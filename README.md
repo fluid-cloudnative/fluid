@@ -1,6 +1,6 @@
-# Kubernetes Template Project
+# Fluid
 
-The Kubernetes Template Project is a template for starting new projects in the GitHub organizations owned by Kubernetes. All Kubernetes projects, at minimum, must have the following files:
+The Fluid is a template for starting new projects in the GitHub organizations owned by Kubernetes. All Kubernetes projects, at minimum, must have the following files:
 
 - a `README.md` outlining the project goals, sponsoring sig, and community contact information
 - an `OWNERS` with the project leads listed as approvers ([docs on `OWNERS` files][owners])
@@ -14,7 +14,7 @@ The Kubernetes Template Project is a template for starting new projects in the G
 
 ## Community, discussion, contribution, and support
 
-Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
+Learn how to engage with the Cloudnativefluid Community on the [community page](http://kubernetes.io/community/).
 
 You can reach the maintainers of this project at:
 
@@ -23,7 +23,7 @@ You can reach the maintainers of this project at:
 
 ### Code of conduct
 
-Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
+Participation in the Cloudnativefluid Community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
 
 [owners]: https://git.k8s.io/community/contributors/guide/owners.md
 [Creative Commons 4.0]: https://git.k8s.io/website/LICENSE
