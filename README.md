@@ -1,6 +1,6 @@
 # Fluid
 
-The Fluid is a template for starting new projects in the GitHub organizations owned by Kubernetes. All Kubernetes projects, at minimum, must have the following files:
+The Fluid is a template for starting new projects in the GitHub organizations owned by Kubernetes. All Fluid projects, at minimum, must have the following files:
 
 - a `README.md` outlining the project goals, sponsoring sig, and community contact information
 - an `OWNERS` with the project leads listed as approvers ([docs on `OWNERS` files][owners])
