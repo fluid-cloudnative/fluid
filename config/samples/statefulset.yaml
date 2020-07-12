@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  serviceName: "nginx"
+  podManagementPolicy: "Parallel"
+  selector: # define how the deployment finds the pods it manages
+    matchLabels:
+      app: nginx
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      hostNetwork: true
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+          - mountPath: /data
+            name: cifar10
+      volumes:
+      - name: cifar10
+        persistentVolumeClaim:
+          claimName: cifar10

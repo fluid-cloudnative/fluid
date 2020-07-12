@@ -1,7 +1,9 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioDataLoad
 metadata:
-  name: alluxiodataload-sample
+  name: cifar
 spec:
   # Add fields here
-  foo: bar
+  dataset: cifar
+  strategy: once
+  replicas: 2
