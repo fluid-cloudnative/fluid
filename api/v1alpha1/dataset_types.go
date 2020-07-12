@@ -82,9 +82,6 @@ type DatasetSpec struct {
 
 	// Runtimes for supporting dataset
 	Runtimes []Runtime `json:"runtimes,omitempty"`
-
-	// The copies of the dataset
-	Copies int32 `json:"copies"`
 }
 
 type Runtime struct {

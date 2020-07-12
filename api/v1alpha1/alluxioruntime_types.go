@@ -132,6 +132,9 @@ type AlluxioRuntimeSpec struct {
 	JvmOptions []string          `json:"jvmOptions,omitempty"`
 
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
+
+	// The copies of the dataset
+	DataReplicas int32 `json:"dataReplicas"`
 }
 
 type RuntimePhase string
