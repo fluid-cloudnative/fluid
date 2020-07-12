@@ -47,6 +47,10 @@ spec:
                 imageTag:
                   type: string
               type: object
+            dataReplicas:
+              description: The copies of the dataset
+              format: int32
+              type: integer
             fuse:
               description: AlluxioFuseSpec is a description of the alluxio fuse
               properties:
@@ -348,6 +352,8 @@ spec:
                       type: object
                   type: object
               type: object
+          required:
+          - dataReplicas
           type: object
         status:
           description: AlluxioRuntimeStatus defines the observed state of AlluxioRuntime

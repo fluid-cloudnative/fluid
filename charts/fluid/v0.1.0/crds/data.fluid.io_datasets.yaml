@@ -36,10 +36,6 @@ spec:
         spec:
           description: DatasetSpec defines the desired state of Dataset
           properties:
-            copies:
-              description: The copies of the dataset
-              format: int32
-              type: integer
             mounts:
               description: Mounts
               items:
@@ -175,8 +171,6 @@ spec:
                     type: string
                 type: object
               type: array
-          required:
-          - copies
           type: object
         status:
           description: DatasetStatus defines the observed state of Dataset
