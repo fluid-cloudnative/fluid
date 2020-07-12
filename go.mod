@@ -10,7 +10,7 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0 // indirect
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/onsi/ginkgo v1.11.0
-	github.com/onsi/gomega v1.7.0
+	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
@@ -70,3 +70,5 @@ replace k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.5
 replace k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.18.5
 
 replace k8s.io/sample-controller => k8s.io/sample-controller v0.18.5
+
+replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.6.0

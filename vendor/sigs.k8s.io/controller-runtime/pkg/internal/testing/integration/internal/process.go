@@ -4,19 +4,22 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"sigs.k8s.io/testing_frameworks/integration/addr"
+	"sigs.k8s.io/controller-runtime/pkg/internal/testing/integration/addr"
 )
 
+// ProcessState define the state of the process.
 type ProcessState struct {
 	DefaultedProcessInput
 	Session *gexec.Session
@@ -28,7 +31,7 @@ type ProcessState struct {
 	// HealthCheckEndpoint.
 	// If left empty it will default to 100 Milliseconds.
 	HealthCheckPollInterval time.Duration
-	// StartMessage is the message to wait for on stderr. If we recieve this
+	// StartMessage is the message to wait for on stderr. If we receive this
 	// message, we assume the process is ready to operate. Ignored if
 	// HealthCheckEndpoint is specified.
 	//
@@ -38,8 +41,13 @@ type ProcessState struct {
 	// Deprecated: Use HealthCheckEndpoint in favour of StartMessage
 	StartMessage string
 	Args         []string
+
+	// ready holds wether the process is currently in ready state (hit the ready condition) or not.
+	// It will be set to true on a successful `Start()` and set to false on a successful `Stop()`
+	ready bool
 }
 
+// DefaultedProcessInput defines the default process input required to perform the test.
 type DefaultedProcessInput struct {
 	URL              url.URL
 	Dir              string
@@ -49,9 +57,11 @@ type DefaultedProcessInput struct {
 	StartTimeout     time.Duration
 }
 
+// DoDefaulting sets the default configuration according to the data informed and return an DefaultedProcessInput
+// and an error if some requirement was not informed.
 func DoDefaulting(
 	name string,
-	listenUrl *url.URL,
+	listenURL *url.URL,
 	dir string,
 	path string,
 	startTimeout time.Duration,
@@ -64,17 +74,17 @@ func DoDefaulting(
 		StopTimeout:  stopTimeout,
 	}
 
-	if listenUrl == nil {
+	if listenURL == nil {
 		port, host, err := addr.Suggest()
 		if err != nil {
 			return DefaultedProcessInput{}, err
 		}
 		defaults.URL = url.URL{
 			Scheme: "http",
-			Host:   fmt.Sprintf("%s:%d", host, port),
+			Host:   net.JoinHostPort(host, strconv.Itoa(port)),
 		}
 	} else {
-		defaults.URL = *listenUrl
+		defaults.URL = *listenURL
 	}
 
 	if dir == "" {
@@ -106,7 +116,13 @@ func DoDefaulting(
 
 type stopChannel chan struct{}
 
+// Start starts the apiserver, waits for it to come up, and returns an error,
+// if occurred.
 func (ps *ProcessState) Start(stdout, stderr io.Writer) (err error) {
+	if ps.ready {
+		return nil
+	}
+
 	command := exec.Command(ps.Path, ps.Args...)
 
 	ready := make(chan bool)
@@ -131,6 +147,7 @@ func (ps *ProcessState) Start(stdout, stderr io.Writer) (err error) {
 
 	select {
 	case <-ready:
+		ps.ready = true
 		return nil
 	case <-timedOut:
 		if pollerStopCh != nil {
@@ -159,9 +176,12 @@ func pollURLUntilOK(url url.URL, interval time.Duration, ready chan bool, stopCh
 	}
 	for {
 		res, err := http.Get(url.String())
-		if err == nil && res.StatusCode == http.StatusOK {
-			ready <- true
-			return
+		if err == nil {
+			res.Body.Close()
+			if res.StatusCode == http.StatusOK {
+				ready <- true
+				return
+			}
 		}
 
 		select {
@@ -173,6 +193,8 @@ func pollURLUntilOK(url url.URL, interval time.Duration, ready chan bool, stopCh
 	}
 }
 
+// Stop stops this process gracefully, waits for its termination, and cleans up
+// the CertDir if necessary.
 func (ps *ProcessState) Stop() error {
 	if ps.Session == nil {
 		return nil
@@ -194,7 +216,7 @@ func (ps *ProcessState) Stop() error {
 	case <-timedOut:
 		return fmt.Errorf("timeout waiting for process %s to stop", path.Base(ps.Path))
 	}
-
+	ps.ready = false
 	if ps.DirNeedsCleaning {
 		return os.RemoveAll(ps.Dir)
 	}

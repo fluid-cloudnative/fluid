@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,12 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package manager
+/*
+Package ratelimiter defines rate limiters used by Controllers to limit how frequently requests may be queued.
 
-// func SetCacheForTest(options *Options, c func(config *rest.Config, opts cache.Options) (cache.Cache, error)) {
-// 	options.newCache = c
-// }
-
-// func SetClientForTest(options *Options, c func(config *rest.Config, options client.Options) (client.Client, error)) {
-// 	options.newClient = c
-// }
+Typical rate limiters that can be used are implemented in client-go's workqueue package.
+*/
+package ratelimiter

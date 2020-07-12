@@ -5,7 +5,7 @@ import (
 	"io"
 	"os/exec"
 
-	"sigs.k8s.io/testing_frameworks/integration/internal"
+	"sigs.k8s.io/controller-runtime/pkg/internal/testing/integration/internal"
 )
 
 // KubeCtl is a wrapper around the kubectl binary.
