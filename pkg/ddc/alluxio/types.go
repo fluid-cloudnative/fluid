@@ -42,7 +42,7 @@ type Alluxio struct {
 	Journal Journal `yaml:"journal,omitempty"`
 
 	ShortCircuit ShortCircuit `yaml:"shortCircuit,omitempty"`
-	// EnablePillars bool `yaml:"enablePillars,omitempty"`
+	// Enablefluid bool `yaml:"enablefluid,omitempty"`
 }
 
 type ImageInfo struct {

@@ -34,8 +34,8 @@ type DataLoadReconciler struct {
 }
 
 //Reconcile reconciles the AlluxioDataLoad Object
-// +kubebuilder:rbac:groups=data.pillars.io,resources=alluxiodataloads,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.pillars.io,resources=alluxiodataloads/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads/status,verbs=get;update;patch
 
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

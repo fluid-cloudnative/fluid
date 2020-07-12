@@ -38,8 +38,8 @@ func main() {
 	flag.CommandLine.Parse([]string{})
 
 	cmd := &cobra.Command{
-		Use:   "Pillars",
-		Short: "CSI based Pillars driver for Fuse",
+		Use:   "fluid",
+		Short: "CSI based fluid driver for Fuse",
 		Run: func(cmd *cobra.Command, args []string) {
 			handle()
 		},

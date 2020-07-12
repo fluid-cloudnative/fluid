@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	driverName = "fuse.csi.pillars.io"
+	driverName = "fuse.csi.fluid.io"
 	version    = "1.0.0"
 )
 

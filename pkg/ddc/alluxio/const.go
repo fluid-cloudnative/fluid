@@ -16,9 +16,9 @@ limitations under the License.
 package alluxio
 
 const (
-	CSI_DRIVER = "fuse.csi.pillars.io"
+	CSI_DRIVER = "fuse.csi.fluid.io"
 
-	PILLARS_PATH = "pillars_path"
+	fluid_PATH = "fluid_path"
 
 	ALLUXIO_MOUNT = "/alluxio-mnt"
 )

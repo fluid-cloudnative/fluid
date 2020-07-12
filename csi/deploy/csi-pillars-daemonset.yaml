@@ -1,18 +1,18 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-nodeplugin-pillars
-  namespace: pillars-system
+  name: csi-nodeplugin-fluid
+  namespace: fluid-system
 spec:
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: csi-nodeplugin-pillars
+      app: csi-nodeplugin-fluid
   template:
     metadata:
       labels:
-        app: csi-nodeplugin-pillars
+        app: csi-nodeplugin-fluid
     spec:
       tolerations:
       - operator: Exists
@@ -24,11 +24,11 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/pillars /registration/fuse.csi.pillars.io-reg.sock"]
+                command: ["/bin/sh", "-c", "rm -rf /registration/fluid /registration/fuse.csi.fluid.io-reg.sock"]
           args:
             - --v=5
-            - --csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.pillars.io/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.pillars.io/csi.sock
+            - --csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -46,8 +46,8 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: registry.cn-hangzhou.aliyuncs.com/pillars/pillars-csi:v0.1.0-23e985d
-          command: ["/usr/bin/pillars-csi"]
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.1.0-23e985d
+          command: ["/usr/bin/fluid-csi"]
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -58,7 +58,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
-              value: unix://var/lib/kubelet/csi-plugins/fuse.csi.pillars.io/csi.sock
+              value: unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: plugin-dir
@@ -66,7 +66,7 @@ spec:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
-            - name: pillars-src-dir
+            - name: fluid-src-dir
               mountPath: /alluxio-mnt
               mountPropagation: "Bidirectional"
       volumes:
@@ -76,7 +76,7 @@ spec:
             type: Directory
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-pillars-plugin
+            path: /var/lib/kubelet/plugins/csi-fluid-plugin
             type: DirectoryOrCreate
         - hostPath:
             path: /var/lib/kubelet/plugins_registry
@@ -85,4 +85,4 @@ spec:
         - hostPath:
             path: /alluxio-mnt
             type: Directory
-          name: pillars-src-dir
+          name: fluid-src-dir

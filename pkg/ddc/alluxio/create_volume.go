@@ -28,7 +28,7 @@ import (
 
 var (
 	expectedAnnotations = map[string]string{
-		"CreatedBy": "pillars",
+		"CreatedBy": "fluid",
 	}
 )
 
@@ -105,7 +105,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 						Driver:       CSI_DRIVER,
 						VolumeHandle: e.runtime.Name,
 						VolumeAttributes: map[string]string{
-							PILLARS_PATH: mountPath,
+							fluid_PATH: mountPath,
 						},
 					},
 				},

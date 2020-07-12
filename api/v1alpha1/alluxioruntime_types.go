@@ -36,7 +36,7 @@ const (
 	Fuse AlluxioRuntimeRole = "fuse"
 )
 
-// VersionSpec represents the settings for the Alluxio version that Pillars is orchestrating.
+// VersionSpec represents the settings for the Alluxio version that fluid is orchestrating.
 type AlluxioVersionSpec struct {
 	Image           string `json:"image,omitempty"`
 	ImageTag        string `json:"imageTag,omitempty"`
@@ -108,7 +108,7 @@ type Tieredstore struct {
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
-	// The version information that instructs pillars to orchestrate a particular version of Alluxio.
+	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
 	AlluxioVersion AlluxioVersionSpec `json:"alluxioVersion,omitempty"`
 
 	// The placement-related configuration to pass to kubernetes (affinity, node selector, tolerations).

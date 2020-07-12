@@ -2,8 +2,8 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-   name: pillars-fuse-topology
-provisioner: fuse.csi.pillars.io
+   name: fluid-fuse-topology
+provisioner: fuse.csi.fluid.io
 parameters:
     type: available
 reclaimPolicy: Delete
@@ -13,17 +13,17 @@ allowVolumeExpansion: true
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: csi-pillars-provisioner
+  name: csi-fluid-provisioner
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: csi-pillars-provisioner
+      app: csi-fluid-provisioner
   replicas: 2
   template:
     metadata:
       labels:
-        app: csi-pillars-provisioner
+        app: csi-fluid-provisioner
     spec:
       tolerations:
       - operator: "Exists"
@@ -42,10 +42,10 @@ spec:
         - name: external-provisioner
           image: registry.cn-hangzhou.aliyuncs.com/acs/csi-provisioner:v1.4.0-aliyun
           args:
-            - "--provisioner=fuse.csi.pillars.io"
+            - "--provisioner=fuse.csi.fluid.io"
             - "--csi-address=$(ADDRESS)"
             - "--feature-gates=Topology=True"
-            - "--volume-name-prefix=pillars"
+            - "--volume-name-prefix=fluid"
             - "--strict-topology=true"
             - "--timeout=150s"
             - "--enable-leader-election=true"
@@ -57,20 +57,20 @@ spec:
               value: /socketDir/csi.sock
           imagePullPolicy: "Always"
           volumeMounts:
-            - name: pillars-provisioner-dir
+            - name: fluid-provisioner-dir
               mountPath: /socketDir
-        - name: csi-pillars-provisioner
+        - name: csi-fluid-provisioner
           securityContext:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: registry.cn-hangzhou.aliyuncs.com/pillars/pillars-csi:v0.1.0-5b5a67d
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.1.0-5b5a67d
           imagePullPolicy: "Always"
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--v=2"
-            - "--driver=fuse.csi.pillars.io"
+            - "--driver=fuse.csi.fluid.io"
           env:
             - name: CSI_ENDPOINT
               value: unix://socketDir/csi.sock
@@ -81,11 +81,11 @@ spec:
             - mountPath: /var/log/
               name: host-log
             - mountPath: /socketDir/
-              name: pillars-provisioner-dir
+              name: fluid-provisioner-dir
             - name: etc
               mountPath: /host/etc
       volumes:
-        - name: pillars-provisioner-dir
+        - name: fluid-provisioner-dir
           emptyDir: {}
         - name: host-log
           hostPath:

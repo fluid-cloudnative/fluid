@@ -12,8 +12,8 @@ spec:
       protocol: TCP
     volumeMounts:
       - mountPath: /data
-        name: pillars-pvc
+        name: fluid-pvc
   volumes:
-  - name: pillars-pvc
+  - name: fluid-pvc
     persistentVolumeClaim:
-      claimName: pillars-pvc
+      claimName: fluid-pvc

@@ -61,8 +61,8 @@ func NewRuntimeReconciler(client client.Client,
 }
 
 //Reconcile reconciles alluxio runtime
-// +kubebuilder:rbac:groups=data.pillars.io,resources=alluxioruntimes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.pillars.io,resources=alluxioruntimes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxioruntimes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxioruntimes/status,verbs=get;update;patch
 
 func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := cruntime.ReconcileRequestContext{

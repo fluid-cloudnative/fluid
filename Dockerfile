@@ -6,7 +6,7 @@ COPY . .
 
 # Build
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="-N -l" -a -o /go/bin/pillars-controller cmd/controller/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="-N -l" -a -o /go/bin/fluid-controller cmd/controller/main.go
 
 RUN go get github.com/go-delve/delve/cmd/dlv
 
@@ -27,10 +27,10 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 add charts/ /charts
 
-COPY --from=builder /go/bin/pillars-controller /usr/local/bin/pillars-controller
+COPY --from=builder /go/bin/fluid-controller /usr/local/bin/fluid-controller
 COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
-CMD pillars-controller
+CMD fluid-controller
 
-# CMD ["dlv", "--listen=:12345", "exec", "/usr/local/bin/pillars-controller", "--", "--enable-leader-election"]
+# CMD ["dlv", "--listen=:12345", "exec", "/usr/local/bin/fluid-controller", "--", "--enable-leader-election"]
 

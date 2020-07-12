@@ -28,13 +28,13 @@ import (
 // 	return false, nil
 // }
 
-func checkMountReady(pillarsPath string) error {
-	glog.Infof("Try to check if the mount target %s is ready", pillarsPath)
-	if pillarsPath == "" {
+func checkMountReady(fluidPath string) error {
+	glog.Infof("Try to check if the mount target %s is ready", fluidPath)
+	if fluidPath == "" {
 		return errors.New("target is not specified for checking the mount")
 	}
 
-	args := []string{pillarsPath}
+	args := []string{fluidPath}
 	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()

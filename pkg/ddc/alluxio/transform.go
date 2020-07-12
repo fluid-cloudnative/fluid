@@ -109,7 +109,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	// 	value.JvmOptions = strings.Join(runtime.Spec.JvmOptions, " ")
 	// }
 
-	// value.EnablePillars = true
+	// value.Enablefluid = true
 	levels := []Level{}
 	for _, level := range runtime.Spec.Tieredstore.Levels {
 

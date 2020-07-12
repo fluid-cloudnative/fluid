@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	finalizer = "pillars-dataset-controller-finalizer"
+	finalizer = "fluid-dataset-controller-finalizer"
 )
 
 // DatasetReconciler reconciles a Dataset object
@@ -47,8 +47,8 @@ type reconcileRequestContext struct {
 	types.NamespacedName
 }
 
-// +kubebuilder:rbac:groups=data.pillars.io,resources=datasets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.pillars.io,resources=datasets/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=datasets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=datasets/status,verbs=get;update;patch
 
 func (r *DatasetReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
