@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    imagePullPolicy: Always
+    name: nginx
+    ports:
+    - containerPort: 80
+      protocol: TCP
+    volumeMounts:
+      - mountPath: /data
+        name: pillars-pvc
+  volumes:
+  - name: pillars-pvc
+    persistentVolumeClaim:
+      claimName: pillars-pvc

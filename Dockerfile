@@ -1,27 +1,36 @@
 # Build the manager binary
-FROM golang:1.12.5 as builder
+FROM golang:1.14.2 as builder
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
-
-# Copy the go source
-COPY main.go main.go
-COPY api/ api/
-COPY controllers/ controllers/
+WORKDIR /go/src/github.com/cloudnativefluid/fluid
+COPY . .
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="-N -l" -a -o /go/bin/pillars-controller cmd/controller/main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /workspace/manager .
-USER nonroot:nonroot
+RUN go get github.com/go-delve/delve/cmd/dlv
 
-ENTRYPOINT ["/manager"]
+FROM alpine:3.10
+RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
+ 	rm -rf /var/cache/apk/* && \
+ 	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+ 	echo "Asia/Shanghai" >  /etc/timezone
+
+RUN curl -o helm-v3.0.3-linux-amd64.tar.gz http://aliacs-k8s-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/public/pkg/helm/helm-v3.0.3-linux-amd64.tar.gz && \
+    tar -xvf helm-v3.0.3-linux-amd64.tar.gz && \
+    mv linux-amd64/helm /usr/local/bin/ddc-helm && \
+    chmod u+x /usr/local/bin/ddc-helm && \
+    rm -f helm-v3.0.3-linux-amd64.tar.gz
+
+ENV K8S_VERSION v1.14.8
+RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
+
+add charts/ /charts
+
+COPY --from=builder /go/bin/pillars-controller /usr/local/bin/pillars-controller
+COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+RUN chmod -R u+x /usr/local/bin/
+CMD pillars-controller
+
+# CMD ["dlv", "--listen=:12345", "exec", "/usr/local/bin/pillars-controller", "--", "--enable-leader-election"]
+

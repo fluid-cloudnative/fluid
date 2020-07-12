@@ -20,7 +20,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/AliyunContainerService/pillars/pkg/common"
+	"github.com/cloudnativefluid/fluid/pkg/common"
 	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )

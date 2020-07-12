@@ -1,0 +1,179 @@
+/*
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package alluxio
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/cloudnativefluid/fluid/pkg/utils/helm"
+	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func (e *AlluxioEngine) Shutdown() (err error) {
+	if e.retryShutdown < e.gracefulShutdownLimits {
+		err = e.cleanupCache()
+		if err != nil {
+			e.retryShutdown = e.retryShutdown + 1
+			e.Log.Info("clean cache failed",
+				// "engine", e,
+				"retry times", e.retryShutdown)
+			return
+		}
+	}
+
+	err = e.destroyWorkers(-1)
+	if err != nil {
+		return
+	}
+
+	err = e.destroyMaster()
+	if err != nil {
+		return
+	}
+
+	err = e.cleanAll()
+	return err
+}
+
+// destroyMaster Destroies the master
+func (e *AlluxioEngine) destroyMaster() (err error) {
+	var (
+		found = false
+	)
+
+	found, err = helm.CheckRelease(e.name, e.namespace)
+	if err != nil {
+		return err
+	}
+
+	if found {
+		err = helm.DeleteRelease(e.name, e.namespace)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// // Destroy the workers
+// func (e *AlluxioEngine) destroyWorkers() error {
+// 	return nil
+// }
+
+// cleanupCache cleans up the cache
+func (e *AlluxioEngine) cleanupCache() (err error) {
+	// TODO(cheyang): clean up the cache
+	err = e.invokeCleanCache("/")
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		} else if strings.Contains(err.Error(), "does not have a host assigned") {
+			return nil
+		}
+		return err
+	}
+	ufs, cached, cachedPercentage, err := e.du()
+	if err != nil {
+		return
+	}
+
+	e.Log.Info("The cache after cleanup", "ufs", ufs,
+		"cached", cached,
+		"cachedPercentage", cachedPercentage)
+
+	if cached > 0 {
+		return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
+	}
+
+	return nil
+}
+
+// cleanAll cleans up the all
+func (e *AlluxioEngine) cleanAll() (err error) {
+	var (
+		valueConfigmapName = e.name + "-" + e.runtimeType + "-values"
+		configmapName      = e.name + "-config"
+		namespace          = e.namespace
+	)
+
+	cms := []string{valueConfigmapName, configmapName}
+
+	for _, cm := range cms {
+		err = kubeclient.DeleteConfigMap(e.Client, cm, namespace)
+		if err != nil {
+			return
+		}
+	}
+
+	return nil
+}
+
+// destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
+func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
+	var (
+		nodeList *corev1.NodeList = &corev1.NodeList{}
+
+		labelName       = e.getRuntimeLabelname()
+		labelCommonName = e.getCommonLabelname()
+		labelMemoryName = e.getStoragetLabelname(humanReadType, memoryStorageType)
+		labelDiskName   = e.getStoragetLabelname(humanReadType, diskStorageType)
+		labelTotalname  = e.getStoragetLabelname(humanReadType, totalStorageType)
+	)
+
+	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
+	if err != nil {
+		return
+	}
+
+	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+
+	// 1.select the nodes
+	// TODO(cheyang) Need consider node selector
+	var i int32 = 0
+	for _, node := range nodeList.Items {
+		if workers >= 0 {
+			if i > workers {
+				e.Log.Info("destroy workers", "count", i)
+				break
+			}
+		}
+
+		// nodes = append(nodes, &node)
+		toUpdate := node.DeepCopy()
+		if len(toUpdate.Labels) == 0 {
+			continue
+		}
+
+		for _, label := range labelNames {
+			delete(toUpdate.Labels, label)
+		}
+
+		if len(toUpdate.Labels) < len(node.Labels) {
+			err := e.Client.Update(context.TODO(), toUpdate)
+			if err != nil {
+				return err
+			}
+		}
+
+		i++
+	}
+
+	return
+}

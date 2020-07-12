@@ -1,0 +1,98 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: pillars-fuse-topology
+provisioner: fuse.csi.pillars.io
+parameters:
+    type: available
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: csi-pillars-provisioner
+  namespace: pillars-system
+spec:
+  selector:
+    matchLabels:
+      app: csi-pillars-provisioner
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: csi-pillars-provisioner
+    spec:
+      tolerations:
+      - operator: "Exists"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+      priorityClassName: system-node-critical
+      serviceAccount: admin
+      hostNetwork: true
+      containers:
+        - name: external-provisioner
+          image: registry.cn-hangzhou.aliyuncs.com/acs/csi-provisioner:v1.4.0-aliyun
+          args:
+            - "--provisioner=fuse.csi.pillars.io"
+            - "--csi-address=$(ADDRESS)"
+            - "--feature-gates=Topology=True"
+            - "--volume-name-prefix=pillars"
+            - "--strict-topology=true"
+            - "--timeout=150s"
+            - "--enable-leader-election=true"
+            - "--leader-election-type=leases"
+            - "--retry-interval-start=500ms"
+            - "--v=5"
+          env:
+            - name: ADDRESS
+              value: /socketDir/csi.sock
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: pillars-provisioner-dir
+              mountPath: /socketDir
+        - name: csi-pillars-provisioner
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: registry.cn-hangzhou.aliyuncs.com/pillars/pillars-csi:v0.1.0-5b5a67d
+          imagePullPolicy: "Always"
+          args:
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--v=2"
+            - "--driver=fuse.csi.pillars.io"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://socketDir/csi.sock
+          volumeMounts:
+            - mountPath: /dev
+              mountPropagation: "HostToContainer"
+              name: host-dev
+            - mountPath: /var/log/
+              name: host-log
+            - mountPath: /socketDir/
+              name: pillars-provisioner-dir
+            - name: etc
+              mountPath: /host/etc
+      volumes:
+        - name: pillars-provisioner-dir
+          emptyDir: {}
+        - name: host-log
+          hostPath:
+            path: /var/log/
+        - name: host-dev
+          hostPath:
+            path: /dev
+        - name: etc
+          hostPath:
+            path: /etc
