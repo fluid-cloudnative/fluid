@@ -1,8 +1,10 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= registry.cn-hangzhou.aliyuncs.com/pillars/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
+
+CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/pillars/pillars-csi
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -11,19 +13,38 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+GIT_COMMIT=$(shell git rev-parse HEAD)
+GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
+GIT_TREE_STATE=$(shell echo "clean")
+GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
+GIT_VERSION=v0.1.0-${GIT_SHA}
+
 all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/manager cmd/controller/main.go
+
+# Build CSI binary
+csi: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi cmd/csi/main.go
+
+# Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
+debug: generate fmt vet manifests
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
+
+# Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
+debug-csi: generate fmt vet manifests
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.pillars.io/csi.sock
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run ./main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go run cmd/controller/main.go
 
 # Install CRDs into a cluster
 install: manifests
@@ -51,12 +72,19 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image
-docker-build: test
-	docker build . -t ${IMG}
+docker-build: generate fmt vet
+	docker build --no-cache . -t ${IMG}:${GIT_VERSION}
+
+docker-build-csi: generate fmt vet
+	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
 # Push the docker image
-docker-push:
-	docker push ${IMG}
+docker-push: docker-build
+	docker push ${IMG}:${GIT_VERSION}
+
+docker-push-csi: docker-build-csi
+	docker push ${CSI_IMG}:${GIT_VERSION}
+
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -67,7 +95,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
