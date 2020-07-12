@@ -72,6 +72,22 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
 	}
+	if err = (&controllers.AlluxioRuntimeReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("AlluxioRuntime"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
+		os.Exit(1)
+	}
+	if err = (&controllers.AlluxioDataLoadReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("AlluxioDataLoad"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

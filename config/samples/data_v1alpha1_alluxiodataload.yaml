@@ -1,0 +1,7 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioDataLoad
+metadata:
+  name: alluxiodataload-sample
+spec:
+  # Add fields here
+  foo: bar

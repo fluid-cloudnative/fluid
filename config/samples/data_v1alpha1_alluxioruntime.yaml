@@ -1,0 +1,7 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: alluxioruntime-sample
+spec:
+  # Add fields here
+  foo: bar
