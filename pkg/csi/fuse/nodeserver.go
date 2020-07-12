@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/kubernetes/pkg/util/mount"
+	"k8s.io/utils/mount"
 )
 
 type nodeServer struct {
@@ -70,14 +70,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	   https://github.com/Alluxio/alluxio/blob/master/integration/fuse/bin/alluxio-fuse
 	*/
 
-	pillarsPath := req.GetVolumeContext()["pillars_path"]
-	if pillarsPath == "" {
-		// pillarsPath = fmt.Sprintf("/mnt/%s", req.)
-		return nil, status.Error(codes.InvalidArgument, "pillars_path is not set")
+	fluidPath := req.GetVolumeContext()["fluid_path"]
+	if fluidPath == "" {
+		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
+		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
 	}
 
 	// 1. Wait the alluxio fuse ready
-	err = checkMountReady(pillarsPath)
+	err = checkMountReady(fluidPath)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -87,7 +87,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// 	args = append(args, "-o", strings.Join(mountOptions, ","))
 	// }
 
-	args = append(args, pillarsPath, targetPath)
+	args = append(args, fluidPath, targetPath)
 	command := exec.Command("mount", args...)
 
 	glog.V(4).Infoln(command)
