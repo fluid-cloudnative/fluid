@@ -1,0 +1,7 @@
+version: "2"
+domain: fluid.io
+repo: github.com/cloudnativefluid/fluid
+resources:
+- group: data
+  version: v1alpha1
+  kind: Dataset
