@@ -134,6 +134,7 @@ type AlluxioRuntimeSpec struct {
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
 
 	// The copies of the dataset
+	// +optional
 	DataReplicas int32 `json:"dataReplicas"`
 }
 
