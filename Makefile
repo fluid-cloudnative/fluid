@@ -1,10 +1,10 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.cn-hangzhou.aliyuncs.com/pillars/runtime-controller
+IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/pillars/pillars-csi
+CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -40,7 +40,7 @@ debug: generate fmt vet manifests
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug-csi: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.pillars.io/csi.sock
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
