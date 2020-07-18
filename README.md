@@ -1,29 +1,68 @@
 # Fluid
 
-The Fluid is a template for starting new projects in the GitHub organizations owned by Cloudnativefluid. All Fluid projects, at minimum, must have the following files:
+## What is Fluid?
+Argo Workflows is an open source container-native data accelerate engine for data centric jobs on Kubernetes.
 
-- a `README.md` outlining the project goals, sponsoring sig, and community contact information
-- an `OWNERS` with the project leads listed as approvers ([docs on `OWNERS` files][owners])
-- a `CONTRIBUTING.md` outlining how to contribute to the project
-- an unmodified copy of `code-of-conduct.md` from this repo, which outlines community behavior and the consequences of breaking the code
-- a `LICENSE` which must be Apache 2.0 for code projects, or [Creative Commons 4.0] for documentation repositories, without any custom content
-- a `SECURITY_CONTACTS` with the contact points for the Product Security Team 
-  to reach out to for triaging and handling of incoming issues. They must agree to abide by the
-  [Embargo Policy](https://git.k8s.io/security/private-distributors-list.md#embargo-policy)
-  and will be removed and replaced if they violate that agreement.
 
-## Community, discussion, contribution, and support
 
-Learn how to engage with the Cloudnativefluid Community on the [community page](http://kubernetes.io/community/).
+## Why Argo Fluid?
 
-You can reach the maintainers of this project at:
 
-- [Slack](http://slack.k8s.io/)
-- [Mailing List](https://groups.google.com/forum/#!forum/kubernetes-dev)
+## Quickstart
 
-### Code of conduct
+1. 下载fluid
 
-Participation in the Cloudnativefluid Community is governed by the [Cloudnativefluid Code of Conduct](code-of-conduct.md).
+要部署fluid， 请确保安装了Helm 3。
 
-[owners]: https://git.k8s.io/community/contributors/guide/owners.md
-[Creative Commons 4.0]: https://git.k8s.io/website/LICENSE
+```
+wget http://kubeflow.oss-cn-beijing.aliyuncs.com/fluid-0.4.0.tgz
+tar -xvf fluid-0.4.0.tgz
+```
+
+
+2. 使用Helm 3安装
+
+```
+helm install fluid fluid
+NAME: fluid
+LAST DEPLOYED: Tue Jul  7 11:22:07 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+```
+
+
+3. 查看运行结果
+
+```
+kubectl get po -n fluid-system
+NAME                                  READY     STATUS    RESTARTS   AGE
+controller-manager-6b864dfd4f-995gm   1/1       Running   0          32h
+csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
+csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
+```
+
+4. 卸载
+
+```
+helm del fluid
+kubectl delete crd `kubectl get crd | grep data.fluid.io| awk '{print $1}'` 
+```
+
+## Who uses Fluid?
+
+
+## Documentation
+* [Get started here](docs/quick-start.md)
+* [How to write Runtime specs](examples/README.md)
+* [How to develop Fluid](docs/configure-artifact-repository.md)
+
+## Features
+* 极致的数据加速体验 （没有额外费用）
+* 可以调度的数据集
+* 缓存亲和性调度
+* 可观测数据缓存
+
+
+oproj.github.io/community/join-slack)
