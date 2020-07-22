@@ -1,11 +1,18 @@
 # Fluid
 
 ## What is Fluid?
-Argo Workflows is an open source container-native data accelerate engine for data centric jobs on Kubernetes.
+
+Fluid is an open source container-native Distributed Data Accelerator for Big data and Deep Learning. It has the features:
+
+- Data Accessing Accelerates for OSS, HDFS for free
+- Portable and Scalable Dataset in Kubernetes with Infrastructure Knowledge
+- Cache co-locality for workload schedule
+- Unify Dataset Access from different storage source
+- Manage the dataset by preloading the data automatically and visibility of cache state
+
+## Why Fluid?
 
 
-
-## Why Argo Fluid?
 
 
 ## Quickstart
