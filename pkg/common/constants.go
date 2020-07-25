@@ -50,3 +50,9 @@ const (
 
 	HDD MediumType = "HDD"
 )
+
+type Category string
+
+const (
+	AccelerateCategory Category = "Accelerate"
+)

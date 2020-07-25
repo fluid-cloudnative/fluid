@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 controller:
-  image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.1.0-d5ee20f
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.1.0-a88ea76
 
 
 csi:

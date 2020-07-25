@@ -50,21 +50,10 @@ func (e *AlluxioEngine) UpdateCacheOfDataset() (err error) {
 			datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
 		}
 
-		found := false
-		for _, runtime := range datasetToUpdate.Status.Runtimes {
-			if runtime.Engine == common.ALLUXIO_RUNTIME {
-				found = true
-			}
-		}
-
-		if !found {
-			runtime := datav1alpha1.Runtime{
-				Name:      e.name,
-				Namespace: e.namespace,
-				Type:      "Accelerate",
-			}
-			datasetToUpdate.Status.Runtimes = append(datasetToUpdate.Status.Runtimes, runtime)
-		}
+		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
+			e.namespace,
+			common.AccelerateCategory,
+			common.ALLUXIO_RUNTIME))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 

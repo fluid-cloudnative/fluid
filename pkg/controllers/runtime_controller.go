@@ -87,7 +87,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	}
 
 	if dataset != nil {
-		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.RuntimeType) {
+		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
 			dataset = nil
@@ -99,21 +99,6 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	}
 
 	// 3.Update the status of dataset
-	if dataset != nil {
-		if len(dataset.Status.Runtimes) == 0 {
-
-		}
-		// if dataset.Status.RuntimeName == "" {
-		// 	dataset.Status.RuntimeName = ctx.Name
-		// 	dataset.Status.RuntimeType = ctx.RuntimeType
-		// 	dataset.Status.RuntimeNamespace = ctx.Namespace
-		// 	dataset.Status.Phase = datav1alpha1.PendingDatasetPhase
-		// 	if err := r.Status().Update(ctx, dataset); err != nil {
-		// 		ctx.Log.Error(err, "Failed to update dataset status")
-		// 		return utils.RequeueIfError(err)
-		// 	}
-		// }
-	}
 	ctx.Dataset = dataset
 
 	// 4.Reconcile delete the runtime
