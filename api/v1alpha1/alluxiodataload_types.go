@@ -27,8 +27,11 @@ type AlluxioDataLoadSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// DatasetName is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
+	DatasetName string `json:"datasetName,omitempty"`
+
+	// Optional
+	Path string `json:"path,omitempty"`
 }
 
 // AlluxioDataLoadStatus defines the observed state of AlluxioDataLoad
