@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	"github.com/cloudnativefluid/fluid/pkg/common"
 	"github.com/cloudnativefluid/fluid/pkg/controllers"
 	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
 	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
@@ -70,6 +71,7 @@ func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Log:            r.Log.WithValues("alluxioruntime", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
+		Category:       common.AccelerateCategory,
 		RuntimeType:    runtimeType,
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,

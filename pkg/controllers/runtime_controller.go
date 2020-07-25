@@ -87,7 +87,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	}
 
 	if dataset != nil {
-		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.RuntimeType) {
+		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
 			dataset = nil
