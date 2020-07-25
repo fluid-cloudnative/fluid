@@ -55,6 +55,7 @@ csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 helm del fluid
 kubectl delete crd `kubectl get crd | grep data.fluid.io| awk '{print $1}'` 
+kubectl patch crd/datasets.data.fluid.io -p '{"metadata":{"finalizers":[]}}' --type=merge
 ```
 
 ## Who uses Fluid?
