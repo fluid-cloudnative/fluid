@@ -19,6 +19,7 @@ import (
 	"context"
 
 	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	"github.com/cloudnativefluid/fluid/pkg/common"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,5 +37,6 @@ type ReconcileRequestContext struct {
 	client.Client
 	RuntimeType   string
 	FinalizerName string
-	Runtime       runtime.Object
+	common.Category
+	Runtime runtime.Object
 }
