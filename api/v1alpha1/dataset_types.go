@@ -89,9 +89,9 @@ type Runtime struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Type string `json:"type,omitempty"`
+	Category common.Category `json:"category,omitempty"`
 
-	Engine string `json:"engine,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 // DatasetStatus defines the observed state of Dataset
@@ -176,18 +176,7 @@ func init() {
 }
 
 // Canbeound checks if the dataset can be bound to the runtime
-func (dataset *Dataset) CanbeBound(name string, namespace string, runtimeType string) (bound bool) {
-	// if dataset.Status.RuntimeName == "" &&
-	// 	dataset.Status.RuntimeType == "" &&
-	// 	dataset.Status.RuntimeNamespace == "" {
-	// 	bound = true
-	// }
-
-	// if dataset.Status.RuntimeName == runtimeName &&
-	// 	dataset.Status.RuntimeNamespace == runtimeNamespace &&
-	// 	dataset.Status.RuntimeType == runtimeType {
-	// 	bound = true
-	// }
+func (dataset *Dataset) CanbeBound(name string, namespace string, category common.Category) (bound bool) {
 
 	if len(dataset.Status.Runtimes) == 0 {
 		bound = true
@@ -196,7 +185,7 @@ func (dataset *Dataset) CanbeBound(name string, namespace string, runtimeType st
 	for _, runtime := range dataset.Status.Runtimes {
 		if runtime.Name == name &&
 			runtime.Namespace == namespace &&
-			runtime.Type == runtimeType {
+			runtime.Category == category {
 			bound = true
 		}
 	}
