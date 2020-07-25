@@ -161,7 +161,7 @@ spec:
               description: Runtimes for supporting dataset
               items:
                 properties:
-                  engine:
+                  category:
                     type: string
                   name:
                     type: string
@@ -220,7 +220,7 @@ spec:
               description: Runtimes for supporting dataset
               items:
                 properties:
-                  engine:
+                  category:
                     type: string
                   name:
                     type: string
