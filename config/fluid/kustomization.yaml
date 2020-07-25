@@ -1,0 +1,9 @@
+resources:
+  - bases/csi-plugin.yaml
+  - bases/driver.yaml
+  - bases/manager.yaml
+  - bases/role-binding.yaml
+
+patchesStrategicMerge:
+  - patches/image_in_manager.yaml
+  - patches/image_in_csi-plugin.yaml
