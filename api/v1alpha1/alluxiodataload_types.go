@@ -30,7 +30,9 @@ type AlluxioDataLoadSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// DatasetName is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
-	DatasetName string `json:"datasetName,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	// +required
+	DatasetName string `json:"datasetName"`
 
 	// the Path in alluxio
 	// +optional
