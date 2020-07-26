@@ -123,9 +123,7 @@
 
 - Add environment variables to master, worker, fuse
 
-0.6.7
+0.6.8
 
-- Update the mountPath of the fuse
-
-
+- Fixed parsing issue with multiple medium types for tiered storage #11778
 
