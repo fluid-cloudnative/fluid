@@ -15,6 +15,8 @@ spec:
     plural: alluxiodataloads
     singular: alluxiodataload
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: AlluxioDataLoad is the Schema for the alluxiodataloads API
@@ -34,13 +36,65 @@ spec:
         spec:
           description: AlluxioDataLoadSpec defines the desired state of AlluxioDataLoad
           properties:
-            foo:
-              description: Foo is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go
-                to remove/update
+            datasetName:
+              description: DatasetName is an example field of AlluxioDataLoad. Edit
+                AlluxioDataLoad_types.go to remove/update
+              minLength: 1
               type: string
+            path:
+              description: the Path in alluxio
+              type: string
+            slotsPerNode:
+              description: Specifies the number of slots per worker used in hostfile.
+                Defaults to 1.
+              format: int32
+              type: integer
+          required:
+          - datasetName
           type: object
         status:
           description: AlluxioDataLoadStatus defines the observed state of AlluxioDataLoad
+          properties:
+            conditions:
+              description: The latest available observations of an object's current
+                state.
+              items:
+                description: DataloadCondition describes current state of a Dataload.
+                properties:
+                  lastProbeTime:
+                    description: The last time this condition was updated.
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of Dataload condition, Complete or Failed.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            phase:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: string
+          required:
+          - phase
           type: object
       type: object
   version: v1alpha1
