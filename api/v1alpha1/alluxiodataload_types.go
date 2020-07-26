@@ -16,6 +16,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/cloudnativefluid/fluid/pkg/common"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,10 +46,35 @@ type AlluxioDataLoadSpec struct {
 type AlluxioDataLoadStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Phase common.DataloadPhase `json:"phase"`
+
+	// The latest available observations of an object's current state.
+	// +optional
+	Conditions []DataloadCondition `json:"conditions"`
+}
+
+// DataloadCondition describes current state of a Dataload.
+type DataloadCondition struct {
+	// Type of Dataload condition, Complete or Failed.
+	Type common.DataloadConditionType
+	// Status of the condition, one of True, False, Unknown.
+	Status v1.ConditionStatus
+	// Last time the condition was checked.
+	// +optional
+	LastProbeTime metav1.Time
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time
+	// (brief) reason for the condition's last transition.
+	// +optional
+	Reason string
+	// Human readable message indicating details about last transition.
+	// +optional
+	Message string
 }
 
 // +kubebuilder:object:root=true
-
+// +kubebuilder:subresource:status
 // AlluxioDataLoad is the Schema for the alluxiodataloads API
 type AlluxioDataLoad struct {
 	metav1.TypeMeta   `json:",inline"`
