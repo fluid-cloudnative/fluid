@@ -30,8 +30,14 @@ type AlluxioDataLoadSpec struct {
 	// DatasetName is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
 	DatasetName string `json:"datasetName,omitempty"`
 
-	// Optional
+	// the Path in alluxio
+	// +optional
 	Path string `json:"path,omitempty"`
+
+	// Specifies the number of slots per worker used in hostfile.
+	// Defaults to 1.
+	// +optional
+	SlotsPerNode *int32 `json:"slotsPerNode,omitempty"`
 }
 
 // AlluxioDataLoadStatus defines the observed state of AlluxioDataLoad
