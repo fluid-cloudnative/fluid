@@ -58,21 +58,17 @@ type AlluxioDataLoadStatus struct {
 // DataloadCondition describes current state of a Dataload.
 type DataloadCondition struct {
 	// Type of Dataload condition, Complete or Failed.
-	Type common.DataloadConditionType
+	Type common.DataloadConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
-	Status v1.ConditionStatus
-	// Last time the condition was checked.
-	// +optional
-	LastProbeTime metav1.Time
-	// Last time the condition transit from one status to another.
-	// +optional
-	LastTransitionTime metav1.Time
-	// (brief) reason for the condition's last transition.
-	// +optional
-	Reason string
-	// Human readable message indicating details about last transition.
-	// +optional
-	Message string
+	Status v1.ConditionStatus `json:"status"`
+	// The reason for the condition's last transition.
+	Reason string `json:"reason,omitempty"`
+	// A human readable message indicating details about the transition.
+	Message string `json:"message,omitempty"`
+	// The last time this condition was updated.
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	// Last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
