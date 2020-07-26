@@ -16,6 +16,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/cloudnativefluid/fluid/pkg/common"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,18 +29,50 @@ type AlluxioDataLoadSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// DatasetName is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
+	// +kubebuilder:validation:MinLength=1
+	// +required
+	DatasetName string `json:"datasetName"`
+
+	// the Path in alluxio
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// Specifies the number of slots per worker used in hostfile.
+	// Defaults to 1.
+	// +optional
+	SlotsPerNode *int32 `json:"slotsPerNode,omitempty"`
 }
 
 // AlluxioDataLoadStatus defines the observed state of AlluxioDataLoad
 type AlluxioDataLoadStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Phase common.DataloadPhase `json:"phase"`
+
+	// The latest available observations of an object's current state.
+	// +optional
+	Conditions []DataloadCondition `json:"conditions"`
+}
+
+// DataloadCondition describes current state of a Dataload.
+type DataloadCondition struct {
+	// Type of Dataload condition, Complete or Failed.
+	Type common.DataloadConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status v1.ConditionStatus `json:"status"`
+	// The reason for the condition's last transition.
+	Reason string `json:"reason,omitempty"`
+	// A human readable message indicating details about the transition.
+	Message string `json:"message,omitempty"`
+	// The last time this condition was updated.
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	// Last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-
+// +kubebuilder:subresource:status
 // AlluxioDataLoad is the Schema for the alluxiodataloads API
 type AlluxioDataLoad struct {
 	metav1.TypeMeta   `json:",inline"`
