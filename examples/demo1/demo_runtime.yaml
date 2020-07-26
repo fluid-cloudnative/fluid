@@ -1,0 +1,62 @@
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: cifar10
+spec:
+  alluxioVersion:
+    image: alluxio/alluxio
+    imageTag: "2.3.0-SNAPSHOT"
+    imagePullPolicy: Always
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+        storageType: Memory
+  properteies:
+    alluxio.user.file.writetype.default: MUST_CACHE
+    alluxio.master.journal.folder: /journal
+    alluxio.master.journal.type: UFS
+  master:
+    replicas: 1
+    jvmOptions:
+      - "-Xmx4G"
+    properteies: {}
+    ports: {}
+    resources: {}
+  worker:
+    replicas: 2
+    jvmOptions:
+      - "-Xmx4G"
+    properteies: {}
+    ports: {}
+    resources: {}
+  fuse:
+    image: alluxio/alluxio-fuse
+    imageTag: "2.3.0-SNAPSHOT"
+    imagePullPolicy: Always
+    jvmOptions:
+      - "-Xmx4G "
+      - "-Xms4G "
+      - "-XX:+UseG1GC "
+      - "-XX:MaxDirectMemorySize=4g "
+      - "-XX:+UnlockExperimentalVMOptions "
+      - "-XX:ActiveProcessorCount=8 "
+    # For now, only support local
+    shortCircuitPolicy: local
+    args:
+      - fuse
+      - --fuse-opts=ro,max_read=131072,attr_timeout=7200,entry_timeout=7200
+    env:
+      MAX_IDLE_THREADS: "64"
+      SPENT_TIME: "1000"
+
+
+
+
+
+
+

@@ -1,0 +1,9 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: cifar10
+spec:
+  mounts:
+    # TODO change this to a famous dataset(e.g. cifar10, mnist)
+    - mountPoint: https://downloads.apache.org/hbase/2.2.5/
+      name: hbase
