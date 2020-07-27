@@ -1,6 +1,6 @@
 # 示例 - 数据集访问加速
 
-##前提条件
+## 前提条件
 在运行该示例之前，请参考[安装文档](../../docs/installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
 ```shell script
 $ kubectl get pod -n fluid-system
@@ -10,7 +10,7 @@ csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
 csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
 ```
 
-##运行示例
+## 运行示例
 
 **创建Dataset资源**
 ```shell script
