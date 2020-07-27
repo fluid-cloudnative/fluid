@@ -1,26 +1,35 @@
-# Fluid开发文档
+## Fluid开发文档
 
-## 环境需求
-- [golang 1.13+](https://golang.org/dl/)
-- [docker 19.03+](https://docs.docker.com/engine/install/)
-- GNU Make 4.1+
+### 环境需求
+- golang 1.13+
+- docker 19.03+
+- GNU Make
 
-## 下载源码到本地
+对于golang的安装与配置，请参考[此处](https://golang.org/dl/)
 
-如果您习惯使用GOPATH进行项目开发(`GO111MODULE="off"`)：
+对于docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)
+
+Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`：
+
+- Linux
+    - `sudo apt-get install build-essential` 
+
+### 获取Fluid源码
+不支持Go module：
 ```shell script
 mkdir -p $GOPATH/src/github.com/cloudnativefluid/
 cd $GOPATH/src/github.com/cloudnativefluid
 git clone https://github.com/cheyang/fluid.git
 ```
 
-如果您习惯使用Go Module进行项目开发(`GO111MODULE="on"`)：
+支持Go module:
 ```shell script
 cd <any-place-you-like>
 git clone https://github.com/cheyang/fluid.git
 ```
+> 有关Go module可以参阅 [golang 官方文档](https://github.com/golang/go/wiki/Modules) 获取更多信息
 
-## 编译&镜像构建
+### 编译
 Fluid项目根目录下的`Makefile`文件已经包含了项目开发中的编译、构建、部署等基本逻辑
 ```shell script
 # 构建Controller Manager Binary
@@ -32,27 +41,41 @@ make csi
 
 >**注意：如果您正在使用Go Module进行项目开发，那么可能需要将Makefile文件中的相关目标的`GO111MODULE=off`修改为`GO111MODULE=on`以使得编译成功**
 
-构建Docker镜像：
+### 镜像构建
 ```shell script
-# 构建Controller Manager Docker Image
+# 为manager镜像命名
+export IMG=<your-registry>/<your-namespace>/<img-name>
+# 为CSI插件镜像命名
+export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+
+# 构建manager镜像
 make docker-build
-# 构建CSI Docker Image
+# 构建CSI插件镜像
 make docker-build-csi
 ```
 
-或者一键完成镜像构建和Push操作：
+在运行Fluid之前，需要将构建的镜像推送到可以访问的镜像仓库中
+
+1\. 登录镜像仓库：
+```shell script
+sudo docker login <docker-registry>
+```
+
+2\. 推送镜像:
 ```shell script
 make docker-push
 
 make docker-push-csi
 ```
 
-## 运行
-接下来的内容将假设您在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查
+### 运行
+接下来的内容将假设在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查。更多有关`kubeconfig`的信息可以参考
+[kubernetes官方文档](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
-**步骤**
+> 以下内容将使用`kustomize`。`kubectl 1.14+`已经内置了`kustomize`工具，正在使用`kubectl 1.14`版本以下的开发者请参考 [此处](https://kustomize.io/) 获取有关kustomize的更多信息
 
-0.将构建得到的镜像上传到Kubernetes集群可以访问的镜像仓库，并修改`config/fluid/patches`中各文件的镜像名
+
+0\. 将构建得到的镜像上传到Kubernetes集群可以访问的镜像仓库，并修改`config/fluid/patches`中各文件的镜像名
 
 ```yaml
 # config/fluid/patches/image_in_manager.yaml
@@ -60,7 +83,7 @@ make docker-push-csi
 ...
 containers:
   - name: manager
-    image: <your-manager-image>
+    image: <your-registry>/<your-namespace>/<img-name>:<img-tag>
 ```
 
 ```yaml
@@ -69,25 +92,28 @@ containers:
 ...
 containers:
   - name: plugins
-    image: <your-csi-plugin-image>
+    image: <your-registry>/<your-namespace>/<csi-img-name>:<img-tag>
 ```
 
-1.创建CRD
+> 如果构建并上传的镜像在私有仓库中，请确保在kubernetes集群的各个结点上已经成功执行了`sudo docker login`操作
+
+
+1\. 创建CRD
 ```shell script
 kubectl apply -k config/crd
 ```
 
-2.创建Fluid各组件
+2\. 创建Fluid各组件
 ```shell script
 kubectl apply -k config/fluid
 ```
 
-3.编写样例或使用我们提供的样例
+3\.编写样例或使用我们提供的样例
 ```shell script
 kubectl apply -k config/samples
 ```
 
-4.查看各组件的运行情况,确保各组件和样例资源正常运行
+4\.查看各组件的运行情况,确保各组件和样例资源正常运行
 ```shell script
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
@@ -106,11 +132,11 @@ cifar10-worker-d6kmd   2/2     Running   0          6m15s
 nginx-0                1/1     Running   0          8m30s
 nginx-1                1/1     Running   0          8m30s
 ```
-**注意**: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果
+> 注意: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果
 
-5.通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
+5\.通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
 
-6.环境清理
+6\.环境清理
 ```shell script
 kubectl delete -k config/samples
 
