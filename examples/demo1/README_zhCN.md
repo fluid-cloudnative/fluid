@@ -18,8 +18,9 @@ $ kubectl create -f examples/demo1/demo_dataset.yaml
 dataset.data.fluid.io/cifar10 created
 ```
 
-**查看Dataset状态**（`kubectl get dataset cifar10 -o yaml`）
-```yaml
+**查看Dataset状态**
+```shell script
+$ kubectl get dataset cifar10 -o yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -151,7 +152,7 @@ status:
   workerPhase: Ready
 ```
 
-**查看生成的PersistentVolume以及PersistentVolumeClaim**
+**查看与数据集关联的PersistentVolume以及PersistentVolumeClaim**
 ```shell script
 $ kubectl get pv
 NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
@@ -163,8 +164,10 @@ $ kubectl get pvc
 NAME      STATUS   VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 cifar10   Bound    cifar10   100Gi      RWX                           2m38s
 ```
+与数据集关联的PV,PVC已经由Fluid成功生成，应用可以通过该PVC实现对于该数据集的访问
 
 ## 数据集访问加速
+> 为了演示，接下来将使用Nginx应用访问上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的加速访问能力
 **部署应用**
 ```shell script
 $ kubectl create -f examples/demo1/demo_app.yaml
@@ -183,6 +186,7 @@ nginx-1   1/1     Running   0          37s
 ```shell script
 $ kubectl exec -it nginx-0 -- bash
 
+# in pod nginx-0
 $ du -sh /data/hbase/hbase-2.2.5-client-bin.tar.gz
 200M    /data/hbase/hbase-2.2.5-client-bin.tar.gz
 
@@ -191,17 +195,22 @@ real	1m11.708s
 user	0m0.002s
 sys	0m0.047s
 ```
+此过程耗费了接近70s的时间
 
 **登录到Pod nginx-1,尝试读取数据**
 ```shell script
 $ kubectl exec -it nginx-1 -- bash
 
+# in pod nginx-1
 $ time cp /data/hbase/hbase-2.2.5-client-bin.tar.gz /dev/null
 real	0m1.040s
 user	0m0.001s
 sys	0m0.045s
 ```
-Fluid成功地实现了数据访问的加速!
+同样的数据访问操作仅耗费了1秒！
+因为该数据已经在Alluxio中被缓存，因此数据访问的速度大大加快，可见，Fluid利用Alluxio实现了数据集访问的加速
+
+> 注意： 上述数据集的访问速度与示例运行环境的网络条件有关，如果数据访问速度过慢，请更换更小的数据集尝试
 
 ## 环境清理
 ```shell script

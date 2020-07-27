@@ -21,7 +21,7 @@ NAME                       STATUS   ROLES    AGE     VERSION            NVIDIA_N
 cn-beijing.192.168.1.146   Ready    <none>   4d13h   v1.16.9-aliyun.1   Tesla-V100-SXM2-16GB
 cn-beijing.192.168.1.147   Ready    <none>   4d13h   v1.16.9-aliyun.1   
 ```
-目前，在全部2个结点中，仅有一个结点包含Nvidia Tesla V100
+目前，在全部2个结点中，仅有一个结点包含型号为Nvidia Tesla V100的计算加速硬件设备
 
 **检查待创建的Dataset资源**
 ```shell script
@@ -41,7 +41,7 @@ spec:
               values:
                 - Tesla-V100-SXM2-16GB
 ```
-在该Dataset的`spec.nodeAffinity`属性中定义了亲和性调度的相关配置
+在该Dataset的`spec.nodeAffinity`属性中定义了亲和性调度的相关配置，该配置要求将数据集缓存在具有上述型号特殊硬件的结点上
 
 **创建Dataset资源**
 ```shell script
@@ -87,6 +87,7 @@ cifar10-worker-n87mf   2/2     Running   0          3m24s   192.168.1.146   cn-b
 
 **检查AlluxioRuntime状态**
 ```shell script
+$ kubectl get alluxioruntime cifar10 -o yaml
 ...
 status:
   cacheStates:
@@ -111,7 +112,7 @@ status:
   workerNumberReady: 1
   workerPhase: PartialReady
 ```
-与预想一致，无论是Alluxio Worker还是Alluxio Fuse，均只是PartialReady
+与预想一致，无论是Alluxio Worker还是Alluxio Fuse，均只是PartialReady，这是另一个结点没有满足Dataset亲和性要求的特殊硬件所致
 
 **运行应用模拟模型训练过程**
 > 为了演示，接下来将使用Nginx服务器应用使用上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的亲和性调度特性
@@ -140,7 +141,7 @@ Events:
   Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't have free ports for the requested pod ports, 1 node(s) had volume node affinity conflict.
   Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't have free ports for the requested pod ports, 1 node(s) had volume node affinity conflict.
 ```
-可见，一方面，由于`examples/demo2/demo_app.yaml`中`hostNetwork: true`属性的存在，使得两个Nginx Pod由于端口冲突而无法被调度到一个结点之上。**另一方面，由于Dataset亲和性调度的存在，仅有一个Nginx Pod被成功调度**
+可见，一方面，由于`examples/demo2/demo_app.yaml`中`hostNetwork: true`属性的存在，使得两个Nginx Pod由于端口冲突而无法被调度到一个结点之上。**另一方面，由于Dataset亲和性调度的要求，仅有一个Nginx Pod被成功调度**
 
 **增加特殊硬件**
 ```shell script
@@ -165,6 +166,8 @@ nginx-0   1/1     Running   0          21m   192.168.1.146   cn-beijing.192.168.
 nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
 两个Nginx应用均成功启动，并且分别运行在两个结点上
+
+可见，Fluid支持Dataset资源的亲和性调度，该亲和性调度的能力为数据密集作业在Kubernetes集群上的运行提供了更强的灵活性
 
 ## 环境清理
 ```shell script
