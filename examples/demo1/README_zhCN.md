@@ -63,7 +63,7 @@ cifar10-worker-znl8k   2/2     Running   0          58s
 
 **查看Dataset状态**
 ```shell script
-$ kubectl get dataset hadoop -o yaml
+$ kubectl get dataset cifar10 -o yaml
 ...
 ...
 status:
@@ -90,7 +90,7 @@ status:
 
 **查看AlluxioRuntime状态**
 ```shell script
-$ kubectl get alluxioruntime hadoop -o yaml
+$ kubectl get alluxioruntime cifar10 -o yaml
 ...
 ...
 status:
