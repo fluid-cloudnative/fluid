@@ -39,7 +39,7 @@ make csi
 ```
 构建得到的Binary程序位于`./bin`目录下
 
->**注意：如果您正在使用Go Module进行项目开发，那么可能需要将Makefile文件中的相关目标的`GO111MODULE=off`修改为`GO111MODULE=on`以使得编译成功**
+>注意：如果您正在使用Go Module进行项目开发，那么可能需要将Makefile文件中的相关目标的`GO111MODULE=off`修改为`GO111MODULE=on`以使得编译成功
 
 ### 镜像构建
 ```shell script
@@ -72,10 +72,14 @@ make docker-push-csi
 接下来的内容将假设在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查。更多有关`kubeconfig`的信息可以参考
 [kubernetes官方文档](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
-> 以下内容将使用`kustomize`。`kubectl 1.14+`已经内置了`kustomize`工具，正在使用`kubectl 1.14`版本以下的开发者请参考 [此处](https://kustomize.io/) 获取有关kustomize的更多信息
+> 以下内容将使用`kustomize`，`kubectl 1.14+`已经内置了`kustomize`工具，正在使用`kubectl 1.14`版本以下的开发者请参考 [此处](https://kustomize.io/) 获取有关kustomize的更多信息
 
 
-0\. 将构建得到的镜像上传到Kubernetes集群可以访问的镜像仓库，并修改`config/fluid/patches`中各文件的镜像名
+0\. 将构建的镜像上传到Kubernetes集群可以访问的镜像仓库
+> 如果构建并上传的镜像在私有仓库中，请确保在kubernetes集群的各个结点上已经成功执行了`sudo docker login <docker-registry>`操作
+
+
+1\. 修改`config/fluid/patches`中各文件的镜像名
 
 ```yaml
 # config/fluid/patches/image_in_manager.yaml
@@ -95,25 +99,22 @@ containers:
     image: <your-registry>/<your-namespace>/<csi-img-name>:<img-tag>
 ```
 
-> 如果构建并上传的镜像在私有仓库中，请确保在kubernetes集群的各个结点上已经成功执行了`sudo docker login`操作
-
-
-1\. 创建CRD
+2\. 创建CRD
 ```shell script
 kubectl apply -k config/crd
 ```
 
-2\. 创建Fluid各组件
+3\. 创建Fluid各组件
 ```shell script
 kubectl apply -k config/fluid
 ```
 
-3\.编写样例或使用我们提供的样例
+4\.编写样例或使用提供的样例
 ```shell script
 kubectl apply -k config/samples
 ```
 
-4\.查看各组件的运行情况,确保各组件和样例资源正常运行
+5\.查看各组件的运行情况,确保各组件和样例资源正常运行
 ```shell script
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
@@ -134,9 +135,9 @@ nginx-1                1/1     Running   0          8m30s
 ```
 > 注意: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果
 
-5\.通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
+6\.通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
 
-6\.环境清理
+7\.环境清理
 ```shell script
 kubectl delete -k config/samples
 
