@@ -69,5 +69,16 @@ tbd
 
 ### controller测试
 
-tbd
+#### 测试方案
+
+使用[Ginkgo](https://www.ginkgo.wiki/)测试框架。
+
+安装Ginkgo
+
+```shell
+$ go get github.com/onsi/ginkgo/ginkgo
+$ go get github.com/onsi/gomega/...
+```
+
+
 
