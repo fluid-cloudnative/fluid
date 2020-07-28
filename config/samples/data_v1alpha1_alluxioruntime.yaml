@@ -24,7 +24,7 @@ spec:
       high: "0.95"
       low: "0.7"
       storageType: Disk
-  properteies:
+  properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal
     alluxio.master.journal.type: UFS
@@ -32,14 +32,14 @@ spec:
     replicas: 1
     jvmOptions:
       - "-Xmx4G"
-    properteies: {}
+    properties: {}
     ports: {}
     resources: {}
   worker:
     replicas: 2
     jvmOptions:
       - "-Xmx4G"
-    properteies: {}
+    properties: {}
     ports: {}
     resources: {}
   fuse:
