@@ -78,3 +78,9 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
+
+var _ = Describe("alluxio", func() {
+	It("basic", func() {
+		By("basic test")
+	})
+})
