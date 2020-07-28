@@ -145,3 +145,33 @@ kubectl delete -k config/fluid
 
 kubectl delete -k config/crd
 ```
+
+### 调试
+
+**前提条件**
+
+确保环境中已经安装了go-delve，具体安装过程可以参考[go-delve安装手册](https://github.com/go-delve/delve/tree/master/Documentation/installation)
+
+**本地调试**
+```shell script
+# 让go-delve完成编译工作
+dlv debug cmd/controller/main.go
+# 先编译后调试
+make manager
+dlv exec bin/manager
+```
+
+**远程调试**
+在开发Fluid时，通常情况下更为常用的方式是远程调试，确保本机和远程主机均已正确安装了go-delve
+
+在远程主机上:
+```shell script
+dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
+```
+这将使得远程主机的调试程序监听指定的端口(e.g. 12345)
+
+在本机上:
+```shell script
+dlv connect "<remote-addr>:12345" --api-version=2
+```
+> 注意：要进行远程调试，请确保远程主机指定的端口未被占用并且已经对远程主机的防火墙进行了适当的配置
