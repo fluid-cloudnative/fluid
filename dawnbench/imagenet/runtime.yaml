@@ -25,7 +25,7 @@ spec:
     alluxio.user.client.cache.enabled: "false"
     alluxio.user.client.cache.store.type: MEMORY
     alluxio.user.client.cache.dir: /alluxio/ram
-    alluxio.user.client.cache.page.size: 512KB
+    alluxio.user.client.cache.page.size: 2MB
     alluxio.user.client.cache.size: 1800MB
     # alluxio configurations
     alluxio.user.block.worker.client.pool.min: "512"
@@ -66,20 +66,12 @@ spec:
     alluxio.worker.block.master.client.pool.size: "1024"
   master:
     replicas: 1
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx6G"
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=8"
   worker:
     replicas: 4
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx12G"
       - "-XX:+UnlockExperimentalVMOptions"
@@ -90,12 +82,7 @@ spec:
     imageTag: "2.3.0-SNAPSHOT-b7629dc"
     imagePullPolicy: Always
     env:
-      MAX_IDLE_THREADS: "64"
       SPENT_TIME: "1000"
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx16G"
       - "-Xms16G"

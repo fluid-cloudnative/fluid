@@ -1,6 +1,6 @@
 # 在fluid上进行dawnbench测试
 
-本文介绍如何使用fluid部署云端ImageNet数据集，并在ImageNet数据集上训练ResNet-50模型。本位以四机八卡测试环境为例，其中GPU是Tesla-V100-SXM2-16GB。
+本文介绍如何使用fluid部署云端ImageNet数据集，并在ImageNet数据集上训练ResNet-50模型。本文以四机八卡测试环境为例，其中GPU是Tesla-V100-SXM2-16GB。
 
 ## 前提条件
 
@@ -8,6 +8,8 @@
 - kubernetes集群（version >= 1.8）
 - [helm](https://helm.sh/)（version >= 3.0）
 - [arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+
+arena是一个方便数据科学家运行和监视机器学习任务的CLI，安装教程可参考[arena安装教程](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md)。
 
 ## 部署
 
@@ -20,7 +22,7 @@
 数据集存储在[阿里云OSS](https://cn.aliyun.com/product/oss)，请确保`dataset.yaml`文件中设置了正确的`mountPoint`、`fs.oss.accessKeyId`、`fs.oss.accessKeySecret`和`fs.oss.endpoint`。
 
 ```shell
-cat << EOF > dataset.yaml
+$ cat << EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -76,7 +78,7 @@ Events:   <none>
 Alluxio Runtime直接使用阿里云上的docker镜像`registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-b7629dc`，这是目前为止支持AlluxioFuse `kernel_cache`模式的最为稳定的版本。本文档以四机八卡为例，所以设置`spec.worker.replicas=4`。此外，如下的`runtime.yaml`文件还设置了许多参数以优化dawnbench测试的IO性能。
 
 ```shell
-cat << EOF > runtime.yaml
+$ cat << EOF > runtime.yaml
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
@@ -103,7 +105,7 @@ spec:
     alluxio.user.client.cache.enabled: "false"
     alluxio.user.client.cache.store.type: MEMORY
     alluxio.user.client.cache.dir: /alluxio/ram
-    alluxio.user.client.cache.page.size: 512KB
+    alluxio.user.client.cache.page.size: 2MB
     alluxio.user.client.cache.size: 1800MB
     # alluxio configurations
     alluxio.user.block.worker.client.pool.min: "512"
@@ -144,20 +146,12 @@ spec:
     alluxio.worker.block.master.client.pool.size: "1024"
   master:
     replicas: 1
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx6G"
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=8"
   worker:
     replicas: 4
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx12G"
       - "-XX:+UnlockExperimentalVMOptions"
@@ -168,12 +162,7 @@ spec:
     imageTag: "2.3.0-SNAPSHOT-b7629dc"
     imagePullPolicy: Always
     env:
-      MAX_IDLE_THREADS: "64"
       SPENT_TIME: "1000"
-    resources:
-      limits:
-        cpu: "50"
-        memory: "150G"
     jvmOptions:
       - "-Xmx16G"
       - "-Xms16G"
@@ -284,7 +273,7 @@ Status:
 Events:         <none>
 ```
 
-检查pv和pvc，名为imagenet的pv和pvc被成功创建，至此，云端数据集已成功部署到集群中
+检查pv和pvc，名为imagenet的pv和pvc被成功创建。至此，云端数据集已成功部署到集群中
 
 ```shell
 $ kubectl get pv,pvc
@@ -298,9 +287,7 @@ persistentvolumeclaim/imagenet   Bound    imagenet   100Gi      RWX             
 
 ## 执行测试
 
-根据IO负载压力从高到低划分，有两种不同的dawnbench训练任务，分别是`job-a`和`job-b`。我们使用`arena`简化机器学习任务的部署流程。
-
-提交`job-a`四机八卡训练任务：
+我们使用`arena`简化机器学习任务的部署流程。提交四机八卡训练任务：
 
 ```shell
 arena submit mpi \
@@ -325,19 +312,3 @@ arena参数说明：
 - `--data`：挂载数据集（`imagenet`）到worker的`/data`目录
 - `-e DATA_DIR`：指定数据集位置
 - `./launch-example.sh 4 8`：启动四机八卡测试
-
-同理，arena提交`job-b`四机八卡训练任务：
-
-```shell
-arena submit mpi \
---name fluid-4x8-dawnbench-v3 \
---gpus=8  \
---workers=4 \
---working-dir=/perseus-demo/tensorflow-demo/ \
---data imagenet:/data \
--e DATA_DIR=/data/imagenet \
--e num_batch=1000 \
--e batch_size=1024  \
--e datasets_num_private_threads=8  --image=registry-vpc.cn-shanghai.aliyuncs.com/tensorflow-samples/perseus-benchmark-dawnbench-v3-tfrecord-investigate:ubuntu1604-cuda10.0-1.2.2-1.15-py36-0325 "./launch-example.sh 4 8"
-```
-
