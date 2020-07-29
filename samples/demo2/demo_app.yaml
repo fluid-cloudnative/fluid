@@ -16,13 +16,21 @@ spec:
       labels:
         app: nginx
     spec:
-      hostNetwork: true
+      affinity:
+        # prevent two Nginx Pod from being scheduled at the same Node
+        # just for demonstrating demo2
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - nginx
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: nginx
           image: nginx
-          ports:
-            - containerPort: 80
-              protocol: TCP
           volumeMounts:
             - mountPath: /data
               name: cifar10

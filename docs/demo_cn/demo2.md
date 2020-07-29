@@ -25,7 +25,7 @@ cn-beijing.192.168.1.147   Ready    <none>   4d13h   v1.16.9-aliyun.1
 
 **检查待创建的Dataset资源**
 ```shell script
-$ cat examples/demo2/demo_dataset.yaml
+$ cat samples/demo2/demo_dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -45,13 +45,13 @@ spec:
 
 **创建Dataset资源**
 ```shell script
-$ kubectl create -f examples/demo2/demo_dataset.yaml
+$ kubectl create -f samples/demo2/demo_dataset.yaml
 dataset.data.fluid.io/cifar10 created
 ```
 
 **检查待创建的AlluxioRuntime资源**
 ```shell script
-cat examples/demo2/demo_runtime.yaml
+cat samples/demo2/demo_runtime.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -74,7 +74,7 @@ spec:
 
 **创建AlluxioRuntime资源并查看状态**
 ```shell script
-$ kubectl create -f examples/demo2/demo_runtime.yaml
+$ kubectl create -f samples/demo2/demo_runtime.yaml
 alluxioruntime.data.fluid.io/cifar10 created
 
 $ kubectl get pod -o wide
@@ -83,7 +83,7 @@ cifar10-fuse-qtxl7     1/1     Running   0          3m24s   192.168.1.146   cn-b
 cifar10-master-0       2/2     Running   0          4m57s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 cifar10-worker-n87mf   2/2     Running   0          3m24s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
-仅有一组Alluxio Worker/Alluxio Fuse成功运行，并且均执行在具有特殊硬件的结点之上。
+仅有一组Alluxio Worker/Alluxio Fuse成功运行，并且均执行在具有特殊硬件的结点（即`cn-beijing.192.168.1.146`）之上。
 
 **检查AlluxioRuntime状态**
 ```shell script
@@ -118,7 +118,7 @@ status:
 > 为了演示，接下来将使用Nginx服务器应用使用上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的亲和性调度特性
 
 ```shell script
-$ kubectl create -f examples/demo2/demo_app.yaml 
+$ kubectl create -f samples/demo2/demo_app.yaml 
 statefulset.apps/nginx created
 ```
 
@@ -138,10 +138,10 @@ $ kubectl describe pod nginx-1
 Events:
   Type     Reason            Age        From               Message
   ----     ------            ----       ----               -------
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't have free ports for the requested pod ports, 1 node(s) had volume node affinity conflict.
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't have free ports for the requested pod ports, 1 node(s) had volume node affinity conflict.
+  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
+  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
 ```
-可见，一方面，由于`examples/demo2/demo_app.yaml`中`hostNetwork: true`属性的存在，使得两个Nginx Pod由于端口冲突而无法被调度到一个结点之上。**另一方面，由于Dataset亲和性调度的要求，仅有一个Nginx Pod被成功调度**
+一方面，由于`samples/demo2/demo_app.yaml`中对于`PodAntiAffinity`的配置，使得两个Nginx Pod无法被调度到同一节点。**另一方面，由于目前满足Dataset亲和性要求的结点仅有一个，因此仅有一个Nginx Pod被成功调度**
 
 **增加特殊硬件**
 ```shell script
@@ -171,11 +171,7 @@ nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.
 
 ## 环境清理
 ```shell script
-kubectl delete statefulset nginx
-
-kubectl delete alluxioruntime cifar10
-
-kubectl delete dataset cifar10
+kubectl delete -f samples/demo2
 ```
 
 
