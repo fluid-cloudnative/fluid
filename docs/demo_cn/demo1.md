@@ -1,7 +1,7 @@
 # 示例 - 数据集访问加速
 
 ## 前提条件
-在运行该示例之前，请参考[安装文档](../../docs/installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考[安装文档](../installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
 ```shell script
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
@@ -35,7 +35,7 @@ metadata:
   uid: 0cc6fa22-7e96-4b51-9e1f-8ce4b72c5c6c
 spec:
   mounts:
-  - mountPoint: https://downloads.apache.org/hbase/2.2.5/
+  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
     name: hbase
 status:
   conditions: []
@@ -167,19 +167,11 @@ cifar10   Bound    cifar10   100Gi      RWX                           2m38s
 与数据集关联的PV,PVC已经由Fluid成功生成，应用可以通过该PVC实现对于该数据集的访问
 
 ## 数据集访问加速
-> 为了演示，接下来将使用Nginx应用访问上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的加速访问能力
-**部署应用**
+**启动测试作业**
 ```shell script
-$ kubectl create -f examples/demo1/demo_app.yaml
+$ kubectl create -f examples/demo1/demo_test.yaml
 statefulset.apps/nginx created
 ```
-
-等待应用正常启动
-```shell script
-$ kubectl get pod -l app=nginx
-NAME      READY   STATUS    RESTARTS   AGE
-nginx-0   1/1     Running   0          37s
-nginx-1   1/1     Running   0          37s
 ```
 
 **登录到Pod nginx-0，并尝试读取数据**
@@ -220,15 +212,4 @@ kubectl delete alluxioruntime cifar10
 
 kubectl delete dataset cifar10
 ```
-
-
-
-
-
-
-
-
-
-
-
 

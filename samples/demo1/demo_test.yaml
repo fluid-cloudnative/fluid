@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fluid-test
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["time", "cp", "/data/hbase/hbase-2.2.5-client-bin.tar.gz", "./"]
+          volumeMounts:
+            - mountPath: /data
+              name: cifar10
+      volumes:
+        - name: cifar10
+          persistentVolumeClaim:
+            claimName: cifar10

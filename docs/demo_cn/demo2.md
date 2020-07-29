@@ -2,7 +2,7 @@
 通常情况下，执行模型训练时需要使用到特殊的硬件（e.g. GPU/TPU）对整个训练过程进行加速。为了能够将待训练的数据集放置在具有特殊硬件的集群结点上，Fluid提供了针对数据集的亲和性调度，本文档通过一个简单的例子演示了该特性。
 
 ## 前提条件
-在运行该示例之前，请参考[安装文档](../../docs/installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考[安装文档](../installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
 ```shell script
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE

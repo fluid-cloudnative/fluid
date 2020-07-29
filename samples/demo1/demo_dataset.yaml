@@ -5,5 +5,5 @@ metadata:
 spec:
   mounts:
     # TODO change this to a famous dataset(e.g. cifar10, mnist)
-    - mountPoint: https://downloads.apache.org/hbase/2.2.5/
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
       name: hbase
