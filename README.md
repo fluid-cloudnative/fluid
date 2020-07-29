@@ -6,7 +6,7 @@ Fluid is an open source container-native Distributed Data Accelerator for Big da
 
 - Data Accessing Accelerates for OSS, HDFS for free
 - Portable and Scalable Dataset in Kubernetes with Infrastructure Knowledge
-- Cache co-locality for workload schedule
+- Cache co-locality for workload scheduling
 - Unify Dataset Access from different storage source
 - Manage the dataset by preloading the data automatically and visibility of cache state
 
