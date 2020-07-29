@@ -15,13 +15,13 @@ spec:
 #    name: hdfs
 #    options:
 #      alluxio.underfs.version: "2.7"
-  - mountPoint: https://downloads.apache.org/hadoop/common/hadoop-3.2.1/
+  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.2.1/
     name: hadoop
 #    options:
 #      alluxio.underfs.web.connnection.timeout: "120s"
-  - mountPoint: https://downloads.apache.org/spark/spark-2.4.6/
+  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.6/
     name: spark
-  - mountPoint: https://downloads.apache.org/hbase/2.2.5/
+  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
     name: hbase
 #    options:
 #      alluxio.underfs.web.connnection.timeout: "120s"
