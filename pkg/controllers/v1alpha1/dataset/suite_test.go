@@ -16,6 +16,8 @@ limitations under the License.
 package dataset
 
 import (
+	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"testing"
 
@@ -39,6 +41,7 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var testCtx = context.Background()
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -80,7 +83,20 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("alluxio", func() {
-	It("basic", func() {
-		By("basic test")
+	It("Should create successfully", func() {
+		dataset := datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dataset-name",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "mount-point",
+					Name: "mount-name",
+					},
+				},
+			},
+		}
+		err := k8sClient.Create(testCtx, &dataset)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
