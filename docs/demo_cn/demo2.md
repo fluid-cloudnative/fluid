@@ -70,7 +70,7 @@ spec:
     imagePullPolicy: Always
     ...
 ```
-该配置文件表明希望创建一个AlluxioRuntime资源，其中包含1个AlluxioMaster和2个AlluxioWorker，并且2个AlluxioWorker均有对应的Alluxio Fuse
+该配置文件表明希望创建一个AlluxioRuntime资源，其中包含1个Alluxio Master和2个Alluxio Worker，并且对于任意一个Alluxio Worker均会启动一个Alluxio Fuse组件与其协同工作
 
 **创建AlluxioRuntime资源并查看状态**
 ```shell script
@@ -83,7 +83,7 @@ cifar10-fuse-qtxl7     1/1     Running   0          3m24s   192.168.1.146   cn-b
 cifar10-master-0       2/2     Running   0          4m57s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 cifar10-worker-n87mf   2/2     Running   0          3m24s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
-仅有一组Alluxio Worker/Alluxio Fuse成功运行，并且均执行在具有特殊硬件的结点（即`cn-beijing.192.168.1.146`）之上。
+仅有一组Alluxio Worker/Alluxio Fuse成功启动，并且均运行在具有特殊硬件的结点（即`cn-beijing.192.168.1.146`）之上。
 
 **检查AlluxioRuntime状态**
 ```shell script
@@ -112,10 +112,35 @@ status:
   workerNumberReady: 1
   workerPhase: PartialReady
 ```
-与预想一致，无论是Alluxio Worker还是Alluxio Fuse，均只是PartialReady，这是另一个结点没有满足Dataset亲和性要求的特殊硬件所致
+与预想一致，无论是Alluxio Worker还是Alluxio Fuse，其状态均为PartialReady，这是另一个结点无法满足Dataset亲和性要求所致
 
-**运行应用模拟模型训练过程**
-> 为了演示，接下来将使用Nginx服务器应用使用上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的亲和性调度特性
+**查看待创建的应用**
+> 为了演示，接下来将使用Nginx服务器应用模拟使用上述数据集。通常情况下，您不会这么做，但在本示例中为了简单，我们使用该应用演示数据集的亲和性调度特性
+```shell script
+$ cat samples/demo2/demo_app.yaml
+...
+spec:
+  ...
+  template: # define the pods specifications
+    ...
+    spec:
+      affinity:
+        # prevent two Nginx Pod from being scheduled at the same Node
+        # just for demonstrating demo2
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - nginx
+            topologyKey: "kubernetes.io/hostname"
+...
+```
+该应用定义了`PodAntiAffinity`的相关配置，这些配置将确保属于相同应用的多个Pod不会被调度到同一结点，通过这样的配置，能够更加清楚地演示Dataset亲和性调度对使用该Dataset的应用的影响
+
+**运行应用**
 
 ```shell script
 $ kubectl create -f samples/demo2/demo_app.yaml 
@@ -129,7 +154,7 @@ NAME      READY   STATUS    RESTARTS   AGE    IP              NODE              
 nginx-0   1/1     Running   0          2m5s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 nginx-1   0/1     Pending   0          2m5s   <none>          <none>                     <none>           <none>
 ```
-仅有一个nginx应用成功启动，并且运行在含有特殊硬件的结点上
+仅有一个Nginx Pod成功启动，并且运行在含有特殊硬件的结点上
 
 **查看应用启动失败原因**
 ```shell script
@@ -165,7 +190,7 @@ NAME      READY   STATUS    RESTARTS   AGE   IP              NODE               
 nginx-0   1/1     Running   0          21m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
-两个Nginx应用均成功启动，并且分别运行在两个结点上
+两个Nginx Pod均成功启动，并且分别运行在两个结点上
 
 可见，Fluid支持Dataset资源的亲和性调度，该亲和性调度的能力为数据密集作业在Kubernetes集群上的运行提供了更强的灵活性
 
