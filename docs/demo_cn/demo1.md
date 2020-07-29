@@ -42,7 +42,7 @@ status:
   phase: NotBound
 ```
 
-Dataset目前还未与一个配置完成的AlluxioRuntime绑定，因此在`status`中`phase`属性值为`NotBound`
+Dataset目前还未与任何AlluxioRuntime绑定，因此在`status`中的`phase`属性值为`NotBound`
 
 **创建AlluxioRuntime**
 ```shell script
@@ -86,7 +86,7 @@ status:
     type: alluxio
   ufsTotal: 443.5MiB
 ```
-因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset的`Status`得到了更新，从这些信息中可以获得一些基本信息
+因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset的`Status`得到了更新，从上述状态中可以获得有关数据集的一些基本信息
 
 **查看AlluxioRuntime状态**
 ```shell script
@@ -172,7 +172,7 @@ cifar10   Bound    cifar10   100Gi      RWX                           2m38s
 $ kubectl create -f samples/demo1/demo_test.yaml
 job.batch/fluid-test created
 ```
-该测试程序会尝试访问数据集，并打印出访问所耗费的时间
+该测试程序会尝试读取并数据集，并打印出此过程所耗费的时间：
 ```shell script
 $ kubectl logs fluid-test-cqmwj
 real    1m 9.55s
