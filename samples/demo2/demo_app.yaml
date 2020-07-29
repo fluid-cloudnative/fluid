@@ -1,0 +1,40 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  serviceName: "nginx"
+  podManagementPolicy: "Parallel"
+  selector: # define how the deployment finds the pods it manages
+    matchLabels:
+      app: nginx
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        # prevent two Nginx Pod from being scheduled at the same Node
+        # just for demonstrating demo2
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - nginx
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: nginx
+          image: nginx
+          volumeMounts:
+            - mountPath: /data
+              name: cifar10
+      volumes:
+        - name: cifar10
+          persistentVolumeClaim:
+            claimName: cifar10
