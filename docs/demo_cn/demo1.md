@@ -14,7 +14,7 @@ csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
 
 **创建Dataset资源**
 ```shell script
-$ kubectl create -f examples/demo1/demo_dataset.yaml 
+$ kubectl create -f samples/demo1/demo_dataset.yaml 
 dataset.data.fluid.io/cifar10 created
 ```
 
@@ -46,7 +46,7 @@ Dataset目前还未与一个配置完成的AlluxioRuntime绑定，因此在`stat
 
 **创建AlluxioRuntime**
 ```shell script
-$ kubectl create -f examples/demo1/demo_runtime.yaml
+$ kubectl create -f samples/demo1/demo_runtime.yaml
 alluxioruntime.data.fluid.io/cifar10 created
 ```
 
@@ -169,47 +169,38 @@ cifar10   Bound    cifar10   100Gi      RWX                           2m38s
 ## 数据集访问加速
 **启动测试作业**
 ```shell script
-$ kubectl create -f examples/demo1/demo_test.yaml
-statefulset.apps/nginx created
+$ kubectl create -f samples/demo1/demo_test.yaml
+job.batch/fluid-test created
 ```
-```
-
-**登录到Pod nginx-0，并尝试读取数据**
+该测试程序会尝试访问数据集，并打印出访问所耗费的时间
 ```shell script
-$ kubectl exec -it nginx-0 -- bash
-
-# in pod nginx-0
-$ du -sh /data/hbase/hbase-2.2.5-client-bin.tar.gz
-200M    /data/hbase/hbase-2.2.5-client-bin.tar.gz
-
-$ time cp /data/hbase/hbase-2.2.5-client-bin.tar.gz /dev/null
-real	1m11.708s
-user	0m0.002s
-sys	0m0.047s
+$ kubectl logs fluid-test-cqmwj
+real    1m 9.55s
+user    0m 0.00s
+sys     0m 0.64s
 ```
 此过程耗费了接近70s的时间
 
-**登录到Pod nginx-1,尝试读取数据**
+**再次启动测试作业**
 ```shell script
-$ kubectl exec -it nginx-1 -- bash
-
-# in pod nginx-1
-$ time cp /data/hbase/hbase-2.2.5-client-bin.tar.gz /dev/null
-real	0m1.040s
-user	0m0.001s
-sys	0m0.045s
+kubectl delete -f samples/demo1/demo_test.yaml
+kubectl create -f samples/demo1/demo_test.yaml
 ```
-同样的数据访问操作仅耗费了1秒！
+由于数据集已经被缓存，此次测试作业能够迅速完成：
+```shell script
+$ kubectl logs fluid-test-hpzqc
+real    0m 2.03s
+user    0m 0.00s
+sys     0m 0.63s
+```
+同样的数据访问操作仅耗费了2s
+
 因为该数据已经在Alluxio中被缓存，因此数据访问的速度大大加快，可见，Fluid利用Alluxio实现了数据集访问的加速
 
 > 注意： 上述数据集的访问速度与示例运行环境的网络条件有关，如果数据访问速度过慢，请更换更小的数据集尝试
 
 ## 环境清理
 ```shell script
-kubectl delete statefulset nginx
-
-kubectl delete alluxioruntime cifar10
-
-kubectl delete dataset cifar10
+kubectl delete -f samples/demo1/
 ```
 
