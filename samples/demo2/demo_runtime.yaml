@@ -24,16 +24,10 @@ spec:
     replicas: 1
     jvmOptions:
       - "-Xmx4G"
-    properteies: {}
-    ports: {}
-    resources: {}
   worker:
     replicas: 2
     jvmOptions:
       - "-Xmx4G"
-    properteies: {}
-    ports: {}
-    resources: {}
   fuse:
     image: alluxio/alluxio-fuse
     imageTag: "2.3.0-SNAPSHOT"
@@ -50,6 +44,3 @@ spec:
     args:
       - fuse
       - --fuse-opts=ro,max_read=131072,attr_timeout=7200,entry_timeout=7200
-    env:
-      MAX_IDLE_THREADS: "64"
-      SPENT_TIME: "1000"
