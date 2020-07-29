@@ -61,10 +61,3 @@ spec:
     env:
       MAX_IDLE_THREADS: "64"
       SPENT_TIME: "1000"
-
-
-
-
-
-
-
