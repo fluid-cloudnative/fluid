@@ -12,8 +12,8 @@ spec:
           command: ["time", "cp", "/data/hbase/hbase-2.2.5-client-bin.tar.gz", "./"]
           volumeMounts:
             - mountPath: /data
-              name: cifar10
+              name: hbase-vol
       volumes:
-        - name: cifar10
+        - name: hbase-vol
           persistentVolumeClaim:
-            claimName: cifar10
+            claimName: hbase
