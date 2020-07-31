@@ -93,7 +93,7 @@ main() {
 	# Parse arguments using getopt
 	ARGS=$(getopt -a -o h --long help,runtime-name:,runtime-namespace: -- "$@")
 	if [ $? != 0 ]; then
-		exit 1print_usage
+		exit 1
 	fi
 
 	eval set -- "${ARGS}"
