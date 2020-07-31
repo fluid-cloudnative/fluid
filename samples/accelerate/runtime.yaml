@@ -2,7 +2,7 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: cifar10
+  name: hbase
 spec:
   alluxioVersion:
     image: alluxio/alluxio
