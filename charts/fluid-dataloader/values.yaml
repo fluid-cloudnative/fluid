@@ -5,13 +5,13 @@
 dataloader:
   # Optional
   # Default: 2
-  # Desciption: how many threads to be used to preload data
+  # Desciption: how many threads to be used to prefetch data
   threads: 4
 
   # Optional
-  # Default: all files under `/data` recursively, i.e. `/data/*`
-  # Description: directory name when mounting UFS to Alluxio, used to decide which data path to be preload.
-  # Example: `hbase` -> data path to be preload: `/data/hbase/*`
+  # Default: all files under `/data`, including those in subdirectories, i.e. `/data/*`
+  # Description: directory name when mounting UFS to Alluxio, used to decide which data path to be prefetch.
+  # Example: `hbase` -> data path to be prefetch: `/data/hbase/*`
   mountName: # hbase
 
   # Required
@@ -19,4 +19,4 @@ dataloader:
 
   # Required
   # Description: equals num of alluxio workers, used for deciding how many dataloader jobs to be launched in parallel
-  numWorker: 
+  numWorker: # 2

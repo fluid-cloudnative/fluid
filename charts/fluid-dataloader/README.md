@@ -40,9 +40,9 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-Some dataloader job will be launched. You will see multiple job running on different nodes:
+Some dataloader jobs will be launched. You will see multiple jobs running on different nodes:
 ```shell script
-kubectl get pod -l role=alluxio-dataloader
+kubectl get pod -o wide -l role=alluxio-dataloader
 ```
 
 Once some job completes, you can check time consumed during data prefetch:
