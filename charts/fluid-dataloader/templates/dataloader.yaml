@@ -52,8 +52,8 @@ spec:
               value: {{ .Values.dataloader.threads | default "2" | quote }}
             - name: DATA_PATH
               value: 
-                {{- if .Values.dataloader.mountName -}}
-                  {{- .Values.dataloader.mountName | printf "/data/%s/*" | quote | indent 1 -}}
+                {{- if .Values.dataloader.mountPath -}}
+                  {{- .Values.dataloader.mountPath | trimAll "/" | printf "/data/%s/*" | quote | indent 1 -}}
                 {{- else -}}
                   {{- quote "/data/*" | indent 1 -}}
                 {{- end }}

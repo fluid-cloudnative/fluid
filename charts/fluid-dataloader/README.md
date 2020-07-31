@@ -17,7 +17,7 @@ Say `<pvc-name>` is the name of your dataset-related PVC, usually it's the same 
 
 2. get num of Alluxio workers
 ```shell script
-$ kubectl get pod -l release=<dataset-name> | grep -c "worker"
+kubectl get pod -l release=<dataset-name> | grep -c "worker"
 ```
 
 3. Install fluid-dataloader

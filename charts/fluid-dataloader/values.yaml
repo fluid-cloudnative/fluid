@@ -10,9 +10,9 @@ dataloader:
 
   # Optional
   # Default: all files under `/data`, including those in subdirectories, i.e. `/data/*`
-  # Description: directory name when mounting UFS to Alluxio, used to decide which data path to be prefetch.
-  # Example: `hbase` -> data path to be prefetch: `/data/hbase/*`
-  mountName: # hbase
+  # Description: absolute path in Alluxio, used to decide which data path to be prefetched.
+  # Example: `/hbase` or `/hbase/` -> data path to be prefetched: `/data/hbase/*`
+  mountPath: # hbase
 
   # Required
   image: registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf
