@@ -1,0 +1,78 @@
+# .Release.Name will be used to decide which dataset will be preload
+# .Release.Name should be like `<pvc-name>-load`(e.g. hbase-load for a PersistentVolumeClaim named `hbase`)
+# TODO: the length of .Release.Name won't exceed 53, which means length of `<pvc-name>` can't exceed 48. This might be a problem.
+{{ $datasetName := "" -}}
+{{- if hasSuffix "-load" .Release.Name -}}
+  {{- $datasetName = .Release.Name | trimSuffix "-load" -}}
+{{- else -}}
+  {{- $datasetName = .Release.Name -}}
+{{- end }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $datasetName | printf "%s-loader" }}
+  labels:
+    role: dataload-job
+    dataset: {{ $datasetName }}
+spec:
+  # change this according to num of alluxio workers
+  completions: {{ required "Num of Alluxio Workers should be set" .Values.dataloader.numWorker }}
+  parallelism: {{ required "Num of Alluxio Workers should be set" .Values.dataloader.numWorker }}
+  template:
+    metadata:
+      name: {{ $datasetName | printf "%s-loader" }}
+      labels:
+        role: alluxio-dataloader
+        dataset: {{ $datasetName }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: data.fluid.io/storage-alluxio-{{ .Release.Namespace }}-{{ $datasetName }}
+                    operator: In
+                    values:
+                      - "true"
+                  - key: data.fluid.io/storage-{{ .Release.Namespace }}-{{ $datasetName }}
+                    operator: In
+                    values:
+                      - "true"
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                  - key: role
+                    operator: In
+                    values:
+                      - alluxio-dataloader
+                  - key: dataset
+                    operator: In
+                    values:
+                      - {{ $datasetName }}
+      restartPolicy: OnFailure
+      containers:
+        - name: preloader
+          image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+          imagePullPolicy: Always
+          command: ["/app/read_file.sh"]
+          env:
+            # /app/read_file.sh will run `python multithread_read_benchmark.py --threads=$THREADS --path=$DATA_PATH`
+            - name: THREADS
+              value: {{ .Values.dataloader.threads | default "2" | quote }}
+            - name: DATA_PATH
+              value: 
+                {{- if .Values.dataloader.mountPath -}}
+                  {{- .Values.dataloader.mountPath | trimAll "/" | printf "/data/%s/*" | quote | indent 1 -}}
+                {{- else -}}
+                  {{- quote "/data/*" | indent 1 -}}
+                {{- end }}
+          volumeMounts:
+            - mountPath: /data
+              name: vol
+      volumes:
+        - name: vol
+          persistentVolumeClaim:
+            claimName: {{ $datasetName }}

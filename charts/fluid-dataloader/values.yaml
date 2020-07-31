@@ -1,0 +1,22 @@
+# Default values for fluid-dataloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dataloader:
+  # Optional
+  # Default: 2
+  # Desciption: how many threads to be used to prefetch data
+  threads: 4
+
+  # Optional
+  # Default: all files under `/data`, including those in subdirectories, i.e. `/data/*`
+  # Description: absolute path in Alluxio, used to decide which data path to be prefetched.
+  # Example: `/hbase` or `/hbase/` -> data path to be prefetched: `/data/hbase/*`
+  mountPath: # hbase
+
+  # Required
+  image: registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf
+
+  # Required
+  # Description: equals num of alluxio workers, used for deciding how many dataloader jobs to be launched in parallel
+  numWorker: # 2
