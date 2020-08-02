@@ -124,5 +124,5 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		return workersReady, err
 	}
 
-	return
+	return true, err
 }
