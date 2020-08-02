@@ -27,7 +27,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		return err
 	}
 
-	if runtime.Spec.Worker.Replicas > runtime.Status.CurrentWorkerNumberScheduled {
+	if runtime.Replicas() > runtime.Status.CurrentWorkerNumberScheduled {
 		err = e.SetupWorkers()
 		if err != nil {
 			return err
@@ -43,7 +43,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		// 	e.Log.Error(err, "Check if the runtime is ready")
 		// 	return err
 		// }
-	} else if runtime.Spec.Worker.Replicas < runtime.Status.CurrentWorkerNumberScheduled {
+	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
 		// scale in
 	} else {
 

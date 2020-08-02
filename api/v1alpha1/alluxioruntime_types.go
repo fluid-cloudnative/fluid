@@ -136,6 +136,9 @@ type AlluxioRuntimeSpec struct {
 	// The copies of the dataset
 	// +optional
 	DataReplicas int32 `json:"dataReplicas"`
+
+	// The replicas of the worker, need to be specified
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 type RuntimePhase string
@@ -305,4 +308,9 @@ type AlluxioRuntimeList struct {
 
 func init() {
 	SchemeBuilder.Register(&AlluxioRuntime{}, &AlluxioRuntimeList{})
+}
+
+// Replicas gets the replicas of runtime worker
+func (runtime *AlluxioRuntime) Replicas() int32 {
+	return runtime.Spec.Replicas
 }
