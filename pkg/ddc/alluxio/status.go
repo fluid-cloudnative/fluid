@@ -94,7 +94,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Status.NumberUnavailable)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
-		if runtime.Spec.Worker.Replicas == workers.Status.NumberReady {
+		if runtime.Replicas() == workers.Status.NumberReady {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 			// runtimeToUpdate.Status.CacheStates[data.Cacheable] = runtime.Status.CacheStates[data.CacheCapacity]
 			workerReady = true
