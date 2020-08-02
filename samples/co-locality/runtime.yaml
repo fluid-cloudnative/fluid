@@ -4,6 +4,7 @@ kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
+  replicas: 2
   alluxioVersion:
     image: alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT"
@@ -25,7 +26,6 @@ spec:
     jvmOptions:
       - "-Xmx4G"
   worker:
-    replicas: 2
     jvmOptions:
       - "-Xmx4G"
   fuse:

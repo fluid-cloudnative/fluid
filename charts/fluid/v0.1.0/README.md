@@ -80,7 +80,6 @@ spec:
               values:
               - Tesla-P100-PCIE-16GB
   prefetchStrategy: Never
-  replicas: 1
 ```
 
 ## Uninstall
