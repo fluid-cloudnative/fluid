@@ -71,11 +71,11 @@ metadata:
   name: hbase
 spec:
   ...
+  replicas: 2
   master:
     replicas: 1
     ...
   worker:
-    replicas: 2
     ...
   fuse:
     image: alluxio/alluxio-fuse

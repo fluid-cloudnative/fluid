@@ -86,7 +86,8 @@ metadata:
   name: imagenet
   #namespace: fluid-system
 spec:
-  dataCopies: 3
+  dataReplicas: 3
+  replicas: 4
   alluxioVersion:
     image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT-b7629dc"
@@ -151,7 +152,6 @@ spec:
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=8"
   worker:
-    replicas: 4
     jvmOptions:
       - "-Xmx12G"
       - "-XX:+UnlockExperimentalVMOptions"
