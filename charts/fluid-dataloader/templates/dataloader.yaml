@@ -27,6 +27,18 @@ spec:
         dataset: {{ $datasetName }}
     spec:
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: data.fluid.io/storage-alluxio-{{ .Release.Namespace }}-{{ $datasetName }}
+                    operator: In
+                    values:
+                      - "true"
+                  - key: data.fluid.io/storage-{{ .Release.Namespace }}-{{ $datasetName }}
+                    operator: In
+                    values:
+                      - "true"
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: "kubernetes.io/hostname"
