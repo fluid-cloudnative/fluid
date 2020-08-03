@@ -5,26 +5,12 @@ metadata:
   #namespace: fluid-system
 spec:
   mounts:
-#  - mountPoint: oss://cifar10-shanghai/
-#    name: oss
-#    options:
-#      fs.oss.accessKeyId: xxx
-#      fs.oss.accessKeySecret: yyy
-#      fs.oss.endpoint: oss-cn-shanghai-internal.aliyuncs.com
-#  - mountPoint: hdfs://hdfs-namenode-0.hdfs-namenode.default.svc.cluster.local:8020/
-#    name: hdfs
-#    options:
-#      alluxio.underfs.version: "2.7"
   - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.2.1/
     name: hadoop
-#    options:
-#      alluxio.underfs.web.connnection.timeout: "120s"
   - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.6/
     name: spark
   - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
     name: hbase
-#    options:
-#      alluxio.underfs.web.connnection.timeout: "120s"
   nodeAffinity:
     required:
        nodeSelectorTerms:
