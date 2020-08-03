@@ -8,8 +8,8 @@ spec:
   # Add fields here
   replicas: 2
   alluxioVersion:
-    image: alluxio/alluxio
-    imageTag: "2.3.0-SNAPSHOT"
+    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
+    imageTag: "2.3.0-SNAPSHOT-bbce37a"
     imagePullPolicy: Always
   tieredstore:
     levels:
@@ -43,8 +43,8 @@ spec:
     ports: {}
     resources: {}
   fuse:
-    image: alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT"
+    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+    imageTag: "2.3.0-SNAPSHOT-bbce37a"
     imagePullPolicy: Always
     jvmOptions: 
       - "-Xmx4G "
