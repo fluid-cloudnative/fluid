@@ -186,6 +186,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	if len(runtime.Spec.Worker.JvmOptions) > 0 {
 		value.Worker.JvmOptions = runtime.Spec.Worker.JvmOptions
 	}
+
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
 	labelName := e.getCommonLabelname()
 

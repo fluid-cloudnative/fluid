@@ -268,6 +268,10 @@ spec:
               additionalProperties:
                 type: string
               type: object
+            replicas:
+              description: The replicas of the worker, need to be specified
+              format: int32
+              type: integer
             tieredstore:
               description: Tieredstore is a description of the tiered store
               properties:
