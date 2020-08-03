@@ -18,6 +18,7 @@ package dataset
 import (
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	"testing"
 
@@ -42,6 +43,7 @@ var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var testCtx = context.Background()
+var useExistingCluster = true
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -56,7 +58,8 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		UseExistingCluster: &useExistingCluster,
+		CRDDirectoryPaths:  []string{filepath.Join("..", "config", "crd", "bases")},
 	}
 
 	var err error
@@ -82,21 +85,44 @@ var _ = AfterSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 })
 
-var _ = Describe("alluxio", func() {
-	It("Should create successfully", func() {
-		dataset := datav1alpha1.Dataset{
+var _ = Describe("dataset", func() {
+	var dataset datav1alpha1.Dataset
+
+	BeforeEach(func() {
+		dataset = datav1alpha1.Dataset{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "dataset-name",
+				Name:      "test-name",
+				Namespace: "default",
 			},
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "mount-point",
-					Name: "mount-name",
-					},
+					MountPoint: "test-MountPoint",
+					Name:       "test-MountName",
+				},
 				},
 			},
 		}
+	})
+
+	It("Should create dataset successfully", func() {
+		By("create dataset")
 		err := k8sClient.Create(testCtx, &dataset)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check dataset status")
+		var createdDataset datav1alpha1.Dataset
+		var name = types.NamespacedName{
+			Namespace: dataset.Namespace,
+			Name:      dataset.Name,
+		}
+		err = k8sClient.Get(testCtx, name, &createdDataset)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(createdDataset.Status.Phase).Should(
+			Or(Equal(datav1alpha1.NoneDatasetPhase),
+				Equal(datav1alpha1.NotBoundDatasetPhase)))
+
+		By("delete dataset")
+		err = k8sClient.Delete(testCtx, &dataset)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
