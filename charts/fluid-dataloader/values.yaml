@@ -4,6 +4,11 @@
 
 dataloader:
   # Optional
+  # Default: 6
+  # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
+  backoffLimit: 6
+
+  # Optional
   # Default: 2
   # Desciption: how many threads to be used to prefetch data
   threads: 4
