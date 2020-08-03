@@ -22,14 +22,14 @@ func TestGetOrDefault(t *testing.T) {
 	}
 }
 
-func TestContainsString(t *testing.T)  {
+func TestContainsString(t *testing.T) {
 	var aaa, bbb, ccc, ddd, empty = "aaa", "bbb", "ccc", "ddd", ""
 	var slice = []string{aaa, bbb, ccc, empty}
 	var testCases = []struct {
 		slice    []string
 		s        string
 		expected bool
-	} {
+	}{
 		{slice, aaa, true},
 		{slice, bbb, true},
 		{slice, ccc, true},
@@ -50,7 +50,7 @@ func TestRemoveString(t *testing.T) {
 		slice    []string
 		s        string
 		expected []string
-	} {
+	}{
 		{slice, aaa, []string{bbb, ccc, ddd, empty}},
 		{slice, bbb, []string{aaa, ccc, ddd, empty}},
 		{slice, ccc, []string{aaa, bbb, ddd, empty}},
