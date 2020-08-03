@@ -34,7 +34,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		return err
 	}
 
-	replicas := runtime.Spec.Worker.Replicas
+	replicas := runtime.Replicas()
 
 	currentReplicas, err := e.AssignNodesToCache(replicas)
 	if err != nil {
@@ -130,10 +130,10 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 		return ready, err
 	}
 
-	// replicas := runtime.Spec.Worker.Replicas
+	// replicas := runtime.Replicas()
 
 	if workers.Status.NumberReady > 0 {
-		if runtime.Spec.Worker.Replicas == workers.Status.NumberReady {
+		if runtime.Replicas() == workers.Status.NumberReady {
 			workerReady = true
 		} else if workers.Status.NumberReady >= 1 {
 			workerPartialReady = true
@@ -142,7 +142,7 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 
 	fuses, err := e.getDaemonset(fuseName, namespace)
 	if fuses.Status.NumberAvailable > 0 {
-		if runtime.Spec.Worker.Replicas == fuses.Status.NumberReady {
+		if runtime.Spec.Replicas == fuses.Status.NumberReady {
 			fuseReady = true
 		} else if fuses.Status.NumberReady >= 1 {
 			fusePartialReady = true

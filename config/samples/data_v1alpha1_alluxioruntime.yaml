@@ -6,6 +6,7 @@ metadata:
   #namespace: fluid-system
 spec:
   # Add fields here
+  replicas: 2
   alluxioVersion:
     image: alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT"
@@ -36,7 +37,6 @@ spec:
     ports: {}
     resources: {}
   worker:
-    replicas: 2
     jvmOptions:
       - "-Xmx4G"
     properties: {}

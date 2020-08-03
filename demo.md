@@ -160,7 +160,8 @@ metadata:
   #namespace: fluid-system
 spec:
   # Add fields here
-  dataCopies: 3
+  replicas: 2
+  dataReplicas: 3
   alluxioVersion:
     image: alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT"
@@ -188,7 +189,6 @@ spec:
     jvmOptions:
       - "-Xmx4G"
   worker:
-    replicas: 2
     jvmOptions:
       - "-Xmx4G"
   fuse:
