@@ -8,22 +8,22 @@ import (
 
 func TestAddRuntimesIfNotExist(t *testing.T) {
 	var runtime1 = data.Runtime{
-		Name: "imagenet",
+		Name:     "imagenet",
 		Category: common.AccelerateCategory,
 	}
 	var runtime2 = data.Runtime{
-		Name: "mock-name",
+		Name:     "mock-name",
 		Category: "mock-category",
 	}
 	var runtime3 = data.Runtime{
-		Name: "cifar10",
+		Name:     "cifar10",
 		Category: common.AccelerateCategory,
 	}
-	var testCases = []struct{
-		description	string
-		runtimes	[]data.Runtime
-		newRuntime	data.Runtime
-		expected	[]data.Runtime
+	var testCases = []struct {
+		description string
+		runtimes    []data.Runtime
+		newRuntime  data.Runtime
+		expected    []data.Runtime
 	}{
 		{"add runtime to an empty slices successfully",
 			[]data.Runtime{}, runtime1, []data.Runtime{runtime1}},
@@ -32,7 +32,7 @@ func TestAddRuntimesIfNotExist(t *testing.T) {
 		{"add runtime of different name and category successfully",
 			[]data.Runtime{runtime1}, runtime2, []data.Runtime{runtime1, runtime2}},
 		{"runtime of the same category but different name will not be added",
-		[]data.Runtime{runtime1}, runtime3, []data.Runtime{runtime1}},
+			[]data.Runtime{runtime1}, runtime3, []data.Runtime{runtime1}},
 	}
 	var runtimeSliceEqual = func(a, b []data.Runtime) bool {
 		if len(a) != len(b) || (a == nil) != (b == nil) {

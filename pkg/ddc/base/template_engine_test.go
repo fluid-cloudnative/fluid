@@ -10,18 +10,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-
-
 var _ = Describe("TemplateEngine", func() {
 	var fakeRuntime = runtime.ReconcileRequestContext{
-		Log: log.NullLogger{},
-		RuntimeType: "test-runtime-type",
+		Log:           log.NullLogger{},
+		RuntimeType:   "test-runtime-type",
 		FinalizerName: "test-finalizer-name",
-		Runtime: nil,
+		Runtime:       nil,
 	}
 	var t = base.TemplateEngine{
-		Id: "test-id",
-		Log: fakeRuntime.Log,
+		Id:      "test-id",
+		Log:     fakeRuntime.Log,
 		Context: fakeRuntime,
 	}
 	var im *enginemock.MockImplement
