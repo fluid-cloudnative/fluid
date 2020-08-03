@@ -18,25 +18,25 @@ print_usage() {
   echo "OPTIONS:"
   echo "    -h, --help"
   echo "        Display this help message."
-  echo "    --runtime-name name"
+  echo "    --name name"
   echo "        Set the name of runtime (default '${runtime_name}')."
-  echo "    --runtime-namespace name"
+  echo "    --namespace name"
   echo "        Set the namespace of runtime (default '${runtime_namespace}')."
 }
 
 run() {
   echo
-  echo "-----------------run $@------------------"
-  timeout 10s $@
-  if [ "$?" != "0" ]; then
-    echo "failed to collect info: $@"
+  echo "-----------------run $*------------------"
+  timeout 10s "$@"
+  if [ $? != 0 ]; then
+    echo "failed to collect info: $*"
   fi
 
   echo "------------End of ${1}----------------"
 }
 
 helm_status() {
-  run helm status ${fluid_name} &>$diagnose_dir/helm.log
+  run helm status ${fluid_name} &>"$diagnose_dir/helm.log"
 }
 
 pod_status() {
@@ -64,7 +64,7 @@ core_component() {
   local container="$2"
   shift 2
   local selectors="$@"
-  local constrains=$(echo ${selectors} | tr ' ' ',')
+  local constrains=$(echo "${selectors}" | tr ' ' ',')
   if [[ -n ${constrains} ]]; then
     constrains="-l ${constrains}"
   fi
@@ -91,7 +91,7 @@ pd_collect() {
 
 main() {
   # Parse arguments using getopt
-  ARGS=$(getopt -a -o h --long help,runtime-name:,runtime-namespace: -- "$@")
+  ARGS=$(getopt -a -o h --long help,name:,namespace: -- "$@")
   if [ $? != 0 ]; then
     exit 1
   fi
@@ -105,11 +105,11 @@ main() {
       shift 1
       exit 0
       ;;
-    --runtime-name)
+    --name)
       runtime_name=$2
       shift 2
       ;;
-    --runtime-namespace)
+    --namespace)
       runtime_namespace=$2
       shift 2
       ;;
@@ -118,7 +118,7 @@ main() {
       break
       ;;
     *)
-      echo "ERROR: invalide argument $1" >&2
+      echo "ERROR: invalid argument $1" >&2
       exit 1
       ;;
     esac
