@@ -127,6 +127,3 @@
 
 - Fixed parsing issue with multiple medium types for tiered storage #11778
 
-0.6.9
-
-- Pass alluxio.user.hostname via ALLUXIO_USER_JAVA_OPTS for FUSE
