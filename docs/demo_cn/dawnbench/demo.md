@@ -27,7 +27,6 @@ apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
   name: imagenet
-  #namespace: fluid-system
 spec:
   mounts:
     - mountPoint: oss://<OSS_BUCKET>/<OSS_DIRECTORY>/
@@ -86,8 +85,9 @@ metadata:
   name: imagenet
   #namespace: fluid-system
 spec:
-  dataReplicas: 3
+  # Add fields here
   replicas: 4
+  dataReplicas: 3
   alluxioVersion:
     image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT-b7629dc"
@@ -95,11 +95,11 @@ spec:
   tieredstore:
     levels:
       - mediumtype: MEM
-        path: /dev/shm
+        path: /var/lib/docker/alluxio
         quota: 150Gi
         high: "0.99"
         low: "0.8"
-        storageType: Memory
+        storageType: Disk
   properties:
     # jni-fuse related configurations
     alluxio.fuse.jnifuse.enabled: "true"
@@ -108,6 +108,13 @@ spec:
     alluxio.user.client.cache.dir: /alluxio/ram
     alluxio.user.client.cache.page.size: 2MB
     alluxio.user.client.cache.size: 1800MB
+    # alluxio master
+    alluxio.master.metastore: ROCKS
+    alluxio.master.metastore.inode.cache.max.size: "10000000"
+    alluxio.master.journal.log.size.bytes.max: 500MB
+    alluxio.master.metadata.sync.concurrency.level: "128"
+    alluxio.master.metadata.sync.executor.pool.size: "128"
+    alluxio.master.metadata.sync.ufs.prefetch.pool.size: "128"
     # alluxio configurations
     alluxio.user.block.worker.client.pool.min: "512"
     alluxio.fuse.debug.enabled: "false"
@@ -122,7 +129,7 @@ spec:
     alluxio.worker.network.reader.buffer.size: 32MB
     alluxio.worker.file.buffer.size: 320MB
     alluxio.user.metrics.collection.enabled: "false"
-    alluxio.master.rpc.executor.max.pool.size: "10240"
+    alluxio.master.rpc.executor.max.pool.size: "1024"
     alluxio.master.rpc.executor.core.pool.size: "128"
     #alluxio.master.mount.table.root.readonly: "true"
     alluxio.user.update.file.accesstime.disabled: "true"
@@ -170,11 +177,6 @@ spec:
       - "-XX:MaxDirectMemorySize=32g"
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=24"
-      - "-XX:+PrintGC"
-      - "-XX:+PrintGCDateStamps"
-      - "-XX:+PrintGCDetails"
-      - "-XX:+PrintGCTimeStamps"
-    # For now, only support local
     shortCircuitPolicy: local
     args:
       - fuse
