@@ -99,7 +99,7 @@ spec:
         quota: 150Gi
         high: "0.99"
         low: "0.8"
-        storageType: Memory
+        storageType: Disk
   properties:
     # jni-fuse related configurations
     alluxio.fuse.jnifuse.enabled: "true"
