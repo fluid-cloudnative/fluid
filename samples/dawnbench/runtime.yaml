@@ -10,7 +10,7 @@ spec:
   dataReplicas: 3
   alluxioVersion:
     image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
-    imageTag: "2.3.0-SNAPSHOT-b7629dc"
+    imageTag: "2.3.0-SNAPSHOT-bbce37a"
     imagePullPolicy: Always
   tieredstore:
     levels:
@@ -19,7 +19,7 @@ spec:
         quota: 150Gi
         high: "0.99"
         low: "0.8"
-        storageType: Memory
+        storageType: Disk
   properties:
     # jni-fuse related configurations
     alluxio.fuse.jnifuse.enabled: "true"
@@ -86,7 +86,7 @@ spec:
       - "-XX:ActiveProcessorCount=8"
   fuse:
     image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT-b7629dc"
+    imageTag: "2.3.0-SNAPSHOT-bbce37a"
     imagePullPolicy: Always
     env:
       SPENT_TIME: "1000"
