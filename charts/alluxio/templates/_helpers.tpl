@@ -166,11 +166,11 @@ resources:
         {{- if contains "," .mediumtype }}
           {{- $type := .type }}
           {{- $path := .path }}
-          {{- $parts := splitList "," .mediumtype }}
-          {{- range $i, $val := $parts }}
+          {{- $split := split "," .mediumtype }}
+          {{- range $key, $val := $split }}
             {{- /* Example: For path="/tmp/mem,/tmp/ssd", mountPath resolves to /tmp/mem and /tmp/ssd */}}
-            - mountPath: {{ index ($path | splitList ",") $i }}
-              name: {{ $val | lower }}-{{ $i }}
+            - mountPath: {{ index ($path | split ",") $key }}
+              name: {{ $val | lower }}-{{ replace $key "_" "" }}
           {{- end}}
         {{- /* The mediumtype is a single value. */}}
         {{- else}}
@@ -195,24 +195,24 @@ resources:
       {{- if .mediumtype }}
         {{- /* The mediumtype can have multiple parts like MEM,SSD */}}
         {{- if contains "," .mediumtype }}
-          {{- $parts := splitList "," .mediumtype }}
+          {{- $split := split "," .mediumtype }}
           {{- $type := .type }}
           {{- $path := .path }}
           {{- $volumeName := .name }}
           {{- /* A volume will be generated for each part */}}
-          {{- range $i, $val := $parts }}
+          {{- range $key, $val := $split }}
             {{- /* Example: For mediumtype="MEM,SSD", mediumName resolves to mem-0 and ssd-1 */}}
-            {{- $mediumName := printf "%v-%v" (lower $val) $i }}
+            {{- $mediumName := printf "%v-%v" (lower $val) (replace $key "_" "") }}
             {{- if eq $type "hostPath"}}
         - hostPath:
-            path: {{ index ($path | splitList ",") $i }}
+            path: {{ index ($path | split ",") $key }}
             type: DirectoryOrCreate
           name: {{ $mediumName }}
             {{- else if eq $type "persistentVolumeClaim" }}
         - name: {{ $mediumName }}
           persistentVolumeClaim:
             {{- /* Example: For volumeName="/tmp/mem,/tmp/ssd", claimName resolves to /tmp/mem and /tmp/ssd */}}
-            claimName: {{ index ($volumeName | splitList ",") $i }}
+            claimName: {{ index ($volumeName | split ",") $key }}
             {{- else }}
         - name: {{ $mediumName }}
           emptyDir:
