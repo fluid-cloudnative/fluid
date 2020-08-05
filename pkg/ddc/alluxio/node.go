@@ -138,6 +138,8 @@ func (e *AlluxioEngine) alreadyAssigned(runtime *datav1alpha1.AlluxioRuntime, no
 		_, assigned = node.Labels[label]
 	}
 
+	e.Log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
+
 	return
 
 }
