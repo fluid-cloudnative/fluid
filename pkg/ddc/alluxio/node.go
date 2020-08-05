@@ -53,7 +53,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 	}
 
 	dataset, err = utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	e.Log.Info("get dataset info", "dataset", dataset)
 	if err != nil {
 		return
 	}
@@ -68,7 +68,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 		// if runtime.Spec.Placement.All().NodeAffinity != nil {
 		// 	terms := runtime.Spec.Placement.All().NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 		// 	if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-		// 		e.Log.V(1).Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+		// 		e.Log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 		// 		continue
 		// 	}
 		// }
@@ -76,14 +76,14 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 			if dataset.Spec.NodeAffinity.Required != nil {
 				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
 				if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-					e.Log.V(1).Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+					e.Log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 					continue
 				}
 			}
 		}
 
 		if !kubeclient.IsReady(node) {
-			e.Log.V(1).Info("Node is skipped because it is not ready", "node", node.Name)
+			e.Log.Info("Node is skipped because it is not ready", "node", node.Name)
 			continue
 		}
 
@@ -94,16 +94,16 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 
 		if !e.alreadyAssigned(runtime, node) {
 			if !e.canbeAssigned(runtime, node) {
-				e.Log.V(1).Info("Node is skipped because it is not assigned and also can't be assigned", "node", node.Name)
+				e.Log.Info("Node is skipped because it is not assigned and also can't be assigned", "node", node.Name)
 				continue
 			} else {
 				newScheduledNodes = append(newScheduledNodes, node)
-				e.Log.V(1).Info("New Node to schedule",
+				e.Log.Info("New Node to schedule",
 					"dataset", e.name,
 					"node", node.Name)
 			}
 		} else {
-			e.Log.V(1).Info("Node is already scheduled for dataset",
+			e.Log.Info("Node is already scheduled for dataset",
 				"dataset", e.name,
 				"node", node.Name)
 		}
@@ -113,7 +113,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 
 	currentScheduleNum = int32(len(currentScheduledNodes))
 	newScheduleNum = int32(len(newScheduledNodes))
-	e.Log.V(1).Info(" Find node to schedule or scheduled for dataset",
+	e.Log.Info(" Find node to schedule or scheduled for dataset",
 		"dataset", e.name,
 		"currentScheduleNum", currentScheduleNum,
 		"newScheduleNum", newScheduleNum)
