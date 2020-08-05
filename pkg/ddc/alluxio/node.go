@@ -113,7 +113,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 
 	currentScheduleNum = int32(len(currentScheduledNodes))
 	newScheduleNum = int32(len(newScheduledNodes))
-	e.Log.Info(" Find node to schedule or scheduled for dataset",
+	e.Log.Info("Find node to schedule or scheduled for dataset",
 		"dataset", e.name,
 		"currentScheduleNum", currentScheduleNum,
 		"newScheduleNum", newScheduleNum)
@@ -161,10 +161,10 @@ func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node
 		} else {
 			nodeDiskCapacity := *node.Status.Allocatable.StorageEphemeral()
 			if requirement.Cmp(nodeDiskCapacity) <= 0 {
-				e.Log.Info("requirement is less than node memory capacity", "requirement", requirement,
+				e.Log.Info("requirement is less than node disk capacity", "requirement", requirement,
 					"nodeDiskCapacity", nodeDiskCapacity)
 			} else {
-				e.Log.Info("requirement is more than node memory capacity", "requirement", requirement,
+				e.Log.Info("requirement is more than node disk capacity", "requirement", requirement,
 					"nodeDiskCapacity", nodeDiskCapacity)
 				return false
 			}
