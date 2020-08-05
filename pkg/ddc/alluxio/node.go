@@ -17,8 +17,10 @@ package alluxio
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
@@ -36,7 +38,8 @@ import (
 func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}
-		currentScheduledNodes                  = []corev1.Node{}
+		alreadySchedNodeList  *corev1.NodeList = &corev1.NodeList{}
+		currentScheduledNodes                  = map[string]corev1.Node{}
 		newScheduledNodes                      = []corev1.Node{}
 		newScheduleNum        int32
 		dataset               *datav1alpha1.Dataset
@@ -53,9 +56,28 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 	}
 
 	dataset, err = utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.Info("get dataset info", "dataset", dataset)
+	e.Log.Info("AssignNodesToCache", "dataset", dataset)
 	if err != nil {
 		return
+	}
+
+	// datasetLabels := labels.SelectorFromSet(labels.Set(map[string]string{e.getCommonLabelname(): "true"}))
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", e.getCommonLabelname()))
+	if err != nil {
+		return currentScheduleNum, err
+	}
+	err = e.List(context.TODO(), alreadySchedNodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return
+		}
+	}
+
+	for _, node := range alreadySchedNodeList.Items {
+		currentScheduledNodes[node.Name] = node
+		e.Log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
 	// storageMap := tieredstore.GetLevelStorageMap(runtime)
@@ -63,6 +85,11 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 
 		if int32(len(currentScheduledNodes)) == desiredNum {
 			break
+		}
+
+		if _, found := currentScheduledNodes[node.Name]; found {
+			e.Log.Info("Node is skipped because it is already assigned", "node", node.Name)
+			continue
 		}
 
 		// if runtime.Spec.Placement.All().NodeAffinity != nil {
@@ -108,7 +135,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 				"node", node.Name)
 		}
 
-		currentScheduledNodes = append(currentScheduledNodes, node)
+		currentScheduledNodes[node.Name] = node
 	}
 
 	currentScheduleNum = int32(len(currentScheduledNodes))
@@ -146,6 +173,11 @@ func (e *AlluxioEngine) alreadyAssigned(runtime *datav1alpha1.AlluxioRuntime, no
 
 // canbeAssigned checks if the node is already assigned the runtime engine
 func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node corev1.Node) bool {
+	// TODO(cheyang): the different dataset can be put in the same node, but it has to handle port conflict
+	if e.alreadyAssigned(runtime, node) {
+		return false
+	}
+
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
 	for key, requirement := range storageMap {
