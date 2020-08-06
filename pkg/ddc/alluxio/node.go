@@ -177,7 +177,7 @@ func (e *AlluxioEngine) alreadyAssignedByFluid(node corev1.Node) (assigned bool)
 	labels := node.Labels
 	if len(labels) > 0 {
 		for label, _ := range labels {
-			if !strings.HasPrefix(label, common.LabelAnnotationStorageCapacityPrefix) {
+			if strings.HasPrefix(label, common.LabelAnnotationStorageCapacityPrefix) {
 				assigned = true
 				e.Log.Info("alreadyAssignedByFluid find the node is already used by dataset.",
 					"node", node.Name,
