@@ -123,6 +123,8 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 		return
 	}
 
+	// TODO(iluoeli): this will cause error if UfsTotal is stale and not properly cleaned.
+	// maybe we should check mounts other than UfsTotal
 	if dataset.Status.UfsTotal == "" {
 		should = true
 	}
