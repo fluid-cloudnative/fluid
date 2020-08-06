@@ -29,17 +29,17 @@ type AlluxioDataLoadSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// DatasetName is an example field of AlluxioDataLoad. Edit AlluxioDataLoad_types.go to remove/update
+	// Name of the dataset that will be prefetched
 	// +kubebuilder:validation:MinLength=1
 	// +required
 	DatasetName string `json:"datasetName"`
 
-	// the Path in alluxio
+	// Mount path of the dataset in Alluxio. Defaults to /{datasetName} if not specified. (e.g. /my-dataset/cifar10)
 	// +optional
 	Path string `json:"path,omitempty"`
 
 	// Specifies the number of slots per worker used in hostfile.
-	// Defaults to 1.
+	// Defaults to 2.
 	// +optional
 	SlotsPerNode *int32 `json:"slotsPerNode,omitempty"`
 }
@@ -48,6 +48,9 @@ type AlluxioDataLoadSpec struct {
 type AlluxioDataLoadStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// The latest available observation of a dataload's running phase.
+	// One of the four phases: `Pending`, `Loading`, `Complete` and `Failed`
 	Phase common.DataloadPhase `json:"phase"`
 
 	// The latest available observations of an object's current state.
@@ -73,6 +76,8 @@ type DataloadCondition struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
+
 // AlluxioDataLoad is the Schema for the alluxiodataloads API
 type AlluxioDataLoad struct {
 	metav1.TypeMeta   `json:",inline"`
