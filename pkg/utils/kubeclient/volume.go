@@ -60,8 +60,8 @@ func IsPersistentVolumeExist(client client.Client, name string, annotations map[
 	return found, err
 }
 
-// IsPersistentVolumeClaim
-func IsPersistentVolumeClaim(client client.Client, name, namespace string, annotations map[string]string) (found bool, err error) {
+// IsPersistentVolumeClaimExist
+func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,

@@ -16,6 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
 )
 
@@ -53,6 +56,28 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 
 	if found {
 		err = kubeclient.DeletePersistentVolume(e.Client, e.runtime.Name)
+		if err != nil {
+			return err
+		}
+		retries := 500
+		for i := 0; i < retries; i++ {
+			found, err = kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
+			if err != nil {
+				return err
+			}
+
+			if found {
+				time.Sleep(time.Duration(2 * time.Second))
+			} else {
+				break
+			}
+		}
+
+		if found {
+			return fmt.Errorf("The PV %s in ns %s is not cleaned up",
+				e.runtime.Name,
+				e.runtime.Namespace)
+		}
 	}
 
 	return err
@@ -61,13 +86,36 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 // deleteFusePersistentVolume
 func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaim(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
 	if err != nil {
 		return err
 	}
 
 	if found {
 		err = kubeclient.DeletePersistentVolumeClaim(e.Client, e.runtime.Name, e.runtime.Namespace)
+		if err != nil {
+			return err
+		}
+
+		retries := 500
+		for i := 0; i < retries; i++ {
+			found, err = kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+			if err != nil {
+				return err
+			}
+
+			if found {
+				time.Sleep(time.Duration(2 * time.Second))
+			} else {
+				break
+			}
+		}
+
+		if found {
+			return fmt.Errorf("The PV %s in ns %s is not cleaned up",
+				e.runtime.Name,
+				e.runtime.Namespace)
+		}
 	}
 
 	return err
