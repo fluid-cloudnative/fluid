@@ -17,8 +17,11 @@ package alluxio
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
@@ -36,7 +39,8 @@ import (
 func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}
-		currentScheduledNodes                  = []corev1.Node{}
+		alreadySchedNodeList  *corev1.NodeList = &corev1.NodeList{}
+		currentScheduledNodes                  = map[string]corev1.Node{}
 		newScheduledNodes                      = []corev1.Node{}
 		newScheduleNum        int32
 		dataset               *datav1alpha1.Dataset
@@ -53,9 +57,28 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 	}
 
 	dataset, err = utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	e.Log.Info("AssignNodesToCache", "dataset", dataset)
 	if err != nil {
 		return
+	}
+
+	// datasetLabels := labels.SelectorFromSet(labels.Set(map[string]string{e.getCommonLabelname(): "true"}))
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", e.getCommonLabelname()))
+	if err != nil {
+		return currentScheduleNum, err
+	}
+	err = e.List(context.TODO(), alreadySchedNodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return
+		}
+	}
+
+	for _, node := range alreadySchedNodeList.Items {
+		currentScheduledNodes[node.Name] = node
+		e.Log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
 	// storageMap := tieredstore.GetLevelStorageMap(runtime)
@@ -65,10 +88,15 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 			break
 		}
 
+		if _, found := currentScheduledNodes[node.Name]; found {
+			e.Log.Info("Node is skipped because it is already assigned", "node", node.Name)
+			continue
+		}
+
 		// if runtime.Spec.Placement.All().NodeAffinity != nil {
 		// 	terms := runtime.Spec.Placement.All().NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 		// 	if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-		// 		e.Log.V(1).Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+		// 		e.Log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 		// 		continue
 		// 	}
 		// }
@@ -76,14 +104,14 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 			if dataset.Spec.NodeAffinity.Required != nil {
 				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
 				if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-					e.Log.V(1).Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+					e.Log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 					continue
 				}
 			}
 		}
 
 		if !kubeclient.IsReady(node) {
-			e.Log.V(1).Info("Node is skipped because it is not ready", "node", node.Name)
+			e.Log.Info("Node is skipped because it is not ready", "node", node.Name)
 			continue
 		}
 
@@ -94,26 +122,26 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 
 		if !e.alreadyAssigned(runtime, node) {
 			if !e.canbeAssigned(runtime, node) {
-				e.Log.V(1).Info("Node is skipped because it is not assigned and also can't be assigned", "node", node.Name)
+				e.Log.Info("Node is skipped because it is not assigned and also can't be assigned", "node", node.Name)
 				continue
 			} else {
 				newScheduledNodes = append(newScheduledNodes, node)
-				e.Log.V(1).Info("New Node to schedule",
+				e.Log.Info("New Node to schedule",
 					"dataset", e.name,
 					"node", node.Name)
 			}
 		} else {
-			e.Log.V(1).Info("Node is already scheduled for dataset",
+			e.Log.Info("Node is already scheduled for dataset",
 				"dataset", e.name,
 				"node", node.Name)
 		}
 
-		currentScheduledNodes = append(currentScheduledNodes, node)
+		currentScheduledNodes[node.Name] = node
 	}
 
 	currentScheduleNum = int32(len(currentScheduledNodes))
 	newScheduleNum = int32(len(newScheduledNodes))
-	e.Log.V(1).Info(" Find node to schedule or scheduled for dataset",
+	e.Log.Info("Find node to schedule or scheduled for dataset",
 		"dataset", e.name,
 		"currentScheduleNum", currentScheduleNum,
 		"newScheduleNum", newScheduleNum)
@@ -138,12 +166,37 @@ func (e *AlluxioEngine) alreadyAssigned(runtime *datav1alpha1.AlluxioRuntime, no
 		_, assigned = node.Labels[label]
 	}
 
+	e.Log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
+
 	return
 
 }
 
+// alreadyAssignedByFluid checks if the node is occupied by other dataset
+func (e *AlluxioEngine) alreadyAssignedByFluid(node corev1.Node) (assigned bool) {
+	labels := node.Labels
+	if len(labels) > 0 {
+		for label, _ := range labels {
+			if strings.HasPrefix(label, common.LabelAnnotationStorageCapacityPrefix) {
+				assigned = true
+				e.Log.Info("alreadyAssignedByFluid find the node is already used by dataset.",
+					"node", node.Name,
+					"label", label)
+				break
+			}
+		}
+	}
+
+	return
+}
+
 // canbeAssigned checks if the node is already assigned the runtime engine
 func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node corev1.Node) bool {
+	// TODO(cheyang): the different dataset can be put in the same node, but it has to handle port conflict
+	if e.alreadyAssignedByFluid(node) {
+		return false
+	}
+
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
 	for key, requirement := range storageMap {
@@ -161,10 +214,10 @@ func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node
 		} else {
 			nodeDiskCapacity := *node.Status.Allocatable.StorageEphemeral()
 			if requirement.Cmp(nodeDiskCapacity) <= 0 {
-				e.Log.Info("requirement is less than node memory capacity", "requirement", requirement,
+				e.Log.Info("requirement is less than node disk capacity", "requirement", requirement,
 					"nodeDiskCapacity", nodeDiskCapacity)
 			} else {
-				e.Log.Info("requirement is more than node memory capacity", "requirement", requirement,
+				e.Log.Info("requirement is more than node disk capacity", "requirement", requirement,
 					"nodeDiskCapacity", nodeDiskCapacity)
 				return false
 			}

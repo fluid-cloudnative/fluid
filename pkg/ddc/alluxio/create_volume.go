@@ -141,7 +141,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaim(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
 	if err != nil {
 		return err
 	}
