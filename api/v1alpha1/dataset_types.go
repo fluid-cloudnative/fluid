@@ -38,9 +38,10 @@ const (
 	NoneDatasetPhase DatasetPhase = ""
 )
 
-// Mount describes a mounting.
+// Mount describes a mounting. <br>
+// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio Storage Integrations</a> for more info
 type Mount struct {
-	// MountPoint is the mount point of source
+	// MountPoint is the mount point of source.
 	// +kubebuilder:validation:MinLength=10
 	// +required
 	MountPoint string `json:"mountPoint,omitempty"`
@@ -69,7 +70,7 @@ type Mount struct {
 
 // DatasetSpec defines the desired state of Dataset
 type DatasetSpec struct {
-	// Mounts
+	// Mount Points to be mounted on Alluxio.
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
 	// +required
@@ -80,17 +81,23 @@ type DatasetSpec struct {
 	// +optional
 	NodeAffinity *CacheableNodeAffinity `json:"nodeAffinity,omitempty"`
 
-	// Runtimes for supporting dataset
+	// Runtimes for supporting dataset (e.g. AlluxioRuntime)
 	Runtimes []Runtime `json:"runtimes,omitempty"`
 }
 
+// Runtime describes a runtime to be used to support dataset
 type Runtime struct {
+
+	// Name of the runtime object
 	Name string `json:"name,omitempty"`
 
+	// Namespace of the runtime object
 	Namespace string `json:"namespace,omitempty"`
 
+	// Category the runtime object belongs to (e.g. Accelerate)
 	Category common.Category `json:"category,omitempty"`
 
+	// Runtime object's type (e.g. Alluxio)
 	Type string `json:"type,omitempty"`
 }
 
@@ -100,7 +107,7 @@ type DatasetStatus struct {
 	// Total in GB of dataset in the cluster
 	UfsTotal string `json:"ufsTotal,omitempty"`
 
-	// Dataset Phase
+	// Dataset Phase. One of the four phases: `Pending`, `Bound`, `NotBound` and `Failed`
 	Phase DatasetPhase `json:"phase,omitempty"`
 
 	// Runtimes for supporting dataset
@@ -113,7 +120,8 @@ type DatasetStatus struct {
 	CacheStates common.CacheStateList `json:"cacheStates,omitempty"`
 }
 
-// DatasetConditionType defines all kinds of types of cacheStatus.
+// DatasetConditionType defines all kinds of types of cacheStatus.<br>
+// one of the three types: `RuntimeScheduled`, `Ready` and `Initialized`
 type DatasetConditionType string
 
 const (
@@ -152,6 +160,7 @@ type DatasetCondition struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
 
 // Dataset is the Schema for the datasets API
 type Dataset struct {

@@ -26,54 +26,87 @@ import (
 type AlluxioRuntimeRole common.RuntimeRole
 
 const (
-	// Master is the type for master of alluxio cluster.
+	// Master is the type for master of Alluxio cluster.
 	Master AlluxioRuntimeRole = "master"
 
-	// Worker is the type for workers of alluxio cluster.
+	// Worker is the type for workers of Alluxio cluster.
 	Worker AlluxioRuntimeRole = "worker"
 
-	// Fuse is the type for chief worker of alluxio cluster.
+	// Fuse is the type for chief worker of Alluxio cluster.
 	Fuse AlluxioRuntimeRole = "fuse"
 )
 
 // VersionSpec represents the settings for the Alluxio version that fluid is orchestrating.
 type AlluxioVersionSpec struct {
-	Image           string `json:"image,omitempty"`
-	ImageTag        string `json:"imageTag,omitempty"`
+	// Image for Alluxio(e.g. alluxio/alluxio)
+	Image string `json:"image,omitempty"`
+
+	// Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
+	ImageTag string `json:"imageTag,omitempty"`
+
+	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 }
 
-// AlluxioCompTemplateSpec is a description of the alluxio commponents
+// AlluxioCompTemplateSpec is a description of the Alluxio commponents
 type AlluxioCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
 	// +kubebuilder:validation:Minimum=1
 	// replicas is the min replicas of dataset in the cluster
 	// +optional
-	Replicas   int32    `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Options for JVM
 	JvmOptions []string `json:"jvmOptions,omitempty"`
+
+	// Configurable properties for the Alluxio component. <br>
+	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
+
+	// Ports used by Alluxio(e.g. rpc: 19998 for master)
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
+
+	// Resources that will be requested by the Alluxio component. <br>
+	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// Placement  rook.PlacementSpec `json:"placement,omitempty"`
 	// +optional
 
 }
 
-// AlluxioFuseSpec is a description of the alluxio fuse
+// AlluxioFuseSpec is a description of the Alluxio Fuse
 type AlluxioFuseSpec struct {
-	Image           string            `json:"image,omitempty"`
-	ImageTag        string            `json:"imageTag,omitempty"`
-	ImagePullPolicy string            `json:"imagePullPolicy,omitempty"`
-	JvmOptions      []string          `json:"jvmOptions,omitempty"`
-	Properties      map[string]string `json:"properties,omitempty"`
-	Env             map[string]string `json:"env,omitempty"`
+
+	// Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
+	Image string `json:"image,omitempty"`
+
+	// Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
+	ImageTag string `json:"imageTag,omitempty"`
+
+	// One of the three policies: `Always`, `IfNotPresent`, `Never`
+	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// Options for JVM
+	JvmOptions []string `json:"jvmOptions,omitempty"`
+
+	// Configurable properties for Alluxio System. <br>
+	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+	Properties map[string]string `json:"properties,omitempty"`
+
+	// Environment variables that will be used by Alluxio Fuse
+	Env map[string]string `json:"env,omitempty"`
+
 	// ShortCircuitPolicy string            `json:"shortCircuitPolicy,omitempty"`
+
+	// Resources that will be requested by Alluxio Fuse. <br>
+	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
@@ -82,27 +115,43 @@ type AlluxioFuseSpec struct {
 	// The mountPath in the host machine
 	// MountPath string `json:"mountPath,omitempty"`
 	// Placement rook.PlacementSpec `json:"placement,omitempty"`
+
+	// Arguments that will be passed to Alluxio Fuse
 	Args []string `json:"args,omitempty"`
 }
 
+// Level describes configurations a tier needs. <br>
+// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring Tiered Storage</a> for more info
 type Level struct {
 	// Alias string `json:"alias,omitempty"`
+
+	// Medium Type of the tier. One of the three types: `MEM`, `SSD`, `HDD`
 	// +kubebuilder:validation:Enum=MEM;SSD;HDD
 	// +required
 	MediumType common.MediumType `json:"mediumtype"`
+
+	// File path to be used for the tier (e.g. /mnt/ramdisk)
 	// +kubebuilder:validation:MinLength=1
 	// +required
 	Path string `json:"path,omitempty"`
+
+	// Quota for the tier. (e.g. 100GB)
 	// +required
 	Quota *resource.Quantity `json:"quota,omitempty"`
+
 	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
 	// float64 is not supported, https://github.com/kubernetes-sigs/controller-tools/issues/245
+
+	// Ratio of high watermark of the tier (e.g. 0.9)
 	High string `json:"high,omitempty"`
-	Low  string `json:"low,omitempty"`
+
+	// Ratio of low watermark of the tier (e.g. 0.7)
+	Low string `json:"low,omitempty"`
 }
 
 // Tieredstore is a description of the tiered store
 type Tieredstore struct {
+	// configurations for multiple tiers
 	Levels []Level `json:"levels,omitempty"`
 }
 
@@ -114,23 +163,29 @@ type AlluxioRuntimeSpec struct {
 	// The placement-related configuration to pass to kubernetes (affinity, node selector, tolerations).
 	// Placement rook.PlacementSpec `json:"placement,omitempty"`
 
-	// A spec for alluxio master
+	// Desired state for Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`
 
-	// A spec for alluxio job master
+	// Desired state for Alluxio job master
 	JobMaster AlluxioCompTemplateSpec `json:"jobMaster,omitempty"`
 
-	// A spec for alluxio worker
+	// Desired state for Alluxio worker
 	Worker AlluxioCompTemplateSpec `json:"worker,omitempty"`
 
-	// A spec for alluxio job Worker
+	// Desired state for Alluxio job Worker
 	JobWorker AlluxioCompTemplateSpec `json:"jobWorker,omitempty"`
 
+	// Desired state for Alluxio Fuse
 	Fuse AlluxioFuseSpec `json:"fuse,omitempty"`
 
+	// Configurable properties for Alluxio system. <br>
+	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
 	Properties map[string]string `json:"properties,omitempty"`
-	JvmOptions []string          `json:"jvmOptions,omitempty"`
 
+	// Options for JVM
+	JvmOptions []string `json:"jvmOptions,omitempty"`
+
+	// Tiered storage used by Alluxio
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
 
 	// The copies of the dataset
@@ -201,16 +256,20 @@ type RuntimeCondition struct {
 
 // AlluxioRuntimeStatus defines the observed state of AlluxioRuntime
 type AlluxioRuntimeStatus struct {
+	// config map used to set configurations
 	ValueFileConfigmap string `json:"valueFile"`
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+
 	// MasterPhase is the master running phase
-	MasterPhase  RuntimePhase `json:"masterPhase"`
-	MasterReason string       `json:"masterReason,omitempty"`
+	MasterPhase RuntimePhase `json:"masterPhase"`
+
+	// Reason for Alluxio Master's condition transition
+	MasterReason string `json:"masterReason,omitempty"`
 
 	// WorkerPhase is the worker running phase
-	WorkerPhase  RuntimePhase `json:"workerPhase"`
-	WorkerReason string       `json:"workerReason,omitempty"`
+	WorkerPhase RuntimePhase `json:"workerPhase"`
+
+	// Reason for Alluxio Worker's condition transition
+	WorkerReason string `json:"workerReason,omitempty"`
 
 	// The total number of nodes that should be running the runtime worker
 	// pod (including nodes correctly running the runtime worker pod).
@@ -249,8 +308,10 @@ type AlluxioRuntimeStatus struct {
 	MasterNumberReady int32 `json:"masterNumberReady"`
 
 	// FusePhase is the Fuse running phase
-	FusePhase  RuntimePhase `json:"fusePhase"`
-	FuseReason string       `json:"fuseReason,omitempty"`
+	FusePhase RuntimePhase `json:"fusePhase"`
+
+	// Reason for the condition's last transition.
+	FuseReason string `json:"fuseReason,omitempty"`
 
 	// The total number of nodes that can be running the runtime Fuse
 	// pod (including nodes correctly running the runtime Fuse pod).
@@ -287,6 +348,7 @@ type AlluxioRuntimeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
 
 // AlluxioRuntime is the Schema for the alluxioruntimes API
 type AlluxioRuntime struct {
