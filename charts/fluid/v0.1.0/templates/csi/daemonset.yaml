@@ -81,9 +81,9 @@ spec:
             type: DirectoryOrCreate
         - hostPath:
             path: /var/lib/kubelet/plugins_registry
-            type: Directory
+            type: DirectoryOrCreate
           name: registration-dir
         - hostPath:
             path: /alluxio-mnt
-            type: Directory
+            type: DirectoryOrCreate
           name: fluid-src-dir
