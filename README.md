@@ -14,6 +14,10 @@ Fluid is an open source container-native Distributed Data Accelerator for Big da
 
 
 
+## 前置条件
+
+需要CSI支持
+
 
 ## Quickstart
 
@@ -27,7 +31,13 @@ tar -xvf fluid-0.4.0.tgz
 ```
 
 
-2. 使用Helm 3安装
+2. 创建namespace
+
+```
+kubectl create ns fluid-system
+```
+
+3. 使用Helm 3安装
 
 ```
 helm install fluid fluid
@@ -40,7 +50,7 @@ TEST SUITE: None
 ```
 
 
-3. 查看运行结果
+4. 查看运行结果
 
 ```
 kubectl get po -n fluid-system
@@ -50,7 +60,7 @@ csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
 csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 
-4. 卸载
+5. 卸载
 
 ```
 helm del fluid
