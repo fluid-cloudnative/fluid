@@ -17,37 +17,34 @@ package utils
 
 import (
 	"context"
-
 	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-/*
-* Get the dataset
- */
-func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dataset, error) {
-
+func GetDataLoad(client client.Client, name, namespace string) (*datav1alpha1.AlluxioDataLoad, error) {
 	key := types.NamespacedName{
-		Name:      name,
 		Namespace: namespace,
+		Name:      name,
 	}
-	var dataset datav1alpha1.Dataset
-	if err := client.Get(context.TODO(), key, &dataset); err != nil {
+	var dataload datav1alpha1.AlluxioDataLoad
+	if err := client.Get(context.TODO(), key, &dataload); err != nil {
 		return nil, err
 	}
-	return &dataset, nil
+	return &dataload, nil
 }
 
-func GetAlluxioRuntime(client client.Client, name, namespace string) (*datav1alpha1.AlluxioRuntime, error) {
-
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	var runtime datav1alpha1.AlluxioRuntime
-	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+func FindDataLoadWithPredicate(c client.Client, namespace string, predFunc func(dl datav1alpha1.AlluxioDataLoad) bool) (dataload *datav1alpha1.AlluxioDataLoad, err error) {
+	var dataloadList *datav1alpha1.AlluxioDataLoadList = &datav1alpha1.AlluxioDataLoadList{}
+	err = c.List(context.TODO(), dataloadList, &client.ListOptions{Namespace: namespace})
+	if err != nil {
 		return nil, err
 	}
-	return &runtime, nil
+	items := dataloadList.Items
+	for _, item := range items {
+		if predFunc(item) {
+			return &item, nil
+		}
+	}
+	return nil, nil
 }
