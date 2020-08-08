@@ -1,0 +1,6 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioDataLoad
+metadata:
+  name: yet-another-dataloader
+spec:
+  datasetName: dataset
