@@ -32,6 +32,30 @@
 {{- $alluxioJavaOpts = printf "-Dalluxio.master.journal.type=%v" .Values.journal.type | append $alluxioJavaOpts }}
 {{- $alluxioJavaOpts = printf "-Dalluxio.master.journal.folder=%v" .Values.journal.folder | append $alluxioJavaOpts }}
 
+{{- /* Tiered store configuration */}}
+{{- if .Values.tieredstore }}
+  {{- $alluxioJavaOpts = printf "-Dalluxio.worker.tieredstore.levels=%v" (len .Values.tieredstore.levels) | append $alluxioJavaOpts }}
+  {{- range .Values.tieredstore.levels }}
+    {{- $tierName := printf "-Dalluxio.worker.tieredstore.level%v" .level }}
+    {{- if .alias }}
+    {{- $alluxioJavaOpts = printf "%v.alias=%v" $tierName .alias | append $alluxioJavaOpts }}
+    {{- end}}
+    {{- $alluxioJavaOpts = printf "%v.dirs.mediumtype=%v" $tierName .mediumtype | append $alluxioJavaOpts }}
+    {{- if .path }}
+      {{- $alluxioJavaOpts = printf "%v.dirs.path=%v" $tierName .path | append $alluxioJavaOpts }}
+    {{- end}}
+    {{- if .quota }}
+      {{- $alluxioJavaOpts = printf "%v.dirs.quota=%v" $tierName .quota | append $alluxioJavaOpts }}
+    {{- end}}
+    {{- if .high }}
+      {{- $alluxioJavaOpts = printf "%v.watermark.high.ratio=%v" $tierName .high | append $alluxioJavaOpts }}
+    {{- end}}
+    {{- if .low }}
+      {{- $alluxioJavaOpts = printf "%v.watermark.low.ratio=%v" $tierName .low | append $alluxioJavaOpts }}
+    {{- end}}
+  {{- end}}
+{{- end }}
+
 {{- /* Generate HA embedded journal address for masters */}}
 {{- if $isHaEmbedded }}
   {{- $embeddedJournalAddresses := "-Dalluxio.master.embedded.journal.addresses=" }}
@@ -46,6 +70,8 @@
 {{- if .Values.jvmOptions }}
   {{- $alluxioJavaOpts = concat $alluxioJavaOpts .Values.jvmOptions }}
 {{- end }}
+
+
 
 {{- /* ===================================== */}}
 {{- /*       ALLUXIO_MASTER_JAVA_OPTS        */}}
@@ -100,30 +126,6 @@
     {{- end}}
   {{- end}}
 {{- end}}
-
-{{- /* Tiered store configuration */}}
-{{- if .Values.tieredstore }}
-  {{- $workerJavaOpts = printf "-Dalluxio.worker.tieredstore.levels=%v" (len .Values.tieredstore.levels) | append $workerJavaOpts }}
-  {{- range .Values.tieredstore.levels }}
-    {{- $tierName := printf "-Dalluxio.worker.tieredstore.level%v" .level }}
-    {{- if .alias }}
-    {{- $workerJavaOpts = printf "%v.alias=%v" $tierName .alias | append $workerJavaOpts }}
-    {{- end}}
-    {{- $workerJavaOpts = printf "%v.dirs.mediumtype=%v" $tierName .mediumtype | append $workerJavaOpts }}
-    {{- if .path }}
-      {{- $workerJavaOpts = printf "%v.dirs.path=%v" $tierName .path | append $workerJavaOpts }}
-    {{- end}}
-    {{- if .quota }}
-      {{- $workerJavaOpts = printf "%v.dirs.quota=%v" $tierName .quota | append $workerJavaOpts }}
-    {{- end}}
-    {{- if .high }}
-      {{- $workerJavaOpts = printf "%v.watermark.high.ratio=%v" $tierName .high | append $workerJavaOpts }}
-    {{- end}}
-    {{- if .low }}
-      {{- $workerJavaOpts = printf "%v.watermark.low.ratio=%v" $tierName .low | append $workerJavaOpts }}
-    {{- end}}
-  {{- end}}
-{{- end }}
 
 {{- range $key, $val := .Values.worker.properties }}
   {{- $workerJavaOpts = printf "-D%v=%v" $key $val | append $workerJavaOpts }}

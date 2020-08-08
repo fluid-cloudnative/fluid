@@ -76,9 +76,8 @@ type AlluxioCompTemplateSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Placement  rook.PlacementSpec `json:"placement,omitempty"`
-	// +optional
-
+	// Environment variables that will be used by Alluxio component. <br>
+	Env map[string]string `json:"env,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
