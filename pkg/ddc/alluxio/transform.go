@@ -29,7 +29,7 @@ import (
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
 	if runtime == nil {
-		err = fmt.Errorf("The alluxioRuntime is nulll")
+		err = fmt.Errorf("The alluxioRuntime is null")
 		return
 	}
 
@@ -170,6 +170,17 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// if len(runtime.Spec.Master.JvmOptions) > 0 {
 	// 	value.Master.JvmOptions = strings.Join(runtime.Spec.Master.JvmOptions, " ")
 	// }
+	if len(value.Master.JvmOptions) > 0 {
+		value.Master.JvmOptions = runtime.Spec.Master.JvmOptions
+	}
+
+	if len(runtime.Spec.Master.Env) > 0 {
+		value.Master.Env = runtime.Spec.Master.Env
+	} else {
+		value.Master.Env = map[string]string{}
+	}
+
+	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
 
 	if len(runtime.Spec.Master.Properties) > 0 {
 		value.Master.Properties = runtime.Spec.Master.Properties
@@ -199,6 +210,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Worker.Properties = runtime.Spec.Worker.Properties
 	}
 
+	if len(runtime.Spec.Worker.Env) > 0 {
+		value.Worker.Env = runtime.Spec.Worker.Env
+	} else {
+		value.Worker.Env = map[string]string{}
+	}
+
+	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
+
 	value.Worker.HostNetwork = true
 
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
@@ -223,6 +242,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 			e.Log.Info("update the requiremnet", "requirement", req)
 
 			value.Worker.Resources.Limits[corev1.ResourceMemory] = req.String()
+		} else if key == common.DiskCacheStore {
+			e.Log.Info("Update the disk requirement")
+
+			req := requirement.DeepCopy()
+
+			e.Log.Info("update the requiremnet for disk", "requirement", req)
+
+			value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
 	}
 
@@ -304,9 +331,17 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 				req.Add(quantity)
 			}
 
-			e.Log.Info("update the requiremnet", "requirement", req)
+			e.Log.Info("update the requiremnet for memory", "requirement", req)
 
 			value.Fuse.Resources.Limits[corev1.ResourceMemory] = req.String()
+		} else if key == common.DiskCacheStore {
+			e.Log.Info("Update the disk requirement")
+
+			req := requirement.DeepCopy()
+
+			e.Log.Info("update the requiremnet for disk", "requirement", req)
+
+			value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
 	}
 
