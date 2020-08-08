@@ -149,6 +149,9 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	dataset := ctx.Dataset.DeepCopy()
 	if dataset != nil {
 		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
+		dataset.Status.UfsTotal = ""
+		dataset.Status.Conditions = []datav1alpha1.DatasetCondition{}
+		dataset.Status.CacheStates = common.CacheStateList{}
 		// dataset.Status.RuntimeName = ""
 		// dataset.Status.RuntimeType = ""
 		// dataset.Status.RuntimeNamespace = ""
