@@ -101,8 +101,8 @@ spec:
                 fieldPath: status.podIP
           {{- end }}
           {{- range $key, $value := .Values.master.env }}
-            - name: "{{ $key }}"
-              value: "{{ $value }}"
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
           {{- end }}
           envFrom:
           - configMapRef:

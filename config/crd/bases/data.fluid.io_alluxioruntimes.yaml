@@ -41,10 +41,14 @@ spec:
                 a particular version of Alluxio.
               properties:
                 image:
+                  description: Image for Alluxio(e.g. alluxio/alluxio)
                   type: string
                 imagePullPolicy:
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
                   type: string
                 imageTag:
+                  description: Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
             dataReplicas:
@@ -52,35 +56,44 @@ spec:
               format: int32
               type: integer
             fuse:
-              description: AlluxioFuseSpec is a description of the alluxio fuse
+              description: Desired state for Alluxio Fuse
               properties:
                 args:
-                  description: The mountPath in the host machine MountPath string
-                    `json:"mountPath,omitempty"` Placement rook.PlacementSpec `json:"placement,omitempty"`
+                  description: Arguments that will be passed to Alluxio Fuse
                   items:
                     type: string
                   type: array
                 env:
                   additionalProperties:
                     type: string
+                  description: Environment variables that will be used by Alluxio
+                    Fuse
                   type: object
                 image:
+                  description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
                   type: string
                 imagePullPolicy:
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
                   type: string
                 imageTag:
+                  description: Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
                   type: string
                 jvmOptions:
+                  description: Options for JVM
                   items:
                     type: string
                   type: array
                 properties:
                   additionalProperties:
                     type: string
+                  description: Configurable properties for Alluxio System. <br> Refer
+                    to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 resources:
-                  description: ShortCircuitPolicy string            `json:"shortCircuitPolicy,omitempty"`
-                    Resources are not allowed for ephemeral containers. Ephemeral
+                  description: Resources that will be requested by Alluxio Fuse. <br>
+                    <br> Resources are not allowed for ephemeral containers. Ephemeral
                     containers use spare resources already allocated to the pod.
                   properties:
                     limits:
@@ -108,19 +121,30 @@ spec:
                   type: object
               type: object
             jobMaster:
-              description: A spec for alluxio job master
+              description: Desired state for Alluxio job master
               properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
                 jvmOptions:
+                  description: Options for JVM
                   items:
                     type: string
                   type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -130,7 +154,8 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources are not allowed for ephemeral containers.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
                   properties:
@@ -159,19 +184,30 @@ spec:
                   type: object
               type: object
             jobWorker:
-              description: A spec for alluxio job Worker
+              description: Desired state for Alluxio job Worker
               properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
                 jvmOptions:
+                  description: Options for JVM
                   items:
                     type: string
                   type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -181,7 +217,8 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources are not allowed for ephemeral containers.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
                   properties:
@@ -210,23 +247,35 @@ spec:
                   type: object
               type: object
             jvmOptions:
+              description: Options for JVM
               items:
                 type: string
               type: array
             master:
-              description: A spec for alluxio master
+              description: Desired state for Alluxio master
               properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
                 jvmOptions:
+                  description: Options for JVM
                   items:
                     type: string
                   type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -236,7 +285,8 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources are not allowed for ephemeral containers.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
                   properties:
@@ -267,37 +317,47 @@ spec:
             properties:
               additionalProperties:
                 type: string
+              description: Configurable properties for Alluxio system. <br> Refer
+                to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                Configuration Properties</a> for more info
               type: object
             replicas:
               description: The replicas of the worker, need to be specified
               format: int32
               type: integer
             tieredstore:
-              description: Tieredstore is a description of the tiered store
+              description: Tiered storage used by Alluxio
               properties:
                 levels:
+                  description: configurations for multiple tiers
                   items:
+                    description: Level describes configurations a tier needs. <br>
+                      Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring
+                      Tiered Storage</a> for more info
                     properties:
                       high:
-                        description: StorageType common.CacheStoreType `json:"storageType,omitempty"`
-                          float64 is not supported, https://github.com/kubernetes-sigs/controller-tools/issues/245
+                        description: Ratio of high watermark of the tier (e.g. 0.9)
                         type: string
                       low:
+                        description: Ratio of low watermark of the tier (e.g. 0.7)
                         type: string
                       mediumtype:
-                        description: Alias string `json:"alias,omitempty"`
+                        description: 'Medium Type of the tier. One of the three types:
+                          `MEM`, `SSD`, `HDD`'
                         enum:
                         - MEM
                         - SSD
                         - HDD
                         type: string
                       path:
+                        description: File path to be used for the tier (e.g. /mnt/ramdisk)
                         minLength: 1
                         type: string
                       quota:
                         anyOf:
                         - type: integer
                         - type: string
+                        description: Quota for the tier. (e.g. 100GB)
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
                     required:
@@ -306,19 +366,30 @@ spec:
                   type: array
               type: object
             worker:
-              description: A spec for alluxio worker
+              description: Desired state for Alluxio worker
               properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
                 jvmOptions:
+                  description: Options for JVM
                   items:
                     type: string
                   type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -328,7 +399,8 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources are not allowed for ephemeral containers.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
                   properties:
@@ -451,6 +523,7 @@ spec:
               description: FusePhase is the Fuse running phase
               type: string
             fuseReason:
+              description: Reason for the condition's last transition.
               type: string
             masterNumberReady:
               description: The number of nodes that should be running the runtime
@@ -459,13 +532,13 @@ spec:
               format: int32
               type: integer
             masterPhase:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file MasterPhase is the master running phase'
+              description: MasterPhase is the master running phase
               type: string
             masterReason:
+              description: Reason for Alluxio Master's condition transition
               type: string
             valueFile:
+              description: config map used to set configurations
               type: string
             workerNumberAvailable:
               description: The number of nodes that should be running the runtime
@@ -489,6 +562,7 @@ spec:
               description: WorkerPhase is the worker running phase
               type: string
             workerReason:
+              description: Reason for Alluxio Worker's condition transition
               type: string
           required:
           - currentFuseNumberScheduled

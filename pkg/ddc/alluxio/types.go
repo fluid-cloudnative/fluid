@@ -75,6 +75,7 @@ type ShortCircuit struct {
 
 type Worker struct {
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
+	Env          map[string]string `yaml:"env,omitempty"`
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
@@ -83,6 +84,7 @@ type Worker struct {
 
 type Master struct {
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
+	Env          map[string]string `yaml:"env,omitempty"`
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
@@ -129,4 +131,15 @@ type cacheStates struct {
 	cached           string
 	cachedPercentage string
 	nonCacheable     string
+}
+
+func (value *Alluxio) getTiredStoreLevel0Path() (path string) {
+	path = "/dev/shm"
+	for _, level := range value.Tieredstore.Levels {
+		if level.Level == 0 {
+			path = level.Path
+			break
+		}
+	}
+	return
 }

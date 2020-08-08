@@ -37,16 +37,16 @@ spec:
           description: AlluxioDataLoadSpec defines the desired state of AlluxioDataLoad
           properties:
             datasetName:
-              description: DatasetName is an example field of AlluxioDataLoad. Edit
-                AlluxioDataLoad_types.go to remove/update
+              description: Name of the dataset that will be prefetched
               minLength: 1
               type: string
             path:
-              description: the Path in alluxio
+              description: Mount path of the dataset in Alluxio. Defaults to /{datasetName}
+                if not specified. (e.g. /my-dataset/cifar10)
               type: string
             slotsPerNode:
               description: Specifies the number of slots per worker used in hostfile.
-                Defaults to 1.
+                Defaults to 2.
               format: int32
               type: integer
           required:
@@ -89,9 +89,9 @@ spec:
                 type: object
               type: array
             phase:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
+              description: 'The latest available observation of a dataload''s running
+                phase. One of the four phases: `Pending`, `Loading`, `Complete` and
+                `Failed`'
               type: string
           required:
           - phase
