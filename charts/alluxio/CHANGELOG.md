@@ -127,3 +127,6 @@
 
 - Fixed parsing issue with multiple medium types for tiered storage #11778
 
+0.6.9
+
+- Fixed the typo of alluxio master's env
