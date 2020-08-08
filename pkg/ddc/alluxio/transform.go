@@ -180,7 +180,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Master.Env = map[string]string{}
 	}
 
-	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
+	value.Master.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
 
 	if len(runtime.Spec.Master.Properties) > 0 {
 		value.Master.Properties = runtime.Spec.Master.Properties
