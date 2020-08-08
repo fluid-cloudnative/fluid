@@ -37,12 +37,13 @@ spec:
           description: DatasetSpec defines the desired state of Dataset
           properties:
             mounts:
-              description: Mounts
+              description: Mount Points to be mounted on Alluxio.
               items:
-                description: Mount describes a mounting.
+                description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
+                  Storage Integrations</a> for more info
                 properties:
                   mountPoint:
-                    description: MountPoint is the mount point of source
+                    description: MountPoint is the mount point of source.
                     minLength: 10
                     type: string
                   name:
@@ -158,16 +159,21 @@ spec:
                   type: object
               type: object
             runtimes:
-              description: Runtimes for supporting dataset
+              description: Runtimes for supporting dataset (e.g. AlluxioRuntime)
               items:
+                description: Runtime describes a runtime to be used to support dataset
                 properties:
                   category:
+                    description: Category the runtime object belongs to (e.g. Accelerate)
                     type: string
                   name:
+                    description: Name of the runtime object
                     type: string
                   namespace:
+                    description: Namespace of the runtime object
                     type: string
                   type:
+                    description: Runtime object's type (e.g. Alluxio)
                     type: string
                 type: object
               type: array
@@ -214,19 +220,25 @@ spec:
                 type: object
               type: array
             phase:
-              description: Dataset Phase
+              description: 'Dataset Phase. One of the four phases: `Pending`, `Bound`,
+                `NotBound` and `Failed`'
               type: string
             runtimes:
               description: Runtimes for supporting dataset
               items:
+                description: Runtime describes a runtime to be used to support dataset
                 properties:
                   category:
+                    description: Category the runtime object belongs to (e.g. Accelerate)
                     type: string
                   name:
+                    description: Name of the runtime object
                     type: string
                   namespace:
+                    description: Namespace of the runtime object
                     type: string
                   type:
+                    description: Runtime object's type (e.g. Alluxio)
                     type: string
                 type: object
               type: array
