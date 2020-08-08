@@ -224,13 +224,13 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
+	e.Log.Info("transformWorkers", "storageMap", storageMap)
+
 	for key, requirement := range storageMap {
 		if value.Worker.Resources.Limits == nil {
 			value.Worker.Resources.Limits = make(common.ResourceList)
 		}
 		if key == common.MemoryCacheStore {
-			e.Log.Info("Update the memory requirement")
-
 			req := requirement.DeepCopy()
 
 			if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
@@ -239,12 +239,10 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 				req.Add(quantity)
 			}
 
-			e.Log.Info("update the requiremnet", "requirement", req)
+			e.Log.Info("update the requirement for memory", "requirement", req)
 
 			value.Worker.Resources.Limits[corev1.ResourceMemory] = req.String()
 		} else if key == common.DiskCacheStore {
-			e.Log.Info("Update the disk requirement")
-
 			req := requirement.DeepCopy()
 
 			e.Log.Info("update the requiremnet for disk", "requirement", req)
@@ -316,13 +314,13 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
+	e.Log.Info("transformFuse", "storageMap", storageMap)
+
 	for key, requirement := range storageMap {
 		if value.Fuse.Resources.Limits == nil {
 			value.Fuse.Resources.Limits = make(common.ResourceList)
 		}
 		if key == common.MemoryCacheStore {
-			e.Log.Info("Update the memory requirement")
-
 			req := requirement.DeepCopy()
 
 			if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
@@ -335,12 +333,8 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 
 			value.Fuse.Resources.Limits[corev1.ResourceMemory] = req.String()
 		} else if key == common.DiskCacheStore {
-			e.Log.Info("Update the disk requirement")
-
 			req := requirement.DeepCopy()
-
 			e.Log.Info("update the requiremnet for disk", "requirement", req)
-
 			value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
 	}
