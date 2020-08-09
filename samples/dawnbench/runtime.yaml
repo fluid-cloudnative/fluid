@@ -39,7 +39,7 @@ spec:
     alluxio.fuse.debug.enabled: "false"
     alluxio.web.ui.enabled: "false"
     alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy
+    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirst
     alluxio.user.block.write.location.policy.class: alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy
     alluxio.worker.allocator.class: alluxio.worker.block.allocator.GreedyAllocator
     alluxio.user.block.size.bytes.default: 16MB
