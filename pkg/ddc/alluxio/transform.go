@@ -236,7 +236,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 			req := requirement.DeepCopy()
 
 			if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
-				req.Add(resource.MustParse("4Gi"))
+				req.Add(resource.MustParse("8Gi"))
 			} else {
 				req.Add(quantity)
 			}
@@ -327,7 +327,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 			req := requirement.DeepCopy()
 
 			if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
-				req.Add(resource.MustParse("4Gi"))
+				req.Add(resource.MustParse("50Gi"))
 			} else {
 				req.Add(quantity)
 			}
