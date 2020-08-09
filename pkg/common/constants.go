@@ -66,6 +66,18 @@ const (
 	HDD MediumType = "HDD"
 )
 
+var tieredStoreOrderMap map[MediumType]int = map[MediumType]int{
+	Memory: 0,
+	SSD:    1,
+	HDD:    2,
+}
+
+func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
+	order, _ = tieredStoreOrderMap[MediumType]
+
+	return order
+}
+
 type Category string
 
 const (

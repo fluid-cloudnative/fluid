@@ -42,10 +42,14 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 		return
 	}
 
-	if runtime.Spec.Master.Replicas == master.Status.ReadyReplicas {
+	masterReplicas := runtime.Spec.Master.Replicas
+	if masterReplicas == 0 {
+		masterReplicas = 1
+	}
+	if masterReplicas == master.Status.ReadyReplicas {
 		ready = true
 	} else {
-		e.Log.V(1).Info("The master is not ready.", "replicas", runtime.Spec.Master.Replicas,
+		e.Log.Info("The master is not ready.", "replicas", masterReplicas,
 			"readyReplicas", master.Status.ReadyReplicas)
 	}
 
