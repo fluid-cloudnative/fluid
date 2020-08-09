@@ -113,12 +113,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	levels := []Level{}
 	for _, level := range runtime.Spec.Tieredstore.Levels {
 
-		l := 0
-		if level.MediumType == common.SSD {
-			l = 1
-		} else if level.MediumType == common.HDD {
-			l = 2
-		}
+		// l := 0
+		// if level.MediumType == common.SSD {
+		// 	l = 1
+		// } else if level.MediumType == common.HDD {
+		// 	l = 2
+		// }
+
+		l := tieredstore.GetTieredLevel(runtime, level.MediumType)
 
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),

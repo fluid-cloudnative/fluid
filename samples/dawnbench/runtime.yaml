@@ -14,12 +14,11 @@ spec:
     imagePullPolicy: Always
   tieredstore:
     levels:
-      - mediumtype: MEM
+      - mediumtype: SSD
         path: /var/lib/docker/alluxio
         quota: 150Gi
         high: "0.99"
         low: "0.8"
-        storageType: Disk
   properties:
     # jni-fuse related configurations
     alluxio.fuse.jnifuse.enabled: "true"
