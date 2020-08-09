@@ -244,13 +244,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 			e.Log.Info("update the requirement for memory", "requirement", req)
 
 			value.Worker.Resources.Limits[corev1.ResourceMemory] = req.String()
-		} else if key == common.DiskCacheStore {
-			req := requirement.DeepCopy()
-
-			e.Log.Info("update the requiremnet for disk", "requirement", req)
-
-			value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
+		// } else if key == common.DiskCacheStore {
+		// 	req := requirement.DeepCopy()
+
+		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
+
+		// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
+		// }
 	}
 
 	return
@@ -334,11 +335,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 			e.Log.Info("update the requiremnet for memory", "requirement", req)
 
 			value.Fuse.Resources.Limits[corev1.ResourceMemory] = req.String()
-		} else if key == common.DiskCacheStore {
-			req := requirement.DeepCopy()
-			e.Log.Info("update the requiremnet for disk", "requirement", req)
-			value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
+		// } else if key == common.DiskCacheStore {
+		// 	req := requirement.DeepCopy()
+		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
+		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
+		// }
 	}
 
 	return

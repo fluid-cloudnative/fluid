@@ -210,18 +210,19 @@ func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node
 					"nodeMemoryCapacity", nodeMemoryCapacity)
 				return false
 			}
-
-		} else {
-			nodeDiskCapacity := *node.Status.Allocatable.StorageEphemeral()
-			if requirement.Cmp(nodeDiskCapacity) <= 0 {
-				e.Log.Info("requirement is less than node disk capacity", "requirement", requirement,
-					"nodeDiskCapacity", nodeDiskCapacity)
-			} else {
-				e.Log.Info("requirement is more than node disk capacity", "requirement", requirement,
-					"nodeDiskCapacity", nodeDiskCapacity)
-				return false
-			}
 		}
+
+		// } else {
+		// 	nodeDiskCapacity := *node.Status.Allocatable.StorageEphemeral()
+		// 	if requirement.Cmp(nodeDiskCapacity) <= 0 {
+		// 		e.Log.Info("requirement is less than node disk capacity", "requirement", requirement,
+		// 			"nodeDiskCapacity", nodeDiskCapacity)
+		// 	} else {
+		// 		e.Log.Info("requirement is more than node disk capacity", "requirement", requirement,
+		// 			"nodeDiskCapacity", nodeDiskCapacity)
+		// 		return false
+		// 	}
+		// }
 	}
 
 	return true
