@@ -8,18 +8,17 @@ spec:
   # Add fields here
   replicas: 4
   dataReplicas: 3
-  alluxioVersion:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
-    imageTag: "2.3.0-SNAPSHOT-bbce37a"
-    imagePullPolicy: Always
+#  alluxioVersion:
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
+#    imageTag: "2.3.0-SNAPSHOT-bbce37a"
+#    imagePullPolicy: Always
   tieredstore:
     levels:
-      - mediumtype: MEM
+      - mediumtype: SSD
         path: /var/lib/docker/alluxio
         quota: 150Gi
         high: "0.99"
         low: "0.8"
-        storageType: Disk
   properties:
     # jni-fuse related configurations
     alluxio.fuse.jnifuse.enabled: "true"
@@ -40,7 +39,7 @@ spec:
     alluxio.fuse.debug.enabled: "false"
     alluxio.web.ui.enabled: "false"
     alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy
+    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirst
     alluxio.user.block.write.location.policy.class: alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy
     alluxio.worker.allocator.class: alluxio.worker.block.allocator.GreedyAllocator
     alluxio.user.block.size.bytes.default: 16MB
@@ -73,7 +72,6 @@ spec:
     alluxio.fuse.logging.threshold: 1000ms
     alluxio.worker.block.master.client.pool.size: "1024"
   master:
-    replicas: 1
     jvmOptions:
       - "-Xmx6G"
       - "-XX:+UnlockExperimentalVMOptions"
@@ -100,4 +98,4 @@ spec:
     shortCircuitPolicy: local
     args:
       - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200
+      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty

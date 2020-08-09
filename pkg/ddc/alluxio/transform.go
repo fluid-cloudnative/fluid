@@ -67,12 +67,12 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 // 2. Transform the common part
 func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 
-	value.Image = "alluxio/alluxio"
+	value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
 	if runtime.Spec.AlluxioVersion.Image != "" {
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.2.1"
+	value.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
@@ -113,12 +113,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	levels := []Level{}
 	for _, level := range runtime.Spec.Tieredstore.Levels {
 
-		l := 0
-		if level.MediumType == common.SSD {
-			l = 1
-		} else if level.MediumType == common.HDD {
-			l = 2
-		}
+		// l := 0
+		// if level.MediumType == common.SSD {
+		// 	l = 1
+		// } else if level.MediumType == common.HDD {
+		// 	l = 2
+		// }
+
+		l := tieredstore.GetTieredLevel(runtime, level.MediumType)
 
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
@@ -226,6 +228,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	e.Log.Info("transformWorkers", "storageMap", storageMap)
 
+	// TODO(iluoeli): it should be xmx + direct memory
+	memLimit := resource.MustParse("20Gi")
+	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
+		memLimit = quantity
+	}
+
 	for key, requirement := range storageMap {
 		if value.Worker.Resources.Limits == nil {
 			value.Worker.Resources.Limits = make(common.ResourceList)
@@ -233,23 +241,21 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 		if key == common.MemoryCacheStore {
 			req := requirement.DeepCopy()
 
-			if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
-				req.Add(resource.MustParse("4Gi"))
-			} else {
-				req.Add(quantity)
-			}
+			memLimit.Add(req)
 
-			e.Log.Info("update the requirement for memory", "requirement", req)
+			e.Log.Info("update the requirement for memory", "requirement", memLimit)
 
-			value.Worker.Resources.Limits[corev1.ResourceMemory] = req.String()
-		} else if key == common.DiskCacheStore {
-			req := requirement.DeepCopy()
-
-			e.Log.Info("update the requiremnet for disk", "requirement", req)
-
-			value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
+		// } else if key == common.DiskCacheStore {
+		// 	req := requirement.DeepCopy()
+
+		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
+
+		// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
+		// }
 	}
+
+	value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
 
 	return
 }
@@ -258,12 +264,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
-	value.Fuse.Image = "alluxio/alluxio-fuse"
+	value.Fuse.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
 	if runtime.Spec.Fuse.Image != "" {
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.2.1"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
@@ -316,6 +322,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 
 	e.Log.Info("transformFuse", "storageMap", storageMap)
 
+	// TODO(iluoeli): it should be xmx + direct memory
+	memLimit := resource.MustParse("50Gi")
+	if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
+		memLimit = quantity
+	}
+
 	for key, requirement := range storageMap {
 		if value.Fuse.Resources.Limits == nil {
 			value.Fuse.Resources.Limits = make(common.ResourceList)
@@ -323,21 +335,19 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 		if key == common.MemoryCacheStore {
 			req := requirement.DeepCopy()
 
-			if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; !exists || quantity.IsZero() {
-				req.Add(resource.MustParse("4Gi"))
-			} else {
-				req.Add(quantity)
-			}
+			memLimit.Add(req)
 
-			e.Log.Info("update the requiremnet for memory", "requirement", req)
+			e.Log.Info("update the requiremnet for memory", "requirement", memLimit)
 
-			value.Fuse.Resources.Limits[corev1.ResourceMemory] = req.String()
-		} else if key == common.DiskCacheStore {
-			req := requirement.DeepCopy()
-			e.Log.Info("update the requiremnet for disk", "requirement", req)
-			value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		}
+		// } else if key == common.DiskCacheStore {
+		// 	req := requirement.DeepCopy()
+		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
+		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
+		// }
 	}
+
+	value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
 
 	return
 
