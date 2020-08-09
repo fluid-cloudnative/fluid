@@ -67,12 +67,12 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 // 2. Transform the common part
 func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 
-	value.Image = "alluxio/alluxio"
+	value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
 	if runtime.Spec.AlluxioVersion.Image != "" {
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.2.1"
+	value.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
@@ -261,12 +261,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
-	value.Fuse.Image = "alluxio/alluxio-fuse"
+	value.Fuse.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
 	if runtime.Spec.Fuse.Image != "" {
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.2.1"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
