@@ -229,7 +229,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Worker.HostNetwork = true
 
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
