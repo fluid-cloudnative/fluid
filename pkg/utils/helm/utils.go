@@ -220,3 +220,14 @@ func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string
 
 	return releaseMap, nil
 }
+
+func DeleteReleaseIfExists(name, namespace string) error {
+	existed, err := CheckRelease(name, namespace)
+	if err != nil {
+		return err
+	} else if existed {
+		return DeleteRelease(name, namespace)
+	}
+	// release not found
+	return nil
+}
