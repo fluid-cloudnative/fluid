@@ -4,3 +4,5 @@ metadata:
   name: yet-another-dataloader
 spec:
   datasetName: dataset
+  path: /zookeeper
+  slotsPerNode: 2

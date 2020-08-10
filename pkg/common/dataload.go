@@ -47,3 +47,7 @@ const (
 func GetReleaseName(datasetName string) string {
 	return fmt.Sprintf("%s-load", datasetName)
 }
+
+func GetPrefetchJobName(datasetName string) string {
+	return fmt.Sprintf("%s-loader", datasetName)
+}

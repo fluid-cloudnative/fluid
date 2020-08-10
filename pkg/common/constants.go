@@ -29,6 +29,22 @@ const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
+
+	ErrorHelmInstall = "ErrorHelmInstall"
+
+	DatasetNotReady = "DatasetNotReady"
+
+	RuntimeNotReady = "RuntimeNotReady"
+
+	DataLoadCollision = "DataLoadCollision"
+
+	PrefetchJobStarted = "Prefetch Started"
+
+	PrefetchJobInterrupted = "PrefetchJobInterrupted"
+
+	PrefetchJobComplete = "Prefetch Complete"
+
+	PrefetchJobFailed = "Prefetch Failed"
 )
 
 // Runtime for Alluxio

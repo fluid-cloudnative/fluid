@@ -1,6 +1,6 @@
 package dataload
 
-// DataLoadValue defines a Helm value file configurations
+// DataLoadValue defines all configurations used in DataLoad prefetch batch job
 type DataLoadValue struct {
 	DataLoadInfo DataLoadInfo `yaml:"dataloader,omitempty"`
 }

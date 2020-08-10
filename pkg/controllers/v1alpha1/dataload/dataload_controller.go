@@ -46,7 +46,7 @@ func NewDataLoadReconciler(client client.Client,
 	r := &DataLoadReconciler{
 		Scheme: scheme,
 	}
-	r.ReconcilerImplement = NewReconcilerImplement(client, log)
+	r.ReconcilerImplement = NewReconcilerImplement(client, log, recorder)
 	return r
 }
 
@@ -54,6 +54,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := cdataload.ReconcileRequestContext{
 		Context:        context.Background(),
 		Log:            r.Log.WithValues("alluxiodataload", req.NamespacedName),
+		Recorder:       r.Recorder,
 		NamespacedName: req.NamespacedName,
 	}
 

@@ -11,7 +11,9 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"os"
 	"reflect"
@@ -20,31 +22,22 @@ import (
 	"time"
 )
 
-type ReconcilerStateMachineInterface interface {
-	ReconcileNoneDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error)
-
-	ReconcilePendingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error)
-
-	ReconcileLoadingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error)
-
-	ReconcileCompleteDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error)
-
-	ReconcileFailedDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error)
-}
-
 type ReconcilerImplement struct {
 	client.Client
-	Log logr.Logger
+	Log      logr.Logger
+	Recorder record.EventRecorder
 }
 
-func NewReconcilerImplement(client client.Client, log logr.Logger) *ReconcilerImplement {
+func NewReconcilerImplement(client client.Client, log logr.Logger, recorder record.EventRecorder) *ReconcilerImplement {
 	r := &ReconcilerImplement{
-		Client: client,
-		Log:    log,
+		Client:   client,
+		Log:      log,
+		Recorder: recorder,
 	}
 	return r
 }
 
+// Reconcile Dataload
 func (r *ReconcilerImplement) ReconcileDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	/*
 		DataLoadPhase: Complete
@@ -78,7 +71,6 @@ func (r *ReconcilerImplement) ReconcileDataload(ctx cdataload.ReconcileRequestCo
 		DataLoadPhase: Loading -> Complete/Failed
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhaseLoading {
-		//TODO(xuzhihao) check dataset & runtime status to make sure it's still ready
 		return r.ReconcileLoadingDataload(ctx)
 	}
 
@@ -86,6 +78,7 @@ func (r *ReconcilerImplement) ReconcileDataload(ctx cdataload.ReconcileRequestCo
 	return ctrl.Result{}, nil
 }
 
+// Reconcile DataLoad deletion
 func (r *ReconcilerImplement) ReconcileDataloadDeletion(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	/*
 		Delete helm release if exists
@@ -120,6 +113,7 @@ func (r *ReconcilerImplement) ReconcileDataloadDeletion(ctx cdataload.ReconcileR
 	return utils.NoRequeue()
 }
 
+// Reconcile Dataload in `None` phase
 func (r *ReconcilerImplement) ReconcileNoneDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
 	dataloadToUpdate.Status.Phase = common.DataloadPhasePending
@@ -136,6 +130,7 @@ func (r *ReconcilerImplement) ReconcileNoneDataload(ctx cdataload.ReconcileReque
 	return utils.RequeueImmediately()
 }
 
+// Reconcile Dataload in `Pending` phase
 func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	/*
 		1. Check if related dataset ready (i.e. related dataset exists and bounded)
@@ -147,10 +142,11 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 	} else if !ready {
 		if dataset == nil {
 			ctx.Log.Info("Related dataset not found", "datasetName", ctx.DataLoad.Spec.DatasetName, "namespace", ctx.DataLoad.Namespace)
+			r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.DatasetNotReady, "Can't find dataset \"%s\"", ctx.DataLoad.Spec.DatasetName)
 		} else {
 			ctx.Log.Info("Related dataset not ready", "datasetName", dataset.Name, "namespace", dataset.Namespace)
+			r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.DatasetNotReady, "Dataset \"%s\" is not bound", ctx.DataLoad.Spec.DatasetName)
 		}
-		//TODO EventRecorder
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 	ctx.Log.Info("Related dataset ready", "datasetName", dataset.Name, "namespace", dataset.Namespace)
@@ -165,8 +161,10 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 	} else if !ready {
 		if alluxioRuntime == nil {
 			ctx.Log.Info("Related alluxio runtime not found", "runtimeName", ctx.DataLoad.Spec.DatasetName, "namespace", ctx.DataLoad.Namespace)
+			r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.RuntimeNotReady, "Cant't find Alluxio runtime named \"%s\"", ctx.DataLoad.Spec.DatasetName)
 		} else {
 			ctx.Log.Info("Related alluxio runtime not ready", "runtimeName", alluxioRuntime.Name, "namespace", alluxioRuntime.Namespace, "scheduledWorkers", alluxioRuntime.Status.CurrentWorkerNumberScheduled, "availableWorkers", alluxioRuntime.Status.WorkerNumberAvailable)
+			r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.RuntimeNotReady, "Alluxio runtime is not ready")
 		}
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
@@ -183,8 +181,7 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 
 	if dataloadWithCollision != nil {
 		ctx.Log.Info("Another Dataload is loading", "dataloadName", dataloadWithCollision.Name, "namespace", dataloadWithCollision.Namespace)
-		//Backoff
-		//TODO EventRecorder
+		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.DataLoadCollision, "Another DataLoad(name: %s) is running a prefetch job", dataloadWithCollision.Name)
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 	ctx.Log.Info("No other dataload loading, ready to prefetch...")
@@ -226,6 +223,9 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 		if helmErr != nil {
 			ctx.Log.Error(err, "Unable to delete related release")
 		}
+	} else {
+		// Helm chart installed and phase updated with no error
+		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.PrefetchJobStarted, "Started Prefetch Job")
 	}
 
 	//dataloadToUpdate := ctx.DataLoad.DeepCopy()
@@ -237,24 +237,21 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 	return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 }
 
+// Reconcile Dataload in `Loading` phase
 func (r *ReconcilerImplement) ReconcileLoadingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
-	jobName := types.NamespacedName{
-		Namespace: ctx.DataLoad.Namespace,
-		Name:      fmt.Sprintf("%s-loader", ctx.DataLoad.Spec.DatasetName),
-	}
-
-	job := &batchv1.Job{}
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
 	var needUpdate bool
-	if err := r.Get(ctx, jobName, job); err != nil {
-		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("Related job not found, turn phase to `None`", "dataload", ctx.DataLoad)
-			dataloadToUpdate.Status.Phase = common.DataloadPhaseNone
-			needUpdate = true
-		} else {
-			ctx.Log.Error(err, "Fail to get related job", "jobName", jobName)
-			return utils.RequeueIfError(err)
-		}
+
+	job := r.getRelatedJobIfNoInterrupts(ctx)
+
+	if job == nil {
+		// Some interruption occurs
+		_ = helm.DeleteReleaseIfExists(common.GetReleaseName(ctx.DataLoad.Spec.DatasetName), ctx.DataLoad.Namespace)
+		dataloadToUpdate.Status.Phase = common.DataloadPhaseNone
+		dataloadToUpdate.Status.Conditions = []datav1alpha1.DataloadCondition{}
+		ctx.Log.Info("Dataload's Loading process has been interrupted")
+		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.PrefetchJobInterrupted, "Dataload's Loading process has been interrupted")
+		needUpdate = true
 	} else if job.Status.Failed > 0 || job.Status.Succeeded == *job.Spec.Completions {
 		dataloadToUpdate.Status.Conditions = []datav1alpha1.DataloadCondition{
 			{
@@ -270,36 +267,46 @@ func (r *ReconcilerImplement) ReconcileLoadingDataload(ctx cdataload.ReconcileRe
 		if job.Status.Failed > 0 {
 			ctx.Log.Info("Related Job failed", "jobName", job.Name)
 			dataloadToUpdate.Status.Phase = common.DataloadPhaseFailed
+			r.Recorder.Eventf(dataloadToUpdate, v1.EventTypeNormal, common.PrefetchJobFailed, "Job \"%s\" Finished. Current status: Failed", job.Name)
 		} else {
 			ctx.Log.Info("Related Job complete", "jobName", job.Name)
 			dataloadToUpdate.Status.Phase = common.DataloadPhaseComplete
+			r.Recorder.Eventf(dataloadToUpdate, v1.EventTypeNormal, common.PrefetchJobComplete, "Job \"%s\" Finished. Current status: Complete", job.Name)
 		}
 		needUpdate = true
 	}
 
 	if needUpdate {
-		// We don't have to retry updating here since Requeue can help us find out its current status.
-		if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
-			ctx.Log.Error(err, "Failed to update status of a loading dataload", "dataloadName", ctx.DataLoad.Name)
-			return utils.RequeueIfError(err)
+		if !reflect.DeepEqual(dataloadToUpdate.Status, ctx.DataLoad.Status) {
+			if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
+				ctx.Log.Error(err, "Failed to update status of a loading dataload", "dataloadName", ctx.DataLoad.Name)
+				return utils.RequeueIfError(err)
+			}
 		}
 	}
 
 	return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 }
 
+// Reconcile Dataload in `Complete` phase
 func (r *ReconcilerImplement) ReconcileCompleteDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	//No need to reconcile
 	ctx.Log.Info("Dataload prefetch job done", "dataloadName", ctx.DataLoad.Name, "currentPhase", ctx.DataLoad.Status.Phase)
 	return utils.NoRequeue()
 }
 
+// Reconcile Dataload in `Failed` phase
 func (r *ReconcilerImplement) ReconcileFailedDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	//No need to reconcile
 	ctx.Log.Info("Dataload prefetch job done", "dataloadName", ctx.DataLoad.Name, "currentPhase", ctx.DataLoad.Status.Phase)
 	return utils.NoRequeue()
 }
 
+/*
+	Check existence and status of the runtime related to the dataload.
+	If the runtime exists, return a pointer to that runtime.
+	If the runtime is ready, which means all its scheduled workers are avilable, `ready`= true, otherwise false.
+*/
 func (r *ReconcilerImplement) checkRelatedRuntimeReady(ctx cdataload.ReconcileRequestContext) (alluxioRuntime *datav1alpha1.AlluxioRuntime, ready bool, err error) {
 	runtimeName := ctx.DataLoad.Spec.DatasetName
 	alluxioRuntime, err = utils.GetAlluxioRuntime(r, runtimeName, ctx.DataLoad.Namespace)
@@ -319,6 +326,11 @@ func (r *ReconcilerImplement) checkRelatedRuntimeReady(ctx cdataload.ReconcileRe
 	return
 }
 
+/*
+	Check existence and status of the dataset related to the dataload.
+	If the dataset exists, return a pointer to that dataset.
+	If the dataset has a phase `Bound`, `ready`=true, otherwise false.
+*/
 func (r *ReconcilerImplement) checkRelatedDatasetReady(ctx cdataload.ReconcileRequestContext) (dataset *datav1alpha1.Dataset, ready bool, err error) {
 	datasetName := ctx.DataLoad.Spec.DatasetName
 	dataset, err = utils.GetDataset(r, datasetName, ctx.DataLoad.Namespace)
@@ -330,6 +342,10 @@ func (r *ReconcilerImplement) checkRelatedDatasetReady(ctx cdataload.ReconcileRe
 	return dataset, dataset.Status.Phase == datav1alpha1.BoundDatasetPhase, nil
 }
 
+/*
+	Check out if there's any dataload collides with the one reconciling. Return a pointer to it if exists.
+	A dataload collides with another one means that they have the same `datasetName` and some of them in phase `Loading`
+*/
 func (r *ReconcilerImplement) findDataLoadWithCollision(ctx cdataload.ReconcileRequestContext) (dataLoad *datav1alpha1.AlluxioDataLoad, err error) {
 	collisionFunc := func(dl datav1alpha1.AlluxioDataLoad) bool {
 		// A dataload with collision is another dataload object with same DatasetName and loading phase
@@ -338,6 +354,9 @@ func (r *ReconcilerImplement) findDataLoadWithCollision(ctx cdataload.ReconcileR
 	return utils.FindDataLoadWithPredicate(r, ctx.DataLoad.Namespace, collisionFunc)
 }
 
+/*
+	Launch a batch job to do prefetching
+*/
 func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestContext, numWorker int32) (done bool, err error) {
 	/*
 		1. Check Helm releases
@@ -372,6 +391,7 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 
 	if err := helm.InstallRelease(releaseName, ctx.DataLoad.Namespace, valueFileName, chartName); err != nil {
 		ctx.Log.Error(err, "Fail to install helm chart")
+		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.ErrorHelmInstall, "Can't install Helm release due to %v", err)
 		//TODO(xuzhihao) inform error like `configuration not right` to events
 		return false, err
 	}
@@ -380,6 +400,9 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 	return true, nil
 }
 
+/*
+	Generate value file used to config batch job
+*/
 func (r *ReconcilerImplement) generateValueFile(dataload datav1alpha1.AlluxioDataLoad, numWorker int32) (valueFileName string, err error) {
 	dataloadConfig := cdataload.DataLoadInfo{
 		BackoffLimit: 6,
@@ -411,4 +434,33 @@ func (r *ReconcilerImplement) generateValueFile(dataload datav1alpha1.AlluxioDat
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+/*
+	If there's any change of other related resources that interrupted loading process, return nil.
+	Return a pointer to the related job otherwise.
+	An interruption can be something like related runtime or dataset becomes not ready, related job not found, etc.
+
+*/
+func (r *ReconcilerImplement) getRelatedJobIfNoInterrupts(ctx cdataload.ReconcileRequestContext) *batchv1.Job {
+	dataset, ready, err := r.checkRelatedDatasetReady(ctx)
+	if err != nil || dataset == nil || !ready {
+		return nil
+	}
+
+	runtime, ready, err := r.checkRelatedRuntimeReady(ctx)
+	if err != nil || runtime == nil || !ready {
+		return nil
+	}
+
+	key := types.NamespacedName{
+		Namespace: ctx.DataLoad.Namespace,
+		Name:      common.GetPrefetchJobName(ctx.DataLoad.Spec.DatasetName),
+	}
+	job := &batchv1.Job{}
+	if err := r.Get(ctx, key, job); err != nil {
+		return nil
+	}
+
+	return job
 }
