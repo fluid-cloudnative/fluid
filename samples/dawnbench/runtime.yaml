@@ -6,8 +6,8 @@ metadata:
   #namespace: fluid-system
 spec:
   # Add fields here
-  replicas: 4
-  dataReplicas: 3
+  replicas: 16
+  dataReplicas: 1
 #  alluxioVersion:
 #    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
 #    imageTag: "2.3.0-SNAPSHOT-bbce37a"
@@ -39,7 +39,7 @@ spec:
     alluxio.fuse.debug.enabled: "false"
     alluxio.web.ui.enabled: "false"
     alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirst
+    alluxio.user.ufs.block.read.location.policy: alluxio.client.block.policy.LocalFirstPolicy
     alluxio.user.block.write.location.policy.class: alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy
     alluxio.worker.allocator.class: alluxio.worker.block.allocator.GreedyAllocator
     alluxio.user.block.size.bytes.default: 16MB
@@ -82,12 +82,15 @@ spec:
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:MaxDirectMemorySize=32g"
       - "-XX:ActiveProcessorCount=8"
+    resources:
+      limits:
+        cpu: 8
   fuse:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT-bbce37a"
-    imagePullPolicy: Always
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+#    imageTag: "2.3.0-SNAPSHOT-bbce37a"
+#    imagePullPolicy: Always
     env:
-      SPENT_TIME: "1000"
+      MAX_IDLE_THREADS: "32"
     jvmOptions:
       - "-Xmx16G"
       - "-Xms16G"
@@ -95,6 +98,9 @@ spec:
       - "-XX:MaxDirectMemorySize=32g"
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=24"
+    resources:
+      limits:
+        cpu: 16
     shortCircuitPolicy: local
     args:
       - fuse
