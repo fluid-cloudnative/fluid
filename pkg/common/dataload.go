@@ -15,6 +15,8 @@ limitations under the License.
 
 package common
 
+import "fmt"
+
 type DataloadPhase string
 
 const (
@@ -35,3 +37,13 @@ const (
 	// DataloadFailed means the Dataload has failed its execution.
 	DataloadFailed DataloadConditionType = "Failed"
 )
+
+const (
+	Finalizer      = "fluid-dataload-controller-finalizer"
+	Dataload_chart = "fluid-dataloader"
+	Image          = "registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf"
+)
+
+func GetReleaseName(datasetName string) string {
+	return fmt.Sprintf("%s-load", datasetName)
+}
