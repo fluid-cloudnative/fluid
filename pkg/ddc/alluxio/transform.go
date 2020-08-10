@@ -98,6 +98,13 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Properties = runtime.Spec.Properties
 	}
 
+	dataReplicas := runtime.Spec.DataReplicas
+	if dataReplicas <= 0 {
+		dataReplicas = 1
+	}
+	// Set the max replication
+	value.Properties["alluxio.user.file.replication.max"] = fmt.Sprintf("%d", dataReplicas)
+
 	if len(runtime.Spec.JvmOptions) > 0 {
 		value.JvmOptions = runtime.Spec.JvmOptions
 	}
@@ -222,7 +229,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Worker.HostNetwork = true
 
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 
