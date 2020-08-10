@@ -82,10 +82,13 @@ spec:
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:MaxDirectMemorySize=32g"
       - "-XX:ActiveProcessorCount=8"
+    resources:
+      limits:
+        cpu: 8
   fuse:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT-bbce37a"
-    imagePullPolicy: Always
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+#    imageTag: "2.3.0-SNAPSHOT-bbce37a"
+#    imagePullPolicy: Always
     env:
       SPENT_TIME: "1000"
     jvmOptions:
@@ -95,6 +98,9 @@ spec:
       - "-XX:MaxDirectMemorySize=32g"
       - "-XX:+UnlockExperimentalVMOptions"
       - "-XX:ActiveProcessorCount=24"
+    resources:
+      limits:
+        cpu: 12
     shortCircuitPolicy: local
     args:
       - fuse
