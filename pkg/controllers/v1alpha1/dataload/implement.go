@@ -83,20 +83,22 @@ func (r *ReconcilerImplement) ReconcileDataloadDeletion(ctx cdataload.ReconcileR
 	/*
 		Delete helm release if exists
 	*/
-	datasetName := ctx.DataLoad.Spec.DatasetName
-	releaseName := common.GetReleaseName(datasetName)
-	existed, err := helm.CheckRelease(releaseName, ctx.DataLoad.Namespace)
-	if err != nil {
-		ctx.Log.Error(err, "Helm check release error")
-	} else if existed {
-		if err := helm.DeleteRelease(releaseName, ctx.DataLoad.Namespace); err != nil {
-			ctx.Log.Error(err, "Helm can't uninstall release")
+	//datasetName := ctx.DataLoad.Spec.DatasetName
+	//releaseName := common.GetReleaseName(datasetName)
+	releaseName, existed := ctx.DataLoad.Labels["release"]
+	if existed {
+		existed, err := helm.CheckRelease(releaseName, ctx.DataLoad.Namespace)
+		if err != nil {
+			ctx.Log.Error(err, "Helm check release error")
+		} else if existed {
+			if err := helm.DeleteRelease(releaseName, ctx.DataLoad.Namespace); err != nil {
+				ctx.Log.Error(err, "Helm can't uninstall release")
+			}
+			ctx.Log.Info("Helm release successfully deleted", "releaseName", releaseName)
+		} else {
+			ctx.Log.Info("Related Helm release not found, just delete dataload object")
 		}
-		ctx.Log.Info("Helm release successfully deleted", "releaseName", releaseName)
-	} else {
-		ctx.Log.Info("Related Helm release not found, just delete dataload object")
 	}
-
 	/*
 		Remove finalizer
 	*/
@@ -218,11 +220,20 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 
 	if err != nil {
 		ctx.Log.Error(err, "Unable to update dataload's phase to `Loading`. Trying to uninstall related helm release")
-		releaseName := common.GetReleaseName(ctx.DataLoad.Spec.DatasetName)
-		helmErr := helm.DeleteReleaseIfExists(releaseName, ctx.DataLoad.Namespace)
-		if helmErr != nil {
-			ctx.Log.Error(err, "Unable to delete related release")
+		//releaseName := common.GetReleaseName(ctx.DataLoad.Spec.DatasetName)
+		dataload, err := utils.GetDataLoad(r, ctx.DataLoad.Name, ctx.DataLoad.Namespace)
+		if err == nil {
+			releaseName, existed := dataload.Labels["release"]
+			if existed {
+				helmErr := helm.DeleteReleaseIfExists(releaseName, ctx.DataLoad.Namespace)
+				if helmErr != nil {
+					ctx.Log.Error(helmErr, "Unable to delete related release")
+				}
+			}
+		} else {
+			return utils.RequeueIfError(err)
 		}
+
 	} else {
 		// Helm chart installed and phase updated with no error
 		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.PrefetchJobStarted, "Started Prefetch Job")
@@ -246,7 +257,10 @@ func (r *ReconcilerImplement) ReconcileLoadingDataload(ctx cdataload.ReconcileRe
 
 	if job == nil {
 		// Some interruption occurs
-		_ = helm.DeleteReleaseIfExists(common.GetReleaseName(ctx.DataLoad.Spec.DatasetName), ctx.DataLoad.Namespace)
+		releaseName, existed := ctx.DataLoad.Labels["release"]
+		if existed {
+			_ = helm.DeleteReleaseIfExists(releaseName, ctx.DataLoad.Namespace)
+		}
 		dataloadToUpdate.Status.Phase = common.DataloadPhaseNone
 		dataloadToUpdate.Status.Conditions = []datav1alpha1.DataloadCondition{}
 		ctx.Log.Info("Dataload's Loading process has been interrupted")
@@ -351,6 +365,7 @@ func (r *ReconcilerImplement) findDataLoadWithCollision(ctx cdataload.ReconcileR
 		// A dataload with collision is another dataload object with same DatasetName and loading phase
 		return dl.Name != ctx.DataLoad.Name && dl.Spec.DatasetName == ctx.DataLoad.Spec.DatasetName && dl.Status.Phase == common.DataloadPhaseLoading
 	}
+	//TODO: Using label Selector instead of using predicate
 	return utils.FindDataLoadWithPredicate(r, ctx.DataLoad.Namespace, collisionFunc)
 }
 
@@ -362,7 +377,7 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 		1. Check Helm releases
 	*/
 	//releaseName := fmt.Sprintf("%s-load", ctx.DataLoad.Spec.DatasetName)
-	releaseName := common.GetReleaseName(ctx.DataLoad.Spec.DatasetName)
+	releaseName := utils.NewReleaseName(ctx.DataLoad.Spec.DatasetName)
 	existed, err := helm.CheckRelease(releaseName, ctx.DataLoad.Namespace)
 	if err != nil {
 		ctx.Log.Error(err, "Fail to check helm releases")
@@ -386,13 +401,31 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 	var chartName = utils.GetChartsDirectory() + "/" + common.Dataload_chart
 
 	/*
-		3. Install release with generated value file
+		3. Label dataload with release name
 	*/
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		dataload, err := utils.GetDataLoad(r, ctx.DataLoad.Name, ctx.DataLoad.Namespace)
+		if err != nil {
+			return err
+		}
+		dataloadToUpdate := dataload.DeepCopy()
+		if dataloadToUpdate.Labels == nil {
+			dataloadToUpdate.Labels = map[string]string{}
+		}
+		dataloadToUpdate.Labels["release"] = releaseName
+		return r.Update(ctx, dataloadToUpdate)
+	})
 
+	if err != nil {
+		return false, err
+	}
+
+	/*
+		4. Install release with generated value file
+	*/
 	if err := helm.InstallRelease(releaseName, ctx.DataLoad.Namespace, valueFileName, chartName); err != nil {
 		ctx.Log.Error(err, "Fail to install helm chart")
 		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeWarning, common.ErrorHelmInstall, "Can't install Helm release due to %v", err)
-		//TODO(xuzhihao) inform error like `configuration not right` to events
 		return false, err
 	}
 
@@ -453,9 +486,14 @@ func (r *ReconcilerImplement) getRelatedJobIfNoInterrupts(ctx cdataload.Reconcil
 		return nil
 	}
 
+	releaseName, existed := ctx.DataLoad.Labels["release"]
+	if !existed {
+		return nil
+	}
+
 	key := types.NamespacedName{
 		Namespace: ctx.DataLoad.Namespace,
-		Name:      common.GetPrefetchJobName(ctx.DataLoad.Spec.DatasetName),
+		Name:      utils.GetJobNameFromReleaseName(releaseName),
 	}
 	job := &batchv1.Job{}
 	if err := r.Get(ctx, key, job); err != nil {

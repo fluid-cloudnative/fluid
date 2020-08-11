@@ -17,9 +17,12 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	"github.com/cloudnativefluid/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 func GetDataLoad(client client.Client, name, namespace string) (*datav1alpha1.AlluxioDataLoad, error) {
@@ -47,4 +50,15 @@ func FindDataLoadWithPredicate(c client.Client, namespace string, predFunc func(
 		}
 	}
 	return nil, nil
+}
+
+func NewReleaseName(datasetName string) string {
+	return fmt.Sprintf("%s-load-%s", datasetName, RandomAlphaNumberString(common.Suffix_length))
+}
+
+func GetJobNameFromReleaseName(releaseName string) string {
+	strs := strings.Split(releaseName, "-load-")
+	datasetName := strs[0]
+	suffix := strs[len(strs)-1]
+	return fmt.Sprintf("%s-loader-job-%s", datasetName, suffix)
 }
