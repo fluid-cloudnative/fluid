@@ -4,7 +4,7 @@
 
 An open source Kubernetes-native Distributed Dataset Manager and Orchestrator for Data Analysis and Machine Learning.
 
-![Architecture.png](Architecture.png)
+![architecture.png](architecture.png)
 
 ## Features
 
