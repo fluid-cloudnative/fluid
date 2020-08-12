@@ -2,7 +2,12 @@
 
 ## What is Fluid?
 
-Fluid is an open source container-native Distributed Data Accelerator for Big data and Deep Learning. It has the features:
+An open source Kubernetes-native Distributed Dataset Manager and Orchestrator for Data Analysis and Machine Learning.
+
+![Architecture.png](Architecture.png)
+
+## Features
+
 
 - Data Accessing Accelerates for OSS, HDFS for free
 - Portable and Scalable Dataset in Kubernetes with Infrastructure Knowledge
