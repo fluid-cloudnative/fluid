@@ -93,6 +93,12 @@ func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 	}
 
 	if found {
+		err = kubeclient.RemoveProtectionFinalizer(e.Client, e.runtime.Name, e.runtime.Namespace)
+		// though failed to remove finalizers, we can still try to delete PVC
+		if err != nil {
+			e.Log.Info("Failed to remove finalizers")
+		}
+
 		err = kubeclient.DeletePersistentVolumeClaim(e.Client, e.runtime.Name, e.runtime.Namespace)
 		if err != nil {
 			return err
