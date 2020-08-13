@@ -9,21 +9,27 @@ An open source Kubernetes-native Distributed Dataset Manager and Orchestrator fo
 ## Features
 
 - __Data Accessing Accelerates for OSS, HDFS, CEPH and Other underlayer storages__
-  Fluid empowers Distributed Cache Capaicty(with Alluixo or other engines) in Kubernetes with 
+
+  Fluid empowers Distributed Cache Capaicty(with Alluixo or other engines) in Kubernetes with  
   			- Observability
   			- Portability
   			- Horizontal scalability 
   on the cloud. 
+
 - __Schedule data and compute with Cache Co-locality__
+
   Bring the data close to compute, and bring the compute close to data
 
 - __Prefetch the data to cache automatically__
+
   Warm up the cache in Kubernetes automaticaly
 
 - __Multi-tenant support__
+
   Users can create and manage multiple dataset in multiple namespaces
 
 - __Unify the Data access from different underlayer storages__
+
   The data from the different storage can be consumed together 
 
 ## Prerequisites
