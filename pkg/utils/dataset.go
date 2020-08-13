@@ -38,16 +38,3 @@ func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dat
 	}
 	return &dataset, nil
 }
-
-func GetAlluxioRuntime(client client.Client, name, namespace string) (*datav1alpha1.AlluxioRuntime, error) {
-
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	var runtime datav1alpha1.AlluxioRuntime
-	if err := client.Get(context.TODO(), key, &runtime); err != nil {
-		return nil, err
-	}
-	return &runtime, nil
-}

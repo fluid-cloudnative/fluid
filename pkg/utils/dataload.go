@@ -25,6 +25,9 @@ import (
 	"strings"
 )
 
+/*
+* Get DataLoad object with name and namespace.
+ */
 func GetDataLoad(client client.Client, name, namespace string) (*datav1alpha1.AlluxioDataLoad, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
@@ -37,6 +40,10 @@ func GetDataLoad(client client.Client, name, namespace string) (*datav1alpha1.Al
 	return &dataload, nil
 }
 
+/*
+* list all DataLoad objects in a specific namespace and return the first one that satisfies a predicate.
+* The predicate should be a function which returns a bool given a DataLoad object
+ */
 func FindDataLoadWithPredicate(c client.Client, namespace string, predFunc func(dl datav1alpha1.AlluxioDataLoad) bool) (dataload *datav1alpha1.AlluxioDataLoad, err error) {
 	var dataloadList *datav1alpha1.AlluxioDataLoadList = &datav1alpha1.AlluxioDataLoadList{}
 	err = c.List(context.TODO(), dataloadList, &client.ListOptions{Namespace: namespace})
@@ -52,10 +59,18 @@ func FindDataLoadWithPredicate(c client.Client, namespace string, predFunc func(
 	return nil, nil
 }
 
+/*
+* Generate a new release Name for DataLoad
+ */
 func NewReleaseName(datasetName string) string {
 	return fmt.Sprintf("%s-load-%s", datasetName, RandomAlphaNumberString(common.Suffix_length))
 }
 
+/*
+* Return the related job name given a release name.
+* A release name should be like <dataset>-load-<random_suffix>,
+* and the returned job name will be like <dataset>-loader-job-<random_suffix>
+ */
 func GetJobNameFromReleaseName(releaseName string) string {
 	strs := strings.Split(releaseName, "-load-")
 	datasetName := strs[0]
