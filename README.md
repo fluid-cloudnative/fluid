@@ -53,10 +53,6 @@ You can see our documentation at [docs]() for more in-depth installation and ins
 
 All the Fluid documentation is maintained in the [docs-fluid repository](https://github.com/fluid-cloudnative/docs-fluid). 
 
-* [Get started here](docs/quick-start.md)
-* [How to write Runtime specs](examples/README.md)
-* [How to develop Fluid](docs/configure-artifact-repository.md)
-
 ## Demo
 
 ### Demo 1: Unification
