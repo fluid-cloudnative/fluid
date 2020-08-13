@@ -10,13 +10,9 @@ An open source Kubernetes-native Distributed Dataset Manager and Orchestrator fo
 
 ## Features
 
-- __Data Accessing Accelerates__
+- __Accelerate Data Accessing__
 
-    Fluid empowers Distributed Cache Capaicty(with Alluixo or other engines) in Kubernetes with  
-            - **Observability**  
-  			- **Portability**  
-  			- **Horizontal scalability**  
-    on the cloud. 
+    Fluid empowers Distributed Cache Capaicty(Alluixo inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal scalability**
 
 - __Schedule data and compute with Cache Co-locality__
 
