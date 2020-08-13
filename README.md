@@ -1,5 +1,7 @@
 # Fluid
 
+English | [简体中文](./README-zh_CN.md)
+
 ## What is Fluid?
 
 An open source Kubernetes-native Distributed Dataset Manager and Orchestrator for Data Analysis and Machine Learning.
