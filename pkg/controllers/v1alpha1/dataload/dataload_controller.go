@@ -35,10 +35,7 @@ type DataLoadReconciler struct {
 	*ReconcilerImplement
 }
 
-//Reconcile reconciles the AlluxioDataLoad Object
-// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads/status,verbs=get;update;patch
-
+// Return a new DataLoad Reconciler
 func NewDataLoadReconciler(client client.Client,
 	log logr.Logger,
 	scheme *runtime.Scheme,
@@ -49,6 +46,10 @@ func NewDataLoadReconciler(client client.Client,
 	r.ReconcilerImplement = NewReconcilerImplement(client, log, recorder)
 	return r
 }
+
+// Reconcile reconciles the AlluxioDataLoad Object
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=alluxiodataloads/status,verbs=get;update;patch
 
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := cdataload.ReconcileRequestContext{

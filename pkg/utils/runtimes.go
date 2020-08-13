@@ -16,8 +16,11 @@ limitations under the License.
 package utils
 
 import (
+	"context"
 	data "github.com/cloudnativefluid/fluid/api/v1alpha1"
 	"github.com/cloudnativefluid/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewRuntimeCondition creates a new Cache condition.
@@ -46,4 +49,18 @@ func AddRuntimesIfNotExist(runtimes []data.Runtime, newRuntime data.Runtime) (up
 	}
 
 	return updatedRuntimes
+}
+
+// Get Alluxio Runtime object given name and namespace
+func GetAlluxioRuntime(client client.Client, name, namespace string) (*data.AlluxioRuntime, error) {
+
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.AlluxioRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+	return &runtime, nil
 }
