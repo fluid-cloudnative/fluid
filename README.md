@@ -4,7 +4,7 @@ English | [简体中文](./README-zh_CN.md)
 
 ## What is Fluid?
 
-An open source Kubernetes-native Distributed Dataset Manager and Orchestrator for Data Analysis and Machine Learning.
+An open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
 
 ![architecture.png](./static/architecture.png)
 
@@ -12,7 +12,7 @@ An open source Kubernetes-native Distributed Dataset Manager and Orchestrator fo
 
 - __Accelerate Data Accessing__
 
-    Fluid empowers Distributed Cache Capaicty(Alluixo inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal scalability**
+    Fluid empowers Distributed Cache Capaicty(Alluixo Inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal scalability**
 
 - __Schedule data and compute with Cache Co-locality__
 
