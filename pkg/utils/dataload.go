@@ -63,7 +63,7 @@ func FindDataLoadWithPredicate(c client.Client, namespace string, predFunc func(
 * Generate a new release Name for DataLoad
  */
 func NewReleaseName(datasetName string) string {
-	return fmt.Sprintf("%s-load-%s", datasetName, RandomAlphaNumberString(common.Suffix_length))
+	return fmt.Sprintf("%s-load-%s", datasetName, RandomAlphaNumberString(common.DATALOAD_SUFFIX_LENGTH))
 }
 
 /*

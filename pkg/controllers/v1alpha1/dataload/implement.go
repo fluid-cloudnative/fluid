@@ -24,10 +24,12 @@ import (
 
 type ReconcilerImplement struct {
 	client.Client
-	Log      logr.Logger
-	Recorder record.EventRecorder
+	Log             logr.Logger
+	Recorder        record.EventRecorder
+	DataLoaderImage string
 }
 
+// Return a new reconciler implement
 func NewReconcilerImplement(client client.Client, log logr.Logger, recorder record.EventRecorder) *ReconcilerImplement {
 	r := &ReconcilerImplement{
 		Client:   client,
@@ -37,41 +39,56 @@ func NewReconcilerImplement(client client.Client, log logr.Logger, recorder reco
 	return r
 }
 
+// Set up the reconciler
+func (r *ReconcilerImplement) Setup() {
+	if r.DataLoaderImage != "" {
+		return
+	}
+
+	val, existed := os.LookupEnv(common.ENV_DATALOADER_IMG)
+	if !existed {
+		r.DataLoaderImage = common.DATALOAD_DEFAULT_IMAGE
+	} else {
+		r.DataLoaderImage = val
+	}
+	r.Log.Info("Setting up DataLoader Image", "Image", r.DataLoaderImage)
+}
+
 // Reconcile Dataload
 func (r *ReconcilerImplement) ReconcileDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	/*
 		DataLoadPhase: Complete
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhaseComplete {
-		return r.ReconcileCompleteDataload(ctx)
+		return r.reconcileCompleteDataload(ctx)
 	}
 
 	/*
 		DataLoadPhase: Failed
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhaseFailed {
-		return r.ReconcileFailedDataload(ctx)
+		return r.reconcileFailedDataload(ctx)
 	}
 
 	/*
 		DataLoadPhase: None -> Pending
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhaseNone {
-		return r.ReconcileNoneDataload(ctx)
+		return r.reconcileNoneDataload(ctx)
 	}
 
 	/*
 		DataLoadPhase: Pending -> Loading
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhasePending {
-		return r.ReconcilePendingDataload(ctx)
+		return r.reconcilePendingDataload(ctx)
 	}
 
 	/*
 		DataLoadPhase: Loading -> Complete/Failed
 	*/
 	if ctx.DataLoad.Status.Phase == common.DataloadPhaseLoading {
-		return r.ReconcileLoadingDataload(ctx)
+		return r.reconcileLoadingDataload(ctx)
 	}
 
 	//unreachable in theory
@@ -104,7 +121,7 @@ func (r *ReconcilerImplement) ReconcileDataloadDeletion(ctx cdataload.ReconcileR
 	*/
 	ctx.Log.Info("Start to clean up finalizer", "dataload", ctx.DataLoad)
 	if !ctx.DataLoad.ObjectMeta.GetDeletionTimestamp().IsZero() {
-		ctx.DataLoad.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataLoad.ObjectMeta.Finalizers, common.Finalizer)
+		ctx.DataLoad.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataLoad.ObjectMeta.Finalizers, common.DATALOAD_FINALIZER)
 		if err := r.Update(ctx, &ctx.DataLoad); err != nil {
 			ctx.Log.Error(err, "Failed to remove finalizer")
 			return utils.RequeueIfError(err)
@@ -116,7 +133,7 @@ func (r *ReconcilerImplement) ReconcileDataloadDeletion(ctx cdataload.ReconcileR
 }
 
 // Reconcile Dataload in `None` phase
-func (r *ReconcilerImplement) ReconcileNoneDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *ReconcilerImplement) reconcileNoneDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
 	dataloadToUpdate.Status.Phase = common.DataloadPhasePending
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
@@ -133,7 +150,7 @@ func (r *ReconcilerImplement) ReconcileNoneDataload(ctx cdataload.ReconcileReque
 }
 
 // Reconcile Dataload in `Pending` phase
-func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *ReconcilerImplement) reconcilePendingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	/*
 		1. Check if related dataset ready (i.e. related dataset exists and bounded)
 	*/
@@ -249,7 +266,7 @@ func (r *ReconcilerImplement) ReconcilePendingDataload(ctx cdataload.ReconcileRe
 }
 
 // Reconcile Dataload in `Loading` phase
-func (r *ReconcilerImplement) ReconcileLoadingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *ReconcilerImplement) reconcileLoadingDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
 	var needUpdate bool
 
@@ -303,14 +320,14 @@ func (r *ReconcilerImplement) ReconcileLoadingDataload(ctx cdataload.ReconcileRe
 }
 
 // Reconcile Dataload in `Complete` phase
-func (r *ReconcilerImplement) ReconcileCompleteDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *ReconcilerImplement) reconcileCompleteDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	//No need to reconcile
 	ctx.Log.Info("Dataload prefetch job done", "dataloadName", ctx.DataLoad.Name, "currentPhase", ctx.DataLoad.Status.Phase)
 	return utils.NoRequeue()
 }
 
 // Reconcile Dataload in `Failed` phase
-func (r *ReconcilerImplement) ReconcileFailedDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *ReconcilerImplement) reconcileFailedDataload(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
 	//No need to reconcile
 	ctx.Log.Info("Dataload prefetch job done", "dataloadName", ctx.DataLoad.Name, "currentPhase", ctx.DataLoad.Status.Phase)
 	return utils.NoRequeue()
@@ -398,7 +415,7 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 		return false, err
 	}
 
-	var chartName = utils.GetChartsDirectory() + "/" + common.Dataload_chart
+	var chartName = utils.GetChartsDirectory() + "/" + common.DATALOAD_CHART
 
 	/*
 		3. Label dataload with release name
@@ -439,7 +456,7 @@ func (r *ReconcilerImplement) launchPrefetchJob(ctx cdataload.ReconcileRequestCo
 func (r *ReconcilerImplement) generateValueFile(dataload datav1alpha1.AlluxioDataLoad, numWorker int32) (valueFileName string, err error) {
 	dataloadConfig := cdataload.DataLoadInfo{
 		BackoffLimit: 6,
-		Image:        common.Image,
+		Image:        r.DataLoaderImage,
 		NumWorker:    numWorker,
 	}
 
