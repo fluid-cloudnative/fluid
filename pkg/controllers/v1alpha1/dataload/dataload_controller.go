@@ -44,6 +44,7 @@ func NewDataLoadReconciler(client client.Client,
 		Scheme: scheme,
 	}
 	r.ReconcilerImplement = NewReconcilerImplement(client, log, recorder)
+	r.Setup()
 	return r
 }
 
@@ -87,7 +88,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 		3. Add finalizer
 	*/
-	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), common.Finalizer) {
+	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), common.DATALOAD_FINALIZER) {
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
@@ -98,8 +99,8 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *DataLoadReconciler) addFinalizerAndRequeue(ctx cdataload.ReconcileRequestContext) (ctrl.Result, error) {
-	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, common.Finalizer)
-	ctx.Log.Info("Add finalizer and Requeue", "finalizer", common.Finalizer)
+	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, common.DATALOAD_FINALIZER)
+	ctx.Log.Info("Add finalizer and Requeue", "finalizer", common.DATALOAD_FINALIZER)
 	prevGeneration := ctx.DataLoad.ObjectMeta.GetGeneration()
 	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
 		ctx.Log.Error(err, "Failed to add finalizer to dataload", "StatusUpdateError", err)
