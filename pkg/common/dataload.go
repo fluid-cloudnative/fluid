@@ -35,3 +35,11 @@ const (
 	// DataloadFailed means the Dataload has failed its execution.
 	DataloadFailed DataloadConditionType = "Failed"
 )
+
+const (
+	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
+	DATALOAD_CHART         = "fluid-dataloader"
+	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf"
+	DATALOAD_SUFFIX_LENGTH = 5
+	ENV_DATALOADER_IMG     = "DATALOADER_IMG"
+)

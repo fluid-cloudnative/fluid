@@ -117,6 +117,9 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	return exist, err
 }
 
+/*
+* Delete Release given name and namespace
+ */
 func DeleteRelease(name, namespace string) error {
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
@@ -136,6 +139,9 @@ func DeleteRelease(name, namespace string) error {
 	return err
 }
 
+/*
+* return an array with all releases' names in a given namespace
+ */
 func ListReleases(namespace string) (releases []string, err error) {
 	releases = []string{}
 	_, err = exec.LookPath(helmCmd[0])
@@ -155,6 +161,9 @@ func ListReleases(namespace string) (releases []string, err error) {
 	return strings.Split(string(out), "\n"), nil
 }
 
+/*
+* return a map with all releases' names and app versions in a given namespace
+ */
 func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) {
 	releaseMap = map[string]string{}
 	_, err = exec.LookPath(helmCmd[0])
@@ -188,6 +197,9 @@ func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) 
 	return releaseMap, nil
 }
 
+/*
+* return a map with all releases' names and other info in a given namespace
+ */
 func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string, err error) {
 	releaseMap = map[string][]string{}
 	_, err = exec.LookPath(helmCmd[0])
@@ -219,4 +231,19 @@ func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string
 	}
 
 	return releaseMap, nil
+}
+
+/*
+* Delete a release with given name and namespace if it exists.
+* A wrapper of CheckRelease() and DeleteRelease()
+ */
+func DeleteReleaseIfExists(name, namespace string) error {
+	existed, err := CheckRelease(name, namespace)
+	if err != nil {
+		return err
+	} else if existed {
+		return DeleteRelease(name, namespace)
+	}
+	// release not found
+	return nil
 }

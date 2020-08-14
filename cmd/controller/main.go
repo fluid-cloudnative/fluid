@@ -29,6 +29,7 @@ import (
 
 	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
 	alluxioctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/alluxio"
+	dataloadctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/dataload"
 	datasetctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio"
 	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
@@ -104,15 +105,22 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
 		os.Exit(1)
 	}
-
-	if err = (&alluxioctl.DataLoadReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("alluxioctl").WithName("AlluxioDataLoad"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("alluxioctl").WithName("AlluxioDataLoad"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("AlluxioDataLoad"),
+	)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
 		os.Exit(1)
 	}
+	//if err = (&dataload.DataLoadReconciler{
+	//	Client: mgr.GetClient(),
+	//	Log:    ctrl.Log.WithName("alluxioctl").WithName("AlluxioDataLoad"),
+	//	Scheme: mgr.GetScheme(),
+	//}).SetupWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
+	//	os.Exit(1)
+	//}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
