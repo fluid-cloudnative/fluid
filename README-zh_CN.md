@@ -68,10 +68,6 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 2.钉钉群
 
 
-## 采纳者
-
-如果您对Fluid感兴趣，并希望与他人分享您的经验，欢迎您在[ADOPTERS.md]（ADOPTERS.md）页面上添加您的信息。我们会持续与您讨论新的需求和功能设计。
-
 ## License
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
