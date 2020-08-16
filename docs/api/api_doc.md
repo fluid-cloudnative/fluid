@@ -299,14 +299,15 @@ Tieredstore
 </tr>
 <tr>
 <td>
-<code>dataReplicas</code></br>
+<code>data</code></br>
 <em>
-int32
+<a href="#data.fluid.io/v1alpha1.Data">
+Data
+</a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>The copies of the dataset</p>
+<p>Management strategies for the dataset to which the runtime is bound</p>
 </td>
 </tr>
 <tr>
@@ -534,6 +535,17 @@ Kubernetes core/v1.ResourceRequirements
 <br>
 Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 already allocated to the pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by Alluxio component. <br></p>
 </td>
 </tr>
 </tbody>
@@ -889,14 +901,15 @@ Tieredstore
 </tr>
 <tr>
 <td>
-<code>dataReplicas</code></br>
+<code>data</code></br>
 <em>
-int32
+<a href="#data.fluid.io/v1alpha1.Data">
+Data
+</a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>The copies of the dataset</p>
+<p>Management strategies for the dataset to which the runtime is bound</p>
 </td>
 </tr>
 <tr>
@@ -1282,6 +1295,49 @@ Kubernetes core/v1.NodeSelector
 </td>
 <td>
 <p>Required specifies hard node constraints that must be met.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.Data">Data
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+</p>
+<p>
+<p>Data management strategies</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The copies of the dataset</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pin</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio User-CLI pin</a></p>
 </td>
 </tr>
 </tbody>
@@ -1969,5 +2025,5 @@ Kubernetes meta/v1.Time
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>5925cbc</code>.
+on git commit <code>9419ac9</code>.
 </em></p>
