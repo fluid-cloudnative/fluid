@@ -154,6 +154,17 @@ type Tieredstore struct {
 	Levels []Level `json:"levels,omitempty"`
 }
 
+// Data management strategies
+type Data struct {
+	// The copies of the dataset
+	// +optional
+	Replicas int32 `json:"replicas"`
+
+	// Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio User-CLI pin</a>
+	// +optional
+	Pin bool `json:"pin"`
+}
+
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
@@ -187,9 +198,8 @@ type AlluxioRuntimeSpec struct {
 	// Tiered storage used by Alluxio
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
 
-	// The copies of the dataset
-	// +optional
-	DataReplicas int32 `json:"dataReplicas"`
+	//Management strategies for the dataset to which the runtime is bound
+	Data Data `json:"data,omitempty"`
 
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
