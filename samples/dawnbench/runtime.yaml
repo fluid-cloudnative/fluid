@@ -7,7 +7,8 @@ metadata:
 spec:
   # Add fields here
   replicas: 16
-  dataReplicas: 1
+  data:
+    replicas: 1
 #  alluxioVersion:
 #    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
 #    imageTag: "2.3.0-SNAPSHOT-bbce37a"
