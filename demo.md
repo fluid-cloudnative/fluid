@@ -161,7 +161,8 @@ metadata:
 spec:
   # Add fields here
   replicas: 2
-  dataReplicas: 3
+  data:
+    replicas: 3
   alluxioVersion:
     image: alluxio/alluxio
     imageTag: "2.3.0-SNAPSHOT"
