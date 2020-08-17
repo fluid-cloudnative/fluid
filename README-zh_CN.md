@@ -4,7 +4,7 @@
 
 ## 什么是FLuid
 
-一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集自定义资源，
+一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集这种自定义资源的抽象，
 
 ![architecture.png](./static/architecture.png)
 
@@ -67,10 +67,6 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 
 2.钉钉群
 
-
-## 采纳者
-
-如果您对Fluid感兴趣，并希望与他人分享您的经验，欢迎您在[ADOPTERS.md]（ADOPTERS.md）页面上添加您的信息。我们会持续与您讨论新的需求和功能设计。
 
 ## License
 
