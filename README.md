@@ -44,8 +44,8 @@ You can follow our [Get Started](docs/installation/installation_cn/README.md) gu
 
 You can see our documentation at [docs]() for more in-depth installation and instructions for production:
 
-- [English]()
-- [简体中文]()
+- [English](https://github.com/fluid-cloudnative/docs-fluid/blob/master/en/TOC.md)
+- [简体中文](https://github.com/fluid-cloudnative/docs-fluid/blob/master/zh/TOC.md)
 
 All the Fluid documentation is maintained in the [docs-fluid repository](https://github.com/fluid-cloudnative/docs-fluid). 
 
@@ -59,9 +59,9 @@ All the Fluid documentation is maintained in the [docs-fluid repository](https:/
 
 Feel free to reach out if you have any questions. The maintainers of this project are reachable via:
 
-## Adopters
+1.Slack:
 
-If you are intrested in Fluid and would like to share your experiences with others, you are warmly welcome to add your information on [ADOPTERS.md](ADOPTERS.md) page. We will continuousely discuss new requirements and feature design with you in advance.
+2.DingTalk:
 
 ## Contributing
 
