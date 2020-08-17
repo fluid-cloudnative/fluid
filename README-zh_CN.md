@@ -4,7 +4,7 @@
 
 ## 什么是FLuid
 
-一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集自定义资源，
+一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集这种自定义资源的抽象，
 
 ![architecture.png](./static/architecture.png)
 
