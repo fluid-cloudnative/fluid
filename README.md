@@ -6,7 +6,7 @@ English | [简体中文](./README-zh_CN.md)
 
 An open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
 
-![architecture.png](./static/architecture.png)
+![architecture.png](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png)
 
 ## Features
 
@@ -42,7 +42,7 @@ You can follow our [Get Started](docs/installation/installation_cn/README.md) gu
 
 ## Documentation
 
-You can see our documentation at [docs]() for more in-depth installation and instructions for production:
+You can see our documentation at [docs](https://github.com/fluid-cloudnative/docs-fluid) for more in-depth installation and instructions for production:
 
 - [English](https://github.com/fluid-cloudnative/docs-fluid/blob/master/en/TOC.md)
 - [简体中文](https://github.com/fluid-cloudnative/docs-fluid/blob/master/zh/TOC.md)
