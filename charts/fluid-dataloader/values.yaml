@@ -20,7 +20,7 @@ dataloader:
   mountPath: # hbase
 
   # Required
-  image: registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
 
   # Required
   # Description: equals num of alluxio workers, used for deciding how many dataloader jobs to be launched in parallel
