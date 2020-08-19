@@ -91,7 +91,7 @@ docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
 docker-push-loader: docker-build-loader
-	docker push ${CSI_IMG}:${GIT_VERSION}
+	docker push ${LOADER_IMG}
 
 docker-push-all: docker-push docker-push-csi docker-push-loader
 
