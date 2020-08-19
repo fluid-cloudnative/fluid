@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudnativefluid/fluid/pkg/utils"
+	"time"
 
 	"k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -220,9 +221,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 		for _, pod := range pods {
 			if !IsCompletePod(&pod) {
 				canRemove = false
-				log.V(1).Info("Cannot remove pvc-protection finalizer because incomplete pod",
-					"Pod", pod)
-				break
+				return fmt.Errorf("cannot remove pvc-protection finalizer because incomplete pod %v", pod)
 			}
 		}
 		if canRemove {
@@ -240,4 +239,29 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 		}
 	}
 	return err
+}
+
+func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	pvc := &v1.PersistentVolumeClaim{}
+	err = client.Get(context.TODO(), key, pvc)
+	if err != nil {
+		return
+	}
+
+	if pvc.DeletionTimestamp.IsZero() ||
+		!utils.ContainsString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName) {
+		return
+	}
+
+	// only force remove finalizer after 1 minute
+	then := pvc.DeletionTimestamp.Add(1 * time.Minute)
+	if time.Now().After(then) {
+		should = true
+	}
+
+	return
 }
