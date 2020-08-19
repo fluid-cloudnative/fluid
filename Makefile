@@ -6,6 +6,8 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
 
+LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -78,6 +80,9 @@ docker-build: generate fmt vet
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
+docker-build-loader:
+	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
+
 # Push the docker image
 docker-push: docker-build
 	docker push ${IMG}:${GIT_VERSION}
@@ -85,6 +90,10 @@ docker-push: docker-build
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
+docker-push-loader: docker-build-loader
+	docker push ${CSI_IMG}:${GIT_VERSION}
+
+docker-push-all: docker-push docker-push-csi docker-push-loader
 
 # find or download controller-gen
 # download controller-gen if necessary

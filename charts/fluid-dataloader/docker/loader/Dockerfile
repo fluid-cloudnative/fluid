@@ -1,4 +1,3 @@
-# docker build -t registry.cn-hangzhou.aliyuncs.com/fluid-namespace/coco-perf .
 FROM python:2.7.17-alpine3.10
 
 RUN echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
