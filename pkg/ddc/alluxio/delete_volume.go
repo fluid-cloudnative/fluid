@@ -125,7 +125,7 @@ func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 		//}
 
 		if found {
-			return fmt.Errorf("The PV %s in ns %s is not cleaned up",
+			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
 				e.runtime.Name,
 				e.runtime.Namespace)
 		} else {

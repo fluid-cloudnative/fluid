@@ -221,21 +221,19 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 		for _, pod := range pods {
 			if !IsCompletePod(&pod) {
 				canRemove = false
-				return fmt.Errorf("cannot remove pvc-protection finalizer because incomplete pod %v", pod)
+				return fmt.Errorf("cannot remove pvc-protection finalizer " +
+					"because incomplete Pod %v in Namespace %v", pod.Name, pod.Namespace)
 			}
 		}
 		if canRemove {
 			log.V(1).Info("Remove finalizer pvc-protection")
 			finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
 			pvc.SetFinalizers(finalizers)
-			log.V(1).Info("before update", "PVC", pvc)
 			if err = client.Update(context.TODO(), pvc); err != nil {
 				log.Error(err, "Failed to remove finalizer",
 					"Finalizer", persistentVolumeClaimProtectionFinalizerName)
 				return err
 			}
-			_ = client.Get(context.TODO(), key, pvc)
-			log.V(1).Info("after update", "PVC", pvc)
 		}
 	}
 	return err
@@ -257,8 +255,8 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 		return
 	}
 
-	// only force remove finalizer after 1 minute
-	then := pvc.DeletionTimestamp.Add(1 * time.Minute)
+	// only force remove finalizer after 30 seconds' Terminating state
+	then := pvc.DeletionTimestamp.Add(30 * time.Second)
 	if time.Now().After(then) {
 		should = true
 	}
