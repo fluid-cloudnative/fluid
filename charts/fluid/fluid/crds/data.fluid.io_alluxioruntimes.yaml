@@ -51,10 +51,19 @@ spec:
                   description: Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
-            dataReplicas:
-              description: The copies of the dataset
-              format: int32
-              type: integer
+            data:
+              description: Management strategies for the dataset to which the runtime
+                is bound
+              properties:
+                pin:
+                  description: Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio
+                    User-CLI pin</a>
+                  type: boolean
+                replicas:
+                  description: The copies of the dataset
+                  format: int32
+                  type: integer
+              type: object
             fuse:
               description: Desired state for Alluxio Fuse
               properties:
