@@ -210,35 +210,20 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 	}
 
 	// try to remove finalizer "pvc-protection"
-	if utils.ContainsString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName) {
-		canRemove := true
-		// get pods which mounted this pvc
-		pods, err := GetPvcMountPods(client, name, namespace)
-		if err != nil {
-			return err
-		}
-		// check pods status
-		for _, pod := range pods {
-			if !IsCompletePod(&pod) {
-				canRemove = false
-				return fmt.Errorf("cannot remove pvc-protection finalizer " +
-					"because incomplete Pod %v in Namespace %v", pod.Name, pod.Namespace)
-			}
-		}
-		if canRemove {
-			log.V(1).Info("Remove finalizer pvc-protection")
-			finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
-			pvc.SetFinalizers(finalizers)
-			if err = client.Update(context.TODO(), pvc); err != nil {
-				log.Error(err, "Failed to remove finalizer",
-					"Finalizer", persistentVolumeClaimProtectionFinalizerName)
-				return err
-			}
-		}
+	log.V(1).Info("Remove finalizer pvc-protection")
+	finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
+	pvc.SetFinalizers(finalizers)
+	if err = client.Update(context.TODO(), pvc); err != nil {
+		log.Error(err, "Failed to remove finalizer",
+			"Finalizer", persistentVolumeClaimProtectionFinalizerName)
+		return err
 	}
+
 	return err
 }
 
+// ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer
+// when linked pods are inactive and timeout
 func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
@@ -253,6 +238,20 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	if pvc.DeletionTimestamp.IsZero() ||
 		!utils.ContainsString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName) {
 		return
+	}
+
+	// get pods which mounted this pvc
+	pods, err := GetPvcMountPods(client, name, namespace)
+	if err != nil {
+		return
+	}
+	// check pods status
+	for _, pod := range pods {
+		if !IsCompletePod(&pod) {
+			err = fmt.Errorf("cannot remove pvc-protection finalizer " +
+				"because incomplete Pod %v in Namespace %v", pod.Name, pod.Namespace)
+			return
+		}
 	}
 
 	// only force remove finalizer after 30 seconds' Terminating state
