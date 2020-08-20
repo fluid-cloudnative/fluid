@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: fluid-test
+  name: fluid-copy-test
 spec:
   template:
     spec:
@@ -9,7 +9,8 @@ spec:
       containers:
         - name: busybox
           image: busybox
-          command: ["time", "cp", "/data/hbase/hbase-2.2.5-client-bin.tar.gz", "./"]
+          command: ["/bin/sh"]
+          args: ["-c", "set -x; time cp -r /data/hbase ./"]
           volumeMounts:
             - mountPath: /data
               name: hbase-vol
