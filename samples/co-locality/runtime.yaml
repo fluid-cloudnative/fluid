@@ -13,10 +13,15 @@ spec:
         high: "0.95"
         low: "0.7"
         storageType: Memory
-  properteies:
+  properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal
     alluxio.master.journal.type: UFS
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
   master:
     jvmOptions:
       - "-Xmx4G"
@@ -35,4 +40,4 @@ spec:
     shortCircuitPolicy: local
     args:
       - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
+      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
