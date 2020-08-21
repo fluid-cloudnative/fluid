@@ -62,9 +62,15 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 
 1.Slack
 
-2.钉钉群
+2.钉钉讨论群
 
 ![dingtalk.png](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png)
+
+
+<div>
+  <img src="static/dingtalk.png" width="280" title="dingtalk">
+</div>
+
 
 
 ## License
