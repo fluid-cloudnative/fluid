@@ -6,7 +6,9 @@
 
 一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集这种自定义资源的抽象，
 
-![architecture.png](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png)
+<div>
+  <img src="static/architecture.png" width="420" title="architecture">
+</div>
 
 ## 核心功能
 
@@ -70,7 +72,6 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 <div>
   <img src="static/dingtalk.png" width="280" title="dingtalk">
 </div>
-
 
 
 ## License
