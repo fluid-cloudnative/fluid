@@ -113,19 +113,10 @@ func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 			}
 		}
 
-		//retries := 500
-		//for i := 0; i < retries; i++ {
-		//	found, err = kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
-		//	if err != nil {
-		//		return err
-		//	}
-		//
-		//	if found {
-		//		time.Sleep(time.Duration(2 * time.Second))
-		//	} else {
-		//		break
-		//	}
-		//}
+		found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+		if err != nil {
+			return err
+		}
 
 		if found {
 			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
