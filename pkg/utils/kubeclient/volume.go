@@ -257,7 +257,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	for _, pod := range pods {
 		if !IsCompletePod(&pod) {
 			err = fmt.Errorf("can not remove pvc-protection finalizer "+
-				"because Pod %v in Namespace %v is incomplete", pod.Name, pod.Namespace)
+				"because Pod %v in Namespace %v is not completed", pod.Name, pod.Namespace)
 			return
 		}
 	}
