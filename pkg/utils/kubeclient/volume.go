@@ -248,7 +248,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	// check pods status
 	for _, pod := range pods {
 		if !IsCompletePod(&pod) {
-			err = fmt.Errorf("cannot remove pvc-protection finalizer " +
+			err = fmt.Errorf("can not remove pvc-protection finalizer " +
 				"because incomplete Pod %v in Namespace %v", pod.Name, pod.Namespace)
 			return
 		}
@@ -256,8 +256,12 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 
 	// only force remove finalizer after 30 seconds' Terminating state
 	then := pvc.DeletionTimestamp.Add(30 * time.Second)
-	if time.Now().After(then) {
+	now := time.Now()
+	if now.After(then) {
 		should = true
+	} else {
+		log.V(1).Info("can not remove pvc-protection finalizer " +
+			"before reached expected timeout (%v < %v)", now, then)
 	}
 
 	return
