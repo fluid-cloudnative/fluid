@@ -19,12 +19,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudnativefluid/fluid/pkg/utils"
-	"time"
-
 	"k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 const (
@@ -240,6 +239,15 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 		return
 	}
 
+	// only force remove finalizer after 30 seconds' Terminating state
+	then := pvc.DeletionTimestamp.Add(30 * time.Second)
+	now := time.Now()
+	if now.Before(then) {
+		log.V(1).Info("can not remove pvc-protection finalizer "+
+			"before reached expected timeout (%v seconds remaining)", then.Sub(now).Seconds())
+		return
+	}
+
 	// get pods which mounted this pvc
 	pods, err := GetPvcMountPods(client, name, namespace)
 	if err != nil {
@@ -248,21 +256,13 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	// check pods status
 	for _, pod := range pods {
 		if !IsCompletePod(&pod) {
-			err = fmt.Errorf("can not remove pvc-protection finalizer " +
-				"because incomplete Pod %v in Namespace %v", pod.Name, pod.Namespace)
+			err = fmt.Errorf("can not remove pvc-protection finalizer "+
+				"because Pod %v in Namespace %v is incomplete", pod.Name, pod.Namespace)
 			return
 		}
 	}
 
-	// only force remove finalizer after 30 seconds' Terminating state
-	then := pvc.DeletionTimestamp.Add(30 * time.Second)
-	now := time.Now()
-	if now.After(then) {
-		should = true
-	} else {
-		log.V(1).Info("can not remove pvc-protection finalizer " +
-			"before reached expected timeout (%v < %v)", now, then)
-	}
+	should = true
 
 	return
 }
