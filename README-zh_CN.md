@@ -14,8 +14,6 @@
 
 	Fluid通过使用分布式缓存引擎（Alluxio Inside）提供数据加速，同时可以保障数据的**可观测性**，**可迁移性**和**自动化的水平扩展**
 
-    Fluid empowers Distributed Cache Capaicty(Alluixo Inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal scalability**
-
 - __调度应用时考虑数据集的本地性__
 
   	Bring the data close to compute, and bring the compute close to data
@@ -29,7 +27,6 @@
 	用户可以创建和管理不同namespace的数据集，
 
 - __一次性统一访问不同来源的底层数据（对象存储，HDFS和Ceph等存储)，适用于混合云场景__
-
 
 
 ## 先决条件
@@ -66,6 +63,8 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 1.Slack
 
 2.钉钉群
+
+![dingtalk.png](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png)
 
 
 ## License
