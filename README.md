@@ -63,6 +63,9 @@ Feel free to reach out if you have any questions. The maintainers of this projec
 
 2.DingTalk:
 
+![dingtalk.png](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png)
+
+
 ## Contributing
 
 Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
