@@ -243,8 +243,8 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	then := pvc.DeletionTimestamp.Add(30 * time.Second)
 	now := time.Now()
 	if now.Before(then) {
-		log.V(1).Info("can not remove pvc-protection finalizer "+
-			"before reached expected timeout (%v seconds remaining)", then.Sub(now).Seconds())
+		log.V(1).Info("can not remove pvc-protection finalizer before reached expected timeout",
+			"Remaining seconds:", then.Sub(now).Seconds())
 		return
 	}
 
