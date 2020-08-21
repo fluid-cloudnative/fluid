@@ -7,7 +7,7 @@ English | [简体中文](./README-zh_CN.md)
 An open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
 
 <div>
-  <img src="static/architecture.png" width="560" title="architecture">
+  <img src="static/architecture.png" title="architecture">
 </div>
 
 ## Features
