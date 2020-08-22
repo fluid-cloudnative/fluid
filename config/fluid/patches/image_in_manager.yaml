@@ -9,4 +9,4 @@ spec:
       containers:
         - name: manager
           # change the following image if necessary
-          image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.1.0-a88ea76
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.1.0-b389ba2
