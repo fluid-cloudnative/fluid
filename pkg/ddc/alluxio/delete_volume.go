@@ -98,22 +98,28 @@ func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 			return err
 		}
 
-		retries := 500
-		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
-			if err != nil {
-				return err
-			}
+		should, err := kubeclient.ShouldRemoveProtectionFinalizer(e.Client, e.runtime.Name, e.runtime.Namespace)
+		if err != nil {
+			return err
+		}
 
-			if found {
-				time.Sleep(time.Duration(2 * time.Second))
-			} else {
-				break
+		// NOTE: remove finalizer after PVC was ordered to be deleted
+		if should {
+			e.Log.Info("Should remove pvc-protection finalizer")
+			err = kubeclient.RemoveProtectionFinalizer(e.Client, e.runtime.Name, e.runtime.Namespace)
+			if err != nil {
+				e.Log.Info("Failed to remove finalizers")
+				return err
 			}
 		}
 
+		found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+		if err != nil {
+			return err
+		}
+
 		if found {
-			return fmt.Errorf("The PV %s in ns %s is not cleaned up",
+			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
 				e.runtime.Name,
 				e.runtime.Namespace)
 		} else {
