@@ -7,7 +7,7 @@ English | [简体中文](./README-zh_CN.md)
 An open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
 
 <div>
-  <img src="static/architecture.png" title="architecture">
+  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
 </div>
 
 ## Features
@@ -66,7 +66,7 @@ Feel free to reach out if you have any questions. The maintainers of this projec
 2.DingTalk:
 
 <div>
-  <img src="static/dingtalk.png" width="280" title="dingtalk">
+  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
 
