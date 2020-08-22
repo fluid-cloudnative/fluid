@@ -18,11 +18,16 @@ package kubeclient
 import (
 	"context"
 	"fmt"
-
+	"github.com/cloudnativefluid/fluid/pkg/utils"
 	"k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
+)
+
+const (
+	persistentVolumeClaimProtectionFinalizerName = "kubernetes.io/pvc-protection"
 )
 
 // IsPersistentVolumeExist
@@ -146,11 +151,118 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 		found = true
 	}
 	if found {
+		log.V(1).Info("deleting pvc", "PVC", pvc)
 		err = client.Delete(context.TODO(), pvc)
 		if err != nil && !apierrs.IsNotFound(err) {
 			return fmt.Errorf("error deleting pvc %s: %s", name, err.Error())
 		}
 	}
+
+	return
+}
+
+// GetPodPvcs get PersistVolumeClaims of pod
+func GetPodPvcs(volumes []v1.Volume) []v1.Volume {
+	var pvcs []v1.Volume
+	for _, volume := range volumes {
+		if volume.VolumeSource.PersistentVolumeClaim != nil {
+			pvcs = append(pvcs, volume)
+		}
+	}
+	return pvcs
+}
+
+// GetPvcMountPods get pods that mounted the specific pvc for a given namespace
+func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, error) {
+	nsPods := v1.PodList{}
+	err := e.List(context.TODO(), &nsPods, &client.ListOptions{
+		Namespace: namespace,
+	})
+	if err != nil {
+		log.Error(err, "Failed to list pods")
+		return []v1.Pod{}, err
+	}
+	var pods []v1.Pod
+	for _, pod := range nsPods.Items {
+		pvcs := GetPodPvcs(pod.Spec.Volumes)
+		for _, pvc := range pvcs {
+			if pvc.Name == pvcName {
+				pods = append(pods, pod)
+			}
+		}
+	}
+	return pods, err
+}
+
+// RemoveProtectionFinalizer remove finalizers of PersistentVolumeClaim
+// if all owners that this PVC is mounted by are inactive (Succeed or Failed)
+func RemoveProtectionFinalizer(client client.Client, name, namespace string) (err error) {
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+
+	pvc := &v1.PersistentVolumeClaim{}
+	err = client.Get(context.TODO(), key, pvc)
+	if err != nil {
+		return err
+	}
+
+	// try to remove finalizer "pvc-protection"
+	log.V(1).Info("Remove finalizer pvc-protection")
+	finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
+	pvc.SetFinalizers(finalizers)
+	if err = client.Update(context.TODO(), pvc); err != nil {
+		log.Error(err, "Failed to remove finalizer",
+			"Finalizer", persistentVolumeClaimProtectionFinalizerName)
+		return err
+	}
+
+	return err
+}
+
+// ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer
+// when linked pods are inactive and timeout
+func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	pvc := &v1.PersistentVolumeClaim{}
+	err = client.Get(context.TODO(), key, pvc)
+	if err != nil {
+		return
+	}
+
+	if pvc.DeletionTimestamp.IsZero() ||
+		!utils.ContainsString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName) {
+		return
+	}
+
+	// only force remove finalizer after 30 seconds' Terminating state
+	then := pvc.DeletionTimestamp.Add(30 * time.Second)
+	now := time.Now()
+	if now.Before(then) {
+		log.V(1).Info("can not remove pvc-protection finalizer before reached expected timeout",
+			"Remaining seconds:", then.Sub(now).Seconds())
+		return
+	}
+
+	// get pods which mounted this pvc
+	pods, err := GetPvcMountPods(client, name, namespace)
+	if err != nil {
+		return
+	}
+	// check pods status
+	for _, pod := range pods {
+		if !IsCompletePod(&pod) {
+			err = fmt.Errorf("can not remove pvc-protection finalizer "+
+				"because Pod %v in Namespace %v is not completed", pod.Name, pod.Namespace)
+			return
+		}
+	}
+
+	should = true
 
 	return
 }
