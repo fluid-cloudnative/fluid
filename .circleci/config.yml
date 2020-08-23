@@ -1,0 +1,20 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version
+      - image: circleci/golang:1.13
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    environment:
+      TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'
+    steps:
+      - checkout
+      - run:
+          name: build test ship
+          command: |
+            make gererate
+            bash <(curl -s https://codecov.io/bash)
+            echo "done"
