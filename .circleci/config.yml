@@ -15,6 +15,6 @@ jobs:
       - run:
           name: build test ship
           command: |
-            make gererate
+            make generate
             bash <(curl -s https://codecov.io/bash)
             echo "done"
