@@ -16,7 +16,8 @@ jobs:
       - run:
           name: build test ship
           command: |
-            make generate
             make unit-test
             bash <(curl -s https://codecov.io/bash)
+
+# maybe later we need to upload build binary to helm repository
 
