@@ -1781,7 +1781,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Options to configure. Please refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount configurations</a>. The configurations are started with 'fs.' </p>
+<p>Mount options. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount configurations</a>. The configurations has Prefix 'fs.' And you can Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The Storage Integrations</a> </p>
 </td>
 </tr>
 <tr>
