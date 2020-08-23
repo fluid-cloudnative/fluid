@@ -10,11 +10,13 @@ jobs:
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'
+      CODECOV_TOKEN: 'd3008b2c-991c-4a06-9167-b0aaef74eb02'
     steps:
       - checkout
       - run:
           name: build test ship
           command: |
             make generate
-            go test ${TEST_FLAGS} pkg/utils/crtl_utils_test.go
+            make unit-test
             bash <(curl -s https://codecov.io/bash)
+
