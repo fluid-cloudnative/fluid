@@ -16,6 +16,5 @@ jobs:
           name: build test ship
           command: |
             make generate
-          # currently we run single test manually just to make sure codecov works rightly
             go test ${TEST_FLAGS} pkg/utils/crtl_utils_test.go
             bash <(curl -s https://codecov.io/bash)
