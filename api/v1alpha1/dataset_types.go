@@ -46,7 +46,10 @@ type Mount struct {
 	// +required
 	MountPoint string `json:"mountPoint,omitempty"`
 
-	// Options to configure
+	// The Mount Options. <br>
+	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount Options</a>.  <br>
+	// The option has Prefix 'fs.' And you can Learn more from
+	// <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The Storage Integrations</a>
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
 
