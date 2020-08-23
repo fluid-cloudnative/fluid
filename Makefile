@@ -31,7 +31,7 @@ test: generate fmt vet manifests
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
 unit-test: generate fmt vet manifests
-    go test ${TEST_FLAGS} $(go list ./... | grep -v controller)
+	go test ${TEST_FLAGS} $(go list ./... | grep -v controller)
 
 # Build manager binary
 manager: generate fmt vet
@@ -39,7 +39,7 @@ manager: generate fmt vet
 
 # Build CSI binary
 csi: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi cmd/csi/main.go
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi cmd/csi/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
