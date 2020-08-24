@@ -15,7 +15,7 @@ jobs:
       - run:
           name: build test ship
           command: |
-            go list
+            go list ./...
             make unit-test
             bash <(curl -s https://codecov.io/bash)
 
