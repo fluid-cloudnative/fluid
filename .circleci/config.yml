@@ -21,7 +21,7 @@ jobs:
 # maybe later we need to upload output to helm repository
 
 workflows:
-  build and test:
+  build:
     jobs:
       - build:
           context: codecov-token
