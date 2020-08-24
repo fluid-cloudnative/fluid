@@ -10,7 +10,6 @@ jobs:
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'
-      CODECOV_TOKEN: 'd3008b2c-991c-4a06-9167-b0aaef74eb02'
     steps:
       - checkout
       - run:
@@ -19,5 +18,12 @@ jobs:
             make unit-test
             bash <(curl -s https://codecov.io/bash)
 
-# maybe later we need to upload build binary to helm repository
+# maybe later we need to upload output to helm repository
+
+workflows:
+  build and test:
+    jobs:
+      - build:
+          context: codecov-token
+
 
