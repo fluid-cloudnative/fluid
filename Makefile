@@ -31,7 +31,7 @@ test: generate fmt vet manifests
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
 unit-test: generate fmt vet manifests
-    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test ${TEST_FLAGS}
+	go list ./... | grep -v controller | xargs go test ${TEST_FLAGS}
 
 # Build manager binary
 manager: generate fmt vet
