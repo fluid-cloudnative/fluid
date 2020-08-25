@@ -1,14 +1,7 @@
 {{ define "packages" }}
 
 {{ with .packages}}
-<p>Packages:</p>
-<ul>
-    {{ range . }}
-    <li>
-        <a href="#{{- packageAnchorID . -}}">{{ packageDisplayName . }}</a>
-    </li>
-    {{ end }}
-</ul>
+# API Reference
 {{ end}}
 
 {{ range .packages }}
