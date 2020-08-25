@@ -15,7 +15,7 @@ arena是一个方便数据科学家运行和监视机器学习任务的CLI，安
 
 ### 部署fluid
 
-请参照[fluid部署教程](../installation_cn/README.md)在kubernetes集群上安装fluid。
+请参照[fluid部署教程](../userguide/install.md)在kubernetes集群上安装fluid。
 
 ### 创建dataset
 
