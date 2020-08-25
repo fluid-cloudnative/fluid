@@ -1,9 +1,11 @@
 # 示例 - 数据缓存亲和性调度
-Fluid提供了针对数据缓存的调度机制，这意味着用户能够像管理Pod一样管理数据缓存在Kubernetes集群中的存放位置，这些存放位置同样也会间接地影响相关应用的调度策略。本文档通过一个简单的示例来演示上述功能特性，该示例将会尝试将远程文件的数据缓存分布在指定的集群结点之上，并启动应用使用这些数据缓存
+在Fluid中，`Dataset`资源对象中所定义的远程文件是可被调度的，这意味着你能够像管理你的Pod一样管理远程文件缓存在Kubernetes集群上的存放位置。另外，Fluid同样支持对于应用的数据缓存亲和性调度，这种调度方式将应用(e.g. 数据分析任务、机器学习任务等)与所需要的数据缓存放置在一起，以尽可能地减少额外的开销。
+
+本文档将向你简单地展示上述特性
 
 ## 前提条件
-在运行该示例之前，请参考[安装文档](../installation_cn/README.md)完成安装，并检查Fluid各组件正常运行：
-```shell script
+在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
+```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
 controller-manager-7fd6457ccf-jnkvn   1/1     Running   0          60s
@@ -11,9 +13,17 @@ csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
 csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
 ```
 
+通常来说，你会看到一个名为“controller-manager”的Pod和多个名为“csi-nodeplugin”的Pod正在运行。其中，“csi-nodeplugin”这些Pod的数量取决于你的Kubernetes集群中结点的数量。
+
+## 新建工作环境
+```shell
+$ mkdir <any-path>/co-locality
+$ cd <any-path>/co-locality
+```
+
 ## 运行示例
 **查看全部结点**
-```shell script
+```shell
 $ kubectl get nodes
 NAME                       STATUS   ROLES    AGE     VERSION
 cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1
@@ -21,22 +31,23 @@ cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
 ```
 
 **使用标签标识结点**
-```shell script
+```shell
 $ kubectl label nodes cn-beijing.192.168.1.146 hbase-cache=true
 ```
+在接下来的步骤中，我们将使用`NodeSelector`来管理集群中存放数据的位置，所以在这里标记期望的结点
 
 **再次查看结点**
-```shell script
+```shell
 $ kubectl get node -L hbase-cache
 NAME                       STATUS   ROLES    AGE     VERSION            HBASE-CACHE
 cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1   true
 cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1   
 ```
-目前，在全部2个结点中，仅有一个结点添加了`hbase-cache=true`的标签，接下来将使用该标签作为依据进行数据缓存的调度
+目前，在全部2个结点中，仅有一个结点添加了`hbase-cache=true`的标签，接下来，我们希望数据缓存仅会被放置在该结点之上
 
 **检查待创建的Dataset资源对象**
-```shell script
-$ cat samples/co-locality/dataset.yaml
+```shell
+$ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -53,41 +64,68 @@ spec:
               operator: In
               values:
                 - "true"
+EOF
 ```
-在该Dataset资源对象的`spec.nodeAffinity`属性中定义了亲和性调度的相关配置，该配置要求将数据缓存放置在具有`hbase-cache=true`标签的结点之上
+在该`Dataset`资源对象的`spec`属性中，我们定义了一个`nodeSelectorTerm`的子属性，该子属性要求数据缓存必须被放置在具有`hbase-cache=true`标签的结点之上
 
 **创建Dataset资源对象**
-```shell script
-$ kubectl create -f samples/co-locality/dataset.yaml
+```shell
+$ kubectl create -f dataset.yaml
 dataset.data.fluid.io/hbase created
 ```
 
 **检查待创建的AlluxioRuntime资源对象**
-```shell script
-cat samples/co-locality/runtime.yaml
+```shell
+$ cat<<EOF >runtime.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
-  ...
   replicas: 2
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+        storageType: Memory
+  properties:
+    alluxio.user.file.writetype.default: MUST_CACHE
+    alluxio.master.journal.folder: /journal
+    alluxio.master.journal.type: UFS
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
   master:
-    replicas: 1
-    ...
+    jvmOptions:
+      - "-Xmx4G"
   worker:
-    ...
+    jvmOptions:
+      - "-Xmx4G"
   fuse:
-    image: alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT"
-    imagePullPolicy: Always
-    ...
+    jvmOptions:
+      - "-Xmx4G "
+      - "-Xms4G "
+      - "-XX:+UseG1GC "
+      - "-XX:MaxDirectMemorySize=4g "
+      - "-XX:+UnlockExperimentalVMOptions "
+      - "-XX:ActiveProcessorCount=8 "
+    # For now, only support local
+    shortCircuitPolicy: local
+    args:
+      - fuse
+      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
+EOF
 ```
-该配置文件表明希望创建一个AlluxioRuntime资源，其中包含1个Alluxio Master和2个Alluxio Worker，并且对于任意一个Alluxio Worker均会启动一个Alluxio Fuse组件与其协同工作
+该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。通过创建这么一个`AlluxioRuntime`资源对象，Fluid将会启动一个包含1个Alluxio Master和2个Alluxio Worker的Alluxio实例
 
 **创建AlluxioRuntime资源并查看状态**
-```shell script
-$ kubectl create -f samples/co-locality/runtime.yaml
+```shell
+$ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get pod -o wide
@@ -96,10 +134,10 @@ hbase-fuse-42csf     1/1     Running   0          104s   192.168.1.146   cn-beij
 hbase-master-0       2/2     Running   0          3m3s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
-仅有一组Alluxio Worker/Alluxio Fuse成功启动，并且均运行在具有指定标签的结点（即`cn-beijing.192.168.1.146`）之上。
+在此处可以看到，尽管我们期望看见两个AlluxioWorker被启动，但仅有一组Alluxio Worker成功启动，并且运行在具有指定标签（即`hbase-cache=true`）的结点之上。
 
 **检查AlluxioRuntime状态**
-```shell script
+```shell
 $ kubectl get alluxioruntime hbase -o yaml
 ...
 status:
@@ -125,16 +163,31 @@ status:
   workerNumberReady: 1
   workerPhase: PartialReady
 ```
-与预想一致，无论是Alluxio Worker还是Alluxio Fuse，其状态均为PartialReady，这是另一个结点无法满足Dataset资源对象的亲和性要求所致
+与预想一致，`workerPhase`状态此时为`PartialReady`，并且`currentWorkerNumberScheduled: 1`小于`desiredWorkerNumberScheduled: 2`
 
 **查看待创建的应用**
-```shell script
-$ cat samples/co-locality/app.yaml
-...
+
+我们提供了一个样例应用来演示Fluid是如何进行数据缓存亲和性调度的，首先查看该应用：
+
+```shell
+$ cat<<EOF >app.yaml
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: nginx
+  labels:
+    app: nginx
 spec:
-  ...
+  replicas: 2
+  serviceName: "nginx"
+  podManagementPolicy: "Parallel"
+  selector: # define how the deployment finds the pods it manages
+    matchLabels:
+      app: nginx
   template: # define the pods specifications
-    ...
+    metadata:
+      labels:
+        app: nginx
     spec:
       affinity:
         # prevent two Nginx Pod from being scheduled at the same Node
@@ -148,28 +201,38 @@ spec:
                 values:
                 - nginx
             topologyKey: "kubernetes.io/hostname"
-...
+      containers:
+        - name: nginx
+          image: nginx
+          volumeMounts:
+            - mountPath: /data
+              name: hbase-vol
+      volumes:
+        - name: hbase-vol
+          persistentVolumeClaim:
+            claimName: hbase
+EOF
 ```
-该应用定义了`PodAntiAffinity`的相关配置，这些配置将确保属于相同应用的多个Pod不会被调度到同一结点，通过这样的配置，能够更加清楚地演示数据缓存的调度对使用该数据缓存的应用的影响
+其中的`podAntiAffinity`可能会让人有一点疑惑，关于这个属性的解释如下：`podAntiAffinity`属性将会确保属于相同应用的多个Pod被分散到多个不同的结点，这样的配置能够让我们更加清晰的观察到Fluid的数据缓存亲和性调度是怎么进行的。所以简单来说，这只是一个专用于演示的属性，你不必太过在意它
 
 **运行应用**
 
-```shell script
-$ kubectl create -f samples/co-locality/app.yaml
+```shell
+$ kubectl create -f app.yaml
 statefulset.apps/nginx created
 ```
 
 **查看应用运行状态**
-```shell script
-kubectl get pod -o wide -l app=nginx
+```shell
+$ kubectl get pod -o wide -l app=nginx
 NAME      READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
 nginx-0   1/1     Running   0          2m5s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 nginx-1   0/1     Pending   0          2m5s   <none>          <none>                     <none>           <none>
 ```
-仅有一个Nginx Pod成功启动，并且运行在具有指定标签的结点上
+仅有一个Nginx Pod成功启动，并且运行在满足`nodeSelectorTerm`的结点之上
 
 **查看应用启动失败原因**
-```shell script
+```shell
 $ kubectl describe pod nginx-1
 ...
 Events:
@@ -178,14 +241,14 @@ Events:
   Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
   Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
 ```
-一方面，由于`samples/co-locality/app.yaml`中对于`PodAntiAffinity`的配置，使得两个Nginx Pod无法被调度到同一节点。**另一方面，由于目前满足Dataset资源对象亲和性要求的结点仅有一个，因此仅有一个Nginx Pod被成功调度**
+如上所示，一方面，为了满足`PodAntiAffinity`属性的要求，使得两个Nginx Pod无法被调度到同一节点。另一方面，由于目前满足Dataset资源对象亲和性要求的结点仅有一个，因此仅有一个Nginx Pod被成功调度
 
-**为结点添加标签**
-```shell script
-kubectl label node cn-beijing.192.168.1.147 hbase-cache=true
+**为另一个结点添加标签**
+```shell
+$ kubectl label node cn-beijing.192.168.1.147 hbase-cache=true
 ```
-现在两个结点都具有相同的标签了，此时重新检查各个组件的运行状态
-```shell script
+现在全部两个结点都具有相同的标签了，此时重新检查各个组件的运行状态
+```shell
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
 hbase-fuse-42csf     1/1     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
@@ -194,22 +257,24 @@ hbase-master-0       2/2     Running   0          46m   192.168.1.147   cn-beiji
 hbase-worker-l62m4   2/2     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 hbase-worker-rvncl   2/2     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
-两个Alluxio Worker和Alluxio Fuse都成功启动，并且分别运行在两个结点上
+两个Alluxio Worker都成功启动，并且分别运行在两个结点上
 
-```shell script
+```shell
 $ kubectl get pod -l app=nginx -o wide
 NAME      READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
 nginx-0   1/1     Running   0          21m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
-两个Nginx Pod均成功启动，并且分别运行在两个结点上
+另一个nginx Pod不再处于`Pending`状态，已经成功启动并运行在另一个结点上
+
+可见，可调度的数据缓存以及对应用的数据缓存亲和性调度都是被Fluid所支持的特性。在绝大多数情况下，这两个特性协同工作，为用户提供了一种更灵活更便捷的方式在Kubernetes集群中管理数据。
 
 可见，Fluid支持数据缓存的调度策略，这些调度策略为用户提供了更加灵活的数据缓存管理能力
 
 ## 环境清理
-```shell script
-kubectl delete -f samples/co-locality
+```shell
+$ kubectl delete -f .
 
-kubectl label node cn-beijing.192.168.1.146 hbase-cache-
-kubectl label node cn-beijing.192.168.1.147 hbase-cache-
+$ kubectl label node cn-beijing.192.168.1.146 hbase-cache-
+$ kubectl label node cn-beijing.192.168.1.147 hbase-cache-
 ```
