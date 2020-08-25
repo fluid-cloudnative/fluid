@@ -39,16 +39,15 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 快速开始
 
-你可以通过 [快速开始](docs/installation/installation_cn/README.md) 在Kubernetes集群中测试Fluid.
+你可以通过 [快速开始](docs/cn/userguide/get_started.md) 在Kubernetes集群中测试Fluid.
 
 ## 文档
 
 如果需要详细了解Fluid的使用，请参考文档 [docs](https://github.com/fluid-cloudnative/docs-fluid)：
 
-- [English](https://github.com/fluid-cloudnative/docs-fluid/blob/master/en/TOC.md)
-- [简体中文](https://github.com/fluid-cloudnative/docs-fluid/blob/master/zh/TOC.md)
+- [English](docs/en/TOC.md)
+- [简体中文](docs/zh/TOC.md)
 
-Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudnative/docs-fluid). 
 
 ## 快速演示
 
@@ -57,6 +56,8 @@ Fluid的文档维护在 [docs-fluid repository](https://github.com/fluid-cloudna
 ### 演示 2: Dawnbench性能测试
 
 ## 如何贡献
+
+欢迎您的贡献，如何贡献请参考[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 社区
 
