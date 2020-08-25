@@ -4,7 +4,7 @@ English | [简体中文](./README-zh_CN.md)
 
 ## What is Fluid?
 
-An open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
 
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
@@ -51,7 +51,7 @@ You can see our documentation at [docs](https://github.com/fluid-cloudnative/doc
 
 All the Fluid documentation is maintained in the [docs-fluid repository](https://github.com/fluid-cloudnative/docs-fluid). 
 
-## Demo
+## Qucik Demo
 
 ### Demo 1: Unification
 
