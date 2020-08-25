@@ -40,16 +40,14 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 
 ## Quick Start
 
-You can follow our [Get Started](docs/installation/installation_cn/README.md) guide to quickly start a testing Kubernetes cluster.
+You can follow our [Get Started](docs/en/userguide/get_started.md) guide to quickly start a testing Kubernetes cluster.
 
 ## Documentation
 
-You can see our documentation at [docs](https://github.com/fluid-cloudnative/docs-fluid) for more in-depth installation and instructions for production:
+You can see our documentation at [docs](docs/README.md) for more in-depth installation and instructions for production:
 
-- [English](https://github.com/fluid-cloudnative/docs-fluid/blob/master/en/TOC.md)
-- [简体中文](https://github.com/fluid-cloudnative/docs-fluid/blob/master/zh/TOC.md)
-
-All the Fluid documentation is maintained in the [docs-fluid repository](https://github.com/fluid-cloudnative/docs-fluid). 
+- [English](docs/en/TOC.md)
+- [简体中文](docs/zh/TOC.md)
 
 ## Qucik Demo
 
