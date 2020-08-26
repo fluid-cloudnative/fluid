@@ -4,7 +4,7 @@ English | [简体中文](./README-zh_CN.md)
 
 ## What is Fluid?
 
-Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for Data Analysis and Machine Learning.
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.
 
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
@@ -12,25 +12,25 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 
 ## Features
 
-- __Accelerate Data Accessing__
+- __Native Support for DataSet Abstraction__
 
-    Fluid empowers Distributed Cache Capaicty(Alluixo Inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal scalability**
+	Make the abilities needed by data-intensive applictions as navtive-supported functions, to achieve efficient data access and reduce the cost of multidimensional management.
 
-- __Schedule data and compute with Cache Co-locality__
+- __Cloud Data Warming up and Accessing Acceleration __
 
-  	Bring the data close to compute, and bring the compute close to data
+    Fluid empowers Distributed Cache Capaicty(Alluixo inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal Scalability**
 
-- __Prefetch the data to cache automatically__
+- __Co-Orchestration for Data and Application__
 
-  	Warm up the cache in Kubernetes automaticaly
+    During application scheduling and data placement on cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
 
-- __Multi-tenant support__
+- __Support Multiple Namespaces Management__
 
-  	Users can create and manage multiple dataset in multiple namespaces
+  	User can create and manage datasets in multiple namespaces
 
-- __Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages__
+- __Support Heterogeneous Data Source Management__
 
-  	The data from the different storage can be consumed together 
+  	Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages
 
 ## Prerequisites
 
@@ -59,9 +59,7 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 
 Feel free to reach out if you have any questions. The maintainers of this project are reachable via:
 
-1.Slack:
-
-2.DingTalk:
+DingTalk:
 
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
@@ -72,6 +70,6 @@ Feel free to reach out if you have any questions. The maintainers of this projec
 
 Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
-## License
+## Open Srouce License
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.

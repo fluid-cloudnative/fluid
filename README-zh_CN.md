@@ -4,7 +4,7 @@
 
 ## 什么是Fluid
 
-Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于在线数据分析和机器学习。通过定义数据集这种自定义资源的抽象，
+Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。通过定义数据集资源的抽象，实现如下功能：
 
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
@@ -12,24 +12,24 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 核心功能
 
-- __数据加速__
+- __数据集抽象原生支持__
 
-	Fluid通过使用分布式缓存引擎（Alluxio Inside）提供数据加速，同时可以保障数据的**可观测性**，**可迁移性**和**自动化的水平扩展**
+  	将数据密集型应用所需基础支撑能力功能化，实现数据高效访问并降低多维管理成本
 
-- __调度应用时考虑数据集的本地性__
+- __云上数据预热与加速__
 
-  	Bring the data close to compute, and bring the compute close to data
+	Fluid通过使用分布式缓存引擎（Alluxio inside）为云上应用提供数据预热与加速，同时可以保障缓存数据的**可观测性**，**可迁移性**和**自动化的水平扩展**
 
-- __自动数据预热__
+- __数据应用协同编排__
 
-  	提供自动的预热Kubernetes数据缓存的机制
+  	在云上调度应用和数据时候，同时考虑两者特性与位置，实现协同编排，提升性能
 
-- __多用户支持__
+- __多命名空间管理支持__
 
-	用户可以创建和管理不同namespace的数据集，
+	用户可以创建和管理不同namespace的数据集
 
-- __一次性统一访问不同来源的底层数据（对象存储，HDFS和Ceph等存储)，适用于混合云场景__
-
+- __异构数据源管理__
+	一次性统一访问不同来源的底层数据（对象存储，HDFS和Ceph等存储)，适用于混合云场景
 
 ## 先决条件
 
@@ -59,18 +59,15 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 欢迎您的贡献，如何贡献请参考[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## 社区
+## 欢迎加入与反馈
 
-随时提出您关心的问题，您可以和项目的维护者通过：
+Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只是一个起点，需要大家的共同参与。大家在使用过程发现Bug或需要的Feature，都可以直接在 GitHub [github](https://github.com/fluid-cloudnative/fluid)上面提 issue 或 PR，一起参与讨论。另外我们有一个钉钉群，欢迎您的参与和讨论。
 
-1.Slack
-
-2.钉钉讨论群
-
+钉钉讨论群
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
-## License
+## 开源协议
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
