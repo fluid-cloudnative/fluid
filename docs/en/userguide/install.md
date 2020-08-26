@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-- git
+- Git
 
-- kubernetes cluster（version >= 1.14）, and support CSI
+- Kubernetes cluster（version >= 1.14）, and support CSI
 - kubectl（version >= 1.14）
-- [helm](https://helm.sh/)（version >= 3.0）
+- [Helm](https://helm.sh/)（version >= 3.0）
 
 The following documents assume that you have installed all the above requirements.
 
@@ -24,7 +24,7 @@ You can execute the following command in any folder to clone source code from [f
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 ```
 
-[helm charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts) used to deploy Fluid is included in source code.
+[Helm Charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts) used to deploy Fluid is included in source code.
 
 ### Install Fluid with Helm
 
