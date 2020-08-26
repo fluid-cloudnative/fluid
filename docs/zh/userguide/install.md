@@ -4,7 +4,7 @@
 
 - Git
 - Kubernetes集群（version >= 1.14）, 并且支持CSI功能
-- Kubectl（version >= 1.14）
+- kubectl（version >= 1.14）
 - Helm（version >= 3.0）
 
 接下来的文档假设您已经配置好上述所有环境。

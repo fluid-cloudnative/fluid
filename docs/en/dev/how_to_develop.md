@@ -9,7 +9,7 @@
 - Kubernetes (version >= 1.14)
 - GNU Make
 
-For installation of olang, please refer to [Install Golang](https://golang.org/dl/)
+For installation of Golang, please refer to [Install Golang](https://golang.org/dl/)
 
 `make` is usually in a `build-essential` package in your distribution's package manager of choice. Make sure you have `make` on your machine.
 
