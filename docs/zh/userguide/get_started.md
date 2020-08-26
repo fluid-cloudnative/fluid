@@ -167,4 +167,4 @@ sys	0m0.020s
 ```
 
 到这里，我们已经成功创建了一个数据集并完成了加速，关于数据集的进一步使用和管理可以参考[accelerate](
-../user/accelerate_data_accessing.md)和[co-locality](../user/data_co_locality.md)这两个例子。
+../samples/accelerate_data_accessing.md)和[co-locality](../samples/data_co_locality.md)这两个例子。
