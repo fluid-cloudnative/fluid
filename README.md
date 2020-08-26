@@ -16,7 +16,7 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 
 	Make the abilities needed by data-intensive applictions as navtive-supported functions, to achieve efficient data access and reduce the cost of multidimensional management.
 
-- __Cloud Data Warming up and Accessing Acceleration __
+- __Cloud Data Warming up and Accessing Acceleration__
 
     Fluid empowers Distributed Cache Capaicty(Alluixo inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal Scalability**
 
