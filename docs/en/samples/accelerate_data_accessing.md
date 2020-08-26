@@ -45,7 +45,7 @@ For more information about UFS, please refer to [Alluxio Docs - Storage Integrat
 
 For more information about properties in `Dataset`, please refer to our [API doc](../dev/api_doc.md) 
 
-> We use hbase v2.2.5 on a mirror site of Apache downloads as an example of remote file. It's nothing special, you can change it to any remote file you like. But please note that, if you are going to use WebUFS like we do, files on Apache sites are highly recommended because you might need some advanced configurations due to current implementation of WebUFS.
+> We use hbase v2.2.5 on a mirror site of Apache downloads as an example of remote file. It's nothing special, you can change it to any remote file you like. But please note that, if you are going to use WebUFS like we do, files on Apache sites are highly recommended because you might need some [advanced configurations](https://docs.alluxio.io/os/user/stable/en/ufs/WEB.html#configuring-alluxio) due to current implementation of WebUFS.
 
 **Create the `Dataset` object**
 ```shell
@@ -55,13 +55,9 @@ dataset.data.fluid.io/hbase created
 
 **Check status of the `Dataset` object**
 ```shell
-$ kubectl get dataset hbase -o yaml
-apiVersion: data.fluid.io/v1alpha1
-kind: Dataset
-...
-status:
-  conditions: []
-  phase: NotBound
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE      AGE
+hbase                                                                  NotBound   13s
 ```
 
 With a `NotBound` phase in status, the dataset is not ready cause there isn't any `AlluxioRuntime` object supporting it. We'll create one in the following steps.
@@ -130,30 +126,11 @@ hbase-worker-rlb5w   2/2     Running   0          27s
 
 **Check status of the `Dataset` object again**
 ```shell
-$ kubectl get dataset hbase -o yaml
-...
-...
-status:
-  cacheStates:
-    cacheCapacity: 4GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  - lastTransitionTime: "2020-07-29T08:23:44Z"
-    lastUpdateTime: "2020-07-29T08:26:29Z"
-    message: The ddc runtime is ready.
-    reason: DatasetReady
-    status: "True"
-    type: Ready
-  phase: Bound
-  runtimes:
-  - category: Accelerate
-    name: hbase
-    namespace: default
-    type: alluxio
-  ufsTotal: 443.5MiB
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+hbase   443.5MiB         0B       4GiB             0%                  Bound   2m39s
 ```
-Status of the `Dataset` object has been updated since a related Alluxio instance is ready and successfully bounded to the `Dataset` object. As you can see, basic information about runtime along with some other status info are provided in `status`.
+`Dataset` object has been updated since a related Alluxio instance is ready and successfully bounded to the `Dataset` object.
 
 **Check status of the `AlluxioRuntime` object**
 ```shell
@@ -270,7 +247,7 @@ Login to nginx Pod:
 $ kubectl exec -it nginx -- bash
 ```
 
-Check file status
+Check file status:
 ```shell
 $ ls -1 /data/hbase
 CHANGES.md
@@ -343,6 +320,14 @@ user  0m 0.00s
 sys   0m 1.35s
 ```
 It's our first time to read such a file, and it takes us about 63s. It may be not as fast as you expected but:
+
+**Check status of the dataset**
+```shell
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED     CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+hbase   443.5MiB         443.5MiB   4GiB             100%                Bound   9m27s
+```
+Now, all the remote files have been cached in Alluxio.
 
 **Re-Launch the test job**
 ```shell

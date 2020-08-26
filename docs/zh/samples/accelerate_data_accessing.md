@@ -40,7 +40,7 @@ EOF
 
 更多有关UFS的信息，请参考[Alluxio文档-底层存储系统](https://docs.alluxio.io/os/user/stable/cn/ufs/OSS.html)部分。
 
-> 本示例将以Apache镜像站点上的Hbase v2.25相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为基于目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多更复杂的配置。
+> 本示例将以Apache镜像站点上的Hbase v2.25相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为基于目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多[更复杂的配置](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html#%E9%85%8D%E7%BD%AEalluxio) 
 
 **创建Dataset资源对象**
 ```shell
@@ -50,13 +50,9 @@ dataset.data.fluid.io/hbase created
 
 **查看Dataset资源对象状态**
 ```shell
-$ kubectl get dataset hbase -o yaml
-apiVersion: data.fluid.io/v1alpha1
-kind: Dataset
-...
-status:
-  conditions: []
-  phase: NotBound
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE      AGE
+hbase                                                                  NotBound   13s
 ```
 
 如上所示，`status`中的`phase`属性值为`NotBound`，这意味着该`Dataset`资源对象目前还未与任何`AlluxioRuntime`资源对象绑定，接下来，我们将创建一个`AlluxioRuntime`资源对象。
@@ -124,34 +120,13 @@ hbase-worker-92cln   2/2     Running   0          27s
 hbase-worker-rlb5w   2/2     Running   0          27s
 ```
 
-
-
 **再次查看Dataset资源对象状态**
 ```shell
-$ kubectl get dataset hbase -o yaml
-...
-...
-status:
-  cacheStates:
-    cacheCapacity: 4GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  - lastTransitionTime: "2020-07-29T08:23:44Z"
-    lastUpdateTime: "2020-07-29T08:26:29Z"
-    message: The ddc runtime is ready.
-    reason: DatasetReady
-    status: "True"
-    type: Ready
-  phase: Bound
-  runtimes:
-  - category: Accelerate
-    name: hbase
-    namespace: default
-    type: alluxio
-  ufsTotal: 443.5MiB
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+hbase   443.5MiB         0B       4GiB             0%                  Bound   2m39s
 ```
-因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset资源对象的`Status`得到了更新，此时`phase`属性值已经变为`Bound`状态。从上述状态中可以获知有关资源对象的基本信息
+因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset资源对象的状态得到了更新，此时`PHASE`属性值已经变为`Bound`状态。通过上述命令可以获知有关资源对象的基本信息
 
 **查看AlluxioRuntime状态**
 ```shell
@@ -339,6 +314,14 @@ user  0m 0.00s
 sys   0m 1.35s
 ```
 可见，第一次远程文件的读取耗费了接近63s的时间。当然，你可能会觉得这并没有你预期的那么快，但是：
+
+**查看Dataset资源对象状态**
+```shell
+$ kubectl get dataset hbase
+NAME    UFS TOTAL SIZE   CACHED     CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+hbase   443.5MiB         443.5MiB   4GiB             100%                Bound   9m27s
+```
+现在，所有远程文件都已经被缓存在了Alluxio中
 
 **再次启动测试作业**
 ```shell
