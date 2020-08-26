@@ -34,7 +34,7 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
+    - mountPoint: https://downloads.apache.org/hbase/2.2.5/
       name: hbase
 EOF
 ```
@@ -264,8 +264,14 @@ $ du -h /data/hbase/*
 106K    /data/hbase/RELEASENOTES.md
 115K    /data/hbase/api_compare_2.2.5RC0_to_2.2.4.html
 211M    /data/hbase/hbase-2.2.5-bin.tar.gz
+1.0K    /data/hbase/hbase-2.2.5-bin.tar.gz.asc
+512     /data/hbase/hbase-2.2.5-bin.tar.gz.sha512
 200M    /data/hbase/hbase-2.2.5-client-bin.tar.gz
+1.0K    /data/hbase/hbase-2.2.5-client-bin.tar.gz.asc
+512     /data/hbase/hbase-2.2.5-client-bin.tar.gz.sha512
 34M     /data/hbase/hbase-2.2.5-src.tar.gz
+1.0K    /data/hbase/hbase-2.2.5-src.tar.gz.asc
+512     /data/hbase/hbase-2.2.5-src.tar.gz.sha512
 ```
 
 Logout:
