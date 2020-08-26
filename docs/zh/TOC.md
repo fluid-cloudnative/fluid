@@ -5,18 +5,18 @@
 
 ## TOC
 
-+ Userguide
-  - [Overview](userguide/overview.md)
-  - [Get Started](userguide/get_started.md)
-  - [Installation](userguide/install.md)
-  - [Diagnose](userguide/diagnose.md)
-+ Samples
-  - [Accelerate Data Accessing](samples/accelerate_data_accessing.md)
-  - [Cache Co-locality](samples/data_co_locality.md)
-  - [Machine Learning](samples/machinelearning.md)
++ 用户文档
+  - [概述](userguide/overview.md)
+  - [快速上手](userguide/get_started.md)
+  - [安装](userguide/install.md)
+  - [问题诊断](userguide/diagnose.md)
++ 示例
+  - [数据加速](samples/accelerate_data_accessing.md)
+  - [缓存亲和性调度](samples/data_co_locality.md)
+  - [机器学习](samples/machinelearning.md)
   - [Dawnbench](samples/dawnbench.md)
   - [Warm up](samples/warmup.md)
-+ Developer Guide
-  - [How to develop](dev/how_to_develop.md)
++ 开发者指南
+  - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
 
