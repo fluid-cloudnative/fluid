@@ -39,7 +39,7 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 快速开始
 
-你可以通过 [快速开始](docs/cn/userguide/get_started.md) 在Kubernetes集群中测试Fluid.
+你可以通过 [快速开始](docs/zh/userguide/get_started.md) 在Kubernetes集群中测试Fluid.
 
 ## 文档
 
