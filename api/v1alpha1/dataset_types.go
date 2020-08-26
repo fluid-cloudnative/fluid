@@ -161,6 +161,12 @@ type DatasetCondition struct {
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
+// +kubebuilder:printcolumn:name="Ufs Total Size",type="string",JSONPath=`.status.ufsTotal`
+// +kubebuilder:printcolumn:name="Cached",type="string",JSONPath=`.status.cacheStates.cached`
+// +kubebuilder:printcolumn:name="Cache Capacity",type="string",JSONPath=`.status.cacheStates.cacheCapacity`
+// +kubebuilder:printcolumn:name="Cached Percentage",type="string",JSONPath=`.status.cacheStates.cachedPercentage`
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +genclient
