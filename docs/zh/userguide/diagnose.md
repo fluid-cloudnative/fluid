@@ -1,8 +1,8 @@
-# fluid诊断脚本使用说明
+# Fluid诊断脚本使用说明
 
 ## 脚本介绍
 
-fluid提供了shell脚本[diagnose-fluid.sh](../../../tools/diagnose-fluid.sh)帮助用户快速收集fluid系统和Runtime容器的日志信息。
+Fluid提供了shell脚本[diagnose-fluid.sh](../../../tools/diagnose-fluid.sh)帮助用户快速收集Fluid系统和Runtime容器的日志信息。
 
 ## 如何使用
 

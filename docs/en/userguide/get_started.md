@@ -1,11 +1,11 @@
-# Get Started with fluid
+# Get Started With Fluid
 
-This document mainly describes how to create a Kubernetes cluster environment, complete fluid installation and deployment with Helm, and use fluid to create a data set and speed up your application.  
+This document mainly describes how to create a Kubernetes cluster environment, complete Fluid installation and deployment with Helm, and use Fluid to create a data set and speed up your application.  
 
-## Create a Kubernetes cluster:  
-A Kubernetes environment is prerequisite for fluid,choose the most suitable solution to get it based on your experience: 
+## Create a Kubernetes Cluster:  
+A Kubernetes environment is prerequisite for Fluid,choose the most suitable solution to get it based on your experience: 
  
-- If you have already had a Kubernetes cluster, you can skip to step  [Deploy fluid](#deploy-fluid).  
+- If you have already had a Kubernetes cluster, you can skip to step  [Deploy Fluid](#Deploy-Fluid).  
 - If you have not used Kubernetes before, you can use Minikube to create a Kubernetes cluster.  
 [Minikube](https://kubernetes.io/docs/setup/minikube/) can create a Kubernetes cluster in a virtual machine, which can run on macOS, Linux and Windows.  
 
@@ -32,18 +32,18 @@ nginx-deployment-558fc78868-kvjnf   1/1     Running   1          4d12h
 nginx-deployment-558fc78868-kx9gt   1/1     Running   1          4d12h
 ```
 
-## Deploy fluid  
+## Deploy Fluid  
 Before the installation, make sure that the following requirements have been met:
 
 - You can access the Kubernetes cluster with `kubectl` successfully.   
 - [Helm](https://helm.sh/docs/intro/install/): Helm 3 is installed.  
 - [Git](): Git is installed
-1. Download fluid  
+1. Download Fluid  
 ```shell
 git clone https://github.com/fluid-cloudnative/fluid.git 
 cd fluid/charts/fluid
 ```  
-2. Install fluid with Helm
+2. Install Fluid with Helm
 ```shell
 helm install fluid fluid
 NAME: fluid
@@ -62,8 +62,8 @@ csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
 csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 
-## Create a dataset  
-Fluid provides cloud-native data acceleration and management capabilities, and use `dataset` as a high-level abstraction to facilitate user management. Here we will show you how to create a dataset with fluid.  
+## Create a Dataset  
+Fluid provides cloud-native data acceleration and management capabilities, and use *dataset* as a high-level abstraction to facilitate user management. Here we will show you how to create a dataset with Fluid.  
 1. Create a Dataset object through the CRD file, which describes the source of the dataset.  
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -83,7 +83,7 @@ kubectl create -f dataset.yaml
 After the dataset is created, it is in the `not bound` state and needs to be bound to a runtime to use it.
 
 
-2. Also we create an Alluxio Runtime object based on the alluxioRuntimeCRD file, which enables the dataset.
+2. Also we create an *Alluxio* Runtime object based on the alluxioRuntimeCRD file, which enables the dataset.
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -126,7 +126,7 @@ spec:
       - --fuse-opts=direct_io,ro,max_read=131072
 ```
 
-Create Alluxio Runtime with kubectl
+Create *Alluxio* Runtime with `kubectl`
 
 ```shell
 kubectl create -f runtime.yaml  
@@ -152,7 +152,7 @@ spec:
         claimName: demo
 ```
 
-Create Pod with kubectl
+Create Pod with `kubectl`
 
 ```shell
 kubectl create -f app.yaml

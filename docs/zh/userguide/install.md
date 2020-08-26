@@ -2,15 +2,14 @@
 
 ## 前提条件
 
-- git
-
+- Git
 - Kubernetes集群（version >= 1.14）, 并且支持CSI功能
-- kubectl（version >= 1.14）
+- Kubectl（version >= 1.14）
 - Helm（version >= 3.0）
 
 接下来的文档假设您已经配置好上述所有环境。
 
-对于kubectl的安装和配置，请参考[此处](https://kubernetes.io/docs/tasks/tools/install-kubectl/)。
+对于`kubectl`的安装和配置，请参考[此处](https://kubernetes.io/docs/tasks/tools/install-kubectl/)。
 
 对于Helm 3的安装和配置，请参考[此处](https://v3.helm.sh/docs/intro/install/)。
 
@@ -18,13 +17,13 @@
 
 ### 获取Fluid Chart
 
-您可以在任意文件夹，执行以下命令，从[fluid代码仓库](https://github.com/fluid-cloudnative/fluid)拷贝源代码：
+您可以在任意文件夹，执行以下命令，从[Fluid代码仓库](https://github.com/fluid-cloudnative/fluid)拷贝源代码：
 
 ```shell
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 ```
 
-fluid源代码中包含了部署fluid所需的[helm charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts)。
+Fluid源代码中包含了部署Fluid所需的[Helm charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts)。
 
 ### 使用Helm安装Fluid
 
@@ -40,7 +39,7 @@ $ cd fluid
 $ kubectl create ns fluid-system
 ```
 
-安装fluid：
+安装Fluid：
 
 ```shell
 $ helm install fluid charts/fluid/fluid
