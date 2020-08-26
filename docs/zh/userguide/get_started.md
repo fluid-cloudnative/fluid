@@ -1,10 +1,10 @@
-# fluid 快速上手    
-本文档介绍了如何创建 Kubernetes 集群环境，通过 Helm 完成 fluid 安装部署，并使用 fluid 创建数据集。  
+# Fluid 快速上手    
+本文档介绍了如何创建 Kubernetes 集群环境，通过 Helm 完成 Fluid 安装部署，并使用 Fluid 创建数据集。  
 
 ## 创建 Kubernetes 集群  
-fluid 需要 Kubernetes 环境，根据你的使用经历选择最适合你的方案:  
+Fluid 需要 Kubernetes 环境，根据你的使用经历选择最适合你的方案:  
 
-- 你已经有了一个 Kubernetes 环境，并满足 Kubernetes :版本>=1.14，可以直接[部署fluid](#部署fluid) 
+- 你已经有了一个 Kubernetes 环境，并满足 Kubernetes :版本>=1.14，可以直接[部署Fluid](#部署Fluid) 
 - 你之前没有使用过 Kubernetes，可以使用 Minikube 创建 Kubernetes 集群.     
 [Minikube](https://kubernetes.io/docs/setup/minikube/)可以在虚拟机中创建一个 Kubernetes 集群，可在 macOS, Linux 和 Windows 上运行。
 
@@ -28,17 +28,17 @@ nginx-deployment-558fc78868-kvjnf   1/1     Running   1          4d12h
 nginx-deployment-558fc78868-kx9gt   1/1     Running   1          4d12h
 ```
 
-## 部署fluid
+## 部署Fluid
 开始之前，确保已满足以下要求：
 
 - 使用 `kubectl` 可以成功访问到 Kubernetes 集群
 - [Helm](https://helm.sh/docs/intro/install/) : Helm 3 已安装
 
-1. 获取 fluid  
+1. 获取 Fluid  
 ```shell
 git clone https://github.com/fluid-cloudnative/fluid.git 
 ```  
-2. 使用 Helm 安装 fluid
+2. 使用 Helm 安装 Fluid
 ```shell
 helm install fluid fluid
 NAME: fluid
@@ -57,8 +57,8 @@ csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
 csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 
-## Create a dataset
-fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集`概念方便用户管理，接下来将演示如何用 fluid 创建一个数据集。   
+## 创建dataset
+Fluid提供了云原生的数据加速和管理能力，并抽象出了*数据集*概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
 
 1. 通过CRD文件创建一个Dataset对象，其中描述了数据集的来源。
 ```yaml
@@ -76,10 +76,10 @@ spec:
 ```
 kubectl create -f dataset.yaml
 ```
-dataset创建以后处于 `not bound` 状态，需要绑定 runtime 才能使用。
+dataset创建以后处于 *not bound* 状态，需要绑定 runtime 才能使用。
 
 
-2. 同样根据 alluxioRuntime的CRD文件创建一个 Alluxio Runtime 对象，用来描述支持这个数据集的 runtime。
+2. 同样根据 alluxioRuntime的CRD文件创建一个 *Alluxio* Runtime 对象，用来描述支持这个数据集的 runtime。
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
@@ -120,13 +120,13 @@ spec:
       - fuse
       - --fuse-opts=direct_io,ro,max_read=131072
 ```
-使用kubectl完成创建  
+使用`kubectl`完成创建  
 
 ```shell
 kubectl create -f runtime.yaml  
 ``` 
 
-3. 接下来，我们创建一个应用容器来使用该数据集，我们将多次访问同一数据，并比较访问时间来展示 fluid 的加速效果。
+3. 接下来，我们创建一个应用容器来使用该数据集，我们将多次访问同一数据，并比较访问时间来展示 Fluid 的加速效果。
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -156,7 +156,7 @@ user	0m0.002s
 sys	0m0.028s
 ```
 
-5. 为了避免其他因素(比如 page cache )对结果造成影响，我们将删除之前的容器，新建相同的应用，尝试访问同样的文件。由于此时文件已经被 alluxio 缓存，可以看到第二次访问所需时间远小于第一次。
+5. 为了避免其他因素(比如 page cache )对结果造成影响，我们将删除之前的容器，新建相同的应用，尝试访问同样的文件。由于此时文件已经被 *alluxio* 缓存，可以看到第二次访问所需时间远小于第一次。
 ```shell
 kubectl delete -f app.yaml && kubectl create -f app.yaml
 ...

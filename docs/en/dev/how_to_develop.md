@@ -2,14 +2,14 @@
 
 ## Requirements
 
-- git
+- Git
 
-- golang (version >= 1.13)
-- docker (version >= 19.03)
+- Golang (version >= 1.13)
+- Docker (version >= 19.03)
 - Kubernetes (version >= 1.14)
 - GNU Make
 
-For installation of golang, please refer to [Install Golang](https://golang.org/dl/)
+For installation of Golang, please refer to [Install Golang](https://golang.org/dl/)
 
 `make` is usually in a `build-essential` package in your distribution's package manager of choice. Make sure you have `make` on your machine.
 
@@ -30,7 +30,7 @@ $ git clone https://github.com/fluid-cloudnative/fluid.git
 >
 > See [Go Modules](https://github.com/golang/go/wiki/Modules) for more information if some issue occurs to you.
 
-### Build binary
+### Build Binary
 `Makefile` under project directory provides many tasks you may want to use including Test, Build, Debug, Deploy etc.
 
 You can simply get a binary by running:
@@ -43,8 +43,8 @@ $ make csi
 ```
 By default, the binary would be put under `<fluid-path>/bin`.
 
-### Build image
-1\. Set tags for images
+### Build Images
+1. Set tags for images
 
 ```shell
 # image name for controller manager
@@ -78,7 +78,7 @@ $ make docker-build-csi
 $ docker push <IMG>:<IMG_TAG>
 ```
 
-### Run your fluid on kubernetes cluster
+### Run Your Fluid on Kubernetes Cluster
 In the following steps, we assume you have properly configured `KUBECONFIG` environment variable or set up `~/.kube/config`. See [Kubeconfig docs](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) for more information.
 
 1. Push your images to a image registry accessible to your Kubernetes cluster

@@ -2,16 +2,16 @@
 
 ## 环境需求
 
-- git
+- Git
 
-- golang (version >= 1.13)
-- docker (version >= 19.03)
+- Golang (version >= 1.13)
+- Docker (version >= 19.03)
 - Kubernetes (version >= 1.14)
 - GNU Make
 
-对于golang的安装与配置，请参考[此处](https://golang.org/dl/)。
+对于Golang的安装与配置，请参考[此处](https://golang.org/dl/)。
 
-对于docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)。
+对于Docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)。
 
 Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`：
 
@@ -30,7 +30,7 @@ $ git clone https://github.com/fluid-cloudnative/fluid.git
 
 > **注意**：本文在非Go Module模式下完成Fluid的编译、运行和调试。
 >
-> 有关Go module可以参阅 [golang 官方文档](https://github.com/golang/go/wiki/Modules) 获取更多信息。
+> 有关Go module可以参阅 [Golang 官方文档](https://github.com/golang/go/wiki/Modules) 获取更多信息。
 
 ### 编译
 Fluid项目根目录下的`Makefile`文件已经包含了项目开发中的编译、构建、部署等基本逻辑
@@ -72,7 +72,7 @@ $ make docker-push-csi
 
 ### 运行
 接下来的内容将假设在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查。更多有关`kubeconfig`的信息可以参考
-[kubernetes官方文档](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
+[Kubernetes官方文档](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
 > 以下内容将使用`kustomize`，`kubectl 1.14+`已经内置了`kustomize`工具，正在使用`kubectl 1.14`版本以下的开发者请参考 [此处](https://kustomize.io/) 获取有关kustomize的更多信息
 
