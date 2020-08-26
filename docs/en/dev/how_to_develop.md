@@ -9,7 +9,7 @@
 - Kubernetes (version >= 1.14)
 - GNU Make
 
-For installation of golang, please refer to [Install Golang](https://golang.org/dl/)
+For installation of olang, please refer to [Install Golang](https://golang.org/dl/)
 
 `make` is usually in a `build-essential` package in your distribution's package manager of choice. Make sure you have `make` on your machine.
 
@@ -43,8 +43,8 @@ $ make csi
 ```
 By default, the binary would be put under `<fluid-path>/bin`.
 
-### Build Image
-1\. Set tags for images
+### Build Images
+1. Set tags for images
 
 ```shell
 # image name for controller manager

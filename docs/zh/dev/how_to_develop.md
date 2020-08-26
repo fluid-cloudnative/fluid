@@ -2,16 +2,16 @@
 
 ## 环境需求
 
-- git
+- Git
 
-- golang (version >= 1.13)
-- docker (version >= 19.03)
+- Golang (version >= 1.13)
+- Docker (version >= 19.03)
 - Kubernetes (version >= 1.14)
 - GNU Make
 
-对于golang的安装与配置，请参考[此处](https://golang.org/dl/)。
+对于Golang的安装与配置，请参考[此处](https://golang.org/dl/)。
 
-对于docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)。
+对于Docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)。
 
 Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`：
 

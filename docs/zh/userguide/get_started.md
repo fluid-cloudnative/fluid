@@ -58,7 +58,7 @@ csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 
 ## 创建dataset
-Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集`概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
+Fluid提供了云原生的数据加速和管理能力，并抽象出了*数据集*概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
 
 1. 通过CRD文件创建一个Dataset对象，其中描述了数据集的来源。
 ```yaml

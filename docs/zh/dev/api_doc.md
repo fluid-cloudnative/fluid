@@ -1,4 +1,4 @@
-# api reference
+# API reference
 <p>Packages:</p>
 <ul>
 <li>
