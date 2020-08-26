@@ -57,7 +57,7 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
+    - mountPoint: https://downloads.apache.org/hbase/2.2.5/
       name: hbase
   nodeAffinity:
     required:
