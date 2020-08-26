@@ -17,7 +17,7 @@ csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
 Normally, you shall see a Pod named "controller-manager" and several Pods named "csi-nodeplugin". 
 The num of "csi-nodeplugin" Pods depends on how many nodes your Kubernetes cluster have(e.g. 2 in this demo), so please make sure all "csi-nodeplugin" Pods are working properly.
 
-## Set up workspace
+## Set Up Workspace
 ```shell
 $ mkdir <any-path>/co-locality
 $ cd <any-path>/co-locality
