@@ -78,7 +78,7 @@ $ make docker-build-csi
 $ docker push <IMG>:<IMG_TAG>
 ```
 
-### Run Your Fluid on kubernetes Cluster
+### Run Your Fluid on Kubernetes Cluster
 In the following steps, we assume you have properly configured `KUBECONFIG` environment variable or set up `~/.kube/config`. See [Kubeconfig docs](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) for more information.
 
 1. Push your images to a image registry accessible to your Kubernetes cluster
