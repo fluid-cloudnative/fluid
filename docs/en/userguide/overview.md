@@ -11,26 +11,26 @@ Through the data abstraction layer served on Kubernetes, the data will just be l
 
 Fluid currently mainly focuses on the dataset orchestration and application orchestration these two important scenarios. The dataset orchestration can arrange the cached dataset to the specific Kubernetes node, while the application orchestration can arrange the the applications to nodes with the pre-loaded datasets. These two can work together to form the co-orchestration scenario, which take both the dataset specifications and application characteristics into consideration during resouce scheduling.
 
+## Why Cloud Native Needs Fluid
+
 There exist a nature divergence between the cloud native environment and the earlier big data processing framework. Deeply affected by Google's GFS, MapReduce, BigTable influential papers, the open souce big data ecosystem keeps the concept of 'moving data but not moving computation' during system design. Therefore, data-intensive computing frameworks, such as Spark, Hive, MapReduce, aim to reduce data transmission, and consider more data locality architecture during the design. However, as time changes, for both consider the flexibility of the resource scalability and usage cost, compution and storage separation architecture has been widely used in the cloud native environment. sThus, the cloud native ecosystem need an component like Fluid to make up the lost data locality when the big data architecture embraces cloud native architecture.
 
-## Why Cloud Native needs Fluid
+Besides, in the cloud native environment, applications are usually deployed in the stateless micro-service style, but focus on data processing. However, the data-intensive frameworks and applications always focus on data abstraction, and schedules and executes the computing jobs and tasks. When data-intensive frameworks are deployed in cluod native environment, it needs component like Fluid to handle the data scheduling in cloud.
 
-此外，在云原生环境中，应用通常以无状态（Stateless）微服务化方式部署并不以数据处理为中心；而数据密集型框架和应用通常以数据抽象为中心，开展相关计算作业和任务的分配执行。当数据密集型框架融入云原生环境后，也需要像Fluid这样以数据抽象为中心的调度和分配框架来协同。
-
-针对当前Kubernetes缺乏对应用数据的感知和优化，以及像Alluxio这样的数据编排引擎难以直接驱动云原生应用等架构层的局限，Fluid提出将数据应用协同编排、智能感知、联合优化等一系列创新方法，并且基于Alluxio形成一套云原生场景下数据密集型应用的高效支撑平台。
+To resolve the issue that Kubernetes lacks the awareness and optimization for application data, Fluid put forward a series of innovative methods suach as co-orchestration, intelligent awareness, join-optimization, to form an efficient supporting platform for data-intensive applications in cloud native environment.
 
 
-具体的架构参见下图：
+The architecture of Fluid in Kubernetes is as following:
 <div>
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
 </div>
 
 ## Demo
-我们提供了视频的Demo，为您展示如何通过Fluid提升云上AI模型训练的速度。
+We provide demo to show how to improve the AI model traning speed in Cloud by using Fluid.
 
-### 演示 1: 多数据源联合访问
+### Demo 1: Multiple Data Source Joint Access
 
-### 演示 2: Dawnbench性能测试
+### Demo 2: Dawnbench Performace Test
 
 ## Quick Start
 Fluid需要运行在 Kubernetes v1.14 及以上版本，并且需要支持CSI存储。Fluid Operator的部署和管理是通过 Kubernetes 平台上的包管理工具 Helm v3实现的。运行 Fluid前请确保 Helm 已经正确安装在 Kubernetes 集群里。
