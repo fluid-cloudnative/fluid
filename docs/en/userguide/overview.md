@@ -33,8 +33,8 @@ We provide demo to show how to improve the AI model traning speed in Cloud by us
 ### Demo 2: Dawnbench Performace Test
 
 ## Quick Start
-Fluid需要运行在 Kubernetes v1.14 及以上版本，并且需要支持CSI存储。Fluid Operator的部署和管理是通过 Kubernetes 平台上的包管理工具 Helm v3实现的。运行 Fluid前请确保 Helm 已经正确安装在 Kubernetes 集群里。
+Fluid needs to run on Kubernetes v1.14 or above version, also needs to support CSI storage. The deployment and management of Fluid Operator is through Helm v3 which is the package mangement tool on Kubernetes platform. Please make sure the Helm is correctly installed in the Kubernetes cluster before running Fluid.
 
-你可以参照参考文档 [docs](https://github.com/fluid-cloudnative/docs-fluid)，安装和使用Fluid。
+You can refer to the following documents to insall and use Fluid.
 - [English](docs/en/TOC.md)
 - [简体中文](docs/zh/TOC.md)
