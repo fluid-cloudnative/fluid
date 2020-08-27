@@ -22,6 +22,7 @@
 数据集存储在[阿里云OSS](https://cn.aliyun.com/product/oss)，为保证Alluxio能够成功挂载OSS上的数据集，请确保`dataset.yaml`文件中设置了正确的`mountPoint`、`fs.oss.accessKeyId`、`fs.oss.accessKeySecret`和`fs.oss.endpoint`。
 
 > 你可以参考Alluxio的官方文档示例[Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html)，了解更多在Alluxio中使用OSS的例子。
+> 如果你希望重现这个实验，请在社区开Issue申请数据集下载
 
 本文档以四机八卡为例，所以在`dataset.yaml`中设置`spec.replicas=4`。此外，`dataset.yaml`文件还根据我们的测试经验设置了许多参数以优化Alluxio的IO性能（包括Alluxio、Fuse和JVM等层次），您可以自行根据机器配置和任务需求调整参数。
 

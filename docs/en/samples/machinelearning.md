@@ -22,6 +22,7 @@ The following `dataset.yaml` file defined a `Dataset` and `Runtime`  separated b
 The dataset is stored on [Alibaba Cloud OSS](https://cn.aliyun.com/product/oss). To ensure that Alluxio can successfully mount the dataset, please make sure that configurations in the `dataset.yaml` are correct set, including `mountPoint`, `fs.oss.accessKeyId`, `fs.oss.accessKeySecret` and `fs.oss.endpoint`. 
 
 > See Alluxio's official document [Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html) for more examples of using OSS in Alluxio.
+> If you'd like to download the imagenet dataset, please open an issue in Fluid community to ask for it
 
 This document takes 4 machines to training machine learning tasks, so `spec.replicas` is set to `4`. In addition, the following configuration file `dataset.yaml` also sets many parameters based on our experience to optimize the IO performance of Alluxio in machine learning tasks, including Alluxio, Fuse and JVM levels. You can adjust these parameters according to the test environment and task requirements.
 
