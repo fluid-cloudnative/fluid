@@ -1,17 +1,17 @@
 # 用Fluid加速机器学习训练
 
-本文介绍如何使用Fluid部署[阿里云OSS](https://cn.aliyun.com/product/oss)云端[ImageNet](http://www.image-net.org/)数据集到kubernetes集群，并使用[arena](https://github.com/kubeflow/arena)在此数据集上训练ResNet-50模型。本文以四机八卡测试环境为例。
+本文介绍如何使用Fluid部署[阿里云OSS](https://cn.aliyun.com/product/oss)云端[ImageNet](http://www.image-net.org/)数据集到Kubernetes集群，并使用[Arena](https://github.com/kubeflow/arena)在此数据集上训练ResNet-50模型。本文以四机八卡测试环境为例。
 
 ## 前提条件
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.1.0)
-- [arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+- [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
 
 > **注意**：
 >
 > 1. 本文要求在Kubernetes集群中已安装好Fluid，如果您还没部署Fluid，请参考[Fluid安装手册](../userguide/install.md)在您的Kubernetes集群上安装Fluid。
 >
-> 2. `arena`是一个方便数据科学家运行和监视机器学习任务的CLI, 本文使用`arena`提交机器学习任务，安装教程可参考[arena安装教程](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md)。
+> 2. `Arena`是一个方便数据科学家运行和监视机器学习任务的CLI, 本文使用`Arena`提交机器学习任务，安装教程可参考[Arena安装教程](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md)。
 
 ## 用Fluid部署云端数据集
 
@@ -238,13 +238,13 @@ NAME                             STATUS   VOLUME     CAPACITY   ACCESS MODES   S
 persistentvolumeclaim/imagenet   Bound    imagenet   100Gi      RWX                           7m11s
 ```
 
-至此，OSS云端数据集已成功部署到kubernetes集群中。
+至此，OSS云端数据集已成功部署到Kubernetes集群中。
 
-## 示例：使用arena提交深度学习任务
+## 示例：使用Arena提交深度学习任务
 
-`arena`提供了便捷的方式帮助用户提交和监控机器学习任务。在本文中，我们使用`arena`简化机器学习任务的部署流程。
+`Arena`提供了便捷的方式帮助用户提交和监控机器学习任务。在本文中，我们使用`Arena`简化机器学习任务的部署流程。
 
-如果您已经安装`arena`，并且云端数据集已成功部署到本地集群中，只需要简单执行以下命令便能提交ResNet50四机八卡训练任务：
+如果您已经安装`Arena`，并且云端数据集已成功部署到本地集群中，只需要简单执行以下命令便能提交ResNet50四机八卡训练任务：
 
 ```shell
 arena submit mpi \
@@ -260,7 +260,7 @@ arena submit mpi \
     ./launch-example.sh 4 8
 ```
 
-arena参数说明：
+Arena参数说明：
 
 - `--name`：指定job的名字
 - `--workers`：指定参与训练的节点（worker）数
@@ -289,7 +289,7 @@ horovod-resnet50-v2-4x8-fluid  RUNNING  MPIJOB   16s  horovod-resnet50-v2-4x8-fl
 
 如果您看到`4`个处于`RUNNING`状态的worker，说明您已经成功启动训练。
 
-如果您想知道训练进行到哪一步了，请检查arena日志：
+如果您想知道训练进行到哪一步了，请检查Arena日志：
 
 ```shell
 $ arena logs --tail 100 -f horovod-resnet50-v2-4x8-fluid

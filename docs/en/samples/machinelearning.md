@@ -1,6 +1,6 @@
 # Accelerate Machine Learning Training with Fluid
 
-This article describes how to deploy [ImageNet](http://www.image-net.org/) dataset stored on [Aliyun OSS](https://cn.aliyun.com/product/oss) to Kubernetes cluster with Fluid, and train a ResNet-50 model on this dataset using [arena](https://github.com/kubeflow/arena). In this article, we perform machine learning training on 4 nodes, each node with 8 GPU cards.
+This article describes how to deploy [ImageNet](http://www.image-net.org/) dataset stored on [Aliyun OSS](https://cn.aliyun.com/product/oss) to Kubernetes cluster with Fluid, and train a ResNet-50 model on this dataset using [Arena](https://github.com/kubeflow/arena). In this article, we perform machine learning training on 4 nodes, each node with 8 GPU cards.
 
 ## Prerequisites
 
@@ -227,7 +227,7 @@ Status:
 Events:         <none>
 ```
 
-A pv and pvc named `imagenet` are successfully created. So far, the dataset stored on cloud has been successfully deployed to the kubernetes cluster.
+A pv and pvc named `imagenet` are successfully created. So far, the dataset stored on cloud has been successfully deployed to the Kubernetes cluster.
 
 ```shell
 $ kubectl get pv,pvc
@@ -240,9 +240,9 @@ persistentvolumeclaim/imagenet   Bound    imagenet   100Gi      RWX             
 
 ## Example: Run Deep Learning Frameworks Using Arena
 
-`arena` provides a convenient way to help users submit and monitor machine learning tasks. In this article, we use `arena` to simplify the deployment process of machine learning tasks.
+`Arena` provides a convenient way to help users submit and monitor machine learning tasks. In this article, we use `Arena` to simplify the deployment process of machine learning tasks.
 
-If you have installed `arena` and dataset has been successfully deployed to the local cluster, you can start training a ResNet50 model by simply executing the following command:
+If you have installed `Arena` and dataset has been successfully deployed to the local cluster, you can start training a ResNet50 model by simply executing the following command:
 
 ```shell
 arena submit mpi \
@@ -287,7 +287,7 @@ horovod-resnet50-v2-4x8-fluid  RUNNING  MPIJOB   16s  horovod-resnet50-v2-4x8-fl
 
 If you find that `4` workers are in the `RUNNING` state, congratulations!  It means that you have successfully started the training.
 
-If you want to know where the training is going, please check the arena log:
+If you want to know where the training is going, please check the Arena log:
 
 ```shell
 $ arena logs --tail 100 -f horovod-resnet50-v2-4x8-fluid
