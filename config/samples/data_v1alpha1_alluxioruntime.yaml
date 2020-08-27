@@ -2,15 +2,11 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: cifar10
+  name: dataset
   #namespace: fluid-system
 spec:
   # Add fields here
   replicas: 2
-  alluxioVersion:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
-    imageTag: "2.3.0-SNAPSHOT-bbce37a"
-    imagePullPolicy: Always
   tieredstore:
     levels:
     - mediumtype: MEM
@@ -43,10 +39,7 @@ spec:
     ports: {}
     resources: {}
   fuse:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT-bbce37a"
-    imagePullPolicy: Always
-    jvmOptions: 
+    jvmOptions:
       - "-Xmx4G "
       - "-Xms4G "
       - "-XX:+UseG1GC "
@@ -57,7 +50,4 @@ spec:
     shortCircuitPolicy: local
     args:
       - fuse
-      - --fuse-opts=ro,max_read=131072,attr_timeout=7200,entry_timeout=7200
-    env:
-      MAX_IDLE_THREADS: "64"
-      SPENT_TIME: "1000"
+      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200

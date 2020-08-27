@@ -25,8 +25,8 @@ spec:
           protocol: TCP
         volumeMounts:
           - mountPath: /data
-            name: cifar10
+            name: dataset-vol
       volumes:
-      - name: cifar10
+      - name: dataset-vol
         persistentVolumeClaim:
-          claimName: cifar10
+          claimName: dataset
