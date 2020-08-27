@@ -1,4 +1,4 @@
 resources:
   - data_v1alpha1_alluxioruntime.yaml
   - data_v1alpha1_dataset.yaml
-  - statefulset.yaml
+  - workload.yaml
