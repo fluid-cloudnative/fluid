@@ -29,6 +29,7 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 	用户可以创建和管理不同namespace的数据集
 
 - __异构数据源管理__
+
 	一次性统一访问不同来源的底层数据（对象存储，HDFS和Ceph等存储)，适用于混合云场景
 
 ## 先决条件
@@ -70,4 +71,8 @@ Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只�
 
 ## 开源协议
 
-Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文件。
+
+## 关于我们
+
+Fluid项目由南京大学副研究员顾荣博士，阿里云容器服务高级技术专家车漾，以及Alluxio项目创始成员/Cuckoo Filter的作者范斌博士共同创立。
