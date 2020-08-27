@@ -5,13 +5,13 @@ This article describes how to deploy [ImageNet](http://www.image-net.org/) datas
 ## Prerequisites
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.1.0)
-- [arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+- [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
 
 > **NOTE**:
 >
 > 1. The document requires Fluid installed on your Kubernetes cluster. Please refer to [Fluid Installation Guide](../userguide/install.md) to finish installation before going to the next step.
 >
-> 2. Arena is a CLI that is convenient for data scientists to run and monitor machine learning tasks. See [arena-installation-tutorial](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md) for more information.
+> 2. Arena is a CLI that is convenient for data scientists to run and monitor machine learning tasks. See [Arena Installation Tutorial](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md) for more information.
 
 ## Deploy Dataset on Kubernetes Cluster with Fluid
 
