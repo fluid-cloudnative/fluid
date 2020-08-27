@@ -3,7 +3,6 @@
 ## Prerequisites
 
 - Git
-
 - Kubernetes cluster（version >= 1.14）, and support CSI
 - kubectl（version >= 1.14）
 - [Helm](https://helm.sh/)（version >= 3.0）
@@ -18,7 +17,7 @@ For the installation and configuration of Helm 3, please refer to [here](https:/
 
 ### Download Fluid Chart
 
-You can execute the following command in any folder to clone source code from [fluid repository](https://github.com/fluid-cloudnative/fluid):
+You can execute the following command in any folder to clone source code from [Fluid repository](https://github.com/fluid-cloudnative/fluid):
 
 ```shell
 $ git clone https://github.com/fluid-cloudnative/fluid.git
@@ -40,7 +39,7 @@ Create namespace:
 $ kubectl create ns fluid-system
 ```
 
-Install fluid with:
+Install Fluid with:
 
 ```shell
 $ helm install fluid charts/fluid/fluid

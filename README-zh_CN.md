@@ -44,7 +44,7 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 文档
 
-如果需要详细了解Fluid的使用，请参考文档 [docs](https://github.com/fluid-cloudnative/docs-fluid)：
+如果需要详细了解Fluid的使用，请参考文档 [docs](docs/README_zh.md)：
 
 - [English](docs/en/TOC.md)
 - [简体中文](docs/zh/TOC.md)
