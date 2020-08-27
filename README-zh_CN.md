@@ -71,4 +71,8 @@ Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只�
 
 ## 开源协议
 
-Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文件。
+
+## 关于我们
+
+Fluid项目由南京大学副研究员顾荣博士，阿里云容器服务高级技术专家车漾，以及Alluxio项目创始成员/Cuckoo Filter的作者范斌博士共同创立。
