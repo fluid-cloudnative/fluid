@@ -14,7 +14,6 @@
   - [Accelerate Data Accessing](samples/accelerate_data_accessing.md)
   - [Cache Co-locality](samples/data_co_locality.md)
   - [Machine Learning](samples/machinelearning.md)
-  - [Dawnbench](samples/dawnbench.md)
 + Developer Guide
   - [How to develop](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)

@@ -58,9 +58,9 @@ csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
 ```
 
 ## 创建dataset
-Fluid提供了云原生的数据加速和管理能力，并抽象出了*数据集*概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
+Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集`概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
 
-1. 通过CRD文件创建一个Dataset对象，其中描述了数据集的来源。
+1. 通过`CRD`文件创建一个Dataset对象，其中描述了数据集的来源。
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -76,10 +76,10 @@ spec:
 ```
 kubectl create -f dataset.yaml
 ```
-dataset创建以后处于 *not bound* 状态，需要绑定 runtime 才能使用。
+dataset创建以后处于 `not bound` 状态，需要绑定 runtime 才能使用。
 
 
-2. 同样根据 alluxioRuntime的CRD文件创建一个 *Alluxio* Runtime 对象，用来描述支持这个数据集的 runtime。
+2. 同样根据 AlluxioRuntime的CRD文件创建一个 `Alluxio Runtime` 对象，用来描述支持这个数据集的 Runtime。
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
@@ -156,7 +156,7 @@ user	0m0.002s
 sys	0m0.028s
 ```
 
-5. 为了避免其他因素(比如 page cache )对结果造成影响，我们将删除之前的容器，新建相同的应用，尝试访问同样的文件。由于此时文件已经被 *alluxio* 缓存，可以看到第二次访问所需时间远小于第一次。
+5. 为了避免其他因素(比如 page cache )对结果造成影响，我们将删除之前的容器，新建相同的应用，尝试访问同样的文件。由于此时文件已经被 `Alluxio` 缓存，可以看到第二次访问所需时间远小于第一次。
 ```shell
 kubectl delete -f app.yaml && kubectl create -f app.yaml
 ...

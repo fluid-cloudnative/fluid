@@ -23,7 +23,7 @@
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 ```
 
-Fluid源代码中包含了部署Fluid所需的[Helm charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts)。
+Fluid源代码中包含了部署Fluid所需的[Helm Charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts)。
 
 ### 使用Helm安装Fluid
 
