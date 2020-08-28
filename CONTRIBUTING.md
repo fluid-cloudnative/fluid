@@ -78,7 +78,7 @@ git push origin <new-branch>
 
 Go to the "Pull requests" tab page under your repository and Click the "New Pull Request" button to submit a PR. Select `<new-branch>`, check your commits, fill in PR title and description and finally click the "Create pull request" button to finish submitting.
 
-To help reviewers better get your purpose, PR title should be descriptive enough but not too long. It's also recommended that you follow the [PR template]() as your PR description.
+To help reviewers better get your purpose, PR title should be descriptive enough but not too long. It's also recommended that you follow the [PR template](.github/PULL_REQUEST_TEMPLATE.md) as your PR description.
 
 ### Tracking Your PR
 Once you've submitted the PR to the Fluid project, your PR will be reviewed. Please keep tracking the status of your PR, make responses to the reviewers' comments and update your changes if needed to make your PR get accepted.
