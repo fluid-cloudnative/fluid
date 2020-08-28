@@ -28,9 +28,14 @@ The architecture of Fluid in Kubernetes is as following:
 ## Demo
 We provide demo to show how to improve the AI model traning speed in Cloud by using Fluid.
 
-### Demo 1: Multiple Data Source Joint Access
+### Demo 1: Accelerate Remote File Accessing with Fluid
 
-### Demo 2: Dawnbench Performace Test
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4)
+
+
+### Demo 2: Machine Learning with Fluid
+
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4)
 
 ## Quick Start
 Fluid needs to run on Kubernetes v1.14 or above version, also needs to support CSI storage. The deployment and management of Fluid Operator is through Helm v3 which is the package mangement tool on Kubernetes platform. Please make sure the Helm is correctly installed in the Kubernetes cluster before running Fluid.
