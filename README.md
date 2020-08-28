@@ -5,9 +5,8 @@ English | [简体中文](./README-zh_CN.md)
 ## What is Fluid?
 
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.
-
-<div>
-  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture">
+<div align="center">
+    <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" height="60%" width="60%" alt="">
 </div>
 
 ## Features
