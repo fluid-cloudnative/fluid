@@ -1,4 +1,4 @@
-# Accelerate Machine Learning Training with Fluid
+# DEMO - Accelerate Machine Learning Training with Fluid
 
 This article describes how to deploy [ImageNet](http://www.image-net.org/) dataset stored on [Aliyun OSS](https://cn.aliyun.com/product/oss) to Kubernetes cluster with Fluid, and train a ResNet-50 model on this dataset using [Arena](https://github.com/kubeflow/arena). In this article, we perform machine learning training on 4 nodes, each node with 8 GPU cards.
 

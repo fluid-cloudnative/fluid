@@ -1,4 +1,4 @@
-# 用Fluid加速机器学习训练
+# 示例 - 用Fluid加速机器学习训练
 
 本文介绍如何使用Fluid部署[阿里云OSS](https://cn.aliyun.com/product/oss)云端[ImageNet](http://www.image-net.org/)数据集到Kubernetes集群，并使用[Arena](https://github.com/kubeflow/arena)在此数据集上训练ResNet-50模型。本文以四机八卡测试环境为例。
 
