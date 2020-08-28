@@ -1,6 +1,6 @@
 # Troubleshooting
 
-You may encounter various problems in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. To make this troublesome work easier, we provided  a [shell script](../../../tools/diagnose-fluid.sh) to help users collect logs more quickly. This document describes how to use that script.
+You may encounter various problems during installation or development in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. To make this troublesome work easier, we provided  a [shell script](../../../tools/diagnose-fluid.sh) to help users collect logs more quickly. This document describes how to use that script.
 
 ## Diagnose Fluid using Script
 
@@ -10,7 +10,7 @@ You may encounter various problems in Fluid. Usually, logs are useful for debugg
    $ chmod a+x diagnose-fluid.sh
    ```
 
-2. Get Help Message
+2. Get help message
 
    ```shell
    $ ./diagnose-fluid.sh 
@@ -30,7 +30,7 @@ You may encounter various problems in Fluid. Usually, logs are useful for debugg
            Also collect fluid system logs.
    ```
 
-3. Collect Logs
+3. Collect logs
 
    You can collect all the Runtime container logs for given name and namespace with:
 
