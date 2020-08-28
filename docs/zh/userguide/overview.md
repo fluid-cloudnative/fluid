@@ -25,11 +25,16 @@ Fluid项目当前主要关注数据集编排和应用编排这两个重要场景
 </div>
 
 ## 演示
-我们提供了视频的Demo，为您展示如何通过Fluid提升云上AI模型训练的速度。
+我们提供了视频的Demo，为您展示如何通过Fluid提升数据访问速度。
 
-### 演示 1: 多数据源联合访问
+### 演示 1: 加速文件访问
 
-### 演示 2: Dawnbench性能测试
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4)
+
+
+### 演示 2: 加速机器学习
+
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4)
 
 ## 快速体验Fluid
 Fluid需要运行在 Kubernetes v1.14 及以上版本，并且需要支持CSI存储。Fluid Operator的部署和管理是通过 Kubernetes 平台上的包管理工具 Helm v3实现的。运行 Fluid前请确保 Helm 已经正确安装在 Kubernetes 集群里。

@@ -50,9 +50,14 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 
 ## Qucik Demo
 
-### Demo 1: Unification
+### Demo 1: Accelerate Remote File Accessing with Fluid
 
-### Demo 2: Dawnbench
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4)
+
+
+### Demo 2: Machine Learning with Fluid
+
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4)
 
 ## Community
 
