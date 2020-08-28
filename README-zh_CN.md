@@ -52,9 +52,14 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 快速演示
 
-### 演示 1: 多数据源联合访问
+### 演示 1: 加速文件访问
 
-### 演示 2: Dawnbench性能测试
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4)
+
+
+### 演示 2: 加速机器学习
+
+[![](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4)
 
 ## 如何贡献
 
