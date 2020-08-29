@@ -6,12 +6,17 @@
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.1.0)
 - [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+- [Horovod](https://github.com/horovod/horovod) (version=0.18.1)
+- [Benchmark](https://github.com/tensorflow/benchmarks/tree/cnn_tf_v1.14_compatible)
 
 > **注意**：
 >
 > 1. 本文要求在Kubernetes集群中已安装好Fluid，如果您还没部署Fluid，请参考[Fluid安装手册](../userguide/install.md)在您的Kubernetes集群上安装Fluid。
 >
 > 2. `Arena`是一个方便数据科学家运行和监视机器学习任务的CLI, 本文使用`Arena`提交机器学习任务，安装教程可参考[Arena安装教程](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md)。
+
+> 3.  本演示中使用的Horovod， TensorFlow和Benchmark代码均已经开源，您可以从上述链接中获取。  
+
 
 ## 用Fluid部署云端数据集
 
@@ -21,8 +26,9 @@
 
 数据集存储在[阿里云OSS](https://cn.aliyun.com/product/oss)，为保证Alluxio能够成功挂载OSS上的数据集，请确保`dataset.yaml`文件中设置了正确的`mountPoint`、`fs.oss.accessKeyId`、`fs.oss.accessKeySecret`和`fs.oss.endpoint`。
 
-> 你可以参考Alluxio的官方文档示例[Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html)，了解更多在Alluxio中使用OSS的例子。
-> 如果你希望重现这个实验，请在社区开Issue申请数据集下载
+> 你可以参考Alluxio的官方文档示例[Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html)，了解更多在Alluxio中使用OSS的例子  
+> 如果您希望自己准备数据集，可以访问ImageNet官方网站 [http://image-net.org/download-images](http://image-net.org/download-images)   
+> 如果你希望使用我们提供的数据集重现这个实验，请在社区开Issue申请数据集下载
 
 本文档以四机八卡为例，所以在`dataset.yaml`中设置`spec.replicas=4`。此外，`dataset.yaml`文件还根据我们的测试经验设置了许多参数以优化Alluxio的IO性能（包括Alluxio、Fuse和JVM等层次），您可以自行根据机器配置和任务需求调整参数。
 
