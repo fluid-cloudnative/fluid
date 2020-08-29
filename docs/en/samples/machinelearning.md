@@ -6,12 +6,18 @@ This article describes how to deploy [ImageNet](http://www.image-net.org/) datas
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.1.0)
 - [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+- [TensorFlow](https://github.com/tensorflow/tensorflow) (version = 1.14)
+- [Horovod](https://github.com/horovod/horovod) (version=0.18.1)
+- [Benchmark](https://github.com/tensorflow/benchmarks/tree/cnn_tf_v1.14_compatible)
 
 > **NOTE**:
 >
 > 1. The document requires Fluid installed on your Kubernetes cluster. Please refer to [Fluid Installation Guide](../userguide/install.md) to finish installation before going to the next step.
 >
 > 2. Arena is a CLI that is convenient for data scientists to run and monitor machine learning tasks. See [Arena Installation Tutorial](https://github.com/kubeflow/arena/blob/master/docs/installation/INSTALL_FROM_BINARY.md) for more information.
+
+> 3. This Demo uses Horovod + TensorFlow + Benchmark, they are all open source version. 
+
 
 ## Deploy Dataset on Kubernetes Cluster with Fluid
 
@@ -21,8 +27,9 @@ The following `dataset.yaml` file defined a `Dataset` and `Runtime`  separated b
 
 The dataset is stored on [Alibaba Cloud OSS](https://cn.aliyun.com/product/oss). To ensure that Alluxio can successfully mount the dataset, please make sure that configurations in the `dataset.yaml` are correct set, including `mountPoint`, `fs.oss.accessKeyId`, `fs.oss.accessKeySecret` and `fs.oss.endpoint`. 
 
-> See Alluxio's official document [Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html) for more examples of using OSS in Alluxio.
-> If you'd like to download the imagenet dataset, please open an issue in Fluid community to ask for it
+> See Alluxio's official document [Aliyun Object Storage Service](https://docs.alluxio.io/os/user/stable/en/ufs/OSS.html) for more examples of using OSS in Alluxio.  
+> If you'd like to prepare dataset by yourself， please download the dataset from [http://image-net.org/download-images](http://image-net.org/download-images).   
+> If you'd like to download the imagenet dataset from us, please open an issue in Fluid community to ask for it
 
 This document takes 4 machines to training machine learning tasks, so `spec.replicas` is set to `4`. In addition, the following configuration file `dataset.yaml` also sets many parameters based on our experience to optimize the IO performance of Alluxio in machine learning tasks, including Alluxio, Fuse and JVM levels. You can adjust these parameters according to the test environment and task requirements.
 
