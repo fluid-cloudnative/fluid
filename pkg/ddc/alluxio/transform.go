@@ -96,6 +96,8 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	if len(runtime.Spec.Properties) > 0 {
 		value.Properties = runtime.Spec.Properties
+	} else {
+		value.Properties = map[string]string{}
 	}
 
 	dataReplicas := runtime.Spec.Data.Replicas
