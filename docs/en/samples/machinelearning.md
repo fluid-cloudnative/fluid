@@ -31,7 +31,7 @@ The dataset is stored on [Alibaba Cloud OSS](https://cn.aliyun.com/product/oss).
 > If you'd like to prepare dataset by yourself， please download the dataset from [http://image-net.org/download-images](http://image-net.org/download-images).   
 > If you'd like to download the imagenet dataset from us, please open an issue in Fluid community to ask for it
 
-This document takes 4 machines to training machine learning tasks, so `spec.replicas` is set to `4`. In addition, the following configuration file `dataset.yaml` also sets many parameters based on our experience to optimize the IO performance of Alluxio in machine learning tasks, including Alluxio, Fuse and JVM levels. You can adjust these parameters according to the test environment and task requirements.
+This document takes 4 machines to training machine learning tasks, so `spec.replicas` is set to `4`. To ensure that the data is cached on the V100 machine, `nodeAffinity` is configured. In addition, the following configuration file `dataset.yaml` also sets many parameters based on our experience to optimize the IO performance of Alluxio in machine learning tasks, including Alluxio, Fuse and JVM levels. You can adjust these parameters according to the test environment and task requirements.
 
 ```shell
 $ cat << EOF >> dataset.yaml
@@ -47,6 +47,14 @@ spec:
       fs.oss.accessKeyId: <OSS_ACCESS_KEY_ID>
       fs.oss.accessKeySecret: <OSS_ACCESS_KEY_SECRET>
       fs.oss.endpoint: <OSS_ENDPOINT>
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: aliyun.accelerator/nvidia_name
+              operator: In
+              values:
+                - Tesla-V100-SXM2-16GB
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
