@@ -80,4 +80,4 @@ Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for det
 
 ## About Us
 
-This project is co-founded by Dr. Rong Gu from Nanjing University, Yang Che from Alibaba Group,Inc and Dr. Bin Fan from Alluxio,Inc.
+This project is initiated by Dr. Rong Gu from Nanjing University, Yang Che from Alibaba Group,Inc and Dr. Bin Fan from Alluxio,Inc.

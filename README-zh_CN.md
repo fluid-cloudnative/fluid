@@ -81,4 +81,4 @@ Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文�
 
 ## 关于我们
 
-Fluid项目由南京大学副研究员顾荣博士，阿里云容器服务高级技术专家车漾，以及Alluxio项目创始成员/Cuckoo Filter的作者范斌博士共同创立。
+Fluid项目由南京大学副研究员顾荣博士，阿里云容器服务高级技术专家车漾，以及Alluxio项目创始成员/Cuckoo Filter的作者范斌博士共同发起的。
