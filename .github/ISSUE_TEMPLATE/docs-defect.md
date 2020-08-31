@@ -2,7 +2,7 @@
 name: Document Defect
 about: Report a documentation defect
 title: '[DOC]'
-labels: kind/docs
+labels: documentation
 assignees: ''
 
 ---
