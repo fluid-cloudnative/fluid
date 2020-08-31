@@ -30,7 +30,7 @@
 > 如果您希望自己准备数据集，可以访问ImageNet官方网站 [http://image-net.org/download-images](http://image-net.org/download-images)   
 > 如果你希望使用我们提供的数据集重现这个实验，请在社区开Issue申请数据集下载
 
-本文档以四机八卡为例，所以在`dataset.yaml`中设置`spec.replicas=4`。此外，`dataset.yaml`文件还根据我们的测试经验设置了许多参数以优化Alluxio的IO性能（包括Alluxio、Fuse和JVM等层次），您可以自行根据机器配置和任务需求调整参数。
+本文档以阿里云的V100四机八卡为例，所以在`dataset.yaml`中设置`spec.replicas=4`。为了保证数据被缓存在V100机器上，配置了`nodeAffinity`。此外，`dataset.yaml`文件还根据我们的测试经验设置了许多参数以优化Alluxio的IO性能（包括Alluxio、Fuse和JVM等层次），您可以自行根据机器配置和任务需求调整参数。
 
 ```shell
 $ cat << EOF >> dataset.yaml
@@ -46,6 +46,14 @@ spec:
       fs.oss.accessKeyId: <OSS_ACCESS_KEY_ID>
       fs.oss.accessKeySecret: <OSS_ACCESS_KEY_SECRET>
       fs.oss.endpoint: <OSS_ENDPOINT>
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: aliyun.accelerator/nvidia_name
+              operator: In
+              values:
+                - Tesla-V100-SXM2-16GB
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
