@@ -63,7 +63,7 @@ func NewDriver(nodeID, endpoint string) *driver {
 	}
 
 	socketDir := filepath.Dir(addr)
-	err := os.MkdirAll(socketDir, 755)
+	err := os.MkdirAll(socketDir, 0755)
 	if err != nil {
 		glog.Errorf("failed due to %v", err)
 		os.Exit(1)

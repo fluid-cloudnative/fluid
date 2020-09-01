@@ -89,8 +89,7 @@ var tieredStoreOrderMap map[MediumType]int = map[MediumType]int{
 }
 
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
-	order, _ = tieredStoreOrderMap[MediumType]
-
+	order = tieredStoreOrderMap[MediumType]
 	return order
 }
 
