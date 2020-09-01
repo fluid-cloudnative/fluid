@@ -17,21 +17,15 @@
 
 ### 获取Fluid Chart
 
-您可以在任意文件夹，执行以下命令，从[Fluid代码仓库](https://github.com/fluid-cloudnative/fluid)拷贝源代码：
+您可以从[Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases)下载最新的Fluid安装包。
+
+解压刚才下载的Fluid安装包：
 
 ```shell
-$ git clone https://github.com/fluid-cloudnative/fluid.git
+$ tar -zxf fluid.tgz
 ```
-
-Fluid源代码中包含了部署Fluid所需的[Helm Charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts)。
 
 ### 使用Helm安装Fluid
-
-进入刚才克隆的本地代码仓库：
-
-```shell
-$ cd fluid
-```
 
 创建命名空间：
 
@@ -42,7 +36,7 @@ $ kubectl create ns fluid-system
 安装Fluid：
 
 ```shell
-$ helm install fluid charts/fluid/fluid
+$ helm install fluid fluid
 NAME: fluid
 LAST DEPLOYED: Fri Jul 24 16:10:18 2020
 NAMESPACE: default
@@ -51,7 +45,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-> `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，`fluid`指定了安装的release名字，这可以自行更改，`charts/fluid/fluid`指定了helm chart的所在路径。
+> `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid`指定了helm chart所在路径，即在上一步中压缩包解压后的路径。
 
 ### 检查各组件状态
 
@@ -80,7 +74,7 @@ csi-nodeplugin-fluid-hwtvh            2/2     Running   0          5m28s
 
 ```shell
 $ helm delete fluid
-$ kubectl delete -f charts/fluid/fluid/crds
+$ kubectl delete -f fluid/crds
 ```
 
-> 这里的`fluid`对应安装时指定的<RELEASE_NAME>。
+> `helm delete`命令中的`fluid`对应安装时指定的<RELEASE_NAME>。
