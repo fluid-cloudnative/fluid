@@ -26,8 +26,7 @@ Fluid项目当前主要关注数据集编排和应用编排这两个重要场景
 
 ## 概念
 
-**Dataset**: 数据集是逻辑上相关的一组数据的集合，会被运算引擎使用，比如大数据的Spark，AI场景的TensorFlow。而这些数据智能的应用会创造工业界的核心价值。  
-Dataset的管理实际上也有多个维度，比如安全性，版本管理和数据加速。我们希望从数据加速出发，对于数据集的管理提供支持。
+**Dataset**: 数据集是逻辑上相关的一组数据的集合，会被运算引擎使用，比如大数据的Spark，AI场景的TensorFlow。而这些数据智能的应用会创造工业界的核心价值。Dataset的管理实际上也有多个维度，比如安全性，版本管理和数据加速。我们希望从数据加速出发，对于数据集的管理提供支持。
 
 **Runtime**: 实现数据集安全性，版本管理和数据加速等能力的执行引擎，定义了一系列生命周期的接口。可以通过实现这些接口，支持数据集的管理和加速。
 
@@ -43,20 +42,20 @@ Dataset的管理实际上也有多个维度，比如安全性，版本管理和�
 
 这些控制器包括：
 
-#### **Dataset Controller**: 负责Dataset的生命周期管理，包括创建，与Runtime的绑定和解绑，删除。
+**Dataset Controller**: 负责Dataset的生命周期管理，包括创建，与Runtime的绑定和解绑，删除。
 
-#### **Runtime Controller**: 负责Runtime的生命周期管理，包括创建，扩缩容，缓存预热和清理的触发，删除等操作。
+**Runtime Controller**: 负责Runtime的生命周期管理，包括创建，扩缩容，缓存预热和清理的触发，删除等操作。
 
-#### **Volume Controller**:  负责Dataset对应的数据卷的创建，删除。
+**Volume Controller**:  负责Dataset对应的数据卷的创建，删除。
 
 
 ### 调度器(Fluid-scheduler)
 
 负责在调度过程，结合数据缓存的信息，选择符合条件的节点。
 
-#### **Cache co-locality Plugin**: 结合Runtime中的数据缓存信息，对于使用数据集的应用进行调度。无需用户指定缓存节点。
+**Cache co-locality Plugin**: 结合Runtime中的数据缓存信息，对于使用数据集的应用进行调度。无需用户指定缓存节点。
 
-#### **Prefetch Plugin**: 在调度过程中，根据应用使用数据的特性触发Runtime进行数据预热。
+**Prefetch Plugin**: 在调度过程中，根据应用使用数据的特性触发Runtime进行数据预热。
 
 
 ## 演示
