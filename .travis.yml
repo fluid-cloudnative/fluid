@@ -18,4 +18,5 @@ script:
   - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
   - make unit-test
   - bash <(curl -s https://codecov.io/bash)
-  - docker build . -t fluid:${TRAVIS_JOB_ID}
+  - docker build . -t fluid:${TRAVIS_JOB_NUMBER}
+  - docker build . -f Dockerfile.csi -t fluid-csi:${TRAVIS_JOB_NUMBER}
