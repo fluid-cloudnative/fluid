@@ -17,21 +17,15 @@ For the installation and configuration of Helm 3, please refer to [here](https:/
 
 ### Download Fluid Chart
 
-You can execute the following command in any folder to clone source code from [Fluid repository](https://github.com/fluid-cloudnative/fluid):
+You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases).
+
+Untar the Fluid package you just downloaded:
 
 ```shell
-$ git clone https://github.com/fluid-cloudnative/fluid.git
+$ tar -zxf fluid.tgz
 ```
-
-[Helm Charts](https://github.com/fluid-cloudnative/fluid/tree/master/charts) used to deploy Fluid is included in source code.
 
 ### Install Fluid with Helm
-
-Enter the cloned local repository:
-
-```shell
-$ cd fluid
-```
 
 Create namespace:
 
@@ -42,7 +36,7 @@ $ kubectl create ns fluid-system
 Install Fluid with:
 
 ```shell
-$ helm install fluid charts/fluid/fluid
+$ helm install fluid fluid
 NAME: fluid
 LAST DEPLOYED: Fri Jul 24 16:10:18 2020
 NAMESPACE: default
@@ -51,7 +45,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-> The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  `fluid` means the release name, and `charts/fluid/fluid` specify the path to the helm chart.
+> The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
 ### Check Status of Component
 
@@ -80,7 +74,7 @@ If the Pod status is as shown above, then Fluid is installed on your Kubernetes 
 
 ```shell
 $ helm delete fluid
-$ kubectl delete -f charts/fluid/fluid/crds
+$ kubectl delete -f fluid/crds
 ```
 
-> The `fluid` here means the <RELEASE_NAME> during installation.
+> The `fluid` in command `helm delete` means the <RELEASE_NAME> during installation.
