@@ -7,17 +7,20 @@ jobs:
     docker:
       # specify the version
       - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    working_directory: /go/src/github.com/cloudnativefluid/fluid
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'
     steps:
       - checkout
-      - run:
-          name: build test ship
-          command: |
-            go list ./...
-            make unit-test
-            bash <(curl -s https://codecov.io/bash)
+      - setup_remote_docker:
+          docker_layer_caching: false
+    - run:
+        name: run tests
+        command: |
+          test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+          go vet ./...
+    - run: docker build . -t fluid:${CIRCLE_BUILD_NUM}
+    - run: docker build . -f Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
 
 # maybe later we need to upload output to helm repository
 
