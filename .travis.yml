@@ -16,3 +16,6 @@ script:
   - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
   - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
   - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off make unit-test
+  - bash <(curl -s https://codecov.io/bash)
+  - docker build . -t fluid:${TRAVIS_JOB_ID}

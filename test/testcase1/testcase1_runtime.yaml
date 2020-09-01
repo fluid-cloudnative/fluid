@@ -9,7 +9,7 @@ spec:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 2Gi
+        quota: 1Gi
         high: "0.95"
         low: "0.7"
         storageType: Memory
@@ -22,16 +22,8 @@ spec:
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
+
   fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
     # For now, only support local
     shortCircuitPolicy: local
     args:
