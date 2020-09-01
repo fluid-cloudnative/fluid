@@ -15,5 +15,5 @@ sudo: false
 script:
   - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/manager cmd/controller/main.go
   - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
-  - go vet ./...
+  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
   - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
