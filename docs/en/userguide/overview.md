@@ -25,6 +25,16 @@ The architecture of Fluid in Kubernetes is as following:
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" width="60%" height="60%" alt="">
 </div>
 
+## Concept
+
+**Dataset**:  A set of logically related data that will be used by a computing engine, such as Spark for big data and TensorFlow for AI scenarios. The management of dataset has many metrics, has multiple dimensions, such as security, version management and data acceleration. And we hope to start with data acceleration and provide support for the management of data sets.
+
+**Runtime**:  Security, version management and data acceleration, and defines a series of life cycle interfaces. You can implement them.
+
+**AlluxioRuntime**: From [Alluixo](https://www.alluxio.org/), 
+Fluid manages and schedules Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. It is an engine which supports data management and caching of datasets.
+
+
 ## Demo
 We provide demo to show how to improve the AI model traning speed in Cloud by using Fluid.
 
