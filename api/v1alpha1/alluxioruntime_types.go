@@ -17,7 +17,6 @@ package v1alpha1
 
 import (
 	"github.com/cloudnativefluid/fluid/pkg/common"
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -252,7 +251,7 @@ type RuntimeCondition struct {
 	// Type of cache condition.
 	Type RuntimeConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
-	Status v1.ConditionStatus `json:"status"`
+	Status corev1.ConditionStatus `json:"status"`
 	// The reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 	// A human readable message indicating details about the transition.

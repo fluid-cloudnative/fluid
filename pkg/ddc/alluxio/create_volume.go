@@ -182,8 +182,6 @@ func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 		if err != nil {
 			return err
 		}
-	} else {
-
 	}
 
 	return err

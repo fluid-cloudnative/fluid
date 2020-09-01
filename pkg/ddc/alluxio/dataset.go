@@ -107,7 +107,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 				corev1.ConditionFalse)
 		default:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is unkown.",
+				"The ddc runtime is unknown.",
 				corev1.ConditionFalse)
 		}
 

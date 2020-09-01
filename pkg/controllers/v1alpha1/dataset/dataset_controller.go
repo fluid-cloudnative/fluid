@@ -110,7 +110,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 			ctx.Log.Error(err, "Failed to update the dataset", "StatusUpdateError", ctx)
 			return utils.RequeueIfError(err)
 		} else {
-			ctx.Log.V(1).Info("Update the status of the dataset successfuly", "phase", dataset.Status.Phase)
+			ctx.Log.V(1).Info("Update the status of the dataset successfully", "phase", dataset.Status.Phase)
 		}
 	}
 
