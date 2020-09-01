@@ -336,7 +336,7 @@ func (r *ReconcilerImplement) reconcileFailedDataload(ctx cdataload.ReconcileReq
 /*
 	Check existence and status of the runtime related to the dataload.
 	If the runtime exists, return a pointer to that runtime.
-	If the runtime is ready, which means all its scheduled workers are avilable, `ready`= true, otherwise false.
+	If the runtime is ready, which means all its scheduled workers are available, `ready`= true, otherwise false.
 */
 func (r *ReconcilerImplement) checkRelatedRuntimeReady(ctx cdataload.ReconcileRequestContext) (alluxioRuntime *datav1alpha1.AlluxioRuntime, ready bool, err error) {
 	runtimeName := ctx.DataLoad.Spec.DatasetName

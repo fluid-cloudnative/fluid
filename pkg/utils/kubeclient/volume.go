@@ -18,12 +18,13 @@ package kubeclient
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/cloudnativefluid/fluid/pkg/utils"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -48,7 +49,7 @@ func IsPersistentVolumeExist(client client.Client, name string, annotations map[
 		found = false
 	} else {
 		for k, v := range annotations {
-			value, _ := pv.Annotations[k]
+			value := pv.Annotations[k]
 			if value != v {
 				found = false
 				log.Info("The expected pv's annotation doesn't equal to what it has", "key", k,
@@ -83,7 +84,7 @@ func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, 
 		found = false
 	} else {
 		for k, v := range annotations {
-			value, _ := pvc.Annotations[k]
+			value := pvc.Annotations[k]
 			if value != v {
 				found = false
 				log.Info("The expected pvc's annotation doesn't equal to what it has", "key", k,
