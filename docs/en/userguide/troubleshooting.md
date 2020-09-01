@@ -5,9 +5,14 @@ You may encounter various problems during installation or development in Fluid. 
 ## Diagnose Fluid using Script
 
 1. Make sure that script is executable
-
+   
    ```shell
    $ chmod a+x diagnose-fluid.sh
+   ```
+
+   *MacOS*
+   ```bash
+   $ brew install gnu-getopt
    ```
 
 2. Get help message

@@ -42,6 +42,7 @@ Before the installation, make sure that the following requirements have been met
 ```shell
 git clone https://github.com/fluid-cloudnative/fluid.git 
 cd fluid/charts/fluid
+kubectl create ns fluid-system
 ```  
 2. Install Fluid with Helm
 ```shell

@@ -9,7 +9,10 @@
 ```bash
 $ chmod a+x diagnose-fluid.sh
 ```
-
+*MacOS*
+```bash
+$ brew install gnu-getopt
+```
 2. 查看帮助信息
 
 ```bash

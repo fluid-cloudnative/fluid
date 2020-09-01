@@ -37,6 +37,8 @@ nginx-deployment-558fc78868-kx9gt   1/1     Running   1          4d12h
 1. 获取 Fluid  
 ```shell
 git clone https://github.com/fluid-cloudnative/fluid.git 
+cd fluid/charts/fluid
+kubectl create ns fluid-system
 ```  
 2. 使用 Helm 安装 Fluid
 ```shell
