@@ -19,7 +19,7 @@ For the installation and configuration of Helm 3, please refer to [here](https:/
 
 You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases).
 
-Unzip the Fluid package you just downloaded:
+Untar the Fluid package you just downloaded:
 
 ```shell
 $ tar -zxf fluid.tgz
