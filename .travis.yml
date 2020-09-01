@@ -1,0 +1,18 @@
+language: go
+
+go:
+  - "1.14"
+
+os:
+  - linux
+
+go_import_path: github.com/cloudnativefluid/fluid
+
+# let us have speedy Docker-based Travis workers
+sudo: false
+
+script:
+  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/manager cmd/controller/main.go
+  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
+  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
+  - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
