@@ -35,7 +35,7 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 
   	Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages
 
-## Key Concept
+## Key Concepts
 
 **Dataset**:  A set of logically related data that will be used by a computing engine, such as Spark for big data and TensorFlow for AI scenarios. The management of dataset has many metrics, has multiple dimensions, such as security, version management and data acceleration. And we hope to start with data acceleration and provide support for the management of data sets.
 
