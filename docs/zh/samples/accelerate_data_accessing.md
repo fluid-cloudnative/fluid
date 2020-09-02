@@ -40,7 +40,7 @@ EOF
 
 更多有关UFS的信息，请参考[Alluxio文档-底层存储系统](https://docs.alluxio.io/os/user/stable/cn/ufs/OSS.html)部分。
 
-> 本示例将以Apache镜像站点上的Hbase v2.25相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为基于目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多[更复杂的配置](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html#%E9%85%8D%E7%BD%AEalluxio) 
+> 本示例将以Apache镜像站点上的Hbase v2.25相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为根据目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多[更复杂的配置](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html#%E9%85%8D%E7%BD%AEalluxio) 
 
 **创建Dataset资源对象**
 ```shell
@@ -105,6 +105,13 @@ EOF
 ```shell
 $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
+```
+
+**检查AlluxioRuntime资源对象是否已经创建**
+```shell
+$ kubectl get alluxioruntime
+NAME    AGE
+hbase   55s
 ```
 
 `AlluxioRuntime`是另一个Fluid定义的CRD。一个`AlluxioRuntime`资源对象描述了在Kubernetes集群中运行一个Alluxio实例所需要的配置信息。
@@ -306,13 +313,26 @@ job.batch/fluid-test created
 
 该测试程序会执行`time cp -r /data/hbase ./`的shell命令，其中`/data/hbase`是远程文件在Pod中挂载的位置，该命令完成后会在终端显示命令执行的时长：
 
+等待一段时间,待该作业运行完成,作业的运行状态可通过以下命令查看:
 ```shell
-kubectl logs fluid-copy-test-h59w9
+$ kubectl get pod
+NAME                    READY   STATUS      RESTARTS   AGE
+fluid-copy-test-h59w9   0/1     Completed   0          1m25s
+...
+```
+如果看到如上结果,则说明该作业已经运行完成
+
+> 注意: `fluid-copy-test-h59w9`中的`h59w9`为作业生成的标识,在你的环境中,这个标识可能不同,接下来的命令中涉及该标识的地方请已你的环境为准
+
+**查看测试作业完成时间**
+```shell
+$ kubectl logs fluid-copy-test-h59w9
 + time cp -r /data/hbase ./
 real  1m 2.74s
 user  0m 0.00s
 sys   0m 1.35s
 ```
+
 可见，第一次远程文件的读取耗费了接近63s的时间。当然，你可能会觉得这并没有你预期的那么快，但是：
 
 **查看Dataset资源对象状态**
@@ -330,6 +350,13 @@ $ kubectl create -f app.yaml
 ```
 
 由于远程文件已经被缓存，此次测试作业能够迅速完成：
+```shell
+$ kubectl get pod
+NAME                    READY   STATUS      RESTARTS   AGE
+fluid-copy-test-d9h2x   0/1     Completed   0          24s
+...
+```
+
 ```shell
 $ kubectl logs fluid-copy-test-d9h2x
 + time cp -r /data/hbase ./
