@@ -16,8 +16,8 @@ limitations under the License.
 package base
 
 import (
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 // Engine interface defines the interfaces that should be implemented

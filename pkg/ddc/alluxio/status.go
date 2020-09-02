@@ -19,8 +19,8 @@ import (
 	"context"
 	"reflect"
 
-	data "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
+	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/client-go/util/retry"
 )
 

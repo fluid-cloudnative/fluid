@@ -16,7 +16,7 @@ limitations under the License.
 package utils
 
 import (
-	data "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

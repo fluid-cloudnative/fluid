@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // DeleteVolume creates volume

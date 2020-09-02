@@ -18,11 +18,11 @@ package alluxio
 import (
 	"fmt"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
-	"github.com/cloudnativefluid/fluid/pkg/ddc"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
 const (

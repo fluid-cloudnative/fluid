@@ -27,12 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	// +kubebuilder:scaffold:imports
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	alluxioctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/alluxio"
-	dataloadctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/dataload"
-	datasetctl "github.com/cloudnativefluid/fluid/pkg/controllers/v1alpha1/dataset"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
+	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
+	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
 var (

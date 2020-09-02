@@ -1,9 +1,10 @@
 package utils
 
 import (
-	data "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
 	"testing"
+
+	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestAddRuntimesIfNotExist(t *testing.T) {

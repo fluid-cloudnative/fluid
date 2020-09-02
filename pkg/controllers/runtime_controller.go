@@ -27,13 +27,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // var _ RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)

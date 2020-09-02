@@ -13,9 +13,9 @@ limitations under the License.
 package ddc
 
 import (
-	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 	"fmt"
 )

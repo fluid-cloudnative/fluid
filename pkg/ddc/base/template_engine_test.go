@@ -1,9 +1,9 @@
 package base_test
 
 import (
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
-	enginemock "github.com/cloudnativefluid/fluid/pkg/ddc/base/mock"
-	"github.com/cloudnativefluid/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

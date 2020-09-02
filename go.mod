@@ -1,4 +1,4 @@
-module github.com/cloudnativefluid/fluid
+module github.com/fluid-cloudnative/fluid
 
 go 1.13
 
