@@ -1,18 +1,27 @@
-language: go
+matrix:
+  include:
+    - language: go
+      go:
+        - "1.14"
+      os:
+        - linux
+      go_import_path: github.com/cloudnativefluid/fluid
+      sudo: false
+      before_script:
+        - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+      script:
+        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/manager cmd/controller/main.go
+        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
+        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
+        - golangci-lint run --timeout=10m ./...
+        - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+        - TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic' make unit-test
+        - bash <(curl -s https://codecov.io/bash)
 
-go:
-  - "1.14"
-
-os:
-  - linux
-
-go_import_path: github.com/fluid-cloudnative/fluid
-
-# let us have speedy Docker-based Travis workers
-sudo: false
-
-script:
-  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/manager cmd/controller/main.go
-  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
-  - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
-  - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+    - language: ruby
+      rvm:
+        - 2.6
+      before_script:
+        - gem install mdl
+      script:
+        - mdl . |grep -v 'vendor\|api_doc'
