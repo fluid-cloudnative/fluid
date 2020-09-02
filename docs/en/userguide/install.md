@@ -70,11 +70,17 @@ csi-nodeplugin-fluid-hwtvh            2/2     Running   0          5m28s
 
 If the Pod status is as shown above, then Fluid is installed on your Kubernetes cluster successfully!
 
+For more use cases about Fluid, please refer to our demos:
+- [Speed Up Accessing Remote Files](../samples/accelerate_data_accessing.md)
+- [Cache Co-locality for Workload Scheduling](../samples/data_co_locality.md)
+- [Accelerate Machine Learning Training with Fluid](../samples/machinelearning.md)
+
 ### Uninstall Fluid
 
 ```shell
 $ helm delete fluid
 $ kubectl delete -f fluid/crds
+$ kubectl delete ns fluid-system
 ```
 
 > The `fluid` in command `helm delete` means the <RELEASE_NAME> during installation.
