@@ -18,8 +18,8 @@ package runtime
 import (
 	"context"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"

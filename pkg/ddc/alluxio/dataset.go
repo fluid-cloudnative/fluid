@@ -19,9 +19,9 @@ import (
 	"context"
 	"reflect"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"

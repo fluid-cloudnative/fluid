@@ -20,12 +20,12 @@ import (
 	"io/ioutil"
 	"os"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
-	"github.com/cloudnativefluid/fluid/pkg/utils/helm"
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubectl"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	yaml "gopkg.in/yaml.v2"
 )
 

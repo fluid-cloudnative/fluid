@@ -36,8 +36,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudnativefluid/fluid/pkg/utils"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/golang/glog"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 )

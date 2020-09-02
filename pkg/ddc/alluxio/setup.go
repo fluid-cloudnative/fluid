@@ -16,8 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // IsSetupDone checks the setup is done

@@ -15,7 +15,7 @@ limitations under the License.
 
 package alluxio
 
-import "github.com/cloudnativefluid/fluid/pkg/common"
+import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 type readType string
 

@@ -16,9 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio/operations"
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
 	units "github.com/docker/go-units"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // queryCacheStatus checks the cache status

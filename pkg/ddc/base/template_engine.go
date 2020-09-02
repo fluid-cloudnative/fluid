@@ -16,7 +16,7 @@ limitations under the License.
 package base
 
 import (
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -21,8 +21,8 @@ import (
 
 	units "github.com/docker/go-units"
 
-	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio/operations"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {

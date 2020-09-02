@@ -25,7 +25,7 @@ import (
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	options "sigs.k8s.io/controller-runtime/pkg/client"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 // getRuntime gets the alluxio runtime

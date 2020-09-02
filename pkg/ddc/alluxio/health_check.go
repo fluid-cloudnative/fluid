@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
-	data "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 )

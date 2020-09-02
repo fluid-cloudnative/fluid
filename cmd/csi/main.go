@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudnativefluid/fluid/pkg/csi/fuse"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
 	"github.com/spf13/cobra"
 )
 

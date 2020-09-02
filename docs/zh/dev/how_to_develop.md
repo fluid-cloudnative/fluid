@@ -23,8 +23,8 @@ Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`
 ### 获取Fluid源码
 
 ```shell
-$ mkdir -p $GOPATH/src/github.com/cloudnativefluid/
-$ cd $GOPATH/src/github.com/cloudnativefluid
+$ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
+$ cd $GOPATH/src/github.com/fluid-cloudnative
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 ```
 

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 )
 

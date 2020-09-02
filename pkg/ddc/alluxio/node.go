@@ -28,11 +28,11 @@ import (
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
-	"github.com/cloudnativefluid/fluid/pkg/utils/tieredstore"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 )
 
 // AssignNodesToCache finds nodes

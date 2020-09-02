@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

@@ -28,12 +28,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
-	"github.com/cloudnativefluid/fluid/pkg/controllers"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // Use compiler to check if the struct implements all the interface
