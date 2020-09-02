@@ -18,8 +18,8 @@ package tieredstore
 import (
 	"sort"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/common"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrl "sigs.k8s.io/controller-runtime"

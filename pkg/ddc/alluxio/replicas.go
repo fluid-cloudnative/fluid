@@ -16,7 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 // SyncReplicas syncs the replicas

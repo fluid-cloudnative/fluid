@@ -18,7 +18,7 @@ package utils
 import (
 	"context"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

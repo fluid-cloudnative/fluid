@@ -6,7 +6,7 @@ go:
 os:
   - linux
 
-go_import_path: github.com/cloudnativefluid/fluid
+go_import_path: github.com/fluid-cloudnative/fluid
 
 # let us have speedy Docker-based Travis workers
 sudo: false

@@ -16,7 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/cloudnativefluid/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 )
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {

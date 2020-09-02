@@ -32,7 +32,7 @@
         "k8s.io/api/": "Kubernetes ",
         "k8s.io/apimachinery/pkg/apis/": "Kubernetes ",
         "k8s.io/apimachinery/pkg/api/": "Kubernetes ",
-        "github.com/cloudnativefluid/fluid/pkg/": ""
+        "github.com/fluid-cloudnative/fluid/pkg/": ""
 
     },
     "markdownDisabled": false

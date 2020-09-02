@@ -26,7 +26,7 @@ import (
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/cloudnativefluid/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var log logr.Logger

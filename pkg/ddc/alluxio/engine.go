@@ -21,10 +21,10 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	datav1alpha1 "github.com/cloudnativefluid/fluid/api/v1alpha1"
-	"github.com/cloudnativefluid/fluid/pkg/ddc/base"
-	cruntime "github.com/cloudnativefluid/fluid/pkg/runtime"
-	"github.com/cloudnativefluid/fluid/pkg/utils/kubeclient"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 /**

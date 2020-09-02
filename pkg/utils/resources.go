@@ -16,7 +16,7 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/cloudnativefluid/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
