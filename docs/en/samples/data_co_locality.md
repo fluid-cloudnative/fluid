@@ -124,7 +124,7 @@ spec:
       - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
-In this snippet of yaml, there are many specifications used by Fluid to launch an Alluxio instance. By creating such an `AlluxioRuntime` object, an Alluxio instance with 1 master and 2 workers is expected to be launched.
+In this snippet of yaml, there are many specifications used by Fluid to launch an Alluxio instance. The `spec.replicas` in the yaml above is set to 2, which means an Alluxio instance with 1 master and 2 workers is expected to be launched.
 
 **Create the `AlluxioRuntime` object**
 ```shell
