@@ -5,7 +5,7 @@ matrix:
         - "1.14"
       os:
         - linux
-      go_import_path: github.com/cloudnativefluid/fluid
+      go_import_path: github.com/fluid-cloudnative/fluid
       sudo: false
       before_script:
         - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
