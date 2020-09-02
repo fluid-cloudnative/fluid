@@ -2,6 +2,8 @@
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2.1
+orbs:
+  md-sheriff: nubank/md-sheriff@0.0.5
 jobs:
   build:
     docker:
@@ -23,3 +25,8 @@ jobs:
       - run: docker build . -f Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
 
 # maybe later we need to upload output to helm repository
+workflows:
+  lint_ant_build:
+    jobs:
+      - run-lint
+      - build
