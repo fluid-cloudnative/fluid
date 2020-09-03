@@ -3,7 +3,6 @@
 ## 环境需求
 
 - Git
-
 - Golang (version >= 1.13)
 - Docker (version >= 19.03)
 - Kubernetes (version >= 1.14)
@@ -46,29 +45,29 @@ $ make csi
 ### 镜像构建
 
 1. 设置镜像名称       
-```shell
-# 为manager镜像命名
-$ export IMG=<your-registry>/<your-namespace>/<img-name>
-# 为CSI插件镜像命名
-$ export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
-# 构建manager镜像
-$ make docker-build
-# 构建CSI插件镜像
-$ make docker-build-csi
-```
-
-在运行Fluid之前，需要将构建的镜像推送到可以访问的镜像仓库中
+    ```shell
+    # 为manager镜像命名
+    $ export IMG=<your-registry>/<your-namespace>/<img-name>
+    # 为CSI插件镜像命名
+    $ export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+    # 构建manager镜像
+    $ make docker-build
+    # 构建CSI插件镜像
+    $ make docker-build-csi
+    ```
+    
+    在运行Fluid之前，需要将构建的镜像推送到可以访问的镜像仓库中
 
 2. 登录镜像仓库：     
-```shell
-$ sudo docker login <docker-registry>
-```
+    ```shell
+    $ sudo docker login <docker-registry>
+    ```
 
 3. 推送镜像:      
-```shell          
-$ make docker-push
-$ make docker-push-csi
-```
+    ```shell          
+    $ make docker-push
+    $ make docker-push-csi
+    ```
 
 ### 运行
 接下来的内容将假设在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查。更多有关`kubeconfig`的信息可以参考
@@ -78,80 +77,77 @@ $ make docker-push-csi
 
 
 1. 将构建的镜像上传到Kubernetes集群可以访问的镜像仓库
-> 如果构建并上传的镜像在私有仓库中，请确保在kubernetes集群的各个结点上已经成功执行了`sudo docker login <docker-registry>`操作
-
+    > 如果构建并上传的镜像在私有仓库中，请确保在kubernetes集群的各个结点上已经成功执行了`sudo docker login <docker-registry>`操作
 
 2. 修改`config/fluid/patches`中各文件的镜像名
-```yaml
-
-# config/fluid/patches/image_in_manager.yaml
-...
-...
-containers:
-  - name: manager
-    image: <your-registry>/<your-namespace>/<img-name>:<img-tag>
-
-```
+    ```yaml
+    # config/fluid/patches/image_in_manager.yaml
+    ...
+    ...
+    containers:
+      - name: manager
+        image: <your-registry>/<your-namespace>/<img-name>:<img-tag>
+    ```
 
 3. 创建CRD
-```shell
-$ kubectl apply -k config/crd
-```
-
-检查CRD：
-
-```shell
-$ kubectl get crd | grep fluid
-alluxiodataloads.data.fluid.io          2020-08-22T03:53:46Z
-alluxioruntimes.data.fluid.io           2020-08-22T03:53:46Z
-datasets.data.fluid.io                  2020-08-22T03:53:46Z
-```
+    ```shell
+    $ kubectl apply -k config/crd
+    ```
+    
+    检查CRD：
+    
+    ```shell
+    $ kubectl get crd | grep fluid
+    alluxiodataloads.data.fluid.io          2020-08-22T03:53:46Z
+    alluxioruntimes.data.fluid.io           2020-08-22T03:53:46Z
+    datasets.data.fluid.io                  2020-08-22T03:53:46Z
+    ```
 
 4. 创建Fluid各组件
-```shell
-$ kubectl apply -k config/fluid
-```
-
-检查Fluid组件：
-
-```shell
-$ kubectl get pod -n fluid-system
-NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7fd6457ccf-p7j2x   1/1     Running   0          84s
-csi-nodeplugin-fluid-pj9tv            2/2     Running   0          84s
-csi-nodeplugin-fluid-t8ctj            2/2     Running   0          84s
-```
+    ```shell
+    $ kubectl apply -k config/fluid
+    ```
+    
+    检查Fluid组件：
+    
+    ```shell
+    $ kubectl get pod -n fluid-system
+    NAME                                  READY   STATUS    RESTARTS   AGE
+    controller-manager-7fd6457ccf-p7j2x   1/1     Running   0          84s
+    csi-nodeplugin-fluid-pj9tv            2/2     Running   0          84s
+    csi-nodeplugin-fluid-t8ctj            2/2     Running   0          84s
+    ```
 
 5. 编写样例或使用提供的样例
-```shell
-$ kubectl apply -k config/samples
-```
-
-检查样例pod：
-
-```shell
-$ kubectl get pod
-NAME                   READY   STATUS    RESTARTS   AGE
-cifar10-fuse-vb6l4     1/1     Running   0          6m15s
-cifar10-fuse-vtqpx     1/1     Running   0          6m15s
-cifar10-master-0       2/2     Running   0          8m24s
-cifar10-worker-729xz   2/2     Running   0          6m15s
-cifar10-worker-d6kmd   2/2     Running   0          6m15s
-nginx-0                1/1     Running   0          8m30s
-nginx-1                1/1     Running   0          8m30s
-```
-> 注意: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果。
+    ```shell
+    $ kubectl apply -k config/samples
+    ```
+    
+    检查样例pod：
+    
+    ```shell
+    $ kubectl get pod
+    NAME                   READY   STATUS    RESTARTS   AGE
+    cifar10-fuse-vb6l4     1/1     Running   0          6m15s
+    cifar10-fuse-vtqpx     1/1     Running   0          6m15s
+    cifar10-master-0       2/2     Running   0          8m24s
+    cifar10-worker-729xz   2/2     Running   0          6m15s
+    cifar10-worker-d6kmd   2/2     Running   0          6m15s
+    nginx-0                1/1     Running   0          8m30s
+    nginx-1                1/1     Running   0          8m30s
+    ```
+    > 注意: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果。
 
 6. 通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
 
 7. 环境清理
-```shell
-$ kubectl delete -k config/samples
-
-$ kubectl delete -k config/fluid
-
-$ kubectl delete -k config/crd
-```
+    ```shell
+    $ kubectl delete -k config/samples
+    
+    $ kubectl delete -k config/fluid
+    
+    $ kubectl delete -k config/crd
+    ```
 
 ### 调试
 
