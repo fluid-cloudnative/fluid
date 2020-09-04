@@ -193,6 +193,6 @@ func (e *AlluxioEngine) createHCFSPersistentVolume() (err error) {
 }
 
 // createHCFSVolume (TODO: cheyang)
-func (e *AlluxioEngine) createHCFSPersistentVolumeClaim() (err error) {
-	return nil
-}
+// func (e *AlluxioEngine) createHCFSPersistentVolumeClaim() (err error) {
+// 	return nil
+// }

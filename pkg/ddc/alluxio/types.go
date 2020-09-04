@@ -130,7 +130,7 @@ type cacheStates struct {
 	// highWaterMark    string
 	cached           string
 	cachedPercentage string
-	nonCacheable     string
+	// nonCacheable     string
 }
 
 func (value *Alluxio) getTiredStoreLevel0Path() (path string) {
