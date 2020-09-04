@@ -1,70 +1,57 @@
 # Get Started With Fluid
 
-This document mainly describes how to create a Kubernetes cluster environment, complete Fluid installation and deployment with Helm, and use Fluid to create a data set and speed up your application.  
+This document mainly describes how to deploy Fluid with Helm, and use Fluid to create a dataset and speed up your application.  
 
-## Create a Kubernetes Cluster:  
-A Kubernetes environment is prerequisite for Fluid,choose the most suitable solution to get it based on your experience: 
- 
-- If you have already had a Kubernetes cluster, you can skip to step  [Deploy Fluid](#Deploy-Fluid).  
-- If you have not used Kubernetes before, you can use Minikube to create a Kubernetes cluster.  
-[Minikube](https://kubernetes.io/docs/setup/minikube/) can create a Kubernetes cluster in a virtual machine, which can run on macOS, Linux and Windows.  
+## Requirements  
 
-Please ensure that the following requirements are met:  
+1. Kubernetes 1.14+
 
-  - [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) :version 1.0.0+   
-  - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) :           version 1.14+       
+    If you don't have a Kubernetes now, we highly recommend you use a cloud Kubernetes service. Usually, with a few steps, you can get your own Kubernetes Cluster. Here's some of the certified cloud Kubernetes services: 
+    - [Amazon Elastic Kubernetes Service](https://aws.amazon.com/eks/)
+    - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
+    - [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster)
+    - [Aliyun Container Service for Kubernetes](https://www.aliyun.com/product/kubernetes)
 
-After installing Minikube:
-```shell
-minikube start
-```
+    > Note: While convenient, Minikube is not recommended to deploy Fluid due to its limited functionalities.
 
-If the installation is successful, you will get prompt message like this:
-```shell
-  minikube v1.12.1 on Darwin 10.14.5
-```  
+2. Kubectl 1.14+
 
-Use `kubectl` to access the newly created Kubernetes cluster  
-```shell
-$ kubectl get pods
-NAME                                READY   STATUS    RESTARTS   AGE
-nginx-deployment-558fc78868-kvjnf   1/1     Running   1          4d12h
-nginx-deployment-558fc78868-kx9gt   1/1     Running   1          4d12h
-```
+    Please make sure your kubectl is properly configured to interact with your Kubernetes environment.
+
+3. [Helm 3](https://helm.sh/docs/intro/install/)
+
+    In the following steps, we'll deploy Fluid with Helm 3
 
 ## Deploy Fluid  
-Before the installation, make sure that the following requirements have been met:
-
-- You can access the Kubernetes cluster with `kubectl` successfully.   
-- [Helm](https://helm.sh/docs/intro/install/): Helm 3 is installed.  
-- [Git](): Git is installed
-1. Download Fluid  
+1. Create namespace for Fluid 
     ```shell
-    git clone https://github.com/fluid-cloudnative/fluid.git 
-    cd fluid/charts/fluid
-    kubectl create ns fluid-system
+    $ kubectl create ns fluid-system
     ```  
-2. Install Fluid with Helm
+2. Download the latest Fluid from Github [release page](https://github.com/fluid-cloudnative/fluid/releases)
+
+3. Deploy Fluid with Helm
     ```shell
-    helm install fluid fluid
+    $ helm install fluid fluid.tgz
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default
     STATUS: deployed
     REVISION: 1
     TEST SUITE: None
-    ``` 
-3. Check installation results
+    ```
+
+4. Check running status of Fluid
     ```shell
-    kubectl get po -n fluid-system
+    $ kubectl get po -n fluid-system
     NAME                                  READY     STATUS    RESTARTS   AGE
     controller-manager-6b864dfd4f-995gm   1/1       Running   0          32h
-    csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
-    csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
+    csi-nodeplugin-fluid-c6pzj            2/2       Running   0          32h
+    csi-nodeplugin-fluid-wczmq            2/2       Running   0          32h
     ```
 
 ## Create a Dataset  
-Fluid provides cloud-native data acceleration and management capabilities, and use *dataset* as a high-level abstraction to facilitate user management. Here we will show you how to create a dataset with Fluid.  
+Fluid provides cloud-native data acceleration and management capabilities, and use *dataset* as a high-level abstraction to facilitate user management. Here we will show you how to create a dataset with Fluid. 
+
 1. Create a Dataset object through the CRD file, which describes the source of the dataset.  
     ```yaml
     apiVersion: data.fluid.io/v1alpha1
@@ -81,9 +68,8 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
     ```shell
     kubectl create -f dataset.yaml
     ```
-    After the dataset is created, it is in the `not bound` state and needs to be bound to a runtime to use it.
 
-2. Also we create an *Alluxio* Runtime object based on the alluxioRuntimeCRD file, which enables the dataset.
+2. Create an `AlluxioRuntime` CRD object to support the dataset we created. We use [Alluxio](https://www.alluxio.io/) as its runtime here.
     ```yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
@@ -178,4 +164,7 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
     sys	0m0.020s
     ```
 
-At this point, we have successfully created a data set and completed the acceleration. For the further use and management of the dataset, please refer to the two examples of [accelerate](../samples/accelerate_data_accessing.md) and [co-locality](../samples/data_co_locality.md).
+We've created a dataset and did some management in a very simple way. For more detail about Fluid, we provide several sample docs for you:
+- [Speed Up Accessing Remote Files](../samples/accelerate_data_accessing.md)
+- [Cache Co-locality for Workload Scheduling](../samples/data_co_locality.md)
+- [Accelerate Machine Learning Training with Fluid](../samples/machinelearning.md)
