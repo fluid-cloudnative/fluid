@@ -1,68 +1,58 @@
 # Fluid 快速上手    
-本文档介绍了如何创建 Kubernetes 集群环境，通过 Helm 完成 Fluid 安装部署，并使用 Fluid 创建数据集。  
+本文档介绍了如何创建或使用 Kubernetes 集群环境，通过 Helm 完成 Fluid 安装部署，并使用 Fluid 创建数据集。  
 
-## 创建 Kubernetes 集群  
-Fluid 需要 Kubernetes 环境，根据你的使用经历选择最适合你的方案:  
+## 前置需求
 
-- 你已经有了一个 Kubernetes 环境，并满足 Kubernetes :版本>=1.14，可以直接[部署Fluid](#部署Fluid) 
-- 你之前没有使用过 Kubernetes，可以使用 Minikube 创建 Kubernetes 集群.     
-[Minikube](https://kubernetes.io/docs/setup/minikube/)可以在虚拟机中创建一个 Kubernetes 集群，可在 macOS, Linux 和 Windows 上运行。
+1. Kubernetes 1.14+
+  
+    如果你目前没有满足条件的 Kubernetes 环境, 那么我们推荐你选择官方认证的 Kubernetes 云服务, 通常情况下, 你仅需寥寥几步即可快速获得一个专属的 Kubernetes 环境, 以下列出了部分经过认证的 Kubernetes 云服务:
+    - [阿里云容器服务](https://www.aliyun.com/product/kubernetes)
+    - [Amazon Elastic Kubernetes Service](https://aws.amazon.com/eks/)
+    - [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster)
+    - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
 
-请确保满足以下要求:      
-  - [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) :版本 1.0.0+   
-  - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) :  版本  1.14+               
+    > 注意: 考虑到 Minikube 功能的局限性,我们不推荐使用 Minikube 进行接下来的步骤
 
-安装好Minikube之后:
-```shell
-minikube start
-```
-如果安装成功的话,会出现类似的提示信息:
-```shell
-  Darwin 10.14.5 上的 minikube v1.12.1
-```
-使用 `kubectl`访问新创建的 Kubernetes 集群
-```shell
-$ kubectl get pods
-NAME                                READY   STATUS    RESTARTS   AGE
-nginx-deployment-558fc78868-kvjnf   1/1     Running   1          4d12h
-nginx-deployment-558fc78868-kx9gt   1/1     Running   1          4d12h
-```
+2. Kubectl 1.14+
 
-## 部署Fluid
-开始之前，确保已满足以下要求：
+    请确保Kubectl已经正确配置使其能够与你的Kubernetes环境进行交互
 
-- 使用 `kubectl` 可以成功访问到 Kubernetes 集群
-- [Helm](https://helm.sh/docs/intro/install/) : Helm 3 已安装
+3. [Helm 3](https://helm.sh/docs/intro/install/)
 
-1. 获取 Fluid  
+    在接下来的步骤中, 将使用Helm 3进行 Fluid 的快速安装
+
+
+## 安装Fluid
+1. 创建命名空间
     ```shell
-    git clone https://github.com/fluid-cloudnative/fluid.git 
-    cd fluid/charts/fluid
-    kubectl create ns fluid-system
+    $ kubectl create ns fluid-system
     ```  
-2. 使用 Helm 安装 Fluid
+2. 从 Github 仓库[Release页面](https://github.com/fluid-cloudnative/fluid/releases)下载最新版本的Fluid
+    
+3. 使用 Helm 安装 Fluid
     ```shell
-    helm install fluid fluid
+    $ helm install fluid fluid.tgz
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default
     STATUS: deployed
     REVISION: 1
     TEST SUITE: None
-    ```  
-3. 查看安装结果 
+    ```
+
+4. 查看Fluid的运行状态
     ```shell
-    kubectl get pod -n fluid-system
+    $ kubectl get po -n fluid-system
     NAME                                  READY     STATUS    RESTARTS   AGE
     controller-manager-6b864dfd4f-995gm   1/1       Running   0          32h
-    csi-nodeplugin-fluid-c6pzj          2/2       Running   0          32h
-    csi-nodeplugin-fluid-wczmq          2/2       Running   0          32h
+    csi-nodeplugin-fluid-c6pzj            2/2       Running   0          32h
+    csi-nodeplugin-fluid-wczmq            2/2       Running   0          32h
     ```
 
 ## 创建dataset
-Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集`概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
+Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集(Dataset)`概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
 
-1. 通过`CRD`文件创建一个Dataset对象，其中描述了数据集的来源。
+1. 创建一个Dataset CRD对象，其中描述了数据集的来源。
     ```yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: Dataset
@@ -78,9 +68,8 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
     ```
     kubectl create -f dataset.yaml
     ```
-    dataset创建以后处于 `not bound` 状态，需要绑定 runtime 才能使用。
 
-2. 同样根据 AlluxioRuntime的CRD文件创建一个 `Alluxio Runtime` 对象，用来描述支持这个数据集的 Runtime。
+2. 创建 `AlluxioRuntime` CRD对象，用来描述支持这个数据集的 Runtime, 在这里我们使用[Alluxio](https://www.alluxio.io/)作为其Runtime
     ```yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
@@ -167,5 +156,7 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
     sys	0m0.020s
     ```
 
-到这里，我们已经成功创建了一个数据集并完成了加速，关于数据集的进一步使用和管理可以参考[accelerate](
-../samples/accelerate_data_accessing.md)和[co-locality](../samples/data_co_locality.md)这两个例子。
+到这里，我们简单地创建了一个数据集并实现了数据集的抽象管理与加速, 更多有关 Fluid 的更详细的信息, 请参考以下示例文档:
+- [远程文件访问加速](../samples/accelerate_data_accessing.md)
+- [数据缓存亲和性调度](../samples/data_co_locality.md)
+- [用Fluid加速机器学习训练](../samples/machinelearning.md)
