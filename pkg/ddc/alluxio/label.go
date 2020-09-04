@@ -22,7 +22,7 @@ type readType string
 const (
 	humanReadType readType = "human-"
 
-	rawReadType readType = "raw-"
+	// rawReadType readType = "raw-"
 )
 
 type storageType string

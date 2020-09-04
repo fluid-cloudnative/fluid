@@ -121,14 +121,14 @@ func (e *AlluxioEngine) getCurrentCacheCapacityOfNode(nodeName string) (capacity
 }
 
 // get the value of cached
-func (e *AlluxioEngine) cachedState() (int64, error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	cached, err := fileUitls.CachedState()
+// func (e *AlluxioEngine) cachedState() (int64, error) {
+// 	podName, containerName := e.getMasterPodInfo()
+// 	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+// 	cached, err := fileUitls.CachedState()
 
-	return int64(cached), err
+// 	return int64(cached), err
 
-}
+// }
 
 // clean cache
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {

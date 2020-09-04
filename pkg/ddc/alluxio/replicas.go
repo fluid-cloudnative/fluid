@@ -45,8 +45,9 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		// }
 	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
 		// scale in
+		e.Log.V(1).Info("Scale in to be implemented")
 	} else {
-
+		e.Log.V(1).Info("Nothing to do")
 	}
 
 	return

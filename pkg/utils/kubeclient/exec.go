@@ -156,6 +156,9 @@ func ExecCommandInContainer(podName string, containerName string, namespace stri
 
 func ExecCommandInPod(podName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
 	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	if err != nil {
+		return "", "Failed to find the pod", err
+	}
 	return ExecCommandInContainer(podName, pod.Spec.Containers[0].Name, namespace, cmd)
 }
 

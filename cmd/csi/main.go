@@ -30,12 +30,18 @@ var (
 )
 
 func init() {
-	flag.Set("logtostderr", "true")
+	if err := flag.Set("logtostderr", "true"); err != nil {
+		fmt.Printf("Failed to flag.set due to %v", err)
+		os.Exit(1)
+	}
 }
 
 func main() {
 
-	flag.CommandLine.Parse([]string{})
+	if err := flag.CommandLine.Parse([]string{}); err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err.Error())
+		os.Exit(1)
+	}
 
 	cmd := &cobra.Command{
 		Use:   "fluid",
@@ -48,15 +54,20 @@ func main() {
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 
 	cmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "node id")
-	cmd.MarkPersistentFlagRequired("nodeid")
+	if err := cmd.MarkPersistentFlagRequired("nodeid"); err != nil {
+		errorAndExit(err)
+	}
 
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "", "CSI endpoint")
-	cmd.MarkPersistentFlagRequired("endpoint")
+	if err := cmd.MarkPersistentFlagRequired("endpoint"); err != nil {
+		errorAndExit(err)
+	}
 
-	cmd.ParseFlags(os.Args[1:])
+	if err := cmd.ParseFlags(os.Args[1:]); err != nil {
+		errorAndExit(err)
+	}
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
+		errorAndExit(err)
 	}
 
 	os.Exit(0)
@@ -67,6 +78,11 @@ func handle() {
 
 	d := csi.NewDriver(nodeID, endpoint)
 	d.Run()
+}
+
+func errorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "%s", err.Error())
+	os.Exit(1)
 }
 
 // /*
