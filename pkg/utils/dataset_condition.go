@@ -71,18 +71,18 @@ func GetDatasetCondition(conditions []datav1alpha1.DatasetCondition,
 	return -1, nil
 }
 
-func trimDatasetConditions(conditions []datav1alpha1.DatasetCondition) []datav1alpha1.DatasetCondition {
-	knownConditions := map[datav1alpha1.DatasetConditionType]bool{}
-	newConditions := []datav1alpha1.DatasetCondition{}
-	for _, condition := range conditions {
-		if _, found := knownConditions[condition.Type]; !found {
-			newConditions = append(newConditions, condition)
-			knownConditions[condition.Type] = true
-		}
-	}
+// func trimDatasetConditions(conditions []datav1alpha1.DatasetCondition) []datav1alpha1.DatasetCondition {
+// 	knownConditions := map[datav1alpha1.DatasetConditionType]bool{}
+// 	newConditions := []datav1alpha1.DatasetCondition{}
+// 	for _, condition := range conditions {
+// 		if _, found := knownConditions[condition.Type]; !found {
+// 			newConditions = append(newConditions, condition)
+// 			knownConditions[condition.Type] = true
+// 		}
+// 	}
 
-	return newConditions
-}
+// 	return newConditions
+// }
 
 func IsDatasetConditionExist(conditions []datav1alpha1.DatasetCondition,
 	cond datav1alpha1.DatasetCondition) (found bool) {

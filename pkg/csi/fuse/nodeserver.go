@@ -60,10 +60,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		glog.Infof("Try to mount to %v", targetPath)
 	}
 
-	mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
-	if req.GetReadonly() {
-		mountOptions = append(mountOptions, "ro")
-	}
+	// mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
+	// if req.GetReadonly() {
+	// 	mountOptions = append(mountOptions, "ro")
+	// }
 
 	/*
 	   https://docs.alluxio.io/os/user/edge/en/api/POSIX-API.html

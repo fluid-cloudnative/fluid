@@ -69,15 +69,15 @@ func GetRuntimeCondition(conditions []data.RuntimeCondition,
 	return -1, nil
 }
 
-func trimRuntimeConditions(conditions []data.RuntimeCondition) []data.RuntimeCondition {
-	knownConditions := map[data.RuntimeConditionType]bool{}
-	newConditions := []data.RuntimeCondition{}
-	for _, condition := range conditions {
-		if _, found := knownConditions[condition.Type]; !found {
-			newConditions = append(newConditions, condition)
-			knownConditions[condition.Type] = true
-		}
-	}
+// func trimRuntimeConditions(conditions []data.RuntimeCondition) []data.RuntimeCondition {
+// 	knownConditions := map[data.RuntimeConditionType]bool{}
+// 	newConditions := []data.RuntimeCondition{}
+// 	for _, condition := range conditions {
+// 		if _, found := knownConditions[condition.Type]; !found {
+// 			newConditions = append(newConditions, condition)
+// 			knownConditions[condition.Type] = true
+// 		}
+// 	}
 
-	return newConditions
-}
+// 	return newConditions
+// }

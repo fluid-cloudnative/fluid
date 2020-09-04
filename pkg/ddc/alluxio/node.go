@@ -240,6 +240,10 @@ func (e *AlluxioEngine) labelCacheNode(nodeToLabel corev1.Node, runtime *datav1a
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		nodeName := nodeToLabel.Name
 		node, err := kubeclient.GetNode(e.Client, nodeName)
+		if err != nil {
+			e.Log.Error(err, "GetNode In labelCacheNode")
+			return err
+		}
 		toUpdate := node.DeepCopy()
 		if toUpdate.Labels == nil {
 			toUpdate.Labels = make(map[string]string)

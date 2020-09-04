@@ -63,15 +63,15 @@ func (e *AlluxioEngine) getDaemonset(name string, namespace string) (daemonset *
 	return daemonset, err
 }
 
-func (e *AlluxioEngine) getConfigMap(name string, namespace string) (configMap *corev1.ConfigMap, err error) {
-	configMap = &corev1.ConfigMap{}
-	err = e.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, configMap)
+// func (e *AlluxioEngine) getConfigMap(name string, namespace string) (configMap *corev1.ConfigMap, err error) {
+// 	configMap = &corev1.ConfigMap{}
+// 	err = e.Client.Get(context.TODO(), types.NamespacedName{
+// 		Name:      name,
+// 		Namespace: namespace,
+// 	}, configMap)
 
-	return configMap, err
-}
+// 	return configMap, err
+// }
 
 func (e *AlluxioEngine) getMasterPodInfo() (podName string, containerName string) {
 	podName = e.name + "-master-0"
