@@ -309,3 +309,9 @@ If you want to know where the training is going, please check the Arena log:
 ```shell
 $ arena logs --tail 100 -f horovod-resnet50-v2-4x8-fluid
 ```
+
+## Clean Up
+
+```shell
+$ kubectl delete -f dataset.yaml
+```

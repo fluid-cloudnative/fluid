@@ -138,14 +138,15 @@ $ make csi
     ```
     > 注意: 上述命令可能随您组件的不同实现或是不同的样例产生不同的结果。
 
-6. 通过日志等方法查看您的组件是否运作正常(e.g. `kubectl logs -n fluid-system controller-manager`)
+6. 通过日志等方法查看您的组件是否运作正常
+    ```shell
+    $ kubectl logs -n fluid-system <controller_manager_name>
+    ```
 
 7. 环境清理
     ```shell
     $ kubectl delete -k config/samples
-    
     $ kubectl delete -k config/fluid
-    
     $ kubectl delete -k config/crd
     ```
 
