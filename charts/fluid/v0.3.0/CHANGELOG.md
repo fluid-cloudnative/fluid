@@ -10,4 +10,4 @@
 
 ### 0.3.0
 
-* Speed up Volume and hostPath
+* Speed up Volume and hostPath in Kubernetes
