@@ -310,3 +310,9 @@ horovod-resnet50-v2-4x8-fluid  RUNNING  MPIJOB   16s  horovod-resnet50-v2-4x8-fl
 ```shell
 $ arena logs --tail 100 -f horovod-resnet50-v2-4x8-fluid
 ```
+
+## 环境清理
+
+```shell
+$ kubectl delete -f dataset.yaml
+```

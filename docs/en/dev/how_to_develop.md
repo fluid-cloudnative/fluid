@@ -155,7 +155,7 @@ In the following steps, we assume you have properly configured `KUBECONFIG` envi
 
 6. Check logs to verify your implementation
     ```shell
-    $ kubectl logs -n fluid-system <CONTROLLER_MANAGER_NAME>
+    $ kubectl logs -n fluid-system <controller_manager_name>
     ```
 
 7. Clean up
@@ -177,7 +177,7 @@ $ make unit-test
 
 #### Integration Tests
 
-`kubebuilder`  provided a integration test framework based on [envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest) package. You must install `kubebuilder` before running integration tests:
+`kubebuilder` provided a integration test framework based on [envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest) package. You must install `kubebuilder` before running integration tests:
 
 ```shell
 $ os=$(go env GOOS)
