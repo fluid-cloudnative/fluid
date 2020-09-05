@@ -1,10 +1,8 @@
 ### 0.1.0
 
-* support controller and webhook deployment
 * Update CSI image
-
+* Update dataset CRD
 
 ### 0.2.0
 
-* Remove webhook
-* Update dataset CRD
+* Refactor and clean up the code

@@ -8,6 +8,25 @@ metadata:
   creationTimestamp: null
   name: datasets.data.fluid.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.ufsTotal
+    name: Ufs Total Size
+    type: string
+  - JSONPath: .status.cacheStates.cached
+    name: Cached
+    type: string
+  - JSONPath: .status.cacheStates.cacheCapacity
+    name: Cache Capacity
+    type: string
+  - JSONPath: .status.cacheStates.cachedPercentage
+    name: Cached Percentage
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: data.fluid.io
   names:
     kind: Dataset
@@ -53,7 +72,10 @@ spec:
                   options:
                     additionalProperties:
                       type: string
-                    description: Options to configure
+                    description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
+                      Options</a>.  <br> The option has Prefix 'fs.' And you can Learn
+                      more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
+                      Storage Integrations</a>
                     type: object
                   path:
                     description: The path of mount, if not set will be /{Name}
