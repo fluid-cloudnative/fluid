@@ -21,4 +21,10 @@ const (
 	fluid_PATH = "fluid_path"
 
 	ALLUXIO_MOUNT = "/alluxio-mnt"
+
+	pathScheme string = "path:"
+
+	volumeScheme string = "volume:"
+
+	alluxioHome string = "/opt/alluxio"
 )

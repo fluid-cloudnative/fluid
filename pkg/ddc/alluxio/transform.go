@@ -33,6 +33,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		return
 	}
 
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return value, err
+	}
+
 	value = &Alluxio{}
 
 	value.FullnameOverride = e.name
@@ -55,11 +60,14 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		return
 	}
 
-	// 3.transform the fuse
+	// 4.transform the fuse
 	err = e.transformFuse(runtime, value)
 	if err != nil {
 		return
 	}
+
+	// 5.transform the dataset if it has local path or volume
+	e.transformDatasetToVolume(runtime, dataset, value)
 
 	return
 }
