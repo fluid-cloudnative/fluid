@@ -149,6 +149,36 @@ $ make csi
     $ kubectl delete -k config/crd
     ```
 
+### 单元测试
+
+#### 基本测试
+
+在项目根目录下执行如下命令运行基本单元测试(工具类测试和engine测试)：
+
+```shell
+$ make unit-test
+```
+
+#### 集成测试
+
+`kubebuilder`基于[envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest)提供了controller测试的基本框架，如果您想运行controller测试，您需要执行如下命令安装`kubebuilder`：
+
+```shell
+$ os=$(go env GOOS)
+$ arch=$(go env GOARCH)
+$ curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+$ sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
+$ export PATH=$PATH:/usr/local/kubebuilder/bin
+```
+
+接下来，您可以在项目根目录下运行所有的单元测试：
+
+```shell
+$ make test
+```
+
+> 如果您在macOS等非linux系统开发，运行测试时若提示`exec format error`，则需要检查运行测试命令时是否设置了与开发环境不一致的`GOOS`。
+
 ### 调试
 
 **前提条件**
