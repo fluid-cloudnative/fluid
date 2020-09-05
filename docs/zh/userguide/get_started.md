@@ -53,7 +53,8 @@
 Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据集(Dataset)`概念方便用户管理，接下来将演示如何用 Fluid 创建一个数据集。   
 
 1. 创建一个Dataset CRD对象，其中描述了数据集的来源。
-    ```yaml
+    ```shell 
+    $ cat<<EOF >dataset.yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: Dataset
     metadata:
@@ -62,15 +63,17 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
       mounts:
         - mountPoint: https://mirror.bit.edu.cn/apache/spark/spark-3.0.0/
           name: spark
+    EOF
     ```  
     执行安装
     
     ```
-    kubectl create -f dataset.yaml
+    $ kubectl create -f dataset.yaml
     ```
 
 2. 创建 `AlluxioRuntime` CRD对象，用来描述支持这个数据集的 Runtime, 在这里我们使用[Alluxio](https://www.alluxio.io/)作为其Runtime
-    ```yaml
+    ```shell
+    $ cat<<EOF >runtime.yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
     metadata:
@@ -106,15 +109,17 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
         args:
           - fuse
           - --fuse-opts=direct_io,ro,max_read=131072
+    EOF
     ```
     使用`kubectl`完成创建  
     
     ```shell
-    kubectl create -f runtime.yaml  
+    $ kubectl create -f runtime.yaml  
     ``` 
 
 3. 接下来，我们创建一个应用容器来使用该数据集，我们将多次访问同一数据，并比较访问时间来展示 Fluid 的加速效果。
-    ```yaml
+    ```shell
+    $ cat<<EOF >app.yaml
     apiVersion: v1
     kind: Pod
     metadata:
@@ -130,14 +135,20 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
         - name: demo
           persistentVolumeClaim:
             claimName: demo
+    EOF
     ```
+    使用`kubectl`完成创建  
+
+    ```shell
+    $ kubectl create -f app.yaml  
+    ``` 
 
 4. 登录到应用容器中访问数据，初次访问会花费更长时间。
     ```shell
-    kubectl exec -it demo-app -- bash
-    #  du -sh /data/spark/spark-3.0.0-bin-without-hadoop.tgz
+    $ kubectl exec -it demo-app -- bash
+    $ du -sh /data/spark/spark-3.0.0-bin-without-hadoop.tgz
     150M	/data/spark/spark-3.0.0-bin-without-hadoop.tgz
-    # time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
     real	0m13.171s
     user	0m0.002s
     sys	0m0.028s
@@ -145,9 +156,9 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
 
 5. 为了避免其他因素(比如 page cache )对结果造成影响，我们将删除之前的容器，新建相同的应用，尝试访问同样的文件。由于此时文件已经被 `Alluxio` 缓存，可以看到第二次访问所需时间远小于第一次。
     ```shell
-    kubectl delete -f app.yaml && kubectl create -f app.yaml
-    ...
-    # time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ kubectl delete -f app.yaml && kubectl create -f app.yaml
+    $ kubectl exec -it demo-app -- bash
+    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
     real	0m0.344s
     user	0m0.002s
     sys	0m0.020s
