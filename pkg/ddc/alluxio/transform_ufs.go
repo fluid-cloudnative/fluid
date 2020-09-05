@@ -51,6 +51,4 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 		}
 	}
 
-	return
-
 }
