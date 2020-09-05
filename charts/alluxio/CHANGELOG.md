@@ -131,4 +131,9 @@
 
 - Fixed the typo of alluxio master's env
 - Fixed tiered level0 issue
-* Tiered store configuration on master
+- Tiered store configuration on master
+
+0.6.10
+
+- Support hostPath
+

@@ -123,6 +123,18 @@ spec:
             - name: alluxio-journal
               mountPath: /journal
             {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
             {{- if .Values.metastore }}
             - name: alluxio-metastore
               mountPath: {{ .Values.metastore.mountPath }}
@@ -189,6 +201,18 @@ spec:
 {{- include "alluxio.master.secretVolumeMounts" . }}
             {{- end }}
           {{- end }}
+          {{- if .Values.ufsPaths }}   
+            {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}   
+            {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+            {{- end }}
+          {{- end }}
           {{- if .Values.mounts }}
             {{- range .Values.mounts }}
             - name: "{{ .name }}"
@@ -228,6 +252,20 @@ spec:
             medium: {{ .Values.journal.medium }}
             sizeLimit: {{ .Values.journal.size | quote }}
         {{- end}}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
   volumeClaimTemplates:
   {{- if and $needJournalVolume (eq .Values.journal.volumeType "persistentVolumeClaim") }}
     - metadata:

@@ -95,6 +95,18 @@ spec:
             - name: alluxio-domain
               mountPath: /opt/domain
             {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
             {{- if .Values.secrets -}}
               {{- if .Values.secrets.worker -}}
 {{- include "alluxio.worker.secretVolumeMounts" . }}
@@ -152,6 +164,18 @@ spec:
             - name: alluxio-domain
               mountPath: /opt/domain
             {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
             {{- if .Values.secrets }}
               {{- if .Values.secrets.worker }}
 {{- include "alluxio.worker.secretVolumeMounts" . }}
@@ -178,6 +202,20 @@ spec:
         {{- end}}
         {{- if .Values.mounts }}   
           {{- range .Values.mounts }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
         - name: "{{ .name }}"
           persistentVolumeClaim:
             claimName: "{{ .name }}"

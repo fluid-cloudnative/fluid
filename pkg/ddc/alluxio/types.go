@@ -43,6 +43,20 @@ type Alluxio struct {
 
 	ShortCircuit ShortCircuit `yaml:"shortCircuit,omitempty"`
 	// Enablefluid bool `yaml:"enablefluid,omitempty"`
+
+	UFSPaths []UFSPath `yaml:"ufsPaths,omitempty"`
+
+	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
+}
+
+type UFSPath struct {
+	HostPath  string `yaml:"hostPath"`
+	UFSVolume `yaml:",inline"`
+}
+
+type UFSVolume struct {
+	Name          string `yaml:"name"`
+	ContainerPath string `yaml:"containerPath"`
 }
 
 type ImageInfo struct {
