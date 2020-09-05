@@ -32,11 +32,12 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 			if len(value.UFSPaths) == 0 {
 				value.UFSPaths = []UFSPath{}
 			}
-			value.UFSPaths = append(value.UFSPaths, UFSPath{
-				Name:          mount.Name,
-				HostPath:      strings.TrimLeft(mount.MountPoint, pathScheme),
-				ContainerPath: fmt.Sprintf("%s/underFSStorage/%s", alluxioHome, mount.Name),
-			})
+
+			ufsPath := UFSPath{}
+			ufsPath.Name = mount.Name
+			ufsPath.ContainerPath = fmt.Sprintf("%s/underFSStorage/%s", alluxioHome, mount.Name)
+			ufsPath.HostPath = strings.TrimLeft(mount.MountPoint, pathScheme)
+			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
 		} else if strings.HasPrefix(mount.MountPoint, volumeScheme) {
 			if len(value.UFSVolumes) == 0 {

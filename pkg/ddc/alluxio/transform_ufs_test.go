@@ -22,8 +22,10 @@ import (
 )
 
 func TestTransformDatasetToVolume(t *testing.T) {
-	var defaultStr = "default string"
-	var nonnullStr = "non-null string"
+	var ufsPath = UFSPath{}
+	ufsPath.Name = "test"
+	ufsPath.HostPath = "/mnt/test"
+	ufsPath.ContainerPath = "/opt/alluxio/underFSStorage/test"
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
 		dataset *datav1alpha1.Dataset
@@ -31,23 +33,17 @@ func TestTransformDatasetToVolume(t *testing.T) {
 		expect  UFSPath
 	}{
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
-			Spec: {
-				Mounts: []datav1alpha1.Mount{
-					datav1alpha1.Mount{
-						MountPoint: "path:/mnt/test",
-						Name:       "test",
-					},
-				},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+					MountPoint: "path:/mnt/test",
+					Name:       "test",
+				}},
 			},
-		}, &Alluxio{}, UFSPath{
-			Name:          "test",
-			ContainerPath: "/opt/alluxio/underFSStorage/test",
-			HostPath:      "/mnt/test",
-		}},
+		}, &Alluxio{}, ufsPath},
 	}
 	for _, test := range tests {
-
-		transformDatasetToVolume(test.runtime, test.dataset, test.value)
+		engine := &AlluxioEngine{}
+		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
 		if len(test.value.UFSPaths) != 1 {
 			t.Errorf("expected %v, got %v", test.expect, test.value)
 		}
