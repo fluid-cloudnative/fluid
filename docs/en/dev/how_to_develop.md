@@ -165,7 +165,38 @@ In the following steps, we assume you have properly configured `KUBECONFIG` envi
     $ kubectl delete -k config/crd
     ```
 
+### Unit Testing
+
+#### Basic Tests
+
+Execute following command from project root to run basic unit tests:
+
+```shell
+$ make unit-test
+```
+
+#### Integration Tests
+
+`kubebuilder`  provided a integration test framework based on [envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest) package. You must install `kubebuilder` before running integration tests:
+
+```shell
+$ os=$(go env GOOS)
+$ arch=$(go env GOARCH)
+$ curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+$ sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
+$ export PATH=$PATH:/usr/local/kubebuilder/bin
+```
+
+Next, run all unit tests (integration tests included) with:
+
+```shell
+$ make test
+```
+
+> **NOTE:** When running unit tests on a non-linux system such as macOS, if testing failed and says `exec format error`, you may need to check whether `GOOS` is consistent with your actual OS.
+
 ### Debug
+
 You can debug your program in multiple ways, here is just a brief guide for how to debug with `go-delve`
 
 **Prerequisites**
