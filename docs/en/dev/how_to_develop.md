@@ -118,7 +118,7 @@ In the following steps, we assume you have properly configured `KUBECONFIG` envi
     ```
 
 4. Install your implementation
-    ```shelll
+    ```shell
     $ kubectl apply -k config/fluid
     ```
     

@@ -15,12 +15,6 @@ spec:
       high: "0.95"
       low: "0.7"
       storageType: Memory
-    - mediumtype: SSD
-      path: /var/lib/docker/alluxio
-      quota: 10Gi
-      high: "0.95"
-      low: "0.7"
-      storageType: Disk
   properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal
@@ -42,10 +36,6 @@ spec:
     jvmOptions:
       - "-Xmx4G "
       - "-Xms4G "
-      - "-XX:+UseG1GC "
-      - "-XX:MaxDirectMemorySize=4g "
-      - "-XX:+UnlockExperimentalVMOptions "
-      - "-XX:ActiveProcessorCount=8 "
     # For now, only support local
     shortCircuitPolicy: local
     args:
