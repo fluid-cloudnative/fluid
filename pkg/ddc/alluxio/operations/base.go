@@ -71,7 +71,7 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	var (
 		// command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "ls", "-R", alluxioPath}
 		// command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "count", alluxioPath}
-		command = []string{"alluxio", "fs", "ls", "-R", alluxioPath}
+		command []string
 		stdout  string
 		stderr  string
 	)
