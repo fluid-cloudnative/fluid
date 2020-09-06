@@ -67,7 +67,7 @@ func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 }
 
 // Load the metadata
-func (a AlluxioFileUtils) LoadMetaData(alluxioPath string) (err error) {
+func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error) {
 	var (
 		// command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "ls", "-R", alluxioPath}
 		// command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "count", alluxioPath}
@@ -75,6 +75,12 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string) (err error) {
 		stdout  string
 		stderr  string
 	)
+
+	if sync {
+		command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "ls", "-R", alluxioPath}
+	} else {
+		command = []string{"alluxio", "fs", "ls", "-R", alluxioPath}
+	}
 
 	start := time.Now()
 	stdout, stderr, err = a.exec(command, false)

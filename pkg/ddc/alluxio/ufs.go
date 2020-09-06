@@ -89,7 +89,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	//2. load the metadata
-	err = fileUitls.LoadMetaData("/")
+	err = fileUitls.LoadMetaData("/", true)
 	if err != nil {
 		return
 	}

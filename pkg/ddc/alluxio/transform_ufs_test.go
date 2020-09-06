@@ -44,7 +44,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if len(test.value.UFSPaths) != 1 {
+		if test.value.UFSPaths[0].ContainerPath != ufsPath.ContainerPath {
 			t.Errorf("expected %v, got %v", test.expect, test.value)
 		}
 	}
