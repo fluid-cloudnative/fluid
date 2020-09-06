@@ -69,6 +69,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	//1. make mount
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
+			fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
 			continue
 		}
 

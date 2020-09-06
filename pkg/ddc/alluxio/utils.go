@@ -130,3 +130,7 @@ func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
 	return strings.HasPrefix(mountPoint, pathScheme) || strings.HasPrefix(mountPoint, volumeScheme)
 }
+
+func (e *AlluxioEngine) getLocalStorageDirectory() string {
+	return fmt.Sprintf("%s/underFSStorage", alluxioHome)
+}

@@ -35,7 +35,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
-			ufsPath.ContainerPath = fmt.Sprintf("%s/underFSStorage/%s", alluxioHome, mount.Name)
+			ufsPath.ContainerPath = fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
 			ufsPath.HostPath = strings.TrimLeft(mount.MountPoint, pathScheme)
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
@@ -46,7 +46,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 				Name:          mount.Name,
-				ContainerPath: fmt.Sprintf("%s/underFSStorage/%s", alluxioHome, mount.Name),
+				ContainerPath: fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name),
 			})
 		}
 	}
