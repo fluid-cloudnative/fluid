@@ -17,18 +17,27 @@ package operations
 
 import (
 	"testing"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func TestSyncLocalDir(t *testing.T) {
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
 	var tests = []struct {
 		path string
 		err  error
 	}{
 		{"/opt/alluxio/underFSStorage/test", nil},
 	}
+
 	for _, test := range tests {
-		tools := NewAlluxioFileUtils("", "", "", nil)
-		if tools.log != nil {
+		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
+		err := tools.SyncLocalDir(test.path)
+		// fmt.Println(err)
+		if err == nil {
 			t.Errorf("expected %v, got %v", test.path, tools)
 		}
 	}

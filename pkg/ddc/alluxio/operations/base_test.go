@@ -17,6 +17,9 @@ package operations
 
 import (
 	"testing"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func TestLoadMetaData(t *testing.T) {
@@ -27,9 +30,15 @@ func TestLoadMetaData(t *testing.T) {
 	}{
 		{"/", true, nil},
 	}
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
+
 	for _, test := range tests {
-		tools := NewAlluxioFileUtils("", "", "", nil)
-		if tools.log != nil {
+		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
+		err := tools.LoadMetaData(test.path, test.sync)
+		// fmt.Println(err)
+		if err == nil {
 			t.Errorf("expected %v, got %v", test.path, tools)
 		}
 	}
