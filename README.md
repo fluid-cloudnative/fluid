@@ -1,13 +1,15 @@
 <div align="left">
-    <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/fluid_logo.png" title="architecture" height="20%" width="20%" alt="">
+    <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/fluid_logo.jpg" title="architecture" height="9%" width="9%" alt="">
 </div>
+
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CircleCI](https://circleci.com/gh/circleci/circleci-docs.svg?style=svg)](https://circleci.com/gh/fluid-cloudnative/fluid)
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
-# Fluid
 
+# Fluid
 English | [简体中文](./README-zh_CN.md)
 
 ## What is Fluid?
