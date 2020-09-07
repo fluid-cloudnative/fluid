@@ -22,9 +22,9 @@ const (
 
 	ALLUXIO_MOUNT = "/alluxio-mnt"
 
-	pathScheme string = "path:"
+	pathScheme string = "local://"
 
-	volumeScheme string = "volume:"
+	volumeScheme string = "pvc://"
 
 	alluxioHome string = "/opt/alluxio"
 )

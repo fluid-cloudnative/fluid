@@ -25,10 +25,10 @@ func TestIsFluidNativeScheme(t *testing.T) {
 		mountPoint string
 		expect     bool
 	}{
-		{"path:/test",
+		{"local:///test",
 			true},
 		{
-			"volume:test",
+			"pvc://test",
 			true,
 		}, {
 			"oss://test",

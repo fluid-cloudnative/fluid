@@ -4,9 +4,9 @@ metadata:
   name: test
 spec:
   mounts:
-    - mountPoint: path:/mnt/test1
+    - mountPoint: local:///mnt/test1
       name: test1
-    - mountPoint: path:/mnt/test2
+    - mountPoint: local:///mnt/test2
       name: test2
 ---
 apiVersion: data.fluid.io/v1alpha1
@@ -15,6 +15,10 @@ metadata:
   name: test
 spec:
   replicas: 2
+  alluxioVersion:
+    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
+    imageTag: "2.3.0-SNAPSHOT-cf866c7"
+    imagePullPolicy: Always
   tieredstore:
     levels:
       - mediumtype: MEM
@@ -43,6 +47,9 @@ spec:
     jvmOptions:
       - "-Xmx4G"
   fuse:
+    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+    imageTag: "2.3.0-SNAPSHOT-cf866c7"
+    imagePullPolicy: Always
     jvmOptions:
       - "-Xmx4G "
       - "-Xms4G "
