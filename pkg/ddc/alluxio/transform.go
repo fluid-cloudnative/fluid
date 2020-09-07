@@ -345,7 +345,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	}
 
 	if dataset.Spec.Owner != nil {
-		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", dataset.Spec.Owner.UID, dataset.Spec.Owner.GID)}, ",")
+		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
 	}
 	// value.Fuse.Args[-1]
 
@@ -388,8 +388,9 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		// }
 	}
-
-	value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	if value.Fuse.Resources.Limits != nil {
+		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	}
 
 	return
 
