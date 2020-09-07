@@ -164,6 +164,21 @@ type Data struct {
 	Pin bool `json:"pin"`
 }
 
+// Run as
+type RunAs struct {
+	// The user name to run the alluxio runtime
+	UserName string `json:"userName"`
+
+	// The group name to run the alluxio runtime
+	GroupName string `json:"groupName"`
+
+	// The uid to run the alluxio runtime
+	UID *int64 `json:"uid"`
+
+	// The gid to run the alluxio runtime
+	GID *int64 `json:"gid"`
+}
+
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
@@ -202,6 +217,9 @@ type AlluxioRuntimeSpec struct {
 
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// Manage the user to run Alluxio Runtime
+	RunAs *RunAs `json:"runAs,omitempty"`
 }
 
 type RuntimePhase string

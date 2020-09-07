@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"strconv"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -207,6 +208,14 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Master.HostNetwork = true
 
+	// check the run as
+	if runtime.Spec.RunAs != nil {
+		value.Master.Env["ALLUXIO_USERNAME"] = runtime.Spec.RunAs.UserName
+		value.Master.Env["ALLUXIO_GROUP"] = runtime.Spec.RunAs.GroupName
+		value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	}
+
 	return
 }
 
@@ -233,6 +242,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Worker.Env = runtime.Spec.Worker.Env
 	} else {
 		value.Worker.Env = map[string]string{}
+	}
+
+	// check the run as
+	if runtime.Spec.RunAs != nil {
+		value.Worker.Env["ALLUXIO_USERNAME"] = runtime.Spec.RunAs.UserName
+		value.Worker.Env["ALLUXIO_GROUP"] = runtime.Spec.RunAs.GroupName
+		value.Worker.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+		value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}
 
 	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
