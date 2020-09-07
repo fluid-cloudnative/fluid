@@ -22,7 +22,11 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
-        storageType: Memory
+  runAs:
+    userName: cheyang
+    userGroup: cheyang
+    uid: 1005
+    gid: 1005
   properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal
@@ -46,5 +50,5 @@ spec:
     shortCircuitPolicy: local
     args:
       - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
+      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,uid=1005,gid=1005,nonempty
 
