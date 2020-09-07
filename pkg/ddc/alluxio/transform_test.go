@@ -56,7 +56,10 @@ func TestTransformFuse(t *testing.T) {
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
 		engine.Log = ctrl.Log
-		engine.transformFuse(test.runtime, test.dataset, test.value)
+		err := engine.transformFuse(test.runtime, test.dataset, test.value)
+		if err != nil {
+			t.Errorf("error %v", err)
+		}
 		if test.value.Fuse.Args[1] != test.expect[1] {
 			t.Errorf("expected %v, got %v", test.expect, test.value.Fuse.Args)
 		}
