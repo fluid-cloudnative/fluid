@@ -166,12 +166,6 @@ type Data struct {
 
 // Run as
 type RunAs struct {
-	// The user name to run the alluxio runtime
-	UserName string `json:"userName"`
-
-	// The group name to run the alluxio runtime
-	GroupName string `json:"groupName"`
-
 	// The uid to run the alluxio runtime
 	UID *int64 `json:"uid"`
 

@@ -210,8 +210,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 
 	// check the run as
 	if runtime.Spec.RunAs != nil {
-		value.Master.Env["ALLUXIO_USERNAME"] = runtime.Spec.RunAs.UserName
-		value.Master.Env["ALLUXIO_GROUP"] = runtime.Spec.RunAs.GroupName
+		value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
+		value.Master.Env["ALLUXIO_GROUP"] = alluxioUser
 		value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
 		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}
@@ -246,8 +246,8 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	// check the run as
 	if runtime.Spec.RunAs != nil {
-		value.Worker.Env["ALLUXIO_USERNAME"] = runtime.Spec.RunAs.UserName
-		value.Worker.Env["ALLUXIO_GROUP"] = runtime.Spec.RunAs.GroupName
+		value.Worker.Env["ALLUXIO_USERNAME"] = alluxioUser
+		value.Worker.Env["ALLUXIO_GROUP"] = alluxioUser
 		value.Worker.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
 		value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}

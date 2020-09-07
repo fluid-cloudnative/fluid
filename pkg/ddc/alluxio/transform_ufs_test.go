@@ -26,9 +26,6 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	ufsPath.Name = "test"
 	ufsPath.HostPath = "/mnt/test"
 	ufsPath.ContainerPath = "/opt/alluxio/underFSStorage/test"
-	var ufsPath2 = UFSPath{}
-	ufsPath2.Name = "test2"
-	ufsPath2.ContainerPath = "/opt/alluxio/underFSStorage/test2"
 
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -50,7 +47,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
 		if test.value.UFSPaths[0].HostPath != ufsPath.HostPath ||
 			test.value.UFSPaths[0].ContainerPath != ufsPath.ContainerPath {
-			t.Errorf("expected %v, got %v", test.expect, test.value)
+			t.Errorf("expected %v, got %v", test.expect, test.value.UFSPaths[0])
 		}
 	}
 }

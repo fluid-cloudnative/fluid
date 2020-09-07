@@ -36,7 +36,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
 			ufsPath.ContainerPath = fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-			ufsPath.HostPath = "/" + strings.TrimPrefix(mount.MountPoint, pathScheme)
+			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, pathScheme)
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
 		} else if strings.HasPrefix(mount.MountPoint, volumeScheme) {

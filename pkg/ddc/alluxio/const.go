@@ -27,4 +27,6 @@ const (
 	volumeScheme string = "pvc://"
 
 	alluxioHome string = "/opt/alluxio"
+
+	alluxioUser string = "fluid"
 )
