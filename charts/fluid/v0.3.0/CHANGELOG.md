@@ -11,3 +11,4 @@
 ### 0.3.0
 
 * Speed up Volume and hostPath in Kubernetes
+* Add RunAs
