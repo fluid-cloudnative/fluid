@@ -8,6 +8,9 @@ spec:
       name: test1
     - mountPoint: local:///mnt/test2
       name: test2
+  owner:
+    uid: 1005
+    gid: 1005
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime

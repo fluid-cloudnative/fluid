@@ -165,7 +165,7 @@ type Data struct {
 }
 
 // Run as
-type RunAs struct {
+type User struct {
 	// The uid to run the alluxio runtime
 	UID *int64 `json:"uid"`
 
@@ -213,7 +213,7 @@ type AlluxioRuntimeSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Manage the user to run Alluxio Runtime
-	RunAs *RunAs `json:"runAs,omitempty"`
+	RunAs *User `json:"runAs,omitempty"`
 }
 
 type RuntimePhase string

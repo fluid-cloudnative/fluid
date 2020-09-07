@@ -18,6 +18,7 @@ package alluxio
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -62,7 +63,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	}
 
 	// 4.transform the fuse
-	err = e.transformFuse(runtime, value)
+	err = e.transformFuse(runtime, dataset, value)
 	if err != nil {
 		return
 	}
@@ -295,7 +296,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 }
 
 // 4. Transform the fuse
-func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
+func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, dataset *datav1alpha1.Dataset, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
 	value.Fuse.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
@@ -339,7 +340,14 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
+	} else {
+		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
 	}
+
+	if dataset.Spec.Owner != nil {
+		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", dataset.Spec.Owner.UID, dataset.Spec.Owner.GID)}, ",")
+	}
+	// value.Fuse.Args[-1]
 
 	labelName := e.getCommonLabelname()
 	if len(value.Fuse.NodeSelector) == 0 {

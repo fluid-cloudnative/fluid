@@ -79,6 +79,10 @@ type DatasetSpec struct {
 	// +required
 	Mounts []Mount `json:"mounts,omitempty"`
 
+	// The owner of the dataset
+	// +optional
+	Owner *User `json:"owner,omitempty"`
+
 	// NodeAffinity defines constraints that limit what nodes this dataset can be cached to.
 	// This field influences the scheduling of pods that use the cached dataset.
 	// +optional
