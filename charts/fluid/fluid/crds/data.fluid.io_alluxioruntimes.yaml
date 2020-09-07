@@ -341,21 +341,13 @@ spec:
                   description: The gid to run the alluxio runtime
                   format: int64
                   type: integer
-                groupName:
-                  description: The group name to run the alluxio runtime
-                  type: string
                 uid:
                   description: The uid to run the alluxio runtime
                   format: int64
                   type: integer
-                userName:
-                  description: The user name to run the alluxio runtime
-                  type: string
               required:
               - gid
-              - groupName
               - uid
-              - userName
               type: object
             tieredstore:
               description: Tiered storage used by Alluxio
