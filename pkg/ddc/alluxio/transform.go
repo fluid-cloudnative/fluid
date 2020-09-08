@@ -71,6 +71,9 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 5.transform the dataset if it has local path or volume
 	e.transformDatasetToVolume(runtime, dataset, value)
 
+	// 6.transform the permission
+	e.transformPermission(runtime, value)
+
 	return
 }
 
