@@ -57,13 +57,13 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
-	if env:=os.Getenv("USE_EXISTING_CLUSTER");env!=""{
-		useExistingCluster=true
+	if env := os.Getenv("USE_EXISTING_CLUSTER"); env != "" {
+		useExistingCluster = true
 	}
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		UseExistingCluster:&useExistingCluster,
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
+		UseExistingCluster: &useExistingCluster,
+		CRDDirectoryPaths:  []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
 	}
 
 	var err error
