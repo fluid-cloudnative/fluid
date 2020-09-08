@@ -84,7 +84,6 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
             quota: 2Gi
             high: "0.95"
             low: "0.7"
-            storageType: Memory
       properties:
         alluxio.user.file.writetype.default: MUST_CACHE
         alluxio.master.journal.folder: /journal
@@ -104,8 +103,6 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
         jvmOptions:
           - "-Xmx4G "
           - "-Xms4G "
-        # For now, only support local
-        shortCircuitPolicy: local
         args:
           - fuse
           - --fuse-opts=direct_io,ro,max_read=131072
