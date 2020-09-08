@@ -85,7 +85,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
+	value.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
@@ -307,7 +307,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
