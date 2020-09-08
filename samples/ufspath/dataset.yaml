@@ -11,6 +11,14 @@ spec:
   owner:
     uid: 1005
     gid: 1005
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: nonroot
+              operator: In
+              values:
+                - "true"
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
