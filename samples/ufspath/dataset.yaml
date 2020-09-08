@@ -18,10 +18,10 @@ metadata:
   name: test
 spec:
   replicas: 2
-  alluxioVersion:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
-    imageTag: "2.3.0-SNAPSHOT-f83f51e"
-    imagePullPolicy: Always
+#  alluxioVersion:
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
+#    imageTag: "2.3.0-SNAPSHOT-f83f51e"
+#    imagePullPolicy: Always
   tieredstore:
     levels:
       - mediumtype: MEM
@@ -48,9 +48,9 @@ spec:
     jvmOptions:
       - "-Xmx4G"
   fuse:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: "2.3.0-SNAPSHOT-f83f51e"
-    imagePullPolicy: Always
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+#    imageTag: "2.3.0-SNAPSHOT-f83f51e"
+#    imagePullPolicy: Always
     jvmOptions:
       - "-Xmx4G "
       - "-Xms4G "

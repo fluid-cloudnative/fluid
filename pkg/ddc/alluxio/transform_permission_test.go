@@ -41,7 +41,7 @@ func TestTransformPermission(t *testing.T) {
 		}, &Alluxio{}, map[string]string{
 			"alluxio.master.security.impersonation.root.users":  "'*'",
 			"alluxio.master.security.impersonation.root.groups": "'*'",
-			"alluxio.security.authorization.permission.enabled": "'false'",
+			"alluxio.security.authorization.permission.enabled": "false",
 		}},
 	}
 	for _, test := range tests {
