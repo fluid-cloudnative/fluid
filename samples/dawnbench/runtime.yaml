@@ -102,7 +102,6 @@ spec:
     resources:
       limits:
         cpu: 16
-    shortCircuitPolicy: local
     args:
       - fuse
       - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
