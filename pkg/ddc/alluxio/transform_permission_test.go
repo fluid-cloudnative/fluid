@@ -39,8 +39,8 @@ func TestTransformPermission(t *testing.T) {
 				Fuse: datav1alpha1.AlluxioFuseSpec{},
 			},
 		}, &Alluxio{}, map[string]string{
-			"alluxio.master.security.impersonation.root.users":  "'*'",
-			"alluxio.master.security.impersonation.root.groups": "'*'",
+			"alluxio.master.security.impersonation.root.users":  "*",
+			"alluxio.master.security.impersonation.root.groups": "*",
 			"alluxio.security.authorization.permission.enabled": "false",
 		}},
 	}

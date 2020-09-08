@@ -27,7 +27,7 @@ func (e *AlluxioEngine) transformPermission(runtime *datav1alpha1.AlluxioRuntime
 			value.Properties = map[string]string{}
 		}
 	}
-	value.Properties["alluxio.master.security.impersonation.root.users"] = "'*'"
-	value.Properties["alluxio.master.security.impersonation.root.groups"] = "'*'"
+	value.Properties["alluxio.master.security.impersonation.root.users"] = "*"
+	value.Properties["alluxio.master.security.impersonation.root.groups"] = "*"
 	value.Properties["alluxio.security.authorization.permission.enabled"] = "false"
 }
