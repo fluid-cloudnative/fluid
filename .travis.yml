@@ -6,8 +6,9 @@ matrix:
       os:
         - linux
       go_import_path: github.com/fluid-cloudnative/fluid
+      #for the convenience of gohook to set gcflag here
       env:
-        - TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic'
+        - TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic -gcflags=-l'
       sudo: true
       before_script:
         - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest

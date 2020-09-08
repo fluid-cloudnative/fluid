@@ -73,7 +73,7 @@ fmt:
 
 # Run go vet against code
 vet:
-	GO111MODULE=off go vet ./...
+	GO111MODULE=off go list ./... | grep -v "vendor" | xargs go vet
 
 # Generate code
 generate: controller-gen
