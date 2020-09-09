@@ -16,7 +16,6 @@ limitations under the License.
 package alluxio
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
@@ -142,7 +141,7 @@ type Level struct {
 }
 
 type Affinity struct {
-	NodeAffinity *datav1alpha1.CacheableNodeAffinity
+	NodeAffinity *NodeAffinity
 }
 
 type cacheStates struct {
