@@ -1,4 +1,3 @@
-
 /*
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,9 +20,9 @@ import (
 	"fmt"
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 )
@@ -37,15 +36,6 @@ const (
 	DATA_NUM       = "data nums not match"
 	PARSE_ERR      = "parse err"
 )
-
-var case1 = struct {
-	out1 int
-	out2 int
-	out3 string
-}{111, 222, "%233"}
-var case2 = struct {
-	out1, out2, out3 int
-}{111, 222, 233}
 
 // a empty logger just for testing ...
 type NullLogger struct{}
@@ -95,10 +85,10 @@ func (log NullLogger) WithName(_ string) logr.Logger {
 func (log NullLogger) WithValues(_ ...interface{}) logr.Logger {
 	return log
 }
+
 //imeplement nulllogger to bypass go vet check
 
 func TestAlluxioFileUtils_IsExist(t *testing.T) {
-
 
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 
@@ -139,6 +129,7 @@ func TestAlluxioFileUtils_IsExist(t *testing.T) {
 }
 
 func TestAlluxioFileUtils_Du(t *testing.T) {
+	out1, out2, out3 := 111, 222, "%233"
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 
 		if strings.Contains(p4[4], EXEC_ERR) {
@@ -150,11 +141,11 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		} else if strings.Contains(p4[4], PARSE_ERR) {
 			return "1\n1\tdududu\tbbb\t", "1\n1\t2\tbbb\t", nil
 		} else {
-			return fmt.Sprintf("first line!\n%d\t%d\t(%s)\t2333", case1.out1, case2.out2, case1.out3), "first line!\n111\t222\t(666)", nil
+			return fmt.Sprintf("first line!\n%d\t%d\t(%s)\t2333", out1, out2, out3), "", nil
 		}
 	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	err := gohook.HookByIndirectJmp(kubeclient.ExecCommandInContainer, mockExec, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -168,7 +159,7 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		{TOO_MANY_LINES, 0, 0, "", false},
 		{DATA_NUM, 0, 0, "", false},
 		{PARSE_ERR, 0, 0, "", false},
-		{FINE, int64(case1.out1), int64(case1.out2), case1.out3, true},
+		{FINE, int64(out1), int64(out2), out3, true},
 	}
 	for _, test := range tests {
 		o1, o2, o3, err := AlluxioFileUtils{log: NullLogger{}}.Du(test.in)
@@ -184,9 +175,8 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 	}
 }
 
-
 func TestAlluxioFileUtils_Count(t *testing.T) {
-	out1,out2,out3:=111,222,333
+	out1, out2, out3 := 111, 222, 333
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 
 		if strings.Contains(p4[3], EXEC_ERR) {
