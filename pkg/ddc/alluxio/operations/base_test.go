@@ -20,13 +20,18 @@ import (
 	"errors"
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	ltest "github.com/go-logr/logr/testing"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 )
 
+type NullLogger struct{}
+
+func (_ NullLogger) Info(_ string, _ ...interface{}) {
+	// Do nothing.
+}
 
 func TestLoadMetaData(t *testing.T) {
 	var tests = []struct {
@@ -50,6 +55,26 @@ func TestLoadMetaData(t *testing.T) {
 	}
 }
 
+func (_ NullLogger) Enabled() bool {
+	return false
+}
+
+func (_ NullLogger) Error(_ error, _ string, _ ...interface{}) {
+	// Do nothing.
+}
+
+func (log NullLogger) V(_ int) logr.InfoLogger {
+	return log
+}
+
+func (log NullLogger) WithName(_ string) logr.Logger {
+	return log
+}
+
+func (log NullLogger) WithValues(_ ...interface{}) logr.Logger {
+	return log
+}
+//imeplement nulllogger to bypass go vet check
 
 func TestAlluxioFileUtils_IsExist(t *testing.T) {
 	mockExecTramp := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
@@ -79,7 +104,6 @@ func TestAlluxioFileUtils_IsExist(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-
 	var tests = []struct {
 		in          string
 		out         bool
@@ -90,16 +114,17 @@ func TestAlluxioFileUtils_IsExist(t *testing.T) {
 		{"fine", true, nil},
 	}
 	for _, test := range tests {
-		found, err := AlluxioFileUtils{log: ltest.NullLogger{}}.IsExist(test.in)
+		found, err := AlluxioFileUtils{log: NullLogger{}}.IsExist(test.in)
 
 		if found != test.out {
 			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
 		}
 		if test.expectedErr == nil && err != nil {
 			t.Errorf("input parameter is %s,and expectedErr should be nil", test.in)
-		}
-		if test.expectedErr != nil && err == nil {
-			t.Error("wrong")
+
+			if test.expectedErr != nil && err == nil {
+				t.Error("wrong")
+			}
 		}
 	}
 }
