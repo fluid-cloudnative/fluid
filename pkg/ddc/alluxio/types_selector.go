@@ -37,7 +37,7 @@ type NodeSelectorRequirement struct {
 // The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
 type NodeSelectorTerm struct {
 	// A list of node selector requirements by node's labels.
-	MatchExpressions []NodeSelectorRequirement `yaml:"values,matchExpressions"`
+	MatchExpressions []NodeSelectorRequirement `yaml:"matchExpressions"`
 }
 
 // NodeSelector represents the union of the results of one or more label queries
@@ -45,7 +45,7 @@ type NodeSelectorTerm struct {
 // by the node selector terms.
 type NodeSelector struct {
 	//Required. A list of node selector terms.
-	NodeSelectorTerms []NodeSelectorTerm `yaml:"values,nodeSelectorTerms"`
+	NodeSelectorTerms []NodeSelectorTerm `yaml:"nodeSelectorTerms"`
 }
 
 type NodeAffinity struct {
@@ -64,7 +64,7 @@ type NodeAffinity struct {
 	// at some point during pod execution (e.g. due to an update), the system
 	// may or may not try to eventually evict the pod from its node.
 	// +optional
-	RequiredDuringSchedulingIgnoredDuringExecution *NodeSelector `yaml:"values,requiredDuringSchedulingIgnoredDuringExecution"`
+	RequiredDuringSchedulingIgnoredDuringExecution *NodeSelector `yaml:"requiredDuringSchedulingIgnoredDuringExecution"`
 }
 
 func translateCacheToNodeAffinity(dataAffinity *datav1alpha1.CacheableNodeAffinity) (nodeAffinity *NodeAffinity) {
