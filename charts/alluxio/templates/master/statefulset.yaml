@@ -60,7 +60,7 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}
-      {{- if .values.affinity }}
+      {{- if .Values.affinity }}
 {{ toYaml .values.affinity | indent 8  }}
       {{- end }}
       initContainers:
