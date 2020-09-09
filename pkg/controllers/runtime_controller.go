@@ -133,14 +133,18 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	err := engine.DeleteVolume()
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
-		return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
+		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
+		log.Error(err, "Failed to delete volume", "dataset", ctx.Dataset.Name)
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
 	// 1. Delete the implementation of the the runtime
 	err = engine.Shutdown()
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
-		return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
+		// return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
+		log.Error(err, "Failed to shutdown the engine", "dataset", ctx.Dataset.Name)
+		utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
 	// 2. Set the dataset's status as unbound
