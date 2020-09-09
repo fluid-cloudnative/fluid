@@ -18,6 +18,7 @@ package operations
 
 import (
 	"errors"
+	"fmt"
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,6 +37,15 @@ const (
 	DATA_NUM       = "data nums not match"
 	PARSE_ERR      = "parse err"
 )
+
+var case1 = struct {
+	out1 int
+	out2 int
+	out3 string
+}{111, 222, "%233"}
+var case2 = struct {
+	out1, out2, out3 int
+}{111, 222, 233}
 
 // a empty logger just for testing ...
 type NullLogger struct{}
@@ -140,11 +150,14 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		} else if strings.Contains(p4[4], PARSE_ERR) {
 			return "1\n1\tdududu\tbbb\t", "1\n1\t2\tbbb\t", nil
 		} else {
-			return "first line!\n111\t222\t(%233)\t2333", "first line!\n111\t222\t(666)", nil
+			return fmt.Sprintf("first line!\n%d\t%d\t(%s)\t2333", case1.out1, case2.out2, case1.out3), "first line!\n111\t222\t(666)", nil
 		}
 	}
 
-	gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	var tests = []struct {
 		in         string
 		out1, out2 int64
@@ -155,7 +168,7 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		{TOO_MANY_LINES, 0, 0, "", false},
 		{DATA_NUM, 0, 0, "", false},
 		{PARSE_ERR, 0, 0, "", false},
-		{FINE, 111, 222, "%233", true},
+		{FINE, int64(case1.out1), int64(case1.out2), case1.out3, true},
 	}
 	for _, test := range tests {
 		o1, o2, o3, err := AlluxioFileUtils{log: NullLogger{}}.Du(test.in)
@@ -166,6 +179,52 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		if test.noErr {
 			if o1 != test.out1 || o2 != test.out2 || o3 != test.out3 {
 				t.Fatalf("input parameter is %s,output is %d,%d, %s", test.in, o1, o2, o3)
+			}
+		}
+	}
+}
+
+
+func TestAlluxioFileUtils_Count(t *testing.T) {
+	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+
+		if strings.Contains(p4[3], EXEC_ERR) {
+			return "does not exist", "", errors.New("exec-error")
+		} else if strings.Contains(p4[3], TOO_MANY_LINES) {
+			return "1\n2\n3\n4\n", "1\n2\n3\n4\n", nil
+		} else if strings.Contains(p4[3], DATA_NUM) {
+			return "1\n2\t3", "1\n2\t3", nil
+		} else if strings.Contains(p4[3], PARSE_ERR) {
+			return "1\n1\tdududu\tbbb\t", "1\n1\t2\tbbb\t", nil
+		} else {
+			return fmt.Sprintf("first line!\n%d\t%d\t%d", case2.out1, case2.out2, case2.out3), "", nil
+		}
+	}
+
+	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	var tests = []struct {
+		in               string
+		out1, out2, out3 int64
+		noErr            bool
+	}{
+		{EXEC_ERR, 0, 0, 0, false},
+		{TOO_MANY_LINES, 0, 0, 0, false},
+		{DATA_NUM, 0, 0, 0, false},
+		{PARSE_ERR, 0, 0, 0, false},
+		{FINE, int64(case2.out1), int64(case2.out2), int64(case2.out3), true},
+	}
+	for _, test := range tests {
+		o1, o2, o3, err := AlluxioFileUtils{log: NullLogger{}}.Count(test.in)
+		var noErr bool = (err == nil)
+		if test.noErr != noErr {
+			t.Errorf("input parameter is %s,expected noerr is %t", test.in, test.noErr)
+		}
+		if test.noErr {
+			if o1 != test.out1 || o2 != test.out2 || o3 != test.out3 {
+				t.Fatalf("input parameter is %s,output is %d,%d, %d", test.in, o1, o2, o3)
 			}
 		}
 	}
