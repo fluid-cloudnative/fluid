@@ -144,7 +144,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
 		log.Error(err, "Failed to shutdown the engine", "Runtime", ctx.NamespacedName)
-		utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
 	// 2. Set the dataset's status as unbound
