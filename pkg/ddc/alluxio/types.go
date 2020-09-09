@@ -99,9 +99,9 @@ type Worker struct {
 }
 
 type Master struct {
-	JvmOptions []string          `yaml:"jvmOptions,omitempty"`
-	Env        map[string]string `yaml:"env,omitempty"`
-	Affinity
+	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
+	Env          map[string]string `yaml:"env,omitempty"`
+	Affinity     Affinity          `yaml:"affinity"`
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
@@ -141,7 +141,7 @@ type Level struct {
 }
 
 type Affinity struct {
-	NodeAffinity *NodeAffinity
+	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
 }
 
 type cacheStates struct {
