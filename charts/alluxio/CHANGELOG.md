@@ -137,3 +137,8 @@
 
 - Support hostPath
 
+
+0.6.11
+
+- Support nodeAffinity in master
+

@@ -51,4 +51,13 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 		}
 	}
 
+	if len(value.UFSPaths) > 0 {
+		// fmt.Println("UFSPaths length 1")
+		if dataset.Spec.NodeAffinity != nil {
+			value.Master.Affinity = Affinity{
+				NodeAffinity: dataset.Spec.NodeAffinity,
+			}
+		}
+	}
+
 }

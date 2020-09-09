@@ -15,7 +15,10 @@ limitations under the License.
 
 package alluxio
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+)
 
 // The value yaml file
 type Alluxio struct {
@@ -97,8 +100,9 @@ type Worker struct {
 }
 
 type Master struct {
-	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
-	Env          map[string]string `yaml:"env,omitempty"`
+	JvmOptions []string          `yaml:"jvmOptions,omitempty"`
+	Env        map[string]string `yaml:"env,omitempty"`
+	Affinity
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
@@ -135,6 +139,10 @@ type Level struct {
 	Quota      string `yaml:"quota,omitempty"`
 	High       string `yaml:"high,omitempty"`
 	Low        string `yaml:"low,omitempty"`
+}
+
+type Affinity struct {
+	NodeAffinity *datav1alpha1.CacheableNodeAffinity
 }
 
 type cacheStates struct {

@@ -60,6 +60,9 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}
+      {{- if .values.affinity }}
+{{ toYaml .values.affinity | indent 8  }}
+      {{- end }}
       initContainers:
       {{- if .Values.journal.format.runFormat}}
       - name: journal-format
