@@ -134,7 +134,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
-		log.Error(err, "Failed to delete volume", "dataset", ctx.Dataset.Name)
+		log.Error(err, "Failed to delete volume", "Runtime", ctx.NamespacedName)
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
@@ -143,7 +143,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
-		log.Error(err, "Failed to shutdown the engine", "dataset", ctx.Dataset.Name)
+		log.Error(err, "Failed to shutdown the engine", "Runtime", ctx.NamespacedName)
 		utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
