@@ -1,0 +1,68 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: test
+spec:
+  mounts:
+    - mountPoint: local:///mnt/test1
+      name: test1
+    - mountPoint: local:///mnt/test2
+      name: test2
+  owner:
+    uid: 1005
+    gid: 1005
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: nonroot
+              operator: In
+              values:
+                - "true"
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: test
+spec:
+  replicas: 2
+#  alluxioVersion:
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
+#    imageTag: "2.3.0-SNAPSHOT-f83f51e"
+#    imagePullPolicy: Always
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+  runAs:
+    uid: 1005
+    gid: 1005
+  properties:
+    alluxio.user.file.writetype.default: MUST_CACHE
+    alluxio.master.journal.folder: /journal
+    alluxio.master.journal.type: UFS
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
+  master:
+    jvmOptions:
+      - "-Xmx4G"
+  worker:
+    jvmOptions:
+      - "-Xmx4G"
+  fuse:
+#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
+#    imageTag: "2.3.0-SNAPSHOT-f83f51e"
+#    imagePullPolicy: Always
+    jvmOptions:
+      - "-Xmx4G "
+      - "-Xms4G "
+    args:
+      - fuse
+      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
+

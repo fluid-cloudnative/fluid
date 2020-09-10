@@ -68,6 +68,14 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 
 	//1. make mount
 	for _, mount := range dataset.Spec.Mounts {
+		if e.isFluidNativeScheme(mount.MountPoint) {
+			err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
+			if err != nil {
+				return
+			}
+			continue
+		}
+
 		alluxioPath := fmt.Sprintf("/%s", mount.Name)
 		mounted, err := fileUitls.IsMounted(alluxioPath)
 		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)
@@ -85,7 +93,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	//2. load the metadata
-	err = fileUitls.LoadMetaData("/")
+	err = fileUitls.LoadMetaData("/", true)
 	if err != nil {
 		return
 	}

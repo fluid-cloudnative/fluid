@@ -60,6 +60,10 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}
+      affinity:
+      {{- if .Values.master.affinity }}
+{{ toYaml .Values.master.affinity | indent 8  }}
+      {{- end }}
       initContainers:
       {{- if .Values.journal.format.runFormat}}
       - name: journal-format
@@ -107,8 +111,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ $fullName }}-config
-{{ include "alluxio.master.readinessProbe" . | indent 10 }}
-{{ include "alluxio.master.livenessProbe" . | indent 10 }}
           ports:
           - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc
@@ -122,6 +124,18 @@ spec:
             {{- if $needJournalVolume }}
             - name: alluxio-journal
               mountPath: /journal
+            {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
             {{- end }}
             {{- if .Values.metastore }}
             - name: alluxio-metastore
@@ -172,8 +186,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ $fullName }}-config
-{{ include "alluxio.jobMaster.readinessProbe" . | indent 10 }}
-{{ include "alluxio.jobMaster.livenessProbe" . | indent 10 }}
           ports:
           - containerPort: {{ .Values.jobMaster.ports.rpc }}
             name: job-rpc
@@ -187,6 +199,18 @@ spec:
           {{- if .Values.secrets }}
             {{- if .Values.secrets.master }}
 {{- include "alluxio.master.secretVolumeMounts" . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsPaths }}   
+            {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}   
+            {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
             {{- end }}
           {{- end }}
           {{- if .Values.mounts }}
@@ -228,6 +252,20 @@ spec:
             medium: {{ .Values.journal.medium }}
             sizeLimit: {{ .Values.journal.size | quote }}
         {{- end}}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
   volumeClaimTemplates:
   {{- if and $needJournalVolume (eq .Values.journal.volumeType "persistentVolumeClaim") }}
     - metadata:

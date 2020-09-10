@@ -17,6 +17,8 @@ package alluxio
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -31,6 +33,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	if runtime == nil {
 		err = fmt.Errorf("The alluxioRuntime is null")
 		return
+	}
+
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return value, err
 	}
 
 	value = &Alluxio{}
@@ -55,11 +62,17 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		return
 	}
 
-	// 3.transform the fuse
-	err = e.transformFuse(runtime, value)
+	// 4.transform the fuse
+	err = e.transformFuse(runtime, dataset, value)
 	if err != nil {
 		return
 	}
+
+	// 5.transform the dataset if it has local path or volume
+	e.transformDatasetToVolume(runtime, dataset, value)
+
+	// 6.transform the permission
+	e.transformPermission(runtime, value)
 
 	return
 }
@@ -72,7 +85,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
+	value.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
@@ -199,6 +212,14 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Master.HostNetwork = true
 
+	// check the run as
+	if runtime.Spec.RunAs != nil {
+		value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
+		value.Master.Env["ALLUXIO_GROUP"] = alluxioUser
+		value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	}
+
 	return
 }
 
@@ -225,6 +246,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Worker.Env = runtime.Spec.Worker.Env
 	} else {
 		value.Worker.Env = map[string]string{}
+	}
+
+	// check the run as
+	if runtime.Spec.RunAs != nil {
+		value.Worker.Env["ALLUXIO_USERNAME"] = alluxioUser
+		value.Worker.Env["ALLUXIO_GROUP"] = alluxioUser
+		value.Worker.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+		value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}
 
 	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
@@ -270,7 +299,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 }
 
 // 4. Transform the fuse
-func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
+func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, dataset *datav1alpha1.Dataset, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
 	value.Fuse.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
@@ -278,7 +307,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-bbce37a"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
@@ -314,7 +343,14 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
+	} else {
+		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
 	}
+
+	if dataset.Spec.Owner != nil {
+		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
+	}
+	// value.Fuse.Args[-1]
 
 	labelName := e.getCommonLabelname()
 	if len(value.Fuse.NodeSelector) == 0 {
@@ -355,8 +391,9 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, valu
 		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		// }
 	}
-
-	value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	if value.Fuse.Resources.Limits != nil {
+		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	}
 
 	return
 

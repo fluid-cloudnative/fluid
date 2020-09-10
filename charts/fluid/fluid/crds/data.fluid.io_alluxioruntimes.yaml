@@ -334,6 +334,21 @@ spec:
               description: The replicas of the worker, need to be specified
               format: int32
               type: integer
+            runAs:
+              description: Manage the user to run Alluxio Runtime
+              properties:
+                gid:
+                  description: The gid to run the alluxio runtime
+                  format: int64
+                  type: integer
+                uid:
+                  description: The uid to run the alluxio runtime
+                  format: int64
+                  type: integer
+              required:
+              - gid
+              - uid
+              type: object
             tieredstore:
               description: Tiered storage used by Alluxio
               properties:

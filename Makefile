@@ -20,13 +20,13 @@ GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
 GIT_TREE_STATE=$(shell echo "clean")
 GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
-GIT_VERSION=v0.2.0-${GIT_SHA}
+GIT_VERSION=v0.3.0-${GIT_SHA}
 
 all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go test ./... -coverprofile cover.out
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test -coverprofile cover.out
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
