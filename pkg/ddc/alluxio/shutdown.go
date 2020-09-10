@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -87,6 +86,13 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 		"cached", cached,
 		"cachedPercentage", cachedPercentage)
 
+	if cached == 0 {
+		e.Log.Info("No need to cache", "ufs", ufs,
+			"cached", cached,
+			"cachedPercentage", cachedPercentage)
+		return nil
+	}
+
 	err = e.invokeCleanCache("/")
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -99,20 +105,20 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 		e.Log.Info("Clean up the cache successfully")
 	}
 
-	time.Sleep(time.Duration(2 * time.Second))
+	time.Sleep(time.Duration(10 * time.Second))
 
-	ufs, cached, cachedPercentage, err = e.du()
-	if err != nil {
-		return
-	}
+	// ufs, cached, cachedPercentage, err = e.du()
+	// if err != nil {
+	// 	return
+	// }
 
-	e.Log.Info("The cache after cleanup", "ufs", ufs,
-		"cached", cached,
-		"cachedPercentage", cachedPercentage)
+	// e.Log.Info("The cache after cleanup", "ufs", ufs,
+	// 	"cached", cached,
+	// 	"cachedPercentage", cachedPercentage)
 
-	if cached > 0 {
-		return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
-	}
+	// if cached > 0 {
+	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
+	// }
 
 	return nil
 }
