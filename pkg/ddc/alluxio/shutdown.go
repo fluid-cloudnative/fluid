@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -87,7 +88,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 		"cachedPercentage", cachedPercentage)
 
 	if cached == 0 {
-		e.Log.Info("No need to cache", "ufs", ufs,
+		e.Log.Info("No need to clean cache", "ufs", ufs,
 			"cached", cached,
 			"cachedPercentage", cachedPercentage)
 		return nil
@@ -120,7 +121,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
 	// }
 
-	return nil
+	return fmt.Errorf("The remaining cached is not cleaned up, check again.")
 }
 
 // cleanAll cleans up the all
