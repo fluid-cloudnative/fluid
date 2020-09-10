@@ -74,6 +74,8 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
+	e.optimizeDefaultProperties(runtime, value)
+
 	return
 }
 
