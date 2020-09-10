@@ -28,7 +28,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	}
 
 	setDefaultProperties(runtime, value, "alluxio.fuse.jnifuse.enabled", "true")
-	setDefaultProperties(runtime, value, "alluxio.master.metastore", "10000000")
+	setDefaultProperties(runtime, value, "alluxio.master.metastore", "ROCKS")
 	setDefaultProperties(runtime, value, "alluxio.web.ui.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.update.file.accesstime.disabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.client.cache.enabled", "false")
