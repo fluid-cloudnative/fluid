@@ -220,6 +220,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}
 
+	value.Master.Properties["alluxio.master.mount.table.root.ufs"] = e.getLocalStorageDirectory()
+
 	return
 }
 
