@@ -55,9 +55,6 @@ spec:
       name: test1
     - mountPoint: local:///mnt/test2
       name: test2
-  owner:
-    uid: 1005
-    gid: 1005
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -109,9 +106,6 @@ EOF
 ```
 
 > alluxioRuntime中的runAs指定的是底层存储的文件所属的uid和gid
-
-> dataset中的owner可以指定该文件通过数据集的转换可以转成的uid和gid
-
 
 创建Dataset和Runtime：
 
