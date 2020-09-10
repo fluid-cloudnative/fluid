@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -85,7 +86,12 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 			return nil
 		}
 		return err
+	} else {
+		e.Log.Info("Clean up the cache successfully")
 	}
+
+	time.Sleep(time.Duration(2 * time.Second))
+
 	ufs, cached, cachedPercentage, err := e.du()
 	if err != nil {
 		return
