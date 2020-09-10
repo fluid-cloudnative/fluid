@@ -78,6 +78,15 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 // cleanupCache cleans up the cache
 func (e *AlluxioEngine) cleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
+	ufs, cached, cachedPercentage, err := e.du()
+	if err != nil {
+		return
+	}
+
+	e.Log.Info("The cache before cleanup", "ufs", ufs,
+		"cached", cached,
+		"cachedPercentage", cachedPercentage)
+
 	err = e.invokeCleanCache("/")
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -92,7 +101,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 
 	time.Sleep(time.Duration(2 * time.Second))
 
-	ufs, cached, cachedPercentage, err := e.du()
+	ufs, cached, cachedPercentage, err = e.du()
 	if err != nil {
 		return
 	}
