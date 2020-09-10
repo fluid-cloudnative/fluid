@@ -120,6 +120,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	// Set the max replication
 	value.Properties["alluxio.user.file.replication.max"] = fmt.Sprintf("%d", dataReplicas)
 
+	// set default storage
+	value.Properties["alluxio.master.mount.table.root.ufs"] = e.getLocalStorageDirectory()
+
 	if len(runtime.Spec.JvmOptions) > 0 {
 		value.JvmOptions = runtime.Spec.JvmOptions
 	}
@@ -219,8 +222,6 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
 		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	}
-
-	value.Master.Properties["alluxio.master.mount.table.root.ufs"] = e.getLocalStorageDirectory()
 
 	return
 }
