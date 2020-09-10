@@ -180,6 +180,21 @@ spec:
                   - nodeSelectorTerms
                   type: object
               type: object
+            owner:
+              description: The owner of the dataset
+              properties:
+                gid:
+                  description: The gid to run the alluxio runtime
+                  format: int64
+                  type: integer
+                uid:
+                  description: The uid to run the alluxio runtime
+                  format: int64
+                  type: integer
+              required:
+              - gid
+              - uid
+              type: object
             runtimes:
               description: Runtimes for supporting dataset (e.g. AlluxioRuntime)
               items:

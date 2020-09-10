@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -124,4 +125,12 @@ func (e *AlluxioEngine) getRunningPodsOfDaemonset(dsName, namespace string) (pod
 
 func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", ALLUXIO_MOUNT, e.namespace, e.name)
+}
+
+func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
+	return strings.HasPrefix(mountPoint, pathScheme) || strings.HasPrefix(mountPoint, volumeScheme)
+}
+
+func (e *AlluxioEngine) getLocalStorageDirectory() string {
+	return fmt.Sprintf("%s/underFSStorage", alluxioHome)
 }

@@ -1,0 +1,28 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  serviceName: "nginx"
+  podManagementPolicy: "Parallel"
+  selector: # define how the deployment finds the pods it manages
+    matchLabels:
+      app: nginx
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          volumeMounts:
+            - mountPath: /data
+              name: test
+      volumes:
+        - name: test
+          persistentVolumeClaim:
+            claimName: test

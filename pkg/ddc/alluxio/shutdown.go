@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -77,6 +78,22 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 // cleanupCache cleans up the cache
 func (e *AlluxioEngine) cleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
+	ufs, cached, cachedPercentage, err := e.du()
+	if err != nil {
+		return
+	}
+
+	e.Log.Info("The cache before cleanup", "ufs", ufs,
+		"cached", cached,
+		"cachedPercentage", cachedPercentage)
+
+	if cached == 0 {
+		e.Log.Info("No need to clean cache", "ufs", ufs,
+			"cached", cached,
+			"cachedPercentage", cachedPercentage)
+		return nil
+	}
+
 	err = e.invokeCleanCache("/")
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -85,21 +102,26 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 			return nil
 		}
 		return err
-	}
-	ufs, cached, cachedPercentage, err := e.du()
-	if err != nil {
-		return
+	} else {
+		e.Log.Info("Clean up the cache successfully")
 	}
 
-	e.Log.Info("The cache after cleanup", "ufs", ufs,
-		"cached", cached,
-		"cachedPercentage", cachedPercentage)
+	time.Sleep(time.Duration(10 * time.Second))
 
-	if cached > 0 {
-		return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
-	}
+	// ufs, cached, cachedPercentage, err = e.du()
+	// if err != nil {
+	// 	return
+	// }
 
-	return nil
+	// e.Log.Info("The cache after cleanup", "ufs", ufs,
+	// 	"cached", cached,
+	// 	"cachedPercentage", cachedPercentage)
+
+	// if cached > 0 {
+	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
+	// }
+
+	return fmt.Errorf("The remaining cached is not cleaned up, check again.")
 }
 
 // cleanAll cleans up the all

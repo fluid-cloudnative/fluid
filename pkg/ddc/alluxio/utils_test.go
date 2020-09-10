@@ -15,18 +15,31 @@ limitations under the License.
 
 package alluxio
 
-const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
-
-	fluid_PATH = "fluid_path"
-
-	ALLUXIO_MOUNT = "/alluxio-mnt"
-
-	pathScheme string = "local://"
-
-	volumeScheme string = "pvc://"
-
-	alluxioHome string = "/opt/alluxio"
-
-	alluxioUser string = "fluid"
+import (
+	"testing"
 )
+
+func TestIsFluidNativeScheme(t *testing.T) {
+
+	var tests = []struct {
+		mountPoint string
+		expect     bool
+	}{
+		{"local:///test",
+			true},
+		{
+			"pvc://test",
+			true,
+		}, {
+			"oss://test",
+			false,
+		},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		result := engine.isFluidNativeScheme(test.mountPoint)
+		if result != test.expect {
+			t.Errorf("expect %v for %s, but got %v", test.expect, test.mountPoint, result)
+		}
+	}
+}

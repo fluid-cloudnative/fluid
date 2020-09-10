@@ -15,7 +15,9 @@ limitations under the License.
 
 package alluxio
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+)
 
 // The value yaml file
 type Alluxio struct {
@@ -43,6 +45,20 @@ type Alluxio struct {
 
 	ShortCircuit ShortCircuit `yaml:"shortCircuit,omitempty"`
 	// Enablefluid bool `yaml:"enablefluid,omitempty"`
+
+	UFSPaths []UFSPath `yaml:"ufsPaths,omitempty"`
+
+	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
+}
+
+type UFSPath struct {
+	HostPath  string `yaml:"hostPath"`
+	UFSVolume `yaml:",inline"`
+}
+
+type UFSVolume struct {
+	Name          string `yaml:"name"`
+	ContainerPath string `yaml:"containerPath"`
 }
 
 type ImageInfo struct {
@@ -85,6 +101,7 @@ type Worker struct {
 type Master struct {
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
 	Env          map[string]string `yaml:"env,omitempty"`
+	Affinity     Affinity          `yaml:"affinity"`
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
@@ -121,6 +138,10 @@ type Level struct {
 	Quota      string `yaml:"quota,omitempty"`
 	High       string `yaml:"high,omitempty"`
 	Low        string `yaml:"low,omitempty"`
+}
+
+type Affinity struct {
+	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
 }
 
 type cacheStates struct {

@@ -83,8 +83,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ template "alluxio.fullname" . }}-config
-{{ include "alluxio.worker.readinessProbe" . | indent 10 }}
-{{ include "alluxio.worker.livenessProbe" . | indent 10 }}
           ports:
           - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc
@@ -94,6 +92,18 @@ spec:
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
+            {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
             {{- end }}
             {{- if .Values.secrets -}}
               {{- if .Values.secrets.worker -}}
@@ -138,8 +148,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ template "alluxio.fullname" . }}-config
-{{ include "alluxio.jobWorker.readinessProbe" . | indent 10 }}
-{{ include "alluxio.jobWorker.livenessProbe" . | indent 10 }}
           ports:
           - containerPort: {{ .Values.jobWorker.ports.rpc }}
             name: job-rpc
@@ -151,6 +159,18 @@ spec:
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
+            {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
             {{- end }}
             {{- if .Values.secrets }}
               {{- if .Values.secrets.worker }}
@@ -178,6 +198,20 @@ spec:
         {{- end}}
         {{- if .Values.mounts }}   
           {{- range .Values.mounts }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
         - name: "{{ .name }}"
           persistentVolumeClaim:
             claimName: "{{ .name }}"
