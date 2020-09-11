@@ -113,6 +113,12 @@ spec:
           - configMapRef:
               name: {{ template "alluxio.fullname" . }}-config
           volumeMounts:
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true     
             - name: alluxio-fuse-device
               mountPath: /dev/fuse
             - name: alluxio-fuse-mount
@@ -133,6 +139,12 @@ spec:
           hostPath:
             path: /dev/fuse
             type: File
+        - name: user         
+          hostPath:
+            path: /etc/passwd
+        - name: group         
+          hostPath:
+            path: /etc/group
         - name: alluxio-fuse-mount
           hostPath:
             path: {{ .Values.fuse.mountPath | dir }}
