@@ -30,7 +30,7 @@ func TestSyncLocalDir(t *testing.T) {
 		path string
 		err  error
 	}{
-		{"/opt/alluxio/underFSStorage/test", nil},
+		{"/underFSStorage/test", nil},
 	}
 
 	for _, test := range tests {

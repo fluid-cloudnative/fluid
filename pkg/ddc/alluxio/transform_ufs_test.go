@@ -26,7 +26,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	var ufsPath = UFSPath{}
 	ufsPath.Name = "test"
 	ufsPath.HostPath = "/mnt/test"
-	ufsPath.ContainerPath = "/opt/alluxio/underFSStorage/test"
+	ufsPath.ContainerPath = "/underFSStorage/test"
 
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
