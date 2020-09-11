@@ -142,3 +142,7 @@
 
 - Support nodeAffinity in master
 
+0.6.12
+
+- Support non-root for fuse
+
