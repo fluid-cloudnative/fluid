@@ -74,6 +74,8 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
+	e.optimizeDefaultProperties(runtime, value)
+
 	return
 }
 
@@ -119,6 +121,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	}
 	// Set the max replication
 	value.Properties["alluxio.user.file.replication.max"] = fmt.Sprintf("%d", dataReplicas)
+
+	// set default storage
+	value.Properties["alluxio.master.mount.table.root.ufs"] = e.getLocalStorageDirectory()
 
 	if len(runtime.Spec.JvmOptions) > 0 {
 		value.JvmOptions = runtime.Spec.JvmOptions
