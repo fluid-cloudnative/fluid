@@ -207,6 +207,7 @@ spec:
           {{- range .Values.ufsPaths }}
         - hostPath:
             path: {{ .hostPath }}
+            type: Directory
           name: {{ .name }}
           {{- end }}
         {{- end }}

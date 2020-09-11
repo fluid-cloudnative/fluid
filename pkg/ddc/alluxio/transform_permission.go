@@ -15,7 +15,9 @@ limitations under the License.
 
 package alluxio
 
-import datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+)
 
 // transformSecurity transforms security configuration
 func (e *AlluxioEngine) transformPermission(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
@@ -29,5 +31,9 @@ func (e *AlluxioEngine) transformPermission(runtime *datav1alpha1.AlluxioRuntime
 	}
 	value.Properties["alluxio.master.security.impersonation.root.users"] = "*"
 	value.Properties["alluxio.master.security.impersonation.root.groups"] = "*"
+	// if runtime.Spec.RunAs != nil {
+	// 	value.Properties[fmt.Sprintf("alluxio.master.security.impersonation.%d.users", runtime.Spec.RunAs.UID)]
+	// 	value.Properties[fmt.Sprintf("alluxio.master.security.impersonation.%d.groups", runtime.Spec.RunAs.GID)]
+	// }
 	value.Properties["alluxio.security.authorization.permission.enabled"] = "false"
 }
