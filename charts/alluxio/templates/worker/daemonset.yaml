@@ -89,6 +89,12 @@ spec:
           - containerPort: {{ .Values.worker.ports.web }}
             name: web
           volumeMounts:
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true   
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
@@ -156,6 +162,12 @@ spec:
           - containerPort: {{ .Values.jobWorker.ports.web }}
             name: job-web
           volumeMounts:
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true   
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
@@ -185,6 +197,12 @@ spec:
             {{- end }}
       restartPolicy: Always
       volumes:
+        - name: user         
+          hostPath:
+            path: /etc/passwd
+        - name: group         
+          hostPath:
+            path: /etc/group
         {{- if $needDomainSocketVolume }}
 {{- include "alluxio.worker.shortCircuit.volume" . }}
         {{- end }}
@@ -207,6 +225,7 @@ spec:
           {{- range .Values.ufsPaths }}
         - hostPath:
             path: {{ .hostPath }}
+            type: Directory
           name: {{ .name }}
           {{- end }}
         {{- end }}

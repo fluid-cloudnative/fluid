@@ -28,5 +28,5 @@ const (
 
 	// alluxioHome string = "/opt/alluxio"
 
-	alluxioUser string = "fluid"
+	// alluxioUser string = "fluid"
 )
