@@ -127,43 +127,43 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
-            - name: user
-              mountPath: /etc/passwd
-              readOnly: true
-            - name: group
-              mountPath: /etc/group
-              readOnly: true   
-            {{- if $needJournalVolume }}
-            - name: alluxio-journal
-              mountPath: /journal
+          - name: user
+            mountPath: /etc/passwd
+            readOnly: true
+          - name: group
+            mountPath: /etc/group
+            readOnly: true   
+          {{- if $needJournalVolume }}
+          - name: alluxio-journal
+            mountPath: /journal
+          {{- end }}
+          {{- if .Values.ufsPaths }}   
+            {{- range .Values.ufsPaths }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
             {{- end }}
-            {{- if .Values.ufsPaths }}   
-              {{- range .Values.ufsPaths }}
-            - mountPath: {{ .containerPath }}
-              name: {{ .name }}
-              {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}   
+            {{- range .Values.ufsVolumes }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
             {{- end }}
-            {{- if .Values.ufsVolumes }}   
-              {{- range .Values.ufsVolumes }}
-            - mountPath: {{ .containerPath }}
-              name: {{ .name }}
-              {{- end }}
+          {{- end }}
+          {{- if .Values.metastore }}
+          - name: alluxio-metastore
+            mountPath: {{ .Values.metastore.mountPath }}
+          {{- end }}
+          {{- if .Values.secrets }}
+            {{- if .Values.secrets.master }}
+- include "alluxio.master.secretVolumeMounts" . }}
             {{- end }}
-            {{- if .Values.metastore }}
-            - name: alluxio-metastore
-              mountPath: {{ .Values.metastore.mountPath }}
+          {{- end }}
+          {{- if .Values.mounts }}
+            {{- range .Values.mounts }}
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
             {{- end }}
-            {{- if .Values.secrets }}
-              {{- if .Values.secrets.master }}
-{{- include "alluxio.master.secretVolumeMounts" . }}
-              {{- end }}
-            {{- end }}
-            {{- if .Values.mounts }}
-              {{- range .Values.mounts }}
-            - name: "{{ .name }}"
-              mountPath: "{{ .path }}"
-              {{- end }}
-            {{- end }}
+          {{- end }}
         - name: alluxio-job-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -221,20 +221,20 @@ spec:
           {{- end }}
           {{- if .Values.ufsPaths }}   
             {{- range .Values.ufsPaths }}
-            - mountPath: {{ .containerPath }}
-              name: {{ .name }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
             {{- end }}
           {{- end }}
           {{- if .Values.ufsVolumes }}   
             {{- range .Values.ufsVolumes }}
-            - mountPath: {{ .containerPath }}
-              name: {{ .name }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
             {{- end }}
           {{- end }}
           {{- if .Values.mounts }}
             {{- range .Values.mounts }}
-            - name: "{{ .name }}"
-              mountPath: "{{ .path }}"
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
             {{- end }}
           {{- end }}
       restartPolicy: Always
