@@ -127,12 +127,12 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
-          - name: user
-            mountPath: /etc/passwd
-            readOnly: true
-          - name: group
-            mountPath: /etc/group
-            readOnly: true   
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true   
             {{- if $needJournalVolume }}
             - name: alluxio-journal
               mountPath: /journal
