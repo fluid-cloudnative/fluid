@@ -11,14 +11,14 @@
 ### 环境部署
 
 ```
-git clone https://github.com/fluid-user/fluid.git -b hostpath_mode
+git clone https://github.com/fluid-cloudnative/fluid.git
 cd charts/fluid
 kubectl delete -f fluid/crds/
 helm delete fluid
 helm install fluid fluid
 ```
 
-### 在主机上某个节点上创建指定文件夹和非root用户
+### 在主机上某些节点上创建指定文件夹和非root用户fluid-user-1和fluid-user-2
 
 ```shell
 mkdir -p /mnt/test1
@@ -28,11 +28,14 @@ rm -f hbase-2.2.5-bin.tar.gz
 wget https://mirror.bit.edu.cn/apache/hbase/2.2.5/hbase-2.2.5-bin.tar.gz
 cd /mnt/test2
 wget https://mirror.bit.edu.cn/apache/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
-groupadd -g 1005 fluid-user && \
-useradd -u 1005  -g fluid-user  fluid-user && \
-usermod -a -G root fluid-user
-chown -R fluid-user:fluid-user /mnt/test*
-chmod -R 400  /mnt/test*/*.tar.gz
+groupadd -g 1005 fluid-user-1 && \
+useradd -u 1005  -g fluid-user-1  fluid-user-1 && \
+usermod -a -G root fluid-user-1
+groupadd -g 1006 fluid-user-2 && \
+useradd -u 1006  -g fluid-user-2  fluid-user-2 && \
+usermod -a -G root fluid-user-2
+chown -R fluid-user-1:fluid-user-1 /mnt/test1
+chown -R fluid-user-2:fluid-user-2 /mnt/test2
 ```
 
 ### 给这样的节点打label
@@ -105,7 +108,11 @@ spec:
 EOF
 ```
 
-> alluxioRuntime中的runAs指定的是底层存储的文件所属的uid和gid
+> 注意:
+
+> 1. alluxioRuntime中的runAs指定的是底层存储的文件所属的uid和gid
+
+> 2. 配置tieredstore时候指定的目录，需要保证runtime的uid和gid是可以有权限进行写操作的
 
 创建Dataset和Runtime：
 
@@ -292,7 +299,7 @@ spec:
 EOF
 ```
 
-执行登录, 并且查看该文件的owner
+执行登录, 并且查看该文件的owner, 这里可以看到文件的用户owner不变
 
 ```
 # kubectl exec -it nginx-0 bash

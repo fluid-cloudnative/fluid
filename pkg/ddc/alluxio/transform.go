@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -87,7 +86,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
+	value.ImageTag = "2.3.0-SNAPSHOT-c8a46e3"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
@@ -101,6 +100,11 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		User:    0,
 		FSGroup: 0,
 		Group:   0,
+	}
+
+	if runtime.Spec.RunAs != nil {
+		value.UserInfo.User = int(*runtime.Spec.RunAs.UID)
+		value.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
 	}
 
 	// TODO: support nodeAffinity
@@ -217,13 +221,13 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Master.HostNetwork = true
 
-	// check the run as
-	if runtime.Spec.RunAs != nil {
-		value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
-		value.Master.Env["ALLUXIO_GROUP"] = alluxioUser
-		value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
-		value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
-	}
+	// // check the run as
+	// if runtime.Spec.RunAs != nil {
+	// 	value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
+	// 	value.Master.Env["ALLUXIO_GROUP"] = alluxioUser
+	// 	value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+	// 	value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	// }
 
 	return
 }
@@ -254,12 +258,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	}
 
 	// check the run as
-	if runtime.Spec.RunAs != nil {
-		value.Worker.Env["ALLUXIO_USERNAME"] = alluxioUser
-		value.Worker.Env["ALLUXIO_GROUP"] = alluxioUser
-		value.Worker.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
-		value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
-	}
+	// if runtime.Spec.RunAs != nil {
+	// 	value.Worker.Env["ALLUXIO_USERNAME"] = alluxioUser
+	// 	value.Worker.Env["ALLUXIO_GROUP"] = alluxioUser
+	// 	value.Worker.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+	// 	value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	// }
 
 	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
 
@@ -312,7 +316,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-f83f51e"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-c8a46e3"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
