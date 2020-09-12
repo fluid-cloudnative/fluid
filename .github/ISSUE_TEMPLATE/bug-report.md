@@ -9,7 +9,7 @@ assignees: ''
 
 **What is your environment(Kubernetes version, Fluid version, etc.)**
 
-**Descirbe the bug**
+**Describe the bug**
 
 **What you expect to happen:**
 

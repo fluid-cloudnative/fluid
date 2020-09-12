@@ -120,134 +120,20 @@ EOF
 $ kubectl create -f dataset.yaml
 ```
 
-检查Alluxio Runtime，可以看到`1`个Master，`2`个Worker和`2`个Fuse已成功部署：
+检查Alluxio Runtime，可以看到Master，Worker和Fuse已成功处于Ready状态：
 
 ```shell
-$ kubectl describe alluxioruntime imagenet 
-
+$ kubectl get alluxioruntimes.data.fluid.io
+NAME   MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
+test   Ready          Ready          Ready        3m23s
 ```
 
 同时，检查到Dataset也绑定到Alluxio Runtime：
 
 ```shell
-$ kubectl describe dataset
-Name:         test
-Namespace:    default
-Labels:       <none>
-Annotations:  <none>
-API Version:  data.fluid.io/v1alpha1
-Kind:         AlluxioRuntime
-Metadata:
-  Creation Timestamp:  2020-09-08T12:50:57Z
-  Finalizers:
-    alluxio-runtime-controller-finalizer
-  Generation:        2
-  Resource Version:  103552014
-  Self Link:         /apis/data.fluid.io/v1alpha1/namespaces/default/alluxioruntimes/test
-  UID:               46a71730-7c97-4c73-9797-b531b9385f6e
-Spec:
-  Alluxio Version:
-  Data:
-    Pin:       false
-    Replicas:  0
-  Fuse:
-    Args:
-      fuse
-      --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
-    Jvm Options:
-      -Xmx4G
-      -Xms4G
-    Resources:
-  Job Master:
-    Resources:
-  Job Worker:
-    Resources:
-  Master:
-    Jvm Options:
-      -Xmx4G
-    Resources:
-  Properties:
-    alluxio.master.journal.folder:                   /journal
-    alluxio.master.journal.type:                     UFS
-    alluxio.user.block.size.bytes.default:           256MB
-    alluxio.user.file.writetype.default:             MUST_CACHE
-    alluxio.user.local.reader.chunk.size.bytes:      256MB
-    alluxio.user.streaming.data.timeout:             300sec
-    alluxio.user.streaming.reader.chunk.size.bytes:  256MB
-    alluxio.worker.network.reader.buffer.size:       256MB
-  Replicas:                                          2
-  Run As:
-    Gid:  1005
-    UID:  1005
-  Tieredstore:
-    Levels:
-      High:        0.95
-      Low:         0.7
-      Mediumtype:  MEM
-      Path:        /dev/shm
-      Quota:       2Gi
-  Worker:
-    Jvm Options:
-      -Xmx4G
-    Resources:
-Status:
-  Cache States:
-    Cache Capacity:     4GiB
-    Cached:             255.3MiB
-    Cached Percentage:  53%
-  Conditions:
-    Last Probe Time:                2020-09-08T12:51:22Z
-    Last Transition Time:           2020-09-08T12:51:22Z
-    Message:                        The master is initialized.
-    Reason:                         Master is initialized
-    Status:                         True
-    Type:                           MasterInitialized
-    Last Probe Time:                2020-09-08T12:53:29Z
-    Last Transition Time:           2020-09-08T12:51:42Z
-    Message:                        The master is ready.
-    Reason:                         Master is ready
-    Status:                         True
-    Type:                           MasterReady
-    Last Probe Time:                2020-09-08T12:53:50Z
-    Last Transition Time:           2020-09-08T12:53:09Z
-    Message:                        The workers are initialized.
-    Reason:                         Workers are initialized
-    Status:                         True
-    Type:                           WorkersInitialized
-    Last Probe Time:                2020-09-08T12:53:50Z
-    Last Transition Time:           2020-09-08T12:53:09Z
-    Message:                        The fuses are initialized.
-    Reason:                         Fuses are initialized
-    Status:                         True
-    Type:                           FusesInitialized
-    Last Probe Time:                2020-09-08T12:53:50Z
-    Last Transition Time:           2020-09-08T12:53:29Z
-    Message:                        The workers are partially ready.
-    Reason:                         Workers are ready
-    Status:                         True
-    Type:                           WorkersReady
-    Last Probe Time:                2020-09-08T12:53:50Z
-    Last Transition Time:           2020-09-08T12:53:29Z
-    Message:                        The fuses are partially ready.
-    Reason:                         Fuses are ready
-    Status:                         True
-    Type:                           FusesReady
-  Current Fuse Number Scheduled:    2
-  Current Master Number Scheduled:  1
-  Current Worker Number Scheduled:  2
-  Desired Fuse Number Scheduled:    2
-  Desired Master Number Scheduled:  1
-  Desired Worker Number Scheduled:  2
-  Fuse Number Available:            2
-  Fuse Number Ready:                2
-  Fuse Phase:                       Ready
-  Master Number Ready:              1
-  Master Phase:                     Ready
-  Value File:                       test-alluxio-values
-  Worker Number Available:          2
-  Worker Number Ready:              2
-  Worker Phase:                     Ready
-Events:
+$  kubectl get dataset
+NAME   UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+test   475.9MiB         0B       4GiB             0%                  Bound   6m19s
 ```
 
 检查pv和pvc，名为imagenet的pv和pvc被成功创建：
@@ -299,13 +185,36 @@ spec:
 EOF
 ```
 
+部署该应用
+
+```
+$ kubectl create -f app.yaml
+statefulset.apps/nginx created
+```
+
 执行登录, 并且查看该文件的owner, 这里可以看到文件的用户owner不变
 
 ```
 # kubectl exec -it nginx-0 bash
 root@nginx-0:/# cd /data/
-root@nginx-0:/data# ls -ltr
-total 1
-drwxrwxr-x 1 1005 1005 1 Sep  7 10:32 test1
-drwxrwxr-x 1 1005 1005 1 Sep  7 10:32 test2
+root@nginx-0:/data# ls -ltra -R /data/
+/data/:
+total 6
+drwxrwxr-x 1 1006 1006    1 Sep  7 10:31 test2
+drwxrwxr-x 1 1005 1005    2 Sep 11 03:07 test1
+drwxr-xr-x 1 1005 1005    2 Sep 12 09:45 .
+drwxr-xr-x 1 root root 4096 Sep 12 09:52 ..
+
+/data/test2:
+total 272281
+-r--r----- 1 1006 1006 278813748 Aug 26  2019 apache-hive-3.1.2-bin.tar.gz
+drwxrwxr-x 1 1006 1006         1 Sep  7 10:31 .
+drwxr-xr-x 1 1005 1005         2 Sep 12 09:45 ..
+
+/data/test1:
+total 215061
+-r--r----- 1 1005 1005 220221311 May 26 07:30 hbase-2.2.5-bin.tar.gz
+-rw-r--r-- 1 1005 1005         0 Sep 11 03:07 test
+drwxrwxr-x 1 1005 1005         2 Sep 11 03:07 .
+drwxr-xr-x 1 1005 1005         2 Sep 12 09:45 ..
 ```
