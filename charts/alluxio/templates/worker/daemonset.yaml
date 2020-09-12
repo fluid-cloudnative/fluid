@@ -197,6 +197,12 @@ spec:
             {{- end }}
       restartPolicy: Always
       volumes:
+        - name: user         
+          hostPath:
+            path: /etc/passwd
+        - name: group         
+          hostPath:
+            path: /etc/group
         {{- if $needDomainSocketVolume }}
 {{- include "alluxio.worker.shortCircuit.volume" . }}
         {{- end }}
