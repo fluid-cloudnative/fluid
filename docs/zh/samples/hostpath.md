@@ -6,6 +6,10 @@
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.3.0)
 
+## 已知约束
+
+- hostPath并不是推荐的使用方式，因为该方式依赖于Kubernetes意外的挂载点维护方式，实际上并不可靠，可能引发数据不一致的问题。
+
 ## 实验步骤
 
 ### 环境部署
