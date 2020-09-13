@@ -74,8 +74,6 @@ func main() {
 			encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
-		} else {
-			// use default configs when `development` is true
 		}
 	}))
 
