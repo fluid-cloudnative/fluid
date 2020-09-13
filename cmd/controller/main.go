@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"go.uber.org/zap/zapcore"
 	"os"
 
 	zapOpt "go.uber.org/zap"
@@ -67,6 +68,15 @@ func main() {
 		o.Development = development
 	}, func(o *zap.Options) {
 		o.ZapOpts = append(o.ZapOpts, zapOpt.AddCaller())
+	}, func(o *zap.Options) {
+		if !development {
+			encCfg := zapOpt.NewProductionEncoderConfig()
+			encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
+			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
+		} else {
+			// use default configs when `development` is true
+		}
 	}))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
