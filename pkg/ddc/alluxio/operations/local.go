@@ -34,7 +34,7 @@ func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
 	duration := time.Since(start)
 	a.log.Info("du -sh", "path", path, "period", duration)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 

@@ -1,0 +1,26 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "S5YH6+pAjKFAFidprYjhl9OpWWE=",
+			"path": "github.com/brahma-adshonor/gohook",
+			"revision": "cfeffdca9b9b432fd22853f9dea6bc0957c64bcc",
+			"revisionTime": "2020-05-11T02:27:46Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "221dbe5ed46703ee255b1da0dec05086f5035f62",
+			"revisionTime": "2019-05-17T17:51:56Z"
+		},
+		{
+			"checksumSHA1": "OHK0GAgeySXMMiqH/84b80WoPNU=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "221dbe5ed46703ee255b1da0dec05086f5035f62",
+			"revisionTime": "2019-05-17T17:51:56Z"
+		}
+	],
+	"rootPath": "github.com/fluid-cloudnative/fluid"
+}
