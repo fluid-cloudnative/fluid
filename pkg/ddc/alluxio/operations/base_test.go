@@ -106,7 +106,13 @@ func TestAlluxioFileUtils_IsExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	defer gohook.UnHook(kubeclient.ExecCommandInContainer)
+	wrappedUnhook:=func(){
+		err:=gohook.UnHook(kubeclient.ExecCommandInContainer)
+		if err!=nil{
+			t.Fatal(err.Error())
+		}
+	}
+	defer wrappedUnhook()
 
 	var tests = []struct {
 		in    string
@@ -150,7 +156,13 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	defer gohook.UnHook(kubeclient.ExecCommandInContainer)
+	wrappedUnhook:=func(){
+		err:=gohook.UnHook(kubeclient.ExecCommandInContainer)
+		if err!=nil{
+			t.Fatal(err.Error())
+		}
+	}
+	defer wrappedUnhook()
 
 	var tests = []struct {
 		in         string
@@ -196,7 +208,13 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 	}
 
 	err := gohook.HookByIndirectJmp(kubeclient.ExecCommandInContainer, mockExec, nil)
-	defer gohook.UnHook(kubeclient.ExecCommandInContainer)
+	wrappedUnhook:=func(){
+		err:=gohook.UnHook(kubeclient.ExecCommandInContainer)
+		if err!=nil{
+			t.Fatal(err.Error())
+		}
+	}
+	defer wrappedUnhook()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
