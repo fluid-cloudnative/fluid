@@ -204,3 +204,37 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPersistVolumeClaimSubdir(t *testing.T) {
+	var testcases = []struct {
+		mountPoint string
+		expected   bool
+	}{
+		{
+			"pvc://imagenet",
+			false,
+		},
+		{
+			"pvc://imagenet/",
+			false,
+		},
+		{
+			"pvc://imagenet/path",
+			true,
+		},
+		{
+			"pvc://imagenet/path/to/dst",
+			true,
+		},
+		{
+			"pvc:///imagenet/path/",
+			true,
+		},
+	}
+	for _, tc := range testcases {
+		engine := &AlluxioEngine{}
+		if ret := engine.containsPersistVolumeClaimSubdir(tc.mountPoint); ret != tc.expected {
+			t.Errorf("expect %v for %s, but got %v", tc.expected, tc.mountPoint, ret)
+		}
+	}
+}
