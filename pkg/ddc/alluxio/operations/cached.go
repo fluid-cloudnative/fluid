@@ -32,7 +32,7 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 	found := false
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 	str := strings.Split(stdout, "\n")
@@ -67,7 +67,7 @@ func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 
