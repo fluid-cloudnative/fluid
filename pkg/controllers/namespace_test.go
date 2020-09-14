@@ -13,10 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubeclient
+package controllers
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -52,7 +53,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
 
 	var err error
@@ -81,28 +82,20 @@ var _ = AfterSuite(func() {
 var _ = Describe("Test namespace", func() {
 	Context("check if given ns exist", func() {
 		It("this ns exists,and err should be nil", func() {
-			err := EnsureNamespace(k8sClient, "default")
+			err := kubeclient.EnsureNamespace(k8sClient, "default")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("try to get a non-existed ns,should fail", func() {
-			err := EnsureNamespace(k8sClient, time.Now().String())
+			err := kubeclient.EnsureNamespace(k8sClient, time.Now().String())
 			Expect(err).Should(HaveOccurred())
 		})
 	})
 	Context("test createnamespace", func() {
 		namespace := "woohoo"
-		It("create a new ns,err should be nil", func() {
-			err := createNamespace(k8sClient, namespace)
-			Expect(err).NotTo(HaveOccurred())
-		})
 		It("check if create ns successfully,err should nil", func() {
-			err := EnsureNamespace(k8sClient, namespace)
+			err := kubeclient.EnsureNamespace(k8sClient, namespace)
 			Expect(err).NotTo(HaveOccurred())
-		})
-		It("try to create ns with a conflicted name ,should fail", func() {
-			err := createNamespace(k8sClient, namespace)
-			Expect(err).Should(HaveOccurred())
 		})
 	})
 })
