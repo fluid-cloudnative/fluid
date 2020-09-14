@@ -56,7 +56,7 @@ func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 		if strings.Contains(stdout, "does not exist") {
 			err = nil
 		} else {
-			err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 			return
 		}
 	} else {
@@ -87,7 +87,7 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	duration := time.Since(start)
 	a.log.Info("Load MetaData took times to run", "period", duration)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 
@@ -116,15 +116,15 @@ func (a AlluxioFileUtils) Mount(alluxioPath string,
 	readOnly bool,
 	shared bool) (err error) {
 
-	// exist, err := a.IsExist(alluxioPath)
-	// if err != nil {
-	// 	return err
+	// exist, expectedErr := a.IsExist(alluxioPath)
+	// if expectedErr != nil {
+	// 	return expectedErr
 	// }
 
 	// if !exist {
-	// 	err = a.Mkdir(alluxioPath)
-	// 	if err != nil {
-	// 		return err
+	// 	expectedErr = a.Mkdir(alluxioPath)
+	// 	if expectedErr != nil {
+	// 		return expectedErr
 	// 	}
 	// }
 
@@ -150,7 +150,7 @@ func (a AlluxioFileUtils) Mount(alluxioPath string,
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 
@@ -166,7 +166,7 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 
 	stdout, stderr, err = a.exec(command, true)
 	if err != nil {
-		return mounted, fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return mounted, fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 	}
 
 	results := strings.Split(stdout, "\n")
@@ -211,7 +211,7 @@ func (a AlluxioFileUtils) Du(alluxioPath string) (ufs int64, cached int64, cache
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 	str := strings.Split(stdout, "\n")
@@ -254,7 +254,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
 

@@ -53,7 +53,8 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 Fluid provides cloud-native data acceleration and management capabilities, and use *dataset* as a high-level abstraction to facilitate user management. Here we will show you how to create a dataset with Fluid. 
 
 1. Create a Dataset object through the CRD file, which describes the source of the dataset.  
-    ```yaml
+    ```shell 
+    $ cat<<EOF >dataset.yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: Dataset
     metadata:
@@ -62,15 +63,16 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
       mounts:
         - mountPoint: https://mirror.bit.edu.cn/apache/spark/spark-3.0.0/
           name: spark
+    EOF
     ```  
-    Create dataset with kubectl
     
     ```shell
     kubectl create -f dataset.yaml
     ```
 
 2. Create an `AlluxioRuntime` CRD object to support the dataset we created. We use [Alluxio](https://www.alluxio.io/) as its runtime here.
-    ```yaml
+    ```shell
+    $ cat<<EOF >runtime.yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
     metadata:
@@ -106,6 +108,7 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
         args:
           - fuse
           - --fuse-opts=direct_io,ro,max_read=131072
+    EOF
     ```
     
     Create *Alluxio* Runtime with `kubectl`
@@ -116,7 +119,8 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
 
 3. Next, we create an application to access this dataset. Here we will access the same data multiple times and compare the time consumed by each access.
 
-    ```yaml
+    ```shell
+    $ cat<<EOF >app.yaml
     apiVersion: v1
     kind: Pod
     metadata:
@@ -132,20 +136,21 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
         - name: demo
           persistentVolumeClaim:
             claimName: demo
+    EOF
     ```
     
     Create Pod with `kubectl`
     
     ```shell
-    kubectl create -f app.yaml
+    $ kubectl create -f app.yaml
     ```
 
 4. Dive into the container to access data, the first access will take longer.
     ```
-    kubectl exec -it demo-app -- bash
-    #  du -sh /data/spark/spark-3.0.0-bin-without-hadoop.tgz
+    $ kubectl exec -it demo-app -- bash
+    $ du -sh /data/spark/spark-3.0.0-bin-without-hadoop.tgz
     150M	/data/spark/spark-3.0.0-bin-without-hadoop.tgz
-    # time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
     real	0m13.171s
     user	0m0.002s
     sys	0m0.028s
@@ -153,9 +158,9 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
 
 5. In order to avoid the influence of other factors like page cache, we will delete the previous container, create the same application, and try to access the same file. Since the file has been cached by alluxio at this time, you can see that it takes significantly less time now.
     ```
-    kubectl delete -f app.yaml && kubectl create -f app.yaml
-    ...
-    # time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ kubectl delete -f app.yaml && kubectl create -f app.yaml
+    $ kubectl exec -it demo-app -- bash
+    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
     real	0m0.344s
     user	0m0.002s
     sys	0m0.020s

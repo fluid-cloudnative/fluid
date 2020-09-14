@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -39,6 +40,7 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var useExistingCluster = false
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -50,6 +52,9 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	if env := os.Getenv("USE_EXISTING_CLUSTER"); env == "true" {
+		useExistingCluster = true
+	}
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{

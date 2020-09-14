@@ -20,8 +20,12 @@ Before generating,we suppose you have installed [Docker](https://www.docker.com/
 don't have to install required tools one by one.
 
 1. Download Required Docker Image  
-`docker pull registry.cn-hangzhou.aliyuncs.com/docs-fluid/doc-build `
+    `docker pull registry.cn-hangzhou.aliyuncs.com/docs-fluid/doc-build `
 2. Start a Container  
-`docker run -it -v <your fluid/docs path>:/data/ fluid/doc-build:0.2.0`
-3. Run Build script  
-`data/bluid.sh`
+    `docker run -it -v <your fluid/docs path>:/data/ fluid/doc-build:0.2.0`
+3. Run Makefile
+    ```shell
+   cd data
+   make build
+   make clean
+    ```
