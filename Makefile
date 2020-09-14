@@ -8,6 +8,7 @@ CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
 
 LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
 
+LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -26,13 +27,13 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test -coverprofile cover.out
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
 unit-test: generate fmt vet manifests
-	go list ./... | grep -v controller | xargs go test ${TEST_FLAGS}
+	go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build manager binary
 manager: generate fmt vet
