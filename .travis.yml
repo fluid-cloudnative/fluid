@@ -8,7 +8,7 @@ matrix:
       go_import_path: github.com/fluid-cloudnative/fluid
       #for the convenience of gohook to set gcflag here
       env:
-        - TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic -gcflags=-l'
+        - CI_TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic'
       sudo: true
       before_script:
         - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
@@ -22,7 +22,7 @@ matrix:
         - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
         - golangci-lint run --timeout=10m ./...
         - test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
-        - go test ./... ${TEST_FLAGS}
+        - make test
         - bash <(curl -s https://codecov.io/bash)
 
 
