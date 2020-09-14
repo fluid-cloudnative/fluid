@@ -26,13 +26,13 @@ GIT_VERSION=v0.3.0-${GIT_SHA}
 all: manager
 
 # Run tests
-test: generate fmt vet manifests
+test: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
-unit-test: generate fmt vet manifests
+unit-test: generate fmt vet
 	go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build manager binary
