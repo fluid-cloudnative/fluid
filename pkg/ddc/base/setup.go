@@ -106,6 +106,12 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		return workersReady, err
 	}
 
+	// 5.1 Sometimes we have to prepare UFS on workers
+	if err = b.Implement.PrepareUFSForWorkers(); err != nil {
+		b.Log.Error(err, "Failed to prepare UFS on workers")
+		return ready, err
+	}
+
 	// 6.Check if the runtime is ready
 	runtimeReady, err := b.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {

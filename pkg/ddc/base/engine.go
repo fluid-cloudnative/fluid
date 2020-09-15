@@ -68,6 +68,8 @@ type Implement interface {
 	UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error)
 	// Prepare the mounts and metadata if it's not ready
 	PrepareUFS() (err error)
+	// PrepareUFSForWorkers will prepare UFS on worker side, e.g. when UFS is local storage.
+	PrepareUFSForWorkers() (err error)
 	// Shutdown and clean up the engine
 	Shutdown() error
 

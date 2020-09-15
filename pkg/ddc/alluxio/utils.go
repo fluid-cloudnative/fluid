@@ -86,6 +86,10 @@ func (e *AlluxioEngine) getMasterPodInfo() (podName string, containerName string
 	return
 }
 
+func (e *AlluxioEngine) getWorkerContainerName() (name string) {
+	return "alluxio-worker"
+}
+
 func (e *AlluxioEngine) getMasterStatefulsetName() (dsName string) {
 	return e.name + "-master"
 }

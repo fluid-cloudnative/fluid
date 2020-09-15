@@ -42,3 +42,23 @@ func TestSyncLocalDir(t *testing.T) {
 		}
 	}
 }
+
+func TestSoftLink(t *testing.T) {
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
+	var testcases = []struct {
+		target   string
+		linkName string
+		err      error
+	}{
+		{"/pvcs", "/underFSStorage/test", nil},
+	}
+	for _, tc := range testcases {
+		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
+		err := tools.SoftLink(tc.target, tc.linkName)
+		if err == nil {
+			t.Errorf("not failed to create soft link %v to %v", tc.target, tc.linkName)
+		}
+	}
+}

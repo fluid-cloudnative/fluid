@@ -40,3 +40,18 @@ func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
 
 	return
 }
+
+func (a AlluxioFileUtils) SoftLink(target string, linkName string) (err error) {
+	var (
+		command = []string{"ln", "-s", target, linkName}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	a.log.Info("du -sh", "target", target, "linkName", linkName)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	return
+}

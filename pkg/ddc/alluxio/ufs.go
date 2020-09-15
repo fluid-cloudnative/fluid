@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	units "github.com/docker/go-units"
 
@@ -69,11 +70,24 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	//1. make mount
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
-			err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
-			if err != nil {
-				return
+			if e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
+				// create soft link
+				target := fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name)
+				linkName := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
+				if err = fileUitls.SoftLink(target, linkName); err != nil {
+					return
+				}
+				if err = fileUitls.SyncLocalDir(linkName); err != nil {
+					return
+				}
+				continue
+			} else {
+				err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
+				if err != nil {
+					return
+				}
+				continue
 			}
-			continue
 		}
 
 		alluxioPath := fmt.Sprintf("/%s", mount.Name)
@@ -139,4 +153,34 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 
 	return
 
+}
+
+func (e *AlluxioEngine) PrepareUFSForWorkers() (err error) {
+	workerName := e.getWorkerDaemonsetName()
+	pods, err := e.getRunningPodsOfDaemonset(workerName, e.namespace)
+	if err != nil {
+		return err
+	}
+	e.Log.V(1).Info("PrepareUFSForWorkers", "Running worker pods are", pods)
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return
+	}
+	for _, pod := range pods {
+		podName := pod.Name
+		mounts := dataset.Spec.Mounts
+		for _, mount := range mounts {
+			if strings.HasPrefix(mount.MountPoint, volumeScheme) &&
+				e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
+				e.Log.Info("Create soft link", "PodName", podName)
+				fileUtils := operations.NewAlluxioFileUtils(podName, e.getWorkerContainerName(), e.namespace, e.Log)
+				target := fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name)
+				linkName := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
+				if err = fileUtils.SoftLink(target, linkName); err != nil {
+					return
+				}
+			}
+		}
+	}
+	return
 }

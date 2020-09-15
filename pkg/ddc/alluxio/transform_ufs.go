@@ -44,13 +44,13 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 				value.UFSVolumes = []UFSVolume{}
 			}
 
-			// If a pvc contains subdirectory, we firstly mount it the somewhere else,
+			// If a pvc contains subdirectory, we firstly mount it to somewhere else,
 			// and after master is setup, create a soft link to under storage.
 			// NOTE: better finished creating soft link before master loads metadata,
 			// or we will have to do that sync once again.
 			if e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
 				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
-					Name: mount.Name,
+					Name:          mount.Name,
 					ContainerPath: fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name),
 				})
 			} else {
