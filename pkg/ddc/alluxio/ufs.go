@@ -46,6 +46,13 @@ func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 }
 
 func (e *AlluxioEngine) preparePersistVolumeClaimSubdir(mount datav1alpha1.Mount, fileUtils operations.AlluxioFileUtils) (err error) {
+	// When all the mounts are pvc with subdirectory specified,
+	// alluxio's local storage will not be created.
+	// This will cause error when later creating soft link.
+	// Thus we create it regardless of whether it exists.
+	if err = fileUtils.LocalMkdir(e.getLocalStorageDirectory()); err != nil {
+		return
+	}
 	_, subdir, basename, ok := e.parsePersistVolumeClaimSubdir(mount.MountPoint)
 	if !ok {
 		return fmt.Errorf("failed to parse subdirectory of PVC")
@@ -82,14 +89,6 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	ready := fileUitls.Ready()
 	if !ready {
 		return fmt.Errorf("The UFS is not ready")
-	}
-
-	// When all the mounts are pvc with subdirectory specified,
-	// alluxio's local storage will not be created.
-	// This will cause error when later creating soft link.
-	// Thus we create it regardless of whether it exists.
-	if err = fileUitls.LocalMkdir(e.getLocalStorageDirectory()); err != nil {
-		return
 	}
 
 	//1. make mount
