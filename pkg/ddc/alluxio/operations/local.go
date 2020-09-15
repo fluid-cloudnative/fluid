@@ -55,3 +55,18 @@ func (a AlluxioFileUtils) SoftLink(target string, linkName string) (err error) {
 	}
 	return
 }
+
+func (a AlluxioFileUtils) LocalMkdir(directory string) (err error) {
+	var (
+		command = []string{"mkdir", "-p", directory}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	a.log.Info("mkdir -p", "directory", directory)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with err: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	return
+}

@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"strings"
 
 	units "github.com/docker/go-units"
@@ -44,6 +45,22 @@ func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 	return e.totalFileNumsInternal()
 }
 
+func (e *AlluxioEngine) preparePersistVolumeClaimSubdir(mount datav1alpha1.Mount, fileUtils operations.AlluxioFileUtils) (err error) {
+	_, subdir, basename, ok := e.parsePersistVolumeClaimSubdir(mount.MountPoint)
+	if !ok {
+		return fmt.Errorf("failed to parse subdirectory of PVC")
+	}
+	target := fmt.Sprintf("%s/%s/%s", e.getPersistVolumeClaimDirectory(), mount.Name, subdir)
+	linkName := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), basename)
+	if err = fileUtils.SoftLink(target, linkName); err != nil {
+		return
+	}
+	if err = fileUtils.SyncLocalDir(linkName); err != nil {
+		return
+	}
+	return
+}
+
 // Prepare the mounts and metadata
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -67,17 +84,21 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 		return fmt.Errorf("The UFS is not ready")
 	}
 
+	// When all the mounts are pvc with subdirectory specified,
+	// alluxio's local storage will not be created.
+	// This will cause error when later creating soft link.
+	// Thus we create it regardless of whether it exists.
+	if err = fileUitls.LocalMkdir(e.getLocalStorageDirectory()); err != nil {
+		return
+	}
+
 	//1. make mount
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
 			if e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
 				// create soft link
-				target := fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name)
-				linkName := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-				if err = fileUitls.SoftLink(target, linkName); err != nil {
-					return
-				}
-				if err = fileUitls.SyncLocalDir(linkName); err != nil {
+				err = e.preparePersistVolumeClaimSubdir(mount, fileUitls)
+				if err != nil {
 					return
 				}
 				continue
@@ -174,9 +195,8 @@ func (e *AlluxioEngine) PrepareUFSForWorkers() (err error) {
 				e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
 				e.Log.Info("Create soft link", "PodName", podName)
 				fileUtils := operations.NewAlluxioFileUtils(podName, e.getWorkerContainerName(), e.namespace, e.Log)
-				target := fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name)
-				linkName := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-				if err = fileUtils.SoftLink(target, linkName); err != nil {
+				err = e.preparePersistVolumeClaimSubdir(mount, fileUtils)
+				if err != nil {
 					return
 				}
 			}

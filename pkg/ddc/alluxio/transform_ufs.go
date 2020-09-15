@@ -51,7 +51,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 			if e.containsPersistVolumeClaimSubdir(mount.MountPoint) {
 				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 					Name:          mount.Name,
-					ContainerPath: fmt.Sprintf("%s/%s", e.getPersistVolumeClainDirectory(), mount.Name),
+					ContainerPath: fmt.Sprintf("%s/%s", e.getPersistVolumeClaimDirectory(), mount.Name),
 				})
 			} else {
 				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{

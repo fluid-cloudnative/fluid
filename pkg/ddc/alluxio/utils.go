@@ -173,7 +173,7 @@ func (e *AlluxioEngine) getCreateArgs(runtime *datav1alpha1.AlluxioRuntime) []st
 	return args
 }
 
-func (e *AlluxioEngine) getPersistVolumeClainDirectory() string {
+func (e *AlluxioEngine) getPersistVolumeClaimDirectory() string {
 	return "/pvcs"
 }
 
@@ -181,4 +181,19 @@ func (e *AlluxioEngine) containsPersistVolumeClaimSubdir(mountPoint string) bool
 	pvcAndSubdir := strings.TrimPrefix(mountPoint, volumeScheme)
 	pvcAndSubdir = strings.Trim(pvcAndSubdir, "/")
 	return strings.Contains(pvcAndSubdir, "/")
+}
+
+func (e *AlluxioEngine) parsePersistVolumeClaimSubdir(mountPoint string) (pvc, path, basename string, ok bool) {
+	pvcAndSubdir := strings.TrimPrefix(mountPoint, volumeScheme)
+	pvcAndSubdir = strings.Trim(pvcAndSubdir, "/")
+	tokens := strings.Split(pvcAndSubdir, "/")
+	if len(tokens) < 2 {
+		ok = false
+		return
+	}
+	pvc = tokens[0]
+	path = strings.Join(tokens[1:], "/")
+	basename = tokens[len(tokens)-1]
+	ok = true
+	return
 }

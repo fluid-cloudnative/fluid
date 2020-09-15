@@ -238,3 +238,45 @@ func TestIsPersistVolumeClaimSubdir(t *testing.T) {
 		}
 	}
 }
+
+func TestParsePersistVolumeClaimSubdir(t *testing.T) {
+	var testcases = []struct {
+		mountPoint       string
+		expectedPvc      string
+		expectedPath     string
+		expectedBasename string
+		expectedFlag     bool
+	}{
+		{"pvc://imagenet/path/to/target",
+			"imagenet",
+			"path/to/target",
+			"target",
+			true},
+		{"pvc://imagenet/target",
+			"imagenet",
+			"target",
+			"target",
+			true},
+		{"pvc://imagenet/target/",
+			"imagenet",
+			"target",
+			"target",
+			true},
+		{"pvc://imagenet/",
+			"",
+			"",
+			"",
+			false},
+	}
+	for _, tc := range testcases {
+		engine := &AlluxioEngine{}
+		pvc, dirname, basename, ret := engine.parsePersistVolumeClaimSubdir(tc.mountPoint)
+		if ret != tc.expectedFlag || pvc != tc.expectedPvc ||
+			dirname != tc.expectedPath || basename != tc.expectedBasename {
+			t.Errorf("expect {pvc: %v, dirname: %v, basename: %v, flag: %v},"+
+				"but got {pvc: %v, dirname: %v, basename: %v, flag: %v}",
+				tc.expectedPvc, tc.expectedPath, tc.expectedBasename, tc.expectedFlag,
+				pvc, dirname, basename, ret)
+		}
+	}
+}
