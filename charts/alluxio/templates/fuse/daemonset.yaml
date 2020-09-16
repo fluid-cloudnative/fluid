@@ -67,6 +67,17 @@ spec:
                 values:
                 - alluxio-worker
             topologyKey: kubernetes.io/hostname
+      initContainers:
+      - name: create-user
+        image: {{ .Values.createImage }}:{{ .Values.createImageTag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["/tmp/entrypoint.sh"]
+          args: {{ .Values.UserInfo.Args }}
+        volumeMounts:
+          - name: user
+            mountPath: /etc/passwd
+          - name: group
+            mountPath: /etc/group 
       containers:
         - name: alluxio-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -141,10 +152,10 @@ spec:
             type: File
         - name: user         
           hostPath:
-            path: /etc/passwd
+            path: {{ .Values.UserInfo.passwdPath }}
         - name: group         
           hostPath:
-            path: /etc/group
+            path: {{ .Values.UserInfo.groupPath }}
         - name: alluxio-fuse-mount
           hostPath:
             path: {{ .Values.fuse.mountPath | dir }}

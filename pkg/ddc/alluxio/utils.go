@@ -16,9 +16,12 @@ limitations under the License.
 package alluxio
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +30,7 @@ import (
 	options "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/sirupsen/logrus"
 )
 
 // getRuntime gets the alluxio runtime
@@ -133,4 +137,33 @@ func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
 
 func (e *AlluxioEngine) getLocalStorageDirectory() string {
 	return "/underFSStorage"
+}
+
+func (e *AlluxioEngine) getPasswdPath() string {
+	timestamp := time.Now().Format("20060102150405")
+	passwd := "/tmp/passwd_" + timestamp
+	logrus.Infoln("User told me to generate passwd file in ", passwd)
+	return passwd
+}
+
+func (e *AlluxioEngine) getGroupsPath() string {
+	timestamp := time.Now().Format("20060102150405")
+	group := "/tmp/group_" + timestamp
+	logrus.Infoln("User told me to generate groups file", group)
+	return group
+}
+
+func (e *AlluxioEngine) getCreateArgs(runtime *datav1alpha1.AlluxioRuntime) string {
+	uid := strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+	gid := strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	username := runtime.Spec.RunAs.UserName
+	var args bytes.Buffer
+	args.WriteString(uid + ":" + username + ":" + gid)
+
+	groups := runtime.Spec.RunAs.Groups
+	for _, group := range groups {
+		gid = strconv.FormatInt(group.ID, 10)
+		args.WriteString(" " + gid + ":" + group.Name)
+	}
+	return args.String()
 }

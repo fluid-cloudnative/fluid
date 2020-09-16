@@ -68,9 +68,12 @@ type ImageInfo struct {
 }
 
 type UserInfo struct {
-	User    int `yaml:"user"`
-	Group   int `yaml:"group"`
-	FSGroup int `yaml:"fsGroup"`
+	User       int    `yaml:"user"`
+	Group      int    `yaml:"group"`
+	FSGroup    int    `yaml:"fsGroup"`
+	passwdPath string `yaml:"passwdpath"`
+	groupPath  string `yaml:"grouppath"`
+	Args       string `yaml:"args"`
 }
 
 type Metastore struct {

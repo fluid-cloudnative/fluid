@@ -20,6 +20,10 @@ image: alluxio/alluxio
 imageTag: 2.4.0-SNAPSHOT
 imagePullPolicy: IfNotPresent
 
+# Create User Docker Image
+createImage: xieydd/centos
+createImageTag: fluid
+
 # Security Context
 user: 1000
 group: 1000

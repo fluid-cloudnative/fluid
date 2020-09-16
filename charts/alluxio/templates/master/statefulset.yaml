@@ -65,6 +65,16 @@ spec:
 {{ toYaml .Values.master.affinity | indent 8  }}
       {{- end }}
       initContainers:
+      - name: create-user
+        image: {{ .Values.createImage }}:{{ .Values.createImageTag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["/tmp/entrypoint.sh"]
+          args: {{ .Values.UserInfo.Args }}
+        volumeMounts:
+          - name: user
+            mountPath: /etc/passwd
+          - name: group
+            mountPath: /etc/group 
       {{- if .Values.journal.format.runFormat}}
       - name: journal-format
         image: {{ .Values.image }}:{{ .Values.imageTag }}
@@ -241,10 +251,10 @@ spec:
       volumes:
         - name: user         
           hostPath:
-            path: /etc/passwd
+            path: {{ .Values.UserInfo.passwdPath }}
         - name: group         
           hostPath:
-            path: /etc/group
+            path: {{ .Values.UserInfo.groupPath }}
         {{- if .Values.secrets }}
           {{- if .Values.secrets.master }}
             {{- range $key, $val := .Values.secrets.master }}
