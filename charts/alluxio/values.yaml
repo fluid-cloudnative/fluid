@@ -26,7 +26,6 @@ initUsers:
   imageTag: v0.3.0
   imagePullPolicy: IfNotPresent
 args: "1000"
-name: "test"
 
 # Security Context
 user: 1000

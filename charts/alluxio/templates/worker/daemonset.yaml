@@ -54,7 +54,7 @@ spec:
       initContainers:
       - name: init-users
         image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
-        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
         command: ["/entrypoint.sh"]
         {{- if .Values.args }}
         args:
