@@ -187,13 +187,33 @@ spec:
                   description: The gid to run the alluxio runtime
                   format: int64
                   type: integer
+                groups:
+                  description: The groups for the alluxio runtime user
+                  items:
+                    description: group
+                    properties:
+                      id:
+                        format: int64
+                        type: integer
+                      name:
+                        type: string
+                    required:
+                    - id
+                    - name
+                    type: object
+                  type: array
                 uid:
                   description: The uid to run the alluxio runtime
                   format: int64
                   type: integer
+                username:
+                  description: The user name to run the alluxio runtime
+                  type: string
               required:
               - gid
+              - groups
               - uid
+              - username
               type: object
             runtimes:
               description: Runtimes for supporting dataset (e.g. AlluxioRuntime)
