@@ -1,3 +1,0 @@
-FROM centos:latest
-COPY entrypoint.sh /tmp/
-RUN chmod +x /tmp/entrypoint.sh

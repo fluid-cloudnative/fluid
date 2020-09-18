@@ -20,10 +20,11 @@ image: alluxio/alluxio
 imageTag: 2.4.0-SNAPSHOT
 imagePullPolicy: IfNotPresent
 
-# Create User Docker Image // TODO make it configuratable
+# Create User Docker Image // TODO make it configurable
 initUsers:
-  image: harbor.unisound.ai/xieydd/centos
-  tag: fluid
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-user
+  imageTag: v0.3.0
+  imagePullPolicy: IfNotPresent
 args: "1000"
 name: "test"
 

@@ -8,6 +8,8 @@ CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
 
 LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
 
+INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -16,12 +18,13 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+VERSION=v0.3.0
 BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
 GIT_TREE_STATE=$(shell echo "clean")
 GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
-GIT_VERSION=v0.3.0-${GIT_SHA}
+GIT_VERSION=${VERSION}-${GIT_SHA}
 
 all: manager
 
@@ -90,6 +93,9 @@ docker-build-csi: generate fmt vet
 docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
 
+docker-build-init-users:
+	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
+
 # Push the docker image
 docker-push: docker-build
 	docker push ${IMG}:${GIT_VERSION}
@@ -100,8 +106,11 @@ docker-push-csi: docker-build-csi
 docker-push-loader: docker-build-loader
 	docker push ${LOADER_IMG}
 
-docker-push-all: docker-push docker-push-csi docker-push-loader
-docker-build-all: docker-build docker-build-csi docker-build-loader
+docker-push-init-users: docker-build-init-users
+	docker push ${INIT_USERS_IMG}:${VERSION}
+
+docker-push-all: docker-push-init-users docker-push docker-push-csi
+docker-build-all: docker-build-init-users docker-build docker-build-csi
 
 # find or download controller-gen
 # download controller-gen if necessary

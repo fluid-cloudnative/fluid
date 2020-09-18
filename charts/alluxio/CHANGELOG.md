@@ -137,7 +137,6 @@
 
 - Support hostPath
 
-
 0.6.11
 
 - Support nodeAffinity in master
@@ -145,4 +144,8 @@
 0.6.12
 
 - Support non-root for fuse
+
+0.6.13
+
+- Add init container for multiple users in ldap
 
