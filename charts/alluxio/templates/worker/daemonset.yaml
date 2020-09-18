@@ -50,16 +50,16 @@ spec:
       {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
-      {{- if gt (int .Values.user) 0 }}
       initContainers:
+      {{ if .Values.initUsers.enabled -}}
       - name: init-users
         image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
         imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
         command: ["/entrypoint.sh"]
-        {{- if .Values.args }}
+          {{- if .Values.initUsers.args }}
         args:
-{{ toYaml .Values.args | trim | indent 12 }}
-        {{- end }}
+{{ toYaml .Values.initUsers.args | trim | indent 12 }}
+          {{- end }}
         volumeMounts:
           - name: user
             mountPath: /tmp/passwd
@@ -105,12 +105,14 @@ spec:
           - containerPort: {{ .Values.worker.ports.web }}
             name: web
           volumeMounts:
+            {{ if .Values.initUsers.enabled -}}
             - name: user
               mountPath: /etc/passwd
               readOnly: true
             - name: group
               mountPath: /etc/group
-              readOnly: true   
+              readOnly: true
+            {{- end}}
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
@@ -178,12 +180,16 @@ spec:
           - containerPort: {{ .Values.jobWorker.ports.web }}
             name: job-web
           volumeMounts:
-            - name: user
-              mountPath: /etc/passwd
-              readOnly: true
-            - name: group
-              mountPath: /etc/group
-              readOnly: true   
+            {{ if .Values.initUsers.enabled -}}
+            - name: user         
+              hostPath:
+                path: {{ .Values.passwdpath }}
+                type: File
+            - name: group         
+              hostPath:
+                path: {{ .Values.grouppath }}
+                type: File
+            {{- end }}
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
               mountPath: /opt/domain
@@ -213,22 +219,16 @@ spec:
             {{- end }}
       restartPolicy: Always
       volumes:
+        {{ if .Values.initUsers.enabled -}}
         - name: user         
           hostPath:
-            {{- if gt (int .Values.user) 0 }}
             path: {{ .Values.passwdpath }}
-            {{- else }}
-            path: /etc/passwd
-            {{- end }}
-            type: FileOrCreate
+            type: File
         - name: group         
           hostPath:
-            {{- if gt (int .Values.user) 0 }}
             path: {{ .Values.grouppath }}
-            {{- else }}
-            path: /etc/group
-            {{- end }}
-            type: FileOrCreate
+            type: File
+        {{- end }}
         {{- if $needDomainSocketVolume }}
 {{- include "alluxio.worker.shortCircuit.volume" . }}
         {{- end }}
@@ -251,7 +251,7 @@ spec:
           {{- range .Values.ufsPaths }}
         - hostPath:
             path: {{ .hostPath }}
-            type: Directory
+            type: ""
           name: {{ .name }}
           {{- end }}
         {{- end }}
