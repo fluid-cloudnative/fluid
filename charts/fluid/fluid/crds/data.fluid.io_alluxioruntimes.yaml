@@ -59,10 +59,14 @@ spec:
       description: AlluxioRuntime is the Schema for the alluxioruntimes API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -70,23 +74,27 @@ spec:
           description: AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
           properties:
             alluxioVersion:
-              description: The version information that instructs fluid to orchestrate a particular version of Alluxio.
+              description: The version information that instructs fluid to orchestrate
+                a particular version of Alluxio.
               properties:
                 image:
                   description: Image for Alluxio(e.g. alluxio/alluxio)
                   type: string
                 imagePullPolicy:
-                  description: 'One of the three policies: `Always`, `IfNotPresent`, `Never`'
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
                   type: string
                 imageTag:
                   description: Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
             data:
-              description: Management strategies for the dataset to which the runtime is bound
+              description: Management strategies for the dataset to which the runtime
+                is bound
               properties:
                 pin:
-                  description: Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio User-CLI pin</a>
+                  description: Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio
+                    User-CLI pin</a>
                   type: boolean
                 replicas:
                   description: The copies of the dataset
@@ -104,13 +112,15 @@ spec:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio Fuse
+                  description: Environment variables that will be used by Alluxio
+                    Fuse
                   type: object
                 image:
                   description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
                   type: string
                 imagePullPolicy:
-                  description: 'One of the three policies: `Always`, `IfNotPresent`, `Never`'
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
                   type: string
                 imageTag:
                   description: Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
@@ -123,10 +133,14 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for Alluxio System. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+                  description: Configurable properties for Alluxio System. <br> Refer
+                    to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 resources:
-                  description: Resources that will be requested by Alluxio Fuse. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.
+                  description: Resources that will be requested by Alluxio Fuse. <br>
+                    <br> Resources are not allowed for ephemeral containers. Ephemeral
+                    containers use spare resources already allocated to the pod.
                   properties:
                     limits:
                       additionalProperties:
@@ -135,7 +149,8 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
@@ -144,7 +159,10 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
               type: object
@@ -154,7 +172,8 @@ spec:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio component. <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -169,15 +188,22 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
-                  description: Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
                   format: int32
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
                   properties:
                     limits:
                       additionalProperties:
@@ -186,7 +212,8 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
@@ -195,7 +222,10 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
               type: object
@@ -205,7 +235,8 @@ spec:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio component. <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -220,15 +251,22 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
-                  description: Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
                   format: int32
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
                   properties:
                     limits:
                       additionalProperties:
@@ -237,7 +275,8 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
@@ -246,7 +285,10 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
               type: object
@@ -261,7 +303,8 @@ spec:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio component. <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -276,15 +319,22 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
-                  description: Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
                   format: int32
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
                   properties:
                     limits:
                       additionalProperties:
@@ -293,7 +343,8 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
@@ -302,14 +353,19 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
               type: object
             properties:
               additionalProperties:
                 type: string
-              description: Configurable properties for Alluxio system. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+              description: Configurable properties for Alluxio system. <br> Refer
+                to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                Configuration Properties</a> for more info
               type: object
             replicas:
               description: The replicas of the worker, need to be specified
@@ -322,21 +378,9 @@ spec:
                   description: The gid to run the alluxio runtime
                   format: int64
                   type: integer
-                groups:
-                  description: The groups for the alluxio runtime user
-                  items:
-                    description: group
-                    properties:
-                      id:
-                        format: int64
-                        type: integer
-                      name:
-                        type: string
-                    required:
-                    - id
-                    - name
-                    type: object
-                  type: array
+                groupname:
+                  description: The group name to run the alluxio runtime
+                  type: string
                 uid:
                   description: The uid to run the alluxio runtime
                   format: int64
@@ -346,7 +390,7 @@ spec:
                   type: string
               required:
               - gid
-              - groups
+              - groupname
               - uid
               - username
               type: object
@@ -356,7 +400,9 @@ spec:
                 levels:
                   description: configurations for multiple tiers
                   items:
-                    description: Level describes configurations a tier needs. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring Tiered Storage</a> for more info
+                    description: Level describes configurations a tier needs. <br>
+                      Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring
+                      Tiered Storage</a> for more info
                     properties:
                       high:
                         description: Ratio of high watermark of the tier (e.g. 0.9)
@@ -365,7 +411,8 @@ spec:
                         description: Ratio of low watermark of the tier (e.g. 0.7)
                         type: string
                       mediumtype:
-                        description: 'Medium Type of the tier. One of the three types: `MEM`, `SSD`, `HDD`'
+                        description: 'Medium Type of the tier. One of the three types:
+                          `MEM`, `SSD`, `HDD`'
                         enum:
                         - MEM
                         - SSD
@@ -393,7 +440,8 @@ spec:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio component. <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -408,15 +456,22 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
-                  description: Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
                   format: int32
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
                   properties:
                     limits:
                       additionalProperties:
@@ -425,7 +480,8 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
@@ -434,7 +490,10 @@ spec:
                         - type: string
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
-                      description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                   type: object
               type: object
@@ -448,20 +507,24 @@ spec:
               description: CacheStatus represents the total resources of the dataset.
               type: object
             conditions:
-              description: Represents the latest available observations of a ddc runtime's current state.
+              description: Represents the latest available observations of a ddc runtime's
+                current state.
               items:
-                description: Condition describes the state of the cache at a certain point.
+                description: Condition describes the state of the cache at a certain
+                  point.
                 properties:
                   lastProbeTime:
                     description: The last time this condition was updated.
                     format: date-time
                     type: string
                   lastTransitionTime:
-                    description: Last time the condition transitioned from one status to another.
+                    description: Last time the condition transitioned from one status
+                      to another.
                     format: date-time
                     type: string
                   message:
-                    description: A human readable message indicating details about the transition.
+                    description: A human readable message indicating details about
+                      the transition.
                     type: string
                   reason:
                     description: The reason for the condition's last transition.
@@ -478,39 +541,51 @@ spec:
                 type: object
               type: array
             currentFuseNumberScheduled:
-              description: The total number of nodes that can be running the runtime Fuse pod (including nodes correctly running the runtime Fuse pod).
+              description: The total number of nodes that can be running the runtime
+                Fuse pod (including nodes correctly running the runtime Fuse pod).
               format: int32
               type: integer
             currentMasterNumberScheduled:
-              description: The total number of nodes that should be running the runtime pod (including nodes correctly running the runtime master pod).
+              description: The total number of nodes that should be running the runtime
+                pod (including nodes correctly running the runtime master pod).
               format: int32
               type: integer
             currentWorkerNumberScheduled:
-              description: The total number of nodes that can be running the runtime worker pod (including nodes correctly running the runtime worker pod).
+              description: The total number of nodes that can be running the runtime
+                worker pod (including nodes correctly running the runtime worker pod).
               format: int32
               type: integer
             desiredFuseNumberScheduled:
-              description: The total number of nodes that should be running the runtime Fuse pod (including nodes correctly running the runtime Fuse pod).
+              description: The total number of nodes that should be running the runtime
+                Fuse pod (including nodes correctly running the runtime Fuse pod).
               format: int32
               type: integer
             desiredMasterNumberScheduled:
-              description: The total number of nodes that should be running the runtime pod (including nodes correctly running the runtime master pod).
+              description: The total number of nodes that should be running the runtime
+                pod (including nodes correctly running the runtime master pod).
               format: int32
               type: integer
             desiredWorkerNumberScheduled:
-              description: The total number of nodes that should be running the runtime worker pod (including nodes correctly running the runtime worker pod).
+              description: The total number of nodes that should be running the runtime
+                worker pod (including nodes correctly running the runtime worker pod).
               format: int32
               type: integer
             fuseNumberAvailable:
-              description: The number of nodes that should be running the runtime Fuse pod and have one or more of the runtime Fuse pod running and available (ready for at least spec.minReadySeconds)
+              description: The number of nodes that should be running the runtime
+                Fuse pod and have one or more of the runtime Fuse pod running and
+                available (ready for at least spec.minReadySeconds)
               format: int32
               type: integer
             fuseNumberReady:
-              description: The number of nodes that should be running the runtime Fuse pod and have one or more of the runtime Fuse pod running and ready.
+              description: The number of nodes that should be running the runtime
+                Fuse pod and have one or more of the runtime Fuse pod running and
+                ready.
               format: int32
               type: integer
             fuseNumberUnavailable:
-              description: The number of nodes that should be running the runtime fuse pod and have none of the runtime fuse pod running and available (ready for at least spec.minReadySeconds)
+              description: The number of nodes that should be running the runtime
+                fuse pod and have none of the runtime fuse pod running and available
+                (ready for at least spec.minReadySeconds)
               format: int32
               type: integer
             fusePhase:
@@ -520,7 +595,9 @@ spec:
               description: Reason for the condition's last transition.
               type: string
             masterNumberReady:
-              description: The number of nodes that should be running the runtime worker pod and have zero or more of the runtime master pod running and ready.
+              description: The number of nodes that should be running the runtime
+                worker pod and have zero or more of the runtime master pod running
+                and ready.
               format: int32
               type: integer
             masterPhase:
@@ -533,15 +610,21 @@ spec:
               description: config map used to set configurations
               type: string
             workerNumberAvailable:
-              description: The number of nodes that should be running the runtime worker pod and have one or more of the runtime worker pod running and available (ready for at least spec.minReadySeconds)
+              description: The number of nodes that should be running the runtime
+                worker pod and have one or more of the runtime worker pod running
+                and available (ready for at least spec.minReadySeconds)
               format: int32
               type: integer
             workerNumberReady:
-              description: The number of nodes that should be running the runtime worker pod and have one or more of the runtime worker pod running and ready.
+              description: The number of nodes that should be running the runtime
+                worker pod and have one or more of the runtime worker pod running
+                and ready.
               format: int32
               type: integer
             workerNumberUnavailable:
-              description: The number of nodes that should be running the runtime worker pod and have none of the runtime worker pod running and available (ready for at least spec.minReadySeconds)
+              description: The number of nodes that should be running the runtime
+                worker pod and have none of the runtime worker pod running and available
+                (ready for at least spec.minReadySeconds)
               format: int32
               type: integer
             workerPhase:
