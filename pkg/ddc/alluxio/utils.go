@@ -18,7 +18,9 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +30,9 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
+
+// For passwd and groups father dir consistency
+var timestamp = time.Now().Format("20060102150405")
 
 // getRuntime gets the alluxio runtime
 func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
@@ -133,4 +138,33 @@ func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
 
 func (e *AlluxioEngine) getLocalStorageDirectory() string {
 	return "/underFSStorage"
+}
+
+func (e *AlluxioEngine) getPasswdPath() string {
+	//timestamp := time.Now().Format("20060102150405")
+	passwd := "/tmp/" + timestamp + "_passwd"
+	e.Log.Info("Generate passwd file")
+	return passwd
+}
+
+func (e *AlluxioEngine) getGroupsPath() string {
+	//timestamp := time.Now().Format("20060102150405")
+	group := "/tmp/" + timestamp + "_group"
+	e.Log.Info("Generate group file")
+	return group
+}
+
+func (e *AlluxioEngine) getCreateArgs(runtime *datav1alpha1.AlluxioRuntime) []string {
+	uid := strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
+	gid := strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
+	username := runtime.Spec.RunAs.UserName
+	var user string = uid + ":" + username + ":" + gid
+	args := []string{user}
+	groups := runtime.Spec.RunAs.Groups
+	for _, group := range groups {
+		gid = strconv.FormatInt(group.ID, 10)
+		var tmp string = " " + gid + ":" + group.Name
+		args = append(args, tmp)
+	}
+	return args
 }

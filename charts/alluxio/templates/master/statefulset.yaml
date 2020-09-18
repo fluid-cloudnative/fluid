@@ -64,8 +64,23 @@ spec:
       {{- if .Values.master.affinity }}
 {{ toYaml .Values.master.affinity | indent 8  }}
       {{- end }}
+      {{- if gt (int .Values.user) 0 }}
       initContainers:
-      {{- if .Values.journal.format.runFormat}}
+      - name: init-users
+        image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.tag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["/tmp/entrypoint.sh"]
+        {{- if .Values.args }}
+        args:
+{{ toYaml .Values.args | trim | indent 12 }}
+        {{- end }}
+        volumeMounts:
+          - name: user
+            mountPath: /tmp/passwd
+          - name: group
+            mountPath: /tmp/group
+      {{- end }}
+      {{- if .Values.journal.format.runFormat }}
       - name: journal-format
         image: {{ .Values.image }}:{{ .Values.imageTag }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -241,10 +256,20 @@ spec:
       volumes:
         - name: user         
           hostPath:
+             {{- if gt (int .Values.user) 0 }}
+            path: {{ .Values.passwdpath }}
+            {{- else }}
             path: /etc/passwd
+            {{- end }}
+            type: FileOrCreate
         - name: group         
           hostPath:
+            {{- if gt (int .Values.user) 0 }}
+            path: {{ .Values.grouppath }}
+            {{- else }}
             path: /etc/group
+            {{- end }}
+            type: FileOrCreate
         {{- if .Values.secrets }}
           {{- if .Values.secrets.master }}
             {{- range $key, $val := .Values.secrets.master }}
