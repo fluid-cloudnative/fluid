@@ -16,7 +16,6 @@ limitations under the License.
 package alluxio
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strconv"
@@ -30,8 +29,10 @@ import (
 	options "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/sirupsen/logrus"
 )
+
+// For passwd and groups father dir consistency
+var timestamp = time.Now().Format("20060102150405")
 
 // getRuntime gets the alluxio runtime
 func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
@@ -140,30 +141,30 @@ func (e *AlluxioEngine) getLocalStorageDirectory() string {
 }
 
 func (e *AlluxioEngine) getPasswdPath() string {
-	timestamp := time.Now().Format("20060102150405")
-	passwd := "/tmp/passwd_" + timestamp
-	logrus.Infoln("User told me to generate passwd file in ", passwd)
+	//timestamp := time.Now().Format("20060102150405")
+	passwd := "/tmp/" + timestamp + "_passwd"
+	e.Log.Info("Generate passwd file")
 	return passwd
 }
 
 func (e *AlluxioEngine) getGroupsPath() string {
-	timestamp := time.Now().Format("20060102150405")
-	group := "/tmp/group_" + timestamp
-	logrus.Infoln("User told me to generate groups file", group)
+	//timestamp := time.Now().Format("20060102150405")
+	group := "/tmp/" + timestamp + "_group"
+	e.Log.Info("Generate group file")
 	return group
 }
 
-func (e *AlluxioEngine) getCreateArgs(runtime *datav1alpha1.AlluxioRuntime) string {
+func (e *AlluxioEngine) getCreateArgs(runtime *datav1alpha1.AlluxioRuntime) []string {
 	uid := strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
 	gid := strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	username := runtime.Spec.RunAs.UserName
-	var args bytes.Buffer
-	args.WriteString(uid + ":" + username + ":" + gid)
-
+	var user string = uid + ":" + username + ":" + gid
+	args := []string{user}
 	groups := runtime.Spec.RunAs.Groups
 	for _, group := range groups {
 		gid = strconv.FormatInt(group.ID, 10)
-		args.WriteString(" " + gid + ":" + group.Name)
+		var tmp string = " " + gid + ":" + group.Name
+		args = append(args, tmp)
 	}
-	return args.String()
+	return args
 }

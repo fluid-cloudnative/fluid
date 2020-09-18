@@ -42,6 +42,8 @@ function main {
     temp=$(cat temp) 
     groups=${temp}
     eval $groups
+    cat /etc/passwd > /tmp/passwd
+    cat /etc/group > /tmp/group
 }
 
 main "$@"

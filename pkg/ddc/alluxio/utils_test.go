@@ -23,7 +23,10 @@ import (
 	"github.com/go-logr/logr"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var timestamp_test = time.Now().Format("20060102150405")
 
 func TestIsFluidNativeScheme(t *testing.T) {
 
@@ -61,6 +64,7 @@ func TestAlluxioEngine_getPasswdPath(t *testing.T) {
 		gracefulShutdownLimits int32
 		retryShutdown          int32
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -72,8 +76,8 @@ func TestAlluxioEngine_getPasswdPath(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{},
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio"},
-			want: "/tmp/passwd_" + time.Now().Format("20060102150405"),
+			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
+			want: "/tmp/" + timestamp_test + "_passwd",
 		},
 	}
 	for _, tt := range tests {
@@ -117,8 +121,8 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{},
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio"},
-			want: "/tmp/group_" + time.Now().Format("20060102150405"),
+			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
+			want: "/tmp/" + timestamp_test + "_group",
 		},
 	}
 	for _, tt := range tests {
@@ -157,7 +161,7 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   string
+		want   []string
 	}{
 		{name: "test",
 			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
@@ -173,7 +177,7 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 				Status: datav1alpha1.AlluxioRuntimeStatus{},
 			},
 			},
-			want: "1000:test:1000 1000:a 2000:b"},
+			want: []string{"1000:test:1000", "1000:a", "2000:b"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -187,7 +191,14 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			if got := e.getCreateArgs(tt.fields.runtime); got != tt.want {
+			got := e.getCreateArgs(tt.fields.runtime)
+			var ne bool
+			for i, src := range got {
+				if src != tt.want[i] {
+					ne = false
+				}
+			}
+			if ne {
 				t.Errorf("AlluxioEngine.getCreateArgs() = %v, want %v", got, tt.want)
 			}
 		})

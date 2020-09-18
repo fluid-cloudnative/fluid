@@ -50,17 +50,22 @@ spec:
       {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
+      {{- if gt (int .Values.user) 0 }}
       initContainers:
-      - name: create-user
-        image: {{ .Values.createImage }}:{{ .Values.createImageTag }}
+      - name: init-users
+        image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.tag }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         command: ["/tmp/entrypoint.sh"]
-          args: {{ .Values.UserInfo.Args }}
+        {{- if .Values.args }}
+        args:
+{{ toYaml .Values.args | trim | indent 12 }}
+        {{- end }}
         volumeMounts:
           - name: user
-            mountPath: /etc/passwd
+            mountPath: /tmp/passwd
           - name: group
-            mountPath: /etc/group 
+            mountPath: /tmp/group 
+      {{- end }}
       containers:
         - name: alluxio-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
@@ -101,10 +106,10 @@ spec:
             name: web
           volumeMounts:
             - name: user
-              mountPath: {{ .Values.UserInfo.passwdPath }}
+              mountPath: /etc/passwd
               readOnly: true
             - name: group
-              mountPath: {{ .Values.UserInfo.groupPath }}
+              mountPath: /etc/group
               readOnly: true   
             {{- if $needDomainSocketVolume }}
             - name: alluxio-domain
@@ -210,10 +215,20 @@ spec:
       volumes:
         - name: user         
           hostPath:
+            {{- if gt (int .Values.user) 0 }}
+            path: {{ .Values.passwdpath }}
+            {{- else }}
             path: /etc/passwd
+            {{- end }}
+            type: FileOrCreate
         - name: group         
           hostPath:
+            {{- if gt (int .Values.user) 0 }}
+            path: {{ .Values.grouppath }}
+            {{- else }}
             path: /etc/group
+            {{- end }}
+            type: FileOrCreate
         {{- if $needDomainSocketVolume }}
 {{- include "alluxio.worker.shortCircuit.volume" . }}
         {{- end }}

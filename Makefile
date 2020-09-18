@@ -101,6 +101,7 @@ docker-push-loader: docker-build-loader
 	docker push ${LOADER_IMG}
 
 docker-push-all: docker-push docker-push-csi docker-push-loader
+docker-build-all: docker-build docker-build-csi docker-build-loader
 
 # find or download controller-gen
 # download controller-gen if necessary

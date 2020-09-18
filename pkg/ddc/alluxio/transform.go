@@ -105,8 +105,8 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	if runtime.Spec.RunAs != nil {
 		value.UserInfo.User = int(*runtime.Spec.RunAs.UID)
 		value.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
-		value.UserInfo.passwdPath = e.getPasswdPath()
-		value.UserInfo.groupPath = e.getGroupsPath()
+		value.UserInfo.PasswdPath = e.getPasswdPath()
+		value.UserInfo.GroupPath = e.getGroupsPath()
 		value.UserInfo.Args = e.getCreateArgs(runtime)
 	}
 
