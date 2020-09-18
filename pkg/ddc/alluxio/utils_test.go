@@ -92,7 +92,7 @@ func TestAlluxioEngine_getPasswdPath(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			if got := e.getPasswdPath(); got != tt.want {
+			if got := e.getPasswdPath(timestamp_test); got != tt.want {
 				t.Errorf("AlluxioEngine.getPasswdPath() = %v, want %v", got, tt.want)
 			}
 		})
@@ -137,14 +137,14 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			if got := e.getGroupsPath(); got != tt.want {
+			if got := e.getGroupsPath(timestamp_test); got != tt.want {
 				t.Errorf("AlluxioEngine.getGroupsPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestAlluxioEngine_getCreateArgs(t *testing.T) {
+func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	type fields struct {
 		runtime                *datav1alpha1.AlluxioRuntime
 		name                   string
@@ -168,16 +168,11 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 				TypeMeta:   v1.TypeMeta{},
 				ObjectMeta: v1.ObjectMeta{},
 				Spec: datav1alpha1.AlluxioRuntimeSpec{RunAs: &datav1alpha1.User{UID: f(int64(1000)), GID: f(int64(1000)),
-					UserName: "test", Groups: []datav1alpha1.Group{
-						{ID: int64(1000),
-							Name: "a"},
-						{ID: int64(2000),
-							Name: "b"},
-					}}},
+					UserName: "test", GroupName: "a"}},
 				Status: datav1alpha1.AlluxioRuntimeStatus{},
 			},
 			},
-			want: []string{"1000:test:1000", "1000:a", "2000:b"}},
+			want: []string{"1000:test:1000", "1000:a"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -191,7 +186,7 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			got := e.getCreateArgs(tt.fields.runtime)
+			got := e.getInitUsersArgs(tt.fields.runtime)
 			var ne bool
 			for i, src := range got {
 				if src != tt.want[i] {
@@ -199,7 +194,7 @@ func TestAlluxioEngine_getCreateArgs(t *testing.T) {
 				}
 			}
 			if ne {
-				t.Errorf("AlluxioEngine.getCreateArgs() = %v, want %v", got, tt.want)
+				t.Errorf("AlluxioEngine.getInitUsersArgs() = %v, want %v", got, tt.want)
 			}
 		})
 	}

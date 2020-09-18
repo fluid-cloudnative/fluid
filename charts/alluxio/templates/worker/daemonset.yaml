@@ -183,11 +183,11 @@ spec:
             {{ if .Values.initUsers.enabled -}}
             - name: user         
               hostPath:
-                path: {{ .Values.passwdpath }}
+                path: {{ .Values.initUsers.passwdpath }}
                 type: File
             - name: group         
               hostPath:
-                path: {{ .Values.grouppath }}
+                path: {{ .Values.initUsers.grouppath }}
                 type: File
             {{- end }}
             {{- if $needDomainSocketVolume }}
@@ -222,11 +222,11 @@ spec:
         {{ if .Values.initUsers.enabled -}}
         - name: user         
           hostPath:
-            path: {{ .Values.passwdpath }}
+            path: {{ .Values.initUsers.passwdpath }}
             type: File
         - name: group         
           hostPath:
-            path: {{ .Values.grouppath }}
+            path: {{ .Values.initUsers.grouppath }}
             type: File
         {{- end }}
         {{- if $needDomainSocketVolume }}

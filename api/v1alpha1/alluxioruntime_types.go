@@ -175,15 +175,18 @@ type User struct {
 	// The user name to run the alluxio runtime
 	UserName string `json:"username"`
 
+	// The group name to run the alluxio runtime
+	GroupName string `json:"groupname"`
+
 	// The groups for the alluxio runtime user
-	Groups []Group `json:"groups"`
+	// Groups []Group `json:"groups"`
 }
 
 // group
-type Group struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
+// type Group struct {
+// 	ID   int64  `json:"id"`
+// 	Name string `json:"name"`
+// }
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
