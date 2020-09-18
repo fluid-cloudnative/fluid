@@ -53,9 +53,9 @@ spec:
       {{- if gt (int .Values.user) 0 }}
       initContainers:
       - name: init-users
-        image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.tag }}
-        imagePullPolicy: {{ .Values.imagePullPolicy }}
-        command: ["/tmp/entrypoint.sh"]
+        image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
+        imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+        command: ["/entrypoint.sh"]
         {{- if .Values.args }}
         args:
 {{ toYaml .Values.args | trim | indent 12 }}
