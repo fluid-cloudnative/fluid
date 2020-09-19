@@ -41,7 +41,7 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 			GroupPath:  e.getGroupsPath(timestamp),
 			Args:       e.getInitUsersArgs(runtime),
 			ImageInfo: ImageInfo{
-				Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-user",
+				Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
 				ImageTag:        "v0.3.0",
 				ImagePullPolicy: "IfNotPresent",
 			},
