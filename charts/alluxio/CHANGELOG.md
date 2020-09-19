@@ -155,4 +155,5 @@
   - move args to init-user.args
   - change ufsPath's hostpath type from "directory" to ""
   - move passwdpath to init-user.passwdpath
+  - add init container for fuse
 
