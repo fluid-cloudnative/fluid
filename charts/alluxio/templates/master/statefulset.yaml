@@ -264,11 +264,11 @@ spec:
         - name: user         
           hostPath:
             path: {{ .Values.initUsers.passwdpath }}
-            type: File
+            type: FileOrCreate
         - name: group         
           hostPath:
             path: {{ .Values.initUsers.grouppath }}
-            type: File
+            type: FileOrCreate
         {{- end }}
         {{- if .Values.secrets }}
           {{- if .Values.secrets.master }}
