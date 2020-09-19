@@ -102,13 +102,8 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		Group:   0,
 	}
 
-	if runtime.Spec.RunAs != nil {
-		value.UserInfo.User = int(*runtime.Spec.RunAs.UID)
-		value.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
-		value.UserInfo.PasswdPath = e.getPasswdPath()
-		value.UserInfo.GroupPath = e.getGroupsPath()
-		value.UserInfo.Args = e.getCreateArgs(runtime)
-	}
+	// transform init users
+	e.transformInitUsers(runtime, value)
 
 	// TODO: support nodeAffinity
 	// nodeAffinity := runtime.Spec.Placement.All().NodeAffinity

@@ -166,6 +166,57 @@ spec:
                       type: object
                   type: object
               type: object
+            initUsers:
+              description: The spec of init users
+              properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by initialize
+                    the users for runtime
+                  type: object
+                image:
+                  description: Image for initialize the users for runtime(e.g. alluxio/alluxio-User
+                    init)
+                  type: string
+                imagePullPolicy:
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
+                  type: string
+                imageTag:
+                  description: Image Tag for initialize the users for runtime(e.g.
+                    2.3.0-SNAPSHOT)
+                  type: string
+                resources:
+                  description: Resources that will be requested by initialize the
+                    users for runtime. <br> <br> Resources are not allowed for ephemeral
+                    containers. Ephemeral containers use spare resources already allocated
+                    to the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+              type: object
             jobMaster:
               description: Desired state for Alluxio job master
               properties:
@@ -378,33 +429,21 @@ spec:
                   description: The gid to run the alluxio runtime
                   format: int64
                   type: integer
-                groups:
-                  description: The groups for the alluxio runtime user
-                  items:
-                    description: group
-                    properties:
-                      id:
-                        format: int64
-                        type: integer
-                      name:
-                        type: string
-                    required:
-                    - id
-                    - name
-                    type: object
-                  type: array
+                group:
+                  description: The group name to run the alluxio runtime
+                  type: string
                 uid:
                   description: The uid to run the alluxio runtime
                   format: int64
                   type: integer
-                username:
+                user:
                   description: The user name to run the alluxio runtime
                   type: string
               required:
               - gid
-              - groups
+              - group
               - uid
-              - username
+              - user
               type: object
             tieredstore:
               description: Tiered storage used by Alluxio

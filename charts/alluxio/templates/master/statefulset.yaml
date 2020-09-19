@@ -64,15 +64,15 @@ spec:
       {{- if .Values.master.affinity }}
 {{ toYaml .Values.master.affinity | indent 8  }}
       {{- end }}
-      {{- if gt (int .Values.user) 0 }}
       initContainers:
+      {{ if .Values.initUsers.enabled -}}
       - name: init-users
         image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
         imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
         command: ["/entrypoint.sh"]
-        {{- if .Values.args }}
+        {{- if .Values.initUsers.args }}
         args:
-{{ toYaml .Values.args | trim | indent 12 }}
+{{ toYaml .Values.initUsers.args | trim | indent 12 }}
         {{- end }}
         volumeMounts:
           - name: user
@@ -88,12 +88,14 @@ spec:
           runAsUser: {{ .Values.user }}
         command: ["alluxio","formatJournal"]
         volumeMounts:
+          {{ if .Values.initUsers.enabled -}}
           - name: user
             mountPath: /etc/passwd
             readOnly: true
           - name: group
             mountPath: /etc/group
-            readOnly: true   
+            readOnly: true
+          {{- end}}
           - name: alluxio-journal
             mountPath: /journal
       {{- end}}
@@ -142,12 +144,14 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
+          {{ if .Values.initUsers.enabled -}}
           - name: user
             mountPath: /etc/passwd
             readOnly: true
           - name: group
             mountPath: /etc/group
-            readOnly: true   
+            readOnly: true
+          {{- end }}
           {{- if $needJournalVolume }}
           - name: alluxio-journal
             mountPath: /journal
@@ -223,12 +227,14 @@ spec:
             name: job-embedded
           {{- end }}
           volumeMounts:
+          {{ if .Values.initUsers.enabled -}}
           - name: user
             mountPath: /etc/passwd
             readOnly: true
           - name: group
             mountPath: /etc/group
-            readOnly: true   
+            readOnly: true
+          {{- end }}
           {{- if .Values.secrets }}
             {{- if .Values.secrets.master }}
 {{- include "alluxio.master.secretVolumeMounts" . }}
@@ -254,22 +260,16 @@ spec:
           {{- end }}
       restartPolicy: Always
       volumes:
+        {{ if .Values.initUsers.enabled -}}
         - name: user         
           hostPath:
-            {{- if gt (int .Values.user) 0 }}
-            path: {{ .Values.passwdpath }}
-            {{- else }}
-            path: /etc/passwd
-            {{- end }}
+            path: {{ .Values.initUsers.passwdpath }}
             type: FileOrCreate
         - name: group         
           hostPath:
-            {{- if gt (int .Values.user) 0 }}
-            path: {{ .Values.grouppath }}
-            {{- else }}
-            path: /etc/group
-            {{- end }}
+            path: {{ .Values.initUsers.grouppath }}
             type: FileOrCreate
+        {{- end }}
         {{- if .Values.secrets }}
           {{- if .Values.secrets.master }}
             {{- range $key, $val := .Values.secrets.master }}
@@ -305,7 +305,7 @@ spec:
           {{- range .Values.ufsPaths }}
         - hostPath:
             path: {{ .hostPath }}
-            type: Directory
+            type: ""
           name: {{ .name }}
           {{- end }}
         {{- end }}

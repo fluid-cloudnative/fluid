@@ -49,6 +49,8 @@ type Alluxio struct {
 	UFSPaths []UFSPath `yaml:"ufsPaths,omitempty"`
 
 	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
+
+	InitUsers InitUsers `yaml:"initUsers,omitempty"`
 }
 
 type UFSPath struct {
@@ -68,12 +70,18 @@ type ImageInfo struct {
 }
 
 type UserInfo struct {
-	User       int      `yaml:"user"`
-	Group      int      `yaml:"group"`
-	FSGroup    int      `yaml:"fsGroup"`
+	User    int `yaml:"user"`
+	Group   int `yaml:"group"`
+	FSGroup int `yaml:"fsGroup"`
+}
+
+// The container to init the users
+type InitUsers struct {
+	ImageInfo  `yaml:",inline"`
+	Args       []string `yaml:"args"`
 	PasswdPath string   `yaml:"passwdpath"`
 	GroupPath  string   `yaml:"grouppath"`
-	Args       []string `yaml:"args"`
+	Enabled    bool     `yaml:"enabled,omitempty"`
 }
 
 type Metastore struct {

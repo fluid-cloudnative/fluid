@@ -110,10 +110,6 @@ type AlluxioFuseSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// The mountPath in the host machine
-	// MountPath string `json:"mountPath,omitempty"`
-	// Placement rook.PlacementSpec `json:"placement,omitempty"`
-
 	// Arguments that will be passed to Alluxio Fuse
 	Args []string `json:"args,omitempty"`
 }
@@ -173,25 +169,25 @@ type User struct {
 	GID *int64 `json:"gid"`
 
 	// The user name to run the alluxio runtime
-	UserName string `json:"username"`
+	UserName string `json:"user"`
+
+	// The group name to run the alluxio runtime
+	GroupName string `json:"group"`
 
 	// The groups for the alluxio runtime user
-	Groups []Group `json:"groups"`
+	// Groups []Group `json:"groups"`
 }
 
 // group
-type Group struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
+// type Group struct {
+// 	ID   int64  `json:"id"`
+// 	Name string `json:"name"`
+// }
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
 	AlluxioVersion AlluxioVersionSpec `json:"alluxioVersion,omitempty"`
-
-	// The placement-related configuration to pass to kubernetes (affinity, node selector, tolerations).
-	// Placement rook.PlacementSpec `json:"placement,omitempty"`
 
 	// Desired state for Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`
@@ -204,6 +200,9 @@ type AlluxioRuntimeSpec struct {
 
 	// Desired state for Alluxio job Worker
 	JobWorker AlluxioCompTemplateSpec `json:"jobWorker,omitempty"`
+
+	// The spec of init users
+	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
 	// Desired state for Alluxio Fuse
 	Fuse AlluxioFuseSpec `json:"fuse,omitempty"`

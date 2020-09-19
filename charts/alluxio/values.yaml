@@ -22,10 +22,11 @@ imagePullPolicy: IfNotPresent
 
 # Create User Docker Image // TODO make it configurable
 initUsers:
-  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-user
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
   imageTag: v0.3.0
   imagePullPolicy: IfNotPresent
-args: "1000"
+  args: "1000"
 
 # Security Context
 user: 1000

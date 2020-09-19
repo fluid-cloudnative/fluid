@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -xe
 
 function printUsage {
   echo "Usage: COMMAND [COMMAND_OPTIONS]"
@@ -20,11 +20,11 @@ function main {
     username=${user_kv[1]}
     gid=${user_kv[2]}
 
-    groupadd -f -g ${gid} ${username}
+    #groupadd -f -g ${gid} ${username}
 
     # create groups
     $(> temp)
-    echo -n "useradd -m -u ${uid} -g ${gid} -G " >> temp 
+    echo -n "useradd -m -u ${uid} -g ${gid} -G 0," >> temp 
     for ((num=2; num<=$#; num++)) ; do
         group="${!num}"
         group_kv=(${group//:/ })
