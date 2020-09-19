@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestTransformInitUsersWithoutRunAs(t *testing.T) {
@@ -31,7 +32,7 @@ func TestTransformInitUsersWithoutRunAs(t *testing.T) {
 		}, &Alluxio{}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{}
+		engine := &AlluxioEngine{Log: log.NullLogger{}}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if test.alluxioValue.InitUsers.Enabled {
 			t.Errorf("expected init users are disabled, but got %v", test.alluxioValue.InitUsers.Enabled)
@@ -58,7 +59,7 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 		}, &Alluxio{}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{}
+		engine := &AlluxioEngine{Log: log.NullLogger{}}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if !test.alluxioValue.InitUsers.Enabled {
 			t.Errorf("expected init users are enabled, but got %v", test.alluxioValue.InitUsers.Enabled)
