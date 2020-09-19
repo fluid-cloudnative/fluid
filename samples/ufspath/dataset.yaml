@@ -27,6 +27,10 @@ spec:
 #    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
 #    imageTag: "2.3.0-SNAPSHOT-f83f51e"
 #    imagePullPolicy: Always
+  initUsers:
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+    imageTag: v0.3.0
+    imagePullPolicy: Always
   tieredstore:
     levels:
       - mediumtype: MEM
