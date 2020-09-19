@@ -87,6 +87,8 @@ spec:
   runAs:
     uid: 1005
     gid: 1005
+    user: myuser
+    group: mygroup
   properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal

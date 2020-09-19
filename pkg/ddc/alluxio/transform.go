@@ -18,7 +18,6 @@ package alluxio
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -103,24 +102,8 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		Group:   0,
 	}
 
-	value.InitUsers = InitUsers{
-		Enabled: false,
-	}
-
-	if runtime.Spec.RunAs != nil {
-		value.UserInfo.User = int(*runtime.Spec.RunAs.UID)
-		value.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
-		// value.UserInfo.PasswdPath = e.getPasswdPath()
-		// value.UserInfo.GroupPath = e.getGroupsPath()
-		// value.UserInfo.Args = e.getInitUsersArgs(runtime)
-		timestamp := time.Now().Format("20060102150405")
-		value.InitUsers = InitUsers{
-			Enabled:    true,
-			PasswdPath: e.getPasswdPath(timestamp),
-			GroupPath:  e.getGroupsPath(timestamp),
-			Args:       e.getInitUsersArgs(runtime),
-		}
-	}
+	// transform init users
+	e.transformInitUsers(runtime, value)
 
 	// TODO: support nodeAffinity
 	// nodeAffinity := runtime.Spec.Placement.All().NodeAffinity
