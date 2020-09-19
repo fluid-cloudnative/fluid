@@ -149,3 +149,11 @@
 
 - Add init container for multiple users in ldap
 
+0.6.14
+
+- Optimize the non-root mode
+  - move args to init-user.args
+  - change ufsPath's hostpath type from "directory" to ""
+  - move passwdpath to init-user.passwdpath
+  - add init container for fuse
+

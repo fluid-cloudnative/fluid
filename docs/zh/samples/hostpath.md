@@ -35,11 +35,7 @@ wget https://mirror.bit.edu.cn/apache/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.
 groupadd -g 1005 fluid-user-1 && \
 useradd -u 1005  -g fluid-user-1  fluid-user-1 && \
 usermod -a -G root fluid-user-1
-groupadd -g 1006 fluid-user-2 && \
-useradd -u 1006  -g fluid-user-2  fluid-user-2 && \
-usermod -a -G root fluid-user-2
 chown -R fluid-user-1:fluid-user-1 /mnt/test1
-chown -R fluid-user-2:fluid-user-2 /mnt/test2
 ```
 
 ### 给这样的节点打label
@@ -51,7 +47,7 @@ kubectl label node {no} nonroot=true
 ### 创建dataset和runtime
 
 ```shell
-$ cat << EOF >> dataset.yaml
+$ cat << EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -87,6 +83,12 @@ spec:
   runAs:
     uid: 1005
     gid: 1005
+    user: myuser
+    group: mygroup
+  initUsers:
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+    imageTag: v0.3.0
+    imagePullPolicy: Always
   properties:
     alluxio.user.file.writetype.default: MUST_CACHE
     alluxio.master.journal.folder: /journal
@@ -117,6 +119,8 @@ EOF
 > 1. alluxioRuntime中的runAs指定的是底层存储的文件所属的uid和gid
 
 > 2. 配置tieredstore时候指定的目录，需要保证runtime的uid和gid是可以有权限进行写操作的
+
+> 3. InitUsers的镜像可以在`initUsers`下配置
 
 创建Dataset和Runtime：
 
@@ -200,25 +204,24 @@ statefulset.apps/nginx created
 
 ```
 # kubectl exec -it nginx-0 bash
-root@nginx-0:/# cd /data/
-root@nginx-0:/data# ls -ltra -R /data/
+root@nginx-0:/# ls -ltra -R /data/
 /data/:
 total 6
-drwxrwxr-x 1 1006 1006    1 Sep  7 10:31 test2
-drwxrwxr-x 1 1005 1005    2 Sep 11 03:07 test1
-drwxr-xr-x 1 1005 1005    2 Sep 12 09:45 .
-drwxr-xr-x 1 root root 4096 Sep 12 09:52 ..
-
-/data/test2:
-total 272281
--r--r----- 1 1006 1006 278813748 Aug 26  2019 apache-hive-3.1.2-bin.tar.gz
-drwxrwxr-x 1 1006 1006         1 Sep  7 10:31 .
-drwxr-xr-x 1 1005 1005         2 Sep 12 09:45 ..
+drwxrwxr-x 1 1005 1005    2 Sep 11 03:19 test1
+drwxr-xr-x 1 root root    1 Sep 19 09:28 test2
+drwxr-xr-x 1 1005 1005    2 Sep 19 09:29 .
+drwxr-xr-x 1 root root 4096 Sep 19 09:30 ..
 
 /data/test1:
 total 215061
 -r--r----- 1 1005 1005 220221311 May 26 07:30 hbase-2.2.5-bin.tar.gz
--rw-r--r-- 1 1005 1005         0 Sep 11 03:07 test
-drwxrwxr-x 1 1005 1005         2 Sep 11 03:07 .
-drwxr-xr-x 1 1005 1005         2 Sep 12 09:45 ..
+-rw-r--r-- 1 1005 1005         0 Sep 11 03:19 test
+drwxrwxr-x 1 1005 1005         2 Sep 11 03:19 .
+drwxr-xr-x 1 1005 1005         2 Sep 19 09:29 ..
+
+/data/test2:
+total 272281
+-rw-r--r-- 1 root root 278813748 Aug 26  2019 apache-hive-3.1.2-bin.tar.gz
+drwxr-xr-x 1 root root         1 Sep 19 09:28 .
+drwxr-xr-x 1 1005 1005         2 Sep 19 09:29 ..
 ```
