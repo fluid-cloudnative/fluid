@@ -108,7 +108,12 @@ func (e *AlluxioEngine) optimizeDefaultForWorker(runtime *datav1alpha1.AlluxioRu
 }
 
 func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
-	if len(runtime.Spec.Fuse.JvmOptions) == 0 {
+
+	if len(runtime.Spec.Fuse.JvmOptions) > 0 {
+		value.Fuse.JvmOptions = runtime.Spec.Fuse.JvmOptions
+	}
+
+	if len(value.Fuse.JvmOptions) == 0 {
 		value.Fuse.JvmOptions = []string{
 			"-Xmx16G",
 			"-Xms16G",

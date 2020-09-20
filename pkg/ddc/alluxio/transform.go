@@ -325,11 +325,6 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties
 	}
 
-	// TODO: support JVMOpitons from string to array
-	if len(runtime.Spec.Fuse.JvmOptions) > 0 {
-		value.Fuse.JvmOptions = runtime.Spec.Fuse.JvmOptions
-	}
-
 	if len(runtime.Spec.Fuse.Env) > 0 {
 		value.Fuse.Env = runtime.Spec.Fuse.Env
 	} else {

@@ -164,3 +164,101 @@ func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
 		}
 	}
 }
+
+func TestOptimizeDefaultForWorkerNoValue(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx12G",
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:MaxDirectMemorySize=32g"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultForWorker(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Worker.JvmOptions[1] != test.expect[1] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Worker.JvmOptions)
+		}
+	}
+}
+
+func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					JvmOptions: []string{"-Xmx4G"},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx4G"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultForWorker(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Worker.JvmOptions[0] != test.expect[0] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Worker.JvmOptions)
+		}
+	}
+}
+
+func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx16G",
+			"-Xms16G",
+			"-XX:+UseG1GC",
+			"-XX:MaxDirectMemorySize=32g",
+			"-XX:+UnlockExperimentalVMOptions"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Fuse.JvmOptions[1] != test.expect[1] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
+		}
+	}
+}
+
+func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Fuse: datav1alpha1.AlluxioFuseSpec{
+					JvmOptions: []string{"-Xmx4G"},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx4G"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Fuse.JvmOptions[0] != test.expect[0] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
+		}
+	}
+}
