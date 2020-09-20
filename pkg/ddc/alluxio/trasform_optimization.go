@@ -80,3 +80,48 @@ func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Al
 		alluxioValue.Properties[key] = value
 	}
 }
+
+func (e *AlluxioEngine) optimizeDefaultForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+	if len(runtime.Spec.Master.JvmOptions) > 0 {
+		value.Master.JvmOptions = runtime.Spec.Master.JvmOptions
+	}
+
+	if len(value.Master.JvmOptions) == 0 {
+		value.Master.JvmOptions = []string{
+			"-Xmx6G",
+			"-XX:+UnlockExperimentalVMOptions",
+		}
+	}
+}
+
+func (e *AlluxioEngine) optimizeDefaultForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+	if len(runtime.Spec.Worker.JvmOptions) > 0 {
+		value.Worker.JvmOptions = runtime.Spec.Worker.JvmOptions
+	}
+	if len(value.Worker.JvmOptions) == 0 {
+		value.Worker.JvmOptions = []string{
+			"-Xmx12G",
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:MaxDirectMemorySize=32g",
+		}
+	}
+}
+
+func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+	if len(runtime.Spec.Fuse.JvmOptions) == 0 {
+		value.Fuse.JvmOptions = []string{
+			"-Xmx16G",
+			"-Xms16G",
+			"-XX:+UseG1GC",
+			"-XX:MaxDirectMemorySize=32g",
+			"-XX:+UnlockExperimentalVMOptions",
+		}
+	}
+
+	if len(runtime.Spec.Fuse.Args) > 0 {
+		value.Fuse.Args = runtime.Spec.Fuse.Args
+	} else {
+		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+	}
+
+}

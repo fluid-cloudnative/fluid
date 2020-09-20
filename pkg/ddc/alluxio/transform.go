@@ -201,9 +201,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// if len(runtime.Spec.Master.JvmOptions) > 0 {
 	// 	value.Master.JvmOptions = strings.Join(runtime.Spec.Master.JvmOptions, " ")
 	// }
-	if len(value.Master.JvmOptions) > 0 {
-		value.Master.JvmOptions = runtime.Spec.Master.JvmOptions
-	}
+
+	e.optimizeDefaultForMaster(runtime, value)
 
 	if len(runtime.Spec.Master.Env) > 0 {
 		value.Master.Env = runtime.Spec.Master.Env
@@ -233,9 +232,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 // 3. Transform the workers
 func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	value.Worker = Worker{}
-	if len(runtime.Spec.Worker.JvmOptions) > 0 {
-		value.Worker.JvmOptions = runtime.Spec.Worker.JvmOptions
-	}
+	e.optimizeDefaultForWorker(runtime, value)
 
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
 	labelName := e.getCommonLabelname()
@@ -348,11 +345,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	value.Fuse.MountPath = e.getMountPoint()
 	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
-	if len(runtime.Spec.Fuse.Args) > 0 {
-		value.Fuse.Args = runtime.Spec.Fuse.Args
-	} else {
-		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
-	}
+	// if len(runtime.Spec.Fuse.Args) > 0 {
+	// 	value.Fuse.Args = runtime.Spec.Fuse.Args
+	// } else {
+	// 	value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
+	// }
+	e.optimizeDefaultFuse(runtime, value)
 
 	if dataset.Spec.Owner != nil {
 		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")

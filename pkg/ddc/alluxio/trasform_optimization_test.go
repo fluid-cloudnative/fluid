@@ -116,3 +116,25 @@ func TestSetDefaultPropertiesWithSet(t *testing.T) {
 		}
 	}
 }
+
+func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx6G",
+			"-XX:+UnlockExperimentalVMOptions"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultForMaster(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Master.JvmOptions[1] != test.expect[1] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.JvmOptions)
+		}
+	}
+}
