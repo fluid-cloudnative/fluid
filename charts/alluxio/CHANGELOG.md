@@ -157,3 +157,8 @@
   - move passwdpath to init-user.passwdpath
   - add init container for fuse
 
+0.6.15
+
+- Optimize for default mode
+  - remove default limits
+
