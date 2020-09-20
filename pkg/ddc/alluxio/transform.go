@@ -20,12 +20,8 @@ import (
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
@@ -201,9 +197,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// if len(runtime.Spec.Master.JvmOptions) > 0 {
 	// 	value.Master.JvmOptions = strings.Join(runtime.Spec.Master.JvmOptions, " ")
 	// }
-	if len(value.Master.JvmOptions) > 0 {
-		value.Master.JvmOptions = runtime.Spec.Master.JvmOptions
-	}
+
+	e.optimizeDefaultForMaster(runtime, value)
 
 	if len(runtime.Spec.Master.Env) > 0 {
 		value.Master.Env = runtime.Spec.Master.Env
@@ -233,9 +228,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 // 3. Transform the workers
 func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	value.Worker = Worker{}
-	if len(runtime.Spec.Worker.JvmOptions) > 0 {
-		value.Worker.JvmOptions = runtime.Spec.Worker.JvmOptions
-	}
+	e.optimizeDefaultForWorker(runtime, value)
 
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
 	labelName := e.getCommonLabelname()
@@ -267,40 +260,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Worker.HostNetwork = true
 
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
-
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
-
-	e.Log.Info("transformWorkers", "storageMap", storageMap)
-
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("20Gi")
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
-	}
-
-	for key, requirement := range storageMap {
-		if value.Worker.Resources.Limits == nil {
-			value.Worker.Resources.Limits = make(common.ResourceList)
-		}
-		if key == common.MemoryCacheStore {
-			req := requirement.DeepCopy()
-
-			memLimit.Add(req)
-
-			e.Log.Info("update the requirement for memory", "requirement", memLimit)
-
-		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
-
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-
-		// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
-	}
-
-	value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	e.transformResourcesForWorker(runtime, value)
 
 	return
 }
@@ -328,11 +288,6 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties
 	}
 
-	// TODO: support JVMOpitons from string to array
-	if len(runtime.Spec.Fuse.JvmOptions) > 0 {
-		value.Fuse.JvmOptions = runtime.Spec.Fuse.JvmOptions
-	}
-
 	if len(runtime.Spec.Fuse.Env) > 0 {
 		value.Fuse.Env = runtime.Spec.Fuse.Env
 	} else {
@@ -348,11 +303,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	value.Fuse.MountPath = e.getMountPoint()
 	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
-	if len(runtime.Spec.Fuse.Args) > 0 {
-		value.Fuse.Args = runtime.Spec.Fuse.Args
-	} else {
-		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
-	}
+	// if len(runtime.Spec.Fuse.Args) > 0 {
+	// 	value.Fuse.Args = runtime.Spec.Fuse.Args
+	// } else {
+	// 	value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
+	// }
+	e.optimizeDefaultFuse(runtime, value)
 
 	if dataset.Spec.Owner != nil {
 		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
@@ -373,39 +329,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	value.Fuse.HostNetwork = true
 	value.Fuse.Enabled = true
 
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
-
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
-
-	e.Log.Info("transformFuse", "storageMap", storageMap)
-
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("50Gi")
-	if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
-	}
-
-	for key, requirement := range storageMap {
-		if value.Fuse.Resources.Limits == nil {
-			value.Fuse.Resources.Limits = make(common.ResourceList)
-		}
-		if key == common.MemoryCacheStore {
-			req := requirement.DeepCopy()
-
-			memLimit.Add(req)
-
-			e.Log.Info("update the requiremnet for memory", "requirement", memLimit)
-
-		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
-	}
-	if value.Fuse.Resources.Limits != nil {
-		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
-	}
+	e.transformResourcesForFuse(runtime, value)
 
 	return
 
