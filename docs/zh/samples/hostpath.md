@@ -38,6 +38,12 @@ usermod -a -G root fluid-user-1
 chown -R fluid-user-1:fluid-user-1 /mnt/test1
 ```
 
+### 在这些缓存节点中，给本地的缓存目录赋予写权限
+
+```
+chmod -R 777 /var/lib/docker/alluxio
+```
+
 ### 给这样的节点打label
 
 ```
