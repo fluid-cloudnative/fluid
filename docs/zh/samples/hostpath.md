@@ -22,7 +22,7 @@ helm delete fluid
 helm install fluid fluid
 ```
 
-### 在主机上某些节点上创建指定文件夹和非root用户fluid-user-1和fluid-user-2
+### 在主机上某些节点上创建指定文件夹和非root用户fluid-user-1
 
 ```shell
 mkdir -p /mnt/test1
