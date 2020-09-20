@@ -1,49 +1,29 @@
 #!/usr/bin/env bash
-set -xe
+set -e
 
-function printUsage {
-  echo "Usage: COMMAND [COMMAND_OPTIONS]"
-  echo
-  echo "COMMAND_OPTION is one of:"
-  echo -e " UID:UserName:GID GroupID:GroupName..."
+printUsage() {
+   echo -e "Usage: sss"
 }
 
-function main {
-    if [[ "$#" -lt 2 ]]; then
-      printUsage
-      exit 1
+main() {
+    if [[ "$#" -eq 0 ]]; then
+        printUsage
+        exit 1
     fi
-    
-    user="$1"
-    user_kv=(${user//:/ })
-    uid=${user_kv[0]}
-    username=${user_kv[1]}
-    gid=${user_kv[2]}
-
-    #groupadd -f -g ${gid} ${username}
-
-    # create groups
-    $(> temp)
-    echo -n "useradd -m -u ${uid} -g ${gid} -G 0," >> temp 
-    for ((num=2; num<=$#; num++)) ; do
-        group="${!num}"
-        group_kv=(${group//:/ })
-        groupid=${group_kv[0]}
-        groupname=${group_kv[1]}
-        echo -n "${groupid}" >> temp 
-        if [[ num -ne $# ]]; then
-            echo -n "," >> temp 
-        fi
-        groupadd -f -g ${groupid} ${groupname}
+    while [[ ! "$#" -eq 0 ]]; do
+        case "${1}" in
+            init_users)
+                sh -c ./init_users.sh
+                ;;
+            chmod_tierpath)
+                sh -c ./chmod_tierpath.sh
+                ;;
+            *)
+                printUsage
+                ;;
+        esac
+        shift
     done
-
-    # create user and bind to group
-    echo -n " ${username}" >> temp 
-    temp=$(cat temp) 
-    groups=${temp}
-    eval $groups
-    cat /etc/passwd > /tmp/passwd
-    cat /etc/group > /tmp/group
 }
 
 main "$@"
