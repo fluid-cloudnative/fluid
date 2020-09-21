@@ -51,6 +51,8 @@ type Alluxio struct {
 	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
 
 	InitUsers InitUsers `yaml:"initUsers,omitempty"`
+
+	InitTierpaths InitTierpaths `yaml:"initTierPaths,omitempty"`
 }
 
 type UFSPath struct {
@@ -77,11 +79,17 @@ type UserInfo struct {
 
 // The container to init the users
 type InitUsers struct {
-	ImageInfo  `yaml:",inline"`
-	Args       []string `yaml:"args"`
-	PasswdPath string   `yaml:"passwdpath"`
-	GroupPath  string   `yaml:"grouppath"`
-	Enabled    bool     `yaml:"enabled,omitempty"`
+	ImageInfo `yaml:",inline"`
+	//Args       []string `yaml:"args"`
+	Env        string `yaml:"env"`
+	PasswdPath string `yaml:"passwdpath"`
+	GroupPath  string `yaml:"grouppath"`
+	Enabled    bool   `yaml:"enabled,omitempty"`
+}
+
+type InitTierpaths struct {
+	// Paths is a string which consists of all the paths in Tierstores with ':' as its separator
+	Paths string `yaml:"paths"`
 }
 
 type Metastore struct {

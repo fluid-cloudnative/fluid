@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-printUsage() {
+function printUsage() {
    echo -e "Usage: sss"
 }
 
-main() {
+function main() {
     if [[ "$#" -eq 0 ]]; then
         printUsage
         exit 1
