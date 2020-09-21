@@ -60,13 +60,13 @@ spec:
             - "init_users"
             - "chmod_tierpath"
           env:
-          {{- if .Values.initUsers.env }}
+          {{- if .Values.initUsers.envUsers }}
             - name: FLUID_INIT_USERS
-              value: {{.Values.initUsers.env | quote }}
+              value: {{.Values.initUsers.envUsers | quote }}
           {{- end }}
-          {{- if .Values.initTierPaths.paths }}
+          {{- if .Values.initUsers.envTieredPaths }}
             - name: FLUID_TIERSTORE_PATHS
-              value: {{ .Values.initTierPaths.paths | quote }}
+              value: {{ .Values.initUsers.envTieredPaths | quote }}
           {{- end }}
           volumeMounts:
             - name: user

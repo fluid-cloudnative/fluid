@@ -161,13 +161,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	value.Tieredstore.Levels = levels
 
-	// Init Tier store paths when running as a non-root user
-	// chmod -R 0777 <path>
-	paths := []string{}
-	for _, level := range levels {
-		paths = append(paths, level.Path)
-	}
-	value.InitTierpaths.Paths = strings.Join(paths, ":")
 	// value.Metastore = Metastore{
 	// 	VolumeType: "emptyDir",
 	// }

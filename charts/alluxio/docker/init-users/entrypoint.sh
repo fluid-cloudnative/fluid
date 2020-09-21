@@ -2,7 +2,11 @@
 set -e
 
 function printUsage() {
-   echo -e "Usage: sss"
+   echo "Usage: COMMAND [COMMAND_OPTIONS]"
+   echo
+   echo "COMMAND is one of:"
+   echo -e " init_users"
+   echo -e " chmod_tierpath"
 }
 
 function main() {

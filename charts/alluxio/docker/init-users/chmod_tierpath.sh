@@ -10,10 +10,6 @@ function printUsage() {
 }
 
 function main() {
-#    if [[ -z "$FLUID_TIERSTORE_PATH" ]]; then
-#        echo -e "Env variable FLUID_TIERSTORE_PATH is empty"
-#        exit 1
-#    fi
     paths="$FLUID_TIERSTORE_PATHS"
     paths=(${paths//:/ })
     if [[ "${#paths[*]}" -eq 0 ]]; then
