@@ -161,4 +161,5 @@
 
 - Optimize for default mode
   - remove default limits
+  - Make the cache data directory accessible
 
