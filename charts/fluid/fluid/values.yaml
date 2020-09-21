@@ -3,11 +3,11 @@
 # Declare variables to be passed into your templates.
 
 controller:
-  image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.3.0-12bf4a7
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.3.0-948811c
 
 
 csi:
   registrar:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.3.0-12bf4a7
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.3.0-948811c
