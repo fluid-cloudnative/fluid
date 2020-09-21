@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -xe
 
 function printUsage() {
   echo -e "Usage: Run command with related environment variable set"

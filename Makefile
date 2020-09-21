@@ -94,7 +94,7 @@ docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
 
 docker-build-init-users:
-	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
+	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push: docker-build
@@ -107,7 +107,7 @@ docker-push-loader: docker-build-loader
 	docker push ${LOADER_IMG}
 
 docker-push-init-users: docker-build-init-users
-	docker push ${INIT_USERS_IMG}:${VERSION}
+	docker push ${INIT_USERS_IMG}:${GIT_VERSION}
 
 docker-push-all: docker-push-init-users docker-push docker-push-csi
 docker-build-all: docker-build-init-users docker-build docker-build-csi
