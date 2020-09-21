@@ -27,6 +27,8 @@ initUsers:
   imageTag: v0.3.0
   imagePullPolicy: IfNotPresent
   args: "1000"
+  envUsers: ""
+  envTieredPaths: ""
 
 # Security Context
 user: 1000

@@ -70,10 +70,17 @@ spec:
         image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
         imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
         command: ["/entrypoint.sh"]
-        {{- if .Values.initUsers.args }}
         args:
-{{ toYaml .Values.initUsers.args | trim | indent 12 }}
-        {{- end }}
+          - "init_users"
+        env:
+          {{- if .Values.initUsers.envUsers }}
+          - name: FLUID_INIT_USERS
+            value: {{.Values.initUsers.envUsers | quote }}
+          {{- end }}
+          {{- if .Values.initUsers.envTieredPaths }}
+          - name: FLUID_TIERSTORE_PATHS
+            value: {{ .Values.initUsers.envTieredPaths | quote }}
+          {{- end }}
         volumeMounts:
           - name: user
             mountPath: /tmp/passwd
