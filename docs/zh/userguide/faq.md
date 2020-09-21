@@ -1,4 +1,4 @@
-## 为什么我使用Helm安装fluid失败了？
+## 1. 为什么我使用Helm安装fluid失败了？
 
 推荐按照[Fluid安装文档](./install.md)依次确认Fluid组件是否正常运行。
 
@@ -12,7 +12,7 @@ Fluid安装文档是以`Helm 3`为例进行部署的。如果您使用`Helm 3`�
 $ kubectl create -f fluid/crds
 ```
 
-## 为什么我无法删除Runtime？
+## 2. 为什么我无法删除Runtime？
 
 请检查相关Pod运行状态和Runtime的Events。
 
