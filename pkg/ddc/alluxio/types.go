@@ -86,11 +86,6 @@ type InitUsers struct {
 	EnvTieredPaths string `yaml:"envTieredPaths"`
 }
 
-//type InitTierpaths struct {
-//	// Paths is a string which consists of all the paths in Tierstores with ':' as its separator
-//	Paths string `yaml:"paths"`
-//}
-
 type Metastore struct {
 	VolumeType string `yaml:"volumeType,omitempty"`
 	Size       string `yaml:"size,omitempty"`
