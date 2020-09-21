@@ -77,11 +77,13 @@ type UserInfo struct {
 
 // The container to init the users
 type InitUsers struct {
-	ImageInfo  `yaml:",inline"`
-	Args       []string `yaml:"args"`
-	PasswdPath string   `yaml:"passwdpath"`
-	GroupPath  string   `yaml:"grouppath"`
-	Enabled    bool     `yaml:"enabled,omitempty"`
+	ImageInfo `yaml:",inline"`
+	//Args       []string `yaml:"args"`
+	EnvUsers       string `yaml:"envUsers"`
+	PasswdPath     string `yaml:"passwdpath"`
+	GroupPath      string `yaml:"grouppath"`
+	Enabled        bool   `yaml:"enabled,omitempty"`
+	EnvTieredPaths string `yaml:"envTieredPaths"`
 }
 
 type Metastore struct {
