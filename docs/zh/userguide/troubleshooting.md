@@ -1,6 +1,6 @@
 # Fluid问题诊断
 
-您可能会在部署、开发Fluid的过程中遇到各种问题，而查看日志可以协助我们定位问题原因。但在分布式环境下，Fluid底层的分布式缓存引擎（Runtime）运行在不同主机的容器上，手动收集这些容器的日志效率低下。因此，Fluid提供了shell脚本[diagnose-fluid.sh](../../../tools/diagnose-fluid.sh)，帮助使用者快速收集Fluid系统和Runtime容器的日志信息。
+您可能会在部署、开发Fluid的过程中遇到各种问题，而查看日志可以协助我们定位问题原因。但在分布式环境下，Fluid底层的分布式缓存引擎（Runtime）运行在不同主机的容器上，手动收集这些容器的日志效率低下。因此，Fluid提供了shell脚本[diagnose-fluid.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh)，帮助使用者快速收集Fluid系统和Runtime容器的日志信息。
 
 ## 如何使用脚本收集日志
 
