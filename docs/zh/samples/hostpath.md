@@ -114,7 +114,7 @@ spec:
     group: fluid-user-1
   initUsers:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
-    imageTag: v0.3.0
+    imageTag: v0.3.0-00e7082
     imagePullPolicy: Always
   properties:
     alluxio.user.file.writetype.default: MUST_CACHE

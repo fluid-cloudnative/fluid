@@ -29,7 +29,7 @@ spec:
 #    imagePullPolicy: Always
   initUsers:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
-    imageTag: v0.3.0
+    imageTag: v0.3.0-00e7082
     imagePullPolicy: Always
   tieredstore:
     levels:

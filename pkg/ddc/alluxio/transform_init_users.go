@@ -60,7 +60,7 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 	}
 
 	// Overwrite ImageInfo.
-	// Priority: runtime.Spec.InitUsers > helm chart value
+	// Priority: runtime.Spec.InitUsers > helm chart value > default value
 	if len(runtime.Spec.InitUsers.Image) > 0 {
 		value.InitUsers.Image = runtime.Spec.InitUsers.Image
 	}
