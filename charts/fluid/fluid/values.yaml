@@ -14,4 +14,4 @@ csi:
 
 runtime:
   alluxio:
-    initImage: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0
+    initImage: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-00e7082
