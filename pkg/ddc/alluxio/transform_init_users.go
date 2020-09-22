@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"strings"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -42,14 +43,23 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 			//Args:       e.getInitUsersArgs(runtime),
 			EnvUsers:       e.getInitUserEnv(runtime),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
-			ImageInfo: ImageInfo{
-				Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
-				ImageTag:        "v0.3.0",
-				ImagePullPolicy: "IfNotPresent",
-			},
+			//ImageInfo: ImageInfo{
+			//	Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
+			//	ImageTag:        "v0.3.0",
+			//	ImagePullPolicy: "IfNotPresent",
+			//},
 		}
+
+		initImageInfo := strings.Split(e.initImage, ":")
+		value.InitUsers.ImageInfo = ImageInfo{
+			Image:           initImageInfo[0],
+			ImageTag:        initImageInfo[1],
+			ImagePullPolicy: "IfNotPresent",
+		}
+
 	}
 
+	//Overwrite ImageInfo. Priority: runtime.Spec > helm chart value > default value
 	if len(runtime.Spec.InitUsers.Image) > 0 {
 		value.InitUsers.Image = runtime.Spec.InitUsers.Image
 	}
