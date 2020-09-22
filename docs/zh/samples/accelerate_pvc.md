@@ -189,7 +189,7 @@ spec:
     levels:
       - mediumtype: SSD
         path: /var/lib/docker/alluxio
-        quota: 50Gi
+        quota: 150Gi
         high: "0.99"
         low: "0.8"
 EOF
@@ -199,7 +199,6 @@ EOF
 >
 > - `spec.replicas`和dawnbench测试的worker数量保持一致。比如：单机八卡为1，四机八卡为4。
 > - `nodeSelectorTerms`作用是限制在有V100显卡的机器上部署数据集，此处应根据实验环境具体调节。
-> - 默认的`spec.tieredstore.levels.quota`给了50Gi的缓存空间，在单机上缓存不了整个数据集（150G），因此，单机测试时应调整到`150Gi`以上。
 
 ```bash
 $ kubectl create -f dataset.yaml
