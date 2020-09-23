@@ -14,7 +14,8 @@
   - [数据加速](samples/accelerate_data_accessing.md)
   - [缓存亲和性调度](samples/data_co_locality.md)
   - [机器学习](samples/machinelearning.md)
-  - [加速NFS数据卷](samples/machinelearning.md)
+  - [主机目录加速](samples/hostpath.md)
+  - [NFS数据卷加速](samples/accelerate_pvc.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)

@@ -12,7 +12,7 @@
 | Cluster | Alibaba Cloud Kubernetes. v1.16.9-aliyun.1             |
 | ------- | ------------------------------------------------------ |
 | ECS实例 | ECS   规格：ecs.gn6v-c10g1.20xlarge<br />    CPU：82核 |
-| OSS带宽 | 20Gb                                                   |
+| 分布式存储|    容量型NAS                                          |
 
 ###  软件配置
 
