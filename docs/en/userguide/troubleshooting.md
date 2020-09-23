@@ -54,5 +54,3 @@ You may encounter various problems during installation or development in Fluid. 
    ```shell
    $ ./diagnose-fluid.sh collect --name cifar10 --namespace default --all
    ```
-
-   
