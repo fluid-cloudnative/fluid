@@ -16,6 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"strings"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -59,10 +61,57 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 		}, &Alluxio{}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine := &AlluxioEngine{
+			Log:       log.NullLogger{},
+			initImage: common.DEFAULT_ALLUXIO_INIT_IMAGE,
+		}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if !test.alluxioValue.InitUsers.Enabled {
 			t.Errorf("expected init users are enabled, but got %v", test.alluxioValue.InitUsers.Enabled)
+		}
+
+		imageInfo := strings.Split(common.DEFAULT_ALLUXIO_INIT_IMAGE, ":")
+		if test.alluxioValue.InitUsers.Image != imageInfo[0] || test.alluxioValue.InitUsers.ImageTag != imageInfo[1] {
+			t.Errorf("expected image info are set properly, but got image: %v, imageTag: %v", test.alluxioValue.InitUsers.Image, test.alluxioValue.InitUsers.ImageTag)
+		}
+	}
+}
+
+func TestTransformInitUsersImageOverwrite(t *testing.T) {
+	value := int64(1000)
+	image := "some-registry.some-repository"
+	imageTag := "v1.0.0-abcdefg"
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				RunAs: &datav1alpha1.User{
+					UID:       &value,
+					GID:       &value,
+					UserName:  "user1",
+					GroupName: "group1",
+				},
+				InitUsers: datav1alpha1.InitUsersSpec{
+					Image:    image,
+					ImageTag: imageTag,
+				},
+			},
+		}, &Alluxio{}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{
+			Log:       log.NullLogger{},
+			initImage: common.DEFAULT_ALLUXIO_INIT_IMAGE,
+		}
+		engine.transformInitUsers(test.runtime, test.alluxioValue)
+		if !test.alluxioValue.InitUsers.Enabled {
+			t.Errorf("expected init users are enabled, but got %v", test.alluxioValue.InitUsers.Enabled)
+		}
+
+		if test.alluxioValue.InitUsers.Image != image || test.alluxioValue.InitUsers.ImageTag != imageTag {
+			t.Errorf("expected image info should be overwrite, but got image: %v, imageTag: %v", test.alluxioValue.InitUsers.Image, test.alluxioValue.InitUsers.ImageTag)
 		}
 	}
 }

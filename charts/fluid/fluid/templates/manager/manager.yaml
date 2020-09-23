@@ -42,6 +42,11 @@ spec:
 #          - --reserved={{ .Values.controller.reservedStorage }}
 #          - --cache-store-type={{ .Values.controller.cacheStoreType }}
 #          - --cache-storage-path={{ .Values.controller.cacheStoragePath }}
+        env:
+          {{- if .Values.runtime.alluxio.initImage }}
+          - name: ALLUXIO_INIT_IMAGE_ENV
+            value: {{ .Values.runtime.alluxio.initImage | quote }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics

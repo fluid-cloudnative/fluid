@@ -17,6 +17,9 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"os"
+	"regexp"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,6 +44,7 @@ type AlluxioEngine struct {
 	// force to clean up when reaching this limits
 	gracefulShutdownLimits int32
 	retryShutdown          int32
+	initImage              string
 }
 
 /**
@@ -67,6 +71,17 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	} else {
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
+
+	// Setup init image for Alluxio Engine
+	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
+		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+			engine.initImage = value
+		}
+	}
+	if len(engine.initImage) == 0 {
+		engine.initImage = common.DEFAULT_ALLUXIO_INIT_IMAGE
+	}
+
 	template := base.NewTemplateEngine(engine, id, ctx)
 
 	err := kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
