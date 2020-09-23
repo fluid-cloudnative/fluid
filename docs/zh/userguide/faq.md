@@ -17,3 +17,13 @@ $ kubectl create -f fluid/crds
 请检查相关Pod运行状态和Runtime的Events。
 
 只要有任何活跃Pod还在使用Fluid创建的Volume，Fluid就不会完成删除操作。
+
+如下的命令可以快速地找出这些活跃Pod，使用时把`<dataset_name>`和`<dataset_namespace>`换成自己的即可：
+```bash
+kubectl describe pvc <dataset_name> -n <dataset_namespace> | \
+	awk '/^Mounted/ {flag=1}; /^Events/ {flag=0}; flag' | \
+	awk 'NR==1 {print $3}; NR!=1 {print $1}' | \
+	xargs -I {} kubectl get po {} | \
+	grep -E "Running|Terminating|Pending" | \
+	cut -d " " -f 1
+```
