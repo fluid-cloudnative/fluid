@@ -198,9 +198,17 @@ spec:
       labels:
         app: nginx
     spec:
+      securityContext:
+        runAsUser: 1201
+        runAsGroup: 1201
+        fsGroup: 1201
       containers:
         - name: nginx
           image: nginx
+          command:
+            - tail
+            - -f
+            - /dev/null
           volumeMounts:
             - mountPath: /data
               name: hostpath-vol
