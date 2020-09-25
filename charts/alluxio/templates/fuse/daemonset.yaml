@@ -50,8 +50,6 @@ spec:
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
       securityContext:
-        runAsUser: {{ .Values.fuse.user }}
-        runAsGroup: {{ .Values.fuse.group }}
         fsGroup: {{ .Values.fuse.fsGroup }}
       affinity:
         podAffinity:
@@ -67,6 +65,29 @@ spec:
                 values:
                 - alluxio-worker
             topologyKey: kubernetes.io/hostname
+      initContainers:
+        {{ if .Values.initUsers.enabled -}}
+        - name: init-fuse
+          image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
+          imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+          command: ["/entrypoint.sh"]
+          args:
+            - "chmod_fuse_mountpoint"
+          env:
+            - name: FLUID_FUSE_MOUNTPOINT
+              value: {{ .Values.fuse.mountPath | dir | quote }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          volumeMounts:
+            - name: alluxio-fuse-mount
+              mountPath: {{ .Values.fuse.mountPath | dir }}
+              mountPropagation: Bidirectional
+        {{- end }}
       containers:
         - name: alluxio-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -101,6 +122,8 @@ spec:
             value: "{{ $value }}"
           {{- end }}
           securityContext:
+            runAsUser: {{ .Values.fuse.user }}
+            runAsGroup: {{ .Values.fuse.group }}
             privileged: true
             capabilities:
               add:
