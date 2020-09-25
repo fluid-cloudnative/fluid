@@ -41,7 +41,10 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+		if err != nil {
+			t.Errorf("Got err %v", err)
+		}
 		if test.alluxioValue.Fuse.Args[1] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.alluxioValue.Fuse.Args[1])
 		}
@@ -74,7 +77,10 @@ func TestTransformFuseWithArgs(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+		if err != nil {
+			t.Errorf("Got err %v", err)
+		}
 		if test.alluxioValue.Fuse.Args[1] != test.expect {
 			t.Errorf("expected fuse %v, but got %v", test.expect, test.alluxioValue.Fuse.Args[1])
 		}
