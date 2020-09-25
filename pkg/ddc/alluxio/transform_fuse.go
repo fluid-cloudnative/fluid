@@ -31,7 +31,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-c8a46e3"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-e0feba3"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
@@ -76,12 +76,6 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Properties["alluxio.fuse.user.group.translation.enabled"] = "true"
 	}
 	// value.Fuse.Args[-1]
-
-	// Launch fuse with non-root user
-	if runtime.Spec.RunAs != nil {
-		value.Fuse.UserInfo.User = int(*runtime.Spec.RunAs.UID)
-		value.Fuse.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
-	}
 
 	// Allow root: only the RunAs user and root can access fuse
 	if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {

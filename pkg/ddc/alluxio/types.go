@@ -136,7 +136,6 @@ type Fuse struct {
 	HostNetwork        bool              `yaml:"hostNetwork,omitempty"`
 	Enabled            bool              `yaml:"enabled,omitempty"`
 	Resources          common.Resources  `yaml:"resources,omitempty"`
-	UserInfo           UserInfo          `yaml:",inline"`
 }
 
 type Tieredstore struct {

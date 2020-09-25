@@ -23,14 +23,6 @@ metadata:
   name: test
 spec:
   replicas: 2
-#  alluxioVersion:
-#    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio
-#    imageTag: "2.3.0-SNAPSHOT-f83f51e"
-#    imagePullPolicy: Always
-  initUsers:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
-    imageTag: v0.3.0-00e7082
-    imagePullPolicy: Always
   tieredstore:
     levels:
       - mediumtype: SSD
@@ -49,6 +41,3 @@ spec:
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  fuse:
-    image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse
-    imageTag: 2.3.0-SNAPSHOT-f0b220e-nonroot

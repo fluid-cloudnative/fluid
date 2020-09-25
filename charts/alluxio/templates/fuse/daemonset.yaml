@@ -79,14 +79,9 @@ spec:
           securityContext:
             runAsUser: 0
             runAsGroup: 0
-            privileged: true
-            capabilities:
-              add:
-                - SYS_ADMIN
           volumeMounts:
             - name: alluxio-fuse-mount
               mountPath: {{ .Values.fuse.mountPath | dir }}
-              mountPropagation: Bidirectional
         {{- end }}
       containers:
         - name: alluxio-fuse
@@ -122,8 +117,8 @@ spec:
             value: "{{ $value }}"
           {{- end }}
           securityContext:
-            runAsUser: {{ .Values.fuse.user }}
-            runAsGroup: {{ .Values.fuse.group }}
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
             privileged: true
             capabilities:
               add:
