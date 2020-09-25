@@ -117,27 +117,11 @@ spec:
     imageTag: v0.3.0-00e7082
     imagePullPolicy: Always
   properties:
-    alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.master.journal.folder: /journal
-    alluxio.master.journal.type: UFS
     alluxio.user.block.size.bytes.default: 256MB
     alluxio.user.streaming.reader.chunk.size.bytes: 256MB
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
-  fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
-    args:
-      - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 
@@ -198,9 +182,16 @@ spec:
       labels:
         app: nginx
     spec:
+      securityContext:
+        runAsUser: 1201
+        runAsGroup: 1201
       containers:
         - name: nginx
           image: nginx
+          command:
+            - tail
+            - -f
+            - /dev/null
           volumeMounts:
             - mountPath: /data
               name: hostpath-vol
