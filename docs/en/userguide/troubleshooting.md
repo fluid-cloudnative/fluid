@@ -28,11 +28,9 @@ You may encounter various problems during installation or development in Fluid. 
            Collect pods logs of Runtime.
    OPTIONS:
        --name name
-           Set the name of runtime (default 'imagenet').
+           Set the name of runtime.
        --namespace name
-           Set the namespace of runtime (default 'default').
-       -a, --all
-           Also collect fluid system logs.
+           Set the namespace of runtime.
    ```
 
 3. Collect logs
@@ -48,9 +46,3 @@ You may encounter various problems during installation or development in Fluid. 
    > As you can see from above command and help message, option `--name` and `--namespace` specified the name and namespace of Alluxio Runtime respectively.
 
    All the logs will be packed in a package under execution path.
-
-   You can also collect the logs of `fluid-system` by adding option `--all`:
-
-   ```shell
-   $ ./diagnose-fluid.sh collect --name cifar10 --namespace default --all
-   ```
