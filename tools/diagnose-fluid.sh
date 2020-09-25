@@ -8,7 +8,7 @@ print_usage() {
   echo "    help"
   echo "        Display this help message."
   echo "    collect"
-  echo "        Collect pods logs of Runtime."
+  echo "        Collect pods logs of controller and runtime."
   echo "OPTIONS:"
   echo "    --name name"
   echo "        Set the name of runtime."

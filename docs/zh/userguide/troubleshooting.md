@@ -22,7 +22,7 @@
         help
             Display this help message.
         collect
-            Collect pods logs of Runtime.
+            Collect pods logs of controller and runtime.
     OPTIONS:
         --name name
             Set the name of runtime.
