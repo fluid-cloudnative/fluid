@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
 set +x
 
-# arguments
-fluid_name="fluid"
-fluid_namespace="fluid-system"
-runtime_name="imagenet"
-runtime_namespace="default"
-collect_all=0
-
-current_dir=$(pwd)
-timestamp=$(date +%s)
-diagnose_dir=/tmp/diagnose_fluid_${timestamp}
-mkdir -p "$diagnose_dir"
-
 print_usage() {
   echo "Usage:"
   echo "    ./diagnose-fluid.sh COMMAND [OPTIONS]"
@@ -20,14 +8,12 @@ print_usage() {
   echo "    help"
   echo "        Display this help message."
   echo "    collect"
-  echo "        Collect pods logs of Runtime."
+  echo "        Collect pods logs of controller and runtime."
   echo "OPTIONS:"
   echo "    --name name"
-  echo "        Set the name of runtime (default '${runtime_name}')."
+  echo "        Set the name of runtime."
   echo "    --namespace name"
-  echo "        Set the namespace of runtime (default '${runtime_namespace}')."
-  echo "    -a, --all"
-  echo "        Also collect fluid system logs."
+  echo "        Set the namespace of runtime."
 }
 
 run() {
@@ -40,12 +26,12 @@ run() {
   echo "------------End of ${1}----------------"
 }
 
-helm_status() {
-  run helm status ${fluid_name} &>"$diagnose_dir/helm.log"
+helm_get() {
+  run helm get all "${1}" &>"$diagnose_dir/${1}.yaml"
 }
 
 pod_status() {
-  local namespace=${1:=default}
+  local namespace=${1:-"default"}
   run kubectl get po -owide -n ${namespace} &>"$diagnose_dir/${namespace}.log"
 }
 
@@ -88,23 +74,20 @@ archive() {
 }
 
 pd_collect() {
-  echo "Start collecting, Runtime-name=${runtime_name}, Runtime-namespace=${runtime_namespace}"
-  helm_status
-  pod_status ${fluid_namespace}
-  pod_status ${runtime_namespace}
+  echo "Start collecting, runtime-name=${runtime_name}, runtime-namespace=${runtime_namespace}"
+  helm_get "${fluid_name}"
+  helm_get "${runtime_name}"
+  pod_status "${fluid_namespace}"
+  pod_status "${runtime_namespace}"
   runtime_pod_logs
-
-  if [[ ${collect_all} == 1 ]]; then
-    fluid_pod_logs
-  fi
-
+  fluid_pod_logs
   archive
 }
 
 collect()
 {
   # Parse arguments using getopt
-  ARGS=$(getopt -a -o h,a --long help,all,name:,namespace: -- "$@")
+  ARGS=$(getopt -a -o h --long help,name:,namespace: -- "$@")
   if [ $? != 0 ]; then
     exit 1
   fi
@@ -121,10 +104,6 @@ collect()
       runtime_namespace=$2
       shift 2
       ;;
-    -a | --all)
-      collect_all=1
-      shift
-      ;;
     --)
       shift
       break
@@ -135,6 +114,17 @@ collect()
       ;;
     esac
   done
+
+  # ensure params
+  fluid_name=${fluid_name:-"fluid"}
+  fluid_namespace=${fluid_namespace:-"fluid-system"}
+  runtime_name=${runtime_name:?"the name of runtime must be set"}
+  runtime_namespace=${runtime_namespace:-"default"}
+
+  current_dir=$(pwd)
+  timestamp=$(date +%s)
+  diagnose_dir="/tmp/diagnose_fluid_${timestamp}"
+  mkdir -p "$diagnose_dir"
 
   pd_collect
 }

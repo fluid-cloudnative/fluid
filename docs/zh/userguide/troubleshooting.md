@@ -22,14 +22,12 @@
         help
             Display this help message.
         collect
-            Collect pods logs of Runtime.
+            Collect pods logs of controller and runtime.
     OPTIONS:
         --name name
-            Set the name of runtime (default 'imagenet').
+            Set the name of runtime.
         --namespace name
-            Set the namespace of runtime (default 'default').
-        -a, --all
-            Also collect fluid system logs.
+            Set the namespace of runtime.
     ```
 
 3. 收集日志
@@ -41,9 +39,3 @@
     ```
     
     shell脚本会将收集的日志信息打包到执行路径下的一个压缩包里。
-    
-    如果要同时收集`fluid-system`的日志，运行时请额外添加option `--all`
-    
-    ```bash
-    $ ./diagnose-fluid.sh collect --name cifar10 --namespace default --all
-    ```
