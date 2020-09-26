@@ -88,7 +88,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		engine.initImage = common.DEFAULT_ALLUXIO_INIT_IMAGE
 	}
 
-	ctx.Log.Info("check alluxio engine", "engine", engine)
+	ctx.Log.Info("check alluxio engine initImage", "engine.initImage", engine.initImage)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
