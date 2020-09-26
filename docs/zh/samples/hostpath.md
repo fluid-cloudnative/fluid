@@ -184,6 +184,7 @@ spec:
       containers:
         - name: nginx
           image: nginx
+          imagePullPolicy: IfNotPresent
           command:
             - tail
             - -f
@@ -227,7 +228,7 @@ drwxr-xr-x 1 1201 1201         2 Sep 20 08:11 .
 **访问数据**
 ```shell
 $ time cp /data/hostpath-data/hbase-2.2.5-bin.tar.gz /dev/null
-real	0m7.697s
+real	0m0.238s
 user	0m0.004s
 sys	0m0.122s
 
