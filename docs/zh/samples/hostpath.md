@@ -114,7 +114,7 @@ spec:
     group: fluid-user-1
   initUsers:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
-    imageTag: v0.3.0-00e7082
+    imageTag: v0.3.0-1467caa
     imagePullPolicy: Always
   properties:
     alluxio.user.block.size.bytes.default: 256MB

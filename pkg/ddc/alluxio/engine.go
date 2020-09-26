@@ -17,9 +17,10 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"regexp"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,6 +77,8 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
 		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
 			engine.initImage = value
+		} else {
+			ctx.Log.Info("Failed to parse the ALLUXIO_INIT_IMAGE_ENV", "ALLUXIO_INIT_IMAGE_ENV", value, "error", err)
 		}
 	}
 	if len(engine.initImage) == 0 {
