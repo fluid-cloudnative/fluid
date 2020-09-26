@@ -31,7 +31,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-c8a46e3"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-e0feba3"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
@@ -77,7 +77,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	}
 	// value.Fuse.Args[-1]
 
-	// Allow other
+	// Allow root: only the RunAs user and root can access fuse
+	//if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {
+	//	value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_root"}, ",")
+	//}
+
+	// Allow others: all users(including root) can access fuse
 	if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {
 		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_other"}, ",")
 	}

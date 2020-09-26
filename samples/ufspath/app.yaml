@@ -16,12 +16,19 @@ spec:
       labels:
         app: nginx
     spec:
+      securityContext:
+        runAsUser: 1005
+        runAsGroup: 1005
       containers:
         - name: nginx
           image: nginx
           volumeMounts:
             - mountPath: /data
               name: test
+          command:
+            - tail
+            - -f
+            - /dev/null
       volumes:
         - name: test
           persistentVolumeClaim:
