@@ -78,8 +78,13 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	// value.Fuse.Args[-1]
 
 	// Allow root: only the RunAs user and root can access fuse
+	//if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {
+	//	value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_root"}, ",")
+	//}
+
+	// Allow others: all users(including root) can access fuse
 	if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {
-		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_root"}, ",")
+		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_other"}, ",")
 	}
 
 	labelName := e.getCommonLabelname()
