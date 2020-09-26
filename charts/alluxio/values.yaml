@@ -85,7 +85,7 @@ master:
     embedded: 19200
     rpc: 19998
     web: 19999
-  hostPID: false
+  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false
@@ -178,7 +178,7 @@ worker:
     rpc: 29999
     web: 30000
   # hostPID requires escalated privileges
-  hostPID: false
+  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false

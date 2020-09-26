@@ -51,6 +51,7 @@ spec:
         role: alluxio-master
     spec:
       hostNetwork: {{ $hostNetwork }}
+      hostPID: {{ .Values.master.hostPID }}
       dnsPolicy: {{ .Values.master.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
