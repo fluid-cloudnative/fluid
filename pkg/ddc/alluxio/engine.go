@@ -80,10 +80,15 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		} else {
 			ctx.Log.Info("Failed to parse the ALLUXIO_INIT_IMAGE_ENV", "ALLUXIO_INIT_IMAGE_ENV", value, "error", err)
 		}
+		ctx.Log.Info("Get INIT_IMAGE from Env", common.ALLUXIO_INIT_IMAGE_ENV, value)
+	} else {
+		ctx.Log.Info("Use Default ALLUXIO_INIT_IMAGE_ENV", "ALLUXIO_INIT_IMAGE_ENV", common.DEFAULT_ALLUXIO_INIT_IMAGE)
 	}
 	if len(engine.initImage) == 0 {
 		engine.initImage = common.DEFAULT_ALLUXIO_INIT_IMAGE
 	}
+
+	ctx.Log.Info("check alluxio engine", "engine", engine)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
