@@ -74,27 +74,11 @@ spec:
         high: "0.95"
         low: "0.7"
   properties:
-    alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.master.journal.folder: /journal
-    alluxio.master.journal.type: UFS
     alluxio.user.block.size.bytes.default: 256MB
     alluxio.user.streaming.reader.chunk.size.bytes: 256MB
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
-  fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
-    args:
-      - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 
@@ -134,66 +118,9 @@ hbase   443.5MiB         0B       4GiB             0%                  Bound   2
 
 **查看AlluxioRuntime状态**
 ```shell
-$ kubectl get alluxioruntime hbase -o yaml
-...
-...
-status:
-  cacheStates:
-    cacheCapacity: 4GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  - lastProbeTime: "2020-07-29T08:23:05Z"
-    lastTransitionTime: "2020-07-29T08:23:05Z"
-    message: The master is initialized.
-    reason: Master is initialized
-    status: "True"
-    type: MasterInitialized
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:05Z"
-    message: The master is ready.
-    reason: Master is ready
-    status: "True"
-    type: MasterReady
-  - lastProbeTime: "2020-07-29T08:23:20Z"
-    lastTransitionTime: "2020-07-29T08:23:20Z"
-    message: The workers are initialized.
-    reason: Workers are initialized
-    status: "True"
-    type: WorkersInitialized
-  - lastProbeTime: "2020-07-29T08:23:20Z"
-    lastTransitionTime: "2020-07-29T08:23:20Z"
-    message: The fuses are initialized.
-    reason: Fuses are initialized
-    status: "True"
-    type: FusesInitialized
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:40Z"
-    message: The workers are partially ready.
-    reason: Workers are ready
-    status: "True"
-    type: WorkersReady
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:40Z"
-    message: The fuses are ready.
-    reason: Fuses are ready
-    status: "True"
-    type: FusesReady
-  currentFuseNumberScheduled: 2
-  currentMasterNumberScheduled: 1
-  currentWorkerNumberScheduled: 2
-  desiredFuseNumberScheduled: 2
-  desiredMasterNumberScheduled: 1
-  desiredWorkerNumberScheduled: 2
-  fuseNumberAvailable: 2
-  fuseNumberReady: 2
-  fusePhase: Ready
-  masterNumberReady: 1
-  masterPhase: Ready
-  valueFile: hbase-alluxio-values
-  workerNumberAvailable: 2
-  workerNumberReady: 2
-  workerPhase: Ready
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
+hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        2m50s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 
@@ -325,12 +252,12 @@ fluid-copy-test-h59w9   0/1     Completed   0          1m25s
 ```shell
 $ kubectl logs fluid-copy-test-h59w9
 + time cp -r /data/hbase ./
-real  1m 2.74s
+real  0m 41.21s
 user  0m 0.00s
 sys   0m 1.35s
 ```
 
-可见，第一次远程文件的读取耗费了接近63s的时间。当然，你可能会觉得这并没有你预期的那么快，但是：
+可见，第一次远程文件的读取耗费了接近41s的时间。当然，你可能会觉得这并没有你预期的那么快，但是：
 
 **查看Dataset资源对象状态**
 ```shell
@@ -357,11 +284,11 @@ fluid-copy-test-d9h2x   0/1     Completed   0          24s
 ```shell
 $ kubectl logs fluid-copy-test-d9h2x
 + time cp -r /data/hbase ./
-real  0m 2.94s
+real  0m 0.40s
 user  0m 0.00s
 sys   0m 1.27s
 ```
-同样的文件访问操作仅耗费了3s
+同样的文件访问操作仅耗费了0.4s
 
 这种大幅度的加速效果归因于Alluxio所提供的强大的缓存能力，这种缓存能力意味着，只要你访问某个远程文件一次，该文件就会被缓存在Alluxio中，你的所有接下来的重复访问都不再需要进行远程文件读取，而是从Alluxio中直接获取数据，因此对于数据的访问加速也就不难解释了。
 
