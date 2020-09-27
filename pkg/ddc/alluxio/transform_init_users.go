@@ -73,4 +73,6 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		value.InitUsers.ImagePullPolicy = runtime.Spec.InitUsers.ImagePullPolicy
 	}
 
+	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
+
 }

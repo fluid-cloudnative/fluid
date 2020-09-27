@@ -40,7 +40,7 @@ spec:
         role: alluxio-worker
     spec:
       hostNetwork: {{ $hostNetwork }}
-      hostPID: {{ $hostPID }}
+      hostPID: {{ .Values.worker.hostPID }}
       dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}

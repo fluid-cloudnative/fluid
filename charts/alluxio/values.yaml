@@ -24,7 +24,7 @@ imagePullPolicy: IfNotPresent
 initUsers:
   enabled: false
   image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
-  imageTag: v0.3.0-00e7082
+  imageTag: v0.3.0-1467caa
   imagePullPolicy: IfNotPresent
   args: "1000"
   envUsers: ""
@@ -85,7 +85,7 @@ master:
     embedded: 19200
     rpc: 19998
     web: 19999
-  hostPID: false
+  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false
@@ -178,7 +178,7 @@ worker:
     rpc: 29999
     web: 30000
   # hostPID requires escalated privileges
-  hostPID: false
+  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false

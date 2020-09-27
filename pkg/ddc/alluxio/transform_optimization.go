@@ -54,7 +54,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.core.pool.size", "128")
 	setDefaultProperties(runtime, value, "#alluxio.master.mount.table.root.readonly", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.update.file.accesstime.disabled", "true")
-	setDefaultProperties(runtime, value, "alluxio.user.file.passive.cache.enabled", "true")
+	setDefaultProperties(runtime, value, "alluxio.user.file.passive.cache.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.block.avoid.eviction.policy.reserved.size.bytes", "2GB")
 	setDefaultProperties(runtime, value, "alluxio.master.journal.folder", "/journal")
 	setDefaultProperties(runtime, value, "alluxio.master.journal.type", "UFS")
@@ -126,7 +126,7 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
 	} else {
-		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,max_readahead=0,attr_timeout=7200,entry_timeout=7200,nonempty"}
 	}
 
 }
