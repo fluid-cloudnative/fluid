@@ -22,6 +22,7 @@ spec:
       containers:
         - name: nginx
           image: nginx
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /data
               name: test

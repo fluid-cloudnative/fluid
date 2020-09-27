@@ -61,7 +61,7 @@ const (
 
 	ALLUXIO_INIT_IMAGE_ENV = "ALLUXIO_INIT_IMAGE_ENV"
 
-	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-00e7082"
+	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
 )
 
 type CacheStoreType string
