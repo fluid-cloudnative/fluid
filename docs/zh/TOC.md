@@ -16,6 +16,7 @@
   - [机器学习](samples/machinelearning.md)
   - [主机目录加速](samples/hostpath.md)
   - [NFS数据卷加速](samples/accelerate_pvc.md)
+  - [以non-root用户身份使用Fluid](samples/nonroot_access.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
