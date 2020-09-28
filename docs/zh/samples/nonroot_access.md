@@ -1,6 +1,6 @@
-# 示例 - 以non-root用户身份使用Fluid
+# 示例 - 使用Fluid访问非root用户的数据
 
-在使用Fluid时，用户不必拥有root权限即可创建Dataset，将自己的数据集挂载到Fluid上，并创建相关应用消费这些数据
+如果用户的数据只能以特定uid访问时，需要通过设置Runtime的RunAs参数指定特定用户运行分布式数据缓存引擎以访问底层数据。
 
 本文档将通过一个简单的例子演示上述特性
 
@@ -12,12 +12,12 @@
 
 ## 运行示例
 
-**创建一个non-root用户**
+**创建一个非root用户**
 ```
 $ groupadd -g 1201 fluid-user-1 && \
 useradd -u 1201 -g fluid-user-1 fluid-user-1
 ```
-上述命令创建了一个non-root用户`fluid-user-1`
+上述命令创建了一个非root用户`fluid-user-1`
 
 **创建属于该用户的目录**
 ```
@@ -94,19 +94,34 @@ EOF
 
 在上述yaml配置文件中，我们将以挂载主机目录的方式挂载我们刚才创建的目录(`/mnt/nonroot`)，更多有关Fluid挂载主机目录的信息，请参考[示例 - 用Fluid加速主机目录](./hostpath.md)
 
-另外，在`spec.runAs`中我们设置了`uid`等用户信息，这意味着我们将以`fluid-user-1`的用户身份启动Alluxio，为该用户的数据提供分布式缓存能力
+另外，在`spec.runAs`中我们设置了`uid`等用户信息，这意味着我们将以`fluid-user-1`的用户身份启动缓存引擎，提供分布式缓存能力
 
 **标记结点**
 ```
 $ kubectl label node <node> nonroot=true
 ```
 
-使用`nonroot=true`对刚才创建的`/mnt/nonroot`目录所在结点进行标记，确保Alluxio在该结点上启动，使得其能够正确挂载指定的主机目录
+使用`nonroot=true`对刚才创建的`/mnt/nonroot`目录所在结点进行标记，确保缓存引擎在该结点上启动，使得其能够正确挂载指定的主机目录
 
 **创建Dataset和AlluxioRuntime资源对象**
 ```
 $ kubectl create -f dataset.yaml
 ```
+
+**查看PV,PVC**
+```
+$ kubectl get pv,pvc
+```
+
+待缓存引擎正常启动后，上述命令将得到如下结果：
+```
+NAME                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
+persistentvolume/nonroot   100Gi      RWX            Retain           Bound    default/nonroot                           3m18s
+
+NAME                            STATUS   VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/nonroot   Bound    nonroot   100Gi      RWX                           3m18s
+```
+
 
 **创建应用使用Dataset**
 ```yaml
@@ -135,7 +150,7 @@ spec:
         claimName: nonroot
 EOF
 ```
-上述配置意味着以`uid`为1201的用户身份启动该应用并使用刚才创建的Dataset
+上述配置意味着我们将以`uid`为1201的用户身份启动该应用, 并通过Fluid创建出的PVC将数据挂载到Pod上
 
 ```
 $ kubectl create -f app.yaml
@@ -149,7 +164,7 @@ $ kubectl exec -it nginx -- bash
 ```
 $ id
 ```
-上述命令将显示以下结果：
+上述命令将得到以下结果：
 ```
 uid=1201 gid=1201 groups=1201
 ```
@@ -160,7 +175,7 @@ uid=1201 gid=1201 groups=1201
 ```
 $ ls -ltR /data
 ```
-上述命令将显示以下结果：
+上述命令将得到以下结果：
 ```
 /data/:
 total 1
@@ -175,9 +190,9 @@ total 1
 -rwxr-x--- 1 1201 1201 28 Sep 27 08:45 data1
 ```
 
-可以看到，Fluid能够以**透传**的方式将所属某个non-root用户的数据暴露给需要这些数据的应用，用户数据的各文件信息不会发生改变
+可以看到，Fluid能够以**透传**的方式将所属某个非root用户的数据暴露给需要这些数据的应用，用户数据的各文件信息不会发生改变
 
-当然，该non-root用户可以自由地访问这些数据：
+当然，该用户可以自由地访问这些数据：
 
 ```
 $ cat /data/nonroot/user1_data/data1
