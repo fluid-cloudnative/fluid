@@ -91,31 +91,11 @@ spec:
         high: "0.95"
         low: "0.7"
   properties:
-    alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.master.journal.folder: /journal
-    alluxio.master.journal.type: UFS
     alluxio.user.block.size.bytes.default: 256MB
     alluxio.user.streaming.reader.chunk.size.bytes: 256MB
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
-  fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
-      - "-XX:+UseG1GC "
-      - "-XX:MaxDirectMemorySize=4g "
-      - "-XX:+UnlockExperimentalVMOptions "
-      - "-XX:ActiveProcessorCount=8 "
-    args:
-      - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为2,这表明Fluid将会启动一个包含1个Alluxio Master和2个Alluxio Worker的Alluxio实例
@@ -135,32 +115,11 @@ hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beij
 
 **检查AlluxioRuntime状态**
 ```shell
-$ kubectl get alluxioruntime hbase -o yaml
-...
-status:
-  cacheStates:
-    cacheCapacity: 2GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  ...
-  currentFuseNumberScheduled: 1
-  currentMasterNumberScheduled: 1
-  currentWorkerNumberScheduled: 1
-  desiredFuseNumberScheduled: 2
-  desiredMasterNumberScheduled: 1
-  desiredWorkerNumberScheduled: 2
-  fuseNumberAvailable: 1
-  fuseNumberReady: 1
-  fusePhase: PartialReady
-  masterNumberReady: 1
-  masterPhase: Ready
-  valueFile: hbase-alluxio-values
-  workerNumberAvailable: 1
-  workerNumberReady: 1
-  workerPhase: PartialReady
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
+hbase   1               1                 Ready          1               2                 PartialReady   1             2               PartialReady   4m3s
 ```
-与预想一致，`workerPhase`状态此时为`PartialReady`，并且`currentWorkerNumberScheduled: 1`小于`desiredWorkerNumberScheduled: 2`
+与预想一致，`Worker Phase`状态此时为`PartialReady`，并且`Ready Workers: 1`小于`Desired Workers: 2`
 
 **查看待创建的应用**
 
@@ -255,6 +214,12 @@ hbase-worker-l62m4   2/2     Running   0          44m   192.168.1.146   cn-beiji
 hbase-worker-rvncl   2/2     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
 两个Alluxio Worker都成功启动，并且分别运行在两个结点上
+
+```shell
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
+hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        46m43s
+```
 
 ```shell
 $ kubectl get pod -l app=nginx -o wide

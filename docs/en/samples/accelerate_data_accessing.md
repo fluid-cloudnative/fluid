@@ -79,27 +79,11 @@ spec:
         high: "0.95"
         low: "0.7"
   properties:
-    alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.master.journal.folder: /journal
-    alluxio.master.journal.type: UFS
     alluxio.user.block.size.bytes.default: 256MB
     alluxio.user.streaming.reader.chunk.size.bytes: 256MB
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
-  fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
-    args:
-      - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 
@@ -139,66 +123,9 @@ hbase   443.5MiB         0B       4GiB             0%                  Bound   2
 
 **Check status of the `AlluxioRuntime` object**
 ```shell
-$ kubectl get alluxioruntime hbase -o yaml
-...
-...
-status:
-  cacheStates:
-    cacheCapacity: 4GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  - lastProbeTime: "2020-07-29T08:23:05Z"
-    lastTransitionTime: "2020-07-29T08:23:05Z"
-    message: The master is initialized.
-    reason: Master is initialized
-    status: "True"
-    type: MasterInitialized
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:05Z"
-    message: The master is ready.
-    reason: Master is ready
-    status: "True"
-    type: MasterReady
-  - lastProbeTime: "2020-07-29T08:23:20Z"
-    lastTransitionTime: "2020-07-29T08:23:20Z"
-    message: The workers are initialized.
-    reason: Workers are initialized
-    status: "True"
-    type: WorkersInitialized
-  - lastProbeTime: "2020-07-29T08:23:20Z"
-    lastTransitionTime: "2020-07-29T08:23:20Z"
-    message: The fuses are initialized.
-    reason: Fuses are initialized
-    status: "True"
-    type: FusesInitialized
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:40Z"
-    message: The workers are partially ready.
-    reason: Workers are ready
-    status: "True"
-    type: WorkersReady
-  - lastProbeTime: "2020-07-29T08:23:40Z"
-    lastTransitionTime: "2020-07-29T08:23:40Z"
-    message: The fuses are ready.
-    reason: Fuses are ready
-    status: "True"
-    type: FusesReady
-  currentFuseNumberScheduled: 2
-  currentMasterNumberScheduled: 1
-  currentWorkerNumberScheduled: 2
-  desiredFuseNumberScheduled: 2
-  desiredMasterNumberScheduled: 1
-  desiredWorkerNumberScheduled: 2
-  fuseNumberAvailable: 2
-  fuseNumberReady: 2
-  fusePhase: Ready
-  masterNumberReady: 1
-  masterPhase: Ready
-  valueFile: hbase-alluxio-values
-  workerNumberAvailable: 2
-  workerNumberReady: 2
-  workerPhase: Ready
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
+hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        2m50s
 ```
 Detailed information about the Alluxio instance is provided here.
 

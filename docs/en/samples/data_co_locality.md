@@ -94,31 +94,11 @@ spec:
         high: "0.95"
         low: "0.7"
   properties:
-    alluxio.user.file.writetype.default: MUST_CACHE
-    alluxio.master.journal.folder: /journal
-    alluxio.master.journal.type: UFS
     alluxio.user.block.size.bytes.default: 256MB
     alluxio.user.streaming.reader.chunk.size.bytes: 256MB
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
-  master:
-    jvmOptions:
-      - "-Xmx4G"
-  worker:
-    jvmOptions:
-      - "-Xmx4G"
-  fuse:
-    jvmOptions:
-      - "-Xmx4G "
-      - "-Xms4G "
-      - "-XX:+UseG1GC "
-      - "-XX:MaxDirectMemorySize=4g "
-      - "-XX:+UnlockExperimentalVMOptions "
-      - "-XX:ActiveProcessorCount=8 "
-    args:
-      - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 In this snippet of yaml, there are many specifications used by Fluid to launch an Alluxio instance. The `spec.replicas` in the yaml above is set to 2, which means an Alluxio instance with 1 master and 2 workers is expected to be launched.
@@ -138,32 +118,11 @@ While two running workers are expected, there's only one running on the node wit
 
 **Check status of the `AlluxioRuntime` object**
 ```shell
-$ kubectl get alluxioruntime hbase -o yaml
-...
-status:
-  cacheStates:
-    cacheCapacity: 2GiB
-    cached: 0B
-    cachedPercentage: 0%
-  conditions:
-  ...
-  currentFuseNumberScheduled: 1
-  currentMasterNumberScheduled: 1
-  currentWorkerNumberScheduled: 1
-  desiredFuseNumberScheduled: 2
-  desiredMasterNumberScheduled: 1
-  desiredWorkerNumberScheduled: 2
-  fuseNumberAvailable: 1
-  fuseNumberReady: 1
-  fusePhase: PartialReady
-  masterNumberReady: 1
-  masterPhase: Ready
-  valueFile: hbase-alluxio-values
-  workerNumberAvailable: 1
-  workerNumberReady: 1
-  workerPhase: PartialReady
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
+hbase   1               1                 Ready          1               2                 PartialReady   1             2               PartialReady   4m3s
 ```
-As expected, `workerPhase` is `PartialReady` and `currentWorkerNumberScheduled: 1` is less than `desiredWorkerNumberScheduled: 2`.
+As expected, `Worker Phase` is `PartialReady` and `Ready Workers: 1` is less than `Desired Workers: 2`.
 
 **Check the workload to be created**
 
@@ -260,6 +219,12 @@ hbase-worker-l62m4   2/2     Running   0          44m   192.168.1.146   cn-beiji
 hbase-worker-rvncl   2/2     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
 There're two running Alluxio workers now.
+
+```shell
+$ kubectl get alluxioruntime hbase -o wide
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
+hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        46m43s
+```
 
 ```shell
 $ kubectl get pod -l app=nginx -o wide
