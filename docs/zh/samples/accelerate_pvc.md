@@ -158,7 +158,7 @@ arena submit mpi \
 1. 按照前述步骤创建NFS的volume 
 2. 部署Fluid加速刚才创建的PVC
 
-```yaml
+```bash
 $ cat <<EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
