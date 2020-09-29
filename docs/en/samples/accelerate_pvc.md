@@ -1,51 +1,51 @@
-# Demo - 使用Fluid加速PVC
+# Demo - Accelerate PVC with Fluid
 
-## 测试场景：ResNet50 模型训练
+## Test scenario: ResNet50 model training
 
-- 测试机型： V100 x8
-- nfs地址：38037492dc-pol25.cn-shanghai.nas.aliyuncs.com
+- Machine： V100 x8
+- NFS Server：38037492dc-pol25.cn-shanghai.nas.aliyuncs.com
 
-## 配置
+## Settings
 
-### 硬件配置
+### Hardware
 
 | Cluster | Alibaba Cloud Kubernetes. v1.16.9-aliyun.1             |
 | ------- | ------------------------------------------------------ |
-| ECS实例 | ECS   规格：ecs.gn6v-c10g1.20xlarge<br />    CPU：82核 |
-| 分布式存储|    容量型NAS                                          |
+| ECS Instance | ECS   specifications：ecs.gn6v-c10g1.20xlarge<br />    CPU：82 cores |
+| Distributed Storage|    NAS                                          |
 
-###  软件配置
+### Software
 
-软件版本： 0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6
+Software version: 0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6
 
-## 前提条件
+## Prerequisites
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.3.0)
 - [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
 - [Horovod](https://github.com/horovod/horovod) (version=0.18.1)
 - [Benchmark](https://github.com/tensorflow/benchmarks/tree/cnn_tf_v1.14_compatible)
 
-## 数据准备
+## Prepare Dataset
 
-1. 下载数据集
+1. Download
 
 ```bash
 $ wget http://imagenet-tar.oss-cn-shanghai.aliyuncs.com/imagenet.tar.gz
 ```
 
-2. 解压数据集
+2. Unpack
 
 ```bash
 $ tar -I pigz -xvf imagenet.tar.gz
 ```
 
-## NFS dawnbench测试
+## NFS dawnbench
 
-### 部署数据集
+### Deploy Dataset
 
-1. 在NFS Server中挂载数据集
+1. Export Dataset on Your NFS Server
 
-2. 使用Kubernetes创建nfs的volume
+2. Create Volume using Kubernetes
 
 ```bash
 $ cat <<EOF > nfs.yaml
@@ -92,13 +92,14 @@ EOF
 
 > **NOTE:**
 >
-> 修改上述yaml文件中的nfs的server和path为您的nfs server地址和挂载路径。
+> Please replace `YOUR_PATH_TO_DATASET` and `YOUR_NFS_SERVER` 
+> with your own nfs server address and path to dataset.
 
 ```bash
 $ kubectl create -f nfs.yaml
 ```
 
-3. 检查Kubernetes是否正常创建volume
+3. Check Volume
 
 ```bash
 $ kubectl get pv,pvc
@@ -109,9 +110,13 @@ NAME                                 STATUS   VOLUME         CAPACITY   ACCESS M
 persistentvolumeclaim/nfs-imagenet   Bound    nfs-imagenet   150Gi      ROX            nfs            45s
 ```
 
-### dawnbench
+### Dawnbench
 
-#### 单机八卡
+> NOTES:
+>
+> `1x8` means `1` machine with `8` GPU cards.
+
+#### 1x8
 
 ```bash
 arena submit mpi \
@@ -127,7 +132,7 @@ arena submit mpi \
     ./launch-example.sh 1 8
 ```
 
-#### 四机八卡
+#### 4x8
 
 ```bash
 arena submit mpi \
@@ -145,18 +150,21 @@ arena submit mpi \
 
 > **NOTE:**
 >
-> 训练完成后，arena保留了laucher，可能导致nfs删不掉。请在提交nfs删除命令后执行如下命令：
+> If you find that nfs volume cannot be deleted,
+> this is because Arena will leave a launcher pod after training finished,
+> and Kubernetes still thinks that volume is in using.
 >
+> Just execute following command to force deleting volume:
 > ```bash
 > $ kubectl patch pvc nfs-imagenet  -p '{"metadata":{"finalizers": []}}' --type=merge
 > ```
 
-## Fluid加速PVC
+## Accelerate PVC with Fluid
 
-### 部署数据集
+### Deploy Dataset
 
-1. 按照前述步骤创建NFS的volume 
-2. 部署Fluid加速刚才创建的PVC
+1. Follow Previous Steps to Create NFS Volume
+2. Deploy Fluid to Accelerate NFS Volume
 
 ```bash
 $ cat <<EOF > dataset.yaml
@@ -197,14 +205,14 @@ EOF
 
 > **NOTE:**
 >
-> - `spec.replicas`和dawnbench测试的worker数量保持一致。比如：单机八卡为1，四机八卡为4。
-> - `nodeSelectorTerms`作用是限制在有V100显卡的机器上部署数据集，此处应根据实验环境具体调节。
+> - Please keep `spec.replicas` consistent with the number of machines you are going to use for machine learning。
+> - `nodeSelectorTerms` is used to restrict scheduling on machines with V100 GPU only.
 
 ```bash
 $ kubectl create -f dataset.yaml
 ```
 
-3. 检查部署
+3. Check Volume
 
 ```bash
 $ kubectl get pv,pvc
@@ -217,9 +225,9 @@ persistentvolumeclaim/fluid-imagenet   Bound    fluid-imagenet   100Gi      RWX 
 persistentvolumeclaim/nfs-imagenet     Bound    nfs-imagenet     150Gi      ROX            nfs            16m
 ```
 
-### dawnbench
+### Dawnbench
 
-#### 单机八卡
+#### 1x8
 
 ```bash
 arena submit mpi \
@@ -235,7 +243,7 @@ arena submit mpi \
     ./launch-example.sh 1 8
 ```
 
-#### 四机八卡
+#### 4x8
 
 ```bash
 arena submit mpi \
@@ -251,15 +259,15 @@ arena submit mpi \
     ./launch-example.sh 4 8
 ```
 
-## 测试结果
+## Experiment Results
 
 ### horovod-1x8
 
 |                         | nfs      | fluid (cold) | fluid (warm) |
 | ----------------------- | -------- | ------------ | ------------ |
-| 训练时间                | 3h49m10s | 3h50m40s     | 3h34m15s     |
-| 1000步速度(images/second) | 2400.8   | 2378.4       | 9327.6       |
-| 最终速度(images/second) | 8696.8   | 8692.8       | 9301.6       |
+| Training time                | 3h49m10s | 3h50m40s     | 3h34m15s     |
+| Speed at the 1000 step(images/second) | 2400.8   | 2378.4       | 9327.6       |
+| Speed at the last step(images/second) | 8696.8   | 8692.8       | 9301.6       |
 | steps                   | 56300    | 56300        | 56300        |
 | Accuracy @ 5            | 0.9282   | 0.9286       | 0.9285       |
 
@@ -267,14 +275,18 @@ arena submit mpi \
 
 |                         | nfs      | fluid (cold) | fluid (warm) |
 | ----------------------- | -------- | ------------ | ------------ |
-| 训练时间                | 2h15m59s | 1h43m43s     | 1h32m22s     |
-| 1000步速度(images/second) | 3136     | 8889.6       | 20859.5      |
-| 最终速度(images/second) | 15024    | 20506.3      | 21329        |
+| Training time                | 2h15m59s | 1h43m43s     | 1h32m22s     |
+| Speed at the 1000 step(images/second) | 3136     | 8889.6       | 20859.5      |
+| Speed at the last step(images/second) | 15024    | 20506.3      | 21329        |
 | steps                   | 14070    | 14070        | 14070        |
 | Accuracy @ 5            | 0.9228   | 0.9204       | 0.9243       |
 
 
 ## 结果分析
 
-从测试结果来看，单机八卡通过Fluid加速效果并没有明显的效果，但是在四机八卡的场景下Fluid加速效果非常明显。在热数据的场景下，可以缩短训练时间 (135-92)/135 = 31 %; 在冷数据场景下可以缩短训练时间 （135-103）/135 = 23 % 。 这是由于四机八卡下，NFS的带宽成为了瓶颈；而Fluid基于Alluxio提供了分布式缓存的P2P数据读取能力。
-
+From the test results, the Fluid acceleration effect on 1x8 has no obvious effect,
+but in the scenario of 4x8, the effect is very obvious.
+In warm data scenario, the training time can be shortened (135-92)/135 = 31%;
+In cold data scenario, training time can be shortened (135-103) /135 = 23%.
+This is because NFS bandwidth became a bottleneck under 4x8;
+Fluid based on Alluxio provides distributed cache data reading capability for P2P data.
