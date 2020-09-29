@@ -47,7 +47,7 @@ $ tar -I pigz -xvf imagenet.tar.gz
 
 2. Create Volume using Kubernetes
 
-```yaml
+```bash
 $ cat <<EOF > nfs.yaml
 apiVersion: v1
 kind: PersistentVolume

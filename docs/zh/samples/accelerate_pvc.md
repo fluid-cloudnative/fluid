@@ -47,7 +47,7 @@ $ tar -I pigz -xvf imagenet.tar.gz
 
 2. 使用Kubernetes创建nfs的volume
 
-```yaml
+```bash
 $ cat <<EOF > nfs.yaml
 apiVersion: v1
 kind: PersistentVolume
