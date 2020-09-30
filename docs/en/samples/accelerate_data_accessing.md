@@ -84,6 +84,10 @@ spec:
     alluxio.user.local.reader.chunk.size.bytes: 256MB
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
+  fuse:
+    args:
+      - fuse
+      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
 EOF
 ```
 
