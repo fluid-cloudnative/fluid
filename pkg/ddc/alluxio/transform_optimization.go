@@ -126,7 +126,7 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
 	} else {
-		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,max_readahead=0,attr_timeout=7200,entry_timeout=7200,nonempty"}
+		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
 	}
 
 }

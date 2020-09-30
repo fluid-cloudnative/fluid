@@ -5,7 +5,7 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 1
+  replicas: 2
   serviceName: "nginx"
   podManagementPolicy: "Parallel"
   selector: # define how the deployment finds the pods it manages

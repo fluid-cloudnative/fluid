@@ -87,27 +87,14 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
             high: "0.95"
             low: "0.7"
       properties:
-        alluxio.user.file.writetype.default: MUST_CACHE
-        alluxio.master.journal.folder: /journal
-        alluxio.master.journal.type: UFS
         alluxio.user.block.size.bytes.default: 256MB
         alluxio.user.streaming.reader.chunk.size.bytes: 256MB
         alluxio.user.local.reader.chunk.size.bytes: 256MB
         alluxio.worker.network.reader.buffer.size: 256MB
-        alluxio.user.streaming.data.timeout: 300sec
-      master:
-        jvmOptions:
-          - "-Xmx4G"
-      worker:
-        jvmOptions:
-          - "-Xmx4G"
       fuse:
-        jvmOptions:
-          - "-Xmx4G "
-          - "-Xms4G "
         args:
           - fuse
-          - --fuse-opts=direct_io,ro,max_read=131072
+          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0       alluxio.user.streaming.data.timeout: 300sec
     EOF
     ```
     
