@@ -99,7 +99,7 @@ spec:
   fuse:
     args:
       - fuse
-      - --fuse-opts=direct_io,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty
+      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 EOF
 ```
 该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为2,这表明Fluid将会启动一个包含1个Alluxio Master和2个Alluxio Worker的Alluxio实例

@@ -72,7 +72,7 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
     ```
 
 2. 创建 `AlluxioRuntime` CRD对象，用来描述支持这个数据集的 Runtime, 在这里我们使用[Alluxio](https://www.alluxio.io/)作为其Runtime
-    ```shell
+    ```yaml
     $ cat<<EOF >runtime.yaml
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
@@ -88,27 +88,15 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
             high: "0.95"
             low: "0.7"
       properties:
-        alluxio.user.file.writetype.default: MUST_CACHE
-        alluxio.master.journal.folder: /journal
-        alluxio.master.journal.type: UFS
         alluxio.user.block.size.bytes.default: 256MB
         alluxio.user.streaming.reader.chunk.size.bytes: 256MB
         alluxio.user.local.reader.chunk.size.bytes: 256MB
         alluxio.worker.network.reader.buffer.size: 256MB
         alluxio.user.streaming.data.timeout: 300sec
-      master:
-        jvmOptions:
-          - "-Xmx4G"
-      worker:
-        jvmOptions:
-          - "-Xmx4G"
       fuse:
-        jvmOptions:
-          - "-Xmx4G "
-          - "-Xms4G "
         args:
           - fuse
-          - --fuse-opts=direct_io,ro,max_read=131072
+          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
     EOF
     ```
     使用`kubectl`完成创建  
