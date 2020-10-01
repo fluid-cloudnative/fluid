@@ -1,252 +1,230 @@
-# 示例 - 用Fluid加速主机目录
+# 示例 - 使用Fluid加速主机目录
 
-尽管Alluxio提供了诸多底层存储系统(UFS)的原生支持,但在实际场景下，使用的文件系统因不被支持而无法作为UFS被挂载到Alluxio之上的情况仍然很常见。
+## 测试场景：ResNet50 模型训练
 
-> 如果你想要了解自己使用的系统是否被Alluxio原生支持，请查阅[Alluxio底层存储系统支持](https://docs.alluxio.io/os/user/stable/cn/ufs/S3.html)
+- 测试机型： V100 x8
+- nfs地址：38037492dc-pol25.cn-shanghai.nas.aliyuncs.com
 
-Fluid对于上述情况提供了替代的解决方案，**本示例将假设你使用的UFS已经被提前映射为了一个主机目录，Fluid将通过挂载该主机目录间接地实现该UFS上的分布式缓存，数据访问加速等能力。**
+## 配置
+
+### 硬件配置
+
+| Cluster | Alibaba Cloud Kubernetes. v1.16.9-aliyun.1             |
+| ------- | ------------------------------------------------------ |
+| ECS实例 | ECS   规格：ecs.gn6v-c10g1.20xlarge<br />    CPU：82核 |
+| 分布式存储|    容量型NAS                                          |
+
+###  软件配置
+
+软件版本： 0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6
 
 ## 前提条件
 
-- [Fluid](https://github.com/fluid-cloudnative/fluid) **(version >= 0.3.0)**
-- 任何已经映射为某主机目录的UFS
-
-请参考[Fluid安装文档](../userguide/install.md)完成Fluid的安装
+- [Fluid](https://github.com/fluid-cloudnative/fluid) (version >= 0.3.0)
+- [Arena](https://github.com/kubeflow/arena)（version >= 0.4.0）
+- [Horovod](https://github.com/horovod/horovod) (version=0.18.1)
+- [Benchmark](https://github.com/tensorflow/benchmarks/tree/cnn_tf_v1.14_compatible)
 
 ## 已知约束
 
 - 通过主机目录实现挂载并不是推荐的使用方式，因为该方式依赖于Kubernetes意外的挂载点维护方式，实际上并不可靠，可能引发数据不一致的问题。
 
+## 数据准备
 
-## 运行示例
+1. 下载数据集
 
-**在多个结点上模拟上述场景**
-
-创建模拟的主机目录：
-```shell
-$ mkdir -p /mnt/test_hostpath
-$ cd /mnt/test_hostpath
+```bash
+$ wget http://imagenet-tar.oss-cn-shanghai.aliyuncs.com/imagenet.tar.gz
 ```
 
-添加模拟数据：
-```shell
-$ wget https://mirror.bit.edu.cn/apache/hbase/2.2.5/hbase-2.2.5-bin.tar.gz
-$ echo "Fluid - Hostpath test" > text_data
+2. 解压数据集
+
+```bash
+$ tar -I pigz -xvf imagenet.tar.gz
 ```
 
-创建用户，并修改上述目录的所属用户和用户组：
-```shell
-$ groupadd -g 1201 fluid-user-1 && \
-useradd -u 1201  -g fluid-user-1  fluid-user-1 && \
-usermod -a -G root fluid-user-1
-$ chown -R fluid-user-1:fluid-user-1 /mnt/test_hostpath
-```
+## NFS dawnbench测试
 
-结果如下：
-```shell
-$ ls -lt
-total 215064
--rw-r--r-- 1 fluid-user-1 fluid-user-1        22 9月  20 16:11 text_data
--rw-r--r-- 1 fluid-user-1 fluid-user-1 220221311 5月  26 15:30 hbase-2.2.5-bin.tar.gz
-```
+### 部署数据集
 
-> 注意：在本示例中我们使用如上步骤模拟一个UFS映射得到的主机目录进行演示，该目录属于一个非root用户。在需要使用主机目录的大多数场景下，你的主机中应该已经存在了这样的主机目录，因此你可能无需进行上述步骤
+1. 在NFS Server中挂载数据集
 
-**标记所有包含上述主机目录的结点**
-```shell
-$ kubectl label nodes <node-name> nonroot-hostpath=true
-```
-
-> **注意：在进行接下来的步骤前，请确保所有具有上述Label的Kubernetes结点上均存在需要挂载的主机目录，并且各结点主机目录中包含完整一致的数据。为了实现这一目标，你可能需要在多个结点上重复执行上述两个步骤**
-
-在本示例中我们创建了两个这样的结点：
-```
-$ kubectl get nodes -L nonroot-hostpath
-NAME                       STATUS   ROLES    AGE   VERSION            NONROOT-HOSTPATH
-cn-beijing.192.168.1.146   Ready    <none>   59d   v1.16.9-aliyun.1   true
-cn-beijing.192.168.1.147   Ready    <none>   59d   v1.16.9-aliyun.1   true
+2. 将NFS挂载到主机目录上
 
 ```
-
-**创建工作环境**
-```shell
-$ mkdir <any-path>/hostpath
-$ cd <any-path>/hostpath
+$ sudo mount -t nfs -o vers=3,nolock,proto=tcp,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport <YOUR_NFS_SERVER>:<YOUR_PATH_TO_DATASET> /mnt/nfs-imagenet
 ```
 
-**创建Dataset和AlluxioRuntime资源对象**
+3. 查看NFS是否已成功挂载
+
+```
+$ mount | grep nfs
+<YOUR_NFS_SERVER>:<YOUR_PATH_TO_DATASET> on /mnt/nfs-imagenet type nfs (rw,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,nolock,noresvport,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.1.28,mountvers=3,mountport=2049,mountproto=tcp,local_lock=all,addr=192.168.1.28)
+```
+
+> **NOTE:**
+>
+> 修改上述命令中的`<YOUR_NFS_SERVER>`和`<YOUR_PATH_TO_DATASET>`为您的nfs server地址和挂载路径。
+
+
+### dawnbench
+
+#### 单机八卡
+
+```
+arena submit mpijob \
+--name horovod-v2-nfs-hostpath-1x8-093000 \
+--gpus=8 \
+--workers=1 \
+--working-dir=/horovod-demo/tensorflow-demo/ \
+--data-dir /mnt/nfs-imagenet:/data \
+-e DATA_DIR=/data/imagenet \
+-e num_batch=1000 \
+-e datasets_num_private_threads=8 \
+--image=registry.cn-hangzhou.aliyuncs.com/tensorflow-samples/horovod-benchmark-dawnbench-v2:0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6 \
+./launch-example.sh 1 8
+```
+
+#### 四机八卡
+```
+arena submit mpi \
+--name horovod-v2-nfs-hostpath-4x8-092921 \
+--gpus=8 \
+--workers=4 \ 
+--working-dir=/horovod-demo/tensorflow-demo/ \ 
+--data-dir /mnt/nfs-imagenet:/data \
+-e DATA_DIR=/data/imagenet \
+-e num_batch=1000 \
+-e datasets_num_private_threads=8 \
+--image=registry.cn-hangzhou.aliyuncs.com/tensorflow-samples/horovod-benchmark-dawnbench-v2:0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6 \
+./launch-example.sh 4 8
+```
+
+## Fluid加速主机目录
+
+### 部署数据集
+1. 按照前述步骤完成NFS的挂载
+2. 部署Fluid加速NFS挂载的主机目录
+
 ```yaml
-$ cat << EOF > dataset.yaml
+$ cat <<EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
-  name: hostpath
+  name: imagenet
 spec:
   mounts:
-    - mountPoint: local:///mnt/test_hostpath
-      name: hostpath-data
+  - mountPoint: local:///mnt/nfs-imagenet
+    name: imagenet
   nodeAffinity:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: nonroot-hostpath
+            - key: aliyun.accelerator/nvidia_name
               operator: In
               values:
-                - "true"
+                - Tesla-V100-SXM2-16GB
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: hostpath
+  name: imagenet
 spec:
-  replicas: 2
+  replicas: 4
+  data:
+    replicas: 1
   tieredstore:
     levels:
-      - mediumtype: SSD
-        path: /var/lib/docker/alluxio
-        quota: 2Gi
-        high: "0.95"
-        low: "0.7"
-  runAs:
-    uid: 1201
-    gid: 1201
-    user: fluid-user-1
-    group: fluid-user-1
-  properties:
-    alluxio.user.block.size.bytes.default: 256MB
-    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-    alluxio.user.local.reader.chunk.size.bytes: 256MB
-    alluxio.worker.network.reader.buffer.size: 256MB
-    alluxio.user.streaming.data.timeout: 300sec
+      - mediumtype: MEM
+        path: /alluxio/ram 
+        quota: 50Gi
+        high: "0.99"
+        low: "0.8"
 EOF
 ```
 
-> 注意：
-> 1. `AlluxioRuntime`中的`runAs`指定的是UFS中目录所属的uid和gid
-> 2. `tieredstore`中所指明的目录，需要保证`AlluxioRuntime`中设置的uid和gid是有权限读写的
-> 3. `nodeAffinity`指明了包含特定主机目录的结点
-> 4. Alluxio启动时使用的initContainer可在`initUsers`下配置
+> **NOTE:**
+>
+> - `mounts.mountPoint`通过`local://`的前缀来指明要挂载的主机目录(e.g. `/mnt/nfs-imagenet`)
+> - `spec.replicas`和dawnbench测试的worker数量保持一致。比如：单机八卡为1，四机八卡为4
+> - `nodeSelectorTerms`作用是限制在有V100显卡的机器上部署数据集，此处应根据实验环境具体调节
 
-```shell
+```
 $ kubectl create -f dataset.yaml
 ```
 
-**数据集可观测性**
+3. 检查部署情况
 
-查看数据集状态:
-```shell
-$ kubectl get dataset hostpath
-NAME       UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hostpath   210MiB           0B       4GiB             0%                  Bound   13m
 ```
-
-查看Alluxio状态：
-```shell
-$ kubectl get alluxioruntime hostpath
-NAME       MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
-hostpath   Ready          Ready          Ready        16m
-```
-
-查看Fluid创建的PV, PVC:
-```shell
 $ kubectl get pv,pvc
 NAME                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM              STORAGECLASS   REASON   AGE
-persistentvolume/hostpath   100Gi      RWX            Retain           Bound    default/hostpath                           16m
+persistentvolume/imagenet   100Gi      RWX            Retain           Bound    default/imagenet                           3h28m
 
 NAME                             STATUS   VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/hostpath   Bound    hostpath   100Gi      RWX                           16m
+persistentvolumeclaim/imagenet   Bound    imagenet   100Gi      RWX                           3h28m
 ```
 
-**创建应用**
-```yaml
-$ cat <<EOF >app.yaml
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  replicas: 1
-  serviceName: "nginx"
-  podManagementPolicy: "Parallel"
-  selector: # define how the deployment finds the pods it manages
-    matchLabels:
-      app: nginx
-  template: # define the pods specifications
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      securityContext:
-        runAsUser: 1201
-        runAsGroup: 1201
-      containers:
-        - name: nginx
-          image: nginx
-          imagePullPolicy: IfNotPresent
-          command:
-            - tail
-            - -f
-            - /dev/null
-          volumeMounts:
-            - mountPath: /data
-              name: hostpath-vol
-      volumes:
-        - name: hostpath-vol
-          persistentVolumeClaim:
-            claimName: hostpath
-EOF
+### dawnbench
+
+#### 单机八卡
+
+```
+arena submit mpi \
+--name horovod-v2-nfs-fluid-1x8-093009 \
+--gpus=8 \
+--workers=1 \
+--working-dir=/horovod-demo/tensorflow-demo/ \
+--data imagenet:/data \
+-e DATA_DIR=/data/imagenet/imagenet \
+-e num_batch=1000 \
+-e datasets_num_private_threads=8 \
+--image=registry.cn-hangzhou.aliyuncs.com/tensorflow-samples/horovod-benchmark-dawnbench-v2:0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6 \
+./launch-example.sh 1 8
 ```
 
-```shell
-$ kubectl create -f app.yaml
+#### 四机八卡
+
+```
+arena submit mpi \
+--name horovod-v2-nfs-fluid-4x8-092910 \
+--gpus=8 \
+--workers=4 \
+--working-dir=/horovod-demo/tensorflow-demo/ \
+--data imagenet:/data \
+-e DATA_DIR=/data/imagenet/imagenet \
+-e num_batch=1000 \
+-e datasets_num_private_threads=8 \
+--image=registry.cn-hangzhou.aliyuncs.com/tensorflow-samples/horovod-benchmark-dawnbench-v2:0.18.1-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6 \
+./launch-example.sh 4 8
 ```
 
-**登录并查看数据挂载情况**
-```shell
-$ kubectl exec -it nginx-0 -- bash
-```
 
-```shell
-$ ls -ltra /data/
-/data:
-total 5
-drwxr-xr-x 1 root root 4096 Sep 20 09:04 ..
-drwxr-xr-x 1 1201 1201    1 Sep 20 08:25 .
-drwxr-xr-x 1 1201 1201    2 Sep 20 08:11 hostpath-data
 
-/data/hostpath-data:
-total 215062
-drwxr-xr-x 1 1201 1201         1 Sep 20 08:25 ..
-drwxr-xr-x 1 1201 1201         2 Sep 20 08:11 .
--rw-r--r-- 1 1201 1201        22 Sep 20 08:11 text_data
--rw-r--r-- 1 1201 1201 220221311 May 26 07:30 hbase-2.2.5-bin.tar.gz
-```
-可以看到各个目录及文件保留了原来的文件所属，各文件的uid与gid均没有发生变化
+## 测试结果
 
-**访问数据**
-```shell
-$ time cp /data/hostpath-data/hbase-2.2.5-bin.tar.gz /dev/null
-real	0m0.238s
-user	0m0.004s
-sys	0m0.122s
+### horovod-1x8
 
-$ exit
+|                         | nfs-hostpath | fluid (cold) | fluid (warm) |
+| ----------------------- | -------- | ------------ | ------------ |
+| 训练时间                 | 4h20m36s | 4h21m56s     | 4h2m16s     |
+| 1000步速度(images/second) | 2426.4  | 2467.2      | 8959.7      |
+| 最终速度(images/second)   | 8218.1   | 8219.8      | 8275.8      |
+| steps                   | 56300    | 56300       | 56300       |
+| Accuracy @ 5            | 0.9280   | 0.9288       | 0.9291      |
 
-$ kubectl get dataset hostpath
-kubectl get datasets.data.fluid.io hostpath 
-NAME       UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hostpath   210MiB           210MiB   4GiB             99%                 Bound   52m
-```
-可见，访问过后的数据已经成功地被缓存在了Alluxio中，Fluid通过挂载主机目录的方式同样可以实现分布式缓存
+### horovod-4x8
 
-## 环境清理
-```shell
-$ kubectl delete -f .
+|                         | nfs-hostpath | fluid (cold) | fluid (warm) |
+| ----------------------- | ---------- | ------------ | ------------ |
+| 训练时间                  | 2h9m21s   | 1h40m15s     | 1h29m55s     |
+| 1000步速度(images/second) | 3219.2    | 11067.2      | 21951.3      |
+| 最终速度(images/second)   | 15855.7   | 20964.4      | 21869.8      |
+| steps                   | 14070      | 14070        | 14070        |
+| Accuracy @ 5            | 0.9227     | 0.9232       | 0.9228       |
 
-# 在多个结点上
-$ rm -rf /mnt/test_hostpath
-$ userdel fluid-user-1
-$ kubectl label nodes <node-name> nonroot-hostpath-
-```
+## 结果分析
+
+从测试结果来看，单机八卡通过Fluid加速效果并没有明显的效果，但是在四机八卡的场景下Fluid加速效果非常明显。
+在热数据的场景下，可以缩短训练时间 **(129-89)/129 = 31 %**; 在冷数据场景下可以缩短训练时间 **（129-100）/129 = 22 %** 。 
+这是由于四机八卡下，NFS的带宽成为了瓶颈；而Fluid基于Alluxio提供了分布式缓存的P2P数据读取能力。
+
