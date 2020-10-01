@@ -24,10 +24,10 @@
 
 ### Features
 
-- Accelerae data access in Hostpath mode in K8s
-- Accelerae data access in Persistent Volume mode in K8s
-- Support with the storage configured with non-root 
-- Make the default settings optimized
+- Accelerate data access in Host-path mode in K8s
+- Accelerate data access in Persistent Volume mode in K8s
+- Support the underlay storage(NFS, Lustre) which is configured only with non-root
+- Make the Alluxio Runtime’s settings optimized by default
 
 
 
