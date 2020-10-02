@@ -42,12 +42,6 @@ total 4
 -rwxr-x--- 1 fluid-user-1 fluid-user-1 28 9月  27 16:45 data1
 ```
 
-**新建工作环境**
-```
-$ mkdir -p <any-path>/nonroot_access
-$ cd <any-path>/nonroot_access
-```
-
 **创建Dataset和AlluxioRuntime资源对象**
 ```yaml
 $ cat<<EOF >dataset.yaml
@@ -89,6 +83,10 @@ spec:
     gid: 1201
     user: fluid-user-1
     group: fluid-user-1
+  fuse:
+    args:
+    - fuse
+    - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
 EOF
 ```
 
@@ -134,6 +132,7 @@ spec:
   containers:
     - name: nginx
       image: nginx
+      imagePullPolicy: IfNotPresent
       volumeMounts:
         - mountPath: /data
           name: nonroot-vol
