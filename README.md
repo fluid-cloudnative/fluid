@@ -12,6 +12,10 @@
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
+|![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
+|------------------|
+|Oct 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration in Persistent Volume and Hostpath mode in K8s, please check the [CHANGELOG](CHANGELOG.md) for details.|
+
 ## What is Fluid?
 
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.

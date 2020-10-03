@@ -7,6 +7,10 @@
 
 [English](./README.md) | 简体中文
 
+|![更新](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) 最新进展：|
+|------------------|
+|Oct 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
+
 ## 什么是Fluid
 
 Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。通过定义数据集资源的抽象，实现如下功能：
