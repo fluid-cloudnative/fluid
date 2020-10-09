@@ -17,10 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"regexp"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"time"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +34,13 @@ import (
 /**
 * Alluxio Engine implements the Engine interface
  */
+type UFSPreparationResult struct {
+	Done      bool
+	StartTime time.Time
+	UfsTotal  string
+	Err       error
+}
+
 type AlluxioEngine struct {
 	// *base.TemplateEngine
 	runtime     *datav1alpha1.AlluxioRuntime
@@ -46,6 +53,9 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
+	//todo add comments
+	UFSPreparationResultChannel chan UFSPreparationResult
+	UFSChecked                  bool
 }
 
 /**
@@ -53,13 +63,15 @@ type AlluxioEngine struct {
  */
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:                   ctx.Name,
-		namespace:              ctx.Namespace,
-		Client:                 ctx.Client,
-		Log:                    ctx.Log,
-		runtimeType:            ctx.RuntimeType,
-		gracefulShutdownLimits: 5,
-		retryShutdown:          0,
+		name:                        ctx.Name,
+		namespace:                   ctx.Namespace,
+		Client:                      ctx.Client,
+		Log:                         ctx.Log,
+		runtimeType:                 ctx.RuntimeType,
+		gracefulShutdownLimits:      5,
+		retryShutdown:               0,
+		UFSPreparationResultChannel: nil,
+		UFSChecked:                  false,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

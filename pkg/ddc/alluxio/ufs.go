@@ -18,8 +18,9 @@ package alluxio
 import (
 	"context"
 	"fmt"
-
 	units "github.com/docker/go-units"
+	"k8s.io/client-go/util/retry"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -43,19 +44,106 @@ func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 	return e.totalFileNumsInternal()
 }
 
+func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
+	// PrepareUFS() should be called exactly once
+	// todo: using mutex to protect it from race condition
+	if !e.UFSChecked {
+		e.UFSChecked = true
+		return true, nil
+	}
+	return false, nil
+}
+
 // Prepare the mounts and metadata
 func (e *AlluxioEngine) PrepareUFS() (err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	shouldMountUfs, err := e.shouldMountUFS()
 	if err != nil {
+		e.Log.Error(err, "Failed to check if should mount ufs")
 		return err
 	}
 
-	if dataset.Status.UfsTotal != "" {
-		e.Log.V(1).Info("dataset ufs is ready",
-			"dataset name", dataset.Name,
-			"dataset namespace", dataset.Namespace,
-			"ufstotal", dataset.Status.UfsTotal)
-		return nil
+	if shouldMountUfs {
+		err := e.mountUFS()
+		if err != nil {
+			e.Log.Error(err, "Fail to mount UFS")
+			return err
+		}
+	}
+
+	go func() {
+		shouldInitializeDataset, err := e.shouldInitializeDataset()
+		if err != nil {
+			e.Log.Error(err, "Can't check if should initialize dataset")
+			return
+		}
+		for shouldInitializeDataset {
+			err = e.initializeDataset()
+			if err != nil {
+				e.Log.Error(err, "Can't initialize dataset")
+			}
+			time.Sleep(10 * time.Second)
+			shouldInitializeDataset, err = e.shouldInitializeDataset()
+			if err != nil {
+				e.Log.Error(err, "Can't check if should initialize dataset")
+				break
+			}
+		}
+
+	}()
+
+	return
+}
+
+// ShouldCheckUFS checks if it requires checking UFS
+func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	if err != nil {
+		return should, err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUitls.Ready()
+	if !ready {
+		should = false
+		err = fmt.Errorf("The UFS is not ready")
+		return should, err
+	}
+
+	// Check if any of the Mounts has not been mounted in Alluxio
+	for _, mount := range dataset.Spec.Mounts {
+		if e.isFluidNativeScheme(mount.MountPoint) {
+			// No need for a Fluid native scheme('local://' and 'pvc://') mount point to be mounted
+			continue
+		}
+		alluxioPath := fmt.Sprintf("/%s", mount.Name)
+		mounted, err := fileUitls.IsMounted(alluxioPath)
+		if err != nil {
+			should = false
+			return should, err
+		}
+		if !mounted {
+			e.Log.Info("Found dataset that is not mounted.", "dataset", dataset)
+			should = true
+			return should, err
+		}
+	}
+
+	// maybe we should check mounts other than UfsTotal
+	//if dataset.Status.UfsTotal == "" {
+	//	should = true
+	//}
+
+	return should, err
+
+}
+
+func (e *AlluxioEngine) mountUFS() (err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
 	}
 
 	podName, containerName := e.getMasterPodInfo()
@@ -69,10 +157,10 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	//1. make mount
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
-			err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
-			if err != nil {
-				return
-			}
+			//err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
+			//if err != nil {
+			//	return
+			//}
 			continue
 		}
 
@@ -91,29 +179,100 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 		}
 
 	}
+	return nil
+}
 
-	//2. load the metadata
-	err = fileUitls.LoadMetaData("/", true)
+func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		return
+		should = false
+		return should, err
 	}
+	//todo configurable load metadata
+	if dataset.Status.UfsTotal != "" {
+		e.Log.V(1).Info("dataset ufs is ready",
+			"dataset name", dataset.Name,
+			"dataset namespace", dataset.Namespace,
+			"ufstotal", dataset.Status.UfsTotal)
+		should = false
+		return should, err
+	}
+	should = true
+	return should, err
+}
 
-	//3. update the status of dataset
-	datasetToUpdate := dataset.DeepCopy()
-	datasetUFSTotalBytes, err := e.TotalStorageBytes()
-	if err != nil {
-		return
-	}
-	ufsTotal := units.BytesSize(float64(datasetUFSTotalBytes))
-	e.Log.Info("UFS storage", "storage", ufsTotal)
-	datasetToUpdate.Status.UfsTotal = ufsTotal
-	err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-	if err != nil {
-		e.Log.Error(err, "Failed to update the ufs of the dataset")
-		return err
-	}
+func (e *AlluxioEngine) initializeDataset() (err error) {
+	if e.UFSPreparationResultChannel != nil {
+		select {
+		case result := <-e.UFSPreparationResultChannel:
+			defer func() { e.UFSPreparationResultChannel = nil }()
+			e.Log.Info("get result from ufs preparation", "result", result)
+			if result.Done {
+				e.Log.Info("ufs preparation done", "period", time.Since(result.StartTime))
+				err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+					dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+					if err != nil {
+						return
+					}
+					datasetToUpdate := dataset.DeepCopy()
+					datasetToUpdate.Status.UfsTotal = result.UfsTotal
+					err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+					if err != nil {
+						return
+					}
+					return
+				})
+				if err != nil {
+					e.Log.Error(err, "Failed to update UfsTotal of the dataset")
+				}
+			} else {
+				e.Log.Error(result.Err, "ufs preparation failed")
+			}
+		case <-time.After(200 * time.Millisecond):
+			e.Log.Info("ufs preparation still in progress")
+		}
+	} else {
+		// UFS should be prepared but not yet prepared
+		e.UFSPreparationResultChannel = make(chan UFSPreparationResult)
+		go func(resultChan chan UFSPreparationResult) {
+			result := UFSPreparationResult{
+				StartTime: time.Now(),
+				UfsTotal:  "",
+			}
+			e.Log.Info("UFS preparation starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
-	return
+			podName, containerName := e.getMasterPodInfo()
+			fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+			err = fileUitls.AsyncLoadMetaData("/", true)
+			if err != nil {
+				result.Err = err
+				result.Done = false
+				resultChan <- result
+				return
+			}
+			datasetUFSTotalBytes, err := e.TotalStorageBytes()
+			if err != nil {
+				result.Err = err
+				result.Done = false
+				resultChan <- result
+				return
+			}
+			ufsTotal := units.BytesSize(float64(datasetUFSTotalBytes))
+			result.Err = nil
+			result.UfsTotal = ufsTotal
+			result.Done = true
+			resultChan <- result
+			return
+		}(e.UFSPreparationResultChannel)
+	}
+	return nil
+}
+
+// report alluxio summary
+func (e *AlluxioEngine) reportSummary() (summary string, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	return fileUtils.ReportSummary()
 }
 
 // du the ufs
@@ -121,22 +280,4 @@ func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, 
 	podName, containerName := e.getMasterPodInfo()
 	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUitls.Du("/")
-}
-
-// ShouldCheckUFS checks if it requires checking UFS
-func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
-	if err != nil {
-		return
-	}
-
-	// TODO(iluoeli): this will cause error if UfsTotal is stale and not properly cleaned.
-	// maybe we should check mounts other than UfsTotal
-	if dataset.Status.UfsTotal == "" {
-		should = true
-	}
-
-	return
-
 }

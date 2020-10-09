@@ -16,18 +16,59 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
 	units "github.com/docker/go-units"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strings"
 )
 
 // queryCacheStatus checks the cache status
 func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
-	cacheCapacity, err := e.getCurrentCachedCapacity()
+	//cacheCapacity, err := e.getCurrentCachedCapacity()
+	//if err != nil {
+	//	e.Log.Error(err, "Failed to sync the cache")
+	//	return states, err
+	//}
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		e.Log.Error(err, "Failed to sync the cache")
+		e.Log.Error(err, "Failed to get dataset when query cache status")
 		return states, err
 	}
+
+	var (
+		totalCacheCapacity string = ""
+		usedCacheCapacity  string = ""
+		cachedPercentage   string = ""
+	)
+	summary, err := e.reportSummary()
+	if err != nil {
+		e.Log.Error(err, "Failed to get Alluxio summary when query cache status")
+		return states, err
+	}
+	strs := strings.Split(summary, "\n")
+	for _, str := range strs {
+		str = strings.TrimSpace(str)
+		if strings.HasPrefix(str, "Total Capacity: ") {
+			totalCacheCapacity = strings.TrimPrefix(str, "Total Capacity: ")
+		}
+		if strings.HasPrefix(str, "Used Capacity: ") {
+			usedCacheCapacity = strings.TrimPrefix(str, "Used Capacity: ")
+		}
+	}
+
+	if dataset.Status.UfsTotal != "" {
+		usedInBytes, _ := units.FromHumanSize(usedCacheCapacity)
+		ufsTotalInBytes, _ := units.RAMInBytes(dataset.Status.UfsTotal)
+		cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
+	}
+
+	return cacheStates{
+		cacheCapacity:    totalCacheCapacity,
+		cached:           usedCacheCapacity,
+		cachedPercentage: cachedPercentage,
+	}, nil
 
 	// dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	// if err != nil {
@@ -46,16 +87,16 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	// 	return states, err
 	// }
 
-	_, cached, cachedPercentage, err := e.du()
-	if err != nil {
-		return states, err
-	}
-
-	return cacheStates{
-		cacheCapacity:    units.BytesSize(float64(cacheCapacity)),
-		cached:           units.BytesSize(float64(cached)),
-		cachedPercentage: cachedPercentage,
-	}, nil
+	//_, cached, cachedPercentage, err := e.du()
+	//if err != nil {
+	//	return states, err
+	//}
+	//
+	//return cacheStates{
+	//	cacheCapacity:    units.BytesSize(float64(cacheCapacity)),
+	//	cached:           units.BytesSize(float64(cached)),
+	//	cachedPercentage: cachedPercentage,
+	//}, nil
 
 }
 
