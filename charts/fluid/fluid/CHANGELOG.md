@@ -12,3 +12,8 @@
 
 * Speed up Volume and hostPath in Kubernetes
 * Add RunAs
+
+
+### 0.4.0
+
+* Add debug info for csi
