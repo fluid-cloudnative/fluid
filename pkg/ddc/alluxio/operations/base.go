@@ -66,7 +66,7 @@ func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 	return
 }
 
-//
+// Get summary info of the Alluxio Engine
 func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report", "summary"}
@@ -82,8 +82,8 @@ func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 	return
 }
 
-// AyncLoadMetadata
-func (a AlluxioFileUtils) AsyncLoadMetaData(alluxioPath string, sync bool) (err error) {
+// Load the metadata without timeout
+func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string, sync bool) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "loadMetadata", "-R", alluxioPath}
 		stdout  string

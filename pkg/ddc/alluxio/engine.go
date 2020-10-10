@@ -34,7 +34,7 @@ import (
 /**
 * Alluxio Engine implements the Engine interface
  */
-type UFSPreparationResult struct {
+type UFSInitResult struct {
 	Done      bool
 	StartTime time.Time
 	UfsTotal  string
@@ -53,9 +53,8 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	//todo add comments
-	UFSPreparationResultChannel chan UFSPreparationResult
-	UFSChecked                  bool
+	UFSInitDoneCh          chan UFSInitResult
+	UFSChecked             bool
 }
 
 /**
@@ -63,15 +62,15 @@ type AlluxioEngine struct {
  */
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:                        ctx.Name,
-		namespace:                   ctx.Namespace,
-		Client:                      ctx.Client,
-		Log:                         ctx.Log,
-		runtimeType:                 ctx.RuntimeType,
-		gracefulShutdownLimits:      5,
-		retryShutdown:               0,
-		UFSPreparationResultChannel: nil,
-		UFSChecked:                  false,
+		name:                   ctx.Name,
+		namespace:              ctx.Namespace,
+		Client:                 ctx.Client,
+		Log:                    ctx.Log,
+		runtimeType:            ctx.RuntimeType,
+		gracefulShutdownLimits: 5,
+		retryShutdown:          0,
+		UFSInitDoneCh:          nil,
+		UFSChecked:             false,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

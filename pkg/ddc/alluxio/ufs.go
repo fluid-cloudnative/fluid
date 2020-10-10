@@ -46,7 +46,7 @@ func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 
 func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	// PrepareUFS() should be called exactly once
-	// todo: using mutex to protect it from race condition
+	// todo: use mutex to protect it from race condition
 	if !e.UFSChecked {
 		e.UFSChecked = true
 		return true, nil
@@ -56,6 +56,7 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 
 // Prepare the mounts and metadata
 func (e *AlluxioEngine) PrepareUFS() (err error) {
+	// 1. Mount UFS (Synchronous Operation)
 	shouldMountUfs, err := e.shouldMountUFS()
 	if err != nil {
 		e.Log.Error(err, "Failed to check if should mount ufs")
@@ -70,6 +71,9 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 		}
 	}
 
+	// 2. Initialize Dataset(Asynchronous Operation), including:
+	// 	 2.1 Load metadata of all files in mounted ufs
+	//   2.2 Get total size of all files in mounted ufs
 	go func() {
 		shouldInitializeDataset, err := e.shouldInitializeDataset()
 		if err != nil {
@@ -81,6 +85,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 			if err != nil {
 				e.Log.Error(err, "Can't initialize dataset")
 			}
+			// Check if initialize dataset is done every ten seconds
 			time.Sleep(10 * time.Second)
 			shouldInitializeDataset, err = e.shouldInitializeDataset()
 			if err != nil {
@@ -115,7 +120,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	// Check if any of the Mounts has not been mounted in Alluxio
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
-			// No need for a Fluid native scheme('local://' and 'pvc://') mount point to be mounted
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
 		alluxioPath := fmt.Sprintf("/%s", mount.Name)
@@ -154,7 +159,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 		return fmt.Errorf("The UFS is not ready")
 	}
 
-	//1. make mount
+	// make mount
 	for _, mount := range dataset.Spec.Mounts {
 		if e.isFluidNativeScheme(mount.MountPoint) {
 			//err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
@@ -188,7 +193,8 @@ func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
 		should = false
 		return should, err
 	}
-	//todo configurable load metadata
+
+	//todo(trafalgarzzz) configurable knob for load metadata
 	if dataset.Status.UfsTotal != "" {
 		e.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
@@ -202,13 +208,15 @@ func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
 }
 
 func (e *AlluxioEngine) initializeDataset() (err error) {
-	if e.UFSPreparationResultChannel != nil {
+	if e.UFSInitDoneCh != nil {
+		// UFS preparation in progress
 		select {
-		case result := <-e.UFSPreparationResultChannel:
-			defer func() { e.UFSPreparationResultChannel = nil }()
+		case result := <-e.UFSInitDoneCh:
+			defer func() { e.UFSInitDoneCh = nil }()
 			e.Log.Info("get result from ufs preparation", "result", result)
 			if result.Done {
 				e.Log.Info("ufs preparation done", "period", time.Since(result.StartTime))
+				// update `dataset.Status.UfsTotal`
 				err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 					dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 					if err != nil {
@@ -228,14 +236,14 @@ func (e *AlluxioEngine) initializeDataset() (err error) {
 			} else {
 				e.Log.Error(result.Err, "ufs preparation failed")
 			}
-		case <-time.After(200 * time.Millisecond):
-			e.Log.Info("ufs preparation still in progress")
+		case <-time.After(500 * time.Millisecond):
+			e.Log.V(1).Info("ufs preparation still in progress")
 		}
 	} else {
-		// UFS should be prepared but not yet prepared
-		e.UFSPreparationResultChannel = make(chan UFSPreparationResult)
-		go func(resultChan chan UFSPreparationResult) {
-			result := UFSPreparationResult{
+		// UFS preparation not started
+		e.UFSInitDoneCh = make(chan UFSInitResult)
+		go func(resultChan chan UFSInitResult) {
+			result := UFSInitResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
@@ -243,13 +251,15 @@ func (e *AlluxioEngine) initializeDataset() (err error) {
 
 			podName, containerName := e.getMasterPodInfo()
 			fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-			err = fileUitls.AsyncLoadMetaData("/", true)
+			// 2.1 load metadata
+			err = fileUitls.LoadMetadataWithoutTimeout("/", true)
 			if err != nil {
 				result.Err = err
 				result.Done = false
 				resultChan <- result
 				return
 			}
+			// 2.2 get total size
 			datasetUFSTotalBytes, err := e.TotalStorageBytes()
 			if err != nil {
 				result.Err = err
@@ -263,7 +273,7 @@ func (e *AlluxioEngine) initializeDataset() (err error) {
 			result.Done = true
 			resultChan <- result
 			return
-		}(e.UFSPreparationResultChannel)
+		}(e.UFSInitDoneCh)
 	}
 	return nil
 }
