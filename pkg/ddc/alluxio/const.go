@@ -20,7 +20,7 @@ const (
 
 	fluid_PATH = "fluid_path"
 
-	ALLUXIO_MOUNT = "/alluxio-mnt"
+	ALLUXIO_MOUNT = "/var/lib/kubelet/alluxio-mnt"
 
 	pathScheme string = "local://"
 

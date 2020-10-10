@@ -67,7 +67,7 @@ spec:
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
-              mountPath: /alluxio-mnt
+              mountPath: /var/lib/kubelet/alluxio-mnt
               mountPropagation: "Bidirectional"
       volumes:
         - name: kubelet-dir
@@ -83,6 +83,6 @@ spec:
             type: Directory
           name: registration-dir
         - hostPath:
-            path: /alluxio-mnt
+            path: /var/lib/kubelet/alluxio-mnt
             type: Directory
           name: fluid-src-dir
