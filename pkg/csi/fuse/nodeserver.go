@@ -39,7 +39,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
 
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
+	isMount, err := isMounted(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -47,13 +47,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			} else {
 				glog.Infof("MkdirAll successful. %v", targetPath)
 			}
-			notMnt = true
+			isMount = true
 		} else {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
-	if !notMnt {
+	if isMount {
 		glog.Infof("It's already mounted to %v", targetPath)
 		return &csi.NodePublishVolumeResponse{}, nil
 	} else {
@@ -101,6 +101,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
+	} else {
+		glog.V(4).Infof("Succeed in binding %s to %s", fluidPath, targetPath)
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -112,6 +114,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	command := exec.Command("umount",
 		targetPath,
 	)
+	glog.V(4).Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()
 	if err != nil {
 		glog.V(3).Infoln(err)
@@ -121,6 +124,8 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	err = mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
 	if err != nil {
 		glog.V(3).Infoln(err)
+	} else {
+		glog.V(4).Infof("Succeed in umounting  %s", targetPath)
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

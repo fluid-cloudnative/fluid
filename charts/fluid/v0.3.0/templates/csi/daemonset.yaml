@@ -25,7 +25,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/fluid /registration/fuse.csi.fluid.io-reg.sock"]
+                command: ["/bin/sh", "-c", "rm -rf /registration/fuse.csi.fluid.io-reg.sock"]
           args:
             - --v=5
             - --csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
@@ -48,7 +48,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
           image: "{{ .Values.csi.plugins.image }}"
-          command: ["/usr/local/bin/fluid-csi"]
+          command: ["/usr/local/bin/entrypoint.sh"]
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

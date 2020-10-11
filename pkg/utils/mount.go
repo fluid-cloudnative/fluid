@@ -13,20 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package alluxio
+package utils
 
-const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
+import "os"
 
-	fluid_PATH = "fluid_path"
+const MountRoot string = "MOUNT_ROOT"
 
-	ALLUXIO_MOUNT = "/alluxio-mnt"
-
-	pathScheme string = "local://"
-
-	volumeScheme string = "pvc://"
-
-	// alluxioHome string = "/opt/alluxio"
-
-	// alluxioUser string = "fluid"
-)
+func GetMountRoot() string {
+	return os.Getenv(MountRoot)
+}

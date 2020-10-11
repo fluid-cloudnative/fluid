@@ -13,7 +13,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -a -o /go/bin
 # Debug
 #RUN go get github.com/go-delve/delve/cmd/dlv
 
-
 # Use distroless as minimal base image to package the csi binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM alpine:3.10
@@ -26,10 +25,11 @@ WORKDIR /
 COPY --from=builder /go/bin/fluid-csi /usr/local/bin/fluid-csi
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 ADD csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
+ADD csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod u+x /usr/local/bin/fluid-csi && \
-    chmod u+x /usr/local/bin/check_mount.sh
+    chmod u+x /usr/local/bin/check_mount.sh && \
+    chmod u+x /usr/local/bin/entrypoint.sh
 
-
-ENTRYPOINT ["fluid-csi"]
+ENTRYPOINT ["entrypoint.sh"]
 
 # ENTRYPOINT ["dlv", "--listen=:12345", "exec", "/usr/local/bin/fluid-csi", "--"]
