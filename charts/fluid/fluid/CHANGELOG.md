@@ -17,3 +17,4 @@
 ### 0.4.0
 
 * Add debug info for csi
+* Make mount root configurable

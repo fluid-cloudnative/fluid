@@ -126,7 +126,9 @@ func (e *AlluxioEngine) getRunningPodsOfDaemonset(dsName, namespace string) (pod
 }
 
 func (e *AlluxioEngine) getMountPoint() (mountPath string) {
-	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", getMountRoot(), e.namespace, e.name)
+	mountRoot := getMountRoot()
+	e.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
 }
 
 func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
@@ -187,5 +189,6 @@ func getMountRoot() (path string) {
 	if len(path) == 0 {
 		path = ALLUXIO_MOUNT
 	}
+	// e.Log.Info("Mount root", "path", path)
 	return
 }

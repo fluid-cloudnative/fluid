@@ -13,5 +13,6 @@ csi:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.4.0-4726bc8
 
 runtime:
+  mountRoot: /alluxio-mnt
   alluxio:
     initImage: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.4.0-4726bc8

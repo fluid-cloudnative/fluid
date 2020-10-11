@@ -67,7 +67,9 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
-	mountPath := fmt.Sprintf("%s/%s/%s/alluxio-fuse", getMountRoot(), e.namespace, e.name)
+	mountRoot := getMountRoot()
+	e.Log.Info("mountRoot", "path", mountRoot)
+	mountPath := fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
 
 	if len(mountPath) == 0 {
 		return fmt.Errorf("Failed to get the mountPath for %s in namespace %s", e.name,
