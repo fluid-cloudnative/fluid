@@ -28,6 +28,7 @@ import (
 	options "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // getRuntime gets the alluxio runtime
@@ -125,7 +126,9 @@ func (e *AlluxioEngine) getRunningPodsOfDaemonset(dsName, namespace string) (pod
 }
 
 func (e *AlluxioEngine) getMountPoint() (mountPath string) {
-	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", ALLUXIO_MOUNT, e.namespace, e.name)
+	mountRoot := getMountRoot()
+	e.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
 }
 
 func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
@@ -178,4 +181,14 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 		tierPaths = append(tierPaths, level.Path)
 	}
 	return strings.Join(tierPaths, ":")
+}
+
+// getMountRoot returns the default path, if it's not set
+func getMountRoot() (path string) {
+	path = utils.GetMountRoot()
+	if len(path) == 0 {
+		path = ALLUXIO_MOUNT
+	}
+	// e.Log.Info("Mount root", "path", path)
+	return
 }

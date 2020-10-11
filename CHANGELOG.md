@@ -31,3 +31,12 @@
 
 
 
+## v0.4.0
+
+### Features
+
+
+### Bugs
+
+- [MountVolume.SetUp failed in GKE](https://github.com/fluid-cloudnative/fluid/issues/222)
+- [fuse.csi.fluid.io not found in the list registered CSI drivers when node restart in k8s 1.15.1](https://github.com/fluid-cloudnative/fluid/issues/220)

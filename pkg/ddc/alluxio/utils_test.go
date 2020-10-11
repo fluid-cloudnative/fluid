@@ -16,10 +16,12 @@ limitations under the License.
 package alluxio
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -197,5 +199,38 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 				t.Errorf("AlluxioEngine.getInitUsersArgs() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMountRootWithEnvSet(t *testing.T) {
+	var testCases = []struct {
+		input    string
+		expected string
+	}{
+		{"/var/lib/mymount", "/var/lib/mymount"},
+	}
+	for _, tc := range testCases {
+		os.Setenv(utils.MountRoot, tc.input)
+		if tc.expected != getMountRoot() {
+			t.Errorf("expected %#v, got %#v",
+				tc.expected, getMountRoot())
+		}
+	}
+}
+
+func TestMountRootWithoutEnvSet(t *testing.T) {
+	var testCases = []struct {
+		input    string
+		expected string
+	}{
+		{"/var/lib/mymount", ALLUXIO_MOUNT},
+	}
+
+	for _, tc := range testCases {
+		os.Unsetenv(utils.MountRoot)
+		if tc.expected != getMountRoot() {
+			t.Errorf("expected %#v, got %#v",
+				tc.expected, getMountRoot())
+		}
 	}
 }
