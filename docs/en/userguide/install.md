@@ -84,3 +84,12 @@ $ kubectl delete ns fluid-system
 ```
 
 > The `fluid` in command `helm delete` means the <RELEASE_NAME> during installation.
+
+
+### Advanced Configuration
+
+In some cloud vendors, the default mount root directory `/alluxio-mnt` is not writable, so you have to modify the directory location
+
+```
+helm install fluid --set runtime.mountRoot=/var/lib/docker/alluxio-mnt fluid
+```

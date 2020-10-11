@@ -84,3 +84,13 @@ $ kubectl delete ns fluid-system
 ```
 
 > `helm delete`命令中的`fluid`对应安装时指定的<RELEASE_NAME>。
+
+
+### 高级配置
+
+在一些特定的云厂商实现下， 默认mount根目录`/alluxio-mnt`是不可写的,因此需要修改目录位置
+
+```
+helm install fluid --set runtime.mountRoot=/var/lib/docker/alluxio-mnt fluid
+```
+
