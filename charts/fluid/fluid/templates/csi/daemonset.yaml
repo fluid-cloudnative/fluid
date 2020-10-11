@@ -48,7 +48,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
           image: "{{ .Values.csi.plugins.image }}"
-          command: ["/usr/local/bin/fluid-csi"]
+          command: ["/usr/local/bin/entrypoint.sh"]
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
