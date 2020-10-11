@@ -28,6 +28,7 @@ import (
 	options "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // getRuntime gets the alluxio runtime
@@ -178,4 +179,13 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 		tierPaths = append(tierPaths, level.Path)
 	}
 	return strings.Join(tierPaths, ":")
+}
+
+// getMountRoot returns the default path, if it's not set
+func getMountRoot() (path string) {
+	path = utils.GetMountRoot()
+	if len(path) == 0 {
+		path = ALLUXIO_MOUNT
+	}
+	return
 }
