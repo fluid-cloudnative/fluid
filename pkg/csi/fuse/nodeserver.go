@@ -39,7 +39,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
 
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
+	isMount, err := isMounted(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -47,13 +47,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			} else {
 				glog.Infof("MkdirAll successful. %v", targetPath)
 			}
-			notMnt = true
+			isMount = true
 		} else {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
-	if !notMnt {
+	if isMount {
 		glog.Infof("It's already mounted to %v", targetPath)
 		return &csi.NodePublishVolumeResponse{}, nil
 	} else {

@@ -2,7 +2,10 @@ package csi
 
 import (
 	"errors"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/golang/glog"
 )
@@ -40,4 +43,28 @@ func checkMountReady(fluidPath string) error {
 	stdoutStderr, err := command.CombinedOutput()
 	glog.Infoln(string(stdoutStderr))
 	return err
+}
+
+func isMounted(absPath string) (bool, error) {
+	glog.Infof("abspath: %s\n", absPath)
+	_, err := os.Stat(absPath)
+	if err != nil {
+		return false, err
+	}
+
+	file, err := ioutil.ReadFile("/proc/mounts")
+	if err != nil {
+		return false, err
+	}
+	lines := strings.Split(string(file), "\n")
+	for _, line := range lines {
+		tokens := strings.Split(line, " ")
+		if len(tokens) < 2 {
+			continue
+		}
+		if tokens[1] == absPath {
+			return true, nil
+		}
+	}
+	return false, nil
 }
