@@ -36,6 +36,19 @@ func init() {
 	}
 }
 
+var cmd = &cobra.Command{
+	Use:   "csi",
+	Short: "CSI based fluid driver for Fuse",
+}
+
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "start fluid driver on node",
+	Run: func(cmd *cobra.Command, args []string) {
+		handle()
+	},
+}
+
 func main() {
 
 	if err := flag.CommandLine.Parse([]string{}); err != nil {
@@ -43,29 +56,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	cmd := &cobra.Command{
-		Use:   "fluid",
-		Short: "CSI based fluid driver for Fuse",
-		Run: func(cmd *cobra.Command, args []string) {
-			handle()
-		},
-	}
 
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 
-	cmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "node id")
-	if err := cmd.MarkPersistentFlagRequired("nodeid"); err != nil {
+	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
+	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		errorAndExit(err)
 	}
 
-	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "", "CSI endpoint")
-	if err := cmd.MarkPersistentFlagRequired("endpoint"); err != nil {
+	startCmd.Flags().StringVarP(&nodeID, "endpoint","","", "CSI endpoint")
+	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
 		errorAndExit(err)
 	}
 
+	cmd.AddCommand(startCmd)
+
+/*
 	if err := cmd.ParseFlags(os.Args[1:]); err != nil {
 		errorAndExit(err)
 	}
+
+ */
 	if err := cmd.Execute(); err != nil {
 		errorAndExit(err)
 	}
