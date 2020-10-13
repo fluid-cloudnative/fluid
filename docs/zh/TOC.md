@@ -12,6 +12,7 @@
   - [问题诊断](userguide/troubleshooting.md)
 + 示例
   - [数据加速](samples/accelerate_data_accessing.md)
+  - [HDFS访问加速](samples/hdfs_client_accelerate.md)
   - [缓存亲和性调度](samples/data_co_locality.md)
   - [机器学习](samples/machinelearning.md)
   - [主机目录加速](samples/hostpath.md)
