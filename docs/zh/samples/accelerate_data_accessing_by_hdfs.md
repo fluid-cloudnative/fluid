@@ -187,13 +187,23 @@ Configuration conf = new Configuration();
 FileSystem fs = FileSystem.get(URI.create(HDFS_URL), conf);
 ```
 
-注意这里的HDFS_URL域名，是通过kube-dns和Kubernetes Service得到的。
+注意这里的HDFS_URL域名规则为: 
+
+```shell
+alluxio://{RUNTIME_HOST}:{RUNTIME_PORT}/{DATASET_NAME}
+```
+
+其中DATASET_NAME为前面创建的Dataset名称，本例中为hadoop。RUNTIME_HOST为{DATASET_NAME}-master-0.{NAMESPACE}.svc.cluster.local，即hadoop-master-0 service对应的dns地址。
 
 ```shell
 $ kubectl get svc
 hadoop-master-0    ClusterIP      None           <none>          19998/TCP,19999/TCP,20001/TCP,20002/TCP,19200/TCP,20003/TCP   18m
 kubernetes         ClusterIP      172.22.0.1     <none>          443/TCP                                                       24h
-...
+```
+端口RUNTIME_PORT为hadoop-master-0的rpc端口，可通过以下命令得到
+```shell
+$ kubectl get service hadoop-master-0 -o jsonpath='{.spec.ports[?(@.name=="rpc")].port}'
+19998
 ```
 
 完整的测试代码可参考[samples/hdfs](../../../samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为 registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0。
@@ -288,4 +298,5 @@ copy directory cost:1300ms
 ```shell
 $ kubectl delete -f .
 ```
+
 
