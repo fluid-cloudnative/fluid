@@ -196,7 +196,7 @@ kubernetes         ClusterIP      172.22.0.1     <none>          443/TCP        
 ...
 ```
 
-完整的测试代码可参考samples/hdfs。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为 registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0。
+完整的测试代码可参考[samples/hdfs](../../../samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为 registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0。
 
 **查看待创建的测试作业**
 
