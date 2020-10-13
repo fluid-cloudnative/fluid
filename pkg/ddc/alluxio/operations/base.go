@@ -74,12 +74,12 @@ func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 		stderr  string
 	)
 
-	summary, stderr, err = a.exec(command, false)
+	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-		return
+		return stdout, err
 	}
-	return
+	return stdout, err
 }
 
 // Load the metadata without timeout

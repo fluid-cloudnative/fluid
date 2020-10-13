@@ -40,7 +40,7 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	var (
 		totalCacheCapacity string = ""
 		usedCacheCapacity  string = ""
-		cachedPercentage   string = ""
+		cachedPercentage   string = dataset.Status.UfsTotal
 	)
 	summary, err := e.reportSummary()
 	if err != nil {
@@ -50,16 +50,16 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	strs := strings.Split(summary, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, "Total Capacity: ") {
-			totalCacheCapacity = strings.TrimPrefix(str, "Total Capacity: ")
+		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
+			totalCacheCapacity = strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY)
 		}
-		if strings.HasPrefix(str, "Used Capacity: ") {
-			usedCacheCapacity = strings.TrimPrefix(str, "Used Capacity: ")
+		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
+			usedCacheCapacity = strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY)
 		}
 	}
 
 	// `dataset.Status.UfsTotal` probably haven't summed, in which case we won't compute cache percentage
-	if dataset.Status.UfsTotal != "" {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != UFS_INIT_NOT_DONE_MSG {
 		usedInBytes, _ := units.FromHumanSize(usedCacheCapacity)
 		ufsTotalInBytes, _ := units.RAMInBytes(dataset.Status.UfsTotal)
 		cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)

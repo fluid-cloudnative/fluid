@@ -80,6 +80,24 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 			e.Log.Error(err, "Can't check if should initialize dataset")
 			return
 		}
+		if shouldInitializeDataset {
+			err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+				dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+				if err != nil {
+					return
+				}
+				datasetToUpdate := dataset.DeepCopy()
+				datasetToUpdate.Status.UfsTotal = UFS_INIT_NOT_DONE_MSG
+				err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+				if err != nil {
+					return
+				}
+				return
+			})
+			if err != nil {
+				e.Log.Error(err, "Failed to update UfsTotal to default Value")
+			}
+		}
 		for shouldInitializeDataset {
 			err = e.initializeDataset()
 			if err != nil {
@@ -272,7 +290,6 @@ func (e *AlluxioEngine) initializeDataset() (err error) {
 			result.UfsTotal = ufsTotal
 			result.Done = true
 			resultChan <- result
-			return
 		}(e.UFSInitDoneCh)
 	}
 	return nil

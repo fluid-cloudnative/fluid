@@ -29,4 +29,10 @@ const (
 	// alluxioHome string = "/opt/alluxio"
 
 	// alluxioUser string = "fluid"
+
+	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+
+	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
+
+	UFS_INIT_NOT_DONE_MSG = "[Calculating]"
 )
