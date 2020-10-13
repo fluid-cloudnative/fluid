@@ -18,11 +18,9 @@ package alluxio
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"os"
 	"regexp"
-	"time"
-
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -34,13 +32,6 @@ import (
 /**
 * Alluxio Engine implements the Engine interface
  */
-type UFSInitResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	Err       error
-}
-
 type AlluxioEngine struct {
 	// *base.TemplateEngine
 	runtime     *datav1alpha1.AlluxioRuntime
@@ -53,8 +44,8 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	UFSInitDoneCh          chan UFSInitResult
-	UFSChecked             bool
+	//UFSInitDoneCh          chan UFSInitResult
+	UFSChecked bool
 }
 
 /**
@@ -69,7 +60,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
-		UFSInitDoneCh:          nil,
 		UFSChecked:             false,
 	}
 	// var implement base.Implement = engine
