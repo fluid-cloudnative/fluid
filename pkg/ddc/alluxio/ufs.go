@@ -99,7 +99,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 				time.Sleep(20 * time.Second)
 				err = e.initializeUFS()
 				if err != nil {
-					e.Log.Error(err, "Can't initialize dataset")
+					e.Log.Error(err, "Can't initialize UFS")
 				}
 				shouldInitializeUFS, err = e.shouldInitializeUFS()
 				if err != nil {
@@ -107,7 +107,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 						e.Log.Info("Can't find dataset when checking if should initialize UFS, abort UFS Initialization")
 						break
 					}
-					e.Log.Error(err, "Can't check if should initialize dataset")
+					e.Log.Error(err, "Can't check if should initialize UFS")
 					continue
 				}
 				if !shouldInitializeUFS {

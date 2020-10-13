@@ -83,7 +83,7 @@ func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 }
 
 // Load the metadata without timeout
-func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string, sync bool) (err error) {
+func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "loadMetadata", "-R", alluxioPath}
 		stdout  string

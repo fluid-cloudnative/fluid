@@ -150,7 +150,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 	return nil
 }
 
-//shouldInitializeUFS checks
+//shouldInitializeUFS checks if UFS initialization has done
 func (e *AlluxioEngine) shouldInitializeUFS() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -174,7 +174,6 @@ func (e *AlluxioEngine) shouldInitializeUFS() (should bool, err error) {
 // initializeUFS do UFS initialization. For Alluxio Engine, it includes the following steps:
 // 1. Load Metadata
 // 2. Get total size of all the UFSs
-// At any time, there is only one goroutine actually doing UFS initialization. Multiple calls
 func (e *AlluxioEngine) initializeUFS() (err error) {
 
 	UFSInitDoneCh := make(chan UFSInitResult)
@@ -188,7 +187,7 @@ func (e *AlluxioEngine) initializeUFS() (err error) {
 		podName, containerName := e.getMasterPodInfo()
 		fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 		// 2.1 load metadata
-		err = fileUitls.LoadMetadataWithoutTimeout("/", true)
+		err = fileUitls.LoadMetadataWithoutTimeout("/")
 		if err != nil {
 			result.Err = err
 			result.Done = false
