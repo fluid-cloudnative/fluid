@@ -11,8 +11,8 @@
   - [安装](userguide/install.md)
   - [问题诊断](userguide/troubleshooting.md)
 + 示例
-  - [数据加速](samples/accelerate_data_accessing.md)
-  - [HDFS访问加速](samples/hdfs_client_accelerate.md)
+  - [数据加速（通过POSIX接口访问）](samples/accelerate_data_accessing.md)
+  - [数据加速（通过HDFS接口访问）](samples/accelerate_data_accessing_by_hdfs.md)
   - [缓存亲和性调度](samples/data_co_locality.md)
   - [机器学习](samples/machinelearning.md)
   - [主机目录加速](samples/hostpath.md)

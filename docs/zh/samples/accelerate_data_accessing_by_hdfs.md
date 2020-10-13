@@ -1,8 +1,8 @@
-## 示例 - HDFS Client文件访问加速
+# 示例 - HDFS Client文件访问加速
 
 本文介绍如何使用HDFS Client，在Fluid中通过Alluxio协议访问远程文件，并借助Alluxio的文件缓存能力，实现访问远程文件加速。
 
-### 前提条件
+## 前提条件
 
 在运行该示例之前，请参考[安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md)完成安装，并检查Fluid各组件正常运行：
 
@@ -14,14 +14,14 @@ csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
 csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
 ```
 
-### 新建工作环境
+## 新建工作环境
 
 ```shell
 $ mkdir <any-path>/hdfs
 $ cd <any-path>/hdfs
 ```
 
-### 运行示例
+## 运行示例
 
 **查看待创建的Dataset资源对象**
 
@@ -139,7 +139,7 @@ hadoop   Bound    hadoop   100Gi      RWX                           3m57s
 
 Dataset资源对象准备完成后（即与Alluxio实例绑定后），与该资源对象关联的PV, PVC已经由Fluid生成，应用可以通过该PVC完成远程文件在Pod中的挂载，并通过挂载目录实现远程文件访问
 
-### 通过HDFS Client访问文件
+## 通过HDFS Client访问文件
 
 **准备测试程序**
 
@@ -283,7 +283,7 @@ copy directory cost:1300ms
 
 这种大幅度的加速效果归因于Alluxio所提供的强大的缓存能力，这种缓存能力意味着，只要你访问某个远程文件一次，该文件就会被缓存在Alluxio中，你的所有接下来的重复访问都不再需要进行远程文件读取，而是从Alluxio中直接获取数据，因此对于数据的访问加速也就不难解释了。
 
-### 环境清理
+## 环境清理
 
 ```shell
 $ kubectl delete -f .
