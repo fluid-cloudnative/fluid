@@ -71,16 +71,16 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 		}
 	}
 
-	// 2. Initialize Dataset(Asynchronous Operation), including:
+	// 2. Initialize UFS(Asynchronous Operation), including:
 	// 	 2.1 Load metadata of all files in mounted ufs
 	//   2.2 Get total size of all files in mounted ufs
 	go func() {
-		shouldInitializeDataset, err := e.shouldInitializeDataset()
+		shouldInitializeUFS, err := e.shouldInitializeUFS()
 		if err != nil {
 			e.Log.Error(err, "Can't check if should initialize dataset")
 			return
 		}
-		if shouldInitializeDataset {
+		if shouldInitializeUFS {
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 				dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 				if err != nil {
@@ -98,14 +98,14 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 				e.Log.Error(err, "Failed to update UfsTotal to default Value")
 			}
 		}
-		for shouldInitializeDataset {
-			err = e.initializeDataset()
+		for shouldInitializeUFS {
+			err = e.initializeUFS()
 			if err != nil {
 				e.Log.Error(err, "Can't initialize dataset")
 			}
-			// Check if initialize dataset is done every ten seconds
+			// Check if ufs initialization is done every ten seconds
 			time.Sleep(10 * time.Second)
-			shouldInitializeDataset, err = e.shouldInitializeDataset()
+			shouldInitializeUFS, err = e.shouldInitializeUFS()
 			if err != nil {
 				e.Log.Error(err, "Can't check if should initialize dataset")
 				break
@@ -205,7 +205,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 	return nil
 }
 
-func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
+func (e *AlluxioEngine) shouldInitializeUFS() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		should = false
@@ -213,7 +213,7 @@ func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
 	}
 
 	//todo(trafalgarzzz) configurable knob for load metadata
-	if dataset.Status.UfsTotal != "" {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != UFS_INIT_NOT_DONE_MSG {
 		e.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
 			"dataset namespace", dataset.Namespace,
@@ -225,15 +225,15 @@ func (e *AlluxioEngine) shouldInitializeDataset() (should bool, err error) {
 	return should, err
 }
 
-func (e *AlluxioEngine) initializeDataset() (err error) {
+func (e *AlluxioEngine) initializeUFS() (err error) {
 	if e.UFSInitDoneCh != nil {
-		// UFS preparation in progress
+		// UFS init in progress
 		select {
 		case result := <-e.UFSInitDoneCh:
 			defer func() { e.UFSInitDoneCh = nil }()
-			e.Log.Info("get result from ufs preparation", "result", result)
+			e.Log.V(1).Info("get result from ufsInitDoneCh", "result", result)
 			if result.Done {
-				e.Log.Info("ufs preparation done", "period", time.Since(result.StartTime))
+				e.Log.Info("ufs init done", "period", time.Since(result.StartTime))
 				// update `dataset.Status.UfsTotal`
 				err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 					dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -252,20 +252,20 @@ func (e *AlluxioEngine) initializeDataset() (err error) {
 					e.Log.Error(err, "Failed to update UfsTotal of the dataset")
 				}
 			} else {
-				e.Log.Error(result.Err, "ufs preparation failed")
+				e.Log.Error(result.Err, "ufs init failed")
 			}
 		case <-time.After(500 * time.Millisecond):
-			e.Log.V(1).Info("ufs preparation still in progress")
+			e.Log.V(1).Info("ufs init still in progress")
 		}
 	} else {
-		// UFS preparation not started
+		// UFS init not started
 		e.UFSInitDoneCh = make(chan UFSInitResult)
 		go func(resultChan chan UFSInitResult) {
 			result := UFSInitResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
-			e.Log.Info("UFS preparation starts", "dataset namespace", e.namespace, "dataset name", e.name)
+			e.Log.Info("UFS init starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
 			podName, containerName := e.getMasterPodInfo()
 			fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
