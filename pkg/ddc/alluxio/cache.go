@@ -20,7 +20,6 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"strings"
 )
 
@@ -102,65 +101,65 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 }
 
 // getCachedCapacityOfNode cacluates the node
-func (e *AlluxioEngine) getCurrentCachedCapacity() (totalCapacity int64, err error) {
-	workerName := e.getWorkerDaemonsetName()
-	pods, err := e.getRunningPodsOfDaemonset(workerName, e.namespace)
-	if err != nil {
-		return totalCapacity, err
-	}
-
-	for _, pod := range pods {
-		nodeName := pod.Spec.NodeName
-		if nodeName == "" {
-			e.Log.Info("The node is skipped due to its node name is null", "node", pod.Spec.NodeName,
-				"pod", pod.Name, "namespace", e.namespace)
-			continue
-		}
-
-		capacity, err := e.getCurrentCacheCapacityOfNode(nodeName)
-		if err != nil {
-			return totalCapacity, err
-		}
-		totalCapacity += capacity
-	}
-
-	return
-
-}
+//func (e *AlluxioEngine) getCurrentCachedCapacity() (totalCapacity int64, err error) {
+//	workerName := e.getWorkerDaemonsetName()
+//	pods, err := e.getRunningPodsOfDaemonset(workerName, e.namespace)
+//	if err != nil {
+//		return totalCapacity, err
+//	}
+//
+//	for _, pod := range pods {
+//		nodeName := pod.Spec.NodeName
+//		if nodeName == "" {
+//			e.Log.Info("The node is skipped due to its node name is null", "node", pod.Spec.NodeName,
+//				"pod", pod.Name, "namespace", e.namespace)
+//			continue
+//		}
+//
+//		capacity, err := e.getCurrentCacheCapacityOfNode(nodeName)
+//		if err != nil {
+//			return totalCapacity, err
+//		}
+//		totalCapacity += capacity
+//	}
+//
+//	return
+//
+//}
 
 // getCurrentCacheCapacityOfNode cacluates the node
-func (e *AlluxioEngine) getCurrentCacheCapacityOfNode(nodeName string) (capacity int64, err error) {
-	labelName := e.getStoragetLabelname(humanReadType, totalStorageType)
-
-	node, err := kubeclient.GetNode(e.Client, nodeName)
-	if err != nil {
-		return capacity, err
-	}
-
-	if !kubeclient.IsReady(*node) {
-		e.Log.Info("Skip the not ready node", "node", node.Name)
-		return 0, nil
-	}
-
-	for k, v := range node.Labels {
-		if k == labelName {
-			value := "0"
-			if v != "" {
-				value = v
-			}
-			// capacity = units.BytesSize(float64(value))
-			capacity, err = units.RAMInBytes(value)
-			if err != nil {
-				return capacity, err
-			}
-			e.Log.V(1).Info("getCurrentCacheCapacityOfNode", k, value)
-			e.Log.V(1).Info("getCurrentCacheCapacityOfNode byteSize", k, capacity)
-		}
-	}
-
-	return
-
-}
+//func (e *AlluxioEngine) getCurrentCacheCapacityOfNode(nodeName string) (capacity int64, err error) {
+//	labelName := e.getStoragetLabelname(humanReadType, totalStorageType)
+//
+//	node, err := kubeclient.GetNode(e.Client, nodeName)
+//	if err != nil {
+//		return capacity, err
+//	}
+//
+//	if !kubeclient.IsReady(*node) {
+//		e.Log.Info("Skip the not ready node", "node", node.Name)
+//		return 0, nil
+//	}
+//
+//	for k, v := range node.Labels {
+//		if k == labelName {
+//			value := "0"
+//			if v != "" {
+//				value = v
+//			}
+//			// capacity = units.BytesSize(float64(value))
+//			capacity, err = units.RAMInBytes(value)
+//			if err != nil {
+//				return capacity, err
+//			}
+//			e.Log.V(1).Info("getCurrentCacheCapacityOfNode", k, value)
+//			e.Log.V(1).Info("getCurrentCacheCapacityOfNode byteSize", k, capacity)
+//		}
+//	}
+//
+//	return
+//
+//}
 
 // get the value of cached
 // func (e *AlluxioEngine) cachedState() (int64, error) {

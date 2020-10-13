@@ -44,8 +44,7 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	//UFSInitDoneCh          chan UFSInitResult
-	UFSChecked bool
+	UFSChecked             bool
 }
 
 /**
