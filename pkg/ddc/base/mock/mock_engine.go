@@ -443,6 +443,12 @@ func (m *MockImplement) SyncReplicas(ctx runtime.ReconcileRequestContext) error 
 	return ret0
 }
 
+// SyncReplicas indicates an expected call of SyncReplicas
+func (mr *MockImplementMockRecorder) SyncReplicas(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncReplicas", reflect.TypeOf((*MockImplement)(nil).SyncReplicas), ctx)
+}
+
 // SyncMetadata mocks base method
 func (m *MockImplement) SyncMetadata() (err error) {
 	m.ctrl.T.Helper()
@@ -451,10 +457,10 @@ func (m *MockImplement) SyncMetadata() (err error) {
 	return ret0
 }
 
-// SyncReplicas indicates an expected call of SyncReplicas
-func (mr *MockImplementMockRecorder) SyncReplicas(ctx interface{}) *gomock.Call {
+// SyncMetadata indicates an expected call of SyncMetadata
+func (mr *MockImplementMockRecorder) SyncMetadata() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncReplicas", reflect.TypeOf((*MockImplement)(nil).SyncReplicas), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncMetadata", reflect.TypeOf((*MockImplement)(nil).SyncMetadata))
 }
 
 // DeleteVolume mocks base method

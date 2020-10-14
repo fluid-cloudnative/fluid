@@ -70,6 +70,7 @@ var _ = Describe("TemplateEngine", func() {
 
 	Describe("Sync", func() {
 		It("Should sync successfully", func() {
+			impl.EXPECT().SyncMetadata().Return(nil).Times(1)
 			impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
 			impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1)
 			impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1)
