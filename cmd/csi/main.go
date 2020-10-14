@@ -16,10 +16,10 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
+	"github.com/fluid-cloudnative/fluid"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
 	"github.com/spf13/cobra"
 )
@@ -27,14 +27,8 @@ import (
 var (
 	endpoint string
 	nodeID   string
+	short    bool
 )
-
-func init() {
-	if err := flag.Set("logtostderr", "true"); err != nil {
-		fmt.Printf("Failed to flag.set due to %v", err)
-		os.Exit(1)
-	}
-}
 
 var cmd = &cobra.Command{
 	Use:   "csi",
@@ -49,16 +43,30 @@ var startCmd = &cobra.Command{
 	},
 }
 
-func main() {
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Long: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		v := fluid.GetVersion()
 
-	if err := flag.CommandLine.Parse([]string{}); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
-	}
+		if short {
+			fmt.Printf("version: %s\n", v)
+			return
+		}
+		fmt.Printf("  BuildDate: %s\n", v.BuildDate)
+		fmt.Printf("  GitCommit: %s\n", v.GitCommit)
+		fmt.Printf("  GitTreeState: %s\n", v.GitTreeState)
+		if v.GitTag != "" {
+			fmt.Printf("  GitTag: %s\n", v.GitTag)
+		}
+		fmt.Printf("  GoVersion: %s\n", v.GoVersion)
+		fmt.Printf("  Compiler: %s\n", v.Compiler)
+		fmt.Printf("  Platform: %s\n", v.Platform)
+	},
+}
 
-
-	cmd.Flags().AddGoFlagSet(flag.CommandLine)
-
+func init() {
 	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
 	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		errorAndExit(err)
@@ -69,14 +77,14 @@ func main() {
 		errorAndExit(err)
 	}
 
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+
 	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
+}
 
-/*
-	if err := cmd.ParseFlags(os.Args[1:]); err != nil {
-		errorAndExit(err)
-	}
 
- */
+func main() {
 	if err := cmd.Execute(); err != nil {
 		errorAndExit(err)
 	}
