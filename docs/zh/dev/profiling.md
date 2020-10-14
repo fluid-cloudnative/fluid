@@ -1,15 +1,15 @@
 # JVM性能分析工具使用
 
 有时需要对Fluid的底层缓存引擎，如Alluxio，进行性能分析，以更加迅速地找到性能瓶颈。
-[async-profiler](https://github.com/jvm-profiling-tools/async-profiler)是一款非常全面的JVM profiling工具，支持对`CPU`，`Lock`等多种事件采样。
+[async-profiler](https://github.com/jvm-profiling-tools/async-profiler)是一款非常全面的JVM profiling工具，支持对`cpu`，`lock`等多种事件采样。
 在本文档中，我们介绍`async-profiler`的简单使用方法。
 请参考[async-profiler官方文档](https://github.com/jvm-profiling-tools/async-profiler)获取更加详细的使用教程。
 
 ## 下载并解压
-```bash
-$ wget https://github.com/jvm-profiling-tools/async-profiler/releases/download/v1.7.1/async-profiler-1.7.1-linux-x64.tar.gz
-$ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
-```
+    ```bash
+    $ wget https://github.com/jvm-profiling-tools/async-profiler/releases/download/v1.7.1/async-profiler-1.7.1-linux-x64.tar.gz
+    $ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
+    ```
 
 ## 简单使用
 
@@ -20,9 +20,9 @@ $ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
     33916 Jps
     ```
 
-2. 采样CPU执行时间
+2. 采样占用CPU时间
     ```bash
-    ./profiler.sh -e cpu -i 1ms -d 300 -f cpu.txt <PID>
+    $ ./profiler.sh -e cpu -i 1ms -d 300 -f cpu.txt <PID>
     ```
 
     **命令说明**:
@@ -37,7 +37,14 @@ $ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
     async-profiler会周期性地采样JVM调用栈，并按照被采样次数由高到低排序。
     可认为采样次数越高的函数，花费的CPU时间也是越多的。因此，通过观察排名前几位的函数调用情况，可快速找出Java进程的主要性能瓶颈。
     
-    下面是对AlluxioFuse进行cpu采样的结果：
+    下面是对AlluxioFuse进行cpu采样的结果，由三部分内容组成。
+    
+    第一部分，介绍采样的次数，GC情况等，其中的`Frame buffer usage`表示保存采样结果的buffer使用率。
+    如果采样间隔太小，或者时间太长，可能会提示`overflow`，此时可用`-b N`调大buffer容量。
+    
+    第二部分，是按照采样次数由高到低排序后的函数调用栈，性能分析时重点关注前几位。
+    
+    第三部分，在最后，是占用CPU时间由高到低的函数。
     ```bash
     $ cat cpu.txt
     --- Execution profile ---
@@ -151,3 +158,8 @@ $ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
        773960647    0.58%      757  read
        660352796    0.50%      656  get_page_from_freelist_[k]
     ```
+> **Tips**:
+> - 一般性能分析只需要采样`cpu`和`lock`即可，它们的结果是比较有参考意义的
+> - 如果是和内存相关的调优，可试着采样`alloc`事件
+> - `wall`事件采样墙上时间，`-t`选项让每个进程分开采样，它俩搭配使用效果比较好
+> - 同一进程同时只能采样一种事件
