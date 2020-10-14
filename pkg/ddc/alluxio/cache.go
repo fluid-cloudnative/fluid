@@ -58,7 +58,7 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 
 	// `dataset.Status.UfsTotal` probably haven't summed, in which case we won't compute cache percentage
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != UFS_INIT_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 		usedInBytes, _ := units.FromHumanSize(usedCacheCapacity)
 		ufsTotalInBytes, _ := units.RAMInBytes(dataset.Status.UfsTotal)
 		cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)

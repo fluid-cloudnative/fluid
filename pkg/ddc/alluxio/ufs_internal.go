@@ -159,7 +159,7 @@ func (e *AlluxioEngine) shouldInitializeUFS() (should bool, err error) {
 	}
 
 	//todo(trafalgarzzz) configurable knob for load metadata
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != UFS_INIT_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 		e.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
 			"dataset namespace", dataset.Namespace,

@@ -44,7 +44,7 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	UFSChecked             bool
+	MetadataSyncDoneCh     chan UFSInitResult
 }
 
 /**
@@ -59,7 +59,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
-		UFSChecked:             false,
+		MetadataSyncDoneCh:     nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
