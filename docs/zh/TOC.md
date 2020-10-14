@@ -10,6 +10,7 @@
   - [快速上手](userguide/get_started.md)
   - [安装](userguide/install.md)
   - [问题诊断](userguide/troubleshooting.md)
+  - [JVM性能分析](userguide/profiling.md)
 + 示例
   - [数据加速（通过POSIX接口访问）](samples/accelerate_data_accessing.md)
   - [数据加速（通过HDFS接口访问）](samples/accelerate_data_accessing_by_hdfs.md)
