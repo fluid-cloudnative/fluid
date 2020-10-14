@@ -8,10 +8,7 @@
     ```bash
     $ chmod a+x diagnose-fluid.sh
     ```
-    *MacOS*
-    ```bash
-    $ brew install gnu-getopt
-    ```
+   
 2. 查看帮助信息
 
     ```bash
@@ -24,9 +21,9 @@
         collect
             Collect pods logs of controller and runtime.
     OPTIONS:
-        --name name
+        -r, --name name
             Set the name of runtime.
-        --namespace name
+        -n, --namespace name
             Set the namespace of runtime.
     ```
 

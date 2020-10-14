@@ -10,9 +10,9 @@ print_usage() {
   echo "    collect"
   echo "        Collect pods logs of controller and runtime."
   echo "OPTIONS:"
-  echo "    --name name"
+  echo "    -r, --name name"
   echo "        Set the name of runtime."
-  echo "    --namespace name"
+  echo "    -n, --namespace name"
   echo "        Set the namespace of runtime."
 }
 
@@ -27,12 +27,12 @@ run() {
 }
 
 helm_get() {
-  run helm get all "${1}" &>"$diagnose_dir/${1}.yaml"
+  run helm get all "${1}" &>"$diagnose_dir/helm-${1}.yaml"
 }
 
 pod_status() {
   local namespace=${1:-"default"}
-  run kubectl get po -owide -n ${namespace} &>"$diagnose_dir/${namespace}.log"
+  run kubectl get po -owide -n ${namespace} &>"$diagnose_dir/pods-${namespace}.log"
 }
 
 fluid_pod_logs() {
@@ -68,6 +68,14 @@ core_component() {
   done
 }
 
+kubectl_resource() {
+  # runtime, dataset, pv and pvc should have the same name
+  kubectl describe dataset ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
+  kubectl describe alluxioruntime ${name} &>"${diagnose_dir}/alluxioruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe pv ${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
+  kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
+}
+
 archive() {
   tar -zcvf "${current_dir}/diagnose_fluid_${timestamp}.tar.gz" "${diagnose_dir}"
   echo "please get diagnose_fluid_${timestamp}.tar.gz for diagnostics"
@@ -81,40 +89,12 @@ pd_collect() {
   pod_status "${runtime_namespace}"
   runtime_pod_logs
   fluid_pod_logs
+  kubectl_resource
   archive
 }
 
 collect()
 {
-  # Parse arguments using getopt
-  ARGS=$(getopt -a -o h --long help,name:,namespace: -- "$@")
-  if [ $? != 0 ]; then
-    exit 1
-  fi
-
-  eval set -- "${ARGS}"
-
-  while true; do
-    case "$1" in
-    --name)
-      runtime_name=$2
-      shift 2
-      ;;
-    --namespace)
-      runtime_namespace=$2
-      shift 2
-      ;;
-    --)
-      shift
-      break
-      ;;
-    *)
-      echo "ERROR: invalid argument $1" >&2
-      exit 1
-      ;;
-    esac
-  done
-
   # ensure params
   fluid_name=${fluid_name:-"fluid"}
   fluid_namespace=${fluid_namespace:-"fluid-system"}
@@ -130,26 +110,45 @@ collect()
 }
 
 main() {
-  if [[ $# == 0 ]]; then
+  if [[ $# -eq 0 ]]; then
     print_usage
     exit 1
   fi
 
-  command="$1"
-  shift
+  action="help"
 
-  case ${command} in
-    "collect")
-      collect "$@"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -h|--help|"-?")
+        print_usage
+        exit 0;
+        ;;
+      collect|help)
+        action=$1
+        ;;
+      -r|--name)
+        runtime_name=$2
+        shift
+        ;;
+      -n|--namespace)
+        runtime_namespace=$2
+        shift
+        ;;
+      *)
+        echo  "Error: unsupported option $1" >&2
+        print_usage
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
+  case ${action} in
+    collect)
+      collect
       ;;
-    "help")
+    help)
       print_usage
-      exit 0
-      ;;
-    *)
-      echo  "ERROR: unsupported command ${command}" >&2
-      print_usage
-      exit 1
       ;;
   esac
 }
