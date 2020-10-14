@@ -10,11 +10,6 @@ You may encounter various problems during installation or development in Fluid. 
    $ chmod a+x diagnose-fluid.sh
    ```
 
-   *MacOS*
-   ```bash
-   $ brew install gnu-getopt
-   ```
-
 2. Get help message
 
    ```shell
@@ -27,9 +22,9 @@ You may encounter various problems during installation or development in Fluid. 
        collect
            Collect pods logs of controller and runtime.
    OPTIONS:
-       --name name
+       -r, --name name
            Set the name of runtime.
-       --namespace name
+       -n, --namespace name
            Set the namespace of runtime.
    ```
 
