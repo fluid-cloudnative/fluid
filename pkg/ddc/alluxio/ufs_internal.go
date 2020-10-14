@@ -16,13 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
 	"fmt"
-	"github.com/docker/go-units"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/client-go/util/retry"
-	"reflect"
 	"time"
 )
 
@@ -146,96 +142,6 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			}
 		}
 
-	}
-	return nil
-}
-
-//shouldInitializeUFS checks if UFS initialization has done
-func (e *AlluxioEngine) shouldInitializeUFS() (should bool, err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		should = false
-		return should, err
-	}
-
-	//todo(trafalgarzzz) configurable knob for load metadata
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
-		e.Log.V(1).Info("dataset ufs is ready",
-			"dataset name", dataset.Name,
-			"dataset namespace", dataset.Namespace,
-			"ufstotal", dataset.Status.UfsTotal)
-		should = false
-		return should, err
-	}
-	should = true
-	return should, err
-}
-
-// initializeUFS do UFS initialization. For Alluxio Engine, it includes the following steps:
-// 1. Load Metadata
-// 2. Get total size of all the UFSs
-func (e *AlluxioEngine) initializeUFS() (err error) {
-
-	UFSInitDoneCh := make(chan UFSInitResult)
-	go func(resultChan chan UFSInitResult) {
-		result := UFSInitResult{
-			StartTime: time.Now(),
-			UfsTotal:  "",
-		}
-		e.Log.Info("UFS init starts", "dataset namespace", e.namespace, "dataset name", e.name)
-
-		podName, containerName := e.getMasterPodInfo()
-		fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-		// 2.1 load metadata
-		err = fileUitls.LoadMetadataWithoutTimeout("/")
-		if err != nil {
-			result.Err = err
-			result.Done = false
-			resultChan <- result
-			return
-		}
-		// 2.2 get total size
-		datasetUFSTotalBytes, err := e.TotalStorageBytes()
-		if err != nil {
-			result.Err = err
-			result.Done = false
-			resultChan <- result
-			return
-		}
-		ufsTotal := units.BytesSize(float64(datasetUFSTotalBytes))
-		result.Err = nil
-		result.UfsTotal = ufsTotal
-		result.Done = true
-		resultChan <- result
-	}(UFSInitDoneCh)
-
-	result := <-UFSInitDoneCh
-	e.Log.V(1).Info("get result from ufsInitDoneCh", "result", result)
-	if result.Done {
-		e.Log.Info("ufs init done", "period", time.Since(result.StartTime))
-		// update `dataset.Status.UfsTotal`
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-			if err != nil {
-				return
-			}
-			datasetToUpdate := dataset.DeepCopy()
-			datasetToUpdate.Status.UfsTotal = result.UfsTotal
-			if !reflect.DeepEqual(datasetToUpdate, dataset) {
-				err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-				if err != nil {
-					return
-				}
-			}
-			return
-		})
-		if err != nil {
-			e.Log.Error(err, "Failed to update UfsTotal of the dataset")
-			return result.Err
-		}
-	} else {
-		e.Log.Error(result.Err, "ufs init failed")
-		return result.Err
 	}
 	return nil
 }

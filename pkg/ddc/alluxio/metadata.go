@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// SyncMetadata syncs metadata if necessary
+// For Alluxio Engine, metadata sync is an asynchronous operation, which means
+// you should call this function periodically to make sure the function actually takes effect.
 func (e *AlluxioEngine) SyncMetadata() (err error) {
 	should, err := e.shouldSyncMetadata()
 	if err != nil {
@@ -22,6 +25,7 @@ func (e *AlluxioEngine) SyncMetadata() (err error) {
 	return
 }
 
+// shouldSyncMetadata checks dataset's UfsTotal to decide whether should sync metadata
 func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -43,6 +47,13 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 	return should, nil
 }
 
+// syncMetadataInternal do the actual work of metadata sync
+// At any time, there is at most one goroutine working on metadata sync. First call to
+// this function will start a goroutine including the following two steps:
+//   1. load metadata
+//   2. get total size of UFSs
+// Any following calls to this function will try to get result of the working goroutine with a timeout, which
+// ensures the function won't block the following Sync operations(e.g. CheckAndUpdateRuntimeStatus) for a long time.
 func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 	if e.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout

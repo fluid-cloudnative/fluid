@@ -443,6 +443,14 @@ func (m *MockImplement) SyncReplicas(ctx runtime.ReconcileRequestContext) error 
 	return ret0
 }
 
+// SyncMetadata mocks base method
+func (m *MockImplement) SyncMetadata() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncMetadata")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
 // SyncReplicas indicates an expected call of SyncReplicas
 func (mr *MockImplementMockRecorder) SyncReplicas(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
