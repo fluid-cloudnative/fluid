@@ -44,7 +44,7 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	MetadataSyncDoneCh     chan UFSInitResult
+	MetadataSyncDoneCh     chan MetadataSyncResult
 }
 
 /**

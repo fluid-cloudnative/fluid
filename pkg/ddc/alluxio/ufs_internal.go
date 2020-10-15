@@ -19,15 +19,7 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"time"
 )
-
-type UFSInitResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	Err       error
-}
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
 	return

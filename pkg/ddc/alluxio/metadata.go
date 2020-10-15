@@ -10,6 +10,14 @@ import (
 	"time"
 )
 
+// MetadataSyncResult describes result for asynchronous metadata sync
+type MetadataSyncResult struct {
+	Done      bool
+	StartTime time.Time
+	UfsTotal  string
+	Err       error
+}
+
 // SyncMetadata syncs metadata if necessary
 // For Alluxio Engine, metadata sync is an asynchronous operation, which means
 // you should call this function periodically to make sure the function actually takes effect.
@@ -110,10 +118,10 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			e.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
 		}
-		e.MetadataSyncDoneCh = make(chan UFSInitResult)
-		go func(resultChan chan UFSInitResult) {
+		e.MetadataSyncDoneCh = make(chan MetadataSyncResult)
+		go func(resultChan chan MetadataSyncResult) {
 			defer close(resultChan)
-			result := UFSInitResult{
+			result := MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
