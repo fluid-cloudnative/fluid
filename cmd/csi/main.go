@@ -16,6 +16,7 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -67,6 +68,11 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
+	if err := flag.Set("logtostderr", "true"); err != nil {
+		fmt.Printf("Failed to flag.set due to %v", err)
+		os.Exit(1)
+	}
+
 	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
 	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		errorAndExit(err)
@@ -85,6 +91,8 @@ func init() {
 
 
 func main() {
+	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
+
 	if err := cmd.Execute(); err != nil {
 		errorAndExit(err)
 	}
