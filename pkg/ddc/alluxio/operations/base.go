@@ -66,6 +66,43 @@ func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 	return
 }
 
+// Get summary info of the Alluxio Engine
+func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
+	var (
+		command = []string{"alluxio", "fsadmin", "report", "summary"}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+	return stdout, err
+}
+
+// Load the metadata without timeout
+func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string) (err error) {
+	var (
+		command = []string{"alluxio", "fs", "loadMetadata", "-R", alluxioPath}
+		stdout  string
+		stderr  string
+	)
+
+	start := time.Now()
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
+	duration := time.Since(start)
+	a.log.Info("Async Load Metadata took times to run", "period", duration)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	} else {
+		a.log.Info("Async Load Metadata finished", "stdout", stdout)
+	}
+	return
+}
+
 // Load the metadata
 func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error) {
 	var (
@@ -252,7 +289,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 		ufileCount, ufolderCount, utotal uint64
 	)
 
-	stdout, stderr, err = a.exec(command, false)
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return

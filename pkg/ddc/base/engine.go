@@ -85,6 +85,9 @@ type Implement interface {
 	// SyncReplicas syncs the replicas
 	SyncReplicas(ctx cruntime.ReconcileRequestContext) error
 
+	// SyncMetadata syncs all metadata from UFS
+	SyncMetadata() (err error)
+
 	// Destroy the Volume
 	DeleteVolume() (err error)
 }

@@ -22,10 +22,7 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
-	options "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -96,34 +93,34 @@ func (e *AlluxioEngine) getFuseDaemonsetName() (dsName string) {
 }
 
 // getRunningPodsOfDaemonset gets worker pods
-func (e *AlluxioEngine) getRunningPodsOfDaemonset(dsName, namespace string) (pods []corev1.Pod, err error) {
-
-	ds, err := e.getDaemonset(dsName, namespace)
-	if err != nil {
-		return pods, err
-	}
-
-	selector := ds.Spec.Selector.MatchLabels
-	// labels := selector.MatchLabels
-
-	pods = []corev1.Pod{}
-	podList := &corev1.PodList{}
-	err = e.Client.List(context.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
-	if err != nil {
-		return pods, err
-	}
-
-	for _, pod := range podList.Items {
-		if !podutil.IsPodReady(&pod) {
-			e.Log.Info("Skip the pod because it's not ready", "pod", pod.Name, "namespace", pod.Namespace)
-			continue
-		}
-		pods = append(pods, pod)
-	}
-
-	return pods, nil
-
-}
+//func (e *AlluxioEngine) getRunningPodsOfDaemonset(dsName, namespace string) (pods []corev1.Pod, err error) {
+//
+//	ds, err := e.getDaemonset(dsName, namespace)
+//	if err != nil {
+//		return pods, err
+//	}
+//
+//	selector := ds.Spec.Selector.MatchLabels
+//	// labels := selector.MatchLabels
+//
+//	pods = []corev1.Pod{}
+//	podList := &corev1.PodList{}
+//	err = e.Client.List(context.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
+//	if err != nil {
+//		return pods, err
+//	}
+//
+//	for _, pod := range podList.Items {
+//		if !podutil.IsPodReady(&pod) {
+//			e.Log.Info("Skip the pod because it's not ready", "pod", pod.Name, "namespace", pod.Namespace)
+//			continue
+//		}
+//		pods = append(pods, pod)
+//	}
+//
+//	return pods, nil
+//
+//}
 
 func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()

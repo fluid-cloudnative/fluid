@@ -70,6 +70,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	shouldCheckUFS, err := b.Implement.ShouldCheckUFS()
 	if err != nil {
 		b.Log.Error(err, "Failed to check if it requires checking ufs.")
+		return ready, err
 	}
 
 	if shouldCheckUFS {
