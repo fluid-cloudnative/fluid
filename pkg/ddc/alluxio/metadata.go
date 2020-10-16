@@ -2,7 +2,6 @@ package alluxio
 
 import (
 	"context"
-	"github.com/docker/go-units"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
@@ -145,7 +144,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 				resultChan <- result
 				return
 			}
-			ufsTotal := units.BytesSize(float64(datasetUFSTotalBytes))
+			ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
 			result.Err = nil
 			result.UfsTotal = ufsTotal
 			result.Done = true
