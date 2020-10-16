@@ -23,7 +23,7 @@ var (
 	sizeRegex = regexp.MustCompile(`^(\d+(\.\d+)*) ?([kKmMgGtTpP])?[iI]?[bB]?$`)
 )
 
-var binaryAbbrs = []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+var binaryAbbrs = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 
 // BytesSize returns a human-readable size in bytes, kibibytes,
 // mebibytes, gibibytes, or tebibytes, but with a B, kB, MB unit style.

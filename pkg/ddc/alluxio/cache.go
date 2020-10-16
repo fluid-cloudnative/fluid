@@ -49,10 +49,16 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
 		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
-			totalCacheCapacity = strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY)
+			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
+			// Convert Alluxio's binary byte units to Fluid's binary byte units
+			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
+			totalCacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
 		}
 		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
-			usedCacheCapacity = strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY)
+			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
+			// Convert Alluxio's binary byte units to Fluid's binary byte units
+			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
+			usedCacheCapacity = utils.BytesSize(float64(usedCacheCapacityAlluxio))
 		}
 	}
 
