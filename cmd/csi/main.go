@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fluid-cloudnative/fluid"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
 	"github.com/spf13/cobra"
 )
@@ -27,45 +28,71 @@ import (
 var (
 	endpoint string
 	nodeID   string
+	short    bool
 )
+
+var cmd = &cobra.Command{
+	Use:   "csi",
+	Short: "CSI based fluid driver for Fuse",
+}
+
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "start fluid driver on node",
+	Run: func(cmd *cobra.Command, args []string) {
+		handle()
+	},
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Long: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		v := fluid.GetVersion()
+
+		if short {
+			fmt.Printf("version: %s\n", v)
+			return
+		}
+		fmt.Printf("  BuildDate: %s\n", v.BuildDate)
+		fmt.Printf("  GitCommit: %s\n", v.GitCommit)
+		fmt.Printf("  GitTreeState: %s\n", v.GitTreeState)
+		if v.GitTag != "" {
+			fmt.Printf("  GitTag: %s\n", v.GitTag)
+		}
+		fmt.Printf("  GoVersion: %s\n", v.GoVersion)
+		fmt.Printf("  Compiler: %s\n", v.Compiler)
+		fmt.Printf("  Platform: %s\n", v.Platform)
+	},
+}
 
 func init() {
 	if err := flag.Set("logtostderr", "true"); err != nil {
 		fmt.Printf("Failed to flag.set due to %v", err)
 		os.Exit(1)
 	}
+
+	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
+	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
+		errorAndExit(err)
+	}
+
+	startCmd.Flags().StringVarP(&nodeID, "endpoint","","", "CSI endpoint")
+	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
+		errorAndExit(err)
+	}
+
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+
+	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
 }
 
+
 func main() {
+	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
-	if err := flag.CommandLine.Parse([]string{}); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
-	}
-
-	cmd := &cobra.Command{
-		Use:   "fluid",
-		Short: "CSI based fluid driver for Fuse",
-		Run: func(cmd *cobra.Command, args []string) {
-			handle()
-		},
-	}
-
-	cmd.Flags().AddGoFlagSet(flag.CommandLine)
-
-	cmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "node id")
-	if err := cmd.MarkPersistentFlagRequired("nodeid"); err != nil {
-		errorAndExit(err)
-	}
-
-	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "", "CSI endpoint")
-	if err := cmd.MarkPersistentFlagRequired("endpoint"); err != nil {
-		errorAndExit(err)
-	}
-
-	if err := cmd.ParseFlags(os.Args[1:]); err != nil {
-		errorAndExit(err)
-	}
 	if err := cmd.Execute(); err != nil {
 		errorAndExit(err)
 	}

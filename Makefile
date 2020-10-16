@@ -18,13 +18,22 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+CURRENT_DIR=$(shell pwd)
 VERSION=v0.4.0
 BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
-GIT_TREE_STATE=$(shell echo "clean")
+GIT_TREE_STATE=$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi)
 GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION=${VERSION}-${GIT_SHA}
+PACKAGE=github.com/fluid-cloudnative/fluid
+
+override LDFLAGS += \
+  -X ${PACKAGE}.version=${VERSION} \
+  -X ${PACKAGE}.buildDate=${BUILD_DATE} \
+  -X ${PACKAGE}.gitCommit=${GIT_COMMIT} \
+  -X ${PACKAGE}.gitTreeState=${GIT_TREE_STATE} \
+  -extldflags "-static"
 
 all: manager
 
@@ -43,7 +52,7 @@ manager: generate fmt vet
 
 # Build CSI binary
 csi: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi cmd/csi/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
