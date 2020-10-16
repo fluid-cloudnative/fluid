@@ -16,13 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
-	"fmt"
-
-	units "github.com/docker/go-units"
-
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
@@ -43,77 +37,45 @@ func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 	return e.totalFileNumsInternal()
 }
 
-// Prepare the mounts and metadata
-func (e *AlluxioEngine) PrepareUFS() (err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		return err
-	}
+// ShouldCheckUFS checks if it requires checking UFS
+func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
+	// For Alluxio Engine, always attempt to prepare UFS
+	should = true
+	return
+}
 
-	if dataset.Status.UfsTotal != "" {
-		e.Log.V(1).Info("dataset ufs is ready",
-			"dataset name", dataset.Name,
-			"dataset namespace", dataset.Namespace,
-			"ufstotal", dataset.Status.UfsTotal)
+// PrepareUFS do all the UFS preparations
+func (e *AlluxioEngine) PrepareUFS() (err error) {
+	// 1. Mount UFS (Synchronous Operation)
+	shouldMountUfs, err := e.shouldMountUFS()
+	if err != nil {
+		return
+	}
+	e.Log.V(1).Info("shouldMountUFS", "should", shouldMountUfs)
+
+	if shouldMountUfs {
+		err = e.mountUFS()
+		if err != nil {
+			return
+		}
+	}
+	e.Log.V(1).Info("mountUFS")
+
+	err = e.SyncMetadata()
+	if err != nil {
+		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
+		e.Log.Error(err, "SyncMetadata")
 		return nil
 	}
 
-	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-
-	ready := fileUitls.Ready()
-	if !ready {
-		return fmt.Errorf("The UFS is not ready")
-	}
-
-	//1. make mount
-	for _, mount := range dataset.Spec.Mounts {
-		if e.isFluidNativeScheme(mount.MountPoint) {
-			err = fileUitls.SyncLocalDir(fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name))
-			if err != nil {
-				return
-			}
-			continue
-		}
-
-		alluxioPath := fmt.Sprintf("/%s", mount.Name)
-		mounted, err := fileUitls.IsMounted(alluxioPath)
-		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)
-		if err != nil {
-			return err
-		}
-
-		if !mounted {
-			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mount.Options, mount.ReadOnly, mount.Shared)
-			if err != nil {
-				return err
-			}
-		}
-
-	}
-
-	//2. load the metadata
-	err = fileUitls.LoadMetaData("/", true)
-	if err != nil {
-		return
-	}
-
-	//3. update the status of dataset
-	datasetToUpdate := dataset.DeepCopy()
-	datasetUFSTotalBytes, err := e.TotalStorageBytes()
-	if err != nil {
-		return
-	}
-	ufsTotal := units.BytesSize(float64(datasetUFSTotalBytes))
-	e.Log.Info("UFS storage", "storage", ufsTotal)
-	datasetToUpdate.Status.UfsTotal = ufsTotal
-	err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-	if err != nil {
-		e.Log.Error(err, "Failed to update the ufs of the dataset")
-		return err
-	}
-
 	return
+}
+
+// report alluxio summary
+func (e *AlluxioEngine) reportSummary() (summary string, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	return fileUtils.ReportSummary()
 }
 
 // du the ufs
@@ -121,22 +83,4 @@ func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, 
 	podName, containerName := e.getMasterPodInfo()
 	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUitls.Du("/")
-}
-
-// ShouldCheckUFS checks if it requires checking UFS
-func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
-	if err != nil {
-		return
-	}
-
-	// TODO(iluoeli): this will cause error if UfsTotal is stale and not properly cleaned.
-	// maybe we should check mounts other than UfsTotal
-	if dataset.Status.UfsTotal == "" {
-		should = true
-	}
-
-	return
-
 }

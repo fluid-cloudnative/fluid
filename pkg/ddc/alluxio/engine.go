@@ -17,12 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"os"
 	"regexp"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -46,6 +44,7 @@ type AlluxioEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
+	MetadataSyncDoneCh     chan MetadataSyncResult
 }
 
 /**
@@ -60,6 +59,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
+		MetadataSyncDoneCh:     nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

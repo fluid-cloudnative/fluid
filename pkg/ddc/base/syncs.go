@@ -19,6 +19,10 @@ import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
+	err = t.Implement.SyncMetadata()
+	if err != nil {
+		return
+	}
 
 	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
