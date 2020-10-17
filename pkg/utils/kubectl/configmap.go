@@ -95,7 +95,7 @@ func SaveConfigMapToFile(name string, key string, namespace string) (fileName st
 
 /**
 *
-* save the key of configMap into a file
+* 
 **/
 func kubectl(args []string) ([]byte, error) {
 	binary, err := exec.LookPath(kubectlCmd[0])
