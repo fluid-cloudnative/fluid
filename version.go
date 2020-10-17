@@ -2,6 +2,7 @@ package fluid
 
 import "runtime"
 import "fmt"
+import "github.com/golang/glog"
 
 type Version struct {
 	Version      string
@@ -22,7 +23,7 @@ var (
 )
 
 
-func GetVersion() Version {
+func getVersion() Version {
 	var versionStr string
 	if gitCommit != "" && gitTag != "" && gitTreeState == "clean" {
 		// if we have a clean tree state and the current commit is tagged,
@@ -51,4 +52,38 @@ func GetVersion() Version {
 		Compiler:     runtime.Compiler,
 		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
+}
+
+// Print version info directly by command
+func PrintVersion(short bool){
+	v := getVersion()
+	if short {
+		fmt.Printf("version: %s\n", v.Version)
+		return
+	}
+	fmt.Printf("  BuildDate: %s\n", v.BuildDate)
+	fmt.Printf("  GitCommit: %s\n", v.GitCommit)
+	fmt.Printf("  GitTreeState: %s\n", v.GitTreeState)
+	if v.GitTag != "" {
+		fmt.Printf("  GitTag: %s\n", v.GitTag)
+	}
+	fmt.Printf("  GoVersion: %s\n", v.GoVersion)
+	fmt.Printf("  Compiler: %s\n", v.Compiler)
+	fmt.Printf("  Platform: %s\n", v.Platform)
+	return
+}
+
+// Print version info in log when start
+func LogVersion(){
+	v := getVersion()
+	glog.Infof("BuildDate: %s\n", v.BuildDate)
+	glog.Infof("GitCommit: %s\n", v.GitCommit)
+	glog.Infof("GitTreeState: %s\n", v.GitTreeState)
+	if v.GitTag != "" {
+		glog.Infof("GitTag: %s\n", v.GitTag)
+	}
+	glog.Infof("GoVersion: %s\n", v.GoVersion)
+	glog.Infof("Compiler: %s\n", v.Compiler)
+	glog.Infof("Platform: %s\n", v.Platform)
+	return
 }
