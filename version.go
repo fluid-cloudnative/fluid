@@ -32,7 +32,7 @@ func getVersion() Version {
 	} else {
 		// otherwise formulate a queryversion string based on as much metadata
 		// information we have available.
-		versionStr = "v" + version
+		versionStr = version
 		if len(gitCommit) >= 7 {
 			versionStr += "+" + gitCommit[0:7]
 			if gitTreeState != "clean" {
@@ -70,7 +70,6 @@ func PrintVersion(short bool){
 	fmt.Printf("  GoVersion: %s\n", v.GoVersion)
 	fmt.Printf("  Compiler: %s\n", v.Compiler)
 	fmt.Printf("  Platform: %s\n", v.Platform)
-	return
 }
 
 // Print version info in log when start
@@ -85,5 +84,4 @@ func LogVersion(){
 	glog.Infof("GoVersion: %s\n", v.GoVersion)
 	glog.Infof("Compiler: %s\n", v.Compiler)
 	glog.Infof("Platform: %s\n", v.Platform)
-	return
 }
