@@ -32,7 +32,7 @@ var (
 )
 
 var cmd = &cobra.Command{
-	Use:   "csi",
+	Use:   "fluid-csi",
 	Short: "CSI based fluid driver for Fuse",
 }
 
@@ -47,23 +47,8 @@ var startCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "print version information",
-	Long: "print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		v := fluid.GetVersion()
-
-		if short {
-			fmt.Printf("version: %s\n", v)
-			return
-		}
-		fmt.Printf("  BuildDate: %s\n", v.BuildDate)
-		fmt.Printf("  GitCommit: %s\n", v.GitCommit)
-		fmt.Printf("  GitTreeState: %s\n", v.GitTreeState)
-		if v.GitTag != "" {
-			fmt.Printf("  GitTag: %s\n", v.GitTag)
-		}
-		fmt.Printf("  GoVersion: %s\n", v.GoVersion)
-		fmt.Printf("  Compiler: %s\n", v.Compiler)
-		fmt.Printf("  Platform: %s\n", v.Platform)
+		fluid.PrintVersion(short)
 	},
 }
 
@@ -78,7 +63,7 @@ func init() {
 		errorAndExit(err)
 	}
 
-	startCmd.Flags().StringVarP(&nodeID, "endpoint","","", "CSI endpoint")
+	startCmd.Flags().StringVarP(&endpoint, "endpoint","","", "CSI endpoint")
 	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
 		errorAndExit(err)
 	}
@@ -102,7 +87,7 @@ func main() {
 
 func handle() {
 	// startReaper()
-
+	fluid.LogVersion()
 	d := csi.NewDriver(nodeID, endpoint)
 	d.Run()
 }

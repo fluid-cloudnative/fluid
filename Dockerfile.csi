@@ -6,7 +6,8 @@ COPY . .
 
 # Build
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o csi main.go
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -a -o /go/bin/fluid-csi cmd/csi/*.go
+#RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -a -o /go/bin/fluid-csi cmd/csi/*.go
+RUN make csi-build
 
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="-N -l" -a -o /go/bin/fluid-csi cmd/csi/*.go
 
