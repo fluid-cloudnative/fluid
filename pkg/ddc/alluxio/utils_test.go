@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -79,7 +81,7 @@ func TestAlluxioEngine_getPasswdPath(t *testing.T) {
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
 			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: "/tmp/" + timestamp_test + "_passwd",
+			want: fmt.Sprintf("/tmp/%s/%s/%s_passwd", "default", "test", timestamp_test),
 		},
 	}
 	for _, tt := range tests {
@@ -124,7 +126,7 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
 			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: "/tmp/" + timestamp_test + "_group",
+			want: fmt.Sprintf("/tmp/%s/%s/%s_group", "default", "test", timestamp_test),
 		},
 	}
 	for _, tt := range tests {
@@ -166,13 +168,14 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 		want   []string
 	}{
 		{name: "test",
-			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
-				TypeMeta:   v1.TypeMeta{},
-				ObjectMeta: v1.ObjectMeta{},
-				Spec: datav1alpha1.AlluxioRuntimeSpec{RunAs: &datav1alpha1.User{UID: f(int64(1000)), GID: f(int64(1000)),
-					UserName: "test", GroupName: "a"}},
-				Status: datav1alpha1.AlluxioRuntimeStatus{},
-			},
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					TypeMeta:   v1.TypeMeta{},
+					ObjectMeta: v1.ObjectMeta{},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{RunAs: &datav1alpha1.User{UID: f(int64(1000)), GID: f(int64(1000)),
+						UserName: "test", GroupName: "a"}},
+					Status: datav1alpha1.AlluxioRuntimeStatus{},
+				},
 			},
 			want: []string{"1000:test:1000", "1000:a"}},
 	}
@@ -232,5 +235,65 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
 		}
+	}
+}
+
+func Test_excludeInactivePod(t *testing.T) {
+	type args struct {
+		pod *corev1.Pod
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "test",
+			args: args{
+				pod: &corev1.Pod{
+					Spec: corev1.PodSpec{
+						NodeName: "test",
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
+					},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := excludeInactivePod(tt.args.pod); got != tt.want {
+				t.Errorf("excludeInactivePod() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isPortInUsed(t *testing.T) {
+	type args struct {
+		port      int
+		usedPorts []int
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "test",
+			args: args{
+				port:      20000,
+				usedPorts: []int{20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isPortInUsed(tt.args.port, tt.args.usedPorts); got != tt.want {
+				t.Errorf("isPortInUsed() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

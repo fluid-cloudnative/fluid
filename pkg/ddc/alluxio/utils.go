@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -138,14 +139,14 @@ func (e *AlluxioEngine) getLocalStorageDirectory() string {
 
 func (e *AlluxioEngine) getPasswdPath(timestamp string) string {
 	//timestamp := time.Now().Format("20060102150405")
-	passwd := "/tmp/" + timestamp + "_passwd"
+	passwd := fmt.Sprintf("/tmp/%s/%s/%s_passwd", e.namespace, e.name, timestamp)
 	e.Log.Info("Generate passwd file")
 	return passwd
 }
 
 func (e *AlluxioEngine) getGroupsPath(timestamp string) string {
 	//timestamp := time.Now().Format("20060102150405")
-	group := "/tmp/" + timestamp + "_group"
+	group := fmt.Sprintf("/tmp/%s/%s/%s_group", e.namespace, e.name, timestamp)
 	e.Log.Info("Generate group file")
 	return group
 }
@@ -187,5 +188,105 @@ func getMountRoot() (path string) {
 		path = ALLUXIO_MOUNT
 	}
 	// e.Log.Info("Mount root", "path", path)
+	return
+}
+
+// exclude Inactive pod when compute ports
+func excludeInactivePod(pod *v1.Pod) bool {
+	// pod not assigned
+	if len(pod.Spec.NodeName) == 0 {
+		return true
+	}
+	// pod is Successed or failed
+	if pod.Status.Phase == v1.PodSucceeded || pod.Status.Phase == v1.PodFailed {
+		return true
+	}
+	return false
+}
+
+func (e *AlluxioEngine) getK8sClusterUsedPort() ([]int, error) {
+	k8sClusterUsedPorts := []int{}
+	pods := &v1.PodList{}
+	services := &v1.ServiceList{}
+
+	err := e.Client.List(context.TODO(), pods)
+	if err != nil {
+		return k8sClusterUsedPorts, err
+	}
+	for _, pod := range pods.Items {
+		// fileter pod
+		if excludeInactivePod(&pod) {
+			continue
+		}
+		for _, container := range pod.Spec.Containers {
+			for _, port := range container.Ports {
+				usedHostPort := port.HostPort
+				if pod.Spec.HostNetwork {
+					usedHostPort = port.ContainerPort
+				}
+
+				k8sClusterUsedPorts = append(k8sClusterUsedPorts, int(usedHostPort))
+			}
+		}
+	}
+
+	err = e.Client.List(context.TODO(), services)
+	if err != nil {
+		return k8sClusterUsedPorts, err
+	}
+	for _, service := range services.Items {
+		if service.Spec.Type == v1.ServiceTypeNodePort || service.Spec.Type == v1.ServiceTypeLoadBalancer {
+			for _, port := range service.Spec.Ports {
+				k8sClusterUsedPorts = append(k8sClusterUsedPorts, int(port.NodePort))
+			}
+		}
+	}
+	e.Log.Info("Get K8S used ports, %++v", k8sClusterUsedPorts)
+	return k8sClusterUsedPorts, err
+}
+
+func isPortInUsed(port int, usedPorts []int) bool {
+	for _, usedPort := range usedPorts {
+		if port == usedPort {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *AlluxioEngine) getAvaliablePort() (err error) {
+
+	usedPorts, err := e.getK8sClusterUsedPort()
+	err = fmt.Errorf("failed to select available port")
+
+	portNum := PORT_NUM
+	// allocate 9 port
+	// master: rpc web job-rpc job-web
+	// worker: rpc web job-rpc job-data job-web
+	// if HA of master should allocate 11 port
+	// addtion: master embedded and job-master embedded
+	if e.runtime.Spec.Master.Replicas > 1 {
+		portNum = PORT_NUM + 2
+	}
+
+	for i := 0; i < portNum; i++ {
+		found := false
+		for port := AUTO_SELECT_PORT_MIN; port <= AUTO_SELECT_PORT_MAX; port++ {
+			if !isPortInUsed(port, usedPorts) && !isPortInUsed(port, e.AllocatedPorts) {
+				e.AllocatedPorts = append(e.AllocatedPorts, port)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			err = fmt.Errorf("All avaliable port from %d to %d are allocated", AUTO_SELECT_PORT_MIN, AUTO_SELECT_PORT_MAX)
+		}
+	}
+
+	if len(e.AllocatedPorts) != portNum {
+		err = fmt.Errorf("Can`t allocate enough port, got %d but expect %d", len(e.AllocatedPorts), portNum)
+	}
+
 	return
 }

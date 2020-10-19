@@ -68,7 +68,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
+	// 7.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
+
+	// 8.allocate port for fluid engine
+	err = e.allocatePorts(value)
 
 	return
 }
@@ -150,7 +154,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 			Alias:      string(level.MediumType),
 			Level:      l,
 			Type:       "hostPath",
-			Path:       level.Path,
+			Path:       fmt.Sprintf("%s/%s/%s", level.Path, runtime.Namespace, runtime.Name),
 			Mediumtype: string(level.MediumType),
 			Low:        level.Low,
 			High:       level.High,
@@ -262,4 +266,26 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	e.transformResourcesForWorker(runtime, value)
 
 	return
+}
+
+// 8.allocate port for fluid engine
+func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
+	err := e.getAvaliablePort()
+
+	if len(e.AllocatedPorts) == PORT_NUM {
+		value.Master.Ports.Rpc = e.AllocatedPorts[0]
+		value.Master.Ports.Web = e.AllocatedPorts[1]
+		value.Worker.Ports.Rpc = e.AllocatedPorts[2]
+		value.Worker.Ports.Web = e.AllocatedPorts[3]
+		value.Worker.Ports.Data = e.AllocatedPorts[4]
+		value.JobMaster.Ports.Web = e.AllocatedPorts[5]
+		value.JobMaster.Ports.Web = e.AllocatedPorts[6]
+		value.JobWorker.Ports.Web = e.AllocatedPorts[7]
+		value.JobWorker.Ports.Web = e.AllocatedPorts[8]
+	} else {
+		value.Master.Ports.Embedded = e.AllocatedPorts[9]
+		value.JobMaster.Ports.Embedded = e.AllocatedPorts[10]
+	}
+
+	return err
 }

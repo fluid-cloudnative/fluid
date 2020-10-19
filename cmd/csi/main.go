@@ -47,7 +47,7 @@ var startCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "print version information",
-	Long: "print version information",
+	Long:  "print version information",
 	Run: func(cmd *cobra.Command, args []string) {
 		v := fluid.GetVersion()
 
@@ -73,12 +73,12 @@ func init() {
 		os.Exit(1)
 	}
 
-	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
+	startCmd.Flags().StringVarP(&nodeID, "nodeid", "", "", "node id")
 	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		errorAndExit(err)
 	}
 
-	startCmd.Flags().StringVarP(&nodeID, "endpoint","","", "CSI endpoint")
+	startCmd.Flags().StringVarP(&nodeID, "endpoint", "", "", "CSI endpoint")
 	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
 		errorAndExit(err)
 	}
@@ -88,7 +88,6 @@ func init() {
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)
 }
-
 
 func main() {
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)

@@ -9,8 +9,16 @@
 # See the NOTICE file distributed with this work for information regarding copyright ownership.
 #
 
-{{ $masterCount := int .Values.master.count }}
+{{- $masterCount := int .Values.master.count }}
+{{- $isEmbedded := (eq .Values.journal.type "EMBEDDED") }}
+{{- $isHaEmbedded := and $isEmbedded (gt $masterCount 1) }}
 {{- $release := .Release }}
+{{- $masterRpcPort := .Values.master.ports.rpc }}
+{{- $masterWebPort := .Values.master.ports.web }}
+{{- $jobMasterRpcPort := .Values.jobMaster.ports.rpc }}
+{{- $jobMasterWebPort := .Values.jobMaster.ports.web }}
+{{- $masterEmbeddedPort := .Values.master.ports.embedded }}
+{{- $jobMasterEmbeddedPort := .Values.jobMaster.ports.embedded }}
 {{- $name := include "alluxio.name" . }}
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
@@ -29,18 +37,20 @@ metadata:
     role: alluxio-master
 spec:
   ports:
-    - port: 19998
+    - port: {{ $masterRpcPort }}
       name: rpc
-    - port: 19999
+    - port: {{ $masterWebPort }}
       name: web
-    - port: 20001
+    - port: {{ $jobMasterRpcPort }}
       name: job-rpc
-    - port: 20002
+    - port: {{ $jobMasterWebPort }}
       name: job-web
-    - port: 19200
+    {{- if $isHaEmbedded }}
+    - port: {{ $masterEmbeddedPort }}
       name: embedded
-    - port: 20003
+    - port: {{ $jobMasterEmbeddedPort }}
       name: job-embedded
+    {{- end }}
   clusterIP: None
   selector:
     role: alluxio-master

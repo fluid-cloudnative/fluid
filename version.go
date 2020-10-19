@@ -13,6 +13,7 @@ type Version struct {
 	Compiler     string
 	Platform     string
 }
+
 var (
 	version      = "0.0.0"                // value from VERSION file
 	buildDate    = "1970-01-01T00:00:00Z" // output from `date -u +'%Y-%m-%dT%H:%M:%SZ'`
@@ -20,7 +21,6 @@ var (
 	gitTag       = ""                     // output from `git describe --exact-match --tags HEAD` (if clean tree state)
 	gitTreeState = ""                     // determined from `git status --porcelain`. either 'clean' or 'dirty'
 )
-
 
 func GetVersion() Version {
 	var versionStr string

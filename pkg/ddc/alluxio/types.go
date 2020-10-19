@@ -33,7 +33,11 @@ type Alluxio struct {
 
 	Master Master `yaml:"master,omitempty"`
 
+	JobMaster JobMaster `yaml:"jobMaster,omitempty"`
+
 	Worker Worker `yaml:"worker,omitempty"`
+
+	JobWorker JobWorker `yaml:"jobWorker,omitemoty"`
 
 	Fuse Fuse `yaml:"fuse,omitempty"`
 
@@ -102,6 +106,21 @@ type ShortCircuit struct {
 	VolumeType string `yaml:"volumeType,omitempty"`
 }
 
+type Ports struct {
+	Rpc      int `yaml:"rpc,omitempty"`
+	Web      int `yaml:"web,omitempty"`
+	Embedded int `yaml:"embedded,omitempty"`
+	Data     int `yaml:"data,omitempty"`
+}
+
+type JobMaster struct {
+	Ports Ports `yaml:"ports,omitempty"`
+}
+
+type JobWorker struct {
+	Ports Ports `yaml:"ports,omitempty"`
+}
+
 type Worker struct {
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
 	Env          map[string]string `yaml:"env,omitempty"`
@@ -109,6 +128,7 @@ type Worker struct {
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports        Ports             `yaml:"ports,omitempty"`
 }
 
 type Master struct {
@@ -120,6 +140,7 @@ type Master struct {
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports        Ports             `yaml:"ports,omitempty"`
 }
 
 type Fuse struct {
@@ -168,7 +189,7 @@ type cacheStates struct {
 }
 
 func (value *Alluxio) getTiredStoreLevel0Path() (path string) {
-	path = "/dev/shm"
+	path = "/dev/shm/default/default"
 	for _, level := range value.Tieredstore.Levels {
 		if level.Level == 0 {
 			path = level.Path
