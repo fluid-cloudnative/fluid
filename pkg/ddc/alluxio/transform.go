@@ -272,7 +272,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 	allocatedPorts, err := e.getAvaliablePort()
 
-	if len(e.AllocatedPorts) == PORT_NUM {
+	if len(allocatedPorts) == PORT_NUM {
 		value.Master.Ports.Rpc = allocatedPorts[0]
 		value.Master.Ports.Web = allocatedPorts[1]
 		value.Worker.Ports.Rpc = allocatedPorts[2]

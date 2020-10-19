@@ -1,14 +1,14 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller
+IMG ?= harbor.unisound.ai/xieydd/fluid/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
+CSI_IMG ?= harbor.unisound.ai/xieydd/fluid/fluid-csi
 
-LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
+LOADER_IMG ?= harbor.unisound.ai/xieydd/fluid/fluid-dataloader
 
-INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+INIT_USERS_IMG ?= harbor.unisound.ai/xieydd/fluid/init-users
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -97,16 +97,16 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: generate fmt vet
-	docker build --no-cache . -t ${IMG}:${GIT_VERSION}
+	docker build --no-cache . -t ${IMG}:${GIT_VERSION} && docker save ${IMG}:${GIT_VERSION} > ../import/controller.tar
 
 docker-build-csi: generate fmt vet
-	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION} && docker save ${CSI_IMG}:${GIT_VERSION} >> ../import/csi.tar
 
 docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
 
 docker-build-init-users:
-	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
+	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION} >> ../import/init.tar
 
 # Push the docker image
 docker-push: docker-build

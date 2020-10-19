@@ -271,7 +271,7 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 	}
 
 	if len(allocatedPorts) != portNum {
-		err = fmt.Errorf("Can`t allocate enough port, got %d but expect %d", len(e.AllocatedPorts), portNum)
+		err = fmt.Errorf("Can`t allocate enough port, got %d but expect %d", len(allocatedPorts), portNum)
 	}
 
 	return
