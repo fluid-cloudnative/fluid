@@ -20,7 +20,7 @@ endif
 
 CURRENT_DIR=$(shell pwd)
 VERSION=v0.4.0
-BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+BUILD_DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
 GIT_TREE_STATE=$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi)
@@ -53,6 +53,10 @@ manager: generate fmt vet
 # Build CSI binary
 csi: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+
+# Build CSI binary in dockerfile
+csi-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o /go/bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests

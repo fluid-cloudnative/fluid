@@ -93,10 +93,7 @@ func SaveConfigMapToFile(name string, key string, namespace string) (fileName st
 	return fileName, err
 }
 
-/**
-*
-* save the key of configMap into a file
-**/
+// kubectl executes command with arguments (string array)
 func kubectl(args []string) ([]byte, error) {
 	binary, err := exec.LookPath(kubectlCmd[0])
 	if err != nil {
