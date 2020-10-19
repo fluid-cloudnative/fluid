@@ -144,6 +144,12 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 					localDirPath := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
 					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
 					err = fileUtils.SyncLocalDir(localDirPath)
+					if err != nil {
+						result.Err = err
+						result.Done = false
+						resultChan <- result
+						return
+					}
 				}
 			}
 
