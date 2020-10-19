@@ -255,9 +255,8 @@ func isPortInUsed(port int, usedPorts []int) bool {
 }
 
 func (e *AlluxioEngine) getAvaliablePort() (err error) {
-
-	usedPorts, err := e.getK8sClusterUsedPort()
-	err = fmt.Errorf("failed to select available port")
+	usedPorts := []int{}
+	usedPorts, err = e.getK8sClusterUsedPort()
 
 	portNum := PORT_NUM
 	// allocate 9 port

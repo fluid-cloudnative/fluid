@@ -63,7 +63,7 @@ func init() {
 		errorAndExit(err)
 	}
 
-	startCmd.Flags().StringVarP(&endpoint, "endpoint","","", "CSI endpoint")
+	startCmd.Flags().StringVarP(&endpoint, "endpoint", "", "", "CSI endpoint")
 	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
 		errorAndExit(err)
 	}
