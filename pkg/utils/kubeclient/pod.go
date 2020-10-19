@@ -19,6 +19,7 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,4 +71,17 @@ func DeletePod(client client.Client, pod *corev1.Pod) error {
 		err = nil
 	}
 	return err
+}
+
+// exclude Inactive pod when compute ports
+func ExcludeInactivePod(pod *v1.Pod) bool {
+	// pod not assigned
+	if len(pod.Spec.NodeName) == 0 {
+		return true
+	}
+	// pod is Successed or failed
+	if pod.Status.Phase == v1.PodSucceeded || pod.Status.Phase == v1.PodFailed {
+		return true
+	}
+	return false
 }

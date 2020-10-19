@@ -1,4 +1,11 @@
 /*
+ * @Author: xieydd
+ * @since: 2020-10-17 17:16:46
+ * @lastTime: 2020-10-19 19:15:25
+ * @LastAuthor: Do not edit
+ * @message:
+ */
+/*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +24,6 @@ package alluxio
 
 import (
 	"strings"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -35,11 +41,10 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		// value.UserInfo.PasswdPath = e.getPasswdPath()
 		// value.UserInfo.GroupPath = e.getGroupsPath()
 		// value.UserInfo.Args = e.getInitUsersArgs(runtime)
-		timestamp := time.Now().Format("20060102150405")
 		value.InitUsers = InitUsers{
 			Enabled:    true,
-			PasswdPath: e.getPasswdPath(timestamp),
-			GroupPath:  e.getGroupsPath(timestamp),
+			PasswdPath: e.getPasswdPath(),
+			GroupPath:  e.getGroupsPath(),
 			//Args:       e.getInitUsersArgs(runtime),
 			EnvUsers:       e.getInitUserEnv(runtime),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),

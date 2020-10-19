@@ -16,6 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
@@ -188,8 +190,8 @@ type cacheStates struct {
 	// nonCacheable     string
 }
 
-func (value *Alluxio) getTiredStoreLevel0Path() (path string) {
-	path = "/dev/shm/default/default"
+func (value *Alluxio) getTiredStoreLevel0Path(namespace string) (path string) {
+	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, value.FullnameOverride)
 	for _, level := range value.Tieredstore.Levels {
 		if level.Level == 0 {
 			path = level.Path
