@@ -72,6 +72,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			}()
 			e.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
 			if result.Done {
+				e.Log.Info("Metadata sync succeeded", "period", time.Since(result.StartTime))
 				err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 					dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 					if err != nil {
@@ -127,6 +128,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			}
 			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 			if err != nil {
+				e.Log.Error(err, "Can't get dataset when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
 				resultChan <- result
@@ -145,6 +147,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
 					err = fileUtils.SyncLocalDir(localDirPath)
 					if err != nil {
+						e.Log.Error(err, fmt.Sprintf("Sync local dir failed when syncing metadata, path: %s", localDirPath), "name", e.name, "namespace", e.namespace)
 						result.Err = err
 						result.Done = false
 						resultChan <- result
@@ -156,6 +159,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			// load metadata
 			err = fileUtils.LoadMetadataWithoutTimeout("/")
 			if err != nil {
+				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
 				resultChan <- result
@@ -165,6 +169,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			// get total size
 			datasetUFSTotalBytes, err := e.TotalStorageBytes()
 			if err != nil {
+				e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
 				resultChan <- result
