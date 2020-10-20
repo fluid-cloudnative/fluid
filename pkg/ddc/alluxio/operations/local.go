@@ -30,7 +30,7 @@ func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
 	)
 
 	start := time.Now()
-	stdout, stderr, err = a.exec(command, false)
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
 	duration := time.Since(start)
 	a.log.Info("du -sh", "path", path, "period", duration)
 	if err != nil {
