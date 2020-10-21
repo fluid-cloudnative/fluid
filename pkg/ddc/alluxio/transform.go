@@ -68,12 +68,14 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
-	// 7.allocate port for fluid engine
-	err = e.allocatePorts(value)
-
-	// 8.set optimization parameters
+	// 7.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
 
+	// 8.allocate port for fluid engine
+	err = e.allocatePorts(value)
+
+	// 9.set engine properties
+	e.setPortProperties(runtime, value)
 	return
 }
 
