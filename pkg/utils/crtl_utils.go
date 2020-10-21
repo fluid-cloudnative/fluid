@@ -31,19 +31,22 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
-// No requeue
+// NoRequeue returns the result of a reconciler invocation and won't requeue.
 func NoRequeue() (ctrl.Result, error) {
 	return RequeueIfError(nil)
 }
 
+// RequeueAfterInterval returns the result of a reconciler invocation with a given requeue interval.
 func RequeueAfterInterval(interval time.Duration) (ctrl.Result, error) {
 	return ctrl.Result{RequeueAfter: interval}, nil
 }
 
+// RequeueImmediately returns the result of a reconciler invocation and requeue immediately.
 func RequeueImmediately() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
+// RequeueIfError returns the result of a reconciler invocation and requeue immediately if err is not nil.
 func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }

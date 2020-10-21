@@ -34,7 +34,7 @@ func NewRuntimeCondition(conditionType data.RuntimeConditionType, reason, messag
 	}
 }
 
-// SetDatasetCondition updates the dataset to include the provided condition.
+// UpdateRuntimeCondition updates the runtime to include the provided condition.
 // If the condition that we are about to add already exists
 // and has the same status and reason then we are not going to update.
 func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.RuntimeCondition) []data.RuntimeCondition {
@@ -56,6 +56,8 @@ func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.R
 	return conditions
 }
 
+// get runtime condition given a runtime condition type.
+// If found, return index of the founded condition in the condition array and the founded condition itself, otherwise return -1 and nil.
 func GetRuntimeCondition(conditions []data.RuntimeCondition,
 	condType data.RuntimeConditionType) (index int, condition *data.RuntimeCondition) {
 	if conditions == nil {

@@ -146,14 +146,17 @@ func ExecCommandInContainerWithFullOutput(podName string, containerName string, 
 	})
 }
 
+// Execute shell command or script in the specified container and return stdout, stderr and error
 func ExecShellInContainer(podName string, containerName string, namespace string, cmd string) (stdout string, stderr string, err error) {
 	return ExecCommandInContainer(podName, containerName, namespace, []string{"/bin/sh", "-c", cmd})
 }
 
+// A wrapper function of ExecCommandInContainerWithFullOutput
 func ExecCommandInContainer(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
 	return ExecCommandInContainerWithFullOutput(podName, containerName, namespace, cmd)
 }
 
+// Find the first container in the given pod, executes command in that container, and return stdout, stderr and error.
 func ExecCommandInPod(podName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
 	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {

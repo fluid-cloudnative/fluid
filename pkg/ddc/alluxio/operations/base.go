@@ -225,7 +225,7 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
-// Check if it's ready
+// Check if the Alluxio is ready by running `alluxio fsadmin report` command
 func (a AlluxioFileUtils) Ready() (ready bool) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report"}
