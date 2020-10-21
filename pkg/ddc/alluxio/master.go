@@ -169,43 +169,5 @@ func (e *AlluxioEngine) SetupMaster() (err error) {
 		return err
 	}
 
-	// 3. Update the status of dataset
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-
-		runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseNotReady
-		replicas := runtimeToUpdate.Spec.Master.Replicas
-		if replicas == 0 {
-			replicas = 1
-		}
-
-		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
-		runtimeToUpdate.Status.ValueFileConfigmap = e.getConfigmapName()
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterInitialized, datav1alpha1.RuntimeMasterInitializedReason,
-			"The master is initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		e.Log.Error(err, "Update runtime status")
-		return err
-	}
-
 	return
 }
