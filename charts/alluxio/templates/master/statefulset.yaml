@@ -83,6 +83,8 @@ spec:
             value: {{ .Values.initUsers.envTieredPaths | quote }}
           {{- end }}
         volumeMounts:
+          - name: dir
+            mountPath: /tmp
           - name: user
             mountPath: /tmp/passwd
           - name: group
@@ -269,13 +271,17 @@ spec:
       restartPolicy: Always
       volumes:
         {{ if .Values.initUsers.enabled -}}
+        - name: dir
+          hostPath:
+            path: {{ .Values.initUsers.dir }}
+            type: DirectoryOrCreate 
         - name: user         
           hostPath:
-            path: {{ .Values.initUsers.passwdpath }}
+            path: {{ .Values.initUsers.dir }}/passwd
             type: FileOrCreate
         - name: group         
           hostPath:
-            path: {{ .Values.initUsers.grouppath }}
+            path: {{ .Values.initUsers.dir }}/group
             type: FileOrCreate
         {{- end }}
         {{- if .Values.secrets }}

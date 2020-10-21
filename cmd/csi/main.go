@@ -58,12 +58,12 @@ func init() {
 		os.Exit(1)
 	}
 
-	startCmd.Flags().StringVarP(&nodeID, "nodeid","","", "node id")
+	startCmd.Flags().StringVarP(&nodeID, "nodeid", "", "", "node id")
 	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		errorAndExit(err)
 	}
 
-	startCmd.Flags().StringVarP(&endpoint, "endpoint","","", "CSI endpoint")
+	startCmd.Flags().StringVarP(&endpoint, "endpoint", "", "", "CSI endpoint")
 	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
 		errorAndExit(err)
 	}
@@ -73,7 +73,6 @@ func init() {
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)
 }
-
 
 func main() {
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)

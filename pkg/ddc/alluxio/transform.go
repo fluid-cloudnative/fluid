@@ -68,8 +68,14 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
+	// 7.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
 
+	// 8.allocate port for fluid engine
+	err = e.allocatePorts(value)
+
+	// 9.set engine properties
+	e.setPortProperties(runtime, value)
 	return
 }
 
@@ -150,7 +156,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 			Alias:      string(level.MediumType),
 			Level:      l,
 			Type:       "hostPath",
-			Path:       level.Path,
+			Path:       fmt.Sprintf("%s/%s/%s", level.Path, runtime.Namespace, runtime.Name),
 			Mediumtype: string(level.MediumType),
 			Low:        level.Low,
 			High:       level.High,
@@ -205,7 +211,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Master.Env = map[string]string{}
 	}
 
-	value.Master.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
+	value.Master.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.name, e.namespace)
 
 	if len(runtime.Spec.Master.Properties) > 0 {
 		value.Master.Properties = runtime.Spec.Master.Properties
@@ -255,11 +261,33 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	// 	value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	// }
 
-	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path()
+	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.name, e.namespace)
 
 	value.Worker.HostNetwork = true
 
 	e.transformResourcesForWorker(runtime, value)
 
 	return
+}
+
+// 8.allocate port for fluid engine
+func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
+	allocatedPorts, err := e.getAvaliablePort()
+
+	if len(allocatedPorts) == PORT_NUM {
+		value.Master.Ports.Rpc = allocatedPorts[0]
+		value.Master.Ports.Web = allocatedPorts[1]
+		value.Worker.Ports.Rpc = allocatedPorts[2]
+		value.Worker.Ports.Web = allocatedPorts[3]
+		value.JobMaster.Ports.Rpc = allocatedPorts[4]
+		value.JobMaster.Ports.Web = allocatedPorts[5]
+		value.JobWorker.Ports.Rpc = allocatedPorts[6]
+		value.JobWorker.Ports.Web = allocatedPorts[7]
+		value.JobWorker.Ports.Data = allocatedPorts[8]
+	} else {
+		value.Master.Ports.Embedded = allocatedPorts[9]
+		value.JobMaster.Ports.Embedded = allocatedPorts[10]
+	}
+
+	return err
 }

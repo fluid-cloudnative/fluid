@@ -16,9 +16,12 @@ limitations under the License.
 package alluxio
 
 import (
+	"strconv"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestOptimizeDefaultProperties(t *testing.T) {
@@ -260,5 +263,92 @@ func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
 		if test.alluxioValue.Fuse.JvmOptions[0] != test.expect[0] {
 			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
 		}
+	}
+}
+
+func TestAlluxioEngine_setPortProperties(t *testing.T) {
+	type fields struct {
+		runtime                *datav1alpha1.AlluxioRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		initImage              string
+		MetadataSyncDoneCh     chan MetadataSyncResult
+	}
+	type args struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+	}
+
+	var port int = 20000
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{},
+			},
+			args: args{
+				runtime: &datav1alpha1.AlluxioRuntime{},
+				alluxioValue: &Alluxio{
+					Master: Master{
+						Ports: Ports{
+							Rpc:      port,
+							Web:      port,
+							Embedded: 0,
+						},
+					},
+					Worker: Worker{
+						Ports: Ports{
+							Rpc: port,
+							Web: port,
+						},
+					},
+					JobMaster: JobMaster{
+						Ports: Ports{
+							Rpc:      port,
+							Web:      port,
+							Embedded: 0,
+						},
+					},
+					JobWorker: JobWorker{
+						Ports: Ports{
+							Rpc:  port,
+							Web:  port,
+							Data: port,
+						},
+					},
+					Properties: map[string]string{},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				initImage:              tt.fields.initImage,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+			}
+			e.setPortProperties(tt.args.runtime, tt.args.alluxioValue)
+			key := tt.args.alluxioValue.Properties["alluxio.master.rpc.port"]
+			if key != strconv.Itoa(port) {
+				t.Errorf("expected %d, got %s", port, tt.args.alluxioValue.Properties["alluxio.master.rpc.port"])
+			}
+		})
 	}
 }
