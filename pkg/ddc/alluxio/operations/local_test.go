@@ -1,11 +1,4 @@
 /*
- * @Author: xieydd
- * @since: 2020-10-17 17:16:46
- * @lastTime: 2020-10-20 18:09:32
- * @LastAuthor: Do not edit
- * @message:
- */
-/*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
