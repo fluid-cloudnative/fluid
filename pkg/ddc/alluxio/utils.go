@@ -139,17 +139,10 @@ func (e *AlluxioEngine) getLocalStorageDirectory() string {
 	return "/underFSStorage"
 }
 
-func (e *AlluxioEngine) getPasswdPath() string {
-	passwd := fmt.Sprintf("/tmp/%s/%s/passwd", e.namespace, e.name)
-	e.Log.Info("Generate passwd file")
-	return passwd
-}
-
-func (e *AlluxioEngine) getGroupsPath() string {
-	//timestamp := time.Now().Format("20060102150405")
-	group := fmt.Sprintf("/tmp/%s/%s/group", e.namespace, e.name)
-	e.Log.Info("Generate group file")
-	return group
+func (e *AlluxioEngine) getInitUserDir() string {
+	dir := fmt.Sprintf("/tmp/fluid/%s/%s", e.namespace, e.name)
+	e.Log.Info("Generate InitUser dir")
+	return dir
 }
 
 func (e *AlluxioEngine) getInitUsersArgs(runtime *datav1alpha1.AlluxioRuntime) []string {
@@ -230,6 +223,8 @@ func getK8sClusterUsedPort(client client.Client) ([]int, error) {
 		}
 	}
 
+	fmt.Printf("Get K8S used ports, %++v", k8sClusterUsedPorts)
+
 	return k8sClusterUsedPorts, err
 }
 
@@ -275,4 +270,8 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 	}
 
 	return
+}
+
+func (e *AlluxioEngine) setProperities(value *Alluxio) {
+	e.Properties = append([]string{}, fmt.Sprintf("-Dalluxio.master.rpc.port=%d", value.Master.Ports.Rpc))
 }

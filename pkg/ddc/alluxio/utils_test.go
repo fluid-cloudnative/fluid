@@ -53,53 +53,7 @@ func TestIsFluidNativeScheme(t *testing.T) {
 	}
 }
 
-func TestAlluxioEngine_getPasswdPath(t *testing.T) {
-	type fields struct {
-		runtime                *datav1alpha1.AlluxioRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-	}
-
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{name: "test",
-			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
-				TypeMeta:   v1.TypeMeta{},
-				ObjectMeta: v1.ObjectMeta{},
-				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
-				Status:     datav1alpha1.AlluxioRuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: fmt.Sprintf("/tmp/%s/%s/passwd", "default", "test"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &AlluxioEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-			}
-			if got := e.getPasswdPath(); got != tt.want {
-				t.Errorf("AlluxioEngine.getPasswdPath() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestAlluxioEngine_getGroupsPath(t *testing.T) {
+func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 	type fields struct {
 		runtime                *datav1alpha1.AlluxioRuntime
 		name                   string
@@ -122,7 +76,7 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
 			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: fmt.Sprintf("/tmp/%s/%s/group", "default", "test"),
+			want: fmt.Sprintf("/tmp/fluid/%s/%s", "default", "test"),
 		},
 	}
 	for _, tt := range tests {
@@ -137,8 +91,8 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			if got := e.getGroupsPath(); got != tt.want {
-				t.Errorf("AlluxioEngine.getGroupsPath() = %v, want %v", got, tt.want)
+			if got := e.getInitUserDir(); got != tt.want {
+				t.Errorf("AlluxioEngine.getInitUserDir() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -255,6 +209,64 @@ func Test_isPortInUsed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isPortInUsed(tt.args.port, tt.args.usedPorts); got != tt.want {
 				t.Errorf("isPortInUsed() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlluxioEngine_setProperities(t *testing.T) {
+	type fields struct {
+		runtime                *datav1alpha1.AlluxioRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		initImage              string
+		MetadataSyncDoneCh     chan MetadataSyncResult
+		Properties             []string
+	}
+	type args struct {
+		value *Alluxio
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{name: "test",
+			fields: fields{Properties: []string{"20001"}},
+			args: args{
+				value: &Alluxio{
+					Master: Master{
+						Ports: Ports{Rpc: 20000},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				initImage:              tt.fields.initImage,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+				Properties:             tt.fields.Properties,
+			}
+			e.setProperities(tt.args.value)
+			got := e.Properties[0]
+
+			if got != "-Dalluxio.master.rpc.port=20000" {
+				t.Errorf("setProperities() set properties error, want %s got %s", got, "-Dalluxio.master.rpc.port=20000")
 			}
 		})
 	}

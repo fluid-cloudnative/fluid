@@ -17,9 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
 )
 
 // queryCacheStatus checks the cache status
@@ -179,7 +180,7 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 // clean cache
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 	return fileUitls.CleanCache(path)
 
 }

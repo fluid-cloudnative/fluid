@@ -74,6 +74,9 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 8.allocate port for fluid engine
 	err = e.allocatePorts(value)
 
+	// 9.set properties for fluid engine
+	e.setProperities(value)
+
 	return
 }
 
@@ -277,11 +280,11 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 		value.Master.Ports.Web = allocatedPorts[1]
 		value.Worker.Ports.Rpc = allocatedPorts[2]
 		value.Worker.Ports.Web = allocatedPorts[3]
-		value.Worker.Ports.Data = allocatedPorts[4]
+		value.JobMaster.Ports.Rpc = allocatedPorts[4]
 		value.JobMaster.Ports.Web = allocatedPorts[5]
-		value.JobMaster.Ports.Web = allocatedPorts[6]
+		value.JobWorker.Ports.Rpc = allocatedPorts[6]
 		value.JobWorker.Ports.Web = allocatedPorts[7]
-		value.JobWorker.Ports.Web = allocatedPorts[8]
+		value.JobWorker.Ports.Data = allocatedPorts[8]
 	} else {
 		value.Master.Ports.Embedded = allocatedPorts[9]
 		value.JobMaster.Ports.Embedded = allocatedPorts[10]

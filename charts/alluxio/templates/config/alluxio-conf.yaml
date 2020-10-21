@@ -78,6 +78,8 @@
 {{- /* ===================================== */}}
 {{- $masterJavaOpts := list }}
 {{- $masterJavaOpts = print "-Dalluxio.master.hostname=${ALLUXIO_MASTER_HOSTNAME}" | append $masterJavaOpts }}
+{{- $masterJavaOpts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $masterJavaOpts }}
+{{- $masterJavaOpts = printf "-Dalluxio.master.web.port=%v" .Values.master.ports.web | append $masterJavaOpts }}
 {{- range $key, $val := .Values.master.properties }}
   {{- $masterJavaOpts = printf "-D%v=%v" $key $val | append $masterJavaOpts }}
 {{- end }}
@@ -86,10 +88,20 @@
 {{- end }}
 
 {{- /* ===================================== */}}
+{{- /*           ALLUXIO_MASTER_PORT         */}}
+{{- /* ===================================== */}}
+{{- $masterPorts := list }}
+{{- $masterPorts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $masterPorts }}
+#{{- $masterPorts = printf "-Dalluxio.master.web.port=%v" .Values.master.ports.web | append $masterPorts }}
+
+{{- /* ===================================== */}}
 {{- /*     ALLUXIO_JOB_MASTER_JAVA_OPTS      */}}
 {{- /* ===================================== */}}
 {{- $jobMasterJavaOpts := list }}
 {{- $jobMasterJavaOpts = print "-Dalluxio.master.hostname=${ALLUXIO_MASTER_HOSTNAME}" | append $jobMasterJavaOpts }}
+{{- $jobMasterJavaOpts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $jobMasterJavaOpts }}
+{{- $jobMasterJavaOpts = printf "-Dalluxio.job.master.rpc.port=%v" .Values.jobMaster.ports.rpc | append $jobMasterJavaOpts }}
+{{- $jobMasterJavaOpts = printf "-Dalluxio.job.master.web.port=%v" .Values.jobMaster.ports.web | append $jobMasterJavaOpts }}
 {{- range $key, $val := .Values.jobMaster.properties }}
   {{- $jobMasterJavaOpts = printf "-D%v=%v" $key $val | append $jobMasterJavaOpts }}
 {{- end }}
@@ -102,6 +114,7 @@
 {{- /* ===================================== */}}
 {{- $workerJavaOpts := list }}
 {{- $workerJavaOpts = print "-Dalluxio.worker.hostname=${ALLUXIO_WORKER_HOSTNAME}" | append $workerJavaOpts }}
+{{- $workerJavaOpts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $workerJavaOpts }}
 {{- $workerJavaOpts = printf "-Dalluxio.worker.rpc.port=%v" .Values.worker.ports.rpc | append $workerJavaOpts }}
 {{- $workerJavaOpts = printf "-Dalluxio.worker.web.port=%v" .Values.worker.ports.web | append $workerJavaOpts }}
 
@@ -139,6 +152,8 @@
 {{- /* ===================================== */}}
 {{- $jobWorkerJavaOpts := list }}
 {{- $jobWorkerJavaOpts = print "-Dalluxio.worker.hostname=${ALLUXIO_WORKER_HOSTNAME}" | append $jobWorkerJavaOpts }}
+{{- $jobWorkerJavaOpts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $jobWorkerJavaOpts }}
+{{- $jobWorkerJavaOpts = printf "-Dalluxio.job.master.rpc.port=%v" .Values.jobMaster.ports.rpc | append $jobWorkerJavaOpts }}
 {{- $jobWorkerJavaOpts = printf "-Dalluxio.job.worker.rpc.port=%v" .Values.jobWorker.ports.rpc | append $jobWorkerJavaOpts }}
 {{- $jobWorkerJavaOpts = printf "-Dalluxio.job.worker.data.port=%v" .Values.jobWorker.ports.data | append $jobWorkerJavaOpts }}
 {{- $jobWorkerJavaOpts = printf "-Dalluxio.job.worker.web.port=%v" .Values.jobWorker.ports.web | append $jobWorkerJavaOpts }}
@@ -153,6 +168,7 @@
 {{- /*        ALLUXIO_FUSE_JAVA_OPTS         */}}
 {{- /* ===================================== */}}
 {{- $fuseJavaOpts := list }}
+{{- $fuseJavaOpts = printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc | append $fuseJavaOpts }}
 {{- range $key, $val := .Values.fuse.properties }}
   {{- $fuseJavaOpts = printf "-D%v=%v" $key $val | append $fuseJavaOpts }}
 {{- end }}
@@ -193,3 +209,6 @@ data:
     {{ range $key := $fuseJavaOpts }}{{ printf "%v " $key }}{{ end }}
   ALLUXIO_USER_JAVA_OPTS: " -Xms16g -Xmx16g "
   ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH: "${ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH}"
+  ALLUXIO_MASTER_PORTS: |- 
+    {{- /* Format ALLUXIO_MASTER_PORTS list to one line */}}
+    {{ range $key := $masterPorts }}{{ printf "%v " $key }}{{ end }} 

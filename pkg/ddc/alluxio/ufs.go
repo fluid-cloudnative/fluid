@@ -1,4 +1,11 @@
 /*
+ * @Author: xieydd
+ * @since: 2020-10-17 17:16:46
+ * @lastTime: 2020-10-20 17:43:20
+ * @LastAuthor: Do not edit
+ * @message:
+ */
+/*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,13 +81,13 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 // report alluxio summary
 func (e *AlluxioEngine) reportSummary() (summary string, err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 	return fileUtils.ReportSummary()
 }
 
 // du the ufs
 func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 	return fileUitls.Du("/")
 }

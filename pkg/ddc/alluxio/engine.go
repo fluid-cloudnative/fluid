@@ -46,6 +46,7 @@ type AlluxioEngine struct {
 	retryShutdown          int32
 	initImage              string
 	MetadataSyncDoneCh     chan MetadataSyncResult
+	Properties             []string
 }
 
 /**
@@ -61,6 +62,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
+		Properties:             []string{},
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

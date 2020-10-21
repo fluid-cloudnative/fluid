@@ -39,7 +39,7 @@ type Alluxio struct {
 
 	Worker Worker `yaml:"worker,omitempty"`
 
-	JobWorker JobWorker `yaml:"jobWorker,omitemoty"`
+	JobWorker JobWorker `yaml:"jobWorker,omitempty"`
 
 	Fuse Fuse `yaml:"fuse,omitempty"`
 
@@ -86,8 +86,7 @@ type InitUsers struct {
 	ImageInfo `yaml:",inline"`
 	//Args       []string `yaml:"args"`
 	EnvUsers       string `yaml:"envUsers"`
-	PasswdPath     string `yaml:"passwdpath"`
-	GroupPath      string `yaml:"grouppath"`
+	Dir            string `yaml:"dir"`
 	Enabled        bool   `yaml:"enabled,omitempty"`
 	EnvTieredPaths string `yaml:"envTieredPaths"`
 }

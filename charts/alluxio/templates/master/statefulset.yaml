@@ -10,6 +10,7 @@
 #
 
 {{- $masterCount := int .Values.master.count }}
+{{- $masterPorts := printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isEmbedded := (eq .Values.journal.type "EMBEDDED") }}
 {{- $isHaEmbedded := and $isEmbedded (gt $masterCount 1) }}
@@ -83,6 +84,8 @@ spec:
             value: {{ .Values.initUsers.envTieredPaths | quote }}
           {{- end }}
         volumeMounts:
+          - name: dir
+            mountPath: /tmp
           - name: user
             mountPath: /tmp/passwd
           - name: group
@@ -94,7 +97,7 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         securityContext:
           runAsUser: {{ .Values.user }}
-        command: ["alluxio","formatJournal"]
+        command: ["alluxio","formatJournal","{{ $masterPorts }}"]
         volumeMounts:
           {{ if .Values.initUsers.enabled -}}
           - name: user
@@ -269,13 +272,17 @@ spec:
       restartPolicy: Always
       volumes:
         {{ if .Values.initUsers.enabled -}}
+        - name: dir
+          hostPath:
+            path: {{ .Values.initUsers.dir }}
+            type: DirectoryOrCreate 
         - name: user         
           hostPath:
-            path: {{ .Values.initUsers.passwdpath }}
+            path: {{ .Values.initUsers.dir }}/passwd
             type: FileOrCreate
         - name: group         
           hostPath:
-            path: {{ .Values.initUsers.grouppath }}
+            path: {{ .Values.initUsers.dir }}/group
             type: FileOrCreate
         {{- end }}
         {{- if .Values.secrets }}

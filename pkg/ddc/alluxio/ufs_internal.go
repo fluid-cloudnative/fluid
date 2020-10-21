@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -32,7 +33,7 @@ func (e *AlluxioEngine) freeStorageBytesInternal() (value int64, err error) {
 func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 	_, _, total, err = fileUitls.Count("/")
 	if err != nil {
 		return
@@ -44,7 +45,7 @@ func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 	fileCount, _, _, err = fileUitls.Count("/")
 	if err != nil {
 		return
@@ -62,7 +63,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 
 	ready := fileUitls.Ready()
 	if !ready {
@@ -107,7 +108,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
 
 	ready := fileUitls.Ready()
 	if !ready {

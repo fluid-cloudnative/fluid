@@ -27,19 +27,21 @@ import (
 )
 
 type AlluxioFileUtils struct {
-	podName   string
-	namespace string
-	container string
-	log       logr.Logger
+	podName    string
+	namespace  string
+	container  string
+	log        logr.Logger
+	Properties []string
 }
 
-func NewAlluxioFileUtils(podName string, containerName string, namespace string, log logr.Logger) AlluxioFileUtils {
+func NewAlluxioFileUtils(podName string, containerName string, namespace string, log logr.Logger, properties []string) AlluxioFileUtils {
 
 	return AlluxioFileUtils{
-		podName:   podName,
-		namespace: namespace,
-		container: containerName,
-		log:       log,
+		podName:    podName,
+		namespace:  namespace,
+		container:  containerName,
+		log:        log,
+		Properties: properties,
 	}
 }
 
@@ -51,6 +53,7 @@ func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, true)
 	if err != nil {
 		if strings.Contains(stdout, "does not exist") {
@@ -74,6 +77,7 @@ func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
@@ -90,6 +94,7 @@ func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string) (err er
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	start := time.Now()
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
 	duration := time.Since(start)
@@ -119,6 +124,7 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 		command = []string{"alluxio", "fs", "ls", "-R", alluxioPath}
 	}
 
+	command = append(command, a.Properties...)
 	start := time.Now()
 	stdout, stderr, err = a.exec(command, false)
 	duration := time.Since(start)
@@ -138,6 +144,7 @@ func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
@@ -184,6 +191,7 @@ func (a AlluxioFileUtils) Mount(alluxioPath string,
 	}
 
 	command = append(command, alluxioPath, ufsPath)
+	command = append(command, a.Properties...)
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
@@ -201,6 +209,7 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, true)
 	if err != nil {
 		return mounted, fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
@@ -231,6 +240,7 @@ func (a AlluxioFileUtils) Ready() (ready bool) {
 		command = []string{"alluxio", "fsadmin", "report"}
 	)
 
+	command = append(command, a.Properties...)
 	_, _, err := a.exec(command, true)
 	if err == nil {
 		ready = true
@@ -246,6 +256,7 @@ func (a AlluxioFileUtils) Du(alluxioPath string) (ufs int64, cached int64, cache
 		stderr  string
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
@@ -289,6 +300,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 		ufileCount, ufolderCount, utotal uint64
 	)
 
+	command = append(command, a.Properties...)
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)

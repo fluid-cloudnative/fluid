@@ -1,7 +1,7 @@
 /*
  * @Author: xieydd
  * @since: 2020-10-17 17:16:46
- * @lastTime: 2020-10-19 19:15:25
+ * @lastTime: 2020-10-20 11:04:38
  * @LastAuthor: Do not edit
  * @message:
  */
@@ -42,9 +42,8 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		// value.UserInfo.GroupPath = e.getGroupsPath()
 		// value.UserInfo.Args = e.getInitUsersArgs(runtime)
 		value.InitUsers = InitUsers{
-			Enabled:    true,
-			PasswdPath: e.getPasswdPath(),
-			GroupPath:  e.getGroupsPath(),
+			Enabled: true,
+			Dir:     e.getInitUserDir(),
 			//Args:       e.getInitUsersArgs(runtime),
 			EnvUsers:       e.getInitUserEnv(runtime),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
