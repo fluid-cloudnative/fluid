@@ -31,7 +31,7 @@ const (
 	persistentVolumeClaimProtectionFinalizerName = "kubernetes.io/pvc-protection"
 )
 
-// IsPersistentVolumeExist
+// IsPersistentVolumeExist checks if the persistent volume exists given name and annotations of the PV.
 func IsPersistentVolumeExist(client client.Client, name string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name: name,
@@ -66,7 +66,7 @@ func IsPersistentVolumeExist(client client.Client, name string, annotations map[
 	return found, err
 }
 
-// IsPersistentVolumeClaimExist
+// IsPersistentVolumeClaimExist checks if the persistent volume claim exists given name, namespace and annotations of the PVC.
 func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,

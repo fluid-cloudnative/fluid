@@ -19,19 +19,25 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 )
 
+// return used storage size of Alluxio in bytes
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
 	return e.usedStorageBytesInternal()
 }
 
+// return free storage size of Alluxio in bytes
 func (e *AlluxioEngine) FreeStorageBytes() (value int64, err error) {
 	// return e.freeStorageBytesInternal()
 	return e.freeStorageBytesInternal()
 }
+
+// return total storage size of Alluxio in bytes
 func (e *AlluxioEngine) TotalStorageBytes() (value int64, err error) {
 	// return e.totalStorageBytesInternal()
 	return e.totalStorageBytesInternal()
 }
+
+// return the total num of files in Alluxio
 func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 	// return e.totalFileNumsInternal()
 	return e.totalFileNumsInternal()
