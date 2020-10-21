@@ -17,9 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
 )
 
 // queryCacheStatus checks the cache status

@@ -16,6 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
@@ -33,7 +35,11 @@ type Alluxio struct {
 
 	Master Master `yaml:"master,omitempty"`
 
+	JobMaster JobMaster `yaml:"jobMaster,omitempty"`
+
 	Worker Worker `yaml:"worker,omitempty"`
+
+	JobWorker JobWorker `yaml:"jobWorker,omitempty"`
 
 	Fuse Fuse `yaml:"fuse,omitempty"`
 
@@ -80,8 +86,7 @@ type InitUsers struct {
 	ImageInfo `yaml:",inline"`
 	//Args       []string `yaml:"args"`
 	EnvUsers       string `yaml:"envUsers"`
-	PasswdPath     string `yaml:"passwdpath"`
-	GroupPath      string `yaml:"grouppath"`
+	Dir            string `yaml:"dir"`
 	Enabled        bool   `yaml:"enabled,omitempty"`
 	EnvTieredPaths string `yaml:"envTieredPaths"`
 }
@@ -102,6 +107,21 @@ type ShortCircuit struct {
 	VolumeType string `yaml:"volumeType,omitempty"`
 }
 
+type Ports struct {
+	Rpc      int `yaml:"rpc,omitempty"`
+	Web      int `yaml:"web,omitempty"`
+	Embedded int `yaml:"embedded,omitempty"`
+	Data     int `yaml:"data,omitempty"`
+}
+
+type JobMaster struct {
+	Ports Ports `yaml:"ports,omitempty"`
+}
+
+type JobWorker struct {
+	Ports Ports `yaml:"ports,omitempty"`
+}
+
 type Worker struct {
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
 	Env          map[string]string `yaml:"env,omitempty"`
@@ -109,6 +129,7 @@ type Worker struct {
 	Properties   map[string]string `yaml:"properties,omitempty"`
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports        Ports             `yaml:"ports,omitempty"`
 }
 
 type Master struct {
@@ -120,6 +141,7 @@ type Master struct {
 	Replicas     int32             `yaml:"replicaCount,omitempty"`
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports        Ports             `yaml:"ports,omitempty"`
 }
 
 type Fuse struct {
@@ -167,8 +189,8 @@ type cacheStates struct {
 	// nonCacheable     string
 }
 
-func (value *Alluxio) getTiredStoreLevel0Path() (path string) {
-	path = "/dev/shm"
+func (value *Alluxio) getTiredStoreLevel0Path(name, namespace string) (path string) {
+	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, name)
 	for _, level := range value.Tieredstore.Levels {
 		if level.Level == 0 {
 			path = level.Path

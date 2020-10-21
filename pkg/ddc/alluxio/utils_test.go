@@ -16,9 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -27,8 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-var timestamp_test = time.Now().Format("20060102150405")
 
 func TestIsFluidNativeScheme(t *testing.T) {
 
@@ -55,53 +53,7 @@ func TestIsFluidNativeScheme(t *testing.T) {
 	}
 }
 
-func TestAlluxioEngine_getPasswdPath(t *testing.T) {
-	type fields struct {
-		runtime                *datav1alpha1.AlluxioRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-	}
-
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{name: "test",
-			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
-				TypeMeta:   v1.TypeMeta{},
-				ObjectMeta: v1.ObjectMeta{},
-				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
-				Status:     datav1alpha1.AlluxioRuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: "/tmp/" + timestamp_test + "_passwd",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &AlluxioEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-			}
-			if got := e.getPasswdPath(timestamp_test); got != tt.want {
-				t.Errorf("AlluxioEngine.getPasswdPath() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestAlluxioEngine_getGroupsPath(t *testing.T) {
+func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 	type fields struct {
 		runtime                *datav1alpha1.AlluxioRuntime
 		name                   string
@@ -124,7 +76,7 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.AlluxioRuntimeStatus{},
 			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
-			want: "/tmp/" + timestamp_test + "_group",
+			want: fmt.Sprintf("/tmp/fluid/%s/%s", "default", "test"),
 		},
 	}
 	for _, tt := range tests {
@@ -139,8 +91,8 @@ func TestAlluxioEngine_getGroupsPath(t *testing.T) {
 				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
 				retryShutdown:          tt.fields.retryShutdown,
 			}
-			if got := e.getGroupsPath(timestamp_test); got != tt.want {
-				t.Errorf("AlluxioEngine.getGroupsPath() = %v, want %v", got, tt.want)
+			if got := e.getInitUserDir(); got != tt.want {
+				t.Errorf("AlluxioEngine.getInitUserDir() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -166,13 +118,14 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 		want   []string
 	}{
 		{name: "test",
-			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
-				TypeMeta:   v1.TypeMeta{},
-				ObjectMeta: v1.ObjectMeta{},
-				Spec: datav1alpha1.AlluxioRuntimeSpec{RunAs: &datav1alpha1.User{UID: f(int64(1000)), GID: f(int64(1000)),
-					UserName: "test", GroupName: "a"}},
-				Status: datav1alpha1.AlluxioRuntimeStatus{},
-			},
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					TypeMeta:   v1.TypeMeta{},
+					ObjectMeta: v1.ObjectMeta{},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{RunAs: &datav1alpha1.User{UID: f(int64(1000)), GID: f(int64(1000)),
+						UserName: "test", GroupName: "a"}},
+					Status: datav1alpha1.AlluxioRuntimeStatus{},
+				},
 			},
 			want: []string{"1000:test:1000", "1000:a"}},
 	}
@@ -232,5 +185,31 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
 		}
+	}
+}
+func Test_isPortInUsed(t *testing.T) {
+	type args struct {
+		port      int
+		usedPorts []int
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "test",
+			args: args{
+				port:      20000,
+				usedPorts: []int{20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isPortInUsed(tt.args.port, tt.args.usedPorts); got != tt.want {
+				t.Errorf("isPortInUsed() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

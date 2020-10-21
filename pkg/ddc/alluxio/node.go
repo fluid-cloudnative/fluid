@@ -18,7 +18,6 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -173,29 +172,31 @@ func (e *AlluxioEngine) alreadyAssigned(runtime *datav1alpha1.AlluxioRuntime, no
 }
 
 // alreadyAssignedByFluid checks if the node is occupied by other dataset
-func (e *AlluxioEngine) alreadyAssignedByFluid(node corev1.Node) (assigned bool) {
-	labels := node.Labels
-	if len(labels) > 0 {
-		for label := range labels {
-			if strings.HasPrefix(label, common.LabelAnnotationStorageCapacityPrefix) {
-				assigned = true
-				e.Log.Info("alreadyAssignedByFluid find the node is already used by dataset.",
-					"node", node.Name,
-					"label", label)
-				break
-			}
-		}
-	}
+// func (e *AlluxioEngine) alreadyAssignedByFluid(node corev1.Node) (assigned bool) {
+// 	labels := node.Labels
+// 	if len(labels) > 0 {
+// 		for label := range labels {
+// 			if strings.HasPrefix(label, common.LabelAnnotationStorageCapacityPrefix) {
+// 				assigned = true
+// 				e.Log.Info("alreadyAssignedByFluid find the node is already used by dataset.",
+// 					"node", node.Name,
+// 					"label", label)
+// 				break
+// 			}
+// 		}
+// 	}
 
-	return
-}
+// 	return
+// }
 
 // canbeAssigned checks if the node is already assigned the runtime engine
 func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node corev1.Node) bool {
 	// TODO(cheyang): the different dataset can be put in the same node, but it has to handle port conflict
-	if e.alreadyAssignedByFluid(node) {
-		return false
-	}
+	// Delete by (xieydd),  handle port conflict
+	// TODO(xieydd): Resource consumption of multi dataset same node
+	// if e.alreadyAssignedByFluid(node) {
+	// 	return false
+	// }
 
 	storageMap := tieredstore.GetLevelStorageMap(runtime)
 

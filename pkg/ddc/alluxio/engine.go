@@ -17,10 +17,11 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/go-logr/logr"
 	"os"
 	"regexp"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"

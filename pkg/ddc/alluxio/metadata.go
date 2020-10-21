@@ -3,11 +3,12 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 // MetadataSyncResult describes result for asynchronous metadata sync

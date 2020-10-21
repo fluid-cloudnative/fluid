@@ -158,11 +158,11 @@ spec:
         {{ if .Values.initUsers.enabled -}}
         - name: user         
           hostPath:
-            path: {{ .Values.initUsers.passwdpath }}
+            path: {{ .Values.initUsers.dir }}/passwd
             type: FileOrCreate
         - name: group         
           hostPath:
-            path: {{ .Values.initUsers.grouppath }}
+            path: {{ .Values.initUsers.dir }}/group
             type: FileOrCreate
         {{- end }}
         - name: alluxio-fuse-device
