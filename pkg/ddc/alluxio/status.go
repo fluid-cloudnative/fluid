@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-// init the status of the engine when it's ready
+// Check the related runtime status and update it
 func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (

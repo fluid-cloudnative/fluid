@@ -158,6 +158,7 @@ func GetChartVersion(chart string) (version string, err error) {
 	return version, nil
 }
 
+// GetChartName extracts the last element of the chart's path as the chart's name
 func GetChartName(chart string) string {
 	return filepath.Base(chart)
 }

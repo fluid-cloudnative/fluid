@@ -37,8 +37,6 @@ func EnsureNamespace(client client.Client, namespace string) (err error) {
 	if err = client.Get(context.TODO(), key, &ns); err != nil {
 		if apierrs.IsNotFound(err) {
 			return createNamespace(client, namespace)
-		} else {
-			return err
 		}
 	}
 	return err

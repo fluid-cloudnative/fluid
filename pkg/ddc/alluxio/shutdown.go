@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// shut down the Alluxio engine
 func (e *AlluxioEngine) Shutdown() (err error) {
 	if e.retryShutdown < e.gracefulShutdownLimits {
 		err = e.cleanupCache()
