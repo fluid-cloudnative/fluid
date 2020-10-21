@@ -68,14 +68,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 6.transform the permission
 	e.transformPermission(runtime, value)
 
-	// 7.set optimization parameters
-	e.optimizeDefaultProperties(runtime, value)
-
-	// 8.allocate port for fluid engine
+	// 7.allocate port for fluid engine
 	err = e.allocatePorts(value)
 
-	// 9.set properties for fluid engine
-	e.setProperities(value)
+	// 8.set optimization parameters
+	e.optimizeDefaultProperties(runtime, value)
 
 	return
 }
@@ -212,7 +209,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 		value.Master.Env = map[string]string{}
 	}
 
-	value.Master.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.namespace)
+	value.Master.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.name, e.namespace)
 
 	if len(runtime.Spec.Master.Properties) > 0 {
 		value.Master.Properties = runtime.Spec.Master.Properties
@@ -262,7 +259,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	// 	value.Worker.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	// }
 
-	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.namespace)
+	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.name, e.namespace)
 
 	value.Worker.HostNetwork = true
 

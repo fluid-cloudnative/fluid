@@ -58,7 +58,7 @@ func TestLoadMetaData(t *testing.T) {
 	}))
 
 	for _, test := range tests {
-		tools := NewAlluxioFileUtils("", "", "", ctrl.Log, []string{})
+		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
 		err := tools.LoadMetaData(test.path, test.sync)
 		// fmt.Println(expectedErr)
 		if err == nil {

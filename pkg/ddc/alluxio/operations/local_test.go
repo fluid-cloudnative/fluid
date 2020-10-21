@@ -34,7 +34,7 @@ func TestSyncLocalDir(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		tools := NewAlluxioFileUtils("", "", "", ctrl.Log, []string{})
+		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
 		err := tools.SyncLocalDir(test.path)
 		// fmt.Println(expectedErr)
 		if err == nil {

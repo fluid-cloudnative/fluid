@@ -271,7 +271,3 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 
 	return
 }
-
-func (e *AlluxioEngine) setProperities(value *Alluxio) {
-	e.Properties = append([]string{}, fmt.Sprintf("-Dalluxio.master.rpc.port=%d", value.Master.Ports.Rpc))
-}

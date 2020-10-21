@@ -74,13 +74,13 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 // report alluxio summary
 func (e *AlluxioEngine) reportSummary() (summary string, err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUtils.ReportSummary()
 }
 
 // du the ufs
 func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUitls.Du("/")
 }

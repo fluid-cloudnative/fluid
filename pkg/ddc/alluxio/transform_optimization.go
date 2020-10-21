@@ -15,7 +15,11 @@ limitations under the License.
 
 package alluxio
 
-import datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+import (
+	"strconv"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+)
 
 // transform dataset which has ufsPaths and ufsVolumes
 func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
@@ -52,7 +56,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.metrics.collection.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.max.pool.size", "1024")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.core.pool.size", "128")
-	setDefaultProperties(runtime, value, "#alluxio.master.mount.table.root.readonly", "true")
+	setDefaultProperties(runtime, value, "alluxio.master.mount.table.root.readonly", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.update.file.accesstime.disabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.file.passive.cache.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.block.avoid.eviction.policy.reserved.size.bytes", "2GB")
@@ -73,6 +77,19 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "alluxio.fuse.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "alluxio.worker.block.master.client.pool.size", "1024")
+	setDefaultProperties(runtime, value, "alluxio.master.rpc.port", strconv.Itoa(value.Master.Ports.Rpc))
+	setDefaultProperties(runtime, value, "alluxio.master.web.port", strconv.Itoa(value.Master.Ports.Web))
+	setDefaultProperties(runtime, value, "alluxio.worker.rpc.port", strconv.Itoa(value.Worker.Ports.Rpc))
+	setDefaultProperties(runtime, value, "alluxio.worker.web.port", strconv.Itoa(value.Worker.Ports.Web))
+	setDefaultProperties(runtime, value, "alluxio.job.master.rpc.port", strconv.Itoa(value.JobMaster.Ports.Rpc))
+	setDefaultProperties(runtime, value, "alluxio.job.master.web.port", strconv.Itoa(value.JobMaster.Ports.Web))
+	setDefaultProperties(runtime, value, "alluxio.job.worker.rpc.port", strconv.Itoa(value.JobWorker.Ports.Rpc))
+	setDefaultProperties(runtime, value, "alluxio.job.worker.web.port", strconv.Itoa(value.JobWorker.Ports.Web))
+	setDefaultProperties(runtime, value, "alluxio.job.worker.data.port", strconv.Itoa(value.JobWorker.Ports.Data))
+	if value.Master.Ports.Embedded != 0 && value.JobMaster.Ports.Embedded != 0 {
+		setDefaultProperties(runtime, value, "alluxio.master.embedded.journal.port", strconv.Itoa(value.Master.Ports.Embedded))
+		setDefaultProperties(runtime, value, "alluxio.job.master.embedded.journal.port", strconv.Itoa(value.JobMaster.Ports.Embedded))
+	}
 }
 
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {

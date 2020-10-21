@@ -189,8 +189,8 @@ type cacheStates struct {
 	// nonCacheable     string
 }
 
-func (value *Alluxio) getTiredStoreLevel0Path(namespace string) (path string) {
-	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, value.FullnameOverride)
+func (value *Alluxio) getTiredStoreLevel0Path(name, namespace string) (path string) {
+	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, name)
 	for _, level := range value.Tieredstore.Levels {
 		if level.Level == 0 {
 			path = level.Path

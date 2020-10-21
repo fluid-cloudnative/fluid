@@ -180,7 +180,7 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 // clean cache
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUitls.CleanCache(path)
 
 }

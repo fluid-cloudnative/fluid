@@ -192,7 +192,8 @@ func (e *AlluxioEngine) alreadyAssigned(runtime *datav1alpha1.AlluxioRuntime, no
 // canbeAssigned checks if the node is already assigned the runtime engine
 func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node corev1.Node) bool {
 	// TODO(cheyang): the different dataset can be put in the same node, but it has to handle port conflict
-	// Done by (xieydd),  handle port conflict, pls review (cheyang)
+	// Delete by (xieydd),  handle port conflict
+	// TODO(xieydd): Resource consumption of multi dataset same node
 	// if e.alreadyAssignedByFluid(node) {
 	// 	return false
 	// }

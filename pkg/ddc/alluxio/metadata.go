@@ -139,7 +139,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
 			podName, containerName := e.getMasterPodInfo()
-			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log, e.Properties)
+			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 
 			// sync local dir if necessary
 			for _, mount := range dataset.Spec.Mounts {

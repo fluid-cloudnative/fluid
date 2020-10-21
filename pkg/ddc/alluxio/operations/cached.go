@@ -29,7 +29,6 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 		stderr  string
 	)
 
-	command = append(command, a.Properties...)
 	found := false
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
@@ -66,7 +65,6 @@ func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 		stderr  string
 	)
 
-	command = append(command, a.Properties...)
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)

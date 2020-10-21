@@ -10,7 +10,6 @@
 #
 
 {{- $masterCount := int .Values.master.count }}
-{{- $masterPorts := printf "-Dalluxio.master.rpc.port=%v" .Values.master.ports.rpc }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isEmbedded := (eq .Values.journal.type "EMBEDDED") }}
 {{- $isHaEmbedded := and $isEmbedded (gt $masterCount 1) }}
@@ -97,7 +96,7 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         securityContext:
           runAsUser: {{ .Values.user }}
-        command: ["alluxio","formatJournal","{{ $masterPorts }}"]
+        command: ["alluxio","formatJournal"]
         volumeMounts:
           {{ if .Values.initUsers.enabled -}}
           - name: user

@@ -29,7 +29,6 @@ func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
 		stderr  string
 	)
 
-	command = append(command, a.Properties...)
 	start := time.Now()
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
 	duration := time.Since(start)
