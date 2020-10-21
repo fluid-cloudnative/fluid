@@ -56,7 +56,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.metrics.collection.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.max.pool.size", "1024")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.core.pool.size", "128")
-	setDefaultProperties(runtime, value, "alluxio.master.mount.table.root.readonly", "true")
+	// setDefaultProperties(runtime, value, "alluxio.master.mount.table.root.readonly", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.update.file.accesstime.disabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.file.passive.cache.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.block.avoid.eviction.policy.reserved.size.bytes", "2GB")
