@@ -65,6 +65,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.block.master.client.pool.gc.threshold", "2day")
 	setDefaultProperties(runtime, value, "alluxio.user.file.master.client.threads", "1024")
 	setDefaultProperties(runtime, value, "alluxio.user.block.master.client.threads", "1024")
+	setDefaultProperties(runtime, value, "alluxio.user.file.create.ttl.action", "FREE")
 	setDefaultProperties(runtime, value, "alluxio.user.file.readtype.default", "CACHE")
 	setDefaultProperties(runtime, value, "alluxio.security.stale.channel.purge.interval", "365d")
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.enabled", "true")
