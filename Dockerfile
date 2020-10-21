@@ -26,7 +26,6 @@ RUN curl -o helm-v3.0.3-linux-amd64.tar.gz http://aliacs-k8s-cn-hangzhou.oss-cn-
 ENV K8S_VERSION v1.14.8
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
 
-FROM fluid/alpine:helm-kubectl
 add charts/ /charts
 
 COPY --from=builder /go/bin/fluid-controller /usr/local/bin/fluid-controller
