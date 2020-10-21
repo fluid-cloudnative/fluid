@@ -45,6 +45,7 @@ func IsFailedPod(pod *corev1.Pod) bool {
 	return pod != nil && pod.Status.Phase == corev1.PodFailed
 }
 
+// get pod given name and namespace of the pod.
 func GetPodByName(client client.Client, name, namespace string) (pod *corev1.Pod, err error) {
 	key := types.NamespacedName{
 		Name:      name,
@@ -64,6 +65,7 @@ func GetPodByName(client client.Client, name, namespace string) (pod *corev1.Pod
 	return
 }
 
+// delete the given pod if it exists
 func DeletePod(client client.Client, pod *corev1.Pod) error {
 	err := client.Delete(context.TODO(), pod)
 	if apierrs.IsNotFound(err) {

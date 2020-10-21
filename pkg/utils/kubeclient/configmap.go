@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Check if the configMap exists given its name and namespace
 func IsConfigMapExist(client client.Client, name, namespace string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
@@ -44,6 +45,7 @@ func IsConfigMapExist(client client.Client, name, namespace string) (found bool,
 	return found, err
 }
 
+// Delete the configmap given its name and namespace if the configmap exists
 func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
 		Name:      name,

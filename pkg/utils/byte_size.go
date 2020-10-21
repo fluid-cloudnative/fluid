@@ -33,6 +33,8 @@ func BytesSize(size float64) string {
 	return units.CustomSize("%.2f%s", size, 1024.0, binaryAbbrs)
 }
 
+// FromHumanSize returns an integer from a human-readable specification of a
+// size with 1024 as multiplier (eg. "44kB" = "(44 * 1024)B").
 func FromHumanSize(size string) (int64, error) {
 	return parseSize(size, binaryMap)
 }

@@ -19,6 +19,7 @@ import "os"
 
 const MountRoot string = "MOUNT_ROOT"
 
+//GetMountRoot get the value of the env variable named MOUNT_ROOT
 func GetMountRoot() string {
 	return os.Getenv(MountRoot)
 }
