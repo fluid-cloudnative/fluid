@@ -134,9 +134,9 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
 4. 登录到应用容器中访问数据，初次访问会花费更长时间。
     ```shell
     $ kubectl exec -it demo-app -- bash
-    $ du -sh /data/spark/spark-3.0.0-bin-without-hadoop.tgz
-    150M	/data/spark/spark-3.0.0-bin-without-hadoop.tgz
-    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ du -sh /data/spark/spark-3.0.1-bin-without-hadoop.tgz
+    150M	/data/spark/spark-3.0.1-bin-without-hadoop.tgz
+    $ time cp /data/spark/spark-3.0.1-bin-without-hadoop.tgz /dev/null
     real	0m13.171s
     user	0m0.002s
     sys	0m0.028s
@@ -146,7 +146,7 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
     ```shell
     $ kubectl delete -f app.yaml && kubectl create -f app.yaml
     $ kubectl exec -it demo-app -- bash
-    $ time cp /data/spark/spark-3.0.0-bin-without-hadoop.tgz /dev/null
+    $ time cp /data/spark/spark-3.0.1-bin-without-hadoop.tgz /dev/null
     real	0m0.344s
     user	0m0.002s
     sys	0m0.020s
