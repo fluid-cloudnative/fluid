@@ -221,68 +221,6 @@ spark   Bound    spark    100Gi      RWX                           53s
 ```
 `Dataset`资源对象准备完成后（即与Alluxio实例绑定后），与该资源对象关联的PV, PVC已经由Fluid生成，应用可以通过该PVC完成远程文件在Pod中的挂载，并通过挂载目录实现远程文件访问
 
-**查看Service查看Port分配情况**
-```shell
-$ kubectl  get svc | grep master
-NAME             TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                                   AGE
-hbase-master-0   ClusterIP   None         <none>        20000/TCP,20001/TCP,20004/TCP,20005/TCP   12m
-spark-master-0   ClusterIP   None         <none>        20009/TCP,20010/TCP,20013/TCP,20014/TCP   8m51s
-
-$ kubectl describe svc hbase-master-0
-Name:              hbase-master-0
-Namespace:         default
-Labels:            app=alluxio
-                   chart=alluxio-0.6.15
-                   heritage=Helm
-                   release=hbase
-                   role=alluxio-master
-Annotations:       <none>
-Selector:          app=alluxio,release=hbase,role=alluxio-master,statefulset.kubernetes.io/pod-name=hbase-master-0
-Type:              ClusterIP
-IP:                None
-Port:              rpc  20000/TCP
-TargetPort:        20000/TCP
-Endpoints:         192.168.1.175:20000
-Port:              web  20001/TCP
-TargetPort:        20001/TCP
-Endpoints:         192.168.1.175:20001
-Port:              job-rpc  20004/TCP
-TargetPort:        20004/TCP
-Endpoints:         192.168.1.175:20004
-Port:              job-web  20005/TCP
-TargetPort:        20005/TCP
-Endpoints:         192.168.1.175:20005
-Session Affinity:  None
-Events:            <none>
-$ kubectl describe svc spark-master-0
-Name:              spark-master-0
-Namespace:         default
-Labels:            app=alluxio
-                   chart=alluxio-0.6.15
-                   heritage=Helm
-                   release=spark
-                   role=alluxio-master
-Annotations:       <none>
-Selector:          app=alluxio,release=spark,role=alluxio-master,statefulset.kubernetes.io/pod-name=spark-master-0
-Type:              ClusterIP
-IP:                None
-Port:              rpc  20009/TCP
-TargetPort:        20009/TCP
-Endpoints:         192.168.1.175:20009
-Port:              web  20010/TCP
-TargetPort:        20010/TCP
-Endpoints:         192.168.1.175:20010
-Port:              job-rpc  20013/TCP
-TargetPort:        20013/TCP
-Endpoints:         192.168.1.175:20013
-Port:              job-web  20014/TCP
-TargetPort:        20014/TCP
-Endpoints:         192.168.1.175:20014
-Session Affinity:  None
-Events:            <none>
-
-```
-
 ## 远程文件访问
 
 **查看待创建的应用**
