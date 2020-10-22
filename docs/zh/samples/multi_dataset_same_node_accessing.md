@@ -31,7 +31,7 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
       name: hbase
   nodeAffinity:
     required:
@@ -51,7 +51,7 @@ metadata:
   name: spark
 spec:
   mounts:
-    - mountPoint: https://mirror.bit.edu.cn/apache/spark/spark-3.0.1/
+    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
       name: spark
   nodeAffinity:
     required:
@@ -64,13 +64,13 @@ spec:
 
 EOF        
 ```
-> 注意: 上述mountPoint中使用了Apache清华镜像源进行演示，如果你的环境位于海外，请更换为`https://downloads.apache.org/hbase/2.2.5/`和`https://downloads.apache.org/spark/spark-3.0.1/`进行尝试
+> 注意: 上述mountPoint中使用了Apache清华镜像源进行演示，如果你的环境位于海外，请更换为`https://downloads.apache.org/hbase/stable/`和`https://downloads.apache.org/spark/`进行尝试
 
 在这里，我们将要创建一个kind为`Dataset`的资源对象(Resource object)。`Dataset`是Fluid所定义的一个Custom Resource Definition(CRD)，该CRD被用来告知Fluid在哪里可以找到你所需要的数据。Fluid将该CRD对象中定义的`mountPoint`属性挂载到Alluxio之上，因此该属性可以是任何合法的能够被Alluxio识别的UFS地址。在本示例中，为了简单，我们使用[WebUFS](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html)进行演示。
 
 更多有关UFS的信息，请参考[Alluxio文档-底层存储系统](https://docs.alluxio.io/os/user/stable/cn/ufs/OSS.html)部分。
 
-> 本示例将以Apache镜像站点上的Hbase v2.25和Spark v3.0.1相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为根据目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多[更复杂的配置](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html#%E9%85%8D%E7%BD%AEalluxio)
+> 本示例将以Apache镜像站点上的Hbase stable和Spark相关资源作为演示中使用的远程文件。这个选择并没有任何特殊之处，你可以将这个远程文件修改为任意你喜欢的远程文件。但是，如果你想要和我们一样使用WebUFS进行操作的话，最好还是选择一个Apache镜像源站点( e.g. [清华镜像源](https://mirrors.tuna.tsinghua.edu.cn/apache) )，因为根据目前WebUFS的实现，如果你选择其他更加复杂的网页作为WebUFS，你可能需要进行更多[更复杂的配置](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html#%E9%85%8D%E7%BD%AEalluxio)
 
 **创建Dataset资源对象**
 ```shell
@@ -84,8 +84,8 @@ dataset.data.fluid.io/spark created
 ```shell
 $ kubectl get dataset
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE      AGE
-hbase                                                                 NotBound    30s
-spark                                                                 NotBound    27s
+hbase                                                                  NotBound   6s
+spark                                                                  NotBound   4s
 ```
 
 如上所示，`status`中的`phase`属性值为`NotBound`，这意味着该`Dataset`资源对象目前还未与任何`AlluxioRuntime`资源对象绑定，接下来，我们将创建一个`AlluxioRuntime`资源对象。
@@ -130,7 +130,7 @@ spec:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 2Gi
+        quota: 4Gi
         high: "0.95"
         low: "0.7"
   properties:
@@ -153,11 +153,11 @@ $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
 # 注意等待 Dataset hbase 全部组件 Running 
-$ kubectl get pod -o wide | grep fuse
+$ kubectl get pod -o wide | grep hbase
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-56mmc     1/1     Running   0          26s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          59s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-bzlkn   2/2     Running   0          26s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hbase-fuse-7jqz6     1/1     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hbase-master-0       2/2     Running   0          42s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
+hbase-worker-w89fq   2/2     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
 
 $ kubectl create -f runtime1.yaml
 alluxioruntime.data.fluid.io/spark created
@@ -167,22 +167,23 @@ alluxioruntime.data.fluid.io/spark created
 ```shell
 $ kubectl get alluxioruntime
 NAME    MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
-hbase   Ready          Ready          Ready        12m
-spark   Ready          Ready          Ready        77s
+hbase   Ready          Ready          Ready        2m14s
+spark   Ready          Ready          Ready        58s
 ```
 
 `AlluxioRuntime`是另一个Fluid定义的CRD。一个`AlluxioRuntime`资源对象描述了在Kubernetes集群中运行一个Alluxio实例所需要的配置信息。
 
 等待一段时间，让AlluxioRuntime资源对象中的各个组件得以顺利启动，你会看到类似以下状态：
 ```shell
-$ kubectl get pod | grep hbase 
-NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-56mmc     1/1     Running   0          11m   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          11m   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-bzlkn   2/2     Running   0          11m   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-fuse-5zxmf     1/1     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-master-0       2/2     Running   0          43s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-spark-worker-cksdm   2/2     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+$ kubectl get pod -o wide
+AME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
+hNAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
+hbase-fuse-7jqz6     1/1     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hbase-master-0       2/2     Running   0          2m24s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
+hbase-worker-w89fq   2/2     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+spark-fuse-x9rqr     1/1     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+spark-master-0       2/2     Running   0          68s     192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
+spark-worker-lt6gt   2/2     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
 ```
 注意上面的不同的 Dataset 的 worker 和 fuse 组件可以正常的调度到相同的节点 `cn-beijing.192.168.1.174`。
 
@@ -190,8 +191,8 @@ spark-worker-cksdm   2/2     Running   0          11s   192.168.1.174   cn-beiji
 ```shell
 $ kubectl get dataset 
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        0.00B    2.00GiB          0.0%                Bound   14m
-spark   998.22MiB        0.00B    2.00GiB          0.0%                Bound   113s
+hbase   443.49MiB        0.00B    2.00GiB          0.0%                Bound   5m41s
+spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   5m38s
 ```
 因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset资源对象的状态得到了更新，此时`PHASE`属性值已经变为`Bound`状态。通过上述命令可以获知有关资源对象的基本信息
 
@@ -199,8 +200,8 @@ spark   998.22MiB        0.00B    2.00GiB          0.0%                Bound   1
 ```shell
 $ kubectl get alluxioruntime -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        12m
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        2m5s
+hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        5m20s
+spark   1               1                 Ready          1               1                 Ready          1             1               Ready        76s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 
@@ -208,17 +209,79 @@ spark   1               1                 Ready          1               1      
 ```shell
 $ kubectl get pv
 NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM           STORAGECLASS   REASON   AGE
-hbase   100Gi      RWX            Retain           Bound    default/hbase                           12m
-spark   100Gi      RWX            Retain           Bound    default/spark                           97s
+hbase   100Gi      RWX            Retain           Bound    default/hbase                           4m55s
+spark   100Gi      RWX            Retain           Bound    default/spark                           51s
 ```
 
 ```shell
 $ kubectl get pvc
 NAME    STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-hbase   Bound    hbase    100Gi      RWX                           12m
-spark   Bound    spark    100Gi      RWX                           99s
+hbase   Bound    hbase    100Gi      RWX                           4m57s
+spark   Bound    spark    100Gi      RWX                           53s
 ```
 `Dataset`资源对象准备完成后（即与Alluxio实例绑定后），与该资源对象关联的PV, PVC已经由Fluid生成，应用可以通过该PVC完成远程文件在Pod中的挂载，并通过挂载目录实现远程文件访问
+
+**查看Service查看Port分配情况**
+```shell
+$ kubectl  get svc | grep master
+NAME             TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                                   AGE
+hbase-master-0   ClusterIP   None         <none>        20000/TCP,20001/TCP,20004/TCP,20005/TCP   12m
+spark-master-0   ClusterIP   None         <none>        20009/TCP,20010/TCP,20013/TCP,20014/TCP   8m51s
+
+$ kubectl describe svc hbase-master-0
+Name:              hbase-master-0
+Namespace:         default
+Labels:            app=alluxio
+                   chart=alluxio-0.6.15
+                   heritage=Helm
+                   release=hbase
+                   role=alluxio-master
+Annotations:       <none>
+Selector:          app=alluxio,release=hbase,role=alluxio-master,statefulset.kubernetes.io/pod-name=hbase-master-0
+Type:              ClusterIP
+IP:                None
+Port:              rpc  20000/TCP
+TargetPort:        20000/TCP
+Endpoints:         192.168.1.175:20000
+Port:              web  20001/TCP
+TargetPort:        20001/TCP
+Endpoints:         192.168.1.175:20001
+Port:              job-rpc  20004/TCP
+TargetPort:        20004/TCP
+Endpoints:         192.168.1.175:20004
+Port:              job-web  20005/TCP
+TargetPort:        20005/TCP
+Endpoints:         192.168.1.175:20005
+Session Affinity:  None
+Events:            <none>
+$ kubectl describe svc spark-master-0
+Name:              spark-master-0
+Namespace:         default
+Labels:            app=alluxio
+                   chart=alluxio-0.6.15
+                   heritage=Helm
+                   release=spark
+                   role=alluxio-master
+Annotations:       <none>
+Selector:          app=alluxio,release=spark,role=alluxio-master,statefulset.kubernetes.io/pod-name=spark-master-0
+Type:              ClusterIP
+IP:                None
+Port:              rpc  20009/TCP
+TargetPort:        20009/TCP
+Endpoints:         192.168.1.175:20009
+Port:              web  20010/TCP
+TargetPort:        20010/TCP
+Endpoints:         192.168.1.175:20010
+Port:              job-rpc  20013/TCP
+TargetPort:        20013/TCP
+Endpoints:         192.168.1.175:20013
+Port:              job-web  20014/TCP
+TargetPort:        20014/TCP
+Endpoints:         192.168.1.175:20014
+Session Affinity:  None
+Events:            <none>
+
+```
 
 ## 远程文件访问
 
@@ -296,15 +359,13 @@ $ kubectl exec -it nginx-spark -- bash
 查看远程文件挂载情况：
 ```shell
 $ ls -lh /data/spark/
-total 999M
--r--r----- 1 root root 322K Aug 28 09:25 SparkR_3.0.1.tar.gz
--r--r----- 1 root root 195M Aug 28 09:25 pyspark-3.0.1.tar.gz
--r--r----- 1 root root 210M Aug 28 09:25 spark-3.0.1-bin-hadoop2.7-hive1.2.tgz
--r--r----- 1 root root 210M Aug 28 09:25 spark-3.0.1-bin-hadoop2.7.tgz
--r--r----- 1 root root 214M Aug 28 09:25 spark-3.0.1-bin-hadoop3.2.tgz
--r--r----- 1 root root 150M Aug 28 09:25 spark-3.0.1-bin-without-hadoop.tgz
--r--r----- 1 root root  22M Aug 28 09:25 spark-3.0.1.tgz
-
+total 1.0K
+dr--r----- 1 root root 7 Oct 22 12:21 spark-2.4.7
+dr--r----- 1 root root 7 Oct 22 12:21 spark-3.0.1
+$ du -h /data/spark/
+999M	/data/spark/spark-3.0.1
+968M	/data/spark/spark-2.4.7
+2.0G	/data/spark/
 ```
 
 登出Nginx Pod:
@@ -386,35 +447,35 @@ spark任务程序会执行`time cp -r /data/spark ./`的shell命令，其中`/da
 等待一段时间,待该作业运行完成,作业的运行状态可通过以下命令查看:
 ```shell
 $ kubectl get pod -o wide | grep copy 
-fluid-copy-test-hbase-gnqfb   0/1     Completed   0          2m50s   172.25.0.20     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-bprqh   0/1     Completed   0          2m47s   172.25.0.21     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-hbase-6s8cv   0/1     Completed   0          3m33s   172.25.0.26     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-spark-mzpzl   0/1     Completed   0          3m30s   172.25.0.27     cn-beijing.192.168.1.174   <none>           <none>
 ```
 如果看到如上结果,则说明该作业已经运行完成
 
-> 注意: `luid-copy-test-hbase-gnqfb `中的`gnqfb`为作业生成的标识,在你的环境中,这个标识可能不同,接下来的命令中涉及该标识的地方请以你的环境为准
+> 注意: `fluid-copy-test-hbase-6s8cv`中的`6s8cv`为作业生成的标识,在你的环境中,这个标识可能不同,接下来的命令中涉及该标识的地方请以你的环境为准
 
 **查看测试作业完成时间**
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-gnqfb
+$ kubectl  logs fluid-copy-test-hbase-6s8cv
 + time cp -r /data/hbase ./
-real	0m 59.84s
+real	0m 54.98s
 user	0m 0.00s
 sys	0m 1.43s
-$ kubectl  logs fluid-copy-test-spark-bprqh
+$ kubectl  logs fluid-copy-test-spark-mzpzl
 + time cp -r /data/spark ./
-real	1m 52.88s
+real	3m 15.71s
 user	0m 0.00s
-sys	0m 3.12s
+sys	0m 6.12s
 ```
 
-可见，第一次远程文件的读取hbase耗费了接近60s的时间，读取spark耗费接近1m53s时间。
+可见，第一次远程文件的读取hbase耗费了接近55s的时间，读取spark耗费接近3m16s时间。
 
 **查看Dataset资源对象状态**
 ```shell
 $ kubectl get dataset
 NAME    UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        443.49MiB   2.00GiB          100.0%              Bound   27m
-spark   998.22MiB        998.22MiB   2.00GiB          100.0%              Bound   14m
+hbase   443.49MiB        443.49MiB   2.00GiB          100.0%              Bound   11m
+spark   1.92GiB          1.92GiB     4.00GiB          100.0%              Bound   11m
 ```
 现在，所有远程文件都已经被缓存在了Alluxio中
 
@@ -428,25 +489,24 @@ $ kubectl create -f app1.yaml
 
 由于远程文件已经被缓存，此次测试作业能够迅速完成：
 ```shell
-$ kubectl get pod | grep fluid
-fluid-copy-test-hbase-5lvzs   0/1     Completed   0          24s   172.25.0.22     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-rvclt   0/1     Completed   0          19s   172.25.0.23     cn-beijing.192.168.1.174   <none>           <none>
+$ kubectl get pod -o wide| grep fluid
+fluid-copy-test-hbase-45t6j   0/1     Completed   0          27s     172.25.0.29     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-spark-27jrg   0/1     Completed   0          75s     172.25.0.28     cn-beijing.192.168.1.174   <none>           <none>
 ```
 
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-5lvzs
+$ kubectl  logs fluid-copy-test-hbase-45t6j
 + time cp -r /data/hbase ./
 real	0m 0.39s
 user	0m 0.00s
-sys	0m 0.38s
-$ kubectl  logs fluid-copy-test-spark-rvclt
+sys	0m 0.39s
+$ kubectl  logs fluid-copy-test-spark-27jrg
 + time cp -r /data/spark ./
-real	0m 0.87s
+real	0m 2.05s
 user	0m 0.00s
-sys	0m 0.86s
-
+sys	0m 2.02s
 ```
-同样的文件访问操，hbase仅耗费了0.39s，spark仅耗费了0.87s。
+同样的文件访问操，hbase仅耗费了0.39s，spark仅耗费了2.05s。
 
 这种大幅度的加速效果归因于Alluxio所提供的强大的缓存能力，这种缓存能力意味着，只要你访问某个远程文件一次，该文件就会被缓存在Alluxio中，你的所有接下来的重复访问都不再需要进行远程文件读取，而是从Alluxio中直接获取数据，因此对于数据的访问加速也就不难解释了。
 > 注意： 上述文件的访问速度与示例运行环境的网络条件有关，如果文件访问速度过慢，请更换更小的远程文件尝试
@@ -458,22 +518,28 @@ $ ls /dev/shm/default/
 hbase  spark
 $ ls -lh /dev/shm/default/hbase/alluxioworker/
 总用量 444M
--rwxrwxrwx 1 root root 174K 10月 22 18:45 100663296
--rwxrwxrwx 1 root root 115K 10月 22 18:45 16777216
--rwxrwxrwx 1 root root 200M 10月 22 18:44 33554432
--rwxrwxrwx 1 root root 106K 10月 22 18:44 50331648
--rwxrwxrwx 1 root root 211M 10月 22 18:45 67108864
--rwxrwxrwx 1 root root  34M 10月 22 18:45 83886080
+-rwxrwxrwx 1 root root 174K 10月 22 20:27 100663296
+-rwxrwxrwx 1 root root 115K 10月 22 20:27 16777216
+-rwxrwxrwx 1 root root 200M 10月 22 20:26 33554432
+-rwxrwxrwx 1 root root 106K 10月 22 20:26 50331648
+-rwxrwxrwx 1 root root 211M 10月 22 20:27 67108864
+-rwxrwxrwx 1 root root  34M 10月 22 20:27 83886080
 $ ls -lh /dev/shm/default/spark/alluxioworker/
-总用量 999M
--rwxrwxrwx 1 root root 150M 10月 22 18:46 100663296
--rwxrwxrwx 1 root root 322K 10月 22 18:46 117440512
--rwxrwxrwx 1 root root 210M 10月 22 18:45 16777216
--rwxrwxrwx 1 root root 210M 10月 22 18:46 33554432
--rwxrwxrwx 1 root root 195M 10月 22 18:45 50331648
--rwxrwxrwx 1 root root 214M 10月 22 18:45 67108864
--rwxrwxrwx 1 root root  22M 10月 22 18:45 83886080
-
+总用量 2.0G
+-rwxrwxrwx 1 root root 210M 10月 22 21:06 100663296
+-rwxrwxrwx 1 root root  16M 10月 22 21:07 117440512
+-rwxrwxrwx 1 root root 195M 10月 22 21:05 134217728
+-rwxrwxrwx 1 root root 214M 10月 22 21:05 150994944
+-rwxrwxrwx 1 root root 140M 10月 22 21:08 16777216
+-rwxrwxrwx 1 root root  22M 10月 22 21:05 167772160
+-rwxrwxrwx 1 root root 221M 10月 22 21:07 184549376
+-rwxrwxrwx 1 root root 150M 10月 22 21:06 201326592
+-rwxrwxrwx 1 root root 311K 10月 22 21:07 218103808
+-rwxrwxrwx 1 root root 322K 10月 22 21:06 234881024
+-rwxrwxrwx 1 root root 210M 10月 22 21:06 33554432
+-rwxrwxrwx 1 root root 161M 10月 22 21:07 50331648
+-rwxrwxrwx 1 root root 223M 10月 22 21:07 67108864
+-rwxrwxrwx 1 root root 208M 10月 22 21:07 83886080
 ```
 可以看到不同Dataset缓存的block文件根据Dataset的namespace和name进行了隔离。
 
