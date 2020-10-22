@@ -3,7 +3,7 @@
 ## 测试场景：ResNet50 模型训练
 
 - 测试机型： V100 x8
-- nfs地址：38037492dc-pol25.cn-shanghai.nas.aliyuncs.com
+- 容量型nfs
 
 ## 配置
 
