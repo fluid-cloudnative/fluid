@@ -125,6 +125,9 @@ type DatasetStatus struct {
 
 	// CacheStatus represents the total resources of the dataset.
 	CacheStates common.CacheStateList `json:"cacheStates,omitempty"`
+
+	// HCFSStatus represents hcfs info
+	HCFSStatus *HCFSStatus `json:"hcfs,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>

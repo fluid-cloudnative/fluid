@@ -39,3 +39,12 @@ type InitUsersSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
+
+// HCFS Endpoint info
+type HCFSStatus struct {
+	// Endpoint for accessing
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// Underlayer HCFS Compatible Version
+	UnderlayerFileSystemVersion string `json:"underlayerFileSystem,omitempty"`
+}
