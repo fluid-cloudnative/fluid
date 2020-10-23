@@ -24,6 +24,10 @@ spec:
   - JSONPath: .status.phase
     name: Phase
     type: string
+  - JSONPath: .status.hcfs.endpoint
+    name: HCFS URL
+    priority: 10
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
