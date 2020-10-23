@@ -46,5 +46,5 @@ type HCFSStatus struct {
 	Endpoint string `json:"endpoint,omitempty"`
 
 	// Underlayer HCFS Compatible Version
-	UnderlayerFileSystemVersion string `json:"underlayerFileSystem,omitempty"`
+	UnderlayerFileSystemVersion string `json:"underlayerFileSystemVersion,omitempty"`
 }
