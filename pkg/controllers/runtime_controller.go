@@ -161,6 +161,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		// dataset.Status.RuntimeNamespace = ""
 		// if len(dataset.Status.Runtimes) == 0 {
 		dataset.Status.Runtimes = []datav1alpha1.Runtime{}
+		dataset.Status.HCFSStatus = nil
 		// }
 
 		if err := r.Status().Update(ctx, dataset); err != nil {
