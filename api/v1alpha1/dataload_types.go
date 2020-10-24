@@ -16,28 +16,72 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// TargetDataset defines the target dataset of the DataLoad
+type TargetDataset struct {
+	// Name defines name of the target dataset
+	Name string `json:"name"`
+
+	// Namespace defines namespace of the target dataset
+	Namespace string `json:"namespace,omitempty"`
+}
+
+// TargetPath defines the target path of the DataLoad
+type TargetPath struct {
+	// Path defines path to be load
+	Path string `json:"path"`
+
+	// Replicas defines how many replicas will be loaded
+	Replicas int32 `json:"replicas,omitempty"`
+}
+
+// DataLoadCondition describes conditions that explains transitions on phase
+type DataLoadCondition struct {
+	// Type of condition, either `Complete` or `Failed`
+	Type common.DataLoadConditionType `json:"type"`
+	// Status of the condition, one of `True`, `False` or `Unknown`
+	Status v1.ConditionStatus `json:"status"`
+	// Reason for the condition's last transition
+	Reason string `json:"reason,omitempty"`
+	// Message is a human-readable message indicating details about the transition
+	Message string `json:"message,omitempty"`
+	// LastProbeTime describes last time this condition was updated.
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	// LastTransitionTime describes last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+}
+
 // DataLoadSpec defines the desired state of DataLoad
 type DataLoadSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Dataset defines the target dataset of the DataLoad
+	Dataset TargetDataset `json:"dataset,omitempty"`
 
-	// Foo is an example field of DataLoad. Edit DataLoad_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// LoadMetadata specifies if the dataload job should load metadata
+	LoadMetadata bool `json:"loadMetadata,omitempty"`
+
+	// Target defines target paths that needs to be loaded
+	Target []TargetPath `json:"target,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad
 type DataLoadStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Phase describes current phase of DataLoad
+	Phase common.DataLoadPhase `json:"phase"`
+
+	// Conditions consists of transition information on DataLoad's Phase
+	Conditions []DataLoadCondition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +genclient
 
 // DataLoad is the Schema for the dataloads API
 type DataLoad struct {
