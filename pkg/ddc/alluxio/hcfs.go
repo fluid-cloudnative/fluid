@@ -65,7 +65,7 @@ func (e *AlluxioEngine) queryHCFSEndpoint() (endpoint string, err error) {
 
 	for _, port := range svc.Spec.Ports {
 		if port.Name == "rpc" {
-			endpoint = fmt.Sprintf("%s:%d", host, port.Port)
+			endpoint = fmt.Sprintf("alluxio://%s:%d", host, port.Port)
 			return
 		}
 	}
