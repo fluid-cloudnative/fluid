@@ -7,3 +7,6 @@ Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-non-root-opti
 Version: https://github.com/cheyang/alluxio/commit/e0feba36cba1b57a3a9a0b893f7a477556e4955c
 Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-pod-for-non-root
 
+1024:
+Version: https://github.com/Alluxio/alluxio/commit/75a8e27b30141a44f9378cbbed1bc04dbbfbbe0e
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
