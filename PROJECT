@@ -1,10 +1,13 @@
-version: "2"
 domain: fluid.io
 repo: github.com/fluid-cloudnative/fluid
 resources:
 - group: data
-  version: v1alpha1
   kind: Dataset
-- group: data
   version: v1alpha1
+- group: data
   kind: AlluxioRuntime
+  version: v1alpha1
+- group: data
+  kind: DataLoad
+  version: v1alpha1
+version: "2"

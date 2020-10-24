@@ -1,0 +1,7 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: dataload-sample
+spec:
+  # Add fields here
+  foo: bar
