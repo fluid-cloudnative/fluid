@@ -17,6 +17,11 @@ package dataload
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,23 +31,78 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
+// reconcileRequestContext wraps up necessary info for reconciliation
+type reconcileRequestContext struct {
+	context.Context
+	types.NamespacedName
+	Log      logr.Logger
+	DataLoad datav1alpha1.DataLoad
+}
+
 // DataLoadReconciler reconciles a DataLoad object
 type DataLoadReconciler struct {
-	client.Client
-	Log    logr.Logger
 	Scheme *runtime.Scheme
+	*DataLoadReconcilerImplement
+}
+
+// NewDataLoadReconciler returns a DataLoadReconciler
+func NewDataLoadReconciler(client client.Client,
+	log logr.Logger,
+	scheme *runtime.Scheme,
+	recorder record.EventRecorder) *DataLoadReconciler {
+	r := &DataLoadReconciler{
+		Scheme: scheme,
+	}
+	r.DataLoadReconcilerImplement = NewDataLoadReconcilerImplement(client, log, recorder)
+	return r
 }
 
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads/status,verbs=get;update;patch
-
+// Reconcile reconciles the DataLoad object
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("dataload", req.NamespacedName)
+	ctx := reconcileRequestContext{
+		Context:        context.Background(),
+		NamespacedName: req.NamespacedName,
+		Log:            r.Log.WithValues("dataload", req.NamespacedName),
+	}
 
-	// your logic here
+	// 1. Get DataLoad object
+	dataload, err := utils.GetDataLoad(r.Client, req.Name, req.Namespace)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("DataLoad not found")
+			return utils.NoRequeue()
+		} else {
+			ctx.Log.Error(err, "failed to get DataLoad")
+			return utils.RequeueIfError(errors.Wrap(err, "failed to get DataLoad info"))
+		}
+	}
 
-	return ctrl.Result{}, nil
+	ctx.DataLoad = *dataload
+	ctx.Log.Info("DataLoad found", "detail", dataload)
+
+	// 2. Reconcile deletion of the object if necessary
+	if utils.HasDeletionTimestamp(ctx.DataLoad.ObjectMeta) {
+		return r.ReconcileDataLoadDeletion(ctx)
+	}
+
+	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), common.DATALOAD_FINALIZER) {
+		return r.addFinalierAndRequeue(ctx)
+	}
+
+	return r.ReconcileDataLoad(ctx)
+}
+
+func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
+	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, common.DATALOAD_FINALIZER)
+	ctx.Log.Info("Add finalizer and requeue", "finalizer", common.DATALOAD_FINALIZER)
+	prevGeneration := ctx.DataLoad.ObjectMeta.GetGeneration()
+	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
+		ctx.Log.Error(err, "failed to add finalizer to dataload", "StatusUpdateError", err)
+		return utils.RequeueIfError(err)
+	}
+	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.DataLoad.ObjectMeta.GetGeneration())
 }
 
 func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager) error {
