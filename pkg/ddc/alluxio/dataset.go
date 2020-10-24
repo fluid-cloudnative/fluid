@@ -123,6 +123,8 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			if err != nil {
 				return err
 			}
+		} else {
+			e.Log.Info("No need to update HCFS status")
 		}
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
