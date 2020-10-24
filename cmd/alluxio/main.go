@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
-	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -124,14 +123,6 @@ func handle() {
 		mgr.GetEventRecorderFor("AlluxioRuntime"),
 	)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
-		os.Exit(1)
-	}
-	if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("alluxioctl").WithName("AlluxioDataLoad"),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("AlluxioDataLoad"),
-	)).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
 		os.Exit(1)
 	}
 
