@@ -118,6 +118,15 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		// datasetToUpdate.Status.CacheStates =
 
+		if datasetToUpdate.Status.HCFSStatus == nil {
+			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
+			if err != nil {
+				return err
+			}
+		} else {
+			e.Log.Info("No need to update HCFS status")
+		}
+
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {

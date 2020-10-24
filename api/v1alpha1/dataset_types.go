@@ -125,6 +125,9 @@ type DatasetStatus struct {
 
 	// CacheStatus represents the total resources of the dataset.
 	CacheStates common.CacheStateList `json:"cacheStates,omitempty"`
+
+	// HCFSStatus represents hcfs info
+	HCFSStatus *HCFSStatus `json:"hcfs,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>
@@ -170,6 +173,7 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Cache Capacity",type="string",JSONPath=`.status.cacheStates.cacheCapacity`
 // +kubebuilder:printcolumn:name="Cached Percentage",type="string",JSONPath=`.status.cacheStates.cachedPercentage`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="HCFS URL",type="string",JSONPath=`.status.hcfs.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

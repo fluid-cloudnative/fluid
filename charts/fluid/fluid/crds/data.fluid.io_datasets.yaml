@@ -24,6 +24,10 @@ spec:
   - JSONPath: .status.phase
     name: Phase
     type: string
+  - JSONPath: .status.hcfs.endpoint
+    name: HCFS URL
+    priority: 10
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -264,6 +268,16 @@ spec:
                 - type
                 type: object
               type: array
+            hcfs:
+              description: HCFSStatus represents hcfs info
+              properties:
+                endpoint:
+                  description: Endpoint for accessing
+                  type: string
+                underlayerFileSystemVersion:
+                  description: Underlayer HCFS Compatible Version
+                  type: string
+              type: object
             phase:
               description: 'Dataset Phase. One of the four phases: `Pending`, `Bound`,
                 `NotBound` and `Failed`'

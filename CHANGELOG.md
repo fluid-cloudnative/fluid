@@ -35,6 +35,8 @@
 
 ### Features
 
+- Show the HCFS Access Endpoint
+
 
 ### Bugs
 
