@@ -32,11 +32,13 @@ const (
 
 	ErrorHelmInstall = "ErrorHelmInstall"
 
-	DatasetNotReady = "DatasetNotReady"
+	TargetDatasetNotFound = "TargetDatasetNotFound"
 
-	RuntimeNotReady = "RuntimeNotReady"
+	TargetDatasetNotReady = "TargetDatasetNotReady"
 
 	DataLoadCollision = "DataLoadCollision"
+
+	RuntimeNotReady = "RuntimeNotReady"
 
 	PrefetchJobStarted = "Prefetch Started"
 
