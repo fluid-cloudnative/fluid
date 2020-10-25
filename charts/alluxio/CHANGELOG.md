@@ -164,3 +164,8 @@
   - Make the cache data directory accessible
 - Enable HostPID
 
+0.6.16
+
+- Make the port configurable
+- Make the cache worker directory configurable
+
