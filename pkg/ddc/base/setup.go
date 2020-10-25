@@ -23,26 +23,14 @@ import (
 // Setup the ddc engine
 func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error) {
 	var (
-		done               bool
 		shouldSetupMaster  bool
 		masterReady        bool
 		shouldSetupWorkers bool
 		workersReady       bool
 	)
-	// 1. Check if the engine is setup successfully. Usually it's the dataset is bound to the runtime
-	done, err = b.Implement.IsSetupDone()
-	if err != nil {
-		return ready, err
-	}
-	if done {
-		b.Log.Info("The runtime is already setup.")
-		ready = true
-		return
-	}
 
 	b.Log.Info("Setup the ddc engine", "runtime", ctx.Runtime)
-
-	// 2. Check if we should setup the master
+	// 1.Check if we should setup the master
 	// shouldSetupMaster, err
 	shouldSetupMaster, err = b.Implement.ShouldSetupMaster()
 	if err != nil {
@@ -56,7 +44,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		}
 	}
 
-	// 3.Check if the master is ready, then go forward to workers setup
+	// 2.Check if the master is ready, then go forward to workers setup
 	masterReady, err = b.Implement.CheckMasterReady()
 	if err != nil {
 		b.Log.Error(err, "Failed to check if it CheckMasterReady.")
@@ -81,7 +69,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		}
 	}
 
-	// 4.Check if we should setup the workers
+	// 3.Check if we should setup the workers
 	shouldSetupWorkers, err = b.Implement.ShouldSetupWorkers()
 	if err != nil {
 		b.Log.Error(err, "Failed to check if it ShouldSetupWorkers.")
@@ -96,7 +84,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		}
 	}
 
-	// 5.Check if the workers are ready
+	// 4.Check if the workers are ready
 	workersReady, err = b.Implement.CheckWorkersReady()
 	if err != nil {
 		b.Log.Error(err, "Check if the workers are ready")
@@ -107,7 +95,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		return workersReady, err
 	}
 
-	// 6.Check if the runtime is ready
+	// 5.Check if the runtime is ready
 	runtimeReady, err := b.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
 		b.Log.Error(err, "Check if the runtime is ready")
@@ -118,7 +106,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 		return runtimeReady, err
 	}
 
-	// 7. Update the dataset status from pending to bound
+	// 6.Update the dataset status from pending to bound
 	err = b.Implement.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
 	if err != nil {
 		b.Log.Error(err, "Bind the dataset")

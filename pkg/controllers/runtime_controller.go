@@ -91,7 +91,10 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
 			dataset = nil
+			err = fmt.Errorf("the dataset can't be bound to the runtime, because it's already bound to another runtime %s", dataset.Name)
+			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 			// return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+			return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 		}
 	} else {
 		ctx.Log.Info("No dataset can be bound to the runtime, waiting.")
@@ -192,19 +195,25 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 }
 
 // ReconcileRuntime reconciles runtime
-func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileRuntime")
+func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.ReconcileRequestContext) (result ctrl.Result, err error) {
+	var (
+		log = ctx.Log.WithName("reconcileRuntime")
+	)
 	log.V(1).Info("process the Runtime", "Runtime", ctx.NamespacedName)
 
 	// 1.Setup the ddc engine, and wait it ready
-	ready, err := engine.Setup(ctx)
-	if err != nil {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
-		log.Error(err, "Failed to steup the ddc engine")
-		// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
-	}
-	if !ready {
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+	if !utils.IsSetupDone(ctx.Dataset) {
+		ready, err := engine.Setup(ctx)
+		if err != nil {
+			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
+			log.Error(err, "Failed to steup the ddc engine")
+			// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
+		}
+		if !ready {
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		}
+	} else {
+		log.Info("The runtime is already setup.")
 	}
 
 	// 2.Setup the volume
