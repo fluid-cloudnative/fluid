@@ -161,9 +161,7 @@ func ListReleases(namespace string) (releases []string, err error) {
 	return strings.Split(string(out), "\n"), nil
 }
 
-/*
-* return a map with all releases' names and app versions in a given namespace
- */
+// ListReleaseMap returns a map with all releases' names and app versions in a given namespace.
 func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) {
 	releaseMap = map[string]string{}
 	_, err = exec.LookPath(helmCmd[0])
