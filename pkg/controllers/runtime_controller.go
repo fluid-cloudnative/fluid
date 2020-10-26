@@ -90,15 +90,16 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
-			dataset = nil
-			err = fmt.Errorf("the dataset can't be bound to the runtime, because it's already bound to another runtime %s", dataset.Name)
-			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
-			// return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
-			return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
+			r.Recorder.Eventf(runtime, corev1.EventTypeWarning,
+				common.ErrorProcessRuntimeReason,
+				"the dataset can't be bound to the runtime, because it's already bound to another runtime %s",
+				dataset.Name)
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 	} else {
 		ctx.Log.Info("No dataset can be bound to the runtime, waiting.")
-		// return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+		r.Recorder.Event(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "No dataset can be bound to the runtime, waiting.")
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
 	// 3.Update the status of dataset
