@@ -50,8 +50,6 @@ type Implement interface {
 	CheckMasterReady() (ready bool, err error)
 	// are the workers ready
 	CheckWorkersReady() (ready bool, err error)
-	// IsSetupDone checks the setup is done
-	IsSetupDone() (done bool, err error)
 	// ShouldSetupMaster checks if we need setup the master
 	ShouldSetupMaster() (should bool, err error)
 	// ShouldSetupWorkers checks if we need setup the workers

@@ -38,3 +38,14 @@ func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dat
 	}
 	return &dataset, nil
 }
+
+// checks the setup is done
+func IsSetupDone(dataset *datav1alpha1.Dataset) (done bool) {
+	index, _ := GetDatasetCondition(dataset.Status.Conditions, datav1alpha1.DatasetReady)
+	if index != -1 {
+		// e.Log.V(1).Info("The runtime is already setup.")
+		done = true
+	}
+
+	return
+}
