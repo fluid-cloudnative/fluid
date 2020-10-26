@@ -5,15 +5,23 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
+	"os"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 	"time"
 )
 
@@ -34,46 +42,78 @@ func NewDataLoadReconcilerImplement(client client.Client, log logr.Logger, recor
 	return r
 }
 
+// ReconcileDataLoadDeletion reconciles the deletion of the DataLoad
 func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx reconcileRequestContext) (ctrl.Result, error) {
-	//todo(xuzhihao) release targetDataset's lock if necessary
-	panic("Not Implemented")
+	log := ctx.Log.WithName("ReconcileDataLoadDeletion")
+
+	// 1. Delete release if exists
+	releaseName := utils.GetDataLoadReleaseName(ctx.DataLoad.Name)
+	err := helm.DeleteReleaseIfExists(releaseName, ctx.DataLoad.Namespace)
+	if err != nil {
+		log.Error(err, "can't delete release", "releaseName", releaseName)
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. Release lock on target dataset if necessary
+	err = r.releaseLockOnTargetDataset(ctx, log)
+	if err != nil {
+		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataLoad.Spec.Dataset)
+		return utils.RequeueIfError(err)
+	}
+
+	// 3. remove finalizer
+	if utils.HasDeletionTimestamp(ctx.DataLoad.ObjectMeta) {
+		ctx.DataLoad.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataLoad.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
+		if err := r.Update(ctx, &ctx.DataLoad); err != nil {
+			log.Error(err, "failed to remove finalizer")
+			return utils.RequeueIfError(err)
+		}
+		log.Info("Finalizer is removed")
+	}
+	return utils.NoRequeue()
 }
 
+// ReconcileDataLoad reconciles the DataLoad according to its phase status
 func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDataLoad")
-	log.V(1).Info("process the dataload", "dataload", ctx.DataLoad)
+	log.V(1).Info("process the cdataload", "cdataload", ctx.DataLoad)
 
-	if ctx.DataLoad.Status.Phase == common.DataLoadPhaseLoaded {
+	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseLoaded {
 		return r.reconcileLoadedDataLoad(ctx)
 	}
 
-	if ctx.DataLoad.Status.Phase == common.DataLoadPhaseFailed {
+	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseFailed {
 		return r.reconcileFailedDataLoad(ctx)
 	}
 
-	if ctx.DataLoad.Status.Phase == common.DataLoadPhaseNone {
+	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseNone {
 		return r.reconcileNoneDataLoad(ctx)
 	}
 
-	if ctx.DataLoad.Status.Phase == common.DataLoadPhasePending {
+	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhasePending {
 		return r.reconcilePendingDataLoad(ctx)
 	}
 	// ctx.DataLoad.Status.Phase == common.DataLoadPhaseLoading
 	return r.reconcileLoadingDataLoad(ctx)
 }
 
+// reconcileNoneDataLoad reconciles DataLoads that are in `DataLoadPhaseNone` phase
 func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNoneDataLoad")
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
-	dataloadToUpdate.Status.Phase = common.DataLoadPhasePending
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhasePending
+	if len(dataloadToUpdate.Status.Conditions) == 0 {
+		dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{}
+	}
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
-		log.Error(err, "failed to update the dataload")
+		log.Error(err, "failed to update the cdataload")
 		return utils.RequeueIfError(err)
 	}
-	log.V(1).Info("Update phase of the dataload to Pending successfully")
+	log.V(1).Info("Update phase of the cdataload to Pending successfully")
 	return utils.RequeueImmediately()
 }
 
+// reconcilePendingDataLoad reconciles DataLoads that are in `DataLoadPhasePending` phase
 func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePendingDataLoad")
 
@@ -107,7 +147,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 
 	// 3. Check if there's any loading DataLoad jobs(conflict DataLoad)
 	conflictDataLoadRef := targetDataset.Status.DataLoadRef
-	myDataLoadRef := fmt.Sprintf("%s-%s", ctx.DataLoad.Namespace, ctx.DataLoad.Name)
+	myDataLoadRef := utils.GetDataLoadRef(ctx.DataLoad.Name, ctx.DataLoad.Namespace)
 	if len(conflictDataLoadRef) != 0 && conflictDataLoadRef != myDataLoadRef {
 		log.V(1).Info("Found other DataLoads that is in Loading phase, will backoff", "other DataLoad", conflictDataLoadRef)
 		r.Recorder.Eventf(&ctx.DataLoad,
@@ -166,50 +206,230 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	// where the DataLoad job will never start and all other DataLoads will be blocked forever.
 	log.Info("Get lock on target dataset, try to update phase")
 	dataLoadToUpdate := ctx.DataLoad.DeepCopy()
-	dataLoadToUpdate.Status.Phase = common.DataLoadPhaseLoading
+	dataLoadToUpdate.Status.Phase = cdataload.DataLoadPhaseLoading
 	if err = r.Client.Status().Update(context.TODO(), dataLoadToUpdate); err != nil {
-		log.Error(err, "failed to update dataload's status to Loading, will retry")
+		log.Error(err, "failed to update cdataload's status to Loading, will retry")
 		return utils.RequeueIfError(err)
 	}
-	log.V(1).Info("update dataload's status to Loading successfully")
+	log.V(1).Info("update cdataload's status to Loading successfully")
 	return utils.RequeueImmediately()
 }
 
+// reconcileLoadingDataLoad reconciles DataLoads that are in `DataLoadPhaseLoading` phase
 func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
-	//todo(xuzhihao): release lock either Failed or Loaded
-	panic("Not Implemented")
+	log := ctx.Log.WithName("reconcileLoadingDataLoad")
+
+	// 1. Check if the helm release already exists
+	releaseName := utils.GetDataLoadReleaseName(ctx.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
+	existed, err := helm.CheckRelease(releaseName, ctx.Namespace)
+	if err != nil {
+		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", ctx.Namespace)
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. install the helm chart if not exists and requeue
+	if !existed {
+		log.Info("DataLoad job helm chart not installed yet, will install")
+		valueFileName, err := r.generateValueFile(ctx.DataLoad)
+		if err != nil {
+			log.Error(err, "failed to generate dataload chart's value file")
+			return utils.RequeueIfError(err)
+		}
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
+		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
+		if err != nil {
+			log.Error(err, "failed to install dataload chart")
+			return utils.RequeueIfError(err)
+		}
+		log.Info("DataLoad job helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
+		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
+		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+
+	// 3. Check running status of the DataLoad job
+	log.V(1).Info("DataLoad chart already existed, check its running status")
+	job, err := utils.GetDataLoadJob(r.Client, jobName, ctx.Namespace)
+	if err != nil {
+		// helm release found but job missing, delete the helm release and requeue
+		if utils.IgnoreNotFound(err) == nil {
+			log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
+				log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
+				return utils.RequeueIfError(err)
+			}
+			return utils.RequeueAfterInterval(20 * time.Second)
+		}
+		// other error
+		log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
+		return utils.RequeueIfError(err)
+	}
+
+	if len(job.Status.Conditions) != 0 {
+		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
+			job.Status.Conditions[0].Type == batchv1.JobComplete {
+			// job either failed or complete, update DataLoad's phase status
+			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+				if err != nil {
+					return err
+				}
+				dataloadToUpdate := dataload.DeepCopy()
+				jobCondition := job.Status.Conditions[0]
+				dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{
+					{
+						Type:               cdataload.DataLoadConditionType(jobCondition.Type),
+						Status:             jobCondition.Status,
+						Reason:             jobCondition.Reason,
+						Message:            jobCondition.Message,
+						LastProbeTime:      jobCondition.LastProbeTime,
+						LastTransitionTime: jobCondition.LastTransitionTime,
+					},
+				}
+				if jobCondition.Type == batchv1.JobFailed {
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+				} else {
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseLoaded
+				}
+
+				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
+					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				log.Error(err, "can't update dataload's phase status to Failed")
+				return utils.RequeueIfError(err)
+			}
+			return utils.RequeueImmediately()
+		}
+	}
+
+	log.V(1).Info("DataLoad job still runnning", "namespace", ctx.Namespace, "jobName", jobName)
+	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
+// reconcileLoadedDataLoad reconciles DataLoads that are in `DataLoadPhaseLoaded` phase
 func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadedDataLoad")
-	log.Info("DataLoad Loaded, no need to requeue")
-	return utils.NoRequeue()
-}
-
-func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
-	//todo(xuzhihao): retry DataLoad after a period
-	log := ctx.Log.WithName("reconcileFailedDataLoad")
-	log.Info("DataLoad failed, won't requeue")
-	return utils.NoRequeue()
-}
-
-func (r *DataLoadReconcilerImplement) listConflictDataLoads(ctx reconcileRequestContext) ([]v1alpha1.DataLoad, error) {
-	var dataLoadList = &v1alpha1.DataLoadList{}
-	err := r.Client.List(context.TODO(), dataLoadList)
+	// 1. release lock on target dataset
+	err := r.releaseLockOnTargetDataset(ctx, log)
 	if err != nil {
-		ctx.Log.Error(err, "fail to list all DataLoads")
-		return nil, err
+		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataLoad.Spec.Dataset)
+		return utils.RequeueIfError(err)
 	}
-	ret := []v1alpha1.DataLoad{}
-	for _, item := range dataLoadList.Items {
-		if item.Name == ctx.DataLoad.Name && item.Namespace == ctx.DataLoad.Namespace {
-			continue
+
+	// 2. record event and no requeue
+	log.Info("DataLoad Loaded, no need to requeue")
+	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
+	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobCompeleted, "DataLoad job %s succeeded", jobName)
+	return utils.NoRequeue()
+}
+
+// reconcileFailedDataLoad reconciles DataLoads that are in `DataLoadPhaseLoaded` phase
+func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileFailedDataLoad")
+	// 1. release lock on target dataset
+	err := r.releaseLockOnTargetDataset(ctx, log)
+	if err != nil {
+		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataLoad.Spec.Dataset)
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. record event and no requeue
+	log.Info("DataLoad failed, won't requeue")
+	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
+	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
+	return utils.NoRequeue()
+}
+
+// todo(xuzhihao): need tests
+func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
+	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	if err != nil {
+		return "", err
+	}
+
+	dataloadInfo := cdataload.DataLoadInfo{
+		BackOffLimit:  3,
+		TargetDataset: dataload.Spec.Dataset.Name,
+		LoadMetadata:  dataload.Spec.LoadMetadata,
+		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-75a8e27",
+		InitImage:     "registry.cn-hangzhou.aliyuncs.com/fluid-namespace/fluid-init-users:v0.4.0-eb1f313",
+	}
+
+	targetPaths := []cdataload.TargetPath{}
+	for _, target := range dataload.Spec.Target {
+		fluidNative := r.isTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
+		targetPaths = append(targetPaths, cdataload.TargetPath{
+			Path:        target.Path,
+			Replicas:    target.Replicas,
+			FluidNative: fluidNative,
+		})
+	}
+	dataloadInfo.TargetPaths = targetPaths
+	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+	data, err := yaml.Marshal(dataLoadValue)
+	if err != nil {
+		return
+	}
+
+	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(valueFile.Name(), data, 0400)
+	if err != nil {
+		return
+	}
+	return valueFile.Name(), nil
+}
+
+//todo(xuzhihao): need tests
+func (r *DataLoadReconcilerImplement) isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
+	for _, mount := range dataset.Spec.Mounts {
+		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
+		if mount.Path != "" {
+			mountPointOnDDCEngine = mount.Path
 		}
-		if item.Spec.Dataset.Name == ctx.DataLoad.Spec.Dataset.Name &&
-			item.Spec.Dataset.Namespace == ctx.DataLoad.Spec.Dataset.Namespace &&
-			item.Status.Phase == common.DataLoadPhaseLoading {
-			ret = append(ret, item)
+		var pathScheme string = "local://"
+
+		var volumeScheme string = "pvc://"
+
+		//todo(xuzhihao) get the longest prefix match
+		if strings.HasPrefix(targetPath, mountPointOnDDCEngine) &&
+			(strings.HasPrefix(mount.MountPoint, pathScheme) || strings.HasPrefix(mount.MountPoint, volumeScheme)) {
+			return true
 		}
 	}
-	return ret, nil
+	return false
+}
+
+func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx reconcileRequestContext, log logr.Logger) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
+		if err != nil {
+			if utils.IgnoreNotFound(err) == nil {
+				log.Info("can't find target dataset, won't release lock", "targetDataset", ctx.DataLoad.Spec.Dataset.Name)
+				return nil
+			}
+			// other error
+			return err
+		}
+		if dataset.Status.DataLoadRef != utils.GetDataLoadRef(ctx.DataLoad.Name, ctx.DataLoad.Namespace) {
+			log.Info("Found DataLoadRef inconsistent with the reconciling DataLoad, won't release this lock, ignore it", "DataLoadRef", dataset.Status.DataLoadRef)
+			return nil
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.DataLoadRef = ""
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
+			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }

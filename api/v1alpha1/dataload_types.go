@@ -16,7 +16,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataload"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,7 +45,7 @@ type TargetPath struct {
 // DataLoadCondition describes conditions that explains transitions on phase
 type DataLoadCondition struct {
 	// Type of condition, either `Complete` or `Failed`
-	Type common.DataLoadConditionType `json:"type"`
+	Type dataload.DataLoadConditionType `json:"type"`
 	// Status of the condition, one of `True`, `False` or `Unknown`
 	Status v1.ConditionStatus `json:"status"`
 	// Reason for the condition's last transition
@@ -73,7 +73,7 @@ type DataLoadSpec struct {
 // DataLoadStatus defines the observed state of DataLoad
 type DataLoadStatus struct {
 	// Phase describes current phase of DataLoad
-	Phase common.DataLoadPhase `json:"phase"`
+	Phase dataload.DataLoadPhase `json:"phase"`
 
 	// Conditions consists of transition information on DataLoad's Phase
 	Conditions []DataLoadCondition `json:"conditions"`

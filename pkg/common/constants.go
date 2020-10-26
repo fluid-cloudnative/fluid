@@ -40,13 +40,11 @@ const (
 
 	RuntimeNotReady = "RuntimeNotReady"
 
-	PrefetchJobStarted = "Prefetch Started"
+	DataLoadJobStarted = "DataLoadJobStarted"
 
-	PrefetchJobInterrupted = "PrefetchJobInterrupted"
+	DataLoadJobFailed = "DataLoadJobFailed"
 
-	PrefetchJobComplete = "Prefetch Complete"
-
-	PrefetchJobFailed = "Prefetch Failed"
+	DataLoadJobCompeleted = "DataLoadJobCompleted"
 )
 
 // Runtime for Alluxio

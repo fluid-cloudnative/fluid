@@ -17,7 +17,7 @@ package dataload
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,14 +80,14 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	ctx.DataLoad = *dataload
-	ctx.Log.Info("DataLoad found", "detail", dataload)
+	ctx.Log.V(1).Info("DataLoad found", "detail", dataload)
 
 	// 2. Reconcile deletion of the object if necessary
 	if utils.HasDeletionTimestamp(ctx.DataLoad.ObjectMeta) {
 		return r.ReconcileDataLoadDeletion(ctx)
 	}
 
-	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), common.DATALOAD_FINALIZER) {
+	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
 		return r.addFinalierAndRequeue(ctx)
 	}
 
@@ -95,8 +95,8 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
-	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, common.DATALOAD_FINALIZER)
-	ctx.Log.Info("Add finalizer and requeue", "finalizer", common.DATALOAD_FINALIZER)
+	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
+	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DATALOAD_FINALIZER)
 	prevGeneration := ctx.DataLoad.ObjectMeta.GetGeneration()
 	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
 		ctx.Log.Error(err, "failed to add finalizer to dataload", "StatusUpdateError", err)
@@ -105,6 +105,7 @@ func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) 
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.DataLoad.ObjectMeta.GetGeneration())
 }
 
+// SetupWithManager sets up the controller with the given controller manager
 func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&datav1alpha1.DataLoad{}).
