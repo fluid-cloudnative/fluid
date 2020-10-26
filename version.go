@@ -1,8 +1,11 @@
 package fluid
 
-import "runtime"
-import "fmt"
-import "github.com/golang/glog"
+import (
+	"fmt"
+	"log"
+	"runtime"
+)
+
 
 type Version struct {
 	Version      string
@@ -75,13 +78,13 @@ func PrintVersion(short bool) {
 // Print version info in log when start
 func LogVersion() {
 	v := getVersion()
-	glog.Infof("BuildDate: %s\n", v.BuildDate)
-	glog.Infof("GitCommit: %s\n", v.GitCommit)
-	glog.Infof("GitTreeState: %s\n", v.GitTreeState)
+	log.Printf("BuildDate: %s\n", v.BuildDate)
+	log.Printf("GitCommit: %s\n", v.GitCommit)
+	log.Printf("GitTreeState: %s\n", v.GitTreeState)
 	if v.GitTag != "" {
-		glog.Infof("GitTag: %s\n", v.GitTag)
+		log.Printf("GitTag: %s\n", v.GitTag)
 	}
-	glog.Infof("GoVersion: %s\n", v.GoVersion)
-	glog.Infof("Compiler: %s\n", v.Compiler)
-	glog.Infof("Platform: %s\n", v.Platform)
+	log.Printf("GoVersion: %s\n", v.GoVersion)
+	log.Printf("Compiler: %s\n", v.Compiler)
+	log.Printf("Platform: %s\n", v.Platform)
 }

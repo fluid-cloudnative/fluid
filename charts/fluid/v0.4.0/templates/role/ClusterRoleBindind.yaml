@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dataset-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dataset-manager
+subjects:
+- kind: ServiceAccount
+  name: dataset-controller
+  namespace: fluid-system
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alluxioruntime-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alluxioruntime-manager
+subjects:
+  - kind: ServiceAccount
+    name: alluxioruntime-controller
+    namespace: fluid-system
