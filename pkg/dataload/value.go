@@ -17,8 +17,6 @@ type DataLoadInfo struct {
 	TargetPaths []TargetPath `yaml:"targetPaths,omitempty"`
 
 	Image string `yaml:"image,omitempty"`
-
-	InitImage string `yaml:"initImage,omitempty"`
 }
 
 type TargetPath struct {

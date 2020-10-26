@@ -357,7 +357,6 @@ func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLo
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
 		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-75a8e27",
-		InitImage:     "registry.cn-hangzhou.aliyuncs.com/fluid-namespace/fluid-init-users:v0.4.0-eb1f313",
 	}
 
 	targetPaths := []cdataload.TargetPath{}

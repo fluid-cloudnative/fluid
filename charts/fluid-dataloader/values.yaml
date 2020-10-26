@@ -4,24 +4,27 @@
 
 dataloader:
   # Optional
-  # Default: 6
+  # Default: 3
   # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
-  backoffLimit: 6
-
-  targetDataset: imagenet
-
-  loadMetadata: false
-
-  targetPaths:
-    - path: "/imagenet"
-      replicas: 2
-    - path: "/insightface"
-      fluidNative: true
-    - path: "/"
-      fluidNative: false
-      replicas: 1
+  backoffLimit: 3
 
   # Required
-  image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-e0feba3
+  # Description: the dataset that this DataLoad targets
+  targetDataset: #imagenet
 
-  initImage: registry.cn-hangzhou.aliyuncs.com/fluid-namespace/fluid-init-users:v0.4.0-70bc762
+  # Optional
+  # Default: false
+  # Description: should load metadata from UFS when doing data load
+  loadMetadata: false
+
+  # Optional
+  # Default: (path: "/", replicas: 1, fluidNative: false)
+  # Description: which paths should the DataLoad load
+  targetPaths:
+    - path: "/"
+      replicas: 1
+      fluidNative: false
+
+  # Required
+  # Description
+  image: #<alluxio-image>
