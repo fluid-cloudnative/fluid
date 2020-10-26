@@ -46,7 +46,7 @@ func IsFailedPod(pod *corev1.Pod) bool {
 	return pod != nil && pod.Status.Phase == corev1.PodFailed
 }
 
-// GetPodByName gets pod given name and namespace of the pod.
+// GetPodByName gets pod with given name and namespace of the pod.
 func GetPodByName(client client.Client, name, namespace string) (pod *corev1.Pod, err error) {
 	key := types.NamespacedName{
 		Name:      name,
