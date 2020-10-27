@@ -23,7 +23,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 add charts/ /charts
 
-COPY --from=builder /go/bin/dataset-controller /usr/local/bin/dataset-controller
+COPY --from=builder bin/dataset-controller /usr/local/bin/dataset-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 

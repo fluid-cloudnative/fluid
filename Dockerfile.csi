@@ -23,7 +23,7 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 WORKDIR /
-COPY --from=builder /go/bin/fluid-csi /usr/local/bin/fluid-csi
+COPY --from=builder bin/fluid-csi /usr/local/bin/fluid-csi
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 ADD csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
 ADD csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh

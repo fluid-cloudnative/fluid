@@ -23,7 +23,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 add charts/ /charts
 
-COPY --from=builder /go/bin/alluxioruntime-controller /usr/local/bin/alluxioruntime-controller
+COPY --from=builder bin/alluxioruntime-controller /usr/local/bin/alluxioruntime-controller
 RUN chmod -R u+x /usr/local/bin/
 
 CMD ["alluxioruntime-controller", "start"]
