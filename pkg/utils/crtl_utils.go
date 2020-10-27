@@ -51,7 +51,7 @@ func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-// RequeueImmediatelyUnlessGenerationChanged which requeues immediately if the object generation has not changed.
+// RequeueImmediatelyUnlessGenerationChanged requeues immediately if the object generation has not changed.
 // Otherwise, since the generation change will trigger an immediate update anyways, this will not requeue.
 // This prevents some cases where two reconciliation loops will occur.
 func RequeueImmediatelyUnlessGenerationChanged(prevGeneration, curGeneration int64) (ctrl.Result, error) {
