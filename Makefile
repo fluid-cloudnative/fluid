@@ -4,10 +4,11 @@ IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+# The Image URL to use in docker build and push
+DATASET_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller
+ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller
 CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
-
 LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
-
 INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
 
 LOCAL_FLAGS ?= -gcflags=-l
@@ -54,9 +55,15 @@ manager: generate fmt vet
 csi: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
-# Build CSI binary in dockerfile
+# Build binary in docker images, will be called in Dockerfile
 csi-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o /go/bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+
+dataset-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o /go/bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset_controller/main.go
+
+alluxioruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o /go/bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxioruntime_controller/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
@@ -83,7 +90,7 @@ deploy: manifests
 manifests: controller-gen
 	GO111MODULE=off $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-# Run go fmt against code
+# Run go fmt against codecsi-node-driver-registrar
 fmt:
 	GO111MODULE=off go fmt ./...
 
@@ -96,8 +103,11 @@ generate: controller-gen
 	GO111MODULE=off $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image
-docker-build: generate fmt vet
-	docker build --no-cache . -t ${IMG}:${GIT_VERSION}
+docker-build-dataset-controller: generate fmt vet
+	docker build --no-cache . -f Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-build-alluxioruntime-controller: generate fmt vet
+	docker build --no-cache . -f Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
@@ -109,8 +119,11 @@ docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
 
 # Push the docker image
-docker-push: docker-build
-	docker push ${IMG}:${GIT_VERSION}
+docker-push-dataset-controller: docker-build-dataset-controller
+	docker push ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
+	docker push ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
@@ -121,8 +134,8 @@ docker-push-loader: docker-build-loader
 docker-push-init-users: docker-build-init-users
 	docker push ${INIT_USERS_IMG}:${GIT_VERSION}
 
-docker-push-all: docker-push-init-users docker-push docker-push-csi
-docker-build-all: docker-build-init-users docker-build docker-build-csi
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-csi docker-build-init-users
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-csi docker-push-init-users
 
 # find or download controller-gen
 # download controller-gen if necessary

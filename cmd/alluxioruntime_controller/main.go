@@ -16,7 +16,11 @@ limitations under the License.
 package main
 
 import (
-	"flag"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid"
+	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
+	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
+	"github.com/spf13/cobra"
 	"go.uber.org/zap/zapcore"
 	"os"
 
@@ -29,9 +33,6 @@ import (
 	// +kubebuilder:scaffold:imports
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
-	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
-	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
@@ -41,28 +42,57 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
+
+	short    bool
+	metricsAddr          string
+	enableLeaderElection bool
+	development          bool
 )
+
+
+var cmd = &cobra.Command{
+	Use:   "alluxioruntime-controller",
+	Short: "Controller for alluxioruntime",
+}
+
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "start alluxioruntime-controller in Kubernetes",
+	Run: func(cmd *cobra.Command, args []string) {
+		handle()
+	},
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fluid.PrintVersion(short)
+	},
+}
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
-
 	_ = datav1alpha1.AddToScheme(scheme)
-	// +kubebuilder:scaffold:scheme
+
+	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
+	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for pillar controller.")
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+
+	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
 }
 
 func main() {
-	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		development          bool
-	)
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err.Error())
+		os.Exit(1)
+	}
+}
 
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&development, "development", true,
-		"Enable development mode for pillar controller.")
-	flag.Parse()
+func handle() {
+	fluid.LogVersion()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development
@@ -81,30 +111,14 @@ func main() {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
-		// MaxConcurrentReconciles: 5,
+		LeaderElectionID:   "7857424864.data.fluid.io",
 		Port: 9443,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to start alluxioruntime manager")
 		os.Exit(1)
 	}
 
-	if err = (&datasetctl.DatasetReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("datasetctl").WithName("Dataset"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
-		os.Exit(1)
-	}
-	// if err = (&alluxioctl.RuntimeReconciler{
-	// 	Client: mgr.GetClient(),
-	// 	Log:    ctrl.Log.WithName("alluxioctl").WithName("AlluxioRuntime"),
-	// 	Scheme: mgr.GetScheme(),
-	// }).SetupWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
-	// 	os.Exit(1)
-	// }
 	if err = (alluxioctl.NewRuntimeReconciler(mgr.GetClient(),
 		ctrl.Log.WithName("alluxioctl").WithName("AlluxioRuntime"),
 		mgr.GetScheme(),
@@ -121,19 +135,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
 		os.Exit(1)
 	}
-	//if err = (&dataload.DataLoadReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("alluxioctl").WithName("AlluxioDataLoad"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "AlluxioDataLoad")
-	//	os.Exit(1)
-	//}
-	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
+	setupLog.Info("starting alluxioruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "problem alluxioruntime-controller")
 		os.Exit(1)
 	}
 }
+
