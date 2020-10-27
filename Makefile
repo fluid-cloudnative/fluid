@@ -48,22 +48,21 @@ unit-test: generate fmt vet
 	GO111MODULE=off go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build manager binary
-manager: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/manager cmd/controller/main.go
+manager: dataset-controller-build alluxioruntime-controller-build csi-build
 
 # Build CSI binary
 csi: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 # Build binary in docker images, will be called in Dockerfile
-csi-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o /go/bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+csi-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
-dataset-controller-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o /go/bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
+dataset-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
 
-alluxioruntime-controller-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o /go/bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
+alluxioruntime-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests

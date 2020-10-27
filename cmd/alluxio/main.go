@@ -43,12 +43,11 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	short    bool
+	short                bool
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
 )
-
 
 var cmd = &cobra.Command{
 	Use:   "alluxioruntime-controller",
@@ -112,7 +111,7 @@ func handle() {
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "7857424864.data.fluid.io",
-		Port: 9443,
+		Port:               9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start alluxioruntime manager")
@@ -142,4 +141,3 @@ func handle() {
 		os.Exit(1)
 	}
 }
-
