@@ -231,7 +231,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := r.generateValueFile(ctx.DataLoad)
+		valueFileName, err := r.generateDataLoadValueFile(ctx.DataLoad)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return utils.RequeueIfError(err)
@@ -345,7 +345,9 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 	return utils.NoRequeue()
 }
 
-func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
+// generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
+// marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
+func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
@@ -385,6 +387,8 @@ func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLo
 	return valueFile.Name(), nil
 }
 
+// isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
+// We check this for the reason that native mount points need extra metadata sync operations.
 func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
@@ -404,6 +408,8 @@ func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Data
 	return false
 }
 
+// releaseLockOnTargetDataset releases lock on target dataset if the lock currently belongs to reconciling DataLoad.
+// We use a key-value pair on the target dataset's status as the lock. To release the lock, we can simply set the value to empty.
 func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx reconcileRequestContext, log logr.Logger) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
