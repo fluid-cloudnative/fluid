@@ -22,15 +22,15 @@ spec:
       - operator: Exists
       hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.alluxio.image }}"
+      - image: "{{ .Values.runtime.alluxio.controller.image }}"
         name: manager
         command: ["alluxioruntime-controller", "start"]
         args:
           - --development=false
         env:
-          {{- if .Values.runtime.alluxio.initImage }}
+          {{- if .Values.runtime.alluxio.init.image }}
           - name: ALLUXIO_INIT_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.initImage | quote }}
+            value: {{ .Values.runtime.alluxio.init.image | quote }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT

@@ -33,9 +33,9 @@ spec:
         args:
           - --development=false
         env:
-          {{- if .Values.runtime.alluxio.initImage }}
+          {{- if .Values.runtime.alluxio.init.image }}
           - name: ALLUXIO_INIT_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.initImage | quote }}
+            value: {{ .Values.runtime.alluxio.init.image | quote }}
           {{- end }}
         ports:
         - containerPort: 8080

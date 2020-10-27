@@ -4,16 +4,18 @@
 
 dataset:
   controller:
-    image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/dataset-controller:v0.4.0-f2c3a3f
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.4.0-99f50e0
 
 csi:
   registrar:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.4.0-a8ba7c9
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.4.0-99f50e0
 
 runtime:
   mountRoot: /alluxio-mnt
   alluxio:
-    initImage: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.4.0-a8ba7c9
-    image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/alluxioruntime-controller:v0.4.0-f2c3a3f
+    init:
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.4.0-a8ba7c9
+    controller:
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.4.0-99f50e0
