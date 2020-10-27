@@ -20,3 +20,4 @@
 * Make mount root configurable
 * Update HCFS URL
 * Split the controller into alluxio runtime and dataset
+* Implement DataLoad CRD and DataLoad controller
