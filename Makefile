@@ -36,7 +36,7 @@ override LDFLAGS += \
   -X ${PACKAGE}.gitTreeState=${GIT_TREE_STATE} \
   -extldflags "-static"
 
-all: manager
+all: build
 
 # Run tests
 test: generate fmt vet
@@ -48,11 +48,7 @@ unit-test: generate fmt vet
 	GO111MODULE=off go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build manager binary
-manager: dataset-controller-build alluxioruntime-controller-build csi-build
-
-# Build CSI binary
-csi: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+build: dataset-controller-build alluxioruntime-controller-build csi-build
 
 # Build binary in docker images, will be called in Dockerfile
 csi-build: generate fmt vet
