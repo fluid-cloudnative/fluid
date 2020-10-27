@@ -43,7 +43,7 @@ func NewAlluxioFileUtils(podName string, containerName string, namespace string,
 	}
 }
 
-// Check if the alluxioPath exists
+// IsExist checks if the alluxioPath exists
 func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
 	var (
 		command = []string{"alluxio", "fs", "ls", alluxioPath}
