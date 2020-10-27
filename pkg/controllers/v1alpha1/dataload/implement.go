@@ -7,7 +7,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
@@ -159,32 +158,35 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	}
 
 	// 4. Check if the bounded runtime is ready
-	var ready bool
-	var boundedRuntime v1alpha1.Runtime
-	runtimes := targetDataset.Status.Runtimes
-	for _, runtime := range runtimes {
-		if runtime.Category != common.AccelerateCategory {
-			continue
-		}
-		boundedRuntime = runtime
-		switch runtime.Type {
-		case common.ALLUXIO_RUNTIME:
-			podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
-			containerName := "alluxio-master"
-			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-			ready = fileUtils.Ready()
-		default:
-			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported", "runtime", runtime)
-		}
-		// Assume there is at most one runtime with AccelerateCategory
-		break
-	}
+
+	runtimeConditions := targetDataset.Status.Conditions
+	ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
+
+	//var boundedRuntime v1alpha1.Runtime
+	//runtimes := targetDataset.Status.Runtimes
+	//for _, runtime := range runtimes {
+	//	if runtime.Category != common.AccelerateCategory {
+	//		continue
+	//	}
+	//	boundedRuntime = runtime
+	//	switch runtime.Type {
+	//	case common.ALLUXIO_RUNTIME:
+	//		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+	//		containerName := "alluxio-master"
+	//		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+	//		ready = fileUtils.Ready()
+	//	default:
+	//		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported", "runtime", runtime)
+	//	}
+	//	// Assume there is at most one runtime with AccelerateCategory
+	//	break
+	//}
 	if !ready {
 		log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
 		r.Recorder.Eventf(&ctx.DataLoad,
 			v1.EventTypeNormal,
 			common.RuntimeNotReady,
-			"Bounded accelerate runtime not ready", "runtime", boundedRuntime)
+			"Bounded accelerate runtime not ready")
 	}
 
 	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and

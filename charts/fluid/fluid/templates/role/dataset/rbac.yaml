@@ -5,6 +5,29 @@ metadata:
   name: dataset-controller
 rules:
   - apiGroups:
+      - batch
+    resources:
+       - jobs
+       - jobs/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - persistentvolumes
+      - services
+      - endpoints
+      - configmaps
+      - events
+      - namespaces
+      - pods
+      - pods/exec
+      - secrets
+      - nodes
+    verbs:
+      - '*'
+  - apiGroups:
       - data.fluid.io
     resources:
       - dataloads
@@ -29,9 +52,9 @@ roleRef:
   kind: ClusterRole
   name: dataset-controller
 subjects:
-- kind: ServiceAccount
-  name: dataset-controller
-  namespace: fluid-system
+  - kind: ServiceAccount
+    name: dataset-controller
+    namespace: fluid-system
 ---
 apiVersion: v1
 kind: ServiceAccount
