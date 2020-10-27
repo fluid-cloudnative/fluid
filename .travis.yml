@@ -17,7 +17,8 @@ matrix:
         - sudo mv /tmp/kubebuilder_2.3.1_linux_${arch} /usr/local/kubebuilder
         - export PATH=$PATH:/usr/local/kubebuilder/bin
       script:
-        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/manager cmd/controller/main.go
+        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/dataset-controller cmd/dataset_controller/main.go
+        - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/alluxioruntime-controller cmd/alluxioruntime_controller/main.go
         - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -o bin/csi cmd/csi/main.go
         - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go vet ./...
         - golangci-lint run --timeout=10m ./...

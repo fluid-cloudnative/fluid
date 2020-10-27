@@ -27,7 +27,7 @@ spec:
       - operator: Exists
       hostNetwork: true
       containers:
-      - image: "{{ .Values.controller.image }}"
+      - image: "{{ .Values.dataset.controller.image }}"
         name: manager
         command: ["dataset-controller", "start"]
         args:

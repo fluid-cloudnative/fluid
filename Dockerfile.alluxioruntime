@@ -26,4 +26,5 @@ add charts/ /charts
 COPY --from=builder /go/bin/alluxioruntime-controller /usr/local/bin/alluxioruntime-controller
 RUN chmod -R u+x /usr/local/bin/
 
-CMD alluxioruntime-controller start
+CMD ["alluxioruntime-controller", "start"]
+

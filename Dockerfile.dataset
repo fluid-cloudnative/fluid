@@ -27,4 +27,4 @@ COPY --from=builder /go/bin/dataset-controller /usr/local/bin/dataset-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 
-CMD dataset-controller start
+CMD ["dataset-controller", "start"]
