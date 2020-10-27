@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ printf "%s-cm" .Release.Name }}
+  name: {{ printf "%s-data-load-script" .Release.Name }}
   labels:
     release: {{ .Release.Name }}
     role: dataload-job

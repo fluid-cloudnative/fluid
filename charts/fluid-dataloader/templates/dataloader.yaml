@@ -66,7 +66,7 @@ spec:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
           volumeMounts:
             - mountPath: /scripts
-              name: script-cm
+              name: data-load-script
               {{- range .Values.dataloader.targetPaths }}
             {{- if .fluidNative }}
             - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
@@ -74,9 +74,9 @@ spec:
               {{- end }}
       {{- end }}
       volumes:
-        - name: script-cm
+        - name: data-load-script
           configMap:
-            name: {{ printf "%s-cm" .Release.Name }}
+            name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
               - key: dataloader.alluxio.init
                 path: alluxio_env_init.sh
