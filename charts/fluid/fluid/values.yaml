@@ -2,9 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-controller:
-  image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.4.0-a8ba7c9
-
+dataset:
+  controller:
+    image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/dataset-controller:v0.4.0-f2c3a3f
 
 csi:
   registrar:
@@ -16,3 +16,4 @@ runtime:
   mountRoot: /alluxio-mnt
   alluxio:
     initImage: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.4.0-a8ba7c9
+    image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/alluxioruntime-controller:v0.4.0-f2c3a3f
