@@ -47,10 +47,9 @@ test: generate fmt vet
 unit-test: generate fmt vet
 	GO111MODULE=off go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
-# Build manager binary
+# Build binary
 build: dataset-controller-build alluxioruntime-controller-build csi-build
 
-# Build binary in docker images, will be called in Dockerfile
 csi-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
