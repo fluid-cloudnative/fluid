@@ -3,19 +3,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: alluxioruntime-controller-manager
+  name: alluxioruntime-controller
   namespace: fluid-system
   labels:
-    control-plane: alluxioruntime-controller-manager
+    control-plane: alluxioruntime-controller
 spec:
   selector:
     matchLabels:
-      control-plane: alluxioruntime-controller-manager
+      control-plane: alluxioruntime-controller
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: alluxioruntime-controller-manager
+        control-plane: alluxioruntime-controller
     spec:
       serviceAccountName: alluxioruntime-controller
       tolerations:
