@@ -19,7 +19,8 @@ jobs:
           command: |
             test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
             go vet ./...
-      - run: docker build . -t fluid:${CIRCLE_BUILD_NUM}
+      - run: docker build . -f Dockerfile.dataset dataset-controller:${CIRCLE_BUILD_NUM}
+      - run: docker build . -f Dockerfile.alluxioruntime alluxioruntime-controller:${CIRCLE_BUILD_NUM}
       - run: docker build . -f Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
 
 # maybe later we need to upload output to helm repository
