@@ -64,7 +64,6 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 	return err
 }
 
-
 // CheckRelease checks if the release with the given name and namespace exist.
 func CheckRelease(name, namespace string) (exist bool, err error) {
 	_, err = exec.LookPath(helmCmd[0])

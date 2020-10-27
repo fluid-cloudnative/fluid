@@ -26,5 +26,5 @@ dataloader:
       fluidNative: false
 
   # Required
-  # Description
+  # Description: the image that the DataLoad job uses
   image: #<alluxio-image>
