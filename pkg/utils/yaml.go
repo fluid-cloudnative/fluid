@@ -30,6 +30,8 @@ func init() {
 	log = ctrl.Log.WithName("utils")
 }
 
+// ToYaml converts values from json format to yaml format and stores the values to the file.
+// It will return err when failed to marshal value or write file.
 func ToYaml(values interface{}, file *os.File) error {
 	log.V(1).Info("create yaml file", "values", values)
 	data, err := yaml.Marshal(values)
