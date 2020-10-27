@@ -56,8 +56,9 @@ func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.R
 	return conditions
 }
 
-// get runtime condition given a runtime condition type.
-// If found, return index of the founded condition in the condition array and the founded condition itself, otherwise return -1 and nil.
+// GetRuntimeCondition is given a runtime condition type.
+// If found, return index of the founded condition in the condition array
+// and the founded condition itself, otherwise return -1 and nil.
 func GetRuntimeCondition(conditions []data.RuntimeCondition,
 	condType data.RuntimeConditionType) (index int, condition *data.RuntimeCondition) {
 	if conditions == nil {
