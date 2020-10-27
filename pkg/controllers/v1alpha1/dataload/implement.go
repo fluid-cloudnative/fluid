@@ -345,7 +345,6 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 	return utils.NoRequeue()
 }
 
-// todo(xuzhihao): need tests
 func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
@@ -361,7 +360,7 @@ func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLo
 
 	targetPaths := []cdataload.TargetPath{}
 	for _, target := range dataload.Spec.Target {
-		fluidNative := r.isTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
+		fluidNative := isTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
 		targetPaths = append(targetPaths, cdataload.TargetPath{
 			Path:        target.Path,
 			Replicas:    target.Replicas,
@@ -386,8 +385,7 @@ func (r *DataLoadReconcilerImplement) generateValueFile(dataload v1alpha1.DataLo
 	return valueFile.Name(), nil
 }
 
-//todo(xuzhihao): need tests
-func (r *DataLoadReconcilerImplement) isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
+func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
 		if mount.Path != "" {
@@ -397,7 +395,7 @@ func (r *DataLoadReconcilerImplement) isTargetPathUnderFluidNativeMounts(targetP
 
 		var volumeScheme string = "pvc://"
 
-		//todo(xuzhihao) get the longest prefix match
+		//todo(xuzhihao): HasPrefix is not enough.
 		if strings.HasPrefix(targetPath, mountPointOnDDCEngine) &&
 			(strings.HasPrefix(mount.MountPoint, pathScheme) || strings.HasPrefix(mount.MountPoint, volumeScheme)) {
 			return true
