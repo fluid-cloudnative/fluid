@@ -4,7 +4,8 @@ FROM golang:1.14.2 as builder
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
-RUN make dataset-controller-build
+RUN make dataset-controller-build && \
+    cp bin/dataset-controller /go/bin/dataset-controller
 
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
@@ -23,7 +24,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 add charts/ /charts
 
-COPY --from=builder bin/dataset-controller /usr/local/bin/dataset-controller
+COPY --from=builder /go/bin/dataset-controller /usr/local/bin/dataset-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 

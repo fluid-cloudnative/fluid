@@ -7,7 +7,8 @@ COPY . .
 # Build
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o csi main.go
 #RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -a -o /go/bin/fluid-csi cmd/csi/*.go
-RUN make csi-build
+RUN make csi-build && \
+    cp bin/fluid-csi /go/bin/fluid-csi
 
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="-N -l" -a -o /go/bin/fluid-csi cmd/csi/*.go
 
@@ -23,7 +24,7 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 WORKDIR /
-COPY --from=builder bin/fluid-csi /usr/local/bin/fluid-csi
+COPY --from=builder /go/bin/fluid-csi /usr/local/bin/fluid-csi
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 ADD csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
 ADD csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh
