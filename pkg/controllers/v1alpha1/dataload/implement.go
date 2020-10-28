@@ -90,7 +90,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 	case cdataload.DataLoadPhaseFailed:
 		return r.reconcileFailedDataLoad(ctx)
 	default:
-		log.Info(fmt.Sprintf("Unknown DataLoad phase, won't reconcile it"))
+		log.Info("Unknown DataLoad phase, won't reconcile it")
 	}
 	return utils.NoRequeue()
 }
