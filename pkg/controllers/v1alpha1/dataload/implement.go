@@ -77,23 +77,22 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 	log := ctx.Log.WithName("ReconcileDataLoad")
 	log.V(1).Info("process the cdataload", "cdataload", ctx.DataLoad)
 
-	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseLoaded {
-		return r.reconcileLoadedDataLoad(ctx)
-	}
-
-	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseFailed {
-		return r.reconcileFailedDataLoad(ctx)
-	}
-
-	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhaseNone {
+	// DataLoad's phase transition: None -> Pending -> Loading -> Loaded or Failed
+	switch ctx.DataLoad.Status.Phase {
+	case cdataload.DataLoadPhaseNone:
 		return r.reconcileNoneDataLoad(ctx)
-	}
-
-	if ctx.DataLoad.Status.Phase == cdataload.DataLoadPhasePending {
+	case cdataload.DataLoadPhasePending:
 		return r.reconcilePendingDataLoad(ctx)
+	case cdataload.DataLoadPhaseLoading:
+		return r.reconcileLoadingDataLoad(ctx)
+	case cdataload.DataLoadPhaseLoaded:
+		return r.reconcileLoadedDataLoad(ctx)
+	case cdataload.DataLoadPhaseFailed:
+		return r.reconcileFailedDataLoad(ctx)
+	default:
+		log.Info(fmt.Sprintf("Unknown DataLoad phase, won't reconcile it"))
 	}
-	// ctx.DataLoad.Status.Phase == common.DataLoadPhaseLoading
-	return r.reconcileLoadingDataLoad(ctx)
+	return utils.NoRequeue()
 }
 
 // reconcileNoneDataLoad reconciles DataLoads that are in `DataLoadPhaseNone` phase
