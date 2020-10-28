@@ -52,7 +52,7 @@ func AddRuntimesIfNotExist(runtimes []data.Runtime, newRuntime data.Runtime) (up
 	return updatedRuntimes
 }
 
-// Get Alluxio Runtime object given name and namespace
+// GetAlluxioRuntime gets Alluxio Runtime object with the given name and namespace
 func GetAlluxioRuntime(client client.Client, name, namespace string) (*data.AlluxioRuntime, error) {
 
 	key := types.NamespacedName{
