@@ -23,9 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-/*
-* Get the dataset
- */
+//GetDataset get the dataset.
+//It returns a pointer to the dataset if successful.
 func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dataset, error) {
 
 	key := types.NamespacedName{
