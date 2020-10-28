@@ -4,24 +4,27 @@
 
 dataloader:
   # Optional
-  # Default: 6
+  # Default: 3
   # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
-  backoffLimit: 6
-
-  # Optional
-  # Default: 2
-  # Desciption: how many threads to be used to prefetch data
-  threads: 4
-
-  # Optional
-  # Default: all files under `/data`, including those in subdirectories, i.e. `/data/*`
-  # Description: absolute path in Alluxio, used to decide which data path to be prefetched.
-  # Example: `/hbase` or `/hbase/` -> data path to be prefetched: `/data/hbase/*`
-  mountPath: # hbase
+  backoffLimit: 3
 
   # Required
-  image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
+  # Description: the dataset that this DataLoad targets
+  targetDataset: #imagenet
+
+  # Optional
+  # Default: false
+  # Description: should load metadata from UFS when doing data load
+  loadMetadata: false
+
+  # Optional
+  # Default: (path: "/", replicas: 1, fluidNative: false)
+  # Description: which paths should the DataLoad load
+  targetPaths:
+    - path: "/"
+      replicas: 1
+      fluidNative: false
 
   # Required
-  # Description: equals num of alluxio workers, used for deciding how many dataloader jobs to be launched in parallel
-  numWorker: # 2
+  # Description: the image that the DataLoad job uses
+  image: #<alluxio-image>

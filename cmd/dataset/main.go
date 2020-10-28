@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -123,6 +124,15 @@ func handle() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
+		os.Exit(1)
+	}
+
+	if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("DataLoad"),
+	)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
 		os.Exit(1)
 	}
 

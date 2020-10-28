@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: hbase
+spec:
+  dataset:
+    name: hbase
+    namespace: default
+  loadMetadata: true
+#  target:
+#    - path: /hbase
+#      replicas: 2

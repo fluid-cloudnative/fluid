@@ -128,6 +128,10 @@ type DatasetStatus struct {
 
 	// HCFSStatus represents hcfs info
 	HCFSStatus *HCFSStatus `json:"hcfs,omitempty"`
+
+	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
+	// This is mainly used as a lock to prevent concurrent DataLoad jobs.
+	DataLoadRef string `json:"dataLoadRef,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>
