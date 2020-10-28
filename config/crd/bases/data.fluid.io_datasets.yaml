@@ -268,6 +268,11 @@ spec:
                 - type
                 type: object
               type: array
+            dataLoadRef:
+              description: DataLoadRef specifies the running DataLoad job that targets
+                this Dataset. This is mainly used as a lock to prevent concurrent
+                DataLoad jobs.
+              type: string
             hcfs:
               description: HCFSStatus represents hcfs info
               properties:

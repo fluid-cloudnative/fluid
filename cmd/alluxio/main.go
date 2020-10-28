@@ -18,9 +18,11 @@ package main
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid"
+	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap/zapcore"
 	"os"
+
+	"go.uber.org/zap/zapcore"
 
 	zapOpt "go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,8 +31,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	// +kubebuilder:scaffold:imports
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
@@ -41,21 +44,20 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	short    bool
+	short                bool
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
 )
 
-
 var cmd = &cobra.Command{
-	Use:   "dataset-controller",
-	Short: "controller for dataset",
+	Use:   "alluxioruntime-controller",
+	Short: "Controller for alluxioruntime",
 }
 
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "start dataset-controller in Kubernetes",
+	Short: "start alluxioruntime-controller in Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
 		handle()
 	},
@@ -80,7 +82,6 @@ func init() {
 
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)
-
 }
 
 func main() {
@@ -110,26 +111,26 @@ func handle() {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "89759796.data.fluid.io",
-		Port: 9443,
+		LeaderElectionID:   "7857424864.data.fluid.io",
+		Port:               9443,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start dataset manager")
+		setupLog.Error(err, "unable to start alluxioruntime manager")
 		os.Exit(1)
 	}
 
-	if err = (&datasetctl.DatasetReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("datasetctl").WithName("Dataset"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
+	if err = (alluxioctl.NewRuntimeReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("alluxioctl").WithName("AlluxioRuntime"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("AlluxioRuntime"),
+	)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting dataset-controller")
+	setupLog.Info("starting alluxioruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running dataset-controller")
+		setupLog.Error(err, "problem alluxioruntime-controller")
 		os.Exit(1)
 	}
 }

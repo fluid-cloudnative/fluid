@@ -6,7 +6,6 @@ import (
 	"runtime"
 )
 
-
 type Version struct {
 	Version      string
 	BuildDate    string

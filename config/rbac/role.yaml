@@ -9,26 +9,6 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - alluxiodataloads
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - alluxiodataloads/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - alluxioruntimes
   verbs:
   - create

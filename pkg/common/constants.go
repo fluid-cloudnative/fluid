@@ -32,19 +32,19 @@ const (
 
 	ErrorHelmInstall = "ErrorHelmInstall"
 
-	DatasetNotReady = "DatasetNotReady"
+	TargetDatasetNotFound = "TargetDatasetNotFound"
 
-	RuntimeNotReady = "RuntimeNotReady"
+	TargetDatasetNotReady = "TargetDatasetNotReady"
 
 	DataLoadCollision = "DataLoadCollision"
 
-	PrefetchJobStarted = "Prefetch Started"
+	RuntimeNotReady = "RuntimeNotReady"
 
-	PrefetchJobInterrupted = "PrefetchJobInterrupted"
+	DataLoadJobStarted = "DataLoadJobStarted"
 
-	PrefetchJobComplete = "Prefetch Complete"
+	DataLoadJobFailed = "DataLoadJobFailed"
 
-	PrefetchJobFailed = "Prefetch Failed"
+	DataLoadJobCompeleted = "DataLoadJobCompleted"
 )
 
 // Runtime for Alluxio

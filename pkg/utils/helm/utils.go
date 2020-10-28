@@ -64,9 +64,7 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 	return err
 }
 
-/**
-* check if the release exist
- */
+// CheckRelease checks if the release with the given name and namespace exist.
 func CheckRelease(name, namespace string) (exist bool, err error) {
 	_, err = exec.LookPath(helmCmd[0])
 	if err != nil {
@@ -161,9 +159,7 @@ func ListReleases(namespace string) (releases []string, err error) {
 	return strings.Split(string(out), "\n"), nil
 }
 
-/*
-* return a map with all releases' names and app versions in a given namespace
- */
+// ListReleaseMap returns a map with all releases' names and app versions in a given namespace.
 func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) {
 	releaseMap = map[string]string{}
 	_, err = exec.LookPath(helmCmd[0])

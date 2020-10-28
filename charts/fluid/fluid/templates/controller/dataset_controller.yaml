@@ -2,25 +2,25 @@
 # kind: Namespace
 # metadata:
 #   labels:
-#     control-plane: controller-manager
+#     control-plane: controller
 #   name: fluid-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dataset-controller-manager
+  name: dataset-controller
   namespace: fluid-system
   labels:
-    control-plane: dataset-controller-manager
+    control-plane: dataset-controller
 spec:
   selector:
     matchLabels:
-      control-plane: dataset-controller-manager
+      control-plane: dataset-controller
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: dataset-controller-manager
+        control-plane: dataset-controller
     spec:
       serviceAccountName: dataset-controller
       tolerations:
@@ -33,9 +33,9 @@ spec:
         args:
           - --development=false
         env:
-          {{- if .Values.runtime.alluxio.initImage }}
+          {{- if .Values.runtime.alluxio.init.image }}
           - name: ALLUXIO_INIT_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.initImage | quote }}
+            value: {{ .Values.runtime.alluxio.init.image | quote }}
           {{- end }}
         ports:
         - containerPort: 8080

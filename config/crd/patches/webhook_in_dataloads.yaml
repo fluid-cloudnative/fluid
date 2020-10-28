@@ -3,7 +3,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: alluxiodataloads.data.fluid.io
+  name: dataloads.data.fluid.io
 spec:
   conversion:
     strategy: Webhook
