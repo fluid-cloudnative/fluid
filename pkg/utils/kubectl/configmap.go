@@ -32,10 +32,7 @@ func init() {
 	log = ctrl.Log.WithName("kubectl")
 }
 
-/**
-*
-* create configMap from file
-**/
+// CreateConfigMapFromFile creates configMap from file.
 func CreateConfigMapFromFile(name string, key, fileName string, namespace string) (err error) {
 	if _, err = os.Stat(fileName); os.IsNotExist(err) {
 		return err
