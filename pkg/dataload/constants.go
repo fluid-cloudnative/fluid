@@ -13,27 +13,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package dataload
 
-type DataloadPhase string
+type DataLoadPhase string
 
 const (
-	DataloadPhaseNone     DataloadPhase = ""
-	DataloadPhasePending  DataloadPhase = "Pending"
-	DataloadPhaseLoading  DataloadPhase = "Loading"
-	DataloadPhaseComplete DataloadPhase = "Complete"
-	DataloadPhaseFailed   DataloadPhase = "Failed"
+	DataLoadPhaseNone    DataLoadPhase = ""
+	DataLoadPhasePending DataLoadPhase = "Pending"
+	DataLoadPhaseLoading DataLoadPhase = "Loading"
+	DataLoadPhaseLoaded  DataLoadPhase = "Loaded"
+	DataLoadPhaseFailed  DataLoadPhase = "Failed"
 )
 
-// DataloadConditionType is a valid value for DataloadCondition.Type
-type DataloadConditionType string
+// DataLoadConditionType is a valid value for DataloadCondition.Type
+type DataLoadConditionType string
 
 // These are valid conditions of a Dataload.
 const (
 	// DataloadComplete means the Dataload has completed its execution.
-	DataloadComplete DataloadConditionType = "Complete"
+	DataLoadComplete DataLoadConditionType = "Complete"
 	// DataloadFailed means the Dataload has failed its execution.
-	DataloadFailed DataloadConditionType = "Failed"
+	DataLoadFailed DataLoadConditionType = "Failed"
 )
 
 const (
