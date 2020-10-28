@@ -12,9 +12,6 @@ spec:
   - JSONPath: .spec.dataset.name
     name: Dataset
     type: string
-  - JSONPath: .status.conditions[0].message
-    name: Last Condition
-    type: string
   - JSONPath: .status.phase
     name: Phase
     type: string
