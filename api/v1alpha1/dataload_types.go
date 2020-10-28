@@ -29,6 +29,8 @@ type TargetDataset struct {
 	// Name defines name of the target dataset
 	Name string `json:"name"`
 
+	// todo(xuzhihao): Namespace may be unnecessary for the reason that we assume DataLoad is in the same namespace with its target Dataset
+
 	// Namespace defines namespace of the target dataset
 	Namespace string `json:"namespace,omitempty"`
 }
@@ -79,6 +81,9 @@ type DataLoadStatus struct {
 	Conditions []DataLoadCondition `json:"conditions"`
 }
 
+// +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +genclient

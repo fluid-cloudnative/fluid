@@ -8,6 +8,19 @@ metadata:
   creationTimestamp: null
   name: dataloads.data.fluid.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.dataset.name
+    name: Dataset
+    type: string
+  - JSONPath: .status.conditions[0].message
+    name: Last Condition
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: data.fluid.io
   names:
     kind: DataLoad
