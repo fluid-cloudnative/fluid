@@ -26,9 +26,9 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-// SetupWorkers checks current replicas at the runtime and make an update
-// over the status by setting current and scheduled phases. The function
-// calls for a status update and finally returns the given response.
+// SetupWorkers checks the desired and current replicas of workers and makes an update
+// over the status by setting phases and conditions. The function
+// calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
 	runtime, err := e.getRuntime()
 	if err != nil {
