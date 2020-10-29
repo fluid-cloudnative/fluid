@@ -17,6 +17,9 @@ package utils
 
 import "regexp"
 
+//SplitSchemaAddr splits the address string into 2 parts: proto and addr.
+//Proto is set to "tcp" in default.
+//It returns proto and addr separately.
 func SplitSchemaAddr(addr string) (string, string) {
 	parts := reSchema.FindStringSubmatch(addr)
 	proto, addr := parts[1], parts[2]
