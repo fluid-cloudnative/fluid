@@ -38,7 +38,8 @@ func GetNode(client client.Client, name string) (node *v1.Node, err error) {
 	return node, err
 }
 
-// Check if the node is ready
+// IsReady checks if the node is ready
+// If the node is ready,it returns bool type 1,else,it returns bool type 0.
 func IsReady(node v1.Node) (ready bool) {
 	ready = true
 	for _, condition := range node.Status.Conditions {
