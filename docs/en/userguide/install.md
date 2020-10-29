@@ -70,6 +70,33 @@ csi-nodeplugin-fluid-hwtvh            2/2     Running   0          5m28s
 
 If the Pod status is as shown above, then Fluid is installed on your Kubernetes cluster successfully!
 
+### Check version info of Component
+
+When csi-nodeplugin, alluxioruntime-controller and dataset-controller start，they will print their own version info into logs.  
+If you installed with the charts provided by us，their version info will be fully consistent.  
+If you installed manually, their version info may be not consistent. You can view in turn:
+```bash
+$ kubectl logs csi-nodeplugin-fluid-tc7fx -c plugins  -n fluid-system | head -n 9 | tail -n 6
+$ kubectl logs alluxioruntime-controller-5dfb5c7966-mkgzb -n fluid-system | head -n 6
+$ kubectl logs dataset-controller-7c4bc68b96-26mcb  -n fluid-system | head -n 6
+```
+The printed logs are in the following format:
+```bash
+2020/10/27 10:16:02 BuildDate: 2020-10-26_14:04:22
+2020/10/27 10:16:02 GitCommit: f2c3a3fa1335cb0384e565f17a4f3284a6507cef
+2020/10/27 10:16:02 GitTreeState: dirty
+2020/10/27 10:16:02 GoVersion: go1.14.2
+2020/10/27 10:16:02 Compiler: gc
+2020/10/27 10:16:02 Platform: linux/amd64
+```
+If the logs printed by Pod have been cleaned up, you can run the following command to view the version:
+```bash
+$ kubectl exec csi-nodeplugin-fluid-tc7fx -c plugins  fluid-csi version -n fluid-system
+$ kubectl exec alluxioruntime-controller-5dfb5c7966-mkgzb alluxioruntime-controller version -n fluid-system
+$ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n  fluid-system 
+```
+
+### Fluid use cases
 For more use cases about Fluid, please refer to our demos:
 - [Speed Up Accessing Remote Files](../samples/accelerate_data_accessing.md)
 - [Cache Co-locality for Workload Scheduling](../samples/data_co_locality.md)
