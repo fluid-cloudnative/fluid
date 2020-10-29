@@ -62,13 +62,42 @@ datasets.data.fluid.io                  2020-07-24T06:54:50Z
 
 ```shell
 $ kubectl get pod -n fluid-system
-NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7f99c884dd-894g9   1/1     Running   0          5m28s
-csi-nodeplugin-fluid-dm9b8            2/2     Running   0          5m28s
-csi-nodeplugin-fluid-hwtvh            2/2     Running   0          5m28s
+NAME                                         READY   STATUS    RESTARTS   AGE
+alluxioruntime-controller-5dfb5c7966-mkgzb   1/1     Running   0          2d1h
+csi-nodeplugin-fluid-64h69                   2/2     Running   0          2d1h
+csi-nodeplugin-fluid-tc7fx                   2/2     Running   0          2d1h
+dataset-controller-7c4bc68b96-26mcb          1/1     Running   0          2d1h
 ```
 
 如果Pod状态如上所示，那么Fluid就可以正常使用了！
+
+**查看各Pod内程序的版本:**
+
+csi-nodeplugin、alluxioruntime-controller、dataset-controller在启动时，会将自身的版本信息打印到日志中。  
+如果您使用我们提供的charts进行安装，它们的版本应该是完全一致的。  
+如果您是手动安装部署，它们的版本可能不完全一致，可以分别依次查看：  
+```bash
+$ kubectl logs csi-nodeplugin-fluid-tc7fx -c plugins  -n fluid-system | head -n 9 | tail -n 6
+$ kubectl logs alluxioruntime-controller-5dfb5c7966-mkgzb -n fluid-system | head -n 6
+$ kubectl logs dataset-controller-7c4bc68b96-26mcb  -n fluid-system | head -n 6
+```
+打印出的日志如下格式：
+```bash
+2020/10/27 10:16:02 BuildDate: 2020-10-26_14:04:22
+2020/10/27 10:16:02 GitCommit: f2c3a3fa1335cb0384e565f17a4f3284a6507cef
+2020/10/27 10:16:02 GitTreeState: dirty
+2020/10/27 10:16:02 GoVersion: go1.14.2
+2020/10/27 10:16:02 Compiler: gc
+2020/10/27 10:16:02 Platform: linux/amd64
+```
+若Pod打印的日志已经被清理掉，可以执行下列命令查看版本： 
+```bash
+$ kubectl exec csi-nodeplugin-fluid-tc7fx -c plugins  fluid-csi version -n fluid-system
+$ kubectl exec alluxioruntime-controller-5dfb5c7966-mkgzb alluxioruntime-controller version -n fluid-system
+$ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n  fluid-system 
+```
+
+### Fluid使用示例
 
 有关Fluid的使用示例,可以参考我们提供的示例文档:
 - [远程文件访问加速](../samples/accelerate_data_accessing.md)
