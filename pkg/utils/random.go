@@ -4,7 +4,6 @@ import (
 	"math/rand"
 )
 
-
 // RandomString returns a string of length l which is made up of runes randomly selected from `source`.
 func RandomString(source []rune, l int32) string {
 	res := make([]rune, l)

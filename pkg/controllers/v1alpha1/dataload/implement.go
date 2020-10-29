@@ -6,7 +6,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
@@ -133,15 +133,15 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	log.V(1).Info("get target dataset", "targetDataset", targetDataset)
 
 	// 2. Check if the target dataset has synced metadata
-	if targetDataset.Status.UfsTotal == "" || targetDataset.Status.UfsTotal == alluxio.METADATA_SYNC_NOT_DONE_MSG {
-		log.V(1).Info("Target dataset not ready", "targetDataset", ctx.DataLoad.Spec.Dataset)
-		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
-			common.TargetDatasetNotReady,
-			"Target dataset(namespace: %s, name: %s) metadata sync not done",
-			targetDataset.Namespace, targetDataset.Name)
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}
+	//if targetDataset.Status.UfsTotal == "" || targetDataset.Status.UfsTotal == alluxio.METADATA_SYNC_NOT_DONE_MSG {
+	//	log.V(1).Info("Target dataset not ready", "targetDataset", ctx.DataLoad.Spec.Dataset)
+	//	r.Recorder.Eventf(&ctx.DataLoad,
+	//		v1.EventTypeNormal,
+	//		common.TargetDatasetNotReady,
+	//		"Target dataset(namespace: %s, name: %s) metadata sync not done",
+	//		targetDataset.Namespace, targetDataset.Name)
+	//	return utils.RequeueAfterInterval(20 * time.Second)
+	//}
 
 	// 3. Check if there's any loading DataLoad jobs(conflict DataLoad)
 	conflictDataLoadRef := targetDataset.Status.DataLoadRef
@@ -158,34 +158,35 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 
 	// 4. Check if the bounded runtime is ready
 
-	runtimeConditions := targetDataset.Status.Conditions
-	ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
+	//runtimeConditions := targetDataset.Status.Conditions
+	//ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
 
-	//var boundedRuntime v1alpha1.Runtime
-	//runtimes := targetDataset.Status.Runtimes
-	//for _, runtime := range runtimes {
-	//	if runtime.Category != common.AccelerateCategory {
-	//		continue
-	//	}
-	//	boundedRuntime = runtime
-	//	switch runtime.Type {
-	//	case common.ALLUXIO_RUNTIME:
-	//		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
-	//		containerName := "alluxio-master"
-	//		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-	//		ready = fileUtils.Ready()
-	//	default:
-	//		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported", "runtime", runtime)
-	//	}
-	//	// Assume there is at most one runtime with AccelerateCategory
-	//	break
-	//}
+	var ready bool
+	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+	if index == -1 {
+		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
+	}
+	switch boundedRuntime.Type {
+	case common.ALLUXIO_RUNTIME:
+		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+		containerName := "alluxio-master"
+		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		ready = fileUtils.Ready()
+	default:
+		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not supported")
+	}
+
 	if !ready {
 		log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
 		r.Recorder.Eventf(&ctx.DataLoad,
 			v1.EventTypeNormal,
 			common.RuntimeNotReady,
 			"Bounded accelerate runtime not ready")
+		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
 	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and
