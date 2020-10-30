@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 	"time"
 
@@ -79,19 +80,24 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 // cleanupCache cleans up the cache
 func (e *AlluxioEngine) cleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
-	ufs, cached, cachedPercentage, err := e.du()
+	cacheStates, err := e.queryCacheStatus()
 	if err != nil {
 		return
 	}
 
-	e.Log.Info("The cache before cleanup", "ufs", ufs,
-		"cached", cached,
-		"cachedPercentage", cachedPercentage)
+	e.Log.Info("The cache before cleanup",
+		"cached", cacheStates.cached,
+		"cachedPercentage", cacheStates.cachedPercentage)
+
+	cached, err := utils.FromHumanSize(cacheStates.cached)
+	if err != nil {
+		return err
+	}
 
 	if cached == 0 {
-		e.Log.Info("No need to clean cache", "ufs", ufs,
-			"cached", cached,
-			"cachedPercentage", cachedPercentage)
+		e.Log.Info("No need to clean cache",
+			"cached", cacheStates.cached,
+			"cachedPercentage", cacheStates.cachedPercentage)
 		return nil
 	}
 
