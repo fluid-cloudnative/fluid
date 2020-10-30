@@ -56,7 +56,6 @@ func GenerateValueFile(values interface{}) (valueFileName string, err error) {
 	return valueFileName, err
 }
 
-
 //GenerateHelmTemplate generates helm template without tiller: helm template -f values.yaml chart_name
 //Exec /usr/local/bin/helm, [template -f /tmp/values313606961 --namespace default --name hj /charts/tf-horovod]
 //returns generated template file: templateFileName
