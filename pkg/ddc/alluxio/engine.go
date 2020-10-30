@@ -30,9 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-/**
-* Alluxio Engine implements the Engine interface
- */
+//AlluxioEngine implements the Engine interface.
 type AlluxioEngine struct {
 	// *base.TemplateEngine
 	runtime     *datav1alpha1.AlluxioRuntime
@@ -41,7 +39,7 @@ type AlluxioEngine struct {
 	runtimeType string
 	Log         logr.Logger
 	client.Client
-	// force to clean up when reaching this limits
+	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
