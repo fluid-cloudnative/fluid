@@ -27,7 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-// Is the master ready
+// CheckMasterReady checks if the master is ready
 func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 
 	masterName := e.getMasterStatefulsetName()
