@@ -35,7 +35,10 @@
 
 ### Features
 
-- Show the HCFS Access Endpoint
+- Warm up Dataset automatically before using it
+- Support managing 3 million files
+- Support deploying multiple dataset in the same node
+- Support showing the HCFS Access Endpoint in Dataset status
 
 
 ### Bugs
