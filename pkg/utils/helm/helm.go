@@ -56,11 +56,10 @@ func GenerateValueFile(values interface{}) (valueFileName string, err error) {
 	return valueFileName, err
 }
 
-/**
-* generate helm template without tiller: helm template -f values.yaml chart_name
-* Exec /usr/local/bin/helm, [template -f /tmp/values313606961 --namespace default --name hj /charts/tf-horovod]
-* returns generated template file: templateFileName
- */
+
+//GenerateHelmTemplate generates helm template without tiller: helm template -f values.yaml chart_name
+//Exec /usr/local/bin/helm, [template -f /tmp/values313606961 --namespace default --name hj /charts/tf-horovod]
+//returns generated template file: templateFileName
 func GenerateHelmTemplate(name string, namespace string, valueFileName string, chartName string, options ...string) (templateFileName string, err error) {
 	tempName := fmt.Sprintf("%s.yaml", name)
 	templateFile, err := ioutil.TempFile("", tempName)
