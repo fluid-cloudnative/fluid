@@ -10,3 +10,7 @@ Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-pod-for-non-r
 1024:
 Version: https://github.com/Alluxio/alluxio/commit/75a8e27b30141a44f9378cbbed1bc04dbbfbbe0e
 Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1030:
+Version: https://github.com/Alluxio/alluxio/commit/c5128a866be2ea29c38ada30de4c0b819d617516
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
