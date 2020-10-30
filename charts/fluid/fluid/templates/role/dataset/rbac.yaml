@@ -34,6 +34,8 @@ rules:
       - dataloads/status
       - datasets
       - datasets/status
+      - alluxioruntimes
+      - alluxioruntimes/status
     verbs:
       - '*'
   - apiGroups:
