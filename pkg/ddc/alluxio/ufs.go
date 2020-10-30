@@ -84,9 +84,9 @@ func (e *AlluxioEngine) reportSummary() (summary string, err error) {
 	return fileUtils.ReportSummary()
 }
 
-// du the ufs
-func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUitls.Du("/")
-}
+////du the ufs
+//func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
+//	podName, containerName := e.getMasterPodInfo()
+//	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+//	return fileUitls.Du("/")
+//}
