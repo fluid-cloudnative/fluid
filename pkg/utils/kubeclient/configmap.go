@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Check if the configMap exists given its name and namespace
+// IsConfigMapExist check if the configMap exists given its name and namespace.
 func IsConfigMapExist(client client.Client, name, namespace string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
