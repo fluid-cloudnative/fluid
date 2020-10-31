@@ -103,7 +103,7 @@ func (a AlluxioFileUtils) LoadMetadataWithoutTimeout(alluxioPath string) (err er
 	return
 }
 
-// Load the metadata
+// LoadMetaData loads the metadata.
 func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error) {
 	var (
 		// command = []string{"alluxio", "fs", "-Dalluxio.user.file.metadata.sync.interval=0", "ls", "-R", alluxioPath}
