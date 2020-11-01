@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-// CheckAndUpdateRuntimeStatus checks the related runtime status and update it.
+// CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (
