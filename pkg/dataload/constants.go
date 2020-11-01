@@ -18,11 +18,11 @@ package dataload
 type DataLoadPhase string
 
 const (
-	DataLoadPhaseNone    DataLoadPhase = ""
-	DataLoadPhasePending DataLoadPhase = "Pending"
-	DataLoadPhaseLoading DataLoadPhase = "Loading"
-	DataLoadPhaseLoaded  DataLoadPhase = "Loaded"
-	DataLoadPhaseFailed  DataLoadPhase = "Failed"
+	DataLoadPhaseNone     DataLoadPhase = ""
+	DataLoadPhasePending  DataLoadPhase = "Pending"
+	DataLoadPhaseLoading  DataLoadPhase = "Loading"
+	DataLoadPhaseComplete DataLoadPhase = "Complete"
+	DataLoadPhaseFailed   DataLoadPhase = "Failed"
 )
 
 // DataLoadConditionType is a valid value for DataloadCondition.Type
