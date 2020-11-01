@@ -44,7 +44,7 @@ const (
 
 	DataLoadJobFailed = "DataLoadJobFailed"
 
-	DataLoadJobCompeleted = "DataLoadJobCompleted"
+	DataLoadJobComplete = "DataLoadJobComplete"
 )
 
 // Runtime for Alluxio

@@ -85,7 +85,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 		return r.reconcilePendingDataLoad(ctx)
 	case cdataload.DataLoadPhaseLoading:
 		return r.reconcileLoadingDataLoad(ctx)
-	case cdataload.DataLoadPhaseLoaded:
+	case cdataload.DataLoadPhaseComplete:
 		return r.reconcileLoadedDataLoad(ctx)
 	case cdataload.DataLoadPhaseFailed:
 		return r.reconcileFailedDataLoad(ctx)
@@ -291,7 +291,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				if jobCondition.Type == batchv1.JobFailed {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
 				} else {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseLoaded
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
@@ -313,7 +313,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
-// reconcileLoadedDataLoad reconciles DataLoads that are in `DataLoadPhaseLoaded` phase
+// reconcileLoadedDataLoad reconciles DataLoads that are in `DataLoadPhaseComplete` phase
 func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadedDataLoad")
 	// 1. release lock on target dataset
@@ -326,11 +326,11 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileReque
 	// 2. record event and no requeue
 	log.Info("DataLoad Loaded, no need to requeue")
 	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
-	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobCompeleted, "DataLoad job %s succeeded", jobName)
+	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobComplete, "DataLoad job %s succeeded", jobName)
 	return utils.NoRequeue()
 }
 
-// reconcileFailedDataLoad reconciles DataLoads that are in `DataLoadPhaseLoaded` phase
+// reconcileFailedDataLoad reconciles DataLoads that are in `DataLoadPhaseComplete` phase
 func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailedDataLoad")
 	// 1. release lock on target dataset
