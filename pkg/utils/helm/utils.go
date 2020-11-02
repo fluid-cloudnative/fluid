@@ -193,9 +193,7 @@ func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) 
 	return releaseMap, nil
 }
 
-/*
-* return a map with all releases' names and other info in a given namespace
- */
+// ListAllReleasesWithDetail returns a map with all releases' names and other info in a given namespace
 func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string, err error) {
 	releaseMap = map[string][]string{}
 	_, err = exec.LookPath(helmCmd[0])
