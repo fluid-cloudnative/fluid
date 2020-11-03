@@ -126,11 +126,11 @@ hadoop   390.2MiB         0B       4GiB             0%                  Bound   
 
 Dataset资源对象准备完成后（即与Alluxio实例绑定后），与该资源对象关联的PV, PVC已经由Fluid生成，应用可以通过该PVC完成远程文件在Pod中的挂载，并通过挂载目录实现远程文件访问
 
-## 通过HDFS Client访问文件
+## Access files through HDFS Client
 
-**准备测试程序**
+**Prepare test program**
 
-本例采用HDFS Java Client访问文件，在编写客户端代码时需要引入以下依赖项
+This example uses HDFS Java Client to access files, and the following dependencies need to be introduced when writing client code
 
 ```xml
 <dependency>
@@ -156,7 +156,7 @@ Dataset资源对象准备完成后（即与Alluxio实例绑定后），与该资
 </dependency>
 ```
 
-同时要在core-site.xml中添加alluxio的配置，详情和故障排查可参考[Running Hadoop MapReduce on Alluxio](https://docs.alluxio.io/os/user/stable/en/compute/Hadoop-MapReduce.html)。
+At the same time, add the configuration of alluxio in core-site.xml. For details and troubleshooting, please refer to [Running Hadoop MapReduce on Alluxio](https://docs.alluxio.io/os/user/stable/en/compute/Hadoop-MapReduce.html)。
 
 ```xml
 <property>
@@ -166,7 +166,7 @@ Dataset资源对象准备完成后（即与Alluxio实例绑定后），与该资
 </property>
 ```
 
-在通过HDFS Client访问文件时，需要指定HDFS Server地址
+When accessing files through the HDFS client, you need to specify the HDFS server address
 
 ```java
 final String HDFS_URL = "alluxio://hadoop-master-0.default:19998/hadoop"
