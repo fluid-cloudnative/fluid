@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Context for loading or applying the configuration state of a service.
+// ReconcileRequestContext loads or applys the configuration state of a service.
 type ReconcileRequestContext struct {
 	context.Context
 	types.NamespacedName
