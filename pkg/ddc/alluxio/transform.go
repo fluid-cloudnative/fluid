@@ -87,7 +87,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.3.0-SNAPSHOT-c5128a8"
+	value.ImageTag = "2.3.0-SNAPSHOT-9291b5f"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}
