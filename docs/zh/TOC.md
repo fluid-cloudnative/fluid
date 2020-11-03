@@ -18,6 +18,7 @@
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)
   - [以non-root用户身份使用Fluid](samples/nonroot_access.md)
+  - [数据预加载](samples/data_warmup.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)

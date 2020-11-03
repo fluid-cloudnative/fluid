@@ -1,12 +1,14 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
-  name: hbase
+  name: spark-dataload
 spec:
   dataset:
-    name: hbase
+    name: spark
     namespace: default
   loadMetadata: true
-#  target:
-#    - path: /hbase
-#      replicas: 2
+  target:
+    - path: /spark/spark-2.4.7
+      replicas: 1
+    - path: /spark/spark-3.0.1/pyspark-3.0.1.tar.gz
+      replicas: 2
