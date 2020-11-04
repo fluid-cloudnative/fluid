@@ -19,11 +19,6 @@
 
 您可以从[Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases)下载最新的Fluid安装包。
 
-解压刚才下载的Fluid安装包：
-
-```shell
-$ tar -zxf fluid.tgz
-```
 
 ### 使用Helm安装Fluid
 
@@ -36,7 +31,7 @@ $ kubectl create ns fluid-system
 安装Fluid：
 
 ```shell
-$ helm install fluid fluid
+$ helm install fluid fluid.tgz
 NAME: fluid
 LAST DEPLOYED: Fri Jul 24 16:10:18 2020
 NAMESPACE: default
@@ -45,7 +40,34 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-> `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid`指定了helm chart所在路径，即在上一步中压缩包解压后的路径。
+> `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
+
+### 使用Helm更新Fluid
+
+更新前，建议确保AlluxioRuntime资源对象中的各个组件得以顺利启动，也就是类似以下状态：
+
+```shell
+$ kubectl get pod
+NAME                 READY   STATUS    RESTARTS   AGE
+hbase-fuse-chscz     1/1     Running   0          9h
+hbase-fuse-fmhr5     1/1     Running   0          9h
+hbase-master-0       2/2     Running   0          9h
+hbase-worker-bdbjg   2/2     Running   0          9h
+hbase-worker-rznd5   2/2     Running   0          9h
+```
+如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
+
+```shell
+$ helm upgrade fluid fluid-0.4.0.tgz
+Release "fluid" has been upgraded. Happy Helming!
+NAME: fluid
+LAST DEPLOYED: Wed Nov  4 09:19:58 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+TEST SUITE: None
+```
+> 我们目前只尝试过从v0.3更新到v0.4，如果您从更旧的版本直接升级到v0.4，可能会出现未知类型的错误。
 
 ### 检查各组件状态
 

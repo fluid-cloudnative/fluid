@@ -9,12 +9,13 @@ Before everything we are going to do, please refer to [Installation Guide](../us
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7fd6457ccf-jnkvn   1/1     Running   0          60s
-csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
-csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
+alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
+csi-nodeplugin-fluid-fwgjh                  2/2     Running   0          8h
+csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
+dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
 
-Normally, you shall see a Pod named "controller-manager" and several Pods named "csi-nodeplugin". 
+Normally, you shall see a Pod named "dataset-controller", a Pod named "alluxioruntime-controller" and several Pods named "csi-nodeplugin". 
 The num of "csi-nodeplugin" Pods depends on how many nodes your Kubernetes cluster have(e.g. 2 in this demo), so please make sure all "csi-nodeplugin" Pods are working properly.
 
 ## Set Up Workspace

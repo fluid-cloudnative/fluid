@@ -34,11 +34,8 @@ $ git clone https://github.com/fluid-cloudnative/fluid.git
 ### 编译
 Fluid项目根目录下的`Makefile`文件已经包含了项目开发中的编译、构建、部署等基本逻辑
 ```shell
-# 构建Controller Manager Binary
-$ make manager
-
-# 构建CSI Binary
-$ make csi
+# 构建dataset-controller, alluxioruntime-controller和csi Binary
+$ make build
 ```
 构建得到的Binary程序位于`./bin`目录下。
 
@@ -46,14 +43,17 @@ $ make csi
 
 1. 设置镜像名称       
     ```shell
-    # 为manager镜像命名
-    $ export IMG=<your-registry>/<your-namespace>/<img-name>
+    # 为dataset-controller镜像命名
+    $ export DATASET_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
+    # 为alluxioruntime-controller镜像命名
+    $ export ALLUXIORUNTIME_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
     # 为CSI插件镜像命名
     $ export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
-    # 构建manager镜像
-    $ make docker-build
-    # 构建CSI插件镜像
-    $ make docker-build-csi
+    # 为init-user镜像命名
+    $ export INIT_USERS_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+    
+    # 构建所有镜像
+    $ make docker-build-all
     ```
     
     在运行Fluid之前，需要将构建的镜像推送到可以访问的镜像仓库中
@@ -65,8 +65,7 @@ $ make csi
 
 3. 推送镜像:      
     ```shell          
-    $ make docker-push
-    $ make docker-push-csi
+    $ make docker-push-all
     ```
 
 ### 运行

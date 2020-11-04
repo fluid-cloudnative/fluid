@@ -8,11 +8,12 @@
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-74d4f88b55-x99r8   1/1     Running   0          17h
-csi-nodeplugin-fluid-brxph            2/2     Running   0          17h
-csi-nodeplugin-fluid-gfcxm            2/2     Running   0          17h
+alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
+csi-nodeplugin-fluid-fwgjh                  2/2     Running   0          8h
+csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
+dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
-通常来说，你会看到一个名为`controller-manager`的Pod和多个名为`csi-nodeplugin`的Pod正在运行。其中，`csi-nodeplugin`这些Pod的数量取决于你的Kubernetes集群中结点的数量。
+通常来说，你会看到一个名为`dataset-controller`的Pod、一个名为`alluxioruntime-controller`的Pod和多个名为`csi-nodeplugin`的Pod正在运行。其中，`csi-nodeplugin`这些Pod的数量取决于你的Kubernetes集群中结点的数量。
 
 ## 运行示例
 
@@ -176,8 +177,7 @@ spark   Ready          Ready          Ready        58s
 等待一段时间，让AlluxioRuntime资源对象中的各个组件得以顺利启动，你会看到类似以下状态：
 ```shell
 $ kubectl get pod -o wide
-AME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hNAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
+NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
 hbase-fuse-7jqz6     1/1     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
 hbase-master-0       2/2     Running   0          2m24s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
 hbase-worker-w89fq   2/2     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>

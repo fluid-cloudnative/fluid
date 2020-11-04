@@ -47,6 +47,34 @@ TEST SUITE: None
 
 > The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
+
+### Upgrade Fluid with Helm
+
+Before updating, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
+
+```shell
+$ kubectl get pod
+NAME                 READY   STATUS    RESTARTS   AGE
+hbase-fuse-chscz     1/1     Running   0          9h
+hbase-fuse-fmhr5     1/1     Running   0          9h
+hbase-master-0       2/2     Running   0          9h
+hbase-worker-bdbjg   2/2     Running   0          9h
+hbase-worker-rznd5   2/2     Running   0          9h
+```
+If you have installed an older version of Fluid before, you can use Helm to update it.
+
+```shell
+$ helm upgrade fluid fluid-0.4.0.tgz
+Release "fluid" has been upgraded. Happy Helming!
+NAME: fluid
+LAST DEPLOYED: Wed Nov  4 09:19:58 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+TEST SUITE: None
+```
+> We have only tried to update from v0.3 to v0.4. If you upgrade directly to v0.4 from an older version, unknown types of errors may occur.
+
 ### Check Status of Component
 
 **Check CRD used by Fluid:**
