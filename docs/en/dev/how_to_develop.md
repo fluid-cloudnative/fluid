@@ -34,11 +34,8 @@ $ git clone https://github.com/fluid-cloudnative/fluid.git
 
 You can simply get a binary by running:
 ```shell
-# build controller manager
-$ make manager
-
-# build fluid CSI plugin
-$ make csi
+# build dataset-controller, alluxioruntime-controller and csi Binary
+$ make build
 ```
 By default, the binary would be put under `<fluid-path>/bin`.
 
@@ -46,12 +43,19 @@ By default, the binary would be put under `<fluid-path>/bin`.
 1. Set tags for images
     
     ```shell
-    # image name for controller manager
-    $ export IMG=<registry>/<namespace>/<img-repo>
-    # image name for CSI plugin
-    $ export CSI_IMG=<registry>/<namespace>/<csi-img-repo>
+    # set name for image of dataset-controller
+    $ export DATASET_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
+    # set name for image of alluxioruntime-controller
+    $ export ALLUXIORUNTIME_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
+    # set name for image of  CSI
+    $ export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+    # set name for image of init-user
+    $ export INIT_USERS_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+    
+    # build all images
+    $ make docker-build-all
     ```
-    Image tag will be automatically injected with SHA1 value of current git revision.
+    Before running Fluid, you need to push the built image to an accessible image registry.
 
 2. Login to a image registry
     
@@ -60,21 +64,10 @@ By default, the binary would be put under `<fluid-path>/bin`.
     $ sudo docker login <docker-registry>
     ```
 
-3. Build your image and push:
-    ```shell
-    # build and push image for controller manager
-    $ make docker-push
-    # build and push image for CSI plugin
-    $ make docker-push-csi
-    ```
-    
-    Alternatively, it makes no difference that you build your images first and then manually push them:
-    ```shell
-    $ make docker-build
-    
-    $ make docker-build-csi
-    
-    $ docker push <IMG>:<IMG_TAG>
+3. push your images:
+
+    ```shell          
+    $ make docker-push-all
     ```
 
 ### Run Your Fluid on Kubernetes Cluster

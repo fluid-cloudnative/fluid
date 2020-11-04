@@ -8,9 +8,10 @@
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7fd6457ccf-jnkvn   1/1     Running   0          60s
-csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
-csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
+alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
+csi-nodeplugin-fluid-fwgjh                  2/2     Running   0          8h
+csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
+dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
 通常来说，你会看到一个名为`controller-manager`的Pod和多个名为`csi-nodeplugin`的Pod正在运行。其中，`csi-nodeplugin`这些Pod的数量取决于你的Kubernetes集群中结点的数量。
 
