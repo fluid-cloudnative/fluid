@@ -170,7 +170,7 @@ At the same time, add the configuration of alluxio in core-site.xml. For details
 When accessing files through the HDFS client, you need to specify the HDFS server address
 
 ```java
-final String HDFS_URL = "alluxio://hadoop-master-0.default:19998/hadoop"
+final String HDFS_URL = "alluxio://hadoop-master-0.default.svc.cluster.local:"+ System.getenv("HADOOP_PORT") + "/hadoop";
 Configuration conf = new Configuration();
 FileSystem fs = FileSystem.get(URI.create(HDFS_URL), conf);
 ```
@@ -189,7 +189,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   H
 hbase   443.49MiB        0.00B    4.00GiB          0.0%                Bound   alluxio://hbase-master-0.default:19998   97s
 ```
 
-For the complete test code, please refer to [samples/hdfs](../../../samples/hdfs). We made the test code into a mirror to facilitate the next test. The mirror address is registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0.
+For the complete test code, please refer to [samples/hdfs](../../../samples/hdfs). We made the test code into a mirror to facilitate the next test. The mirror address is registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
 
 **查看待创建的测试作业**
 
@@ -205,10 +205,14 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: fluid-hdfs-demo
-          image: registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0 #可以替换为自己构建的镜像
+          image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
           imagePullPolicy: Always
+          env:
+          - name: HADOOP_PORT
+            value: "19998"
 EOF
 ```
+Here, you need to replace 19998 in the environment variable with the actual port in the HCFS (Hadoop Compatible FileSystem) URL just queried
 
 **启动测试作业**
 
