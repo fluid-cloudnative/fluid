@@ -9,9 +9,10 @@
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7fd6457ccf-jnkvn   1/1     Running   0          60s
-csi-nodeplugin-fluid-6rhpt            2/2     Running   0          60s
-csi-nodeplugin-fluid-6zwgl            2/2     Running   0          60s
+alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
+csi-nodeplugin-fluid-fwgjh                  2/2     Running   0          8h
+csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
+dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
 
 ## 新建工作环境
