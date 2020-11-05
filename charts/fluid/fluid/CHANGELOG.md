@@ -21,3 +21,6 @@
 * Update HCFS URL
 * Split the controller into alluxio runtime and dataset
 * Implement DataLoad CRD and DataLoad controller
+
+
+### 0.5.0
