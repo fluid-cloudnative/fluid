@@ -10,7 +10,7 @@ import java.net.URI;
 
 public class HDFSClient {
 
-    private static final String HDFS_URL = "alluxio://hadoop-master-0.default.svc.cluster.local:19998/hadoop";
+    private static final String HDFS_URL = "alluxio://hadoop-master-0.default.svc.cluster.local:"+ System.getenv("HADOOP_PORT") + "/hadoop";
     private static final String FILE_PATH = "/hadoop/RELEASENOTES.md";
     private static final String BASE_PATH = "/hadoop/";
 

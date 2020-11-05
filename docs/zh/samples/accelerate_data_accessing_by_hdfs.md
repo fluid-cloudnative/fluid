@@ -170,7 +170,7 @@ Dataset资源对象准备完成后（即与Alluxio实例绑定后），与该资
 在通过HDFS Client访问文件时，需要指定HDFS Server地址
 
 ```java
-final String HDFS_URL = "alluxio://hadoop-master-0.default:19998/hadoop"
+final String HDFS_URL = "alluxio://hadoop-master-0.default.svc.cluster.local:"+ System.getenv("HADOOP_PORT") + "/hadoop";
 Configuration conf = new Configuration();
 FileSystem fs = FileSystem.get(URI.create(HDFS_URL), conf);
 ```
@@ -189,7 +189,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   H
 hbase   443.49MiB        0.00B    4.00GiB          0.0%                Bound   alluxio://hbase-master-0.default:19998   97s
 ```
 
-完整的测试代码可参考[samples/hdfs](../../../samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为 registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0。
+完整的测试代码可参考[samples/hdfs](../../../samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
 
 **查看待创建的测试作业**
 
@@ -205,10 +205,14 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: fluid-hdfs-demo
-          image: registry.cn-beijing.aliyuncs.com/yukong/fluid-hdfs-demo:1.0.0 #可以替换为自己构建的镜像
+          image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
           imagePullPolicy: Always
+          env:
+          - name: HADOOP_PORT
+            value: "19998"
 EOF
 ```
+此处，需要将环境变量中的19998替换为刚刚查询得到的HCFS(Hadoop Compatible FileSystem) URL中实际的端口
 
 **启动测试作业**
 
