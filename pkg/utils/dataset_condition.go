@@ -86,7 +86,7 @@ func GetDatasetCondition(conditions []datav1alpha1.DatasetCondition,
 // 	return newConditions
 // }
 
-// Check if the given dataset condition exists in the given dataset condition array.
+// IsDatasetConditionExist checks if the given dataset condition exists in the given dataset condition array.
 func IsDatasetConditionExist(conditions []datav1alpha1.DatasetCondition,
 	cond datav1alpha1.DatasetCondition) (found bool) {
 
