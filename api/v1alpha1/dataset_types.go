@@ -22,11 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// The dataset phase indicates whether the loading is behaving
+// DatasetPhase indicates whether the loading is behaving
 type DatasetPhase string
 
 const (
-	// bounding to runtime, can't be deleted
+	// Bound to runtime, can't be deleted
 	PendingDatasetPhase DatasetPhase = "Pending"
 	// Bound to dataset, can't be released
 	BoundDatasetPhase DatasetPhase = "Bound"
