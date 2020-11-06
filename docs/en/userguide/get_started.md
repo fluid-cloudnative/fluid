@@ -31,7 +31,7 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 
 3. Deploy Fluid with Helm
     ```shell
-    $ helm install fluid fluid.tgz
+    $ helm install fluid fluid-<version>.tgz
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default
@@ -43,10 +43,11 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 4. Check running status of Fluid
     ```shell
     $ kubectl get po -n fluid-system
-    NAME                                  READY     STATUS    RESTARTS   AGE
-    controller-manager-6b864dfd4f-995gm   1/1       Running   0          32h
-    csi-nodeplugin-fluid-c6pzj            2/2       Running   0          32h
-    csi-nodeplugin-fluid-wczmq            2/2       Running   0          32h
+    NAME                                         READY   STATUS    RESTARTS   AGE
+    alluxioruntime-controller-64948b68c9-zzsx2   1/1     Running   0          108s
+    csi-nodeplugin-fluid-2mfcr                   2/2     Running   0          108s
+    csi-nodeplugin-fluid-l7lv6                   2/2     Running   0          108s
+    dataset-controller-5465c4bbf9-5ds5p          1/1     Running   0          108s
     ```
 
 ## Create a Dataset  
