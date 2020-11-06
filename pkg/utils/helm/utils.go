@@ -227,7 +227,6 @@ func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string
 	return releaseMap, nil
 }
 
-
 // DeleteReleaseIfExists deletes a release with given name and namespace if it exists.
 // A wrapper of CheckRelease() and DeleteRelease()
 func DeleteReleaseIfExists(name, namespace string) error {
