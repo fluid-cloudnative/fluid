@@ -205,7 +205,7 @@ func init() {
 	SchemeBuilder.Register(&Dataset{}, &DatasetList{})
 }
 
-// Canbeound checks if the dataset can be bound to the runtime
+// CanbeBound checks if the dataset can be bound to the runtime
 func (dataset *Dataset) CanbeBound(name string, namespace string, category common.Category) (bound bool) {
 
 	if len(dataset.Status.Runtimes) == 0 {
