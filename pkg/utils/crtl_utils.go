@@ -70,6 +70,7 @@ func GetOrDefault(str *string, defaultValue string) string {
 	}
 }
 
+// Now method returns the current time
 func Now() *metav1.Time {
 	now := metav1.Now()
 	return &now
