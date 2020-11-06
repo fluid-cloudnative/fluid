@@ -70,7 +70,8 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.security.stale.channel.purge.interval", "365d")
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.enabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.expiration.time", "2day")
-	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.max.size", "1000000")
+	// set the default max size of metadata cache
+	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.max.size", "6000000")
 	setDefaultProperties(runtime, value, "alluxio.user.direct.memory.io.enabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.fuse.cached.paths.max", "1000000")
 	setDefaultProperties(runtime, value, "alluxio.job.worker.threadpool.size", "164")
