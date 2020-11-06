@@ -100,11 +100,6 @@ func kubectl(args []string) ([]byte, error) {
 	// 1. prepare the arguments
 	// args := []string{"create", "configmap", name, "--namespace", namespace, fmt.Sprintf("--from-file=%s=%s", name, configFileName)}
 	log.V(1).Info("exec", "binary", binary, "cmd", strings.Join(args, " "))
-	// env := os.Environ()
-	// if types.KubeConfig != "" {
-	// 	env = append(env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
-	// }
-
 	// return syscall.Exec(cmd, args, env)
 	// 2. execute the command
 	cmd := exec.Command(binary, args...)
