@@ -52,10 +52,7 @@ func CreateConfigMapFromFile(name string, key, fileName string, namespace string
 	return
 }
 
-/**
-*
-* save the key of configMap into a file
-**/
+// SaveConfigMapToFile saves the key of configMap into a file
 func SaveConfigMapToFile(name string, key string, namespace string) (fileName string, err error) {
 	binary, err := exec.LookPath(kubectlCmd[0])
 	if err != nil {
