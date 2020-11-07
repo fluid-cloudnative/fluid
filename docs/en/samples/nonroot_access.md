@@ -1,3 +1,15 @@
+# Example - Using Fluid to access non-root user's data
+
+If the user data could only be access by specific uid, Runtime's 'RunAs' parameter should be set to let specific user run distributed data caching engine, to access underlying data.
+
+This document demonstrates the above features with a simple example.
+
+## Prerequisites
+
+- [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.3.0)
+
+Please refer to [Fluid installation documentation](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md) to complete installation.
+
 ## Running Example
    
 **Create a non-root user**
