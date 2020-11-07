@@ -5,5 +5,5 @@ Build the docker image for alluxio:
 docker rm -f alluxio-dev-test
 rm -rf /alluxio
 cd /
-bash build.sh -b branch-2.3-fuse
+bash build-image.sh -b branch-2.3-fuse
 ```
