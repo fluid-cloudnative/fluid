@@ -25,7 +25,7 @@ func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	return e.usedStorageBytesInternal()
 }
 
-// return free storage size of Alluxio in bytes
+// FreeStorageBytes returns free storage size of Alluxio in bytes
 func (e *AlluxioEngine) FreeStorageBytes() (value int64, err error) {
 	// return e.freeStorageBytesInternal()
 	return e.freeStorageBytesInternal()
