@@ -3,6 +3,12 @@ package dataload
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -11,17 +17,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
 
 // DataLoadReconcilerImplement implements the actual reconciliation logic of DataLoadReconciler
@@ -359,7 +360,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		BackoffLimit:  3,
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-42a0cf7",
+		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-4fde044",
 	}
 
 	targetPaths := []cdataload.TargetPath{}
