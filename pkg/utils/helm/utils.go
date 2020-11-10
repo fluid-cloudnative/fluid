@@ -137,9 +137,8 @@ func DeleteRelease(name, namespace string) error {
 	return err
 }
 
-/*
-* return an array with all releases' names in a given namespace
- */
+
+// ListReleases return an array with all releases' names in a given namespace
 func ListReleases(namespace string) (releases []string, err error) {
 	releases = []string{}
 	_, err = exec.LookPath(helmCmd[0])
