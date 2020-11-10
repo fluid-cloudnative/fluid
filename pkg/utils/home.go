@@ -25,7 +25,6 @@ import (
 	"strings"
 )
 
-
 // Home returns the home directory for the executing user.
 // This uses an OS-specific method for discovering the home directory.
 // An error is returned if a home directory cannot be detected.
