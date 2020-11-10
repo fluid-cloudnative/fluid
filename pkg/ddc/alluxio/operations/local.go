@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-//SyncLocalDir Sync local path by running command `du -sh <path>`.
+//SyncLocalDir syncs local path by running command `du -sh <path>`.
 //Under the circumstance where some NAS(e.g. NFS) is mounted on the `<path>`, the function will sync metadata of all files in the NAS.
 //This is necessary for Alluxio to get consistent file metadata with UFS(i.e. NAS in this case).
 func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
