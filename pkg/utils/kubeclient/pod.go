@@ -66,7 +66,7 @@ func GetPodByName(client client.Client, name, namespace string) (pod *corev1.Pod
 	return
 }
 
-//DeletePod delete the given pod if it exists
+//DeletePod deletes the given pod if it exists
 func DeletePod(client client.Client, pod *corev1.Pod) error {
 	err := client.Delete(context.TODO(), pod)
 	if apierrs.IsNotFound(err) {
