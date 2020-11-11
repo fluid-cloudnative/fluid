@@ -79,6 +79,8 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "alluxio.fuse.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "alluxio.worker.block.master.client.pool.size", "1024")
+	// Add the optimization of the same blocks concurrent access from https://github.com/Alluxio/alluxio/pull/12453 which is from Microsoft
+	setDefaultProperties(runtime, value, "alluxio.fuse.shared.caching.reader.enabled", "true")
 }
 
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {

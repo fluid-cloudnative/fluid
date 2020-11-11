@@ -31,7 +31,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-4fde044"
+	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-238b7eb"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}

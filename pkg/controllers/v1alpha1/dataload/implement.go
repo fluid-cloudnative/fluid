@@ -360,7 +360,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		BackoffLimit:  3,
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-4fde044",
+		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-238b7eb",
 	}
 
 	targetPaths := []cdataload.TargetPath{}
