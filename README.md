@@ -88,10 +88,17 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 </pre>
 </details>
 
-<details open>
+<details>
 <summary>Demo 3: Accelerate PVC with Fluid</summary>
 <pre>
 <a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/281779782703.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/7343be344cfebfd53619c1c8a70530ffd43d3d96/68747470733a2f2f696d672e616c6963646e2e636f6d2f696d6765787472612f69342f363030303030303030333331352f4f31434e303164386963425031614d4a614a576a5562725f2121363030303030303030333331352d302d7462766964656f2e6a7067" alt="" data-canonical-src="https://img.alicdn.com/imgextra/i4/6000000003315/O1CN01d8icBP1aMJaJWjUbr_!!6000000003315-0-tbvideo.jpg" style="max-width:100%;"></a>
+</pre>
+</details>
+
+<details open>
+<summary>Demo 4: Preload dataset with Fluid</summary>
+<pre>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/287213603893.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
 </pre>
 </details>
 
