@@ -25,7 +25,7 @@ spec:
       serviceAccountName: dataset-controller
       tolerations:
       - operator: Exists
-      hostNetwork: true
+      #hostNetwork: true
       containers:
       - image: "{{ .Values.dataset.controller.image }}"
         name: manager
