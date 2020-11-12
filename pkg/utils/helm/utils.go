@@ -115,9 +115,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	return exist, err
 }
 
-/*
-* Delete Release given name and namespace
- */
+// DeleteRelease deletes release with the name and namespace
 func DeleteRelease(name, namespace string) error {
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
