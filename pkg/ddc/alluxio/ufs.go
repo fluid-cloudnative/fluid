@@ -19,7 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 )
 
-// return used storage size of Alluxio in bytes
+// UsedStorageBytes returns used storage size of Alluxio in bytes
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
 	return e.usedStorageBytesInternal()
