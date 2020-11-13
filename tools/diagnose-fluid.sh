@@ -36,7 +36,8 @@ pod_status() {
 }
 
 fluid_pod_logs() {
-  core_component "${fluid_namespace}" "manager" "control-plane=controller-manager"
+  core_component "${fluid_namespace}" "manager" "control-plane=alluxioruntime-controller"
+  core_component "${fluid_namespace}" "manager" "control-plane=dataset-controller"
   core_component "${fluid_namespace}" "plugins" "app=csi-nodeplugin-fluid"
   core_component "${fluid_namespace}" "node-driver-registrar" "app=csi-nodeplugin-fluid"
 }
