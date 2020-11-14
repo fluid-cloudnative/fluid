@@ -46,7 +46,7 @@ func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
 	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	fileCount, _, _, err = fileUitls.Count("/")
+	fileCount, err = fileUitls.GetFileCount()
 	if err != nil {
 		return
 	}

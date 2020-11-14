@@ -129,7 +129,7 @@ type DatasetStatus struct {
 	// HCFSStatus represents hcfs info
 	HCFSStatus *HCFSStatus `json:"hcfs,omitempty"`
 
-	// FileNum represents the filenumbers of the dataset
+	// FileNum represents the file numbers of the dataset
 	FileNum string `json:"fileNum,omitempty"`
 
 	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
@@ -181,6 +181,7 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Cached Percentage",type="string",JSONPath=`.status.cacheStates.cachedPercentage`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="HCFS URL",type="string",JSONPath=`.status.hcfs.endpoint`,priority=10
+// +kubebuilder:printcolumn:name="TOTAL FILES",type="string",JSONPath=`.status.fileNum`,priority=11
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

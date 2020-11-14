@@ -18,6 +18,7 @@ package operations
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -325,6 +326,32 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 	}
 
 	return int64(ufileCount), int64(ufolderCount), int64(utotal), err
+}
+
+// Count of the Alluxio Filesystem (except folder)
+// use "alluxio fsadmin report metrics" for better performance
+func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
+	var (
+		command = []string{
+			"alluxio", "fsadmin", "report", "metrics", "|", "grep", "Master.TotalPaths"}
+		stdout string
+		stderr string
+	)
+
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	// eg: Master.FilesCompleted  (Type: COUNTER, Value: 6)
+	matchExp := regexp.MustCompile(`\d+`)
+	fileCountStr := matchExp.FindString(stdout)
+	fileCount, err = strconv.ParseInt(fileCountStr, 10, 64)
+	if err != nil {
+		return
+	}
+	return fileCount, nil
 }
 
 // exec with timeout
