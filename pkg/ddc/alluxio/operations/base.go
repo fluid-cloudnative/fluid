@@ -333,7 +333,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 	var (
 		command = []string{
-			"alluxio", "fsadmin", "report", "metrics", "|", "grep", "Master.TotalPaths"}
+			"alluxio", "fsadmin", "report", "metrics", "|", "grep", "Master.FilesCompleted"}
 		stdout string
 		stderr string
 	)
@@ -344,9 +344,10 @@ func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 		return
 	}
 
-	// eg: Master.FilesCompleted  (Type: COUNTER, Value: 6)
+	// eg: Master.FilesCompleted  (Type: COUNTER, Value: 6,367,897)
+	outStrWithoutComma := strings.Replace(stdout, ",", "", -1)
 	matchExp := regexp.MustCompile(`\d+`)
-	fileCountStr := matchExp.FindString(stdout)
+	fileCountStr := matchExp.FindString(outStrWithoutComma)
 	fileCount, err = strconv.ParseInt(fileCountStr, 10, 64)
 	if err != nil {
 		return
