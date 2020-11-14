@@ -328,7 +328,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 	return int64(ufileCount), int64(ufolderCount), int64(utotal), err
 }
 
-// Count of the Alluxio Filesystem (except folder)
+// file count of the Alluxio Filesystem (except folder)
 // use "alluxio fsadmin report metrics" for better performance
 func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 	var (
