@@ -115,7 +115,7 @@ func GenerateHelmTemplate(name string, namespace string, valueFileName string, c
 }
 
 // GetChartVersion checks the chart version by given the chart directory
-// helms inspect chart /charts/tf-horovod
+// helm inspect chart /charts/tf-horovod
 func GetChartVersion(chart string) (version string, err error) {
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
