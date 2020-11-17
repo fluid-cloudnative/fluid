@@ -277,7 +277,7 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 func (e *AlluxioEngine) parseRuntimeImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-		defaultTag   = "2.3.0-SNAPSHOT-238b7eb"
+		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImage, defaultTag)
@@ -302,7 +302,7 @@ func (e *AlluxioEngine) parseRuntimeImage() (image, tag string) {
 func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
-		defaultTag   = "2.3.0-SNAPSHOT-238b7eb"
+		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV, defaultImage, defaultTag)

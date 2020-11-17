@@ -14,6 +14,7 @@ import (
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
@@ -356,11 +357,16 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		return "", err
 	}
 
+	imageName := "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+	imageTag := "2.3.0-SNAPSHOT-238b7eb"
+	imageName, imageTag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_DATALOAD_IMAGE_ENV, imageName, imageTag)
+	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:  3,
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-238b7eb",
+		Image:         image,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
