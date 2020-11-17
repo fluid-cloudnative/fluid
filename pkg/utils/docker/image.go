@@ -10,11 +10,14 @@ import (
 func ParseDockerImage(image string) (name string, tag string) {
 	matches := strings.Split(image, ":")
 	if len(matches) >= 2 {
-		return matches[0], matches[1]
+		name = matches[0]
+		tag = matches[1]
 	} else if len(matches) == 1 {
-		return matches[0], "latest"
+		name = matches[0]
+		tag = "latest"
+		// return matches[0], "latest"
 	}
-	return "", ""
+	return
 }
 
 // GetImageRepoTagFromEnv parse the image and tag from environment varaibles, if it's not existed or
@@ -30,7 +33,6 @@ func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (im
 				image = k
 
 			}
-
 			if len(v) > 0 {
 				tag = v
 
