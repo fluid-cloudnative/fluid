@@ -75,4 +75,19 @@ kubectl exec -it hbase-master-0 bash
 time alluxio fs  distributedLoad --replication 1 /
 ```
 
+## 4. 为什么我在创建任务挂载 Runtime 创建的 PVC 的时候出现 `driver name fuse.csi.fluid.io not found in the list of registered CSI drivers` 错误？
 
+**回答**:请查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。
+
+首先通过命令查看Fluid的CSI组件是否正常
+
+如下的命令可以快速地找出Pod，使用时把`<node_name>`和`<fluid_namespace>`换成自己的即可：
+```bash
+kubectl get pod -n <fluid_namespace> | grep <node_name>
+
+# <pod_name> 为上一步pod名
+kubectl logs <pod_name> node-driver-registrar -n <fluid_namespace>
+kubectl logs <pod_name> plugins -n <fluid_namespace>
+```
+
+如果上述步骤的Log无错误，请查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。因为Fluid的CSI组件通过固定地址的socket注册到kubelet，默认为`--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`。
