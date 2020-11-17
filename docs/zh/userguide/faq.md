@@ -90,4 +90,12 @@ kubectl logs <pod_name> node-driver-registrar -n <fluid_namespace>
 kubectl logs <pod_name> plugins -n <fluid_namespace>
 ```
 
-如果上述步骤的Log无错误，请查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。因为Fluid的CSI组件通过固定地址的socket注册到kubelet，默认为`--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`。
+如果上述步骤的Log无错误，请查看csidriver对象是否存在：
+```
+kubectl get csidriver
+```
+如果csidriver对象存在，请查看查看csi注册节点是否包含`<node_name>`：
+```
+kubectl get csinode | grep <node_name>
+```
+如果上述命令无输出，查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。因为Fluid的CSI组件通过固定地址的socket注册到kubelet，默认为`--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`。
