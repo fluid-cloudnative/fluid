@@ -82,12 +82,13 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 // 2. Transform the common part
 func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 
-	value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+	value.Image, value.ImageTag = e.parseRuntimeImage()
+	// value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
 	if runtime.Spec.AlluxioVersion.Image != "" {
 		value.Image = runtime.Spec.AlluxioVersion.Image
 	}
 
-	value.ImageTag = "2.3.0-SNAPSHOT-238b7eb"
+	// value.ImageTag = "2.3.0-SNAPSHOT-238b7eb"
 	if runtime.Spec.AlluxioVersion.ImageTag != "" {
 		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
 	}

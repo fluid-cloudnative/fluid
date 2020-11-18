@@ -112,7 +112,7 @@ func (e *AlluxioEngine) optimizeDefaultForMaster(runtime *datav1alpha1.AlluxioRu
 
 	if len(value.Master.JvmOptions) == 0 {
 		value.Master.JvmOptions = []string{
-			"-Xmx6G",
+			"-Xmx16G",
 			"-XX:+UnlockExperimentalVMOptions",
 		}
 	}

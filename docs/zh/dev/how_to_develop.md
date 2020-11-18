@@ -19,6 +19,13 @@ Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`
 
 ## 编译、运行和调试
 
+### 安装`controller-gen`
+
+```shell
+$ go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
+$ cp $GOPATH/bin/controller-gen /usr/local/bin/
+```
+
 ### 获取Fluid源码
 
 ```shell
