@@ -1,50 +1,53 @@
-# JVM性能分析工具使用
+# JVM Performance analysis tool usage
 
-有时需要对Fluid的底层缓存引擎，如Alluxio，进行性能分析，以更加迅速地找到性能瓶颈。
-[async-profiler](https://github.com/jvm-profiling-tools/async-profiler)是一款非常全面的JVM profiling工具，支持对`cpu`，`lock`等多种事件采样。
-在本文档中，我们介绍`async-profiler`的简单使用方法。
-请参考[async-profiler官方文档](https://github.com/jvm-profiling-tools/async-profiler)获取更加详细的使用教程。
+Sometimes, it's necessary to perform performance analysis on Fluid's underlying cache engine, such as Alluxio, to find performance bottlenecks more quickly.
+[async-profiler](https://github.com/jvm-profiling-tools/async-profiler)is a comprehensive JVM profiling tool，supporting sampling of various events such as `cpu` and `lock`.
+In this document, we introduce the simple usage of `async-profiler`.
+Please query [async-profiler official document](https://github.com/jvm-profiling-tools/async-profiler) to get a more detailed tutorial.
 
-## 下载并解压
-   ```bash
+
+## Download and unzip
+   ```bash 
    $ wget https://github.com/jvm-profiling-tools/async-profiler/releases/download/v1.7.1/async-profiler-1.7.1-linux-x64.tar.gz
    $ tar -zxf async-profiler-1.7.1-linux-x64.tar.gz
-   ```
+   ``` 
+    
+## Simple usage
 
-## 简单使用
+1. View Java process
 
-1. 查看Java进程
     ```bash
     $ jps
     8576 AlluxioFuse
     33916 Jps
     ```
-
-2. 采样占用CPU时间
+   
+2. Sampling CPU time being taken up 
     ```bash
     $ ./profiler.sh -e cpu -i 1ms -d 300 -f cpu.txt <PID>
     ```
 
-    **命令说明**:
-    - `-e <EVENT>`： 指定要采样的时间，支持`cpu`, `lock`等
-    - `-i <INTERVAL>`： 指定采样间隔， 支持最小纳秒级别采样，但不建议设置太小，对会被采样的进程造成较大的性能影响
-    - `-d <DURATION>`: 指定采样持续时间，以秒为单位
-    - `-f <FILENAME>`: 指定保存文件名字和格式，文件格式影响最终结果呈现形式，`txt`文档格式方便在服务器查看，`svg`矢量图格式可在浏览器打开
-    - `<PID>`: 所有采样都必须指定一个JVM进程的PID， 如`jps`命令中的AlluxioFuse进程`8576`
+    **Description of command **:
+    - `-e <EVENT>`: specify the sampling time, supporting `cpu`, `lock`, etc.
+    - `-i <INTERVAL>`: specify the sampling interval, supporting the minimum nanosecond level sampling, but it is not recommended to set too small, because it will have a performance impact on the process being sampled
+    - `-d <DURATION>`: specify the sampling duration, in seconds
+    - `-f <FILENAME>`: specify the name and format of the saved file. The file format affects the presentation of the final result. The `txt` file format is convenient for viewing on the server, and the `svg` vector diagram format can be opened in the browser
+    - `<PID>`: all samples must specify the PID of a JVM process, such as the PID of AlluxioFuse process in the `jps` command is `8576` 
 
-3. 采样结果分析
+3. Sampling result analysis
 
-    async-profiler会周期性地采样JVM调用栈，并按照被采样次数由高到低排序。
-    可认为采样次数越高的函数，花费的CPU时间也是越多的。因此，通过观察排名前几位的函数调用情况，可快速找出Java进程的主要性能瓶颈。
+    async-profiler will periodically sample the JVM call stack and sort it from high to low according to the number of times it was sampled.
+    It can be considered that, the higher the sampling times of function, the more CPU time it takes. Therefore, by observing call of the top function, you can quickly find the main performance bottleneck of the Java process.
+        
+    The following is the result of cpu sampling on AlluxioFuse. It consists of three parts：
+        
+    The first part introduces the number of sampling, GC conditions, etc. Among them, `Frame buffer usage` represents the buffer usage rate for saving the sampling results.
+    If the interval of sampling is too small or the time of sampling is too long, it may prompt `overflow`. At this time, you can use `-b N` to increase the buffer capacity.
+        
+    The second part is the call stack of functions sorted from high to low according to the number of samples. The performance analysis focuses on the top few.
+        
+    The third part, at the end, is a function that CPU time being taken up from high to low.
     
-    下面是对AlluxioFuse进行cpu采样的结果，由三部分内容组成。
-    
-    第一部分，介绍采样的次数，GC情况等，其中的`Frame buffer usage`表示保存采样结果的buffer使用率。
-    如果采样间隔太小，或者时间太长，可能会提示`overflow`，此时可用`-b N`调大buffer容量。
-    
-    第二部分，是按照采样次数由高到低排序后的函数调用栈，性能分析时重点关注前几位。
-    
-    第三部分，在最后，是占用CPU时间由高到低的函数。
     ```bash
     $ cat cpu.txt
     --- Execution profile ---
@@ -159,7 +162,7 @@
        660352796    0.50%      656  get_page_from_freelist_[k]
     ```
 > **Tips**:
-> - 一般性能分析只需要采样`cpu`和`lock`即可，它们的结果是比较有参考意义的
-> - 如果是和内存相关的调优，可试着采样`alloc`事件
-> - `wall`事件采样墙上时间，`-t`选项让每个进程分开采样，它俩搭配使用效果比较好
-> - 同一进程同时只能采样一种事件
+> - General performance analysis only needs to sample `cpu` and `lock`, their results are more meaningful for reference
+> - If it is memory-related tuning, try sampling the `alloc` event
+> - The `wall` event samples the wall time. The `-t` option allows each process to be sampled separately. The combination of the two is better
+> - Only one event can be sampled in the same process at the same time
