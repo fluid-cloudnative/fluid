@@ -27,7 +27,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -268,6 +270,56 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 	if len(allocatedPorts) != portNum {
 		err = fmt.Errorf("Can`t allocate enough port, got %d but expect %d", len(allocatedPorts), portNum)
 	}
+
+	return
+}
+
+func (e *AlluxioEngine) parseRuntimeImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	// if value, existed := os.LookupEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV); existed {
+	// 	if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+	// 		k, v := docker.ParseDockerImage(repos)
+	// 		if len(k) ==
+
+	// 	} else {
+	// 		e.Log.Info("Failed to parse the ALLUXIO_RUNTIME_IMAGE_ENV", "ALLUXIO_RUNTIME_IMAGE_ENV", value, "error", err)
+	// 	}
+	// 	e.Log.Info("Get INIT_IMAGE from Env", common.ALLUXIO_RUNTIME_IMAGE_ENV, value)
+	// } else {
+	// 	e.Log.Info("Use Default ALLUXIO_RUNTIME_IMAGE_ENV", "ALLUXIO_RUNTIME_IMAGE_ENV", common.DEFAULT_ALLUXIO_INIT_IMAGE)
+	// }
+
+	return
+}
+
+func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
+		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	// if value, existed := os.LookupEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV); existed {
+	// 	if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+	// 		k, v := docker.ParseDockerImage(repos)
+	// 		if len(k) ==
+
+	// 	} else {
+	// 		e.Log.Info("Failed to parse the ALLUXIO_RUNTIME_IMAGE_ENV", "ALLUXIO_RUNTIME_IMAGE_ENV", value, "error", err)
+	// 	}
+	// 	e.Log.Info("Get INIT_IMAGE from Env", common.ALLUXIO_RUNTIME_IMAGE_ENV, value)
+	// } else {
+	// 	e.Log.Info("Use Default ALLUXIO_RUNTIME_IMAGE_ENV", "ALLUXIO_RUNTIME_IMAGE_ENV", common.DEFAULT_ALLUXIO_INIT_IMAGE)
+	// }
 
 	return
 }

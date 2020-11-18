@@ -32,6 +32,14 @@ spec:
           - name: ALLUXIO_INIT_IMAGE_ENV
             value: {{ .Values.runtime.alluxio.init.image | quote }}
           {{- end }}
+          {{- if .Values.runtime.alluxio.runtime.image }}
+          - name: ALLUXIO_RUNTIME_IMAGE_ENV
+            value: {{ .Values.runtime.alluxio.runtime.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.alluxio.fuse.image }}
+          - name: ALLUXIO_FUSE_IMAGE_ENV
+            value: {{ .Values.runtime.alluxio.fuse.image | quote }}
+          {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT
             value: {{ .Values.runtime.mountRoot | quote }}

@@ -135,7 +135,6 @@ func DeleteRelease(name, namespace string) error {
 	return err
 }
 
-
 // ListReleases return an array with all releases' names in a given namespace
 func ListReleases(namespace string) (releases []string, err error) {
 	releases = []string{}

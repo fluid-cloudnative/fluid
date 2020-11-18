@@ -26,12 +26,11 @@ import (
 func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, dataset *datav1alpha1.Dataset, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
-	value.Fuse.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
+	value.Fuse.Image, value.Fuse.ImageTag = e.parseFuseImage()
 	if runtime.Spec.Fuse.Image != "" {
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
 
-	value.Fuse.ImageTag = "2.3.0-SNAPSHOT-238b7eb"
 	if runtime.Spec.Fuse.ImageTag != "" {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
