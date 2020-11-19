@@ -107,6 +107,12 @@ EOF
 
 **默认情况下，上述DataLoad配置将会尝试加载整个数据集中的全部数据**，如果你希望进行更细粒度的控制(例如：仅加载数据集下指定路径的数据)，请参考[DataLoad进阶配置](#DataLoad进阶配置)
 
+**创建DataLoad对象**
+
+```
+kubectl create -f dataload.yaml
+```
+
 
 **查看创建的DataLoad对象状态**
 ```
