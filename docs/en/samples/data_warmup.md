@@ -7,9 +7,9 @@ Then the application that consumes the data can enjoy the acceleration effect br
 
 For the great benefit mentioned above, we provide **DataLoad CRD**. This is a CRD which offers you a clear and easy way to controll data preloading behaviors.
 
-This document will introduce you two different ways to use DataLoad CRD:
-- [DataLoad Quick Usage](#DataLoad Quick Usage)
-- [DataLoad Advanced Configurations](#DataLoad Advanced Configurations)
+This document will introduce you two different ways about how to use DataLoad CRD:
+- [DataLoad Quick Usage](#dataload-quick-usage)
+- [DataLoad Advanced Configurations](#dataload-advanced-configurations)
 
 ## Prerequisite
 
@@ -112,7 +112,7 @@ EOF
 Feel free to change the configuration above if it doesn't match your actual environment
 
 **By default, it'll preload all the data in the target dataset**. If you'd like to controll the data preloading behaviors in a more find-grained way(e.g. preload data under some specified path only),
-please refer to [DataLoad Advanced Configurations](#DataLoad Advanced Configurations)
+please refer to [DataLoad Advanced Configurations](#dataload-advanced-configurations)
 
 **Create the DataLoad object**
 
@@ -194,13 +194,13 @@ spark   1.92GiB          1.92GiB   4.00GiB          100.0%              Bound   
 
 Besides the basic data preloading feature showed in the above example, 
 with a little bit more configurations, you can enable some advanced features that the DataLoad CRD offers, including:
-- preload data under some specified path only
-- set cache replicas when preloading data
-- sync metadata before preloading data
+- Preload data under some specified path only
+- Set cache replicas when preloading data
+- Sync metadata before preloading data
 
-### preload data under some specified path only
+### Preload data under some specified path only
  
-DataLoad will only preload data under some specified path (or file) instead of the whole dataset. For example:
+With some extra configurations, DataLoad will only preload data under some specified path (or file) instead of the whole dataset. For example:
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -216,9 +216,9 @@ spec:
     - path: /spark/spark-3.0.1/pyspark-3.0.1.tar.gz
 ```
 
-Instead of the whole Apache Spark WebUFS, the above DataLoad will only preload `/spark/spark-2.4.7` and `/spark/spark-3.0.1/pyspark-3.0.1.tar.gz`
+Instead of the whole dataset, the above DataLoad will only preload `/spark/spark-2.4.7` and `/spark/spark-3.0.1/pyspark-3.0.1.tar.gz`
 
-### set cache replicas when preloading data
+### Set cache replicas when preloading data
 
 When preloading data, you can set cache replicas by simple configuration. For example:
 
@@ -241,7 +241,7 @@ spec:
 The above DataLoad will preload all the files under `/spark/spark-2.4.7` with **only one** cache replicas in the distributed cache engine, while it will
 preload the file `/spark/spark-3.0.1/pyspark-3.0.1.tar.gz` with **two** cache replicas.
 
-### sync metadata before preloading data
+### Sync metadata before preloading data
 
 Under many circumstances, files in the remote storage system has changed. 
 Distributed cache engine like Alluxio needs to sync metadata to update its view of the remote file storage.
