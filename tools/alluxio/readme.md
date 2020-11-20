@@ -9,7 +9,7 @@ bash build-image.sh -b branch-2.3-fuse
 ```
 You can run this script to customize your own image with the following parameters:
 ```bash
--h
+-h, --help
     list the help messages.
 -b, --branch branch
     Set the git branch. If you don't assign it, the default branch is "branch-2.3-fuse".
