@@ -37,7 +37,7 @@ func (e *AlluxioEngine) TotalStorageBytes() (value int64, err error) {
 	return e.totalStorageBytesInternal()
 }
 
-// return the total num of files in Alluxio
+// TotalFileNums return the total num of files in Alluxio
 func (e *AlluxioEngine) TotalFileNums() (value int64, err error) {
 	// return e.totalFileNumsInternal()
 	return e.totalFileNumsInternal()
