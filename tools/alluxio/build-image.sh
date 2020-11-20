@@ -12,8 +12,8 @@ alluxio_git='https://github.com/Alluxio/alluxio.git'
 branch="branch-2.3-fuse"
 tag=""
 commit=""
-alluxio_image_name=""
-alluxio_fuse_image_name=""
+alluxio_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+alluxio_fuse_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
 
 dev_container_name="alluxio-dev-test"
 
@@ -34,26 +34,6 @@ print_usage()
   echo -e "\t\tSet the alluxio image name."
   echo -e "\t-f, --alluxio_fuse_image_name alluxio_fuse_image_name"
   echo -e "\t\tSet the alluxio fuse image name."
-}
-check_name()
-{
-  if [ -z ${alluxio_image_name} ]; then
-    echo "did not set the alluxio image name, use -a or --alluxio_image_name to set it."
-    exit 1
-  fi
-
-  if [ -z ${alluxio_fuse_image_name} ]; then
-    echo "did not set the alluxio fuse image name, use -f or --alluxio_fuse_image_name to set it."
-    exit 1
-  fi
-}
-
-test()
-{
-  local GIT=123455
-
-  echo ${alluxio_fuse_image_name}:2.3.0-SNAPSHOT-$GIT
-  echo ${alluxio_image_name}:2.3.0-SNAPSHOT-$GIT
 }
 
 clone()
@@ -163,7 +143,7 @@ main()
         echo "tag=$2"
         shift 2
         ;;
-      -a|--alluxio_docker_name)
+      -a|--alluxio_image_name)
         alluxio_image_name=$2
         echo "alluxio_image_name=$2"
         shift 2
@@ -184,7 +164,7 @@ main()
     esac
   done
 
-  check_name && clone && checkout && start_container && tarball && build
+  clone && checkout && start_container && tarball && build
 
   if [ $? == 0 ]; then
     echo "Build SUCCESS!"
