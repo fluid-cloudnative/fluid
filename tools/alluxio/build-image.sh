@@ -39,7 +39,7 @@ print_usage()
 clean()
 {
   docker rm -f ${dev_container_name} || true
-  rm -rf /alluxio || true
+  # rm -rf /alluxio || true
 }
 
 clone()
