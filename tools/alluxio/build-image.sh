@@ -42,7 +42,7 @@ clone()
     echo "alluxio repository already exists."
   else
     echo "cloning from ${alluxio_git}."
-    git clone "${alluxio_git}"
+    git clone "${alluxio_git}" /alluxio
   fi
 }
 
