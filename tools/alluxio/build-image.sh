@@ -170,7 +170,7 @@ main()
     esac
   done
 
-  clone && checkout && start_container && tarball && build
+  clean && clone && checkout && start_container && tarball && build
 
   if [ $? == 0 ]; then
     echo "Build SUCCESS!"
