@@ -36,6 +36,12 @@ print_usage()
   echo -e "\t\tSet the alluxio fuse image name."
 }
 
+clean()
+{
+  docker rm -f ${dev_container_name} || true
+  rm -rf /alluxio || true
+}
+
 clone()
 {
   if [ -d "/alluxio" ]; then
