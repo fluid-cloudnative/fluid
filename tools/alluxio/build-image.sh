@@ -36,13 +36,19 @@ print_usage()
   echo -e "\t\tSet the alluxio fuse image name."
 }
 
+clean()
+{
+  docker rm -f ${dev_container_name} || true
+  # rm -rf /alluxio || true
+}
+
 clone()
 {
   if [ -d "/alluxio" ]; then
     echo "alluxio repository already exists."
   else
     echo "cloning from ${alluxio_git}."
-    git clone "${alluxio_git}"
+    git clone "${alluxio_git}" /alluxio
   fi
 }
 
@@ -164,7 +170,7 @@ main()
     esac
   done
 
-  clone && checkout && start_container && tarball && build
+  clean && clone && checkout && start_container && tarball && build
 
   if [ $? == 0 ]; then
     echo "Build SUCCESS!"

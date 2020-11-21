@@ -81,6 +81,8 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.worker.block.master.client.pool.size", "1024")
 	// Add the optimization of the same blocks concurrent access from https://github.com/Alluxio/alluxio/pull/12453 which is from Microsoft
 	setDefaultProperties(runtime, value, "alluxio.fuse.shared.caching.reader.enabled", "true")
+	// job retention time only kicks in when the JobMaster is at capacity in terms of number of jobs stored. see https://github.com/Alluxio/alluxio/pull/12468
+	setDefaultProperties(runtime, value, "alluxio.job.master.finished.job.retention.time", "30sec")
 }
 
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {
