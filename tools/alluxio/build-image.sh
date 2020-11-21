@@ -4,7 +4,7 @@
 # build and upload docker images to AliYun
 # on given branch,tag or commit.
 
-set -x -e -u -o pipefail
+set -e -u -o pipefail
 
 # Following arguments are initialized with the default value.
 #alluxio_git='https://github.com/Alluxio/alluxio.git'
@@ -12,6 +12,8 @@ alluxio_git='https://github.com/Alluxio/alluxio.git'
 branch="branch-2.3-fuse"
 tag=""
 commit=""
+alluxio_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+alluxio_fuse_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
 
 dev_container_name="alluxio-dev-test"
 
@@ -28,6 +30,10 @@ print_usage()
   echo -e "\t\tSet the git tag."
   echo -e "\t-c, --commit commmit_id"
   echo -e "\t\tSet the commit id."
+  echo -e "\t-a, --alluxio_image_name alluxio_image_name"
+  echo -e "\t\tSet the alluxio image name."
+  echo -e "\t-f, --alluxio_fuse_image_name alluxio_fuse_image_name"
+  echo -e "\t\tSet the alluxio fuse image name."
 }
 
 clone()
@@ -97,17 +103,17 @@ build()
   docker build -f Dockerfile.fuse -t alluxio/alluxio-fuse:2.3.0-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-2.3.0-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
   docker build -t alluxio/alluxio:2.3.0-SNAPSHOT-$GIT_COMMIT --build-arg ENABLE_DYNAMIC_USER="true" --build-arg ALLUXIO_TARBALL=alluxio-2.3.0-SNAPSHOT-bin.tar.gz .
 
-  docker tag alluxio/alluxio-fuse:2.3.0-SNAPSHOT-$GIT_COMMIT  registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-$GIT_COMMIT
-  docker tag alluxio/alluxio:2.3.0-SNAPSHOT-$GIT_COMMIT  registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-$GIT_COMMIT
+  docker tag alluxio/alluxio-fuse:2.3.0-SNAPSHOT-$GIT_COMMIT  ${alluxio_fuse_image_name}:2.3.0-SNAPSHOT-$GIT_COMMIT
+  docker tag alluxio/alluxio:2.3.0-SNAPSHOT-$GIT_COMMIT  ${alluxio_image_name}:2.3.0-SNAPSHOT-$GIT_COMMIT
 
-  docker push registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-$GIT_COMMIT &
-  docker push registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-$GIT_COMMIT &
+  docker push ${alluxio_fuse_image_name}:2.3.0-SNAPSHOT-$GIT_COMMIT &
+  docker push ${alluxio_image_name}:2.3.0-SNAPSHOT-$GIT_COMMIT &
 }
 
 main()
 {
   # Parse arguments using getopt
-  ARGS=$(getopt -a -o b:c:t:h --long branch:,commit:,tag:,help -- "$@")
+  ARGS=$(getopt -a -o b:c:t:a:f:h --long branch:,commit:,tag:,alluxio_image_name:,alluxio_fuse_image_name:,help -- "$@")
   if [ $? != 0 ]; then
     exit 1
   fi
@@ -137,6 +143,16 @@ main()
         echo "tag=$2"
         shift 2
         ;;
+      -a|--alluxio_image_name)
+        alluxio_image_name=$2
+        echo "alluxio_image_name=$2"
+        shift 2
+        ;;
+      -f|--alluxio_fuse_image_name)
+        alluxio_fuse_image_name=$2
+        echo "alluxio_fuse_image_name=$2"
+        shift 2
+        ;;
       --)
         shift
         break
@@ -148,11 +164,7 @@ main()
     esac
   done
 
-  clone \
-    && checkout \
-    && start_container \
-    && tarball \
-    && build
+  clone && checkout && start_container && tarball && build
 
   if [ $? == 0 ]; then
     echo "Build SUCCESS!"
