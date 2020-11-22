@@ -331,11 +331,11 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 // file count of the Alluxio Filesystem (except folder)
 // use "alluxio fsadmin report metrics" for better performance
 func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
+	args := []string{"alluxio", "fsadmin", "report", "metrics", "|", "grep", "Master.FilesCompleted"}
 	var (
-		command = []string{
-			"alluxio", "fsadmin", "report", "metrics", "|", "grep", "Master.FilesCompleted"}
-		stdout string
-		stderr string
+		command = []string{"bash", "-c", strings.Join(args, " ")}
+		stdout  string
+		stderr  string
 	)
 
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
