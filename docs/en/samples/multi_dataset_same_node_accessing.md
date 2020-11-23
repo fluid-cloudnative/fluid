@@ -1,5 +1,5 @@
 # DEMO - Single-Machine Multiple-Dataset Speed Up Accessing Remote Files
-Powered by [Alluxio](https://www.alluxio.io) and [Fuse](https://github.com/libfuse/libfuse), Fluid provides a simple way for users to access files stored in remote filesystems, just like accessing some ordinary file in local filesystems. Fluid manages and isolates the entire life cycle of data sets, especially for short life cycle applications (e.g data analysis tasks, machine learning tasks), users can deploy them on a large scale in a cluster.
+Powered by [Alluxio](https://www.alluxio.io) and [Fuse](https://github.com/libfuse/libfuse), Fluid provides a simple way for users to access files stored in remote filesystems, just like accessing some ordinary files in local filesystem. Fluid manages and isolates the entire life cycle of data sets, especially for short life cycle applications (e.g data analysis tasks, machine learning tasks), users can deploy them on a large scale in a cluster.
 
 This demo aims to show you an overview of all the features mentioned above.
 
