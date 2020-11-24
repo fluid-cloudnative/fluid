@@ -33,6 +33,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+func (e *AlluxioEngine) getDataSetFileNum() (string, error) {
+	fileCount, err := e.TotalFileNums()
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(fileCount, 10), err
+}
+
 // getRuntime gets the alluxio runtime
 func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
 

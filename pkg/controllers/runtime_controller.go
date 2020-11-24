@@ -166,6 +166,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		// if len(dataset.Status.Runtimes) == 0 {
 		dataset.Status.Runtimes = []datav1alpha1.Runtime{}
 		dataset.Status.HCFSStatus = nil
+		dataset.Status.FileNum = ""
 		// }
 
 		if err := r.Status().Update(ctx, dataset); err != nil {
