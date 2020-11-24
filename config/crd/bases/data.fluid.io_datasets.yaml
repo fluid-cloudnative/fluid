@@ -28,6 +28,10 @@ spec:
     name: HCFS URL
     priority: 10
     type: string
+  - JSONPath: .status.fileNum
+    name: TOTAL FILES
+    priority: 11
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
