@@ -60,6 +60,8 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
+            - name: MOUNT_TYPE
+              value: {{ .Values.csi.plugins.mountType}}
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: plugin-dir
@@ -68,7 +70,7 @@ spec:
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
-              mountPath: {{ .Values.runtime.mountRoot | quote }}
+              mountPath: {{ .Values.csi.plugins.mountRoot | quote }}
               mountPropagation: "Bidirectional"
       volumes:
         - name: kubelet-dir
@@ -84,6 +86,6 @@ spec:
             type: DirectoryOrCreate
           name: registration-dir
         - hostPath:
-            path: {{ .Values.runtime.mountRoot | quote }}
+            path: {{ .Values.csi.plugins.mountRoot | quote }}
             type: DirectoryOrCreate
           name: fluid-src-dir

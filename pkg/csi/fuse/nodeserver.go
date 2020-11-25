@@ -76,7 +76,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
 	}
 
-	// 1. Wait the alluxio fuse ready
+	// 1. Wait the runtime fuse ready
 	err = checkMountReady(fluidPath)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

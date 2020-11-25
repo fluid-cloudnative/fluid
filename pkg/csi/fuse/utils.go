@@ -36,8 +36,8 @@ func checkMountReady(fluidPath string) error {
 	if fluidPath == "" {
 		return errors.New("target is not specified for checking the mount")
 	}
-
-	args := []string{fluidPath}
+	mountType := os.Getenv("MOUNT_TYPE")
+	args := []string{fluidPath, strings.Replace(mountType, ",", "|", -1)}
 	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()

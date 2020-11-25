@@ -11,10 +11,11 @@ csi:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-e1bcf97
+    mountRoot: /runtime-mnt
 
 runtime:
-  mountRoot: /alluxio-mnt
   alluxio:
+    mountSubpath: /runtime-mnt/alluxio
     init:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-e1bcf97
     controller:
