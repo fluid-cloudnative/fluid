@@ -16,6 +16,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	"fmt"
 )
@@ -42,4 +43,12 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 	}
 
 	return
+}
+
+/**
+* GenerateEngineID generates Engine ID
+ */
+func GenerateEngineID(namespacedName types.NamespacedName) string {
+	return fmt.Sprintf("%s-%s",
+		namespacedName.Namespace, namespacedName.Name)
 }
