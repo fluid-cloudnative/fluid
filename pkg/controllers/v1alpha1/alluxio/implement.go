@@ -41,8 +41,7 @@ func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*d
 func (r *RuntimeReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 	found := false
-	id := ddc.GenerateEngineID(ctx.NamespacedName.Namespace,
-		ctx.NamespacedName.Name)
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if engine, found = r.engines[id]; !found {
@@ -64,7 +63,6 @@ func (r *RuntimeReconciler) GetOrCreateEngine(
 func (r *RuntimeReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	id := ddc.GenerateEngineID(ctx.NamespacedName.Namespace,
-		ctx.NamespacedName.Name)
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	delete(r.engines, id)
 }
