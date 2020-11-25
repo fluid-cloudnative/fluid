@@ -67,7 +67,7 @@ func (r *RuntimeReconciler) GetOrCreateEngine(
 func (r *RuntimeReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	id := fmt.Sprintf("%s/%s",
+	id := fmt.Sprintf("%s-%s",
 		ctx.NamespacedName.Namespace,
 		ctx.NamespacedName.Name)
 	delete(r.engines, id)
