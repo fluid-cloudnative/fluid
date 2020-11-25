@@ -31,13 +31,12 @@ import (
 // 	return false, nil
 // }
 
-func checkMountReady(fluidPath string) error {
+func checkMountReady(fluidPath string, mountType string) error {
 	glog.Infof("Try to check if the mount target %s is ready", fluidPath)
 	if fluidPath == "" {
 		return errors.New("target is not specified for checking the mount")
 	}
-	mountType := os.Getenv("MOUNT_TYPE")
-	args := []string{fluidPath, strings.Replace(mountType, ",", "|", -1)}
+	args := []string{fluidPath, mountType}
 	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()

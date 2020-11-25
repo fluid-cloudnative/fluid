@@ -8,7 +8,7 @@ MountType="$2"
 
 count=0
 # while ! mount | grep alluxio | grep  $ConditionPathIsMountPoint | grep -v grep
-while ! mount | grep $ConditionPathIsMountPoint | grep -E $MountType
+while ! mount | grep $ConditionPathIsMountPoint | grep $MountType
 do
     sleep 3
     count=`expr $count + 1`

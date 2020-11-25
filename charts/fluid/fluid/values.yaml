@@ -15,7 +15,6 @@ csi:
 
 runtime:
   alluxio:
-    mountSubpath: /runtime-mnt/alluxio
     init:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-e1bcf97
     controller:

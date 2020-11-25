@@ -60,8 +60,6 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
-            - name: MOUNT_TYPE
-              value: {{ .Values.csi.plugins.mountType}}
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: plugin-dir

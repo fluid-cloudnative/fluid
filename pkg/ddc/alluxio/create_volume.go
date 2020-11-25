@@ -17,9 +17,6 @@ package alluxio
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -67,19 +64,6 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
-	mountRoot := getMountRoot()
-	e.Log.Info("mountRoot", "path", mountRoot)
-	mountPath := fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
-
-	if len(mountPath) == 0 {
-		return fmt.Errorf("Failed to get the mountPath for %s in namespace %s", e.name,
-			e.namespace)
-	}
-
-	if !filepath.IsAbs(mountPath) {
-		return fmt.Errorf("The mount path is illegal %v", mountPath)
-	}
-
 	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
 	if err != nil {
 		return err
@@ -107,7 +91,8 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 						Driver:       CSI_DRIVER,
 						VolumeHandle: e.runtime.Name,
 						VolumeAttributes: map[string]string{
-							fluid_PATH: mountPath,
+							fluid_PATH: e.getMountPoint(),
+							Mount_TYPE: ALLUXIO_MOUNT_TYPE,
 						},
 					},
 				},

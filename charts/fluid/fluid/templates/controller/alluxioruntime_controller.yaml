@@ -40,9 +40,9 @@ spec:
           - name: ALLUXIO_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.alluxio.fuse.image | quote }}
           {{- end }}
-          {{- if .Values.runtime.alluxio.mountSubpath }}
+          {{- if .Values.csi.plugins.mountRoot }}
           - name: MOUNT_ROOT
-            value: {{ .Values.runtime.alluxio.mountSubpath | quote }}
+            value: {{ .Values.csi.plugins.mountRoot | quote }}
           {{- end }}
         ports:
         - containerPort: 8080

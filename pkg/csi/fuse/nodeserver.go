@@ -71,13 +71,18 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	*/
 
 	fluidPath := req.GetVolumeContext()["fluid_path"]
+	mountType := req.GetVolumeContext()["mount_type"]
 	if fluidPath == "" {
 		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
 	}
+	if mountType == "" {
+		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
+		return nil, status.Error(codes.InvalidArgument, "mount_type is not set")
+	}
 
 	// 1. Wait the runtime fuse ready
-	err = checkMountReady(fluidPath)
+	err = checkMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

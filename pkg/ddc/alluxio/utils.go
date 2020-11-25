@@ -187,12 +187,15 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 
 // getMountRoot returns the default path, if it's not set
 func getMountRoot() (path string) {
-	path = utils.GetMountRoot()
-	if len(path) == 0 {
+	path, err := utils.GetMountRoot()
+	if err!=nil{
 		path = ALLUXIO_MOUNT
+	}else{
+		path = path + ALLUXIO_MOUNT
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return
+
 }
 
 func getK8sClusterUsedPort(client client.Client) ([]int, error) {
