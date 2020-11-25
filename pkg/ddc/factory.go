@@ -43,3 +43,11 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 
 	return
 }
+
+/**
+* GenerateEngineID generates Engine ID
+ */
+func GenerateEngineID(namespace, name string) string {
+	return fmt.Sprintf("%s-%s",
+		namespace, name)
+}
