@@ -95,7 +95,7 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
       fuse:
         args:
           - fuse
-          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0       alluxio.user.streaming.data.timeout: 300sec
+          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
     EOF
     ```
     
