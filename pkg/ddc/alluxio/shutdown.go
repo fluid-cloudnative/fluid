@@ -41,6 +41,8 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		}
 	}
 
+	close(e.MetadataSyncDoneCh)
+
 	err = e.destroyWorkers(-1)
 	if err != nil {
 		return
