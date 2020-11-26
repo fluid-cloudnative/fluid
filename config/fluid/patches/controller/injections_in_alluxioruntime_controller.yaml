@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alluxioruntime-controller
+  namespace: fluid-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-e1bcf97
+          env:
+            - name: ALLUXIO_INIT_IMAGE_ENV
+              value: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-e1bcf97
+            - name: ALLUXIO_RUNTIME_IMAGE_ENV
+              value: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226
+            - name: ALLUXIO_FUSE_IMAGE_ENV
+              value: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226
+

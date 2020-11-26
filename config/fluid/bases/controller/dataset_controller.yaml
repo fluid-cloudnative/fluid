@@ -1,0 +1,49 @@
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   labels:
+#     control-plane: controller
+#   name: fluid-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataset-controller
+  namespace: fluid-system
+  labels:
+    control-plane: dataset-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: dataset-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: dataset-controller
+    spec:
+      serviceAccountName: dataset-controller
+      tolerations:
+      - operator: Exists
+      #hostNetwork: true
+      containers:
+      - name: manager
+        # image: <To be injected by patches/controller/injections_in_dataset_controller.yaml>
+        command: ["dataset-controller", "start"]
+        args:
+          - --development=true
+        env:
+          # - name: ALLUXIO_DATALOAD_IMAGE_ENV
+          #   value: <To be injected by patches/controller/injections_in_dataset_controller.yaml>
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 300Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10

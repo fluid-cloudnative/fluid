@@ -1,0 +1,50 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alluxioruntime-controller
+  namespace: fluid-system
+  labels:
+    control-plane: alluxioruntime-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: alluxioruntime-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: alluxioruntime-controller
+    spec:
+      serviceAccountName: alluxioruntime-controller
+      tolerations:
+      - operator: Exists
+      #hostNetwork: true
+      containers:
+      - name: manager
+        # image: <To be injected by patches/controller/injections_in_alluxioruntime_controller.yaml >
+        command: ["alluxioruntime-controller", "start"]
+        args:
+          - --development=true
+        env:
+          - name: MOUNT_ROOT
+            value: /alluxio-mnt
+          # - name: ALLUXIO_INIT_IMAGE_ENV
+          #   value: <To be injected by patches/controller/injections_in_alluxioruntime_controller.yaml>
+          # - name: ALLUXIO_RUNTIME_IMAGE_ENV
+          #   value: <To be injected by patches/controller/injections_in_alluxioruntime_controller.yaml>
+          # - name: ALLUXIO_FUSE_IMAGE_ENV
+          #   value: <To be injected by patches/controller/injections_in_alluxioruntime_controller.yaml>
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 300Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10
