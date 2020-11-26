@@ -68,7 +68,7 @@ spec:
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
-              mountPath: {{ .Values.csi.plugins.mountRoot | quote }}
+              mountPath: {{ .Values.runtime.mountRoot | quote }}
               mountPropagation: "Bidirectional"
       volumes:
         - name: kubelet-dir
@@ -84,6 +84,6 @@ spec:
             type: DirectoryOrCreate
           name: registration-dir
         - hostPath:
-            path: {{ .Values.csi.plugins.mountRoot | quote }}
+            path: {{ .Values.runtime.mountRoot | quote }}
             type: DirectoryOrCreate
           name: fluid-src-dir

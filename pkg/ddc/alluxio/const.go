@@ -22,10 +22,6 @@ const (
 
 	Mount_TYPE = "mount_type"
 
-	ALLUXIO_MOUNT = "/alluxio"
-
-	ALLUXIO_MOUNT_TYPE ="fuse.alluxio-fuse"
-
 	pathScheme string = "local://"
 
 	volumeScheme string = "pvc://"

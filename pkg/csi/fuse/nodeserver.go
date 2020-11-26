@@ -16,6 +16,7 @@ limitations under the License.
 package csi
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"os/exec"
 	"strings"
@@ -77,8 +78,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
 	}
 	if mountType == "" {
-		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
-		return nil, status.Error(codes.InvalidArgument, "mount_type is not set")
+		// default mountType is ALLUXIO_MOUNT_TYPE
+		mountType = common.ALLUXIO_MOUNT_TYPE
 	}
 
 	// 1. Wait the runtime fuse ready

@@ -4,6 +4,8 @@ package common
 const (
 	ALLUXIO_RUNTIME = "alluxio"
 
+	ALLUXIO_MOUNT_TYPE ="fuse.alluxio-fuse"
+
 	ALLUXIO_NAMESPACE = "alluxio-system"
 
 	ALLUXIO_CHART = ALLUXIO_RUNTIME

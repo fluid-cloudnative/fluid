@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -92,7 +93,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 						VolumeHandle: e.runtime.Name,
 						VolumeAttributes: map[string]string{
 							fluid_PATH: e.getMountPoint(),
-							Mount_TYPE: ALLUXIO_MOUNT_TYPE,
+							Mount_TYPE: common.ALLUXIO_MOUNT_TYPE,
 						},
 					},
 				},

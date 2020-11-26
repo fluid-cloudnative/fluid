@@ -189,9 +189,9 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
 	if err!=nil{
-		path = ALLUXIO_MOUNT
+		path = "/" + common.ALLUXIO_RUNTIME
 	}else{
-		path = path + ALLUXIO_MOUNT
+		path = path + "/" + common.ALLUXIO_RUNTIME
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return
