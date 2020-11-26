@@ -15,13 +15,13 @@ spec:
         app: csi-nodeplugin-fluid
     spec:
       tolerations:
-      - operator: Exists
+        - operator: Exists
       #priorityClassName: system-node-critical
       hostNetwork: true
       hostPID: true
       containers:
         - name: node-driver-registrar
-          image: {}
+          # image: <To be injected by patches/csi/injections_in_csi_plugin.yaml>
           lifecycle:
             preStop:
               exec:
@@ -47,8 +47,8 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: {}
-          command: ["/usr/local/bin/fluid-csi"]
+          # image: <To be injected by patches/csi/injections_in_csi_plugin.yaml>
+          command: ["/usr/local/bin/entrypoint.sh"]
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -68,7 +68,7 @@ spec:
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
-              mountPath: /var/lib/kubelet/alluxio-mnt
+              mountPath: /alluxio-mnt
               mountPropagation: "Bidirectional"
       volumes:
         - name: kubelet-dir
@@ -81,9 +81,9 @@ spec:
             type: DirectoryOrCreate
         - hostPath:
             path: /var/lib/kubelet/plugins_registry
-            type: Directory
+            type: DirectoryOrCreate
           name: registration-dir
         - hostPath:
-            path: /var/lib/kubelet/alluxio-mnt
-            type: Directory
+            path: /alluxio-mnt
+            type: DirectoryOrCreate
           name: fluid-src-dir

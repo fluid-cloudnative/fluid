@@ -11,4 +11,4 @@ spec:
         - name: node-driver-registrar
           image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
         - name: plugins
-          image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.1.0-b389ba2
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-e1bcf97

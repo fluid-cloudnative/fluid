@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataset-controller
+  namespace: fluid-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.5.0-e1bcf97
+          env:
+            - name: ALLUXIO_DATALOAD_IMAGE_ENV
+              value: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226
