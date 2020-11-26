@@ -1,9 +1,12 @@
 resources:
-  - bases/csi-plugin.yaml
-  - bases/driver.yaml
-  - bases/manager.yaml
-  - bases/role-binding.yaml
+  - bases/csi/daemonset.yaml
+  - bases/csi/driver.yaml
+  - bases/controller/alluxioruntime_controller.yaml
+  - bases/controller/dataset_controller.yaml
+  - bases/role/alluxio/rbac.yaml
+  - bases/role/dataset/rbac.yaml
 
 patchesStrategicMerge:
-  - patches/image_in_manager.yaml
-  - patches/image_in_csi-plugin.yaml
+  - patches/controller/injections_in_alluxioruntime_controller.yaml
+  - patches/controller/injections_in_dataset_controller.yaml
+  - patches/csi/injections_in_csi_plugin.yaml
