@@ -24,7 +24,7 @@ import (
 const MountRoot string = "MOUNT_ROOT"
 
 //GetMountRoot gets the value of the env variable named MOUNT_ROOT
-func GetMountRoot() (string, error){
+func GetMountRoot() (string, error) {
 	mountRoot := os.Getenv(MountRoot)
 
 	if !filepath.IsAbs(mountRoot) {

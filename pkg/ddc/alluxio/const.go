@@ -22,10 +22,6 @@ const (
 
 	Mount_TYPE = "mount_type"
 
-	pathScheme string = "local://"
-
-	volumeScheme string = "pvc://"
-
 	// alluxioHome string = "/opt/alluxio"
 
 	// alluxioUser string = "fluid"

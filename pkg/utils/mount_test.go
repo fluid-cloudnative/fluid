@@ -14,9 +14,13 @@ func TestMountRootWithEnvSet(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		os.Setenv(MountRoot, tc.input)
-		if tc.expected != GetMountRoot() {
+		mountRoot, err := GetMountRoot()
+		if err != nil {
+			t.Errorf("Get error %v", err)
+		}
+		if tc.expected != mountRoot {
 			t.Errorf("expected %#v, got %#v",
-				tc.expected, GetMountRoot())
+				tc.expected, mountRoot)
 		}
 	}
 }
@@ -30,9 +34,18 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		os.Unsetenv(MountRoot)
-		if tc.expected != GetMountRoot() {
-			t.Errorf("expected %#v, got %#v",
-				tc.expected, GetMountRoot())
+		mountRoot, err := GetMountRoot()
+		if err == nil {
+			t.Errorf("Expected error happened, but no error")
 		}
+
+		if err.Error() != "the the value of the env variable named MOUNT_ROOT is illegal" {
+			t.Errorf("Get unexpected error %v", err)
+		}
+
+		if tc.expected != mountRoot {
+			t.Errorf("Unexpected result %s", tc.expected)
+		}
+
 	}
 }
