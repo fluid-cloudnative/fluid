@@ -20,7 +20,7 @@ const (
 
 	fluid_PATH = "fluid_path"
 
-	ALLUXIO_MOUNT = "/alluxio-mnt"
+	Mount_TYPE = "mount_type"
 
 	pathScheme string = "local://"
 

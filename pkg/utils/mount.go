@@ -15,11 +15,20 @@ limitations under the License.
 
 package utils
 
-import "os"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
 const MountRoot string = "MOUNT_ROOT"
 
 //GetMountRoot gets the value of the env variable named MOUNT_ROOT
-func GetMountRoot() string {
-	return os.Getenv(MountRoot)
+func GetMountRoot() (string, error){
+	mountRoot := os.Getenv(MountRoot)
+
+	if !filepath.IsAbs(mountRoot) {
+		return mountRoot, fmt.Errorf("the the value of the env variable named MOUNT_ROOT is illegal")
+	}
+	return mountRoot, nil
 }
