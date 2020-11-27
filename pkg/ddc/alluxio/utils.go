@@ -142,7 +142,7 @@ func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 }
 
 func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
-	return strings.HasPrefix(mountPoint, pathScheme) || strings.HasPrefix(mountPoint, volumeScheme)
+	return strings.HasPrefix(mountPoint, common.PathScheme) || strings.HasPrefix(mountPoint, common.VolumeScheme)
 }
 
 func (e *AlluxioEngine) getLocalStorageDirectory() string {
@@ -188,9 +188,9 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 // getMountRoot returns the default path, if it's not set
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
-	if err!=nil{
+	if err != nil {
 		path = "/" + common.ALLUXIO_RUNTIME
-	}else{
+	} else {
 		path = path + "/" + common.ALLUXIO_RUNTIME
 	}
 	// e.Log.Info("Mount root", "path", path)

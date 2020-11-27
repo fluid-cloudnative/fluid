@@ -47,9 +47,9 @@ data:
         local replica=$2
         alluxio fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
-            alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path
+            time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path
         else
-            alluxio fs distributedLoad --replication $replica $path
+            time alluxio fs distributedLoad --replication $replica $path
         fi
     }
     
