@@ -142,7 +142,7 @@ func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 }
 
 func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
-	return strings.HasPrefix(mountPoint, pathScheme) || strings.HasPrefix(mountPoint, volumeScheme)
+	return strings.HasPrefix(mountPoint, common.PathScheme) || strings.HasPrefix(mountPoint, common.VolumeScheme)
 }
 
 func (e *AlluxioEngine) getLocalStorageDirectory() string {

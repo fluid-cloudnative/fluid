@@ -85,3 +85,9 @@ type Category string
 const (
 	AccelerateCategory Category = "Accelerate"
 )
+
+const (
+	PathScheme string = "local://"
+
+	VolumeScheme string = "pvc://"
+)

@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -28,7 +29,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 	mounts := dataset.Spec.Mounts
 	for _, mount := range mounts {
 		// if mount.MountPoint
-		if strings.HasPrefix(mount.MountPoint, pathScheme) {
+		if strings.HasPrefix(mount.MountPoint, common.PathScheme) {
 			if len(value.UFSPaths) == 0 {
 				value.UFSPaths = []UFSPath{}
 			}
@@ -36,16 +37,16 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
 			ufsPath.ContainerPath = fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, pathScheme)
+			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme)
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
-		} else if strings.HasPrefix(mount.MountPoint, volumeScheme) {
+		} else if strings.HasPrefix(mount.MountPoint, common.VolumeScheme) {
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
-				Name:          mount.Name,
+				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme),
 				ContainerPath: fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name),
 			})
 		}
