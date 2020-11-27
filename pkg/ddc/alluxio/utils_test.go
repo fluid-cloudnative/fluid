@@ -160,7 +160,7 @@ func TestMountRootWithEnvSet(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"/var/lib/mymount", "/var/lib/mymount"},
+		{"/var/lib/mymount", "/var/lib/mymount/alluxio"},
 	}
 	for _, tc := range testCases {
 		os.Setenv(utils.MountRoot, tc.input)
@@ -176,7 +176,7 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"/var/lib/mymount", ALLUXIO_MOUNT},
+		{"/var/lib/mymount", "/alluxio"},
 	}
 
 	for _, tc := range testCases {
