@@ -3,12 +3,12 @@
 set -ex
 
 ConditionPathIsMountPoint="$1"
-
+MountType="$2"
 #[ -z ${ConditionPathIsMountPoint} ] && ConditionPathIsMountPoint=/alluxio-fuse
 
 count=0
 # while ! mount | grep alluxio | grep  $ConditionPathIsMountPoint | grep -v grep
-while ! mount | grep $ConditionPathIsMountPoint | grep fuse.alluxio-fuse
+while ! mount | grep $ConditionPathIsMountPoint | grep $MountType
 do
     sleep 3
     count=`expr $count + 1`
