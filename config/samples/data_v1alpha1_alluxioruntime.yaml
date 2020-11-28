@@ -6,7 +6,7 @@ metadata:
   #namespace: fluid-system
 spec:
   # Add fields here
-  replicas: 2
+  replicas: 1
   tieredstore:
     levels:
     - mediumtype: MEM

@@ -4,9 +4,6 @@ metadata:
   name: dataset
 spec:
   mounts:
-  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.2.1/
-    name: hadoop
-  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-2.4.6/
+  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/spark/
     name: spark
-  - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
-    name: hbase
+
