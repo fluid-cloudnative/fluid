@@ -41,3 +41,58 @@ drwxr-x--- 2 fluid-user-1 fluid-user-1 4096 9月  27 16:45 user1_data
 total 4
 -rwxr-x--- 1 fluid-user-1 fluid-user-1 28 9月  27 16:45 data1
 ```
+
+**Log into the Application**
+```
+$ kubectl exec -it nginx -- bash
+```
+
+```
+$ id
+```
+Using the above command, you will see the following results:
+```
+uid=1201 gid=1201 groups=1201
+```
+This indicates that we started the application as a user with `uid` of 1201
+
+**Access Data**
+
+```
+$ ls -ltR /data
+```
+Using the above command, you will see the following results:
+```
+/data/:
+total 1
+drwxr-xr-x 1 root root 1 Sep 27 08:45 nonroot
+
+/data/nonroot:
+total 1
+drwxr-x--- 1 1201 1201 1 Sep 27 08:45 user1_data
+
+/data/nonroot/user1_data:
+total 1
+-rwxr-x--- 1 1201 1201 28 Sep 27 08:45 data1
+```
+
+As you can see, Fluid exposes data belonging to a non-root user to applications that require it in the manner of **passthrough**, and the file information for the user's data does not change
+
+Of course, the user is free to access the data:
+
+```
+$ cat /data/nonroot/user1_data/data1
+```
+
+Using the above command, you will see the following results:
+```
+This is fluid-user-1's data
+```
+
+## Environment Cleanup
+
+```
+$ kubectl delete -f .
+$ rm -rf /mnt/nonroot
+$ userdel fluid-user-1
+```
