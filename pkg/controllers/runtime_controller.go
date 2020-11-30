@@ -85,8 +85,15 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 		}
 	}
-
+	// 3.Get the ObjectMeta of runtime
+	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
 	if dataset != nil {
+		if !utils.ContainsOwners(objectMeta.GetOwnerReferences(), dataset) {
+			return r.AddOwnerAndRequeue(ctx, dataset)
+		}
 		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
@@ -96,21 +103,16 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 				dataset.Name)
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
-	} else {
+	} else if objectMeta.GetDeletionTimestamp().IsZero(){
 		ctx.Log.Info("No dataset can be bound to the runtime, waiting.")
 		r.Recorder.Event(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "No dataset can be bound to the runtime, waiting.")
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 3.Update the status of dataset
+	// 4.Update the status of dataset
 	ctx.Dataset = dataset
 
-	// 4.Reconcile delete the runtime
-	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
-	if err != nil {
-		return utils.RequeueIfError(err)
-	}
-
+	// 5.Reconcile delete the runtime
 	if !objectMeta.GetDeletionTimestamp().IsZero() {
 		result, err := r.implement.ReconcileRuntimeDeletion(engine, ctx)
 		if err != nil {
@@ -119,6 +121,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return result, err
 	}
 
+	// 6. Add Finalizer of runtime
 	if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
 		return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
 	} else {
@@ -261,6 +264,26 @@ func (r *RuntimeReconciler) AddFinalizerAndRequeue(ctx cruntime.ReconcileRequest
 		"currentGeneration", currentGeneration)
 
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, currentGeneration)
+}
+
+// AddFinalizerAndRequeue add  finalizer and requeue
+func (r *RuntimeReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
+	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+	objectMeta.SetOwnerReferences(append(objectMeta.GetOwnerReferences(), metav1.OwnerReference{
+		APIVersion:         dataset.APIVersion,
+		Kind:               dataset.Kind,
+		Name:               dataset.Name,
+		UID:                dataset.UID,
+	}))
+	if err := r.Update(ctx, ctx.Runtime); err != nil {
+		ctx.Log.Error(err, "Failed to add ownerreference", "StatusUpdateError", ctx)
+		return utils.RequeueIfError(err)
+	}
+
+	return utils.RequeueImmediately()
 }
 
 // GetRuntimeObjectMeta gets runtime object meta
