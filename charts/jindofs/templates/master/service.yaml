@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "jindofs.fullname" . }}-master
+  labels:
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-master
+spec:
+  ports:
+  - port: 8101
+    name: rpc
+  clusterIP: None
+  selector:
+    role: jindofs-master
+    app: {{ template "jindofs.name" . }}
+    release: {{ .Release.Name }}
