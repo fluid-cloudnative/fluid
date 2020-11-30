@@ -1,15 +1,16 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller
+IMG = registry.cn-shanghai.aliyuncs.com/jindofs/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+CRD_OPTIONS = "crd:trivialVersions=true"
 
 # The Image URL to use in docker build and push
-DATASET_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller
-ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller
-CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
-LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
-INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+DATASET_CONTROLLER_IMG ?= registry.cn-shanghai.aliyuncs.com/jindofs/dataset-controller
+ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.cn-shanghai.aliyuncs.com/jindofs/alluxioruntime-controller
+JINDORUNTIME_CONTROLLER_IMG = registry.cn-shanghai.aliyuncs.com/jindofs/jindoruntime-controller
+CSI_IMG ?= registry.cn-shanghai.aliyuncs.com/jindofs/fluid-csi
+LOADER_IMG ?= registry.cn-shanghai.aliyuncs.com/jindofs/fluid-dataloader
+INIT_USERS_IMG ?= registry.cn-shanghai.aliyuncs.com/jindofs/fluid/init-users
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -48,7 +49,9 @@ unit-test: generate fmt vet
 	GO111MODULE=off go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build binary
+
 build: dataset-controller-build alluxioruntime-controller-build csi-build
+build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build csi-build
 
 csi-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
@@ -58,6 +61,9 @@ dataset-controller-build: generate fmt vet
 
 alluxioruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
+
+jindoruntime-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
@@ -103,6 +109,9 @@ docker-build-dataset-controller: generate fmt vet
 docker-build-alluxioruntime-controller: generate fmt vet
 	docker build --no-cache . -f Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-build-jindoruntime-controller: generate fmt vet
+	docker build --no-cache . -f Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
@@ -119,6 +128,9 @@ docker-push-dataset-controller: docker-build-dataset-controller
 docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 	docker push ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-push-jindoruntime-controller: docker-build-jindoruntime-controller
+	docker push ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
@@ -128,8 +140,8 @@ docker-push-loader: docker-build-loader
 docker-push-init-users: docker-build-init-users
 	docker push ${INIT_USERS_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-csi docker-build-init-users
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-csi docker-push-init-users
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-csi docker-build-init-users
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users
 
 # find or download controller-gen
 # download controller-gen if necessary

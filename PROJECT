@@ -10,4 +10,7 @@ resources:
 - group: data
   kind: DataLoad
   version: v1alpha1
+- group: data
+  kind: JindoRuntime
+  version: v1alpha1
 version: "2"

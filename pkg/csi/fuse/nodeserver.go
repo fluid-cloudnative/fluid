@@ -73,6 +73,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	fluidPath := req.GetVolumeContext()["fluid_path"]
 	mountType := req.GetVolumeContext()["mount_type"]
+	glog.Infof("current mountType - %v", mountType)
 	if fluidPath == "" {
 		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
@@ -81,7 +82,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		// default mountType is ALLUXIO_MOUNT_TYPE
 		mountType = common.ALLUXIO_MOUNT_TYPE
 	}
-
 	// 1. Wait the runtime fuse ready
 	err = checkMountReady(fluidPath, mountType)
 	if err != nil {

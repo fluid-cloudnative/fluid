@@ -2,9 +2,10 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/data.fluid.io_datasets.yaml
-- bases/data.fluid.io_alluxioruntimes.yaml
-- bases/data.fluid.io_dataloads.yaml
+  - bases/data.fluid.io_datasets.yaml
+  - bases/data.fluid.io_alluxioruntimes.yaml
+  - bases/data.fluid.io_dataloads.yaml
+  - bases/data.fluid.io_jindoruntimes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -24,4 +25,4 @@ patchesStrategicMerge:
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
-- kustomizeconfig.yaml
+  - kustomizeconfig.yaml

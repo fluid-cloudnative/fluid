@@ -6,4 +6,3 @@ spec:
   mounts:
   - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/spark/
     name: spark
-

@@ -285,5 +285,3 @@ copy directory cost:1300ms
 ```shell
 $ kubectl delete -f .
 ```
-
-
