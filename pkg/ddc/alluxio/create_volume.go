@@ -28,6 +28,7 @@ var (
 	expectedAnnotations = map[string]string{
 		"CreatedBy": "fluid",
 	}
+	stroageCls = ""
 )
 
 // CreateVolume creates volume
@@ -87,6 +88,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 				Capacity: corev1.ResourceList{
 					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Gi"),
 				},
+				StorageClassName: stroageCls,
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					CSI: &corev1.CSIPersistentVolumeSource{
 						Driver:       CSI_DRIVER,
@@ -155,6 +157,7 @@ func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 						e.getCommonLabelname(): "true",
 					},
 				},
+				StorageClassName: &stroageCls,
 				AccessModes: []corev1.PersistentVolumeAccessMode{
 					corev1.ReadWriteMany,
 				},
