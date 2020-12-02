@@ -11,7 +11,7 @@ This document demonstrates the above features with a simple example.
 Please refer to [Fluid installation documentation](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md) to complete installation.
 
 ## Running Example
-   
+
 **Create a non-root user**
 ```
 $ groupadd -g 1201 fluid-user-1 && \
@@ -42,7 +42,61 @@ total 4
 -rwxr-x--- 1 fluid-user-1 fluid-user-1 28 9月  27 16:45 data1
 ```
 
+**Create Dataset and AlluxioRuntime resource object**
+
+```yaml
+$ cat<<EOF >dataset.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: nonroot
+spec:
+  mounts:
+    # Specify the directory you just created as the mount point
+    - mountPoint: local:///mnt/nonroot/
+      name: nonroot
+  # Ensure that the data cache is placed at the node where the /mnt/nonroot directory exists
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: nonroot
+              operator: In
+              values:
+                - "true"
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: nonroot
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /var/lib/docker/alluxio
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+  # start Alluxio as the fluid-user-1 user
+  runAs:
+    uid: 1201
+    gid: 1201
+    user: fluid-user-1
+    group: fluid-user-1
+  fuse:
+    args:
+    - fuse
+    - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
+EOF
+```
+
+In the above yaml configuration file, we will mount the directory we just created (/mnt/nonroot ') in the same way as the Fluid host directory. For more information about Fluid mount host directory, please refer to [example - use Fluid to accelerate host directory](./hostpath.md)
+
+In addition, in `spec.runAs` we have set user information such as `uid`, which means that we are going to start the caching engine as a `fluid-user-1` user to provide distributed caching capabilities
+
 **Log into the Application**
+
 ```
 $ kubectl exec -it nginx -- bash
 ```
