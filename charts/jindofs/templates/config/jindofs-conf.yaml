@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ template "jindofs.fullname" . }}-config
+  labels:
+    name: {{ template "jindofs.fullname" . }}-config
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  master.cfg: |
+    [bigboot]
+    logger.dir =  {{ .Values.properties.logDir }}
+    logger.cleanner.enable = true
+    [bigboot-namespace]
+    {{- range $key, $val := .Values.master.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+  worker.cfg: |
+    [bigboot]
+    logger.dir =  {{ .Values.properties.logDir }}
+    logger.cleanner.enable = true
+    [bigboot-storage]
+    {{- range $key, $val := .Values.worker.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+  fuse.cfg: |
+    [bigboot]
+    logger.dir =  {{ .Values.properties.logDir }}
+    logger.cleanner.enable = true
+    [bigboot-client]
+    {{- range $key, $val := .Values.fuse.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+    client.rpc.max.unwritten.size = 1073741824
+    jfs.cache.data-cache.enable = 1

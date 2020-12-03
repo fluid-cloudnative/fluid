@@ -87,3 +87,9 @@ spec:
             path: {{ .Values.runtime.mountRoot | quote }}
             type: DirectoryOrCreate
           name: fluid-src-dir
+          {{- if .Values.runtime.jindo.mountRoot }}
+        - hostPath:
+            path: {{ .Values.runtime.jindo.mountRoot | quote }}
+            type: DirectoryOrCreate
+          name: jindo-src-dir
+          {{- end }}

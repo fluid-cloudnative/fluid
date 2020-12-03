@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Make sure the namespace exist
+// EnsureNamespace makes sure the namespace exist.
 func EnsureNamespace(client client.Client, namespace string) (err error) {
 	key := types.NamespacedName{
 		Name: namespace,
