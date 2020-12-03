@@ -78,14 +78,14 @@ spec:
                 a particular version of Alluxio.
               properties:
                 image:
-                  description: Image for Alluxio(e.g. alluxio/alluxio)
+                  description: Image (e.g. alluxio/alluxio)
                   type: string
                 imagePullPolicy:
                   description: 'One of the three policies: `Always`, `IfNotPresent`,
                     `Never`'
                   type: string
                 imageTag:
-                  description: Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
+                  description: Image tag (e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
             data:
