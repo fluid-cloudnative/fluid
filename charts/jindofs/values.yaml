@@ -1,0 +1,59 @@
+# Default values for JindoFS.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
+imageTag: "2.7.4"
+imagePullPolicy: Always
+
+fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
+fuseImageTag: "2.7.4"
+
+user: 0
+group: 0
+fsGroup: 0
+
+useHostNetwork: true
+useHostPID: true
+
+properties:
+  logDir: /mnt/disk1/bigboot/log
+
+master:
+  replicaCount: 1
+  properties:
+    namespace.rpc.port: 8101
+    namespace.meta-dir: /mnt/disk1/bigboot/server
+    namespace.filelet.cache.size: 100000
+    namespace.blocklet.cache.size: 1000000
+    namespace.backend.type: rocksdb
+
+worker:
+  nodeSelector: {}
+  properties:
+    storage.rpc.port: 6101
+    storage.data-dirs: /mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot
+    storage.temp-data-dirs: /mnt/disk1/bigboot/tmp
+    storage.watermark.high.ratio: 0.4
+    storage.watermark.low.ratio: 0.2
+    storage.data-dirs.capacities: 80,80,80
+    storage.meta-dir: /mnt/disk1/bigboot/bignode
+
+fuse:
+  properties:
+    client.storage.rpc.port: 6101
+    client.oss.retry: 5
+    client.oss.upload.threads: 4
+    client.oss.upload.queue.size: 5
+    client.oss.upload.max.parallelism: 16
+    client.oss.timeout.millisecond: 30000
+    client.oss.connection.timeout.millisecond: 3000
+
+mounts:
+  master:
+  # 1: /mnt/disk1
+  workersAndClients:
+  # 1: /mnt/disk1
+  # 2: /mnt/disk2
+  # 3: /mnt/disk3

@@ -277,6 +277,9 @@ spec:
                 this Dataset. This is mainly used as a lock to prevent concurrent
                 DataLoad jobs.
               type: string
+            fileNum:
+              description: FileNum represents the file numbers of the dataset
+              type: string
             hcfs:
               description: HCFSStatus represents hcfs info
               properties:

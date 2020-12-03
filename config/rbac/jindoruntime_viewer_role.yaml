@@ -1,0 +1,20 @@
+# permissions for end users to view jindoruntimes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jindoruntime-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - jindoruntimes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - jindoruntimes/status
+  verbs:
+  - get

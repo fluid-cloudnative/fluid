@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "jindofs.fullname" . }}-fuse
+  labels:
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-fuse
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "jindofs.name" . }}
+      chart: {{ template "jindofs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: jindofs-fuse
+  template:
+    metadata:
+      labels:
+        app: {{ template "jindofs.name" . }}
+        chart: {{ template "jindofs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: jindofs-fuse
+    spec:
+      hostNetwork: {{ .Values.useHostNetwork }}
+      hostPID: {{ .Values.useHostPID }}
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+{{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+{{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+{{- end }}
+      securityContext:
+        runAsUser: {{ .Values.user }}
+        runAsGroup: {{ .Values.group }}
+        fsGroup: {{ .Values.fsGroup }}
+      containers:
+        - name: jindofs-fuse
+          image: {{ .Values.fuseImage }}:{{ .Values.fuseImageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.fuse.args }}
+          args:
+{{ toYaml .Values.fuse.args | indent 12 }}
+          {{- end }}
+          env:
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:8101
+          - name: CLIENT_STORAGE_RPC_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          volumeMounts:
+            - name: jindofs-fuse-device
+              mountPath: /dev/fuse
+            - name: jindofs-fuse-mount
+              mountPath: /jfs
+              mountPropagation: Bidirectional
+            - mountPath: /etc/localtime
+              name: volume-localtime
+            - name: bigboot-config
+              mountPath: /sdk/conf/bigboot.cfg
+              subPath: fuse.cfg
+          {{- range $name, $path := .Values.mounts.workersAndClients }}
+            - name: datavolume-{{ $name }}
+              mountPath: "{{ $path }}"
+            {{- end }}
+      restartPolicy: Always
+      volumes:
+        - name: jindofs-fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: File
+        - hostPath:
+            path: /etc/localtime
+            type: ''
+          name: volume-localtime
+        - name: jindofs-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.hostPath }}
+            type: DirectoryOrCreate
+          {{- range $name, $path := .Values.mounts.workersAndClients }}
+        - hostPath:
+            path:  "{{ $path }}"
+            type: DirectoryOrCreate
+          name: datavolume-{{ $name }}
+          {{- end }}
+        - name: bigboot-config
+          configMap:
+            name: {{ template "jindofs.fullname" . }}-config

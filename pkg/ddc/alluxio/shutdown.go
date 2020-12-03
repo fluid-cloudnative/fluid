@@ -41,7 +41,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		}
 	}
 
-	if(e.MetadataSyncDoneCh != nil){
+	if e.MetadataSyncDoneCh != nil {
 		close(e.MetadataSyncDoneCh)
 	}
 

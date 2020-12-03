@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "jindofs.fullname" . }}-worker
+  labels:
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-worker
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "jindofs.name" . }}
+      release: {{ .Release.Name }}
+      role: jindofs-worker
+  template:
+    metadata:
+      labels:
+        app: {{ template "jindofs.name" . }}
+        chart: {{ template "jindofs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: jindofs-worker
+    spec:
+      hostNetwork: {{ .Values.useHostNetwork }}
+      hostPID: {{ .Values.useHostPID }}
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        runAsUser: {{ .Values.user }}
+        runAsGroup: {{ .Values.group }}
+        fsGroup: {{ .Values.fsGroup }}
+      nodeSelector:
+{{- if .Values.worker.nodeSelector }}
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+{{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+{{- end }}
+      containers:
+        - name: jindofs-worker
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: ["/entrypoint.sh"]
+          args: ["worker"]
+          env:
+          - name: STORAGE_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.namespace.rpc.port }}
+          ports:
+          - containerPort: 6101
+            name: rpc
+          volumeMounts:
+            - name: bigboot-config
+              mountPath: /smartdata/conf/bigboot.cfg
+              subPath: worker.cfg
+            {{- range $name, $path := .Values.mounts.workersAndClients }}
+            - name: datavolume-{{ $name }}
+              mountPath: "{{ $path }}"
+            {{- end }}
+            - mountPath: /etc/localtime
+              name: volume-localtime
+      restartPolicy: Always
+      volumes:
+        - hostPath:
+            path: /etc/localtime
+            type: ''
+          name: volume-localtime
+          {{- range $name, $path := .Values.mounts.workersAndClients }}
+        - hostPath:
+            path:  "{{ $path }}"
+            type: DirectoryOrCreate
+          name: datavolume-{{ $name }}
+          {{- end }}
+        - name: bigboot-config
+          configMap:
+            name: {{ template "jindofs.fullname" . }}-config
