@@ -102,7 +102,7 @@ generate: controller-gen
 	GO111MODULE=off $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Update fluid helm chart
-update-fluid-chart: manifests
+update-crd: manifests
 	cp config/crd/bases/* charts/fluid/fluid/crds
 
 # Build the docker image
