@@ -50,7 +50,6 @@ unit-test: generate fmt vet
 
 # Build binary
 
-build: dataset-controller-build alluxioruntime-controller-build csi-build
 build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build csi-build
 
 csi-build: generate fmt vet

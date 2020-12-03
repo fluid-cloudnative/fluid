@@ -15,9 +15,9 @@ package ddc
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 
 	"fmt"
 )
