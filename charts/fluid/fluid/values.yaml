@@ -15,6 +15,7 @@ csi:
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
+    enabled: true
     init:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-056c358
     controller:
@@ -26,5 +27,6 @@ runtime:
     dataload:
       image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-985b84c
   jindo:
+    enabled: true
     controller:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-HEAD
