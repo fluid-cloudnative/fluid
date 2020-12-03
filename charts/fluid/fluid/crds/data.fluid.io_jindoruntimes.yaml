@@ -451,7 +451,7 @@ spec:
               type: object
           type: object
         status:
-          description: RuntimeStatus defines the observed state ofRuntime
+          description: RuntimeStatus defines the observed state of Runtime
           properties:
             cacheStates:
               additionalProperties:
