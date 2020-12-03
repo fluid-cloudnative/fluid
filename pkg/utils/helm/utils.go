@@ -24,9 +24,7 @@ import (
 	"syscall"
 )
 
-/**
-* install the release with cmd: helm install -f values.yaml chart_name, support helm v3
- */
+// InstallRelease installs the release with cmd: helm install -f values.yaml chart_name, support helm v3
 func InstallRelease(name string, namespace string, valueFile string, chartName string) error {
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
