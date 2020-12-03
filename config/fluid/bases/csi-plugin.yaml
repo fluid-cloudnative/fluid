@@ -21,7 +21,7 @@ spec:
       hostPID: true
       containers:
         - name: node-driver-registrar
-          image: "{{ .Values.csi.registrar.image }}"
+          image: {}
           lifecycle:
             preStop:
               exec:
@@ -47,8 +47,8 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: "{{ .Values.csi.plugins.image }}"
-          command: ["/usr/local/bin/entrypoint.sh"]
+          image: {}
+          command: ["/usr/local/bin/fluid-csi"]
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -68,7 +68,7 @@ spec:
               mountPath: /var/lib/kubelet/
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
-              mountPath: {{ .Values.runtime.mountRoot | quote }}
+              mountPath: /var/lib/kubelet/alluxio-mnt
               mountPropagation: "Bidirectional"
       volumes:
         - name: kubelet-dir
@@ -81,15 +81,9 @@ spec:
             type: DirectoryOrCreate
         - hostPath:
             path: /var/lib/kubelet/plugins_registry
-            type: DirectoryOrCreate
+            type: Directory
           name: registration-dir
         - hostPath:
-            path: {{ .Values.runtime.mountRoot | quote }}
-            type: DirectoryOrCreate
+            path: /var/lib/kubelet/alluxio-mnt
+            type: Directory
           name: fluid-src-dir
-          {{- if .Values.runtime.jindo.mountRoot }}
-        - hostPath:
-            path: {{ .Values.runtime.jindo.mountRoot | quote }}
-            type: DirectoryOrCreate
-          name: jindo-src-dir
-          {{- end }}

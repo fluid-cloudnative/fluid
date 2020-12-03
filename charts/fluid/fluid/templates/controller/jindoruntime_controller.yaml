@@ -1,0 +1,40 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jindoruntime-controller
+  namespace: fluid-system
+  labels:
+    control-plane: jindoruntime-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: jindoruntime-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: jindoruntime-controller
+    spec:
+      serviceAccountName: jindoruntime-controller
+      tolerations:
+        - operator: Exists
+      containers:
+        - image: {{ .Values.runtime.jindo.controller.image | quote }}
+          name: manager
+          command: ["jindoruntime-controller", "start"]
+          args:
+            - --development=false
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+      terminationGracePeriodSeconds: 10

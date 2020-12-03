@@ -17,6 +17,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 
 	"fmt"
 )
@@ -28,6 +29,7 @@ var buildFuncMap map[string]buildFunc
 func init() {
 	buildFuncMap = map[string]buildFunc{
 		"alluxio": alluxio.Build,
+		"jindo":   jindo.Build,
 	}
 }
 
