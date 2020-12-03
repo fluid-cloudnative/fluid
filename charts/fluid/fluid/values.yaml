@@ -25,5 +25,3 @@ runtime:
       image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-985b84c
     dataload:
       image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-985b84c
-  jindo:
-    mountRoot: /mnt/jfs

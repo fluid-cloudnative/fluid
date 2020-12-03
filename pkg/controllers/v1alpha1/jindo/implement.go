@@ -1,7 +1,6 @@
 package jindo
 
 import (
-	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -26,9 +25,7 @@ func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*d
 func (r *RuntimeReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 	found := false
-	id := fmt.Sprintf("%s-%s",
-		ctx.NamespacedName.Namespace,
-		ctx.NamespacedName.Name)
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if engine, found = r.engines[id]; !found {
@@ -48,5 +45,8 @@ func (r *RuntimeReconciler) GetOrCreateEngine(
 
 // RemoveEngine removes the engine
 func (r *RuntimeReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
-
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	delete(r.engines, id)
 }

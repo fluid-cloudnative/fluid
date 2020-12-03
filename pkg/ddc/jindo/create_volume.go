@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -40,8 +41,6 @@ func (e *JindoEngine) CreateVolume() (err error) {
 // createFusePersistentVolume
 func (e *JindoEngine) createFusePersistentVolume() (err error) {
 
-	mountPath := "/mnt/jfs"
-
 	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
 	if err != nil {
 		return err
@@ -63,11 +62,11 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 				},
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					CSI: &corev1.CSIPersistentVolumeSource{
-						Driver:       "fuse.csi.fluid.io",
+						Driver:       CSI_DRIVER,
 						VolumeHandle: e.runtime.Name,
 						VolumeAttributes: map[string]string{
-							"fluid_path": mountPath,
-							"mount_type": "fuse.jindofs-fuse",
+							fluid_PATH: e.getMountPoint(),
+							Mount_TYPE: common.JINDO_MOUNT_TYPE,
 						},
 					},
 				},

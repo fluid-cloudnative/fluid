@@ -21,7 +21,7 @@ spec:
       tolerations:
         - operator: Exists
       containers:
-        - image: registry.cn-shanghai.aliyuncs.com/jindofs/jindoruntime-controller:v0.5.0-HEAD
+        - image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-HEAD
           name: manager
           command: ["jindoruntime-controller", "start"]
           args:

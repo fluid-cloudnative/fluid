@@ -70,11 +70,6 @@ spec:
             - name: fluid-src-dir
               mountPath: {{ .Values.runtime.mountRoot | quote }}
               mountPropagation: "Bidirectional"
-              {{- if .Values.runtime.jindo.mountRoot }}
-            - name: jindo-src-dir
-              mountPath: /mnt/jfs
-              mountPropagation: "Bidirectional"
-              {{- end }}
       volumes:
         - name: kubelet-dir
           hostPath:

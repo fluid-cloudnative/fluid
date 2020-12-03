@@ -42,92 +42,91 @@ type JindoCompTemplateSpec struct {
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Configurable properties for the Alluxio component. <br>
-	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+	// Configurable properties for the Jindo component. <br>
+	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
-
-	// Ports used by Alluxio(e.g. rpc: 19998 for master)
+	
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
 
-	// Resources that will be requested by the Alluxio component. <br>
+	// Resources that will be requested by the Jindo component. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Environment variables that will be used by Alluxio component. <br>
+	// Environment variables that will be used by Jindo component. <br>
 	Env map[string]string `json:"env,omitempty"`
 }
 
-// AlluxioFuseSpec is a description of the Alluxio Fuse
+// JindoFuseSpec is a description of the Jindo Fuse
 type JindoFuseSpec struct {
 
-	// Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
+	// Image for Jindo Fuse(e.g. jindo/jindo-fuse)
 	Image string `json:"image,omitempty"`
 
-	// Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
+	// Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
 	ImageTag string `json:"imageTag,omitempty"`
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 
-	// Configurable properties for Alluxio System. <br>
-	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
-	Properties map[string]string `json:"properties,omitempty"`
+	// Configurable properties for Jindo System. <br>
+	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
+	Properties map[string]int `json:"properties,omitempty"`
 
-	// Environment variables that will be used by Alluxio Fuse
+	// Environment variables that will be used by Jindo Fuse
 	Env map[string]string `json:"env,omitempty"`
 
 	// ShortCircuitPolicy string            `json:"shortCircuitPolicy,omitempty"`
 
-	// Resources that will be requested by Alluxio Fuse. <br>
+	// Resources that will be requested by Jindo Fuse. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Arguments that will be passed to Alluxio Fuse
+	// Arguments that will be passed to Jindo Fuse
 	Args []string `json:"args,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
 type JindoRuntimeSpec struct {
-	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
+	// The version information that instructs fluid to orchestrate a particular version of Jindo.
 	JindoVersion JindoVersionSpec `json:"jindoVersion,omitempty"`
 
-	// Desired state for Alluxio master
+	// Desired state for Jindo master
 	Master JindoCompTemplateSpec `json:"master,omitempty"`
 
-	// Desired state for Alluxio job master
+	// Desired state for Jindo job master
 	JobMaster JindoCompTemplateSpec `json:"jobMaster,omitempty"`
 
-	// Desired state for Alluxio worker
+	// Desired state for Jindo worker
 	Worker JindoCompTemplateSpec `json:"worker,omitempty"`
 
-	// Desired state for Alluxio job Worker
+	// Desired state for Jindo job Worker
 	JobWorker JindoCompTemplateSpec `json:"jobWorker,omitempty"`
 
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
-	// Desired state for Alluxio Fuse
+	// Desired state for Jindo Fuse
 	Fuse JindoFuseSpec `json:"fuse,omitempty"`
 
-	// Configurable properties for Alluxio system. <br>
-	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio Configuration Properties</a> for more info
+	// Configurable properties for Jindo system. <br>
+	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
 	Properties map[string]string `json:"properties,omitempty"`
 
-	// Tiered storage used by Alluxio
+	// Tiered storage used by Jindo
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
 
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Manage the user to run Alluxio Runtime
+	// Manage the user to run Jindo Runtime
 	RunAs *User `json:"runAs,omitempty"`
 }
 
