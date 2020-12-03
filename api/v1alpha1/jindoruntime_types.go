@@ -43,10 +43,9 @@ type JindoCompTemplateSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Configurable properties for the Jindo component. <br>
-	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
-	
+
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
 
@@ -74,7 +73,6 @@ type JindoFuseSpec struct {
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 
 	// Configurable properties for Jindo System. <br>
-	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
 	Properties map[string]int `json:"properties,omitempty"`
 
 	// Environment variables that will be used by Jindo Fuse
@@ -117,7 +115,6 @@ type JindoRuntimeSpec struct {
 	Fuse JindoFuseSpec `json:"fuse,omitempty"`
 
 	// Configurable properties for Jindo system. <br>
-	// Refer to <a href="https://docs.jindo.io/os/user/stable/en/reference/Properties-List.html">Jindo Configuration Properties</a> for more info
 	Properties map[string]string `json:"properties,omitempty"`
 
 	// Tiered storage used by Jindo
