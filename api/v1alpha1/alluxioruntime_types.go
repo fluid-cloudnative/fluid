@@ -215,64 +215,6 @@ type AlluxioRuntimeSpec struct {
 	RunAs *User `json:"runAs,omitempty"`
 }
 
-type RuntimePhase string
-
-const (
-	RuntimePhaseNone         RuntimePhase = ""
-	RuntimePhaseNotReady     RuntimePhase = "NotReady"
-	RuntimePhasePartialReady RuntimePhase = "PartialReady"
-	RuntimePhaseReady        RuntimePhase = "Ready"
-)
-
-// RuntimeConditionType indicates valid conditions type of a runtime
-type RuntimeConditionType string
-
-// These are valid conditions of a runtime.
-const (
-	// MasterInitialized means the master of runtime is initialized
-	RuntimeMasterInitialized RuntimeConditionType = "MasterInitialized"
-	// MasterReady means the master of runtime is ready
-	RuntimeMasterReady RuntimeConditionType = "MasterReady"
-	// WorkersInitialized means the Workers of runtime is initialized
-	RuntimeWorkersInitialized RuntimeConditionType = "WorkersInitialized"
-	// WorkersReady means the Workers of runtime is ready
-	RuntimeWorkersReady RuntimeConditionType = "WorkersReady"
-	// FusesInitialized means the fuses of runtime is initialized
-	RuntimeFusesInitialized RuntimeConditionType = "FusesInitialized"
-	// FusesReady means the fuses of runtime is ready
-	RuntimeFusesReady RuntimeConditionType = "FusesReady"
-)
-
-const (
-	RuntimeMasterInitializedReason = "Master is initialized"
-	// MasterReady means the master of runtime is ready
-	RuntimeMasterReadyReason = "Master is ready"
-	// WorkersInitialized means the Workers of runtime is initialized
-	RuntimeWorkersInitializedReason = "Workers are initialized"
-	// WorkersReady means the Workers of runtime is ready
-	RuntimeWorkersReadyReason = "Workers are ready"
-	// WorkersInitialized means the Workers of runtime is initialized
-	RuntimeFusesInitializedReason = "Fuses are initialized"
-	// WorkersReady means the Workers of runtime is ready
-	RuntimeFusesReadyReason = "Fuses are ready"
-)
-
-// Condition describes the state of the cache at a certain point.
-type RuntimeCondition struct {
-	// Type of cache condition.
-	Type RuntimeConditionType `json:"type"`
-	// Status of the condition, one of True, False, Unknown.
-	Status corev1.ConditionStatus `json:"status"`
-	// The reason for the condition's last transition.
-	Reason string `json:"reason,omitempty"`
-	// A human readable message indicating details about the transition.
-	Message string `json:"message,omitempty"`
-	// The last time this condition was updated.
-	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
-	// Last time the condition transitioned from one status to another.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready Masters",type="integer",JSONPath=`.status.masterNumberReady`,priority=10

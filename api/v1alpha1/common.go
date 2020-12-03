@@ -49,12 +49,12 @@ type HCFSStatus struct {
 	UnderlayerFileSystemVersion string `json:"underlayerFileSystemVersion,omitempty"`
 }
 
-// VersionSpec represents the settings for the Alluxio version that fluid is orchestrating.
+// VersionSpec represents the settings for the  version that fluid is orchestrating.
 type VersionSpec struct {
-	// Image for Alluxio(e.g. alluxio/alluxio)
+	// Image (e.g. alluxio/alluxio)
 	Image string `json:"image,omitempty"`
 
-	// Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
+	// Image tag (e.g. 2.3.0-SNAPSHOT)
 	ImageTag string `json:"imageTag,omitempty"`
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
