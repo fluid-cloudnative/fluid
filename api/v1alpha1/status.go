@@ -17,7 +17,7 @@ package v1alpha1
 
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-// RuntimeStatus defines the observed state ofRuntime
+// RuntimeStatus defines the observed state of Runtime
 type RuntimeStatus struct {
 	// config map used to set configurations
 	ValueFileConfigmap string `json:"valueFile"`
