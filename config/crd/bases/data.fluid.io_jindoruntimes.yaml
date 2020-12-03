@@ -451,7 +451,7 @@ spec:
               type: object
           type: object
         status:
-          description: JindoRuntimeStatus defines the observed state of JindoRuntime
+          description: RuntimeStatus defines the observed state ofRuntime
           properties:
             cacheStates:
               additionalProperties:
@@ -556,7 +556,7 @@ spec:
               description: MasterPhase is the master running phase
               type: string
             masterReason:
-              description: Reason for Jindo Master's condition transition
+              description: Reason for Master's condition transition
               type: string
             valueFile:
               description: config map used to set configurations
@@ -583,7 +583,7 @@ spec:
               description: WorkerPhase is the worker running phase
               type: string
             workerReason:
-              description: Reason for Jindo Worker's condition transition
+              description: Reason for Worker's condition transition
               type: string
           required:
           - currentFuseNumberScheduled
