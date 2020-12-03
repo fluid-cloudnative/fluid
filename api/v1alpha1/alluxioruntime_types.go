@@ -35,18 +35,6 @@ const (
 	Fuse AlluxioRuntimeRole = "fuse"
 )
 
-// VersionSpec represents the settings for the Alluxio version that fluid is orchestrating.
-type AlluxioVersionSpec struct {
-	// Image for Alluxio(e.g. alluxio/alluxio)
-	Image string `json:"image,omitempty"`
-
-	// Image tag for Alluxio(e.g. 2.3.0-SNAPSHOT)
-	ImageTag string `json:"imageTag,omitempty"`
-
-	// One of the three policies: `Always`, `IfNotPresent`, `Never`
-	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
-}
-
 // AlluxioCompTemplateSpec is a description of the Alluxio commponents
 type AlluxioCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
@@ -187,7 +175,7 @@ type User struct {
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
-	AlluxioVersion AlluxioVersionSpec `json:"alluxioVersion,omitempty"`
+	AlluxioVersion VersionSpec `json:"alluxioVersion,omitempty"`
 
 	// Desired state for Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`

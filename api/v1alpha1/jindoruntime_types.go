@@ -21,18 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// VersionSpec represents the settings for the Jindo version that fluid is orchestrating.
-type JindoVersionSpec struct {
-	// Image for Jindo(e.g. jindo/jindo)
-	Image string `json:"image,omitempty"`
-
-	// Image tag for Jindo(e.g. 2.3.0-SNAPSHOT)
-	ImageTag string `json:"imageTag,omitempty"`
-
-	// One of the three policies: `Always`, `IfNotPresent`, `Never`
-	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
-}
-
 // JindoCompTemplateSpec is a description of the Jindo commponents
 type JindoCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
@@ -94,7 +82,7 @@ type JindoFuseSpec struct {
 // JindoRuntimeSpec defines the desired state of JindoRuntime
 type JindoRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Jindo.
-	JindoVersion JindoVersionSpec `json:"jindoVersion,omitempty"`
+	JindoVersion VersionSpec `json:"jindoVersion,omitempty"`
 
 	// Desired state for Jindo master
 	Master JindoCompTemplateSpec `json:"master,omitempty"`
