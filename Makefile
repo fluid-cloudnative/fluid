@@ -101,6 +101,10 @@ vet:
 generate: controller-gen
 	GO111MODULE=off $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
+# Update fluid helm chart
+update-fluid-chart: manifests
+	cp config/crd/bases/* charts/fluid/fluid/crds
+
 # Build the docker image
 docker-build-dataset-controller: generate fmt vet
 	docker build --no-cache . -f Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
