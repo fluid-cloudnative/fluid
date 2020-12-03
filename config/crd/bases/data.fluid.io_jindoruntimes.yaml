@@ -35,43 +35,35 @@ spec:
           description: JindoRuntimeSpec defines the desired state of JindoRuntime
           properties:
             fuse:
-              description: Desired state for Alluxio Fuse
+              description: Desired state for Jindo Fuse
               properties:
                 args:
-                  description: Arguments that will be passed to Alluxio Fuse
+                  description: Arguments that will be passed to Jindo Fuse
                   items:
                     type: string
                   type: array
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio
-                    Fuse
+                  description: Environment variables that will be used by Jindo Fuse
                   type: object
                 image:
-                  description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
+                  description: Image for Jindo Fuse(e.g. jindo/jindo-fuse)
                   type: string
                 imagePullPolicy:
                   description: 'One of the three policies: `Always`, `IfNotPresent`,
                     `Never`'
                   type: string
                 imageTag:
-                  description: Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
+                  description: Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
                   type: string
-                jvmOptions:
-                  description: Options for JVM
-                  items:
-                    type: string
-                  type: array
                 properties:
                   additionalProperties:
-                    type: string
-                  description: Configurable properties for Alluxio System. <br> Refer
-                    to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                    Configuration Properties</a> for more info
+                    type: integer
+                  description: Configurable properties for Jindo System. <br>
                   type: object
                 resources:
-                  description: Resources that will be requested by Alluxio Fuse. <br>
+                  description: Resources that will be requested by Jindo Fuse. <br>
                     <br> Resources are not allowed for ephemeral containers. Ephemeral
                     containers use spare resources already allocated to the pod.
                   properties:
@@ -152,44 +144,36 @@ spec:
               type: object
             jindoVersion:
               description: The version information that instructs fluid to orchestrate
-                a particular version of Alluxio.
+                a particular version of Jindo.
               properties:
                 image:
-                  description: Image for Jindo(e.g. jindo/jindo)
+                  description: Image (e.g. alluxio/alluxio)
                   type: string
                 imagePullPolicy:
                   description: 'One of the three policies: `Always`, `IfNotPresent`,
                     `Never`'
                   type: string
                 imageTag:
-                  description: Image tag for Jindo(e.g. 2.3.0-SNAPSHOT)
+                  description: Image tag (e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
             jobMaster:
-              description: Desired state for Alluxio job master
+              description: Desired state for Jindo job master
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio
-                    component. <br>
+                  description: Environment variables that will be used by Jindo component.
+                    <br>
                   type: object
-                jvmOptions:
-                  description: Options for JVM
-                  items:
-                    type: string
-                  type: array
                 ports:
                   additionalProperties:
                     type: integer
-                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component.
-                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                    Configuration Properties</a> for more info
+                  description: Configurable properties for the Jindo component. <br>
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -199,7 +183,7 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component.
+                  description: Resources that will be requested by the Jindo component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -229,30 +213,22 @@ spec:
                   type: object
               type: object
             jobWorker:
-              description: Desired state for Alluxio job Worker
+              description: Desired state for Jindo job Worker
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio
-                    component. <br>
+                  description: Environment variables that will be used by Jindo component.
+                    <br>
                   type: object
-                jvmOptions:
-                  description: Options for JVM
-                  items:
-                    type: string
-                  type: array
                 ports:
                   additionalProperties:
                     type: integer
-                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component.
-                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                    Configuration Properties</a> for more info
+                  description: Configurable properties for the Jindo component. <br>
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -262,7 +238,7 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component.
+                  description: Resources that will be requested by the Jindo component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -291,36 +267,23 @@ spec:
                       type: object
                   type: object
               type: object
-            jvmOptions:
-              description: Options for JVM
-              items:
-                type: string
-              type: array
             master:
-              description: Desired state for Alluxio master
+              description: Desired state for Jindo master
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio
-                    component. <br>
+                  description: Environment variables that will be used by Jindo component.
+                    <br>
                   type: object
-                jvmOptions:
-                  description: Options for JVM
-                  items:
-                    type: string
-                  type: array
                 ports:
                   additionalProperties:
                     type: integer
-                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component.
-                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                    Configuration Properties</a> for more info
+                  description: Configurable properties for the Jindo component. <br>
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -330,7 +293,7 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component.
+                  description: Resources that will be requested by the Jindo component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -362,16 +325,14 @@ spec:
             properties:
               additionalProperties:
                 type: string
-              description: Configurable properties for Alluxio system. <br> Refer
-                to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                Configuration Properties</a> for more info
+              description: Configurable properties for Jindo system. <br>
               type: object
             replicas:
               description: The replicas of the worker, need to be specified
               format: int32
               type: integer
             runAs:
-              description: Manage the user to run Alluxio Runtime
+              description: Manage the user to run Jindo Runtime
               properties:
                 gid:
                   description: The gid to run the alluxio runtime
@@ -394,7 +355,7 @@ spec:
               - user
               type: object
             tieredstore:
-              description: Tiered storage used by Alluxio
+              description: Tiered storage used by Jindo
               properties:
                 levels:
                   description: configurations for multiple tiers
@@ -434,30 +395,22 @@ spec:
                   type: array
               type: object
             worker:
-              description: Desired state for Alluxio worker
+              description: Desired state for Jindo worker
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Alluxio
-                    component. <br>
+                  description: Environment variables that will be used by Jindo component.
+                    <br>
                   type: object
-                jvmOptions:
-                  description: Options for JVM
-                  items:
-                    type: string
-                  type: array
                 ports:
                   additionalProperties:
                     type: integer
-                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Alluxio component.
-                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
-                    Configuration Properties</a> for more info
+                  description: Configurable properties for the Jindo component. <br>
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -467,7 +420,7 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Alluxio component.
+                  description: Resources that will be requested by the Jindo component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -498,7 +451,7 @@ spec:
               type: object
           type: object
         status:
-          description: JindoRuntimeStatus defines the observed state of JindoRuntime
+          description: RuntimeStatus defines the observed state of Runtime
           properties:
             cacheStates:
               additionalProperties:
@@ -603,7 +556,7 @@ spec:
               description: MasterPhase is the master running phase
               type: string
             masterReason:
-              description: Reason for Jindo Master's condition transition
+              description: Reason for Master's condition transition
               type: string
             valueFile:
               description: config map used to set configurations
@@ -630,7 +583,7 @@ spec:
               description: WorkerPhase is the worker running phase
               type: string
             workerReason:
-              description: Reason for Jindo Worker's condition transition
+              description: Reason for Worker's condition transition
               type: string
           required:
           - currentFuseNumberScheduled

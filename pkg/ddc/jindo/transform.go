@@ -55,7 +55,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, value 
 	properties["jfs.namespaces"] = jfsNamespace
 	// combine properties together
 	if len(runtime.Spec.Master.Properties) > 0 {
-		for  k, v := range runtime.Spec.Master.Properties {
+		for k, v := range runtime.Spec.Master.Properties {
 			properties[k] = v
 		}
 	}
@@ -65,7 +65,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, value 
 func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, value *Jindo) map[string]string {
 	properties := map[string]string{}
 	if len(runtime.Spec.Worker.Properties) > 0 {
-		for  k, v := range runtime.Spec.Worker.Properties {
+		for k, v := range runtime.Spec.Worker.Properties {
 			properties[k] = v
 		}
 	}
@@ -75,7 +75,7 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, value 
 func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) map[string]int {
 	properties := map[string]int{}
 	if len(runtime.Spec.Worker.Properties) > 0 {
-		for  k, v := range runtime.Spec.Fuse.Properties {
+		for k, v := range runtime.Spec.Fuse.Properties {
 			properties[k] = v
 		}
 	}

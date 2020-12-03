@@ -50,7 +50,6 @@ unit-test: generate fmt vet
 
 # Build binary
 
-build: dataset-controller-build alluxioruntime-controller-build csi-build
 build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build csi-build
 
 csi-build: generate fmt vet
@@ -101,6 +100,10 @@ vet:
 # Generate code
 generate: controller-gen
 	GO111MODULE=off $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
+
+# Update fluid helm chart
+update-crd: manifests
+	cp config/crd/bases/* charts/fluid/fluid/crds
 
 # Build the docker image
 docker-build-dataset-controller: generate fmt vet
