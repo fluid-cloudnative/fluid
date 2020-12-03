@@ -17,7 +17,7 @@ package v1alpha1
 
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-// RuntimeStatus defines the observed state of AlluxioRuntime
+// RuntimeStatus defines the observed state ofRuntime
 type RuntimeStatus struct {
 	// config map used to set configurations
 	ValueFileConfigmap string `json:"valueFile"`
@@ -25,13 +25,13 @@ type RuntimeStatus struct {
 	// MasterPhase is the master running phase
 	MasterPhase RuntimePhase `json:"masterPhase"`
 
-	// Reason for Alluxio Master's condition transition
+	// Reason for Master's condition transition
 	MasterReason string `json:"masterReason,omitempty"`
 
 	// WorkerPhase is the worker running phase
 	WorkerPhase RuntimePhase `json:"workerPhase"`
 
-	// Reason for Alluxio Worker's condition transition
+	// Reason for Worker's condition transition
 	WorkerReason string `json:"workerReason,omitempty"`
 
 	// The total number of nodes that should be running the runtime worker
