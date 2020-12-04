@@ -63,7 +63,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	// 1.Get the runtime
 	runtime := ctx.Runtime
 	if runtime == nil {
-		return utils.RequeueIfError(fmt.Errorf("Failed to find the runtime"))
+		return utils.RequeueIfError(fmt.Errorf("failed to find the runtime"))
 	}
 
 	// 2.Get or create the engine

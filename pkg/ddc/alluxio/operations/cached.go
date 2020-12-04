@@ -41,7 +41,7 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 		if strings.Contains(s, "Used Capacity:") {
 			values := strings.Fields(s)
 			if len(values) == 0 {
-				return cached, fmt.Errorf("Failed to parse %s", s)
+				return cached, fmt.Errorf("failed to parse %s", s)
 			}
 			cached, err = units.RAMInBytes(values[len(values)-1])
 			if err != nil {
@@ -52,7 +52,7 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 	}
 
 	if !found {
-		err = fmt.Errorf("Failed to find the cache in output %v", stdout)
+		err = fmt.Errorf("failed to find the cache in output %v", stdout)
 	}
 
 	return
