@@ -100,7 +100,7 @@ func GenerateHelmTemplate(name string, namespace string, valueFileName string, c
 	out, err := cmd.CombinedOutput()
 	fmt.Printf("%s", string(out))
 	if err != nil {
-		return templateFileName, fmt.Errorf("Failed to execute %s, %v with %v", binary, args, err)
+		return templateFileName, fmt.Errorf("failed to execute %s, %v with %v", binary, args, err)
 	}
 
 	// // 6. clean up the value file if needed
@@ -142,11 +142,11 @@ func GetChartVersion(chart string) (version string, err error) {
 
 	lines := strings.Split(string(out), "\n")
 	if len(lines) == 0 {
-		return "", fmt.Errorf("Failed to find version when executing %s, result is %s", args, out)
+		return "", fmt.Errorf("failed to find version when executing %s, result is %s", args, out)
 	}
 	fields := strings.Split(lines[0], ":")
 	if len(fields) != 2 {
-		return "", fmt.Errorf("Failed to find version when executing %s, result is %s", args, out)
+		return "", fmt.Errorf("failed to find version when executing %s, result is %s", args, out)
 	}
 
 	version = strings.TrimSpace(fields[1])

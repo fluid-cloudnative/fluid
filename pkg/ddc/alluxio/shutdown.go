@@ -132,7 +132,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
 	// }
 
-	return fmt.Errorf("The remaining cached is not cleaned up, check again.")
+	return fmt.Errorf("the remaining cached is not cleaned up, check again")
 }
 
 // cleanAll cleans up the all

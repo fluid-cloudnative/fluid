@@ -25,7 +25,7 @@ import (
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
 	if runtime == nil {
-		err = fmt.Errorf("The alluxioRuntime is null")
+		err = fmt.Errorf("the alluxioRuntime is null")
 		return
 	}
 

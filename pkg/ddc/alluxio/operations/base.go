@@ -255,13 +255,13 @@ func (a AlluxioFileUtils) Du(alluxioPath string) (ufs int64, cached int64, cache
 	str := strings.Split(stdout, "\n")
 
 	if len(str) != 2 {
-		err = fmt.Errorf("Failed to parse %s in Du method", str)
+		err = fmt.Errorf("failed to parse %s in Du method", str)
 		return
 	}
 
 	data := strings.Fields(str[1])
 	if len(data) != 4 {
-		err = fmt.Errorf("Failed to parse %s in Du method", data)
+		err = fmt.Errorf("failed to parse %s in Du method", data)
 		return
 	}
 
@@ -300,13 +300,13 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 	str := strings.Split(stdout, "\n")
 
 	if len(str) != 2 {
-		err = fmt.Errorf("Failed to parse %s in Count method", str)
+		err = fmt.Errorf("failed to parse %s in Count method", str)
 		return
 	}
 
 	data := strings.Fields(str[1])
 	if len(data) != 3 {
-		err = fmt.Errorf("Failed to parse %s in Count method", data)
+		err = fmt.Errorf("failed to parse %s in Count method", data)
 		return
 	}
 
@@ -370,7 +370,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 	case <-ch:
 		a.log.V(1).Info("execute in time", "command", command)
 	case <-ctx.Done():
-		err = fmt.Errorf("Timeout when executing %v", command)
+		err = fmt.Errorf("timeout when executing %v", command)
 	}
 
 	return

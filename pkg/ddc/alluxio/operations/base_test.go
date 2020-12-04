@@ -41,7 +41,7 @@ const (
 // a empty logger just for testing ...
 type NullLogger struct{}
 
-func (_ NullLogger) Info(_ string, _ ...interface{}) {
+func (log NullLogger) Info(_ string, _ ...interface{}) {
 	// Do nothing.
 }
 
@@ -67,11 +67,11 @@ func TestLoadMetaData(t *testing.T) {
 	}
 }
 
-func (_ NullLogger) Enabled() bool {
+func (log NullLogger) Enabled() bool {
 	return false
 }
 
-func (_ NullLogger) Error(_ error, _ string, _ ...interface{}) {
+func (log NullLogger) Error(_ error, _ string, _ ...interface{}) {
 	// Do nothing.
 }
 
