@@ -60,19 +60,26 @@ func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.C
 
 // ReconcileInternal handles the logic of reconcile runtime
 func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
-	// 1.Reconcile runtime
+	// 1.Get the runtime
 	runtime := ctx.Runtime
 	if runtime == nil {
 		return utils.RequeueIfError(fmt.Errorf("Failed to find the runtime"))
 	}
 
+	// 2.Get or create the engine
 	engine, err := r.implement.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
-	// 2.Get the dataset
+	// 3.Get the ObjectMeta of runtime
+	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 4.Get the dataset
 	dataset, err := r.GetDataset(ctx)
 	if err != nil {
 		// r.Recorder.Eventf(ctx.Dataset, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
@@ -85,12 +92,20 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 		}
 	}
-	// 3.Get the ObjectMeta of runtime
-	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
-	if err != nil {
-		return utils.RequeueIfError(err)
+	ctx.Dataset = dataset
+
+	// 5.Reconcile delete the runtime
+	// it should be after getting the dataset because need to edit the dataset during deleting
+	if !objectMeta.GetDeletionTimestamp().IsZero() {
+		result, err := r.implement.ReconcileRuntimeDeletion(engine, ctx)
+		if err != nil {
+			r.implement.RemoveEngine(ctx)
+		}
+		return result, err
 	}
+
 	if dataset != nil {
+		// 6.Add the OwnerReference of runtime and requeue
 		if !utils.ContainsOwners(objectMeta.GetOwnerReferences(), dataset) {
 			return r.AddOwnerAndRequeue(ctx, dataset)
 		}
@@ -103,31 +118,20 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 				dataset.Name)
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
-	} else if objectMeta.GetDeletionTimestamp().IsZero(){
+		// 7. Add Finalizer of runtime and requeue
+		if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
+			return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
+		} else {
+			ctx.Log.V(1).Info("The finalizer has been added")
+		}
+	} else {
+		// If dataset is nil, need to wait because the user may have not created dataset
 		ctx.Log.Info("No dataset can be bound to the runtime, waiting.")
 		r.Recorder.Event(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "No dataset can be bound to the runtime, waiting.")
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 4.Update the status of dataset
-	ctx.Dataset = dataset
-
-	// 5.Reconcile delete the runtime
-	if !objectMeta.GetDeletionTimestamp().IsZero() {
-		result, err := r.implement.ReconcileRuntimeDeletion(engine, ctx)
-		if err != nil {
-			r.implement.RemoveEngine(ctx)
-		}
-		return result, err
-	}
-
-	// 6. Add Finalizer of runtime
-	if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
-		return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
-	} else {
-		ctx.Log.V(1).Info("The finalizer has been added")
-	}
-
+	// 8.Start to reconciles runtime
 	return r.implement.ReconcileRuntime(engine, ctx)
 }
 
@@ -266,7 +270,7 @@ func (r *RuntimeReconciler) AddFinalizerAndRequeue(ctx cruntime.ReconcileRequest
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, currentGeneration)
 }
 
-// AddFinalizerAndRequeue add  finalizer and requeue
+// AddOwnerAndRequeue add Owner and requeue
 func (r *RuntimeReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
 	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
 	if err != nil {
