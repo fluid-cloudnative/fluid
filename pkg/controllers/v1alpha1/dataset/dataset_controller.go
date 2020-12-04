@@ -14,6 +14,7 @@ package dataset
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -123,12 +124,20 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	log := ctx.Log.WithName("reconcileDatasetDeletion")
 	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
 
+	/*
 	// 1. If runtime is not deleted, then requeue
 	if ctx.Dataset.Status.Phase == datav1alpha1.BoundDatasetPhase ||
 		ctx.Dataset.Status.Phase == datav1alpha1.FailedDatasetPhase ||
 		ctx.Dataset.Status.Phase == datav1alpha1.PendingDatasetPhase {
 		log.Info("The dataset is failed or bounded, can't be deleted.")
 		return utils.RequeueAfterInterval(time.Duration(1 * time.Second))
+	}
+	 */
+	// 1.if there is a pod which is using the dataset, then requeue
+	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
+	if err != nil || !should{
+		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc")
+		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
 	// 2. Remove finalizer
