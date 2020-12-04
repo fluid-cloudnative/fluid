@@ -134,7 +134,7 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("the master %s in %s is not ready. the expected number is %d, the actual number is %d",
+		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d",
 			master.Name,
 			master.Namespace,
 			master.Status.Replicas,
