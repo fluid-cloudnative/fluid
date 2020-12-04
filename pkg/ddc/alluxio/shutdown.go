@@ -85,7 +85,7 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 func (e *AlluxioEngine) cleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
 	cacheStates, err := e.queryCacheStatus()
-	if err != nil {
+	if cacheStates.cached == "" {
 		return
 	}
 

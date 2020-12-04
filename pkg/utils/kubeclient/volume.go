@@ -187,7 +187,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, erro
 	for _, pod := range nsPods.Items {
 		pvcs := GetPodPvcs(pod.Spec.Volumes)
 		for _, pvc := range pvcs {
-			if pvc.Name == pvcName {
+			if pvc.PersistentVolumeClaim.ClaimName == pvcName {
 				pods = append(pods, pod)
 			}
 		}
@@ -221,6 +221,24 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 
 	return err
 }
+
+// ShouldDeleteDataset should delete Dataset when no pod is using the volume
+func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error){
+	pods, err := GetPvcMountPods(client, name, namespace)
+	if err != nil {
+		return
+	}
+	for _, pod := range pods {
+		if !IsCompletePod(&pod) {
+			err = fmt.Errorf("can not delete dataset "+
+				"because Pod %v in Namespace %v is using it", pod.Name, pod.Namespace)
+			return
+		}
+	}
+	should = true
+	return
+}
+
 
 // ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer
 // when linked pods are inactive and timeout

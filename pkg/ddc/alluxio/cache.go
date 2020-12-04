@@ -30,17 +30,6 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	//	e.Log.Error(err, "Failed to sync the cache")
 	//	return states, err
 	//}
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		e.Log.Error(err, "Failed to get dataset when query cache status")
-		return states, err
-	}
-
-	var (
-		totalCacheCapacity string = ""
-		usedCacheCapacity  string = ""
-		cachedPercentage   string = dataset.Status.UfsTotal
-	)
 	summary, err := e.reportSummary()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Alluxio summary when query cache status")
@@ -53,28 +42,30 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
-			totalCacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
+			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
 		}
 		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
 			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
-			usedCacheCapacity = utils.BytesSize(float64(usedCacheCapacityAlluxio))
+			states.cached = utils.BytesSize(float64(usedCacheCapacityAlluxio))
 		}
+	}
+
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Info("Failed to get dataset when query cache status")
+		return states, err
 	}
 
 	// `dataset.Status.UfsTotal` probably haven't summed, in which case we won't compute cache percentage
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
-		usedInBytes, _ := utils.FromHumanSize(usedCacheCapacity)
+		usedInBytes, _ := utils.FromHumanSize(states.cached)
 		ufsTotalInBytes, _ := utils.FromHumanSize(dataset.Status.UfsTotal)
-		cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
+		states.cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
 	}
 
-	return cacheStates{
-		cacheCapacity:    totalCacheCapacity,
-		cached:           usedCacheCapacity,
-		cachedPercentage: cachedPercentage,
-	}, nil
+	return states, nil
 
 	// dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	// if err != nil {
