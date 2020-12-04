@@ -82,7 +82,7 @@ func SaveConfigMapToFile(name string, key string, namespace string) (fileName st
 	fmt.Printf("%s", string(out))
 
 	if err != nil {
-		return fileName, fmt.Errorf("Failed to execute %s, %v with %v", "kubectl", args, err)
+		return fileName, fmt.Errorf("failed to execute %s, %v with %v", "kubectl", args, err)
 	}
 	return fileName, err
 }

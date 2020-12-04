@@ -9,7 +9,7 @@ import (
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
 	if runtime == nil {
-		err = fmt.Errorf("The jindoRuntime is null")
+		err = fmt.Errorf("the jindoRuntime is null")
 		return
 	}
 

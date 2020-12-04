@@ -59,7 +59,7 @@ func (e *AlluxioEngine) queryHCFSEndpoint() (endpoint string, err error) {
 	}
 
 	if svc == nil {
-		e.Log.Error(fmt.Errorf("Failed to find the svc %s in %s", e.name, e.namespace), "Failed to find the svc, it's nil")
+		e.Log.Error(fmt.Errorf("failed to find the svc %s in %s", e.name, e.namespace), "failed to find the svc, it's nil")
 		return
 	}
 

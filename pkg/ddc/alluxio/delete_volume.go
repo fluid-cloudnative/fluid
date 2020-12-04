@@ -74,10 +74,10 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 		}
 
 		if found {
-			return fmt.Errorf("The PV %s is not cleaned up",
+			return fmt.Errorf("the PV %s is not cleaned up",
 				e.runtime.Name)
 		} else {
-			e.Log.Info("The PV is deleted successfully", "name", e.runtime.Name)
+			e.Log.Info("the PV is deleted successfully", "name", e.runtime.Name)
 		}
 	}
 

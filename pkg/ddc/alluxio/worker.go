@@ -48,7 +48,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		"currentReplicas", currentReplicas)
 
 	if currentReplicas == 0 {
-		return fmt.Errorf("The number of the current workers which can be scheduled is 0")
+		return fmt.Errorf("the number of the current workers which can be scheduled is 0")
 	}
 
 	// 2. Update the status
