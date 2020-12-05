@@ -277,10 +277,10 @@ func (r *RuntimeReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestCont
 		return utils.RequeueIfError(err)
 	}
 	objectMeta.SetOwnerReferences(append(objectMeta.GetOwnerReferences(), metav1.OwnerReference{
-		APIVersion:         dataset.APIVersion,
-		Kind:               dataset.Kind,
-		Name:               dataset.Name,
-		UID:                dataset.UID,
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
 	}))
 	if err := r.Update(ctx, ctx.Runtime); err != nil {
 		ctx.Log.Error(err, "Failed to add ownerreference", "StatusUpdateError", ctx)

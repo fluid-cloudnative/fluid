@@ -88,7 +88,7 @@ func ContainsString(slice []string, s string) bool {
 }
 
 func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Dataset) bool {
-	for _, owner := range owners{
+	for _, owner := range owners {
 		if owner.UID == dataset.UID {
 			return true
 		}

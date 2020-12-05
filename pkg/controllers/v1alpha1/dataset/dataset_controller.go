@@ -125,17 +125,17 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
 
 	/*
-	// 1. If runtime is not deleted, then requeue
-	if ctx.Dataset.Status.Phase == datav1alpha1.BoundDatasetPhase ||
-		ctx.Dataset.Status.Phase == datav1alpha1.FailedDatasetPhase ||
-		ctx.Dataset.Status.Phase == datav1alpha1.PendingDatasetPhase {
-		log.Info("The dataset is failed or bounded, can't be deleted.")
-		return utils.RequeueAfterInterval(time.Duration(1 * time.Second))
-	}
-	 */
+		// 1. If runtime is not deleted, then requeue
+		if ctx.Dataset.Status.Phase == datav1alpha1.BoundDatasetPhase ||
+			ctx.Dataset.Status.Phase == datav1alpha1.FailedDatasetPhase ||
+			ctx.Dataset.Status.Phase == datav1alpha1.PendingDatasetPhase {
+			log.Info("The dataset is failed or bounded, can't be deleted.")
+			return utils.RequeueAfterInterval(time.Duration(1 * time.Second))
+		}
+	*/
 	// 1.if there is a pod which is using the dataset, then requeue
 	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
-	if err != nil || !should{
+	if err != nil || !should {
 		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc")
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
