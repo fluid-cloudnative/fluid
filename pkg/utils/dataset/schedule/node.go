@@ -80,7 +80,7 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
-func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo *base.RuntimeInfo, client client.Client) (err error) {
+func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	var (
 		labelName       = runtimeInfo.GetRuntimeLabelname()
 		labelCommonName = runtimeInfo.GetCommonLabelname()
