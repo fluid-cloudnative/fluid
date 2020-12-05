@@ -55,6 +55,11 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 		return currentScheduleNum, err
 	}
 
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return currentScheduleNum, err
+	}
+
 	dataset, err = utils.GetDataset(e.Client, e.name, e.namespace)
 	e.Log.Info("AssignNodesToCache", "dataset", dataset)
 	if err != nil {
@@ -62,7 +67,7 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 	}
 
 	// datasetLabels := labels.SelectorFromSet(labels.Set(map[string]string{e.getCommonLabelname(): "true"}))
-	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", e.getCommonLabelname()))
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetCommonLabelname()))
 	if err != nil {
 		return currentScheduleNum, err
 	}
