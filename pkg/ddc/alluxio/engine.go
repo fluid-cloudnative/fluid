@@ -74,7 +74,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, &engine.runtime.Spec.Tieredstore)
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {

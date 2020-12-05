@@ -23,7 +23,7 @@ import (
 // by Alluxio Runtime or other implementation .
 // Thread safety is required from implementations of this interface.
 type RuntimeInfoInterface interface {
-	GetTieredstore() *datav1alpha1.Tieredstore
+	GetTieredstore() datav1alpha1.Tieredstore
 
 	GetName() string
 
@@ -38,13 +38,13 @@ type RuntimeInfo struct {
 	namespace   string
 	runtimeType string
 
-	tieredstore *datav1alpha1.Tieredstore
+	tieredstore datav1alpha1.Tieredstore
 }
 
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
-	tieredstore *datav1alpha1.Tieredstore) (runtime RuntimeInfoInterface) {
+	tieredstore datav1alpha1.Tieredstore) (runtime RuntimeInfoInterface) {
 	runtime = &RuntimeInfo{
 		name:        name,
 		namespace:   namespace,
@@ -55,7 +55,7 @@ func BuildRuntimeInfo(name string,
 }
 
 // GetTieredstore gets Tieredstore
-func (info *RuntimeInfo) GetTieredstore() *datav1alpha1.Tieredstore {
+func (info *RuntimeInfo) GetTieredstore() datav1alpha1.Tieredstore {
 	return info.tieredstore
 }
 

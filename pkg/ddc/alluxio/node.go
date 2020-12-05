@@ -198,7 +198,12 @@ func (e *AlluxioEngine) canbeAssigned(runtime *datav1alpha1.AlluxioRuntime, node
 	// 	return false
 	// }
 
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		e.Log.Error(err, "Failed to check canbeAssigned")
+	}
+
+	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	for key, requirement := range storageMap {
 		if key == common.MemoryCacheStore {
@@ -236,7 +241,12 @@ func (e *AlluxioEngine) labelCacheNode(nodeToLabel corev1.Node, runtime *datav1a
 		labelCommonName = e.getCommonLabelname()
 	)
 
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		nodeName := nodeToLabel.Name
