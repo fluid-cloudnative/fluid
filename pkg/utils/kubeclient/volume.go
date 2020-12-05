@@ -223,7 +223,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 }
 
 // ShouldDeleteDataset should delete Dataset when no pod is using the volume
-func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error){
+func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error) {
 	pods, err := GetPvcMountPods(client, name, namespace)
 	if err != nil {
 		return
@@ -238,7 +238,6 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (should b
 	should = true
 	return
 }
-
 
 // ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer
 // when linked pods are inactive and timeout
