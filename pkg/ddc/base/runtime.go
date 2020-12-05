@@ -44,13 +44,14 @@ type RuntimeInfo struct {
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
-	tieredstore *datav1alpha1.Tieredstore) *RuntimeInfo {
-	return &RuntimeInfo{
+	tieredstore *datav1alpha1.Tieredstore) (runtime RuntimeInfoInterface) {
+	runtime = &RuntimeInfo{
 		name:        name,
 		namespace:   namespace,
 		runtimeType: runtimeType,
 		tieredstore: tieredstore,
 	}
+	return
 }
 
 // GetTieredstore gets Tieredstore

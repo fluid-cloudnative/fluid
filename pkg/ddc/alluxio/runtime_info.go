@@ -18,7 +18,7 @@ package alluxio
 import "github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 
 // getRuntimeInfo gets runtime info
-func (e *AlluxioEngine) getRuntimeInfo() (*base.RuntimeInfo, error) {
+func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.runtimeInfo == nil {
 		runtime, err := e.getRuntime()
 		if err != nil {

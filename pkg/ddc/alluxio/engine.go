@@ -44,7 +44,7 @@ type AlluxioEngine struct {
 	retryShutdown          int32
 	initImage              string
 	MetadataSyncDoneCh     chan MetadataSyncResult
-	runtimeInfo            *base.RuntimeInfo
+	runtimeInfo            base.RuntimeInfoInterface
 }
 
 /**

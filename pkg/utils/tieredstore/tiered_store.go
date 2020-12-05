@@ -55,10 +55,10 @@ func makeMediumTypeSorted(mediumTypes []common.MediumType) []common.MediumType {
 }
 
 // GetLevelStorageMap gets the level storage map
-func GetLevelStorageMap(runtime *datav1alpha1.AlluxioRuntime) (storage map[common.CacheStoreType]*resource.Quantity) {
+func GetLevelStorageMap(runtimeInfo *datav1alpha1.AlluxioRuntime) (storage map[common.CacheStoreType]*resource.Quantity) {
 	storage = map[common.CacheStoreType]*resource.Quantity{}
 
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+	for _, level := range runtimeInfo.Spec.Tieredstore.Levels {
 		storageType := common.MemoryCacheStore
 		if level.MediumType == common.SSD {
 			storageType = common.DiskCacheStore
