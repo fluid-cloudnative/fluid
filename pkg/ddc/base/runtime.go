@@ -17,6 +17,7 @@ package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // Runtime Information interface defines the interfaces that should be implemented
@@ -30,6 +31,12 @@ type RuntimeInfoInterface interface {
 	GetNamespace() string
 
 	GetRuntimeType() string
+
+	GetStoragetLabelname(read common.ReadType, storage common.StorageType) string
+
+	GetCommonLabelname() string
+
+	GetRuntimeLabelname() string
 }
 
 // The real Runtime Info should implement
