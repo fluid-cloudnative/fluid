@@ -167,7 +167,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 			Mediumtype: string(level.MediumType),
 			Low:        level.Low,
 			High:       level.High,
-			Quota:      tranformQuantityToAlluxioUnit(level.Quota),
+			Quota:      utils.TranformQuantityToAlluxioUnit(level.Quota),
 		})
 	}
 
