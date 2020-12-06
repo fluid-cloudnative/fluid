@@ -17,7 +17,7 @@ package alluxio
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	datasetSchdule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/schedule"
+	datasetSchdule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 )
 
 // AssignNodesToCache finds nodes to place the cache engine

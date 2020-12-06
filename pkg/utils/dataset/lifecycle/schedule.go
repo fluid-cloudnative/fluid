@@ -1,4 +1,4 @@
-package schedule
+package lifecycle
 
 import (
 	"context"

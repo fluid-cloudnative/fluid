@@ -1,4 +1,4 @@
-package schedule
+package lifecycle
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 var log logr.Logger
 
 func init() {
-	log = ctrl.Log.WithName("dataset.schedule")
+	log = ctrl.Log.WithName("dataset.lifecycle")
 }
 
 // alreadyAssigned checks if the node is already assigned the runtime engine
