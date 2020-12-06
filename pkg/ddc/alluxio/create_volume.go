@@ -64,6 +64,13 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
+	accessModes := e.AccessModes
+	if len(accessModes) == 0 {
+		accessModes = []corev1.PersistentVolumeAccessMode{
+			corev1.ReadOnlyMany,
+		}
+	}
+
 	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
@@ -80,9 +87,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 				Annotations: common.ExpectedFluidAnnotations,
 			},
 			Spec: corev1.PersistentVolumeSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteMany,
-				},
+				AccessModes: accessModes,
 				Capacity: corev1.ResourceList{
 					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Gi"),
 				},
@@ -128,6 +133,12 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
+	accessModes := e.AccessModes
+	if len(accessModes) == 0 {
+		accessModes = []corev1.PersistentVolumeAccessMode{
+			corev1.ReadOnlyMany,
+		}
+	}
 
 	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, common.ExpectedFluidAnnotations)
 	if err != nil {
@@ -156,9 +167,7 @@ func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 					},
 				},
 				StorageClassName: &stroageCls,
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteMany,
-				},
+				AccessModes:      accessModes,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Gi"),

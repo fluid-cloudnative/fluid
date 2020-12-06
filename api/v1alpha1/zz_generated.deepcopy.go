@@ -457,6 +457,11 @@ func (in *DatasetSpec) DeepCopyInto(out *DatasetSpec) {
 		*out = new(CacheableNodeAffinity)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AccessModes != nil {
+		in, out := &in.AccessModes, &out.AccessModes
+		*out = make([]v1.PersistentVolumeAccessMode, len(*in))
+		copy(*out, *in)
+	}
 	if in.Runtimes != nil {
 		in, out := &in.Runtimes, &out.Runtimes
 		*out = make([]Runtime, len(*in))
