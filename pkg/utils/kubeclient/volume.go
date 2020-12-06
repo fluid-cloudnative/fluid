@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -224,6 +225,24 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 
 // ShouldDeleteDataset should delete Dataset when no pod is using the volume
 func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error) {
+	// 1. Check if the pvc exists
+	// exist, err := IsPersistentVolumeExist(client, name, common.ExpectedFluidAnnotations)
+	// if err != nil {
+	// 	return
+	// }
+	// if !exist {
+	// 	return true, nil
+	// }
+
+	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
+	if err != nil {
+		return
+	}
+	if !exist {
+		return true, nil
+	}
+
+	// 2. check if the pod on it is running
 	pods, err := GetPvcMountPods(client, name, namespace)
 	if err != nil {
 		return

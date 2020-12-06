@@ -14,8 +14,9 @@ package dataset
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -122,7 +123,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 // reconcile Dataset Deletion
 func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileDatasetDeletion")
-	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
+	log.Info("process the dataset", "dataset", ctx.Dataset)
 
 	/*
 		// 1. If runtime is not deleted, then requeue
@@ -136,7 +137,7 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	// 1.if there is a pod which is using the dataset, then requeue
 	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
 	if err != nil || !should {
-		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc")
+		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc", "err", err)
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
@@ -147,8 +148,10 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 			log.Error(err, "Failed to remove finalizer")
 			return ctrl.Result{}, err
 		}
-		ctx.Log.V(1).Info("Finalizer is removed", "dataset", ctx.Dataset)
+		ctx.Log.Info("Finalizer is removed", "dataset", ctx.Dataset)
 	}
+
+	log.Info("delete the dataset successfully", "dataset", ctx.Dataset)
 
 	return ctrl.Result{}, nil
 }

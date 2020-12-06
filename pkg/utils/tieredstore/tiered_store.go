@@ -18,8 +18,8 @@ package tieredstore
 import (
 	"sort"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,10 +55,10 @@ func makeMediumTypeSorted(mediumTypes []common.MediumType) []common.MediumType {
 }
 
 // GetLevelStorageMap gets the level storage map
-func GetLevelStorageMap(runtime *datav1alpha1.AlluxioRuntime) (storage map[common.CacheStoreType]*resource.Quantity) {
+func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[common.CacheStoreType]*resource.Quantity) {
 	storage = map[common.CacheStoreType]*resource.Quantity{}
 
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+	for _, level := range runtimeInfo.GetTieredstore().Levels {
 		storageType := common.MemoryCacheStore
 		if level.MediumType == common.SSD {
 			storageType = common.DiskCacheStore
@@ -77,9 +77,9 @@ func GetLevelStorageMap(runtime *datav1alpha1.AlluxioRuntime) (storage map[commo
 }
 
 // GetTieredLevel returns index
-func GetTieredLevel(runtime *datav1alpha1.AlluxioRuntime, mediumType common.MediumType) int {
+func GetTieredLevel(runtimeInfo base.RuntimeInfoInterface, mediumType common.MediumType) int {
 	levels := []common.MediumType{}
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+	for _, level := range runtimeInfo.GetTieredstore().Levels {
 		levels = append(levels, level.MediumType)
 	}
 

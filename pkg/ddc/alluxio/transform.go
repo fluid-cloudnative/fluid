@@ -142,7 +142,13 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	// value.Enablefluid = true
 	levels := []Level{}
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	for _, level := range runtimeInfo.GetTieredstore().Levels {
 
 		// l := 0
 		// if level.MediumType == common.SSD {
@@ -151,7 +157,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		// 	l = 2
 		// }
 
-		l := tieredstore.GetTieredLevel(runtime, level.MediumType)
+		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
@@ -161,7 +167,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 			Mediumtype: string(level.MediumType),
 			Low:        level.Low,
 			High:       level.High,
-			Quota:      tranformQuantityToAlluxioUnit(level.Quota),
+			Quota:      utils.TranformQuantityToAlluxioUnit(level.Quota),
 		})
 	}
 

@@ -58,7 +58,7 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://downloads.apache.org/hbase/2.2.5/
+    - mountPoint: https://downloads.apache.org/hbase/stable/
       name: hbase
   nodeAffinity:
     required:
