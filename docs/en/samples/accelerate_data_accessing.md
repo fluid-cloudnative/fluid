@@ -35,11 +35,11 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.5/
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
       name: hbase
 EOF
 ```
-> Notes: Here, we use THU's tuna Apache mirror site as our `mountPoint`. If your environment isn't in Chinese mainland, please replace it with `https://downloads.apache.org/hbase/2.2.5/`.
+> Notes: Here, we use THU's tuna Apache mirror site as our `mountPoint`. If your environment isn't in Chinese mainland, please replace it with `https://downloads.apache.org/hbase/stable/`.
 
 Here, we'd like to create a resource object with kind `Dataset`. `Dataset` is a Custom Resource Definition(CRD) defined by Fluid and used to tell Fluid where to find all the data you'd like to access.
 Under the hood, Fluid uses Alluxio to do some mount operations, so `mountPoint` property can be any legal UFS path acknowledged by Alluxio. Here, we use [WebUFS](https://docs.alluxio.io/os/user/stable/en/ufs/WEB.html) for its simplicity.

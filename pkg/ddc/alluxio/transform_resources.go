@@ -38,7 +38,11 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		e.Log.Error(err, "failed to transformResourcesForWorker")
+	}
+	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
 
@@ -86,7 +90,11 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 
 	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
 
-	storageMap := tieredstore.GetLevelStorageMap(runtime)
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		e.Log.Error(err, "failed to transformResourcesForFuse")
+	}
+	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	e.Log.Info("transformFuse", "storageMap", storageMap)
 

@@ -44,6 +44,7 @@ type AlluxioEngine struct {
 	retryShutdown          int32
 	initImage              string
 	MetadataSyncDoneCh     chan MetadataSyncResult
+	runtimeInfo            base.RuntimeInfoInterface
 }
 
 /**
@@ -71,6 +72,9 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	} else {
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
+
+	// Setup runtime Info
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
