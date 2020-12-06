@@ -18,7 +18,6 @@ package alluxio
 import (
 	"strings"
 
-	units "github.com/docker/go-units"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -33,13 +32,13 @@ func tranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 
 }
 
-func tranformQuantityToUnits(q *resource.Quantity) (value string) {
-	// value = q.String()
+// func tranformQuantityToUnits(q *resource.Quantity) (value string) {
+// 	// value = q.String()
 
-	// if strings.HasSuffix(value, "i") {
-	// 	strings.ReplaceAll(value, "i", "B")
-	// }
+// 	// if strings.HasSuffix(value, "i") {
+// 	// 	strings.ReplaceAll(value, "i", "B")
+// 	// }
 
-	return units.BytesSize(float64(q.Value()))
+// 	return units.BytesSize(float64(q.Value()))
 
-}
+// }
