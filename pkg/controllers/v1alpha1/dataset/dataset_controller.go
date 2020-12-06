@@ -14,8 +14,9 @@ package dataset
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -136,7 +137,7 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	// 1.if there is a pod which is using the dataset, then requeue
 	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
 	if err != nil || !should {
-		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc")
+		log.Info("dataset cannot be deleted because pvc is mounted or err appear when querying pvc", "err", err)
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
