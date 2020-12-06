@@ -91,3 +91,9 @@ const (
 
 	VolumeScheme string = "pvc://"
 )
+
+var (
+	ExpectedFluidAnnotations = map[string]string{
+		"CreatedBy": "fluid",
+	}
+)
