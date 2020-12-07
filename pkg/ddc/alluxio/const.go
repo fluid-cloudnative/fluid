@@ -16,11 +16,6 @@ limitations under the License.
 package alluxio
 
 const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
-
-	fluid_PATH = "fluid_path"
-
-	Mount_TYPE = "mount_type"
 
 	// alluxioHome string = "/opt/alluxio"
 

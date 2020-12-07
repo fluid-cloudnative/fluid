@@ -63,6 +63,12 @@ spec:
         spec:
           description: DatasetSpec defines the desired state of Dataset
           properties:
+            accessModes:
+              description: AccessModes contains all ways the volume backing the PVC
+                can be mounted
+              items:
+                type: string
+              type: array
             mounts:
               description: Mount Points to be mounted on Alluxio.
               items:

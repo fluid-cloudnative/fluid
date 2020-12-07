@@ -19,6 +19,7 @@ import (
 	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,4 +48,21 @@ func IsSetupDone(dataset *datav1alpha1.Dataset) (done bool) {
 	}
 
 	return
+}
+
+func GetAccessModesOfDataset(client client.Client, name, namespace string) (accessModes []v1.PersistentVolumeAccessMode, err error) {
+	dataset, err := GetDataset(client, name, namespace)
+	if err != nil {
+		return accessModes, err
+	}
+
+	accessModes = dataset.Spec.AccessModes
+	if len(accessModes) == 0 {
+		accessModes = []v1.PersistentVolumeAccessMode{
+			v1.ReadOnlyMany,
+		}
+	}
+
+	return accessModes, err
+
 }
