@@ -225,8 +225,8 @@ arena submit mpi \
 ## 结果分析
 
 
-From the test results, the Fluid acceleration effect on 1x8 has no obvious effect,
-but in the scenario of 4x8, the effect is very obvious.
+From the test results, the Fluid acceleration on 1x8 has no obvious enhancement, 
+while in the improvements of 4x8, the effect is very obvious.
 In warm data scenario, the training time can be shortened **(129-89)/129 = 31 %**;
 In cold data scenario, training time can be shortened **（129-100）/129 = 22 %**.
 This is because NFS bandwidth became a bottleneck under 4x8;
