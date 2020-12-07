@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"context"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
@@ -25,9 +26,6 @@ import (
 )
 
 var (
-	expectedAnnotations = map[string]string{
-		"CreatedBy": "fluid",
-	}
 	stroageCls = ""
 )
 
@@ -66,7 +64,7 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
 	}
@@ -79,7 +77,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 				Labels: map[string]string{
 					e.getCommonLabelname(): "true",
 				},
-				Annotations: expectedAnnotations,
+				Annotations: common.ExpectedFluidAnnotations,
 			},
 			Spec: corev1.PersistentVolumeSpec{
 				AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -131,7 +129,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
 	}
@@ -144,7 +142,7 @@ func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
 				Labels: map[string]string{
 					e.getCommonLabelname(): "true",
 				},
-				Annotations: expectedAnnotations,
+				Annotations: common.ExpectedFluidAnnotations,
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
 				Selector: &metav1.LabelSelector{

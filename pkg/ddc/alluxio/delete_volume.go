@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -49,7 +50,7 @@ func (e *AlluxioEngine) DeleteVolume() (err error) {
 // deleteFusePersistentVolume
 func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 		}
 		retries := 500
 		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
+			found, err = kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, common.ExpectedFluidAnnotations)
 			if err != nil {
 				return err
 			}
@@ -74,10 +75,10 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 		}
 
 		if found {
-			return fmt.Errorf("The PV %s is not cleaned up",
+			return fmt.Errorf("the PV %s is not cleaned up",
 				e.runtime.Name)
 		} else {
-			e.Log.Info("The PV is deleted successfully", "name", e.runtime.Name)
+			e.Log.Info("the PV is deleted successfully", "name", e.runtime.Name)
 		}
 	}
 
@@ -87,7 +88,7 @@ func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
 // deleteFusePersistentVolume
 func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
 	}
@@ -113,7 +114,7 @@ func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
 			}
 		}
 
-		found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+		found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, common.ExpectedFluidAnnotations)
 		if err != nil {
 			return err
 		}

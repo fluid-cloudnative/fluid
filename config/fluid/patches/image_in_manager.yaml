@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: fluid-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          # change the following image if necessary
+          image: registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller:v0.1.0-b389ba2

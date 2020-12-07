@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "jindofs.fullname" . }}-master
+  labels:
+    name: {{ template "jindofs.fullname" . }}-master
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-master
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "jindofs.name" . }}
+      role: jindofs-master
+      name: {{ template "jindofs.fullname" . }}-master
+  serviceName: "jindofs-master"
+  replicas: {{ .Values.master.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "jindofs.fullname" . }}-master
+        app: {{ template "jindofs.name" . }}
+        chart: {{ template "jindofs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: jindofs-master
+    spec:
+      hostNetwork: {{ .Values.useHostNetwork }}
+      hostPID: {{ .Values.useHostPID }}
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+{{- if .Values.master.nodeSelector }}
+{{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
+{{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+{{- end }}
+      securityContext:
+        runAsUser: {{ .Values.user }}
+        runAsGroup: {{ .Values.group }}
+        fsGroup: {{ .Values.fsGroup }}
+      containers:
+        - name: jindofs-master
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          resources:
+            {{- if .Values.worker.resources  }}
+            {{- if .Values.master.resources.limits }}
+            limits:
+              cpu: {{ .Values.master.resources.limits.cpu }}
+              memory: {{ .Values.master.resources.limits.memory }}
+            {{- end }}
+            {{- if .Values.master.resources.requests }}
+            requests:
+              cpu: {{ .Values.master.resources.requests.cpu }}
+              memory: {{ .Values.master.resources.requests.memory }}
+            {{- end }}
+            {{- end }}
+          command: ["/entrypoint.sh"]
+          args: ["master"]
+          ports:
+          - containerPort: 8101
+            name: rpc
+          volumeMounts:
+            - name: bigboot-config
+              mountPath: /smartdata/conf/bigboot.cfg
+              subPath: master.cfg
+          {{- range $name, $path := .Values.mounts.master }}
+            - name: datavolume-{{ $name }}
+              mountPath: "{{ $path }}"
+            {{- end }}
+            - mountPath: /etc/localtime
+              name: volume-localtime
+      restartPolicy: Always
+      volumes:
+        - hostPath:
+            path: /etc/localtime
+            type: ''
+          name: volume-localtime
+          {{- range $name, $path := .Values.mounts.master }}
+        - hostPath:
+            path:  "{{ $path }}"
+            type: DirectoryOrCreate
+          name: datavolume-{{ $name }}
+          {{- end }}
+        - name: bigboot-config
+          configMap:
+            name: {{ template "jindofs.fullname" . }}-config

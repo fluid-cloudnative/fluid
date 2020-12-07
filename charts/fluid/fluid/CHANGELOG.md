@@ -26,3 +26,4 @@
 ### 0.5.0
 
 * Remove hostnetwork from the controller config
+* Add JindoRuntime

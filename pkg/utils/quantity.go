@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package alluxio
+package utils
 
 import (
 	"strings"
@@ -22,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func tranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
+func TranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 	value = q.String()
 
 	if strings.HasSuffix(value, "i") {
@@ -33,7 +32,7 @@ func tranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 
 }
 
-func tranformQuantityToUnits(q *resource.Quantity) (value string) {
+func TranformQuantityToUnits(q *resource.Quantity) (value string) {
 	// value = q.String()
 
 	// if strings.HasSuffix(value, "i") {

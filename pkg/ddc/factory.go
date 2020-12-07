@@ -15,6 +15,7 @@ package ddc
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -28,6 +29,7 @@ var buildFuncMap map[string]buildFunc
 func init() {
 	buildFuncMap = map[string]buildFunc{
 		"alluxio": alluxio.Build,
+		"jindo":   jindo.Build,
 	}
 }
 
@@ -39,7 +41,7 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 	if buildeFunc, found := buildFuncMap[ctx.RuntimeType]; found {
 		engine, err = buildeFunc(id, ctx)
 	} else {
-		err = fmt.Errorf("Failed to build the engine due to the type %s is not found", ctx.NamespacedName)
+		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.NamespacedName)
 	}
 
 	return
