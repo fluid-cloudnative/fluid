@@ -88,6 +88,10 @@ type DatasetSpec struct {
 	// +optional
 	NodeAffinity *CacheableNodeAffinity `json:"nodeAffinity,omitempty"`
 
+	// AccessModes contains all ways the volume backing the PVC can be mounted
+	// +optional
+	AccessModes []v1.PersistentVolumeAccessMode `json:"accessModes,omitempty"`
+
 	// Runtimes for supporting dataset (e.g. AlluxioRuntime)
 	Runtimes []Runtime `json:"runtimes,omitempty"`
 }

@@ -2,12 +2,14 @@ package jindo
 
 import (
 	"fmt"
+
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type JindoEngine struct {
@@ -20,6 +22,7 @@ type JindoEngine struct {
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	retryShutdown          int32
+	runtimeInfo            base.RuntimeInfoInterface
 	//initImage              string
 }
 
@@ -44,6 +47,8 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	} else {
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
+
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
