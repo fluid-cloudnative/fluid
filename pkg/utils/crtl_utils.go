@@ -96,6 +96,7 @@ func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Datase
 	return false
 }
 
+// RemoveString removes strings in a array, which is equal to a given string.
 func RemoveString(slice []string, s string) (result []string) {
 	for _, item := range slice {
 		if item == s {
