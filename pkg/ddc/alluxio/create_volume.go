@@ -16,18 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-var (
-	stroageCls = ""
+	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // CreateVolume creates volume
@@ -65,121 +55,28 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
-	accessModes, err := utils.GetAccessModesOfDataset(e.Client, e.name, e.namespace)
+	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, common.ExpectedFluidAnnotations)
-	if err != nil {
-		return err
-	}
+	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
+		runtimeInfo,
+		e.getMountPoint(),
+		common.ALLUXIO_MOUNT_TYPE,
+		e.Log)
 
-	if !found {
-		pv := &corev1.PersistentVolume{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      e.runtime.Name,
-				Namespace: e.runtime.Namespace,
-				Labels: map[string]string{
-					e.getCommonLabelname(): "true",
-				},
-				Annotations: common.ExpectedFluidAnnotations,
-			},
-			Spec: corev1.PersistentVolumeSpec{
-				AccessModes: accessModes,
-				Capacity: corev1.ResourceList{
-					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Gi"),
-				},
-				StorageClassName: stroageCls,
-				PersistentVolumeSource: corev1.PersistentVolumeSource{
-					CSI: &corev1.CSIPersistentVolumeSource{
-						Driver:       CSI_DRIVER,
-						VolumeHandle: e.runtime.Name,
-						VolumeAttributes: map[string]string{
-							fluid_PATH: e.getMountPoint(),
-							Mount_TYPE: common.ALLUXIO_MOUNT_TYPE,
-						},
-					},
-				},
-				NodeAffinity: &corev1.VolumeNodeAffinity{
-					Required: &corev1.NodeSelector{
-						NodeSelectorTerms: []corev1.NodeSelectorTerm{
-							{
-								MatchExpressions: []corev1.NodeSelectorRequirement{
-									{
-										Key:      e.getCommonLabelname(),
-										Operator: corev1.NodeSelectorOpIn,
-										Values:   []string{"true"},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-
-		err = e.Client.Create(context.TODO(), pv)
-		if err != nil {
-			return err
-		}
-	} else {
-		e.Log.Info("The persistent volume is created", "name", e.runtime.Name)
-	}
-
-	return err
 }
 
 // createFusePersistentVolume
 func (e *AlluxioEngine) createFusePersistentVolumeClaim() (err error) {
-	accessModes, err := utils.GetAccessModesOfDataset(e.Client, e.name, e.namespace)
+	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, common.ExpectedFluidAnnotations)
-	if err != nil {
-		return err
-	}
+	return volumeHelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
 
-	if !found {
-		pvc := &corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      e.runtime.Name,
-				Namespace: e.runtime.Namespace,
-				Labels: map[string]string{
-					e.getCommonLabelname(): "true",
-				},
-				Annotations: common.ExpectedFluidAnnotations,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				Selector: &metav1.LabelSelector{
-					// MatchExpressions: []metav1.LabelSelectorRequirement{
-					// 	{
-
-					// 	},
-					// },
-					MatchLabels: map[string]string{
-						e.getCommonLabelname(): "true",
-					},
-				},
-				StorageClassName: &stroageCls,
-				AccessModes:      accessModes,
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Gi"),
-					},
-				},
-			},
-		}
-
-		err = e.Client.Create(context.TODO(), pvc)
-		if err != nil {
-			return err
-		}
-	}
-
-	return err
 }
 
 // createHCFSVolume (TODO: cheyang)

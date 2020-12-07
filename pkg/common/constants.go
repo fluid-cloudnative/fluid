@@ -24,7 +24,7 @@ const (
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 )
 
-//Reason for Pillar events
+//Reason for Fluid events
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
