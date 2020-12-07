@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -41,11 +42,9 @@ func (e *JindoEngine) CreateVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *JindoEngine) createFusePersistentVolume() (err error) {
-	accessModes := e.AccessModes
-	if len(accessModes) == 0 {
-		accessModes = []corev1.PersistentVolumeAccessMode{
-			corev1.ReadOnlyMany,
-		}
+	accessModes, err := utils.GetAccessModesOfDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
 	}
 
 	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
@@ -91,11 +90,9 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 
 // createFusePersistentVolume
 func (e *JindoEngine) createFusePersistentVolumeClaim() (err error) {
-	accessModes := e.AccessModes
-	if len(accessModes) == 0 {
-		accessModes = []corev1.PersistentVolumeAccessMode{
-			corev1.ReadOnlyMany,
-		}
+	accessModes, err := utils.GetAccessModesOfDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
 	}
 
 	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)

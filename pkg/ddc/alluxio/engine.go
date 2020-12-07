@@ -21,9 +21,7 @@ import (
 	"regexp"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -47,7 +45,6 @@ type AlluxioEngine struct {
 	initImage              string
 	MetadataSyncDoneCh     chan MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
-	AccessModes            []v1.PersistentVolumeAccessMode
 }
 
 /**
@@ -76,13 +73,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
-	// Get access mode
-	dataset, err := utils.GetDataset(ctx.Client, ctx.Name, ctx.Namespace)
-	if err != nil {
-		return nil, err
-	}
-	engine.AccessModes = dataset.Spec.AccessModes
-
 	// Setup runtime Info
 	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
@@ -105,6 +95,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
+	err := kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }
