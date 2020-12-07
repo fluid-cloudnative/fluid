@@ -86,6 +86,7 @@ func ContainsString(slice []string, s string) bool {
 	return false
 }
 
+// RemoveString removes strings in a array, which is equal to a given string.
 func RemoveString(slice []string, s string) (result []string) {
 	for _, item := range slice {
 		if item == s {
