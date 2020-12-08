@@ -51,7 +51,7 @@ func TestTransformFuse(t *testing.T) {
 					GID: &x,
 				},
 			},
-		}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,uid=1000,gid=1000,allow_other"}},
+		}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,uid=1000,gid=1000,allow_other"}},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
