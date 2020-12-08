@@ -153,21 +153,19 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 		}
 	}
 
-	runtimeInfo, err := e.getRuntimeInfo()
-	if err != nil {
-		e.Log.Info("Error:", "err", err)
-	}
-
-	accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
-	if err != nil {
-		e.Log.Info("Error:", "err", err)
-	}
-
 	readOnly := false
-	if len(accessModes) > 0 {
-		for _, mode := range accessModes {
-			if mode == v1.ReadOnlyMany {
-				readOnly = true
+	runtimeInfo := e.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			e.Log.Info("Error:", "err", err)
+		}
+
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == v1.ReadOnlyMany {
+					readOnly = true
+				}
 			}
 		}
 	}
