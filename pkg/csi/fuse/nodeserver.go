@@ -16,10 +16,11 @@ limitations under the License.
 package csi
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
@@ -61,6 +62,18 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		glog.Infof("Try to mount to %v", targetPath)
 	}
 
+	// 0. check if read only
+	readOnly := false
+	if req.GetVolumeCapability() == nil {
+		glog.Infoln("Volume Capability is nil")
+	} else {
+		mode := req.GetVolumeCapability().GetAccessMode().GetMode()
+		if mode == csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY {
+			readOnly = true
+			glog.Infof("Set the mount option readonly=%v", readOnly)
+		}
+	}
+
 	// mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
 	// if req.GetReadonly() {
 	// 	mountOptions = append(mountOptions, "ro")
@@ -93,7 +106,11 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// 	args = append(args, "-o", strings.Join(mountOptions, ","))
 	// }
 
-	args = append(args, fluidPath, targetPath)
+	if readOnly {
+		args = append(args, "-o", "ro", fluidPath, targetPath)
+	} else {
+		args = append(args, fluidPath, targetPath)
+	}
 	command := exec.Command("mount", args...)
 
 	glog.V(4).Infoln(command)
