@@ -86,17 +86,8 @@ type JindoRuntimeSpec struct {
 	// Desired state for Jindo master
 	Master JindoCompTemplateSpec `json:"master,omitempty"`
 
-	// Desired state for Jindo job master
-	JobMaster JindoCompTemplateSpec `json:"jobMaster,omitempty"`
-
 	// Desired state for Jindo worker
 	Worker JindoCompTemplateSpec `json:"worker,omitempty"`
-
-	// Desired state for Jindo job Worker
-	JobWorker JindoCompTemplateSpec `json:"jobWorker,omitempty"`
-
-	// The spec of init users
-	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
 	// Desired state for Jindo Fuse
 	Fuse JindoFuseSpec `json:"fuse,omitempty"`
@@ -115,6 +106,11 @@ type JindoRuntimeSpec struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready Masters",type="integer",JSONPath=`.status.masterNumberReady`,priority=10
+// +kubebuilder:printcolumn:name="Ready Workers",type="integer",JSONPath=`.status.workerNumberReady`,priority=10
+// +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
+// +genclient
 
 // JindoRuntime is the Schema for the jindoruntimes API
 type JindoRuntime struct {
@@ -136,4 +132,9 @@ type JindoRuntimeList struct {
 
 func init() {
 	SchemeBuilder.Register(&JindoRuntime{}, &JindoRuntimeList{})
+}
+
+// Replicas gets the replicas of runtime worker
+func (runtime *JindoRuntime) Replicas() int32 {
+	return runtime.Spec.Replicas
 }
