@@ -37,9 +37,9 @@ func init() {
 
 var helmCmd = []string{"ddc-helm"}
 
-/*
-* Generate value file
- */
+
+// GenerateValueFile generates value file.
+// It returns the name of the value file and error
 func GenerateValueFile(values interface{}) (valueFileName string, err error) {
 	// 1. generate the template file
 	valueFile, err := ioutil.TempFile(os.TempDir(), "values")
