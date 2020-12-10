@@ -1,11 +1,8 @@
-# 示例 - HDFS Client文件访问加速
+# DEMO - Speed Up Accessing HDFS Client Files
+This demo introduces how to use HDFS Client to access remote files by [Alluxio](https://www.alluxio.io) in Fluid, and it can accelerate the access of remote files powered by the file cache ability of Alluxio.
 
-本文介绍如何使用HDFS Client，在Fluid中通过Alluxio协议访问远程文件，并借助Alluxio的文件缓存能力，实现访问远程文件加速。
-
-## 前提条件
-
-在运行该示例之前，请参考[安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md)完成安装，并检查Fluid各组件正常运行：
-
+## Prerequisites
+Before everything we are going to do, please refer to [Installation Guide](../userguide/install.md) to install Fluid on your Kubernetes Cluster, and make sure all the components used by Fluid are ready like this:
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
@@ -15,17 +12,15 @@ csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
 dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
 
-## 新建工作环境
-
+## Set Up Workspace
 ```shell
 $ mkdir <any-path>/hdfs
 $ cd <any-path>/hdfs
 ```
 
-## 运行示例
+## Install Resources to Kubernetes
 
-**查看待创建的Dataset资源对象**
-
+**Check the `Dataset` object to be created**
 ```shell
 $ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -39,7 +34,8 @@ spec:
 EOF
 ```
 
-在这里，我们将要创建一个kind为`Dataset`的资源对象(Resource object)。`Dataset`是Fluid所定义的一个Custom Resource Definition(CRD)，该CRD被用来告知Fluid在哪里可以找到你所需要的数据。Fluid将该CRD对象中定义的`mountPoint`属性挂载到Alluxio之上，因此该属性可以是任何合法的能够被Alluxio识别的UFS地址。在本示例中，为了简单，我们使用[WebUFS](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html)进行演示。
+Here, we'd like to create a resource object with kind `Dataset`. `Dataset` is a Custom Resource Definition(CRD) defined by Fluid and used to tell Fluid where to find all the data you'd like to access.
+Under the hood, Fluid uses Alluxio to do some mount operations, so `mountPoint` property can be any legal UFS path acknowledged by Alluxio. Here, we use [WebUFS](https://docs.alluxio.io/os/user/stable/en/ufs/WEB.html) for its simplicity.
 
 **Create a Dataset resource object**
 
