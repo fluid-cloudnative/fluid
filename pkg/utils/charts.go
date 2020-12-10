@@ -18,7 +18,7 @@ package utils
 import (
 	"os"
 )
-
+// Judge the existence of the path
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	if err != nil {
