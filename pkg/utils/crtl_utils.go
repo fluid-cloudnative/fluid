@@ -77,7 +77,7 @@ func Now() *metav1.Time {
 	now := metav1.Now()
 	return &now
 }
-// Determine whether the string array contains a specific string, return true if contains the string and return false if not.
+// Determine whether the string array contains a specific string, return true if contains the string and return false if not contains.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
