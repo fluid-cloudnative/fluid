@@ -217,9 +217,9 @@ $ kubectl apply -f app.yaml
 job.batch/fluid-hdfs-demo created
 ```
 
-在测试程序中我们先遍历Dataset查看有哪些文件，然后把这些文件复制到本地，查看访问远程文件的加速效果。
+In the test program, we first traverse the Dataset to see which files are there, and then copy these files to the local to see the acceleration effect of accessing remote files.
 
-等待一段时间,待该作业运行完成,作业的运行状态可通过以下命令查看:
+Wait for a period of time, after the job is completed, the running status of the job can be viewed by the following command:
 
 ```shell
 $ kubectl get pods
@@ -240,7 +240,7 @@ $ kubectl logs fluid-hdfs-demo-8q9b7
 copy directory cost:67520ms
 ```
 
-第一次执行作业，耗时67秒多时间。
+It took more than 67 seconds to execute the job for the first time.
 
 **查看Dataset资源对象状态**
 
