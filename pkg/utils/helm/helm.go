@@ -37,7 +37,6 @@ func init() {
 
 var helmCmd = []string{"ddc-helm"}
 
-
 // GenerateValueFile generates value file.
 // It returns the name of the value file and error
 func GenerateValueFile(values interface{}) (valueFileName string, err error) {

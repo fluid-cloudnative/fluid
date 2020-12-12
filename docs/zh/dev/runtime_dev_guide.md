@@ -163,6 +163,8 @@ type Implement interface {
 	SyncMetadata() (err error)
 	// Destroy the Volume
 	DeleteVolume() (err error)
+	// BindToDataset binds the engine to dataset
+	BindToDataset() (err error)
 }
 
 type UnderFileSystemService interface {
@@ -172,7 +174,9 @@ type UnderFileSystemService interface {
 	TotalFileNums() (int64, error)
 }
 ```
-综上，每一个Runtime的engine都需要实现以下方法： 
+
+综上，每一个Runtime的engine都需要实现以下方法:
+
 * CheckMasterReady
 * CheckWorkersReady
 * ShouldSetupMaster
@@ -184,7 +188,8 @@ type UnderFileSystemService interface {
 * PrepareUFS
 * AssignNodesToCache
 * CheckRuntimeHealthy
-* UpdateCacheOfDataset 
+* UpdateCacheOfDataset
+* BindToDataset
 * CheckAndUpdateRuntimeStatus
 * CreateVolume
 * SyncReplicas

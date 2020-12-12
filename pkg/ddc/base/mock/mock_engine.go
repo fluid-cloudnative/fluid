@@ -335,6 +335,20 @@ func (mr *MockImplementMockRecorder) UpdateDatasetStatus(phase interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDatasetStatus", reflect.TypeOf((*MockImplement)(nil).UpdateDatasetStatus), phase)
 }
 
+// BindToDataset mocks base method
+func (m *MockImplement) BindToDataset() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BindToDataset")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BindToDataset indicates an expected call of BindToDataset
+func (mr *MockImplementMockRecorder) BindToDataset() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindToDataset", reflect.TypeOf((*MockImplement)(nil).BindToDataset))
+}
+
 // PrepareUFS mocks base method
 func (m *MockImplement) PrepareUFS() error {
 	m.ctrl.T.Helper()

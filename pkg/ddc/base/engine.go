@@ -88,6 +88,9 @@ type Implement interface {
 
 	// Destroy the Volume
 	DeleteVolume() (err error)
+
+	// BindToDataset binds the engine to dataset
+	BindToDataset() (err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented
