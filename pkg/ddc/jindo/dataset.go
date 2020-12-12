@@ -25,3 +25,7 @@ func (e *JindoEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 	return
 }
+
+func (e *JindoEngine) BindToDataset() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+}

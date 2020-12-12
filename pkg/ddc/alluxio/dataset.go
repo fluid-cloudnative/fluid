@@ -159,3 +159,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 // func (e *AlluxioEngine) IsBoundToDataset() (bound bool, err error) {
 // 	return
 // }
+
+func (e *AlluxioEngine) BindToDataset() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+}
