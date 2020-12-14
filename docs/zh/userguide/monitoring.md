@@ -17,10 +17,10 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 如果集群内无 prometheus:
 ```shell
 $ cd fluid
-$ kubectl apply -f kubernetes-artifacts/prometheus.yaml
+$ kubectl apply -f monitoring/prometheus.yaml
 ```
 
-如集群内有 prometheus,可将一下配置写到 prometheus 配置文件中:
+如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
 ```yaml
 scrape_configs:
   - job_name: 'alluxio master'
@@ -58,7 +58,7 @@ $ docker run -d \
 
 # In-CLuster 部署
 $ cd fluid
-$ kubectl apply -f kubernetes-artifacts/grafana.yaml 
+$ kubectl apply -f monitoring/grafana.yaml 
 ```
 
 
