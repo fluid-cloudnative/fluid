@@ -139,15 +139,29 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 			if err != nil {
+				e.Log.Info("can't get the secret!")
 				return err
 			}
 			encryptedValue := secret.Data[secretKeyRef.Key]
+			e.Log.Info("get encryptedValue in bytes", "encryptedValueInBytes", string(encryptedValue))
+			encryptedValue1 := secret.StringData[secretKeyRef.Key]
+			e.Log.Info("get encryptedValue in string", "encryptedValueInString", encryptedValue1)
 			var value []byte
 			_, err = base64.StdEncoding.Decode(value, encryptedValue)
+			e.Log.Info("get decryptedValue in bytes", "decryptedValueInBytes", string(value))
 			if err != nil {
+				e.Log.Info("can't decode encryptedValue in bytes!")
 				return err
 			}
-			mountOptions[key] = string(value)
+
+			var value1 []byte
+			_, err = base64.StdEncoding.Decode(value1, []byte(encryptedValue1))
+			e.Log.Info("get encryptedValue in string", "encryptedValueInString", string(value1))
+			if err != nil {
+				e.Log.Info("can't decode encryptedValue in string!")
+				return err
+			}
+			mountOptions[key] = string(value1)
 		}
 		if !mounted {
 			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
