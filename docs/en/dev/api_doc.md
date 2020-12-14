@@ -232,6 +232,17 @@ User
 <p>Manage the user to run Alluxio Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>monitor</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Manage monitoring for Alluxio Runtime</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -897,6 +908,17 @@ User
 </td>
 <td>
 <p>Manage the user to run Alluxio Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>monitor</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
 </tbody>
@@ -2979,5 +3001,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>dfe295c</code>.
+on git commit <code>5905eb7</code>.
 </em></p>

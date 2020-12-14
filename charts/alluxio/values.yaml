@@ -321,3 +321,6 @@ fuse:
 #     alluxio-hdfs-config: hdfsConfig
 #   worker: # Shared by worker and jobWorker containers
 #     alluxio-hdfs-config: hdfsConfig
+
+## Monitor ##
+# monitor: prometheus
