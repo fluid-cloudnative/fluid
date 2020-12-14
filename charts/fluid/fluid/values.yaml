@@ -12,7 +12,7 @@ csi:
   plugins:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-c3c9034
   kubelet:
-    rootdir: /var/lib/kubelet
+    rootDir: /var/lib/kubelet
 
 runtime:
   mountRoot: /runtime-mnt
