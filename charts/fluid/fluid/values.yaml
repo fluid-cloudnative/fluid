@@ -11,6 +11,8 @@ csi:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
     image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-c3c9034
+  kubelet:
+    rootdir: /var/lib/kubelet
 
 runtime:
   mountRoot: /runtime-mnt
