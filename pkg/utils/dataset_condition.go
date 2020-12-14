@@ -57,7 +57,7 @@ func UpdateDatasetCondition(conditions []datav1alpha1.DatasetCondition, conditio
 	return conditions
 }
 
-// get dataset condition given a dataset condition type.
+// GetDatasetCondition return dataset condition according to a given dataset condition type.
 // If found, return index of the founded condition in the condition array and the founded condition itself, otherwise return -1 and nil.
 func GetDatasetCondition(conditions []datav1alpha1.DatasetCondition,
 	condType datav1alpha1.DatasetConditionType) (index int, condition *datav1alpha1.DatasetCondition) {
