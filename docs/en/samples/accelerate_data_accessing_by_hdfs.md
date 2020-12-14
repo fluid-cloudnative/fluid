@@ -242,7 +242,7 @@ copy directory cost:67520ms
 
 It took more than 67 seconds to execute the job for the first time.
 
-**查看Dataset资源对象状态**
+**Check status of the `Dataset` object**
 
 ```shell
 $ kubectl get dataset hadoop
@@ -250,16 +250,16 @@ NAME     UFS TOTAL SIZE   CACHED     CACHE CAPACITY   CACHED PERCENTAGE   PHASE 
 hadoop   390.2MiB         388.4MiB   4GiB             99%                 Bound   88m
 ```
 
-可以看到所有远程文件已经被缓存在Alluxio中了。
+We can see that all remote files have been cached in Alluxio.
 
-**再次启动测试作业**
+**Launch a test job again**
 
 ```shell
 $ kubectl delete -f app.yaml
 $ kubectl create -f app.yaml
 ```
 
-由于远程文件都已经被缓存，这次作业耗时大大减少。
+Since the remote files have been cached, the time consumption of this job is greatly reduced.
 
 ```shell
 $ kubectl logs fluid-hdfs-demo-pxt45
@@ -272,11 +272,11 @@ $ kubectl logs fluid-hdfs-demo-pxt45
 copy directory cost:1300ms
 ```
 
-可以看到第二次作业，同样的文件访问，仅耗时1.3秒。
+We can see that the second job took only 1.3 seconds to access the same file.
 
-这种大幅度的加速效果归因于Alluxio所提供的强大的缓存能力，这种缓存能力意味着，只要你访问某个远程文件一次，该文件就会被缓存在Alluxio中，你的所有接下来的重复访问都不再需要进行远程文件读取，而是从Alluxio中直接获取数据，因此对于数据的访问加速也就不难解释了。
+This great acceleration effect is attributed to the powerful caching capability provided by Alluxio. This caching capability means that as long as you access a remote file once, the file will be cached in Alluxio,and all your subsequent repeated accesses no longer require remote file reading, but obtain data directly from Alluxio, so it is not difficult to explain the acceleration of data access.
 
-## 环境清理
+## Clean Up
 
 ```shell
 $ kubectl delete -f .
