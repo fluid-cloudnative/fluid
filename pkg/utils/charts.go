@@ -31,7 +31,7 @@ var chartFolder = ""
 
 /**
 *
-* Get the directory of charts
+// GetChartsDirectory gets the directory of the charts
 **/
 func GetChartsDirectory() string {
 	if chartFolder != "" {
