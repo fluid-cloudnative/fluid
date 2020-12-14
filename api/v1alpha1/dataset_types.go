@@ -38,6 +38,14 @@ const (
 	NoneDatasetPhase DatasetPhase = ""
 )
 
+type EncryptOptionSource struct {
+	SecretKeyRef *v1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+}
+type EncryptOption struct {
+	Name      string               `json:"name,omitempty"`
+	ValueFrom *EncryptOptionSource `json:"secretKeyRef,omitempty"`
+}
+
 // Mount describes a mounting. <br>
 // Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio Storage Integrations</a> for more info
 type Mount struct {
@@ -69,6 +77,8 @@ type Mount struct {
 	// Optional: Defaults to false (shared).
 	// +optional
 	Shared bool `json:"shared,omitempty"`
+
+	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
 }
 
 // DatasetSpec defines the desired state of Dataset

@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
@@ -128,8 +129,28 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			return err
 		}
 
+		mountOptions := map[string]string{}
+		for key, value := range mount.Options {
+			mountOptions[key] = value
+		}
+
+		for _, encryptOption := range mount.EncryptOptions {
+			key := encryptOption.Name
+			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			if err != nil {
+				return err
+			}
+			encryptedValue := secret.Data[secretKeyRef.Key]
+			var value []byte
+			_, err = base64.StdEncoding.Decode(value, encryptedValue)
+			if err != nil {
+				return err
+			}
+			mountOptions[key] = string(value)
+		}
 		if !mounted {
-			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mount.Options, mount.ReadOnly, mount.Shared)
+			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
 				return err
 			}
