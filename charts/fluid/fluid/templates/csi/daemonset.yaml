@@ -28,8 +28,8 @@ spec:
                 command: ["/bin/sh", "-c", "rm -rf /registration/fluid /registration/fuse.csi.fluid.io-reg.sock"]
           args:
             - --v=5
-            - --csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
+            - --csi-address={{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
+            - --kubelet-registration-path={{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -37,7 +37,7 @@ spec:
                   fieldPath: spec.nodeName
           volumeMounts:
             - name: kubelet-dir
-              mountPath: /var/lib/kubelet/
+              mountPath: {{ .Values.csi.kubelet.rootDir }}
             - name: registration-dir
               mountPath: /registration
         - name: plugins
@@ -59,13 +59,13 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
-              value: unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
+              value: unix://{{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
             - name: kubelet-dir
-              mountPath: /var/lib/kubelet/
+              mountPath: {{ .Values.csi.kubelet.rootDir }}
               mountPropagation: "Bidirectional"
             - name: fluid-src-dir
               mountPath: {{ .Values.runtime.mountRoot | quote }}
@@ -73,14 +73,14 @@ spec:
       volumes:
         - name: kubelet-dir
           hostPath:
-            path: /var/lib/kubelet/
+            path: {{ .Values.csi.kubelet.rootDir }}
             type: Directory
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-fluid-plugin
+            path: {{ .Values.csi.kubelet.rootDir }}/plugins/csi-fluid-plugin
             type: DirectoryOrCreate
         - hostPath:
-            path: /var/lib/kubelet/plugins_registry
+            path: {{ .Values.csi.kubelet.rootDir }}/plugins_registry
             type: DirectoryOrCreate
           name: registration-dir
         - hostPath:
