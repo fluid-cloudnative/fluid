@@ -51,7 +51,7 @@ type SecretKeySelector struct {
 type EncryptOptionSource struct {
 	// The encryptInfo obtained from secret
 	// +optional
-	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty"`
+	SecretKeyRef SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 type EncryptOption struct {
 	// The name of encryptOption
@@ -60,7 +60,7 @@ type EncryptOption struct {
 
 	// The valueFrom of encryptOption
 	// +optional
-	ValueFrom *EncryptOptionSource `json:"valueFrom,omitempty"`
+	ValueFrom EncryptOptionSource `json:"valueFrom,omitempty"`
 }
 
 // Mount describes a mounting. <br>
