@@ -272,11 +272,11 @@ $ kubectl logs fluid-hdfs-demo-pxt45
 copy directory cost:1300ms
 ```
 
-We can see that the second job took only 1.3 seconds to access the same file.
+We repeat the job, taking only 1.3 seconds to access the same file.
 
 This great acceleration effect is attributed to the powerful caching capability provided by Alluxio. This caching capability means that as long as you access a remote file once, the file will be cached in Alluxio,and all your subsequent repeated accesses no longer require remote file reading, but obtain data directly from Alluxio, so it is not difficult to explain the acceleration of data access.
 
-## Clean Up
+## Clean Up Environment
 
 ```shell
 $ kubectl delete -f .
