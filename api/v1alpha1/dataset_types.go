@@ -39,11 +39,18 @@ const (
 )
 
 type EncryptOptionSource struct {
+	// The encryptInfo obtained from secret
+	// +optional
 	SecretKeyRef *v1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 type EncryptOption struct {
-	Name      string               `json:"name,omitempty"`
-	ValueFrom *EncryptOptionSource `json:"secretKeyRef,omitempty"`
+	// The name of encryptOption
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// The valueFrom of encryptOption
+	// +optional
+	ValueFrom *EncryptOptionSource `json:"valueFrom,omitempty"`
 }
 
 // Mount describes a mounting. <br>
@@ -78,6 +85,8 @@ type Mount struct {
 	// +optional
 	Shared bool `json:"shared,omitempty"`
 
+	// The secret information
+	// +optional
 	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
 }
 

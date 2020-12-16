@@ -144,8 +144,8 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			}
 			encryptedValue := secret.Data[secretKeyRef.Key]
 			e.Log.Info("get encryptedValue in bytes", "encryptedValueInBytes", string(encryptedValue))
-			encryptedValue1 := secret.StringData[secretKeyRef.Key]
-			e.Log.Info("get encryptedValue in string", "encryptedValueInString", encryptedValue1)
+			//encryptedValue1 := secret.StringData[secretKeyRef.Key]
+			//e.Log.Info("get encryptedValue in string", "encryptedValueInString", encryptedValue1)
 			var value []byte
 			_, err = base64.StdEncoding.Decode(value, encryptedValue)
 			e.Log.Info("get decryptedValue in bytes", "decryptedValueInBytes", string(value))
@@ -154,14 +154,14 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 				return err
 			}
 
-			var value1 []byte
-			_, err = base64.StdEncoding.Decode(value1, []byte(encryptedValue1))
-			e.Log.Info("get encryptedValue in string", "encryptedValueInString", string(value1))
-			if err != nil {
-				e.Log.Info("can't decode encryptedValue in string!")
-				return err
-			}
-			mountOptions[key] = string(value1)
+			//var value1 []byte
+			//_, err = base64.StdEncoding.Decode(value1, []byte(encryptedValue1))
+			//e.Log.Info("get encryptedValue in string", "encryptedValueInString", string(value1))
+			//if err != nil {
+			//	e.Log.Info("can't decode encryptedValue in string!")
+			//	return err
+			//}
+			mountOptions[key] = string(value)
 		}
 		if !mounted {
 			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
