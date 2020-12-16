@@ -38,10 +38,20 @@ const (
 	NoneDatasetPhase DatasetPhase = ""
 )
 
+type SecretKeySelector struct {
+	// The name of required secret
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// The required key in the secret
+	// +optional
+	Key string `json:"key,omitempty"`
+}
+
 type EncryptOptionSource struct {
 	// The encryptInfo obtained from secret
 	// +optional
-	SecretKeyRef *v1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 type EncryptOption struct {
 	// The name of encryptOption
