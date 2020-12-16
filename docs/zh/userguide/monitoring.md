@@ -28,8 +28,8 @@ scrape_configs:
     kubernetes_sd_configs:
       - role: endpoints
     relabel_configs:
-    - source_labels: [__meta_kubernetes_endpoints_name]
-      regex: .*-master-0
+    - source_labels: [__meta_kubernetes_service_label_monitor]
+      regex: prometheus
       action: keep
     - source_labels: [__meta_kubernetes_endpoint_port_name]
       regex: web
@@ -38,7 +38,7 @@ scrape_configs:
       target_label: namespace
       replacement: $1
       action: replace
-    - source_labels: [__meta_kubernetes_pod_label_release]
+    - source_labels: [__meta_kubernetes_pod_label_controller_revision_hash]
       target_label: fluid_runtime
       replacement: $1
       action: replace
@@ -55,7 +55,6 @@ $ docker run -d \
   --restart=always \
   --name grafana \
   grafana/grafana
-
 # In-CLuster 部署
 $ cd fluid
 $ kubectl apply -f monitoring/grafana.yaml 
@@ -102,7 +101,49 @@ Events:                   <none>
 4. 导入模板文件
 grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`
 
-5. 查看监控
+5. 启动 fluid 任务
+```yaml
+$ cat<<EOF >dataset.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: monitoring
+spec:
+  mounts:
+    - mountPoint: local:///mnt/monitoring/
+      name: monitoring
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: monitoring
+              operator: In
+              values:
+                - "true"
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: monitoring
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+  fuse:
+    args:
+    - fuse
+    - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
+  # 指定该 runtime 需要监控
+  monitor: prometheus 
+EOF
+```
+
+6. 查看监控
 在 grafana HOME 中知道名为Fluid-Prometheus-Grafana-Monitor视图即可，如下所示:
 ![](../../media/images/grafana-monitor.jpg)
 注：User of runtime 对应Fluid Alluxio runtime user; fluid_runtime 对应Fluid runtime name; namespace 对应Fluid runtime namespace

@@ -193,6 +193,10 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		Enable:     true,
 	}
 
+	if runtime.Spec.Monitor != "" {
+		value.Monitor = runtime.Spec.Monitor
+	}
+
 	return
 }
 

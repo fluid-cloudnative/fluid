@@ -57,6 +57,8 @@ type Alluxio struct {
 	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
 
 	InitUsers InitUsers `yaml:"initUsers,omitempty"`
+
+	Monitor string `yaml:"monitor,omitempty"`
 }
 
 type UFSPath struct {
