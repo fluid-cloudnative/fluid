@@ -29,7 +29,7 @@ scrape_configs:
       - role: endpoints
     relabel_configs:
     - source_labels: [__meta_kubernetes_service_label_monitor]
-      regex: prometheus
+      regex: alluxio_runtime_metrics
       action: keep
     - source_labels: [__meta_kubernetes_endpoint_port_name]
       regex: web
@@ -139,7 +139,7 @@ spec:
     - fuse
     - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
   # 指定该 runtime 需要监控
-  monitor: prometheus 
+  monitoring: true  
 EOF
 ```
 

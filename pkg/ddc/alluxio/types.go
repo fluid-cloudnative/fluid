@@ -58,7 +58,7 @@ type Alluxio struct {
 
 	InitUsers InitUsers `yaml:"initUsers,omitempty"`
 
-	Monitor string `yaml:"monitor,omitempty"`
+	Monitoring string `yaml:"monitor,omitempty"`
 }
 
 type UFSPath struct {

@@ -323,4 +323,4 @@ fuse:
 #     alluxio-hdfs-config: hdfsConfig
 
 ## Monitor ##
-# monitor: prometheus 
+# monitoring: "alluxio_runtime_metrics"

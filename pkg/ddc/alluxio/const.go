@@ -1,4 +1,11 @@
 /*
+ * @Author: xieydd
+ * @since: 2020-12-16 22:01:19
+ * @lastTime: 2020-12-17 17:53:16
+ * @LastAuthor: Do not edit
+ * @message:
+ */
+/*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +33,8 @@ const (
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
 
 	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+
+	ALLUXIO_RUNTIME_METRICS_LABEL = "alluxio_runtime_metrics"
 
 	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
 
