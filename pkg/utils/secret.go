@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//GetSecret gets the secret.
-//It returns a pointer to the secret if successful.
+// GetSecret gets the secret.
+// It returns a pointer to the secret if successful.
 func GetSecret(client client.Client, name, namespace string) (*v1.Secret, error) {
 
 	key := types.NamespacedName{
