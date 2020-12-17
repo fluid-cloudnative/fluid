@@ -128,8 +128,31 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			return err
 		}
 
+		// Initialize mountOptions using options
+		mountOptions := map[string]string{}
+		for key, value := range mount.Options {
+			mountOptions[key] = value
+		}
+
+		// Configure mountOptions using encryptOptions
+		// If encryptOptions have the same key with options, it will overwrite the corresponding value
+		for _, encryptOption := range mount.EncryptOptions {
+			key := encryptOption.Name
+			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+
+			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			if err != nil {
+				e.Log.Info("can't get the secret")
+				return err
+			}
+
+			value := secret.Data[secretKeyRef.Key]
+			e.Log.Info("get value from secret")
+
+			mountOptions[key] = string(value)
+		}
 		if !mounted {
-			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mount.Options, mount.ReadOnly, mount.Shared)
+			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
 				return err
 			}
