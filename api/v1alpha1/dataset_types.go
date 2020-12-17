@@ -98,7 +98,6 @@ type Mount struct {
 	// The secret information
 	// +optional
 	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
-
 }
 
 // DatasetSpec defines the desired state of Dataset

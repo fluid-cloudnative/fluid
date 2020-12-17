@@ -16,7 +16,6 @@ limitations under the License.
 package alluxio
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
@@ -142,17 +141,17 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 				e.Log.Info("can't get the secret!")
 				return err
 			}
-			encryptedValue := secret.Data[secretKeyRef.Key]
-			e.Log.Info("get encryptedValue in bytes", "encryptedValueInBytes", string(encryptedValue))
-			//encryptedValue1 := secret.StringData[secretKeyRef.Key]
-			//e.Log.Info("get encryptedValue in string", "encryptedValueInString", encryptedValue1)
-			var value []byte
-			_, err = base64.StdEncoding.Decode(value, encryptedValue)
-			e.Log.Info("get decryptedValue in bytes", "decryptedValueInBytes", string(value))
-			if err != nil {
-				e.Log.Info("can't decode encryptedValue in bytes!")
-				return err
-			}
+			value := secret.Data[secretKeyRef.Key]
+			e.Log.Info("get encryptedValue in bytes", "value", string(value))
+			////encryptedValue1 := secret.StringData[secretKeyRef.Key]
+			////e.Log.Info("get encryptedValue in string", "encryptedValueInString", encryptedValue1)
+			//var value []byte
+			//_, err = base64.StdEncoding.Decode(value, encryptedValue)
+			//e.Log.Info("get decryptedValue in bytes", "decryptedValueInBytes", string(value))
+			//if err != nil {
+			//	e.Log.Info("can't decode encryptedValue in bytes!")
+			//	return err
+			//}
 
 			//var value1 []byte
 			//_, err = base64.StdEncoding.Decode(value1, []byte(encryptedValue1))
