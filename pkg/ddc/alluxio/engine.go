@@ -1,14 +1,15 @@
+/*
 
-
-//Package alluxio is licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//http://www.apache.org/licenses/LICENSE-2.0
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package alluxio
 
 import (
@@ -26,7 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-//AlluxioEngine implements the Engine interface.
+// AlluxioEngine implements the Engine interface.
 type AlluxioEngine struct {
 	// *base.TemplateEngine
 	runtime     *datav1alpha1.AlluxioRuntime
@@ -35,7 +36,7 @@ type AlluxioEngine struct {
 	runtimeType string
 	Log         logr.Logger
 	client.Client
-	//GracefulShutdownLimits is reached, and then the system is forced to clean up.
+	// gracefulShutdownLimits is the limit for the system to forcibly clean up.
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
@@ -43,7 +44,7 @@ type AlluxioEngine struct {
 	runtimeInfo            base.RuntimeInfoInterface
 }
 
-//Build function builds the Alluxio Engine
+// Build function builds the Alluxio Engine
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
 		name:                   ctx.Name,
