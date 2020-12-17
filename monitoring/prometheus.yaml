@@ -129,8 +129,8 @@ data:
       kubernetes_sd_configs:
         - role: endpoints
       relabel_configs:
-      - source_labels: [__meta_kubernetes_endpoints_name]
-        regex: .*-master-0
+      - source_labels: [__meta_kubernetes_service_label_monitor]
+        regex: alluxio_runtime_metrics
         action: keep
       - source_labels: [__meta_kubernetes_endpoint_port_name]
         regex: web
@@ -139,8 +139,7 @@ data:
         target_label: namespace 
         replacement: $1
         action: replace
-      - source_labels: [__meta_kubernetes_pod_label_release]
+      - source_labels: [__meta_kubernetes_pod_label_controller_revision_hash]
         target_label: fluid_runtime 
         replacement: $1
         action: replace
-
