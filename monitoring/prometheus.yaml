@@ -130,7 +130,7 @@ data:
         - role: endpoints
       relabel_configs:
       - source_labels: [__meta_kubernetes_service_label_monitor]
-        regex: prometheus
+        regex: alluxio_runtime_metrics
         action: keep
       - source_labels: [__meta_kubernetes_endpoint_port_name]
         regex: web
