@@ -234,7 +234,7 @@ User
 </tr>
 <tr>
 <td>
-<code>monitor</code></br>
+<code>monitoring</code></br>
 <em>
 bool
 </em>
@@ -912,7 +912,7 @@ User
 </tr>
 <tr>
 <td>
-<code>monitor</code></br>
+<code>monitoring</code></br>
 <em>
 bool
 </em>
@@ -3001,5 +3001,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>cb2a6f1</code>.
+on git commit <code>9f7093c</code>.
 </em></p>
