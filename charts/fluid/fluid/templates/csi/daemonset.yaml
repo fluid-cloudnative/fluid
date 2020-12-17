@@ -58,6 +58,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: KUBELET_ROOTDIR
+              value: {{ .Values.csi.kubelet.rootDir }}
             - name: CSI_ENDPOINT
               value: unix://{{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
           imagePullPolicy: "IfNotPresent"
