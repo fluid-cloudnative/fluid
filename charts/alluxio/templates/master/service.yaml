@@ -12,6 +12,8 @@
 {{- $masterCount := int .Values.master.count }}
 {{- $isEmbedded := (eq .Values.journal.type "EMBEDDED") }}
 {{- $isHaEmbedded := and $isEmbedded (gt $masterCount 1) }}
+{{- $isMonitored := (.Values.monitoring) }}
+{{- $metricsLabel := .Values.monitoring }}
 {{- $release := .Release }}
 {{- $masterRpcPort := .Values.master.ports.rpc }}
 {{- $masterWebPort := .Values.master.ports.web }}
@@ -35,6 +37,9 @@ metadata:
     release: {{ $release.Name }}
     heritage: {{ $release.Service }}
     role: alluxio-master
+    {{- if $isMonitored }}
+    monitor: {{ $metricsLabel }}
+    {{- end }}
 spec:
   ports:
     - port: {{ $masterRpcPort }}
