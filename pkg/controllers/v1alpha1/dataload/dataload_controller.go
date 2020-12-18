@@ -20,8 +20,10 @@ import (
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,11 +89,46 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.ReconcileDataLoadDeletion(ctx)
 	}
 
+	// 3. get the dataset
+	dataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, req.Namespace)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
+			// no datset means no metadata, not necessary to ReconcileDataLoad
+			return utils.RequeueAfterInterval(20 * time.Second)
+		} else {
+			ctx.Log.Error(err, "Failed to get the ddc dataset")
+			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
+		}
+	}
+
+	// 4. add finalizer and requeue
 	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
 		return r.addFinalierAndRequeue(ctx)
 	}
 
+	// 5. add owner and requeue
+	if !utils.ContainsOwners(ctx.DataLoad.GetOwnerReferences(), dataset) {
+		return r.AddOwnerAndRequeue(ctx, dataset)
+	}
+
 	return r.ReconcileDataLoad(ctx)
+}
+
+// AddOwnerAndRequeue add Owner and requeue
+func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
+	ctx.DataLoad.ObjectMeta.OwnerReferences = append(ctx.DataLoad.GetOwnerReferences(), metav1.OwnerReference{
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
+	})
+	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
+		ctx.Log.Error(err, "Failed to add ownerreference", "StatusUpdateError", ctx)
+		return utils.RequeueIfError(err)
+	}
+
+	return utils.RequeueImmediately()
 }
 
 func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
