@@ -72,7 +72,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	e.optimizeDefaultProperties(runtime, value)
 
 	// 8.allocate port for fluid engine
-	err = e.allocatePorts(value)
+	if e.runtime.Spec.Exclusiveness {
+		e.setDefaultPorts(value)
+	} else {
+		err = e.allocatePorts(value)
+	}
 
 	// 9.set engine properties
 	e.setPortProperties(runtime, value)
@@ -301,4 +305,22 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 	}
 
 	return err
+}
+
+// 8.set default port for fluid engine
+func (e *AlluxioEngine) setDefaultPorts(value *Alluxio) {
+	if e.runtime.Spec.Master.Replicas > 1 {
+		value.Master.Ports.Rpc = 19998
+		value.Master.Ports.Web = 19999
+		value.Worker.Ports.Rpc = 29999
+		value.Worker.Ports.Web = 30000
+		value.JobMaster.Ports.Rpc = 20001
+		value.JobMaster.Ports.Web = 20002
+		value.JobWorker.Ports.Rpc = 30001
+		value.JobWorker.Ports.Web = 30003
+		value.JobWorker.Ports.Data = 30002
+	} else {
+		value.Master.Ports.Embedded = 19200
+		value.JobMaster.Ports.Embedded = 20003
+	}
 }

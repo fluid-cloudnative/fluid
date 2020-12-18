@@ -243,6 +243,18 @@ bool
 <p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>exclusiveness</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -921,6 +933,18 @@ bool
 <p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>exclusiveness</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.CacheableNodeAffinity">CacheableNodeAffinity
@@ -1481,6 +1505,81 @@ string
 <td>
 <p>DataLoadRef specifies the running DataLoad job that targets this Dataset.
 This is mainly used as a lock to prevent concurrent DataLoad jobs.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EncryptOption">EncryptOption
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.Mount">Mount</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The name of encryptOption</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>valueFrom</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOptionSource">
+EncryptOptionSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The valueFrom of encryptOption</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EncryptOptionSource">EncryptOptionSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">EncryptOption</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>secretKeyRef</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.SecretKeySelector">
+SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The encryptInfo obtained from secret</p>
 </td>
 </tr>
 </tbody>
@@ -2315,6 +2414,20 @@ bool
 <p>Optional: Defaults to false (shared).</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>encryptOptions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">
+[]EncryptOption
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The secret information</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.Runtime">Runtime
@@ -2765,6 +2878,47 @@ common.CacheStateList
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.SecretKeySelector">SecretKeySelector
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EncryptOptionSource">EncryptOptionSource</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The name of required secret</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>key</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The required key in the secret</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.TargetDataset">TargetDataset
 </h3>
 <p>
@@ -3001,5 +3155,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9f7093c</code>.
+on git commit <code>4aa7608</code>.
 </em></p>

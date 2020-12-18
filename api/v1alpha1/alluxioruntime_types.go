@@ -205,7 +205,7 @@ type AlluxioRuntimeSpec struct {
 	// Tiered storage used by Alluxio
 	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
 
-	//Management strategies for the dataset to which the runtime is bound
+	// Management strategies for the dataset to which the runtime is bound
 	Data Data `json:"data,omitempty"`
 
 	// The replicas of the worker, need to be specified
@@ -216,6 +216,10 @@ type AlluxioRuntimeSpec struct {
 
 	// Manage monitoring for Alluxio Runtime
 	Monitoring bool `json:"monitoring,omitempty"`
+
+	// Manage switch for opening Multiple datasets single node deployment or not
+	// TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on
+	Exclusiveness bool `json:"exclusiveness,omitempty"`
 }
 
 // +kubebuilder:object:root=true
