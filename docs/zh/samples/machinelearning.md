@@ -160,54 +160,6 @@ spec:
 EOF
 ```
 
-如果你希望对类似`fs.oss.accessKeyId`、`fs.oss.accessKeySecret`这样的私密信息进行加密配置，可以借助Secret以及Dataset中的encryptOptions进行配置，如下所示：
-
-```shell
-apiVersion: data.fluid.io/v1alpha1
-kind: Dataset
-metadata:
-  name: imagenet
-spec:
-  mounts:
-  - mountPoint: oss://<OSS_BUCKET>/<OSS_DIRECTORY>/
-    name: imagenet
-    options:
-      fs.oss.endpoint: <OSS_ENDPOINT>
-    encryptOptions:
-      - name: fs.oss.accessKeyId
-        valueFrom:
-          secretKeyRef:
-            name: osssecret
-            key: fs.oss.accessKeyId
-      - name: fs.oss.accessKeySecret
-        valueFrom:
-          secretKeyRef:
-            name: osssecret
-            key: fs.oss.accessKeySecret
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: aliyun.accelerator/nvidia_name
-              operator: In
-              values:
-                - Tesla-V100-SXM2-16GB
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: osssecret
-stringData:
-  fs.oss.accessKeyId: <OSS_ACCESS_KEY_ID>
-  fs.oss.accessKeySecret: <OSS_ACCESS_KEY_SECRET>
----
-apiVersion: data.fluid.io/v1alpha1
-kind: AlluxioRuntime
-metadata:
-  name: imagenet
-...
-```
-
 创建Dataset和Runtime：
 
 ```shell
