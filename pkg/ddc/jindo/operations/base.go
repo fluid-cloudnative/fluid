@@ -26,11 +26,11 @@ func NewJindoFileUtils(podName string, containerName string, namespace string, l
 	}
 }
 
-// Get summary info of the Alluxio Engine
+// Get summary info of the Jindo Engine
 func (a JindoFileUtils) ReportSummary() (summary string, err error) {
 	var (
 		// TODO report summary
-		command = []string{"alluxio", "fsadmin", "report", "summary"}
+		command = []string{"jindo", "fsadmin", "report", "summary"}
 		stdout  string
 		stderr  string
 	)

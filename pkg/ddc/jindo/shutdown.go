@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// shut down the Alluxio engine
+// shut down the Jindo engine
 func (e *JindoEngine) Shutdown() (err error) {
 	if e.retryShutdown < e.gracefulShutdownLimits {
 		//err = e.cleanupCache()
