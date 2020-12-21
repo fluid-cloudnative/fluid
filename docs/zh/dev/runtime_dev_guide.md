@@ -7,38 +7,38 @@ Fluid提供了Runtime接口，并且假设Runtime和Dataset是一对一的关系
 
 Dataset的生命周期流程如图所示：
 
-![dataset](/Users/qiulingwei/Downloads/dataset.png)
+![dataset](https://github.com/fluid-cloudnative/fluid/blob/master/static/dataset_lifecycle.png)
 
 ## Runtime
 
 Runtime的生命周期流程如图所示：
 
-![runtime](/Users/qiulingwei/Downloads/runtime.png)
+![runtime](https://github.com/fluid-cloudnative/fluid/blob/master/static/runtime_lifecycle.png)
 
 其中，Engine的整体生命周期如下：
 
 ### Engine.Setup
-ShouldSetupMaster：判断是否需要创建Master。
-SetupMaster：创建Master。
-CheckMasterReady：检查Master是否Ready。
-ShouldCheckUFS：判断是否需要PrepareUFS
-PrepareUFS：为分布式缓存集群设定远端存储点。
-ShouldSetupWorkers：判断是否需要创建Worker。
-SetupWorkers：创建Worker。
-CheckWorkersReady：检查Master是否Ready。
-CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。
-UpdateDatesetStatus：更新Dataset的状态。
+ShouldSetupMaster：判断是否需要创建Master。  
+SetupMaster：创建Master。  
+CheckMasterReady：检查Master是否Ready。  
+ShouldCheckUFS：判断是否需要PrepareUFS.    
+PrepareUFS：为分布式缓存集群设定远端存储点。  
+ShouldSetupWorkers：判断是否需要创建Worker。   
+SetupWorkers：创建Worker。   
+CheckWorkersReady：检查Master是否Ready。   
+CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。   
+UpdateDatesetStatus：更新Dataset的状态。   
 
 ### Engine.CreateVolume
-CreatePV：根据存储位置创建PV。
-CreatePVC：创建PVC。
+CreatePV：根据存储位置创建PV。   
+CreatePVC：创建PVC。   
 ### Engine.Sync
-SyncMetadata：进行metadata的同步工作。
-CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。
-UpdateCacheOfDataset：更新Dataset的cacheStates。
-CheckRuntimeHealthy：检查分布式缓存集群的健康状态，根据检查结果修改Dataset的状态。
-SyncReplicas：比较Runtime的期待副本数和分布式缓存集群中的当前副本数。
-CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。
+SyncMetadata：进行metadata的同步工作。   
+CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。   
+UpdateCacheOfDataset：更新Dataset的cacheStates。   
+CheckRuntimeHealthy：检查分布式缓存集群的健康状态，根据检查结果修改Dataset的状态。   
+SyncReplicas：比较Runtime的期待副本数和分布式缓存集群中的当前副本数。   
+CheckAndUpdateRuntimeStatus：检查并更新Runtime的状态。   
 
 # Reconciler
 Fluid使用了kubebuilder生成脚手架代码，脚手架代码基于controller runtime框架实现对Controller的管理。
