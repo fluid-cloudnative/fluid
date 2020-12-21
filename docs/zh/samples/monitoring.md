@@ -17,7 +17,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 如果集群内无 prometheus:
 ```shell
 $ cd fluid
-$ kubectl apply -f monitoring/prometheus.yaml
+$ kubectl apply -f tools/monitoring/prometheus.yaml
 ```
 
 如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
@@ -57,7 +57,7 @@ $ docker run -d \
   grafana/grafana
 # In-CLuster 部署
 $ cd fluid
-$ kubectl apply -f monitoring/grafana.yaml 
+$ kubectl apply -f tools/monitoring/grafana.yaml 
 ```
 
 
@@ -99,7 +99,7 @@ Events:                   <none>
 导入完成后点击Save & Test 显示 Data source is working 即可
 
 4. 导入模板文件
-grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`
+grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`, 它的位置是`tools/monitoring/fluid-prometheus-grafana-monitor.json`
 
 5. 启动 fluid 任务
 ```yaml
@@ -110,16 +110,8 @@ metadata:
   name: monitoring
 spec:
   mounts:
-    - mountPoint: local:///mnt/monitoring/
-      name: monitoring
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: monitoring
-              operator: In
-              values:
-                - "true"
+    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+      name: spark
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
@@ -134,6 +126,12 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
+  properties:
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
   fuse:
     args:
     - fuse
