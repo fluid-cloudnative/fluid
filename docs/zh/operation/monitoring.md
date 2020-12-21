@@ -94,7 +94,9 @@ Events:                   <none>
 ```
 
 3. 配置 prometheus data source
+
 ![](../../media/images/grafana-prometheus-setting.jpg)
+
 注: 如果 grafana In-Cluster 部署， URL 填写 Service Endpoints 即可；如果以 docker 方式部署，URL 填写prometheus 部署节点 ip:NodePort 即可
 导入完成后点击Save & Test 显示 Data source is working 即可
 
@@ -143,5 +145,7 @@ EOF
 
 6. 查看监控
 在 grafana HOME 中知道名为Fluid-Prometheus-Grafana-Monitor视图即可，如下所示:
+
 ![](../../media/images/grafana-monitor.jpg)
+
 注：User of runtime 对应Fluid Alluxio runtime user; fluid_runtime 对应Fluid runtime name; namespace 对应Fluid runtime namespace
