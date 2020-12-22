@@ -1,9 +1,9 @@
 package jindo
 
 import (
+	"context"
 	"fmt"
 	"reflect"
-	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -189,4 +189,3 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 
 	return
 }
-

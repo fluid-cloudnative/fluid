@@ -1,4 +1,5 @@
 package jindo
+
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 type readType string

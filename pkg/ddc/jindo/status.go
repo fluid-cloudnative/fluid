@@ -1,8 +1,8 @@
 package jindo
 
 import (
-	"reflect"
 	"context"
+	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
