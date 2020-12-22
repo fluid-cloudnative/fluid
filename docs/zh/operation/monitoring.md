@@ -15,12 +15,14 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 #### 1. 部署或配置 Prometheus
 
 如果集群内无 prometheus:
+
 ```shell
 $ cd fluid
 $ kubectl apply -f tools/monitoring/prometheus.yaml
 ```
 
 如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
+
 ```yaml
 scrape_configs:
   - job_name: 'alluxio master'
@@ -65,12 +67,14 @@ $ kubectl apply -f tools/monitoring/grafana.yaml
 
 1. 登录 grafana
 如果以docker 方式部署，访问 `http://$grafana-node-ip:3000`;以 In-CLuster 方式部署，访问`http://$grafana-node-ip:NodePort`，默认账号密码 `admin:admin`:
+
 ```
 # 查看 NodePort
 $ kubectl describe svc monitoring-grafana -n kube-system
 ```
 
 2. 首先查看 prometheus svc 端口
+
 ```
 $ kubectl get svc -n kube-system | grep prometheus-svc
 prometheus-svc             NodePort    10.100.0.144   <none>        9090:31245/TCP           22h
