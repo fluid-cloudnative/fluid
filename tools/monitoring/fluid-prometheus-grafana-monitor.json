@@ -16,7 +16,7 @@
   "gnetId": 13467,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1608626754443,
+  "iteration": 1608627419338,
   "links": [],
   "panels": [
     {
@@ -1662,19 +1662,19 @@
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetStatus  Total quantile=0.5",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetStatus  Total quantile=0.95",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetStatus  Total quantile=0.99",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1772,19 +1772,19 @@
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master ListStatus quantile=0.5",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master ListStatus quantile=0.95",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master ListStatus quantile=0.99",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1882,19 +1882,19 @@
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetConfiguration quantile=0.5",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetConfiguration quantile=0.95",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master GetConfiguration quantile=0.99",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1996,19 +1996,19 @@
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master BlockHeartBeat quantile=0.5",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master BlockHeartBeat quantile=0.95",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "{{fluid_runtime}} : $alluxio_user Master BlockHeartBeat quantile=0.99",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.99",
               "refId": "C"
             }
           ],
@@ -2605,5 +2605,5 @@
   "timezone": "",
   "title": "Fluid-Prometheus-Grafana-Monitor",
   "uid": "oJnC7i4Mk",
-  "version": 4
+  "version": 5
 }
