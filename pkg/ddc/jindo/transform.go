@@ -24,22 +24,22 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 
 	value = &Jindo{
-		Image: "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:"3.1.1",
-		ImagePullPolicy:"Always",
-		FuseImage:"registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:"3.1.1",
-		User:0,
-		Group:0,
-		FsGroup:0,
-		UseHostNetwork:true,
-		UseHostPID:true,
+		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
+		ImageTag:        "3.1.1",
+		ImagePullPolicy: "Always",
+		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
+		FuseImageTag:    "3.1.1",
+		User:            0,
+		Group:           0,
+		FsGroup:         0,
+		UseHostNetwork:  true,
+		UseHostPID:      true,
 		/*Properties:map[string]string{
 			"logDir": "/mnt/disk1/bigboot/log",
 		},*/
 		Properties: e.transformPriority(dataPath),
 		Master: Master{
-			ReplicaCount: 1,
+			ReplicaCount:     1,
 			NodeSelector:     map[string]string{},
 			MasterProperties: e.transformMaster(runtime, dataPath),
 		},
@@ -54,7 +54,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			FuseProperties: e.transformFuse(runtime, dataPath),
 		},
 		Mounts: Mounts{
-			Master: e.transformMountPath(dataPath),
+			Master:            e.transformMountPath(dataPath),
 			WorkersAndClients: e.transformMountPath(dataPath),
 		},
 	}
@@ -65,9 +65,9 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 	properties := map[string]string{
 		"namespace.rpc.port": "8101",
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
-		"namespace.filelet.cache.size": "100000",
+		"namespace.filelet.cache.size":  "100000",
 		"namespace.blocklet.cache.size": "1000000",
-		"namespace.backend.type": "rocksdb",
+		"namespace.backend.type":        "rocksdb",
 	}
 
 	properties["namespace.meta-dir"] = dataPath + "/bigboot/server"
@@ -103,48 +103,47 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]string {
 
 	properties := map[string]string{
-		"storage.rpc.port"            : "6101",
+		"storage.rpc.port": "6101",
 		//"storage.meta-dir"            : "/mnt/disk1/bigboot/bignode",
 	}
 
 	properties["namespace.meta-dir"] = dataPath + "/bigboot/bignode"
 
-	if (e.getTieredStoreType(runtime) == 0) {
+	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
 		properties["storage.ram.cache.size"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
 		//properties["storage.ram.cache.size"] = "90g"
 
 		properties["storage.slicelet.buffer.size"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
 		//properties["storage.slicelet.buffer.size"] = "90g"
-	} else if(e.getTieredStoreType(runtime) == 1 || e.getTieredStoreType(runtime) == 2)  {
-		// HDD and SSD
-        /*
-		 spec:
-		 replicas: 1
-		 tieredstore:
-		   levels:
-		      - mediumtype: HDD
-		       path: /mnt/disk1
-		       quota: 240Gi
-		       high: "0.4"
-		       low: "0.2"
-		*/
-
-		properties["storage.data-dirs"] = dataPath + "/bigboot"
-		//properties["storage.data-dirs"] = "/mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot"
-
-		properties["storage.temp-data-dirs"] = dataPath + "/bigboot/tmp"
-		//properties["storage.temp-data-dirs"] = "/mnt/disk1/bigboot/tmp"
-
-		properties["storage.watermark.high.ratio"] = runtime.Spec.Tieredstore.Levels[0].High
-		//properties["storage.watermark.high.ratio"] = "0.4"
-
-		properties["storage.watermark.low.ratio"] = runtime.Spec.Tieredstore.Levels[0].Low
-		//properties["storage.watermark.low.ratio"] = "0.2"
-
-		properties["storage.data-dirs.capacities"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
-		///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 	}
+	// HDD and SSD
+	/*
+	 spec:
+	 replicas: 1
+	 tieredstore:
+	   levels:
+	      - mediumtype: HDD
+	       path: /mnt/disk1
+	       quota: 240Gi
+	       high: "0.4"
+	       low: "0.2"
+	*/
+
+	properties["storage.data-dirs"] = dataPath + "/bigboot"
+	//properties["storage.data-dirs"] = "/mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot"
+
+	properties["storage.temp-data-dirs"] = dataPath + "/bigboot/tmp"
+	//properties["storage.temp-data-dirs"] = "/mnt/disk1/bigboot/tmp"
+
+	properties["storage.watermark.high.ratio"] = runtime.Spec.Tieredstore.Levels[0].High
+	//properties["storage.watermark.high.ratio"] = "0.4"
+
+	properties["storage.watermark.low.ratio"] = runtime.Spec.Tieredstore.Levels[0].Low
+	//properties["storage.watermark.low.ratio"] = "0.2"
+
+	properties["storage.data-dirs.capacities"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
+	///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		for k, v := range runtime.Spec.Worker.Properties {
@@ -156,19 +155,19 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 
 func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]int {
 	properties := map[string]int{
-		"client.storage.rpc.port"                   : 6101,
-		"client.oss.retry"                          : 5,
-		"client.oss.upload.threads"                 : 4,
-		"client.oss.upload.queue.size"              : 5,
-		"client.oss.upload.max.parallelism"         : 16,
-		"client.oss.timeout.millisecond"            : 30000,
-		"client.oss.connection.timeout.millisecond" : 3000,
+		"client.storage.rpc.port":                   6101,
+		"client.oss.retry":                          5,
+		"client.oss.upload.threads":                 4,
+		"client.oss.upload.queue.size":              5,
+		"client.oss.upload.max.parallelism":         16,
+		"client.oss.timeout.millisecond":            30000,
+		"client.oss.connection.timeout.millisecond": 3000,
 	}
 
-	if (e.getTieredStoreType(runtime) == 0) {
+	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
 		properties["jfs.cache.ram-cache.enable"] = 1
-	} else if(e.getTieredStoreType(runtime) == 1 || e.getTieredStoreType(runtime) == 2) {
+	} else if e.getTieredStoreType(runtime) == 1 || e.getTieredStoreType(runtime) == 2 {
 		// HDD and SSD
 		properties["jfs.cache.ram-cache.enable"] = 0
 	}
@@ -190,13 +189,13 @@ func (e *JindoEngine) transformNodeSelector() map[string]string {
 
 func (e *JindoEngine) transformPriority(dataPath string) map[string]string {
 	properties := map[string]string{}
-	properties["logDir"] =  dataPath + "/bigboot/log"
+	properties["logDir"] = dataPath + "/bigboot/log"
 	return properties
 }
 
 func (e *JindoEngine) transformMountPath(dataPath string) map[string]string {
 	properties := map[string]string{}
 	// 1: /mnt/disk1
-	properties["1"] =  dataPath
+	properties["1"] = dataPath
 	return properties
 }

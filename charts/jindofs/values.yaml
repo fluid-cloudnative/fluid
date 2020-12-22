@@ -24,7 +24,6 @@ master:
   replicaCount: 1
   properties:
     namespace.rpc.port: 8101
-    namespace.meta-dir: /mnt/disk1/bigboot/server
     namespace.filelet.cache.size: 100000
     namespace.blocklet.cache.size: 1000000
     namespace.backend.type: rocksdb
@@ -33,12 +32,6 @@ worker:
   nodeSelector: {}
   properties:
     storage.rpc.port: 6101
-    storage.data-dirs: /mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot
-    storage.temp-data-dirs: /mnt/disk1/bigboot/tmp
-    storage.watermark.high.ratio: 0.4
-    storage.watermark.low.ratio: 0.2
-    storage.data-dirs.capacities: 80,80,80
-    storage.meta-dir: /mnt/disk1/bigboot/bignode
 
 fuse:
   properties:
