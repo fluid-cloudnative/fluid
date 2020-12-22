@@ -1,6 +1,6 @@
 # 示例 - 使用Secret配置Dataset敏感信息
 
-在Fluid中创建Dataset时，有时候我们需要在mounts中配置一些敏感信息，为了保证安全，Fluid提供使用Secret来配置这些敏感信息的能力。下面以访问[阿里云OSS](https://cn.aliyun.com/product/oss)数据集为例说明如何配置。
+在Fluid中创建Dataset时，有时候我们需要在`mounts`中配置一些敏感信息，为了保证安全，Fluid提供使用Secret来配置这些敏感信息的能力。下面以访问[阿里云OSS](https://cn.aliyun.com/product/oss)数据集为例说明如何配置。
 
 ## 创建带敏感信息的Dataset
 
@@ -48,7 +48,7 @@ EOF
 
 可以看到，在上面的配置中，与直接配置`fs.oss.endpoint`不同，我们把`fs.oss.accessKeyId`以及`fs.oss.accessKeySecret`的配置改为从Secret中读取，以此来保障安全性。
 
-> 需要注意的是，如果在options和encryptOptions中配置了同名的键，例如都有`fs.oss.accessKeyId`的配置，那么encryptOptions中的值会覆盖options中对应的值。
+> 需要注意的是，如果在`options`和`encryptOptions`中配置了同名的键，例如都有`fs.oss.accessKeyId`的配置，那么`encryptOptions`中的值会覆盖`options`中对应的值。
 
 ### 创建Secret
 
