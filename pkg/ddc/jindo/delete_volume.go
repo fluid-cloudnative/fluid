@@ -4,7 +4,7 @@ import (
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-// DeleteVolume creates volume
+// DeleteVolume
 func (e *JindoEngine) DeleteVolume() (err error) {
 
 	if e.runtime == nil {
@@ -38,7 +38,7 @@ func (e *JindoEngine) deleteFusePersistentVolume() (err error) {
 	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
 }
 
-// deleteFusePersistentVolume
+// deleteFusePersistentVolumeClaim
 func (e *JindoEngine) deleteFusePersistentVolumeClaim() (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
