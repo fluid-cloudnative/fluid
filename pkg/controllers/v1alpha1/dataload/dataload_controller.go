@@ -115,7 +115,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return r.ReconcileDataLoad(ctx)
 }
 
-// AddOwnerAndRequeue add Owner and requeue
+// AddOwnerAndRequeue adds Owner and requeue
 func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
 	ctx.DataLoad.ObjectMeta.OwnerReferences = append(ctx.DataLoad.GetOwnerReferences(), metav1.OwnerReference{
 		APIVersion: dataset.APIVersion,
