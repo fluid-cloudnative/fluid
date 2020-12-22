@@ -32,7 +32,8 @@ func (e *JindoEngine) ShouldSetupMaster() (should bool, err error) {
 func (e *JindoEngine) SetupMaster() (err error) {
 
 	// Setup the Jindo cluster
-	master, err := e.getMasterStatefulset(e.name+"-jindofs-master", e.namespace)
+	masterName := e.getMasterStatefulsetName()
+	master, err := e.getMasterStatefulset(masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", e.name+"-master")
