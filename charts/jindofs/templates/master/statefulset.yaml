@@ -51,8 +51,8 @@ spec:
             name: rpc
           volumeMounts:
             - name: bigboot-config
-              mountPath: /smartdata/conf/bigboot.cfg
-              subPath: master.cfg
+              mountPath: /bigboot.cfg
+              subPath: bigboot.cfg
           {{- range $name, $path := .Values.mounts.master }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
