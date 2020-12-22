@@ -13,7 +13,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
-	if (len(runtime.Spec.Tieredstore.Levels) == 0) {
+	if len(runtime.Spec.Tieredstore.Levels) == 0 {
 		err = fmt.Errorf("the Tieredstore is null")
 		return
 	}

@@ -49,8 +49,8 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 	if !found {
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        e.runtime.Name,
-				Namespace:   e.runtime.Namespace,
+				Name:      e.runtime.Name,
+				Namespace: e.runtime.Namespace,
 				Labels: map[string]string{
 					e.getCommonLabelname(): "true",
 				},
