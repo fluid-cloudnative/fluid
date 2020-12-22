@@ -15,12 +15,14 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 #### 1. 部署或配置 Prometheus
 
 如果集群内无 prometheus:
+
 ```shell
 $ cd fluid
-$ kubectl apply -f monitoring/prometheus.yaml
+$ kubectl apply -f tools/monitoring/prometheus.yaml
 ```
 
 如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
+
 ```yaml
 scrape_configs:
   - job_name: 'alluxio master'
@@ -57,7 +59,7 @@ $ docker run -d \
   grafana/grafana
 # In-CLuster 部署
 $ cd fluid
-$ kubectl apply -f monitoring/grafana.yaml 
+$ kubectl apply -f tools/monitoring/grafana.yaml 
 ```
 
 
@@ -65,12 +67,14 @@ $ kubectl apply -f monitoring/grafana.yaml
 
 1. 登录 grafana
 如果以docker 方式部署，访问 `http://$grafana-node-ip:3000`;以 In-CLuster 方式部署，访问`http://$grafana-node-ip:NodePort`，默认账号密码 `admin:admin`:
+
 ```
 # 查看 NodePort
 $ kubectl describe svc monitoring-grafana -n kube-system
 ```
 
 2. 首先查看 prometheus svc 端口
+
 ```
 $ kubectl get svc -n kube-system | grep prometheus-svc
 prometheus-svc             NodePort    10.100.0.144   <none>        9090:31245/TCP           22h
@@ -94,12 +98,14 @@ Events:                   <none>
 ```
 
 3. 配置 prometheus data source
+
 ![](../../media/images/grafana-prometheus-setting.jpg)
+
 注: 如果 grafana In-Cluster 部署， URL 填写 Service Endpoints 即可；如果以 docker 方式部署，URL 填写prometheus 部署节点 ip:NodePort 即可
 导入完成后点击Save & Test 显示 Data source is working 即可
 
 4. 导入模板文件
-grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`
+grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`, 它的位置是`tools/monitoring/fluid-prometheus-grafana-monitor.json`
 
 5. 启动 fluid 任务
 ```yaml
@@ -110,16 +116,8 @@ metadata:
   name: monitoring
 spec:
   mounts:
-    - mountPoint: local:///mnt/monitoring/
-      name: monitoring
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: monitoring
-              operator: In
-              values:
-                - "true"
+    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+      name: spark
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
@@ -134,6 +132,12 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
+  properties:
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
   fuse:
     args:
     - fuse
@@ -145,5 +149,7 @@ EOF
 
 6. 查看监控
 在 grafana HOME 中知道名为Fluid-Prometheus-Grafana-Monitor视图即可，如下所示:
+
 ![](../../media/images/grafana-monitor.jpg)
+
 注：User of runtime 对应Fluid Alluxio runtime user; fluid_runtime 对应Fluid runtime name; namespace 对应Fluid runtime namespace

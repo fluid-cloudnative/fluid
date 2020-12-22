@@ -42,6 +42,7 @@ fuse:
     client.oss.upload.max.parallelism: 16
     client.oss.timeout.millisecond: 30000
     client.oss.connection.timeout.millisecond: 3000
+    jfs.cache.data-cache.enable = 1
 
 mounts:
   master:
