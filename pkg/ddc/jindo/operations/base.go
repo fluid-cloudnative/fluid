@@ -26,23 +26,6 @@ func NewJindoFileUtils(podName string, containerName string, namespace string, l
 	}
 }
 
-// Get summary info of the Jindo Engine
-func (a JindoFileUtils) ReportSummary() (summary string, err error) {
-	var (
-		// TODO report summary
-		command = []string{"jindo", "fsadmin", "report", "summary"}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = a.exec(command, false)
-	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-		return stdout, err
-	}
-	return stdout, err
-}
-
 // exec with timeout
 func (a JindoFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)

@@ -18,13 +18,6 @@ func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int
 	return mediumType
 }
 
-func (e *JindoEngine) getMasterPodInfo() (podName string, containerName string) {
-	podName = e.name + "-jindofs-master-0"
-	containerName = "jindofs-master"
-
-	return
-}
-
 func (e *JindoEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
 	e.Log.Info("mountRoot", "path", mountRoot)

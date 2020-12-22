@@ -2,11 +2,6 @@ package jindo
 
 import (
 	"context"
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
-	"time"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
@@ -61,65 +56,6 @@ func (e *JindoEngine) destroyMaster() (err error) {
 		}
 	}
 	return
-}
-
-// // Destroy the workers
-// func (e *JindoEngine) destroyWorkers() error {
-// 	return nil
-// }
-
-// cleanupCache cleans up the cache
-func (e *JindoEngine) cleanupCache() (err error) {
-	// TODO(cheyang): clean up the cache
-	cacheStates, err := e.queryCacheStatus()
-	if cacheStates.cached == "" {
-		return
-	}
-
-	e.Log.Info("The cache before cleanup",
-		"cached", cacheStates.cached,
-		"cachedPercentage", cacheStates.cachedPercentage)
-
-	cached, err := utils.FromHumanSize(cacheStates.cached)
-	if err != nil {
-		return err
-	}
-
-	if cached == 0 {
-		e.Log.Info("No need to clean cache",
-			"cached", cacheStates.cached,
-			"cachedPercentage", cacheStates.cachedPercentage)
-		return nil
-	}
-
-	err = e.invokeCleanCache("/")
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
-		} else if strings.Contains(err.Error(), "does not have a host assigned") {
-			return nil
-		}
-		return err
-	} else {
-		e.Log.Info("Clean up the cache successfully")
-	}
-
-	time.Sleep(time.Duration(10 * time.Second))
-
-	// ufs, cached, cachedPercentage, err = e.du()
-	// if err != nil {
-	// 	return
-	// }
-
-	// e.Log.Info("The cache after cleanup", "ufs", ufs,
-	// 	"cached", cached,
-	// 	"cachedPercentage", cachedPercentage)
-
-	// if cached > 0 {
-	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
-	// }
-
-	return fmt.Errorf("the remaining cached is not cleaned up, check again")
 }
 
 // cleanAll cleans up the all

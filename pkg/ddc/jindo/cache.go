@@ -2,7 +2,6 @@ package jindo
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
@@ -27,12 +26,4 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 
 	return states, nil
-}
-
-
-// clean cache
-func (e *JindoEngine) invokeCleanCache(path string) (err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUitls.CleanCache(path)
 }

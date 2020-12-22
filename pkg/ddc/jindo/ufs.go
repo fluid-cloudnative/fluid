@@ -1,7 +1,5 @@
 package jindo
 
-import "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
-
 // ShouldCheckUFS checks if it requires checking UFS
 func (e *JindoEngine) ShouldCheckUFS() (should bool, err error) {
 	should = true
@@ -34,11 +32,4 @@ func (e *JindoEngine) TotalStorageBytes() (value int64, err error) {
 // return the total num of files in Alluxio
 func (e *JindoEngine) TotalFileNums() (value int64, err error) {
 	return
-}
-
-// report alluxio summary
-func (e *JindoEngine) reportSummary() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportSummary()
 }
