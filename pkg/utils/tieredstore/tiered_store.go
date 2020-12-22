@@ -60,7 +60,7 @@ func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[comm
 
 	for _, level := range runtimeInfo.GetTieredstore().Levels {
 		storageType := common.MemoryCacheStore
-		if level.MediumType == common.SSD {
+		if level.MediumType == common.SSD || level.MediumType == common.HDD {
 			storageType = common.DiskCacheStore
 		}
 

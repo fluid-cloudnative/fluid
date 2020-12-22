@@ -4,11 +4,11 @@
 
 
 image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
-imageTag: "2.7.4"
+imageTag: "3.1.1"
 imagePullPolicy: Always
 
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
-fuseImageTag: "2.7.4"
+fuseImageTag: "3.1.1"
 
 user: 0
 group: 0
@@ -49,6 +49,7 @@ fuse:
     client.oss.upload.max.parallelism: 16
     client.oss.timeout.millisecond: 30000
     client.oss.connection.timeout.millisecond: 3000
+    jfs.cache.data-cache.enable = 1
 
 mounts:
   master:

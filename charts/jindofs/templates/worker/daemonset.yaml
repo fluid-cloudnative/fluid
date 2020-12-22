@@ -44,7 +44,7 @@ spec:
           args: ["worker"]
           env:
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.namespace.rpc.port }}
+            value: {{ template "jindofs.fullname" . }}-master:8101
           ports:
           - containerPort: 6101
             name: rpc
