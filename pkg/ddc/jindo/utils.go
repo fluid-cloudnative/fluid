@@ -62,7 +62,7 @@ func (e *JindoEngine) getMasterStatefulset(name string, namespace string) (maste
 }
 
 func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
-	return e.name+"-jindofs-master"
+	return e.name + "-jindofs-master"
 }
 
 func (e *JindoEngine) getWorkerDaemonsetName() (dsName string) {
