@@ -40,7 +40,7 @@ scrape_configs:
       target_label: namespace
       replacement: $1
       action: replace
-    - source_labels: [__meta_kubernetes_pod_label_controller_revision_hash]
+    - source_labels: [__meta_kubernetes_service_label_release]
       target_label: fluid_runtime
       replacement: $1
       action: replace
