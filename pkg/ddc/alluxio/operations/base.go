@@ -368,7 +368,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 	select {
 	case <-ch:
-		a.log.V(1).Info("execute in time", "command", command)
+		a.log.Info("execute in time", "command", command)
 	case <-ctx.Done():
 		err = fmt.Errorf("timeout when executing %v", command)
 	}
