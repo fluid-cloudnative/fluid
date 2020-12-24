@@ -7,13 +7,13 @@ Fluid提供了Runtime接口，并且假设Runtime和Dataset是一对一的关系
 
 Dataset的生命周期流程如图所示：
 
-![dataset](https://github.com/fluid-cloudnative/fluid/blob/master/static/dataset_lifecycle.png)
+![dataset](../../media/images/dataset_lifecycle.png)
 
 ## Runtime
 
 Runtime的生命周期流程如图所示：
 
-![runtime](https://github.com/fluid-cloudnative/fluid/blob/master/static/runtime_lifecycle.png)
+![runtime](../../media/images/runtime_lifecycle.png)
 
 其中，Engine的整体生命周期如下：
 
