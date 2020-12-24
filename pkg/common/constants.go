@@ -97,3 +97,7 @@ var (
 		"CreatedBy": "fluid",
 	}
 )
+
+const (
+	Exclusiveness string = "exclusiveness"
+)

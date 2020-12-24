@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,6 +47,12 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 	// if e.alreadyAssignedByFluid(node) {
 	// 	return false
 	// }
+	label := runtimeInfo.GetRuntimeExclusivenessLabelname()
+	_, cannotBeAssigned := node.Labels[label]
+	if cannotBeAssigned {
+		log.Info("node ", node.Name, "is exclusiveness, can not be assigned")
+		return false
+	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
@@ -80,11 +86,16 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
-func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client, exclusiveness bool) (err error) {
 	var (
-		labelName       = runtimeInfo.GetRuntimeLabelname()
-		labelCommonName = runtimeInfo.GetCommonLabelname()
+		labelName          = runtimeInfo.GetRuntimeLabelname()
+		labelCommonName    = runtimeInfo.GetCommonLabelname()
+		labelExclusiveName string
 	)
+
+	if exclusiveness {
+		labelExclusiveName = runtimeInfo.GetRuntimeExclusivenessLabelname()
+	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
@@ -102,6 +113,9 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 
 		toUpdate.Labels[labelName] = "true"
 		toUpdate.Labels[labelCommonName] = "true"
+		if exclusiveness {
+			toUpdate.Labels[labelExclusiveName] = "true"
+		}
 		totalRequirement, err := resource.ParseQuantity("0Gi")
 		if err != nil {
 			log.Error(err, "Failed to parse the total requirement")

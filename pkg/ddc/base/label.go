@@ -35,3 +35,7 @@ func (info *RuntimeInfo) GetCommonLabelname() string {
 func (info *RuntimeInfo) GetRuntimeLabelname() string {
 	return common.LabelAnnotationStorageCapacityPrefix + info.runtimeType + "-" + info.namespace + "-" + info.name
 }
+
+func (info *RuntimeInfo) GetRuntimeExclusivenessLabelname() string {
+	return common.LabelAnnotationStorageCapacityPrefix + info.runtimeType + "-" + common.Exclusiveness
+}

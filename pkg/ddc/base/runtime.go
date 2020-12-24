@@ -37,6 +37,8 @@ type RuntimeInfoInterface interface {
 	GetCommonLabelname() string
 
 	GetRuntimeLabelname() string
+
+	GetRuntimeExclusivenessLabelname() string
 }
 
 // The real Runtime Info should implement

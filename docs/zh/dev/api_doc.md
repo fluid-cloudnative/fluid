@@ -243,18 +243,6 @@ bool
 <p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>exclusiveness</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Manage switch for opening Multiple datasets single node deployment or not
-TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -507,6 +495,18 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </td>
 <td>
 <p>Runtimes for supporting dataset (e.g. AlluxioRuntime)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>exclusiveness</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
 </td>
 </tr>
 </table>
@@ -931,18 +931,6 @@ bool
 </td>
 <td>
 <p>Manage monitoring for Alluxio Runtime</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>exclusiveness</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Manage switch for opening Multiple datasets single node deployment or not
-TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
 </td>
 </tr>
 </tbody>
@@ -1389,6 +1377,18 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </td>
 <td>
 <p>Runtimes for supporting dataset (e.g. AlluxioRuntime)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>exclusiveness</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
 </td>
 </tr>
 </tbody>
@@ -3155,5 +3155,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4aa7608</code>.
+on git commit <code>90c2730</code>.
 </em></p>

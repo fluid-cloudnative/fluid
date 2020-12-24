@@ -18,9 +18,10 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -160,11 +161,12 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 	var (
 		nodeList *corev1.NodeList = &corev1.NodeList{}
 
-		labelName       = e.getRuntimeLabelname()
-		labelCommonName = e.getCommonLabelname()
-		labelMemoryName = e.getStoragetLabelname(humanReadType, memoryStorageType)
-		labelDiskName   = e.getStoragetLabelname(humanReadType, diskStorageType)
-		labelTotalname  = e.getStoragetLabelname(humanReadType, totalStorageType)
+		labelName          = e.getRuntimeLabelname()
+		labelCommonName    = e.getCommonLabelname()
+		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
+		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
+		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
+		labelExclusiveName = e.getRuntimeExclusivenessLabelname()
 	)
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
@@ -172,7 +174,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		return
 	}
 
-	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName, labelExclusiveName}
 
 	// 1.select the nodes
 	// TODO(cheyang) Need consider node selector
