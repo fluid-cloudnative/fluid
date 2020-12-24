@@ -1,6 +1,7 @@
 package jindo
 
 import (
+	"encoding/base64"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -83,9 +84,33 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 		}
 		jfsNamespace = jfsNamespace + mount.Name + ","
 		properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
+		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
 		properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
 		properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
-		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
+
+		// to check whether encryptOptions exist
+		for _, encryptOption := range mount.EncryptOptions {
+			key := encryptOption.Name
+			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			if err != nil {
+				e.Log.Info("can't get the secret")
+				break
+			}
+			value := secret.Data[secretKeyRef.Key]
+			// to decode from base64 encode
+			decodeBytes, err := base64.StdEncoding.DecodeString(string(value))
+			if err != nil {
+				e.Log.Info("decode value failed")
+			}
+			if key == "fs.oss.accessKeyId" {
+				properties["jfs.namespaces."+mount.Name+".oss.access.key"] = string(decodeBytes)
+			}
+			if key == "fs.oss.accessKeySecret" {
+				properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = string(decodeBytes)
+			}
+			e.Log.Info("get from secret")
+		}
 	}
 	if strings.HasSuffix(jfsNamespace, ",") {
 		jfsNamespace = strings.TrimRight(jfsNamespace, ",")
