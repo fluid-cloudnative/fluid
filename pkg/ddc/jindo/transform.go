@@ -48,7 +48,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			WorkerProperties: e.transformWorker(runtime, dataPath),
 		},
 		Fuse: Fuse{
-			Args:           nil,
+			Args:           e.runtime.Spec.Fuse.Args,
 			HostPath:       e.getMountPoint(),
 			NodeSelector:   e.transformNodeSelector(),
 			FuseProperties: e.transformFuse(runtime, dataPath),
@@ -162,6 +162,9 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath
 		"client.oss.upload.max.parallelism":         16,
 		"client.oss.timeout.millisecond":            30000,
 		"client.oss.connection.timeout.millisecond": 3000,
+		"jfs.cache.meta-cache.enable":               1,
+		"jfs.cache.data-cache.enable":               1,
+		"jfs.cache.data-cache.slicecache.enable":    1,
 	}
 
 	if e.getTieredStoreType(runtime) == 0 {
