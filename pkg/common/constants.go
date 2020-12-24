@@ -24,7 +24,7 @@ const (
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 )
 
-//Reason for Pillar events
+//Reason for Fluid events
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
@@ -90,4 +90,10 @@ const (
 	PathScheme string = "local://"
 
 	VolumeScheme string = "pvc://"
+)
+
+var (
+	ExpectedFluidAnnotations = map[string]string{
+		"CreatedBy": "fluid",
+	}
 )

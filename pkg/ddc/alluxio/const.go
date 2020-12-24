@@ -16,11 +16,6 @@ limitations under the License.
 package alluxio
 
 const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
-
-	fluid_PATH = "fluid_path"
-
-	Mount_TYPE = "mount_type"
 
 	// alluxioHome string = "/opt/alluxio"
 
@@ -31,6 +26,8 @@ const (
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
 
 	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+
+	ALLUXIO_RUNTIME_METRICS_LABEL = "alluxio_runtime_metrics"
 
 	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
 

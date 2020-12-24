@@ -274,12 +274,12 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 		}
 
 		if !found {
-			err = fmt.Errorf("All avaliable port from %d to %d are allocated", AUTO_SELECT_PORT_MIN, AUTO_SELECT_PORT_MAX)
+			err = fmt.Errorf("all avaliable port from %d to %d are allocated", AUTO_SELECT_PORT_MIN, AUTO_SELECT_PORT_MAX)
 		}
 	}
 
 	if len(allocatedPorts) != portNum {
-		err = fmt.Errorf("Can`t allocate enough port, got %d but expect %d", len(allocatedPorts), portNum)
+		err = fmt.Errorf("can`t allocate enough port, got %d but expect %d", len(allocatedPorts), portNum)
 	}
 
 	return

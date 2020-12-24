@@ -19,6 +19,7 @@ import (
 	"os"
 )
 
+// PathExists returns the specified path is exists or not
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	if err != nil {
@@ -29,7 +30,10 @@ func PathExists(path string) bool {
 
 var chartFolder = ""
 
-// Get the directory of charts
+/**
+*
+// GetChartsDirectory gets the directory of the charts
+**/
 func GetChartsDirectory() string {
 	if chartFolder != "" {
 		return chartFolder

@@ -16,10 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
-	"fmt"
-	"time"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // DeleteVolume creates volume
@@ -48,87 +45,20 @@ func (e *AlluxioEngine) DeleteVolume() (err error) {
 
 // deleteFusePersistentVolume
 func (e *AlluxioEngine) deleteFusePersistentVolume() (err error) {
-
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
+	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	if found {
-		err = kubeclient.DeletePersistentVolume(e.Client, e.runtime.Name)
-		if err != nil {
-			return err
-		}
-		retries := 500
-		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeExist(e.Client, e.runtime.Name, expectedAnnotations)
-			if err != nil {
-				return err
-			}
-
-			if found {
-				time.Sleep(time.Duration(2 * time.Second))
-			} else {
-				break
-			}
-		}
-
-		if found {
-			return fmt.Errorf("The PV %s is not cleaned up",
-				e.runtime.Name)
-		} else {
-			e.Log.Info("The PV is deleted successfully", "name", e.runtime.Name)
-		}
-	}
-
-	return err
+	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
 }
 
 // deleteFusePersistentVolume
 func (e *AlluxioEngine) deleteFusePersistentVolumeClaim() (err error) {
-
-	found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
+	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	if found {
-		err = kubeclient.DeletePersistentVolumeClaim(e.Client, e.runtime.Name, e.runtime.Namespace)
-		if err != nil {
-			return err
-		}
-
-		should, err := kubeclient.ShouldRemoveProtectionFinalizer(e.Client, e.runtime.Name, e.runtime.Namespace)
-		if err != nil {
-			return err
-		}
-
-		// NOTE: remove finalizer after PVC was ordered to be deleted
-		if should {
-			e.Log.Info("Should remove pvc-protection finalizer")
-			err = kubeclient.RemoveProtectionFinalizer(e.Client, e.runtime.Name, e.runtime.Namespace)
-			if err != nil {
-				e.Log.Info("Failed to remove finalizers")
-				return err
-			}
-		}
-
-		found, err := kubeclient.IsPersistentVolumeClaimExist(e.Client, e.runtime.Name, e.runtime.Namespace, expectedAnnotations)
-		if err != nil {
-			return err
-		}
-
-		if found {
-			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
-				e.runtime.Name,
-				e.runtime.Namespace)
-		} else {
-			e.Log.Info("The PVC is deleted successfully",
-				"name", e.runtime.Name,
-				"namespace", e.runtime.Namespace)
-		}
-	}
-
-	return err
-
+	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
 }

@@ -20,6 +20,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -76,6 +77,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
 		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory])
@@ -134,6 +136,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
 		engine.transformResourcesForFuse(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory])

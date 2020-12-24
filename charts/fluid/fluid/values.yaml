@@ -4,29 +4,31 @@
 
 dataset:
   controller:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.5.0-ebe8884
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.5.0-e8fef0d
 
 csi:
   registrar:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-ebe8884
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-e8fef0d
+  kubelet:
+    rootDir: /var/lib/kubelet
 
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
     enabled: true
     init:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-ebe8884
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-e8fef0d
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-ebe8884
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-e8fef0d
     runtime:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-985b84c
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
     fuse:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-985b84c
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-1-SNAPSHOT-9833d5f
     dataload:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-985b84c
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
   jindo:
-    enabled: true
+    enabled: false
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-ebe8884
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-e8fef0d

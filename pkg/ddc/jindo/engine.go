@@ -21,6 +21,7 @@ type JindoEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	//initImage              string
+	runtimeInfo base.RuntimeInfoInterface
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
@@ -44,6 +45,9 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	} else {
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
+
+	// Setup runtime Info
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 

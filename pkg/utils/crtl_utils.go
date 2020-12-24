@@ -16,6 +16,7 @@ limitations under the License.
 package utils
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"time"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -77,6 +78,7 @@ func Now() *metav1.Time {
 	return &now
 }
 
+// ContainsString Determine whether the string array contains a specific string, return true if contains the string and return false if not.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -86,6 +88,16 @@ func ContainsString(slice []string, s string) bool {
 	return false
 }
 
+func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Dataset) bool {
+	for _, owner := range owners {
+		if owner.UID == dataset.UID {
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveString removes strings in a array, which is equal to a given string.
 func RemoveString(slice []string, s string) (result []string) {
 	for _, item := range slice {
 		if item == s {

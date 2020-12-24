@@ -49,8 +49,11 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 	if !found {
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        e.runtime.Name,
-				Namespace:   e.runtime.Namespace,
+				Name:      e.runtime.Name,
+				Namespace: e.runtime.Namespace,
+				Labels: map[string]string{
+					e.getCommonLabelname(): "true",
+				},
 				Annotations: expectedAnnotations,
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -67,6 +70,21 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 						VolumeAttributes: map[string]string{
 							fluid_PATH: e.getMountPoint(),
 							Mount_TYPE: common.JINDO_MOUNT_TYPE,
+						},
+					},
+				},
+				NodeAffinity: &corev1.VolumeNodeAffinity{
+					Required: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      e.getCommonLabelname(),
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"true"},
+									},
+								},
+							},
 						},
 					},
 				},

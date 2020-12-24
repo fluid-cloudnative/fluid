@@ -68,8 +68,8 @@ spec:
             - mountPath: /etc/localtime
               name: volume-localtime
             - name: bigboot-config
-              mountPath: /sdk/conf/bigboot.cfg
-              subPath: fuse.cfg
+              mountPath: /bigboot.cfg
+              subPath: bigboot.cfg
           {{- range $name, $path := .Values.mounts.workersAndClients }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"

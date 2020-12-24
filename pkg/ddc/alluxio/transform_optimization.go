@@ -19,6 +19,9 @@ import (
 	"strconv"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+
+	"k8s.io/api/core/v1"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -53,7 +56,8 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.worker.network.reader.buffer.size", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.worker.file.buffer.size", "320MB")
-	setDefaultProperties(runtime, value, "alluxio.user.metrics.collection.enabled", "false")
+	// Enable metrics as default for better monitoring result, if you have performance concern, feel free to turn it off
+	setDefaultProperties(runtime, value, "alluxio.user.metrics.collection.enabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.max.pool.size", "1024")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.core.pool.size", "128")
 	// setDefaultProperties(runtime, value, "alluxio.master.mount.table.root.readonly", "true")
@@ -149,10 +153,32 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 		}
 	}
 
+	readOnly := false
+	runtimeInfo := e.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			e.Log.Info("Error:", "err", err)
+		}
+
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == v1.ReadOnlyMany {
+					readOnly = true
+				}
+			}
+		}
+	}
+
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
 	} else {
-		value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+		if readOnly {
+			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+		} else {
+			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+		}
+
 	}
 
 }

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -187,7 +188,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, erro
 	for _, pod := range nsPods.Items {
 		pvcs := GetPodPvcs(pod.Spec.Volumes)
 		for _, pvc := range pvcs {
-			if pvc.Name == pvcName {
+			if pvc.PersistentVolumeClaim.ClaimName == pvcName {
 				pods = append(pods, pod)
 			}
 		}
@@ -220,6 +221,41 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 	}
 
 	return err
+}
+
+// ShouldDeleteDataset should delete Dataset when no pod is using the volume
+func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error) {
+	// 1. Check if the pvc exists
+	// exist, err := IsPersistentVolumeExist(client, name, common.ExpectedFluidAnnotations)
+	// if err != nil {
+	// 	return
+	// }
+	// if !exist {
+	// 	return true, nil
+	// }
+
+	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
+	if err != nil {
+		return
+	}
+	if !exist {
+		return true, nil
+	}
+
+	// 2. check if the pod on it is running
+	pods, err := GetPvcMountPods(client, name, namespace)
+	if err != nil {
+		return
+	}
+	for _, pod := range pods {
+		if !IsCompletePod(&pod) {
+			err = fmt.Errorf("can not delete dataset "+
+				"because Pod %v in Namespace %v is using it", pod.Name, pod.Namespace)
+			return
+		}
+	}
+	should = true
+	return
 }
 
 // ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer

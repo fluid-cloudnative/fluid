@@ -16,7 +16,6 @@ limitations under the License.
 package base
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
@@ -107,7 +106,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	}
 
 	// 6.Update the dataset status from pending to bound
-	err = b.Implement.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	err = b.Implement.BindToDataset()
 	if err != nil {
 		b.Log.Error(err, "Bind the dataset")
 		return workersReady, err

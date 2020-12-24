@@ -10,6 +10,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
+	var mediumType int
+	for _, level := range runtime.Spec.Tieredstore.Levels {
+		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
+	}
+	return mediumType
+}
+
 func (e *JindoEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
 	e.Log.Info("mountRoot", "path", mountRoot)
@@ -51,4 +59,26 @@ func (e *JindoEngine) getMasterStatefulset(name string, namespace string) (maste
 	}, master)
 
 	return master, err
+}
+
+func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
+	return e.name + "-jindofs-master"
+}
+
+func (e *JindoEngine) getWorkerDaemonsetName() (dsName string) {
+	return e.name + "-jindofs-worker"
+}
+
+func (e *JindoEngine) getFuseDaemonsetName() (dsName string) {
+	return e.name + "-jindofs-fuse"
+}
+
+func (e *JindoEngine) getDaemonset(name string, namespace string) (daemonset *appsv1.DaemonSet, err error) {
+	daemonset = &appsv1.DaemonSet{}
+	err = e.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, daemonset)
+
+	return daemonset, err
 }

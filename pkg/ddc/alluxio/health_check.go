@@ -134,7 +134,7 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("The master %s in %s is not ready. The expected number is %d, the actual number is %d",
+		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d",
 			master.Name,
 			master.Namespace,
 			master.Status.Replicas,
@@ -224,7 +224,7 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("The daemonset %s in %s are not ready, the unhealthy number %d",
+		err = fmt.Errorf("the daemonset %s in %s are not ready, the unhealthy number %d",
 			workers.Name,
 			workers.Namespace,
 			workers.Status.NumberUnavailable)
@@ -305,7 +305,7 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("The daemonset %s in %s are not ready, the unhealthy number %d",
+		err = fmt.Errorf("the daemonset %s in %s are not ready, the unhealthy number %d",
 			fuses.Name,
 			fuses.Namespace,
 			fuses.Status.UpdatedNumberScheduled)

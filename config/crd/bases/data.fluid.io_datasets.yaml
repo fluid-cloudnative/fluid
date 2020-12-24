@@ -63,12 +63,41 @@ spec:
         spec:
           description: DatasetSpec defines the desired state of Dataset
           properties:
+            accessModes:
+              description: AccessModes contains all ways the volume backing the PVC
+                can be mounted
+              items:
+                type: string
+              type: array
             mounts:
               description: Mount Points to be mounted on Alluxio.
               items:
                 description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
                   Storage Integrations</a> for more info
                 properties:
+                  encryptOptions:
+                    description: The secret information
+                    items:
+                      properties:
+                        name:
+                          description: The name of encryptOption
+                          type: string
+                        valueFrom:
+                          description: The valueFrom of encryptOption
+                          properties:
+                            secretKeyRef:
+                              description: The encryptInfo obtained from secret
+                              properties:
+                                key:
+                                  description: The required key in the secret
+                                  type: string
+                                name:
+                                  description: The name of required secret
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                    type: array
                   mountPoint:
                     description: MountPoint is the mount point of source.
                     minLength: 10
