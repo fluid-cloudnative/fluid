@@ -70,6 +70,7 @@ spec:
                 type: string
               type: array
             exclusiveMode:
+              default: true
               description: Manage switch for opening Multiple datasets single node
                 deployment or not TODO(xieydd) In future, evaluate node resources
                 and runtime resources to decide whether to turn them on

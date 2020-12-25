@@ -175,7 +175,11 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		return
 	}
 
-	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName, labelExclusiveName}
+	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+
+	if e.exclusive {
+		labelNames = append(labelNames, labelExclusiveName)
+	}
 
 	// 1.select the nodes
 	// TODO(cheyang) Need consider node selector

@@ -242,6 +242,7 @@ bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
@@ -1107,6 +1108,7 @@ bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Manage monitoring for Alluxio Runtime</p>
 </td>
 </tr>
@@ -3097,5 +3099,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>2aafbb4</code>.
+on git commit <code>7af175a</code>.
 </em></p>

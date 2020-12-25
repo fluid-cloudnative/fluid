@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
@@ -23,7 +24,8 @@ func init() {
 	log = ctrl.Log.WithName("dataset.lifecycle")
 }
 
-// alreadyAssigned checks if the node is already assigned the runtime engine
+// AlreadyAssigned checks if the node is already assigned the runtime engine
+// If runtime engine cached dataset is exclusive, will check if any runtime engine already assigned the runtime engine
 func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assigned bool) {
 	// label := e.getCommonLabelname()
 
@@ -31,6 +33,14 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 
 	if len(node.Labels) > 0 {
 		_, assigned = node.Labels[label]
+	}
+
+	if runtimeInfo.IsExclusive() {
+		for _, nodeLabel := range node.Labels {
+			if strings.Contains(nodeLabel, common.LabelAnnotationPrefix) {
+				assigned = true
+			}
+		}
 	}
 
 	log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
