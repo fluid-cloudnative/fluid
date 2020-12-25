@@ -48,7 +48,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			WorkerProperties: e.transformWorker(runtime, dataPath),
 		},
 		Fuse: Fuse{
-			Args:           e.runtime.Spec.Fuse.Args,
+			Args:           e.transformFuseArg(),
 			HostPath:       e.getMountPoint(),
 			NodeSelector:   e.transformNodeSelector(),
 			FuseProperties: e.transformFuse(runtime, dataPath),
@@ -126,7 +126,6 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 
 	properties := map[string]string{
 		"storage.rpc.port": "6101",
-		//"storage.meta-dir"            : "/mnt/disk1/bigboot/bignode",
 	}
 
 	properties["namespace.meta-dir"] = dataPath + "/bigboot/bignode"
@@ -220,7 +219,13 @@ func (e *JindoEngine) transformPriority(dataPath string) map[string]string {
 
 func (e *JindoEngine) transformMountPath(dataPath string) map[string]string {
 	properties := map[string]string{}
-	// 1: /mnt/disk1
 	properties["1"] = dataPath
 	return properties
+}
+
+func (e *JindoEngine) transformFuseArg() []string {
+	if len(e.runtime.Spec.Fuse.Args) > 0 {
+		return e.runtime.Spec.Fuse.Args
+	}
+	return []string{"-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"}
 }
