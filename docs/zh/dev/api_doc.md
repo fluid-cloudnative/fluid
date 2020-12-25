@@ -10,6 +10,8 @@ Resource Types:
 <a href="#data.fluid.io/v1alpha1.DataLoad">DataLoad</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
 </li></ul>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime
 </h3>
@@ -499,12 +501,13 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
-<code>exclusiveness</code></br>
+<code>exclusiveMode</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Manage switch for opening Multiple datasets single node deployment or not
 TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
 </td>
@@ -518,6 +521,180 @@ TODO(xieydd) In future, evaluate node resources and runtime resources to decide 
 <em>
 <a href="#data.fluid.io/v1alpha1.DatasetStatus">
 DatasetStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime
+</h3>
+<p>
+<p>JindoRuntime is the Schema for the jindoruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>JindoRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">
+JindoRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>jindoVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of Jindo.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
+JindoCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
+JindoCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">
+JindoFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Configurable properties for Jindo system. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Tieredstore">
+Tieredstore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by Jindo</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Jindo Runtime</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
 </a>
 </em>
 </td>
@@ -1381,12 +1558,13 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
-<code>exclusiveness</code></br>
+<code>exclusiveMode</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Manage switch for opening Multiple datasets single node deployment or not
 TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
 </td>
@@ -1629,8 +1807,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
 </p>
 <p>
 <p>InitUsersSpec is a description of the initialize the users for runtime</p>
@@ -1892,202 +2069,6 @@ already allocated to the pod.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime
-</h3>
-<p>
-<p>JindoRuntime is the Schema for the jindoruntimes API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">
-JindoRuntimeSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>jindoVersion</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.VersionSpec">
-VersionSpec
-</a>
-</em>
-</td>
-<td>
-<p>The version information that instructs fluid to orchestrate a particular version of Jindo.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>master</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo master</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobMaster</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job master</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>worker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobWorker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job Worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>initUsers</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
-InitUsersSpec
-</a>
-</em>
-</td>
-<td>
-<p>The spec of init users</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>fuse</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">
-JindoFuseSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo Fuse</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>properties</code></br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-<p>Configurable properties for Jindo system. <br></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>tieredstore</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
-</a>
-</em>
-</td>
-<td>
-<p>Tiered storage used by Jindo</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>replicas</code></br>
-<em>
-int32
-</em>
-</td>
-<td>
-<p>The replicas of the worker, need to be specified</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAs</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.User">
-User
-</a>
-</em>
-</td>
-<td>
-<p>Manage the user to run Jindo Runtime</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
-RuntimeStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec
 </h3>
 <p>
@@ -2133,19 +2114,6 @@ JindoCompTemplateSpec
 </tr>
 <tr>
 <td>
-<code>jobMaster</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job master</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>worker</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
@@ -2155,32 +2123,6 @@ JindoCompTemplateSpec
 </td>
 <td>
 <p>Desired state for Jindo worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobWorker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job Worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>initUsers</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
-InitUsersSpec
-</a>
-</em>
-</td>
-<td>
-<p>The spec of init users</p>
 </td>
 </tr>
 <tr>
@@ -3155,5 +3097,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>d9abdc1</code>.
+on git commit <code>2aafbb4</code>.
 </em></p>
