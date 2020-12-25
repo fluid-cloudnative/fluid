@@ -69,6 +69,11 @@ spec:
               items:
                 type: string
               type: array
+            exclusiveness:
+              description: Manage switch for opening Multiple datasets single node
+                deployment or not TODO(xieydd) In future, evaluate node resources
+                and runtime resources to decide whether to turn them on
+              type: boolean
             mounts:
               description: Mount Points to be mounted on Alluxio.
               items:

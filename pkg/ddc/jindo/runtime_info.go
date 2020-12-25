@@ -9,7 +9,7 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
-		e.runtimeInfo = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.Tieredstore)
+		e.runtimeInfo = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.Tieredstore, e.exclusive)
 	}
 	return e.runtimeInfo, nil
 }

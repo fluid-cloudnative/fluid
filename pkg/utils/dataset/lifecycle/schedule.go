@@ -120,7 +120,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	// 2.Add label to the selected node
 
 	for _, node := range newScheduledNodes {
-		err = LabelCacheNode(node, runtimeInfo, runtimeClient, dataset.Spec.Exclusiveness)
+		err = LabelCacheNode(node, runtimeInfo, runtimeClient)
 		if err != nil {
 			return
 		}

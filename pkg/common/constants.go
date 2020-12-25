@@ -99,5 +99,5 @@ var (
 )
 
 const (
-	Exclusiveness string = "exclusiveness"
+	Exclusive string = "fluid_exclusive"
 )

@@ -166,7 +166,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
-		labelExclusiveName = e.getRuntimeExclusivenessLabelname()
+		labelExclusiveName = e.getRuntimeExclusiveLabelname()
 	)
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
