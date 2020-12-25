@@ -126,7 +126,8 @@ type DatasetSpec struct {
 
 	// Manage switch for opening Multiple datasets single node deployment or not
 	// TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on
-	Exclusiveness bool `json:"exclusiveness,omitempty"`
+	// +optional
+	ExclusiveMode bool `json:"exclusiveMode,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset

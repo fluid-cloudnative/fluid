@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -166,7 +167,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
-		labelExclusiveName = e.getRuntimeExclusiveLabelname()
+		labelExclusiveName = common.Exclusive
 	)
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{})

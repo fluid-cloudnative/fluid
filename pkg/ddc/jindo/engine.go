@@ -49,7 +49,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.Exclusiveness)
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.ExclusiveMode)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 

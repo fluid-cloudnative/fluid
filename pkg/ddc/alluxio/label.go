@@ -53,7 +53,3 @@ func (e *AlluxioEngine) getCommonLabelname() string {
 func (e *AlluxioEngine) getRuntimeLabelname() string {
 	return common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.namespace + "-" + e.name
 }
-
-func (e *AlluxioEngine) getRuntimeExclusiveLabelname() string {
-	return common.Exclusive
-}

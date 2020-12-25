@@ -38,8 +38,6 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeLabelname() string
 
-	GetRuntimeExclusiveLabelname() string
-
 	IsExclusive() bool
 }
 

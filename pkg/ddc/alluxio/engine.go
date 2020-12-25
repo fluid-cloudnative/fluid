@@ -56,7 +56,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
-		exclusive:              ctx.Dataset.Spec.Exclusiveness,
+		exclusive:              ctx.Dataset.Spec.ExclusiveMode,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
@@ -71,7 +71,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.Exclusiveness)
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.ExclusiveMode)
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
