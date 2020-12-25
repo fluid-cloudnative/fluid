@@ -724,10 +724,7 @@ func (in *JindoRuntimeSpec) DeepCopyInto(out *JindoRuntimeSpec) {
 	*out = *in
 	out.JindoVersion = in.JindoVersion
 	in.Master.DeepCopyInto(&out.Master)
-	in.JobMaster.DeepCopyInto(&out.JobMaster)
 	in.Worker.DeepCopyInto(&out.Worker)
-	in.JobWorker.DeepCopyInto(&out.JobWorker)
-	in.InitUsers.DeepCopyInto(&out.InitUsers)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	if in.Properties != nil {
 		in, out := &in.Properties, &out.Properties

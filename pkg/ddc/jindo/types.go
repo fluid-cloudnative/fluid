@@ -39,8 +39,8 @@ type Fuse struct {
 }
 
 type Mounts struct {
-	Master            []string `yaml:"master"`
-	WorkersAndClients []string `yaml:"workersAndClients"`
+	Master            map[string]string `yaml:"master"`
+	WorkersAndClients map[string]string `yaml:"workersAndClients"`
 }
 
 type Resources struct {
@@ -51,4 +51,14 @@ type Resources struct {
 type Resource struct {
 	CPU    string `yaml:"cpu"`
 	Memory string `yaml:"memory"`
+}
+
+type cacheStates struct {
+	cacheCapacity string
+	// cacheable        string
+	// lowWaterMark     string
+	// highWaterMark    string
+	cached           string
+	cachedPercentage string
+	// nonCacheable     string
 }

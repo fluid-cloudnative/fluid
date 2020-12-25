@@ -32,6 +32,14 @@ func TranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 
 }
 
+func TranformQuantityToJindoUnit(q *resource.Quantity) (value string) {
+	value = q.String()
+	if strings.HasSuffix(value, "Gi") {
+		value = strings.ReplaceAll(value, "Gi", "g")
+	}
+	return
+}
+
 func TranformQuantityToUnits(q *resource.Quantity) (value string) {
 	// value = q.String()
 

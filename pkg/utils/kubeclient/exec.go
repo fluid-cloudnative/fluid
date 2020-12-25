@@ -146,7 +146,7 @@ func ExecCommandInContainerWithFullOutput(podName string, containerName string, 
 	})
 }
 
-// Execute shell command or script in the specified container and return stdout, stderr and error
+// ExecShellInContainer executes shell command or script in the specified container and return stdout, stderr and error
 func ExecShellInContainer(podName string, containerName string, namespace string, cmd string) (stdout string, stderr string, err error) {
 	return ExecCommandInContainer(podName, containerName, namespace, []string{"/bin/sh", "-c", cmd})
 }

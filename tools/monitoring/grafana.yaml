@@ -1,15 +1,18 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: monitoring-grafana
   namespace: kube-system
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
   template:
     metadata:
       labels:
         task: monitoring
-        k8s-app: grafana
+        app: grafana
     spec:
       containers:
         - name: grafana
@@ -32,4 +35,4 @@ spec:
       targetPort: 3000
   type: NodePort
   selector:
-    k8s-app: grafana
+    app: grafana
