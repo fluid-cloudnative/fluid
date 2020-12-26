@@ -215,7 +215,6 @@ type AlluxioRuntimeSpec struct {
 	RunAs *User `json:"runAs,omitempty"`
 
 	// Manage monitoring for Alluxio Runtime
-	// +kubebuilder:default:=true
 	// +optional
 	Monitoring bool `json:"monitoring,omitempty"`
 }

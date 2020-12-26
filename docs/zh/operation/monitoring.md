@@ -142,7 +142,7 @@ spec:
     args:
     - fuse
     - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
-  # 指定该 runtime 需要监控
+  # 指定该 runtime 需要监控, 默认为 false
   monitoring: true  
 EOF
 ```

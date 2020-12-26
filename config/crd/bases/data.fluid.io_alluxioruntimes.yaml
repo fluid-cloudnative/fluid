@@ -412,7 +412,6 @@ spec:
                   type: object
               type: object
             monitoring:
-              default: true
               description: Manage monitoring for Alluxio Runtime
               type: boolean
             properties:
