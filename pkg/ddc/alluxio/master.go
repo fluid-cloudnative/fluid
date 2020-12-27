@@ -124,7 +124,7 @@ func (e *AlluxioEngine) SetupMaster() (err error) {
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", masterName)
-		return e.setupMasterInernal()
+		return e.setupMasterInternal()
 	} else if err != nil {
 		//2. Other errors
 		return

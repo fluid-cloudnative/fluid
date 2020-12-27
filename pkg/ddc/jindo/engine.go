@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -21,6 +22,7 @@ type JindoEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	//initImage              string
+	exclusive   bool
 	runtimeInfo base.RuntimeInfoInterface
 }
 
@@ -47,7 +49,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.ExclusiveMode)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 

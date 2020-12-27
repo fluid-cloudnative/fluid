@@ -18,7 +18,7 @@ package v1alpha1
 import (
 	// "github.com/rook/rook/pkg/apis/rook.io/v1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -123,6 +123,11 @@ type DatasetSpec struct {
 
 	// Runtimes for supporting dataset (e.g. AlluxioRuntime)
 	Runtimes []Runtime `json:"runtimes,omitempty"`
+
+	// Manage switch for opening Multiple datasets single node deployment or not
+	// TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on
+	// +optional
+	ExclusiveMode bool `json:"exclusiveMode,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset
