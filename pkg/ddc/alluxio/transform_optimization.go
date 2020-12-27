@@ -87,6 +87,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.fuse.shared.caching.reader.enabled", "true")
 	// job retention time only kicks in when the JobMaster is at capacity in terms of number of jobs stored. see https://github.com/Alluxio/alluxio/pull/12468
 	setDefaultProperties(runtime, value, "alluxio.job.master.finished.job.retention.time", "30sec")
+	setDefaultProperties(runtime, value, "alluxio.underfs.object.store.breadcrumbs.enabled", "false")
 }
 
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {
