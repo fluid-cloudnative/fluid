@@ -44,11 +44,6 @@ func (e *AlluxioEngine) CreateVolume() (err error) {
 		return err
 	}
 
-	err = e.createFusePersistentVolumeClaim()
-	if err != nil {
-		return err
-	}
-
 	return nil
 
 }

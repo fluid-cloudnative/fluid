@@ -61,7 +61,7 @@ func NewRuntimeReconciler(client client.Client,
 	return r
 }
 
-//Reconcile reconciles alluxio runtime
+// Reconcile reconciles alluxio runtime
 // +kubebuilder:rbac:groups=data.fluid.io,resources=alluxioruntimes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=alluxioruntimes/status,verbs=get;update;patch
 

@@ -411,6 +411,9 @@ spec:
                       type: object
                   type: object
               type: object
+            monitoring:
+              description: Manage monitoring for Alluxio Runtime
+              type: boolean
             properties:
               additionalProperties:
                 type: string

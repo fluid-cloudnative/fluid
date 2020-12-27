@@ -37,6 +37,8 @@ type RuntimeInfoInterface interface {
 	GetCommonLabelname() string
 
 	GetRuntimeLabelname() string
+
+	IsExclusive() bool
 }
 
 // The real Runtime Info should implement
@@ -46,17 +48,20 @@ type RuntimeInfo struct {
 	runtimeType string
 
 	tieredstore datav1alpha1.Tieredstore
+	exclusive   bool
 }
 
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
-	tieredstore datav1alpha1.Tieredstore) (runtime RuntimeInfoInterface) {
+	tieredstore datav1alpha1.Tieredstore,
+	exclusiveness bool) (runtime RuntimeInfoInterface) {
 	runtime = &RuntimeInfo{
 		name:        name,
 		namespace:   namespace,
 		runtimeType: runtimeType,
 		tieredstore: tieredstore,
+		exclusive:   exclusiveness,
 	}
 	return
 }
@@ -79,4 +84,8 @@ func (info *RuntimeInfo) GetNamespace() string {
 // GetRuntimeType gets runtime type
 func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
+}
+
+func (info *RuntimeInfo) IsExclusive() bool {
+	return info.exclusive
 }

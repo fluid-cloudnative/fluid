@@ -77,7 +77,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
+		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore, false)
 		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory])
@@ -136,7 +136,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
+		engine.runtimeInfo = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore, false)
 		engine.transformResourcesForFuse(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory])
