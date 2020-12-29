@@ -126,8 +126,9 @@ type DatasetSpec struct {
 
 	// Manage switch for opening Multiple datasets single node deployment or not
 	// TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on
+	// +kubebuilder:validation:Enum=Exclusive;;Shared
 	// +optional
-	ExclusiveMode bool `json:"exclusiveMode,omitempty"`
+	PlacementMode PlacementMode `json:"placement,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset
@@ -263,4 +264,8 @@ func (dataset *Dataset) CanbeBound(name string, namespace string, category commo
 	}
 
 	return bound
+}
+
+func (dataset *Dataset) IsExclusiveMode() bool {
+	return dataset.Spec.PlacementMode == DefaultMode || dataset.Spec.PlacementMode == ExclusiveMode
 }

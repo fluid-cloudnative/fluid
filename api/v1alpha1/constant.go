@@ -22,3 +22,14 @@ const (
 	// Resynced means updating with the underlayer filesystem.
 	DatasetDataSetFailedReason = "DatasetFailed"
 )
+
+type PlacementMode string
+
+const (
+	ExclusiveMode PlacementMode = "Exclusive"
+
+	ShareMode PlacementMode = "Shared"
+
+	// DefaultMode is exclusive
+	DefaultMode PlacementMode = ""
+)
