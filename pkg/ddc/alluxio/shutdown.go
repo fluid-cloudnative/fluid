@@ -177,7 +177,12 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
 
-	if e.exclusive {
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return
+	}
+
+	if runtimeInfo.IsExclusive() {
 		labelNames = append(labelNames, labelExclusiveName)
 	}
 
