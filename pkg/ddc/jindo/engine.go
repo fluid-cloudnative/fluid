@@ -22,7 +22,6 @@ type JindoEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	//initImage              string
-	exclusive   bool
 	runtimeInfo base.RuntimeInfoInterface
 }
 
@@ -49,7 +48,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore, ctx.Dataset.Spec.ExclusiveMode)
+	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
