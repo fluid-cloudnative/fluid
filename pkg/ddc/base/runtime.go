@@ -96,7 +96,7 @@ func (info *RuntimeInfo) IsExclusive() bool {
 // SetupWithDataset determines if need to setup with the info of dataset
 func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 	if !info.setup {
-		info.exclusive = dataset.Spec.ExclusiveMode
+		info.exclusive = dataset.IsExclusiveMode()
 		info.setup = true
 	}
 }
