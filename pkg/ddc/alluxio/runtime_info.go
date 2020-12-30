@@ -34,6 +34,11 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if !e.UnitTest {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
+			if utils.IgnoreNotFound(err) == nil {
+				e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
+				return e.runtimeInfo, nil
+			}
+
 			e.Log.Info("Failed to get dataset when getruntimeInfo")
 			return e.runtimeInfo, err
 		}
