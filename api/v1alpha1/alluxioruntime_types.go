@@ -118,20 +118,20 @@ type Level struct {
 	// +required
 	Path string `json:"path,omitempty"`
 
-	// Quota for the whole tier. (e.g. 100GB)
+	// Quota for the whole tier. (e.g. 100Gi)
 	// Please note that if there're multiple paths used for this tierstore,
 	// the quota will be equally divided into these paths. If you'd like to
 	// set quota for each, path, see QuotaList for more information.
-	// +required
+	// +optional
 	Quota *resource.Quantity `json:"quota,omitempty"`
 
 	// QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma.
 	// Quotas in this list will be set to paths with the same order in Path.
-	// For example, with Path defined with "/mnt/cache1,/mnt/cache2" and QuotaList set to "100GB, 50GB",
-	// then we get 100GB cache storage under "/mnt/cache1" and 50GB under "/mnt/cache2".
+	// For example, with Path defined with "/mnt/cache1,/mnt/cache2" and QuotaList set to "100Gi, 50Gi",
+	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
 	// Also note that num of quotas must be consistent with the num of paths defined in Path.
 	// +optional
-	// todo(xuzhihao): kubebuilder validation
+	// +kubebuilder:validation:Pattern:="^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?,((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)+$"
 	QuotaList string `json:"quotaList,omitempty"`
 
 	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
