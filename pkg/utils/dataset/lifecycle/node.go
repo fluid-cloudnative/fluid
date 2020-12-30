@@ -35,7 +35,9 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 		_, assigned = node.Labels[label]
 	}
 
-	if runtimeInfo.IsExclusive() {
+	exclusiveness := runtimeInfo.IsExclusive()
+	if exclusiveness {
+		log.Info("Placement Mode", "IsExclusive", exclusiveness)
 		for _, nodeLabel := range node.Labels {
 			if strings.Contains(nodeLabel, common.LabelAnnotationPrefix) {
 				assigned = true
@@ -104,6 +106,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	)
 
 	exclusiveness := runtimeInfo.IsExclusive()
+	log.Info("Placement Mode", "IsExclusive", exclusiveness)
 	if exclusiveness {
 		labelExclusiveName = common.Exclusive
 	}
