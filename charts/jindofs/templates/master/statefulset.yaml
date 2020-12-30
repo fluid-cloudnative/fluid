@@ -46,6 +46,9 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           command: ["/entrypoint.sh"]
           args: ["master"]
+          env:
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:8101
           ports:
           - containerPort: 8101
             name: rpc

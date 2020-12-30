@@ -1,5 +1,10 @@
 package jindo
 
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
+	"strconv"
+)
+
 // ShouldCheckUFS checks if it requires checking UFS
 func (e *JindoEngine) ShouldCheckUFS() (should bool, err error) {
 	should = true
@@ -12,24 +17,34 @@ func (e *JindoEngine) PrepareUFS() (err error) {
 	return
 }
 
-// UsedStorageBytes returns used storage size of Alluxio in bytes
+// UsedStorageBytes returns used storage size of Jindo in bytes
 func (e *JindoEngine) UsedStorageBytes() (value int64, err error) {
 
 	return
 }
 
-// FreeStorageBytes returns free storage size of Alluxio in bytes
+// FreeStorageBytes returns free storage size of Jindo in bytes
 func (e *JindoEngine) FreeStorageBytes() (value int64, err error) {
-
 	return
 }
 
-// return total storage size of Alluxio in bytes
+// return total storage size of Jindo in bytes
 func (e *JindoEngine) TotalStorageBytes() (value int64, err error) {
-	return
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	url := "jfs://" + e.name + "/"
+	ufsSize, err := fileUtils.GetUfsTotalSize(url)
+	return strconv.ParseInt(ufsSize, 10, 64)
 }
 
-// return the total num of files in Alluxio
+// return the total num of files in Jindo
 func (e *JindoEngine) TotalFileNums() (value int64, err error) {
 	return
+}
+
+// report alluxio summary
+func (e *JindoEngine) reportSummary() (summary string, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	return fileUtils.ReportSummary()
 }

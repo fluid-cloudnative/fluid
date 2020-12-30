@@ -82,3 +82,10 @@ func (e *JindoEngine) getDaemonset(name string, namespace string) (daemonset *ap
 
 	return daemonset, err
 }
+
+func (e *JindoEngine) getMasterPodInfo() (podName string, containerName string) {
+	podName = e.name + "-jindofs-master-0"
+	containerName = "jindofs-master"
+
+	return
+}
