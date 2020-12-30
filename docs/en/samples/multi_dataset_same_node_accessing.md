@@ -21,7 +21,7 @@ Normally, you shall see a Pod named `controller-manager` and several Pods named 
 **Label a node**
 
 ```shell
-$ kubectl  label node cn-beijing.192.168.1.174 fluid=multi-dataset
+$ kubectl  label node cn-beijing.192.168.0.199 fluid=multi-dataset
 ```
 > In the next steps, we will use `NodeSelector` to manage the nodes scheduled by the Dataset. There, it is only for experiment use.
 
@@ -45,7 +45,7 @@ spec:
               operator: In
               values:
                 - "multi-dataset"
-
+  placement: "Shared" // set Exclusive or empty means dataset exclusive
 EOF
 
 $ cat<<EOF >dataset1.yaml
@@ -65,7 +65,7 @@ spec:
               operator: In
               values:
                 - "multi-dataset"
-
+  placement: "Shared" 
 EOF        
 ```
 > Notes: Here, we use THU's tuna Apache mirror site as our `mountPoint`. If your environment isn't in Chinese mainland, please replace it with `https://downloads.apache.org/hbase/stable/` and `https://downloads.apache.org/spark/`.
@@ -162,10 +162,9 @@ alluxioruntime.data.fluid.io/hbase created
 # Pay attention to waiting for all components of Dataset hbase Running
 $ kubectl get pod -o wide | grep hbase
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-7jqz6     1/1     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          42s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-w89fq   2/2     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-
+hhbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 $ kubectl create -f runtime1.yaml
 alluxioruntime.data.fluid.io/spark created
 ```
@@ -186,22 +185,22 @@ Wait for a while, and make sure all components defined in the `AlluxioRuntime` o
 ```shell
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-7jqz6     1/1     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          2m24s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-w89fq   2/2     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-fuse-x9rqr     1/1     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-master-0       2/2     Running   0          68s     192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-spark-worker-lt6gt   2/2     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hhbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+spark-fuse-5z49p     1/1     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+spark-master-0       2/2     Running   0          50s     192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+spark-worker-96ksn   2/2     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 ```
-Note that the worker and fuse components of the different Datasets above can be dispatched to the same node `cn-beijing.192.168.1.174` normally .
+Note that the worker and fuse components of the different Datasets above can be dispatched to the same node `cn-beijing.192.168.0.199` normally .
 
 **Check status of the `Dataset` object again**
 
 ```shell
 $ kubectl get dataset 
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        0.00B    2.00GiB          0.0%                Bound   5m41s
-spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   5m38s
+hbase   443.89MiB        0.00B    2.00GiB          0.0%                Bound   11m
+spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   9m38s
 ```
 Because it has been bound to a successfully started AlluxioRuntime, the state of the Dataset resource object has been updated, and the value of the `PHASE` attribute has changed to the `Bound` state. The basic information about the resource object can be obtained through the above command.
 
@@ -209,8 +208,8 @@ Because it has been bound to a successfully started AlluxioRuntime, the state of
 ```shell
 $ kubectl get alluxioruntime -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        5m20s
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        76s
+hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        11m
+spark   1               1                 Ready          1               1                 Ready          1             1               Ready        9m52s
 ```
 Detailed information about the Alluxio instance is provided here.
 
@@ -252,7 +251,7 @@ spec:
     - name: hbase-vol
       persistentVolumeClaim:
         claimName: hbase
-  nodeName: cn-beijing.192.168.1.174
+  nodeName: cn-beijing.192.168.0.199
 
 EOF
 
@@ -272,7 +271,7 @@ spec:
     - name: hbase-vol
       persistentVolumeClaim:
         claimName: spark
-  nodeName: cn-beijing.192.168.1.174
+  nodeName: cn-beijing.192.168.0.199
 
 EOF
 ```
@@ -291,14 +290,14 @@ $ kubectl exec -it nginx-hbase -- bash
 
 Check file status:
 ```shell
-$ ls -lh /data/dataset
+$ ls -lh /data/hbase
 total 444M
--r--r----- 1 root root 174K May 26 07:30 CHANGES.md
--r--r----- 1 root root 106K May 26 07:30 RELEASENOTES.md
--r--r----- 1 root root 115K May 26 07:30 api_compare_2.2.5RC0_to_2.2.4.html
--r--r----- 1 root root 211M May 26 07:30 hbase-2.2.5-bin.tar.gz
--r--r----- 1 root root 200M May 26 07:30 hbase-2.2.5-client-bin.tar.gz
--r--r----- 1 root root  34M May 26 07:30 hbase-2.2.5-src.tar.gz
+-r--r----- 1 root root 193K Sep 16 00:53 CHANGES.md
+-r--r----- 1 root root 112K Sep 16 00:53 RELEASENOTES.md
+-r--r----- 1 root root  26K Sep 16 00:53 api_compare_2.2.6RC2_to_2.2.5.html
+-r--r----- 1 root root 211M Sep 16 00:53 hbase-2.2.6-bin.tar.gz
+-r--r----- 1 root root 200M Sep 16 00:53 hbase-2.2.6-client-bin.tar.gz
+-r--r----- 1 root root  34M Sep 16 00:53 hbase-2.2.6-src.tar.gz
 ```
 
 Login to nginx spark Pod:
@@ -353,7 +352,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase
-      nodeName: cn-beijing.192.168.1.174
+      nodeName: cn-beijing.192.168.0.199
 
 EOF
 
@@ -378,7 +377,7 @@ spec:
         - name: spark-vol
           persistentVolumeClaim:
             claimName: spark
-      nodeName: cn-beijing.192.168.1.174
+      nodeName: cn-beijing.192.168.0.199
 
 EOF
 ```
@@ -400,37 +399,37 @@ Wait for a while and make sure the job has completed. You can check its runnning
 
 ```shell
 $ kubectl get pod -o wide | grep copy 
-fluid-copy-test-hbase-6s8cv   0/1     Completed   0          3m33s   172.25.0.26     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-mzpzl   0/1     Completed   0          3m30s   172.25.0.27     cn-beijing.192.168.1.174   <none>           <none>
+ffluid-copy-test-hbase-r8gxp   0/1     Completed   0          4m16s   172.29.0.135    cn-beijing.192.168.0.199   <none>           <none>
+fluid-copy-test-spark-54q8m   0/1     Completed   0          4m14s   172.29.0.136    cn-beijing.192.168.0.199   <none>           <none>
 ```
 If you see the above result, it means the job has been completed.
 
-> Note: `6s8cv` in `fluid-copy-test-hbase-6s8cv` is a specifier generated by the Job we created. It's highly possible that you may have different specifier in your environment. Please remember replace it with your own specifier in the following steps
+> Note: `r8gxp` in `fluid-copy-test-hbase-r8gxp` is a specifier generated by the Job we created. It's highly possible that you may have different specifier in your environment. Please remember replace it with your own specifier in the following steps
 
 **Check running time of the test job**
 
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-6s8cv
+$ kubectl  logs fluid-copy-test-hbase-r8gxp
 + time cp -r /data/hbase ./
-real	0m 54.98s
-user	0m 0.00s
-sys	0m 1.43s
-$ kubectl  logs fluid-copy-test-spark-mzpzl
+real    3m 34.08s
+user    0m 0.00s
+sys     0m 1.24s
+$ kubectl  logs fluid-copy-test-spark-54q8m
 + time cp -r /data/spark ./
-real	3m 15.71s
-user	0m 0.00s
-sys	0m 6.12s
+real    3m 25.47s
+user    0m 0.00s
+sys     0m 5.48s
 ```
 
-It can be seen that the first remote file read hbase took nearly 55s, and the spark took nearly 3m16s.
+It can be seen that the first remote file read hbase took nearly 3m34s, and the spark took nearly 3m25s.
 
 **Check status of the dataset**
 
 ```shell
 $ kubectl get dataset
 NAME    UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        443.49MiB   2.00GiB          100.0%              Bound   11m
-spark   1.92GiB          1.92GiB     4.00GiB          100.0%              Bound   11m
+hbase   443.89MiB        443.89MiB   2.00GiB          100.0%              Bound   30m
+spark   1.92GiB          1.92GiB     4.00GiB          100.0%              Bound   28m
 ```
 Now, all the remote files have been cached in Alluxio.
 
@@ -446,30 +445,30 @@ $ kubectl create -f app1.yaml
 Since the remote file has been cached, the test job can be completed quickly:
 ```shell
 $ kubectl get pod -o wide| grep fluid
-fluid-copy-test-hbase-45t6j   0/1     Completed   0          27s     172.25.0.29     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-27jrg   0/1     Completed   0          75s     172.25.0.28     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-hbase-sf5md   0/1     Completed   0          53s   172.29.0.137    cn-beijing.192.168.0.199   <none>           <none>
+fluid-copy-test-spark-fwp57   0/1     Completed   0          51s   172.29.0.138    cn-beijing.192.168.0.199   <none>           <none>
 ```
 
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-45t6j
+$ kubectl  logs fluid-copy-test-hbase-sf5md
 + time cp -r /data/hbase ./
-real	0m 0.39s
-user	0m 0.00s
-sys	0m 0.39s
-$ kubectl  logs fluid-copy-test-spark-27jrg
+real    0m 0.36s
+user    0m 0.00s
+sys     0m 0.36s
+$ kubectl  logs fluid-copy-test-spark-fwp57
 + time cp -r /data/spark ./
-real	0m 2.05s
-user	0m 0.00s
-sys	0m 2.02s
+real    0m 1.57s
+user    0m 0.00s
+sys     0m 1.57s
 ```
-Doing the same read operation, hbase takes only 3s this time and spark takes only 2.05s.
+Doing the same read operation, hbase takes only 0.36s this time and spark takes only 1.57s.
 
 The great speedup attributes to the powerful caching capability provided by Alluxio. That means that once you access some remote file, it will be cached in Alluxio, and your next following operations will enjoy a local access instead of a remote one, and thus a great speedup.
 > Note: Time spent for the test job depends on your network environment. If it takes too long for you to complete the job, changing a mirror or some smaller file might help.
 
 Also login to the host node (if possible)
 ```shell
-$ ssh root@192.168.1.174
+$ ssh root@192.168.0.199
 $ ls /dev/shm/default/
 hbase  spark
 $ ls -lh /dev/shm/default/hbase/alluxioworker/
@@ -503,5 +502,5 @@ It can be seen that the block files cached by different Datasets are isolated ac
 
 ```shell
 $ kubectl delete -f .
-$ kubectl label node cn-beijing.192.168.1.174 fluid-
+$ kubectl label node cn-beijing.192.168.0.199 fluid-
 ```
