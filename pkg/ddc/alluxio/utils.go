@@ -178,9 +178,12 @@ func (e *AlluxioEngine) getInitUserEnv(runtime *datav1alpha1.AlluxioRuntime) str
 // Init tierPaths when running as a non-root user: chmod on each path
 // Example: "/dev/shm:/var/lib/docker/alluxio:/dev/ssd"
 func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime) string {
-	tierPaths := []string{}
+	var tierPaths []string
 	for _, level := range runtime.Spec.Tieredstore.Levels {
-		tierPaths = append(tierPaths, level.Path)
+		paths := strings.Split(level.Path, ",")
+		for _, levelPath := range paths {
+			tierPaths = append(tierPaths, levelPath)
+		}
 	}
 	return strings.Join(tierPaths, ":")
 }
