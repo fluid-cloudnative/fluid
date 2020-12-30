@@ -176,7 +176,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (Tieredstore
 					return TieredstoreInfo{}, fmt.Errorf("can't correctly parse quota \"%s\" to a quantity type", quotaStr)
 				}
 				cachePaths = append(cachePaths, CachePath{
-					Path:  paths[i],
+					Path:  strings.TrimRight(paths[i], "/"),
 					Quota: &quotaQuantity,
 				})
 			}
