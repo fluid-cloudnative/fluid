@@ -37,7 +37,11 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 
 	if dataset.Status.UfsTotal == "" {
-		ufsTotal, _ := e.TotalStorageBytes()
+		ufsTotal, err := e.TotalStorageBytes()
+		if (err != nil) {
+			e.Log.Info("Failed to get totalStorage when query cache status")
+			return states, err
+		}
 		dataset.Status.UfsTotal = utils.BytesSize(float64(ufsTotal))
 	}
 

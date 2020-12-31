@@ -98,7 +98,7 @@ func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 			common.JINDO_RUNTIME))
 
 		// get ufsTotal bytesize
-		ufsTotal, _ := e.TotalStorageBytes()
+		ufsTotal, err := e.TotalStorageBytes()
 		datasetToUpdate.Status.UfsTotal = utils.BytesSize(float64(ufsTotal))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
