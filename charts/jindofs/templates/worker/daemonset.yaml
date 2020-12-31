@@ -45,6 +45,8 @@ spec:
           env:
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
             value: {{ template "jindofs.fullname" . }}-master:8101
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:8101
           ports:
           - containerPort: 6101
             name: rpc

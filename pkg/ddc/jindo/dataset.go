@@ -97,8 +97,13 @@ func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 			common.AccelerateCategory,
 			common.JINDO_RUNTIME))
 
-		// to mock total
-		datasetToUpdate.Status.UfsTotal = "100KiB"
+		// get ufsTotal bytesize
+		ufsTotal, err := e.TotalStorageBytes()
+		if err != nil {
+			e.Log.Error(err, "get totalStorage")
+			return err
+		}
+		datasetToUpdate.Status.UfsTotal = utils.BytesSize(float64(ufsTotal))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 

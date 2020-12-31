@@ -3,6 +3,7 @@ package operations
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -60,4 +61,45 @@ func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdo
 	}
 
 	return
+}
+
+// Get summary info of the Alluxio Engine
+func (a JindoFileUtils) ReportSummary() (summary string, err error) {
+	var (
+		command = []string{"/sdk/bin/jindo", "jfs", "-report"}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+	return stdout, err
+}
+
+func (a JindoFileUtils) GetUfsTotalSize(url string) (summary string, err error) {
+	var (
+		command = []string{"hadoop", "fs", "-count", url}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = a.exec(command, false)
+
+	str := strings.Fields(stdout)
+
+	if len(str) < 3 {
+		err = fmt.Errorf("failed to parse %s in Count method", str)
+		return
+	}
+
+	stdout = str[2]
+
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+	return stdout, err
 }
