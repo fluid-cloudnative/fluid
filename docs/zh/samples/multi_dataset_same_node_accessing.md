@@ -19,7 +19,7 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 
 **对某个节点打标签** 
 ```shell
-$ kubectl  label node cn-beijing.192.168.1.174 fluid=multi-dataset
+$ kubectl  label node cn-beijing.192.168.0.199 fluid=multi-dataset
 ```
 > 在接下来的步骤中，我们将使用 `NodeSelector` 来管理Dataset调度的节点，这里仅做试验使用。 
 
@@ -42,6 +42,7 @@ spec:
               operator: In
               values:
                 - "multi-dataset"
+  placement: "Shared" // 设置为 Exclusive 或者为空则为独占节点数据集
 
 EOF
 
@@ -62,6 +63,7 @@ spec:
               operator: In
               values:
                 - "multi-dataset"
+  placement: "Shared" 
 
 EOF        
 ```
@@ -117,7 +119,7 @@ spec:
     args:
       - fuse
       - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
-
+      
 EOF
 
 $ cat<<EOF >runtime1.yaml
@@ -156,9 +158,9 @@ alluxioruntime.data.fluid.io/hbase created
 # 注意等待 Dataset hbase 全部组件 Running 
 $ kubectl get pod -o wide | grep hbase
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-7jqz6     1/1     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          42s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-w89fq   2/2     Running   0          11s   192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 
 $ kubectl create -f runtime1.yaml
 alluxioruntime.data.fluid.io/spark created
@@ -178,21 +180,21 @@ spark   Ready          Ready          Ready        58s
 ```shell
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-7jqz6     1/1     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-hbase-master-0       2/2     Running   0          2m24s   192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-hbase-worker-w89fq   2/2     Running   0          113s    192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-fuse-x9rqr     1/1     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
-spark-master-0       2/2     Running   0          68s     192.168.1.175   cn-beijing.192.168.1.175   <none>           <none>
-spark-worker-lt6gt   2/2     Running   0          36s     192.168.1.174   cn-beijing.192.168.1.174   <none>           <none>
+hbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+spark-fuse-5z49p     1/1     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+spark-master-0       2/2     Running   0          50s     192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
+spark-worker-96ksn   2/2     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 ```
-注意上面的不同的 Dataset 的 worker 和 fuse 组件可以正常的调度到相同的节点 `cn-beijing.192.168.1.174`。
+注意上面的不同的 Dataset 的 worker 和 fuse 组件可以正常的调度到相同的节点 `cn-beijing.192.168.0.199`。
 
 **再次查看Dataset资源对象状态**
 ```shell
 $ kubectl get dataset 
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        0.00B    2.00GiB          0.0%                Bound   5m41s
-spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   5m38s
+hbase   443.89MiB        0.00B    2.00GiB          0.0%                Bound   11m
+spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   9m38s
 ```
 因为已经与一个成功启动的AlluxioRuntime绑定，该Dataset资源对象的状态得到了更新，此时`PHASE`属性值已经变为`Bound`状态。通过上述命令可以获知有关资源对象的基本信息
 
@@ -200,8 +202,8 @@ spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   5
 ```shell
 $ kubectl get alluxioruntime -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        5m20s
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        76s
+hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        11m
+spark   1               1                 Ready          1               1                 Ready          1             1               Ready        9m52s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 
@@ -241,7 +243,7 @@ spec:
     - name: hbase-vol
       persistentVolumeClaim:
         claimName: hbase
-  nodeName: cn-beijing.192.168.1.174
+  nodeName: cn-beijing.192.168.0.199
 
 EOF
 
@@ -261,7 +263,7 @@ spec:
     - name: hbase-vol
       persistentVolumeClaim:
         claimName: spark
-  nodeName: cn-beijing.192.168.1.174
+  nodeName: cn-beijing.192.168.0.199
 
 EOF
 ```
@@ -279,14 +281,14 @@ $ kubectl exec -it nginx-hbase -- bash
 
 查看远程文件挂载情况：
 ```shell
-$ ls -lh /data/dataset
+$ ls -lh /data/hbase
 total 444M
--r--r----- 1 root root 174K May 26 07:30 CHANGES.md
--r--r----- 1 root root 106K May 26 07:30 RELEASENOTES.md
--r--r----- 1 root root 115K May 26 07:30 api_compare_2.2.5RC0_to_2.2.4.html
--r--r----- 1 root root 211M May 26 07:30 hbase-2.2.5-bin.tar.gz
--r--r----- 1 root root 200M May 26 07:30 hbase-2.2.5-client-bin.tar.gz
--r--r----- 1 root root  34M May 26 07:30 hbase-2.2.5-src.tar.gz
+-r--r----- 1 root root 193K Sep 16 00:53 CHANGES.md
+-r--r----- 1 root root 112K Sep 16 00:53 RELEASENOTES.md
+-r--r----- 1 root root  26K Sep 16 00:53 api_compare_2.2.6RC2_to_2.2.5.html
+-r--r----- 1 root root 211M Sep 16 00:53 hbase-2.2.6-bin.tar.gz
+-r--r----- 1 root root 200M Sep 16 00:53 hbase-2.2.6-client-bin.tar.gz
+-r--r----- 1 root root  34M Sep 16 00:53 hbase-2.2.6-src.tar.gz
 ```
 
 登录Nginx spark Pod:
@@ -340,7 +342,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase
-      nodeName: cn-beijing.192.168.1.174
+      nodeName: cn-beijing.192.168.0.199
 
 EOF
 
@@ -365,7 +367,7 @@ spec:
         - name: spark-vol
           persistentVolumeClaim:
             claimName: spark
-      nodeName: cn-beijing.192.168.1.174
+      nodeName: cn-beijing.192.168.0.199
 
 EOF
 ```
@@ -385,35 +387,35 @@ spark任务程序会执行`time cp -r /data/spark ./`的shell命令，其中`/da
 等待一段时间,待该作业运行完成,作业的运行状态可通过以下命令查看:
 ```shell
 $ kubectl get pod -o wide | grep copy 
-fluid-copy-test-hbase-6s8cv   0/1     Completed   0          3m33s   172.25.0.26     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-mzpzl   0/1     Completed   0          3m30s   172.25.0.27     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-hbase-r8gxp   0/1     Completed   0          4m16s   172.29.0.135    cn-beijing.192.168.0.199   <none>           <none>
+fluid-copy-test-spark-54q8m   0/1     Completed   0          4m14s   172.29.0.136    cn-beijing.192.168.0.199   <none>           <none>
 ```
 如果看到如上结果,则说明该作业已经运行完成
 
-> 注意: `fluid-copy-test-hbase-6s8cv`中的`6s8cv`为作业生成的标识,在你的环境中,这个标识可能不同,接下来的命令中涉及该标识的地方请以你的环境为准
+> 注意: `fluid-copy-test-hbase-r8gxp`中的`r8gxp`为作业生成的标识,在你的环境中,这个标识可能不同,接下来的命令中涉及该标识的地方请以你的环境为准
 
 **查看测试作业完成时间**
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-6s8cv
+$ kubectl  logs fluid-copy-test-hbase-r8gxp
 + time cp -r /data/hbase ./
-real	0m 54.98s
-user	0m 0.00s
-sys	0m 1.43s
-$ kubectl  logs fluid-copy-test-spark-mzpzl
+real    3m 34.08s
+user    0m 0.00s
+sys     0m 1.24s
+$ kubectl  logs fluid-copy-test-spark-54q8m
 + time cp -r /data/spark ./
-real	3m 15.71s
-user	0m 0.00s
-sys	0m 6.12s
+real    3m 25.47s
+user    0m 0.00s
+sys     0m 5.48s
 ```
 
-可见，第一次远程文件的读取hbase耗费了接近55s的时间，读取spark耗费接近3m16s时间。
+可见，第一次远程文件的读取hbase耗费了接3m34s的时间，读取spark耗费接近3m25s时间。
 
 **查看Dataset资源对象状态**
 ```shell
 $ kubectl get dataset
 NAME    UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-hbase   443.49MiB        443.49MiB   2.00GiB          100.0%              Bound   11m
-spark   1.92GiB          1.92GiB     4.00GiB          100.0%              Bound   11m
+hbase   443.89MiB        443.89MiB   2.00GiB          100.0%              Bound   30m
+spark   1.92GiB          1.92GiB     4.00GiB          100.0%              Bound   28m
 ```
 现在，所有远程文件都已经被缓存在了Alluxio中
 
@@ -428,30 +430,30 @@ $ kubectl create -f app1.yaml
 由于远程文件已经被缓存，此次测试作业能够迅速完成：
 ```shell
 $ kubectl get pod -o wide| grep fluid
-fluid-copy-test-hbase-45t6j   0/1     Completed   0          27s     172.25.0.29     cn-beijing.192.168.1.174   <none>           <none>
-fluid-copy-test-spark-27jrg   0/1     Completed   0          75s     172.25.0.28     cn-beijing.192.168.1.174   <none>           <none>
+fluid-copy-test-hbase-sf5md   0/1     Completed   0          53s   172.29.0.137    cn-beijing.192.168.0.199   <none>           <none>
+fluid-copy-test-spark-fwp57   0/1     Completed   0          51s   172.29.0.138    cn-beijing.192.168.0.199   <none>           <none>
 ```
 
 ```shell
-$ kubectl  logs fluid-copy-test-hbase-45t6j
+$ kubectl  logs fluid-copy-test-hbase-sf5md
 + time cp -r /data/hbase ./
-real	0m 0.39s
-user	0m 0.00s
-sys	0m 0.39s
-$ kubectl  logs fluid-copy-test-spark-27jrg
+real    0m 0.36s
+user    0m 0.00s
+sys     0m 0.36s
+$ kubectl  logs fluid-copy-test-spark-fwp57
 + time cp -r /data/spark ./
-real	0m 2.05s
-user	0m 0.00s
-sys	0m 2.02s
+real    0m 1.57s
+user    0m 0.00s
+sys     0m 1.57s
 ```
-同样的文件访问操，hbase仅耗费了0.39s，spark仅耗费了2.05s。
+同样的文件访问操，hbase仅耗费了0.36s，spark仅耗费了1.57s。
 
 这种大幅度的加速效果归因于Alluxio所提供的强大的缓存能力，这种缓存能力意味着，只要你访问某个远程文件一次，该文件就会被缓存在Alluxio中，你的所有接下来的重复访问都不再需要进行远程文件读取，而是从Alluxio中直接获取数据，因此对于数据的访问加速也就不难解释了。
 > 注意： 上述文件的访问速度与示例运行环境的网络条件有关，如果文件访问速度过慢，请更换更小的远程文件尝试
 
 同样登录主机节点（如果可以）
 ```shell
-$ ssh root@192.168.1.174
+$ ssh root@192.168.0.199
 $ ls /dev/shm/default/
 hbase  spark
 $ ls -lh /dev/shm/default/hbase/alluxioworker/
@@ -484,5 +486,5 @@ $ ls -lh /dev/shm/default/spark/alluxioworker/
 ## 环境清理
 ```shell
 $ kubectl delete -f .
-$ kubectl label node cn-beijing.192.168.1.174 fluid-
+$ kubectl label node cn-beijing.192.168.0.199 fluid-
 ```
