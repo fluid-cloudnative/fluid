@@ -90,6 +90,11 @@ func (a JindoFileUtils) GetUfsTotalSize(url string) (summary string, err error) 
 
 	str := strings.Fields(stdout)
 
+	if len(str) < 3 {
+		err = fmt.Errorf("failed to parse %s in Count method", str)
+		return
+	}
+
 	stdout = str[2]
 
 	if err != nil {
