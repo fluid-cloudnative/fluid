@@ -158,7 +158,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (Tieredstore
 			for _, path := range paths {
 				pathQuota := avgQuota.DeepCopy()
 				cachePaths = append(cachePaths, CachePath{
-					Path:  path,
+					Path:  strings.TrimRight(path, "/"),
 					Quota: &pathQuota,
 				})
 			}
