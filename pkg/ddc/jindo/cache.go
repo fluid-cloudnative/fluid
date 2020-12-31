@@ -49,7 +49,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 		usedInBytes, _ := utils.FromHumanSize(states.cached)
 		ufsTotalInBytes, _ := utils.FromHumanSize(dataset.Status.UfsTotal)
-		// jindofs calcute cached storage bytesize with block sum, so precentage will be over 100% if totally cached
+		// jindofs calculate cached storage bytesize with block sum, so precentage will be over 100% if totally cached
 		percentTage := float64(usedInBytes)/float64(ufsTotalInBytes)
 		if percentTage > 1 {
 			percentTage = 1
