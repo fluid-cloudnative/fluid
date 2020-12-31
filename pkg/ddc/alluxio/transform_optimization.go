@@ -50,7 +50,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.file.writetype.default", "MUST_CACHE")
 	setDefaultProperties(runtime, value, "alluxio.user.ufs.block.read.location.policy", "alluxio.client.block.policy.LocalFirstPolicy")
 	setDefaultProperties(runtime, value, "alluxio.user.block.write.location.policy.class", "alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy")
-	setDefaultProperties(runtime, value, "alluxio.worker.allocator.class", "alluxio.worker.block.allocator.GreedyAllocator")
+	setDefaultProperties(runtime, value, "alluxio.worker.allocator.class", "alluxio.worker.block.allocator.MaxFreeAllocator")
 	setDefaultProperties(runtime, value, "alluxio.user.block.size.bytes.default", "16MB")
 	setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "32MB")
