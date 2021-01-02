@@ -2,7 +2,6 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
-	"strconv"
 )
 
 // ShouldCheckUFS checks if it requires checking UFS
@@ -30,14 +29,7 @@ func (e *JindoEngine) FreeStorageBytes() (value int64, err error) {
 
 // return total storage size of Jindo in bytes
 func (e *JindoEngine) TotalStorageBytes() (value int64, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	url := "jfs://" + e.name + "/"
-	ufsSize, err := fileUtils.GetUfsTotalSize(url)
-	if (err != nil) {
-		e.Log.Error(err, "get total size")
-	}
-	return strconv.ParseInt(ufsSize, 10, 64)
+	return
 }
 
 // return the total num of files in Jindo
