@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
@@ -88,6 +89,7 @@ func (e *JindoEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName   = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname  = e.getStoragetLabelname(humanReadType, totalStorageType)
+		labelExclusiveName = common.Exclusive
 	)
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
@@ -96,6 +98,15 @@ func (e *JindoEngine) destroyWorkers(workers int32) (err error) {
 	}
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return
+	}
+
+	if runtimeInfo.IsExclusive() {
+		labelNames = append(labelNames, labelExclusiveName)
+	}
 
 	// 1.select the nodes
 	// TODO(cheyang) Need consider node selector
