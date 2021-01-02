@@ -84,11 +84,11 @@ func (e *JindoEngine) destroyWorkers(workers int32) (err error) {
 	var (
 		nodeList *corev1.NodeList = &corev1.NodeList{}
 
-		labelName       = e.getRuntimeLabelname()
-		labelCommonName = e.getCommonLabelname()
-		labelMemoryName = e.getStoragetLabelname(humanReadType, memoryStorageType)
-		labelDiskName   = e.getStoragetLabelname(humanReadType, diskStorageType)
-		labelTotalname  = e.getStoragetLabelname(humanReadType, totalStorageType)
+		labelName          = e.getRuntimeLabelname()
+		labelCommonName    = e.getCommonLabelname()
+		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
+		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
+		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
 		labelExclusiveName = common.Exclusive
 	)
 
