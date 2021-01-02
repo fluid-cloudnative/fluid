@@ -98,6 +98,7 @@ func (e *JindoEngine) TotalJindoStorageBytes(name string) (value int64, err erro
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	url := "jfs://" + name + "/"
 	ufsSize, err := fileUtils.GetUfsTotalSize(url)
+	e.Log.Info("jindo storage ufsSize", "ufsSize", ufsSize)
 	if (err != nil) {
 		e.Log.Error(err, "get total size")
 	}
