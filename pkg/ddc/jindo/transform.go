@@ -150,7 +150,6 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 	       high: "0.4"
 	       low: "0.2"
 	*/
-
 	properties["storage.data-dirs"] = dataPath + "/bigboot"
 	//properties["storage.data-dirs"] = "/mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot"
 
@@ -175,6 +174,7 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 }
 
 func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]int {
+	// default enable data-cache and disable meta-cache
 	properties := map[string]int{
 		"client.storage.rpc.port":                   6101,
 		"client.oss.retry":                          5,
@@ -183,7 +183,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath
 		"client.oss.upload.max.parallelism":         16,
 		"client.oss.timeout.millisecond":            30000,
 		"client.oss.connection.timeout.millisecond": 3000,
-		"jfs.cache.meta-cache.enable":               1,
+		"jfs.cache.meta-cache.enable":               0,
 		"jfs.cache.data-cache.enable":               1,
 		"jfs.cache.data-cache.slicecache.enable":    1,
 	}
@@ -196,7 +196,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath
 		properties["jfs.cache.ram-cache.enable"] = 0
 	}
 
-	if len(runtime.Spec.Worker.Properties) > 0 {
+	if len(runtime.Spec.Fuse.Properties) > 0 {
 		for k, v := range runtime.Spec.Fuse.Properties {
 			properties[k] = v
 		}

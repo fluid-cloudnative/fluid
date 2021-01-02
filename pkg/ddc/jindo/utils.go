@@ -5,9 +5,11 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"strconv"
 )
 
 func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
@@ -88,4 +90,16 @@ func (e *JindoEngine) getMasterPodInfo() (podName string, containerName string) 
 	containerName = "jindofs-master"
 
 	return
+}
+
+// return total storage size of Jindo in bytes
+func (e *JindoEngine) TotalJindoStorageBytes(name string) (value int64, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	url := "jfs://" + name + "/"
+	ufsSize, err := fileUtils.GetUfsTotalSize(url)
+	if (err != nil) {
+		e.Log.Error(err, "get total size")
+	}
+	return strconv.ParseInt(ufsSize, 10, 64)
 }
