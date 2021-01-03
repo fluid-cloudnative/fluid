@@ -26,4 +26,4 @@
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
   - [JVM性能分析](dev/profiling.md)
-  - [如何进行新Runtime开发](dev/runtime_dev_guide.md)
+  - [如何增加新Runtime实现](dev/runtime_dev_guide.md)
