@@ -12,7 +12,7 @@ import (
 
 func (e *JindoEngine) setupMasterInernal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/jindo"
+		chartName = utils.GetChartsDirectory() + "/jindofs"
 	)
 	valuefileName, err := e.generateJindoValueFile()
 	if err != nil {

@@ -16,7 +16,7 @@
   "gnetId": 13467,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1608113545037,
+  "iteration": 1609318838702,
   "links": [],
   "panels": [
     {
@@ -70,7 +70,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -168,7 +168,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -264,7 +264,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -367,7 +367,7 @@
             },
             "textMode": "auto"
           },
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "targets": [
             {
               "expr": "sum(Cluster_Workers{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"})",
@@ -454,7 +454,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -467,7 +467,7 @@
               "expr": "(Cluster_CapacityUsed{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}) / Cluster_CapacityTotal{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "instant": false,
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Cluster Space Used",
               "refId": "A"
             }
           ],
@@ -555,7 +555,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -567,7 +567,7 @@
             {
               "expr": "Cluster_RootUfsCapacityUsed{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}/Cluster_RootUfsCapacityTotal{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} UFS Space Used",
               "refId": "A"
             }
           ],
@@ -655,7 +655,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -667,13 +667,13 @@
             {
               "expr": "Cluster_RootUfsCapacityTotal{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Cluster Root UFS Capacity Total",
               "refId": "A"
             },
             {
               "expr": "Cluster_RootUfsCapacityUsed{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Cluster Root UFS Capacity Used",
               "refId": "B"
             }
           ],
@@ -779,7 +779,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -792,14 +792,14 @@
               "expr": "Cluster_CapacityTotal{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "instant": false,
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Cluster Capacity Total",
               "refId": "A"
             },
             {
               "expr": "Cluster_CapacityUsed{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "instant": false,
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Cluster Capacity Used",
               "refId": "B"
             }
           ],
@@ -861,12 +861,19 @@
       "id": 58,
       "panels": [
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays the current number of how many directories Alluxio has created since starting",
           "fieldConfig": {
             "defaults": {
-              "custom": {},
+              "custom": {
+                "align": null,
+                "filterable": false
+              },
               "mappings": [
                 {
                   "id": 0,
@@ -894,46 +901,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 13,
             "w": 4,
             "x": 0,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 60,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_DirectoriesCreated{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Directories Created",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Directories Created",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "displays the number of times the FileInfosGot operation was called",
           "fieldConfig": {
@@ -966,46 +1025,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 4,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 62,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_FileInfosGot{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master FileInfo Got",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "File Infos Got",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays the total paths located in the Alluxio file system",
           "fieldConfig": {
@@ -1038,46 +1149,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 8,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 64,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_TotalPaths{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Total Paths",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Total Paths",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays how many times the CompleteFile operation has been called",
           "fieldConfig": {
@@ -1110,46 +1273,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 12,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 66,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_CompleteFileOps{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Complete FIle Ops",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Complete File Operations",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays the amount of directories that Alluxio has created (Not the current amount of directories)",
           "fieldConfig": {
@@ -1182,46 +1397,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 16,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 68,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_CreateDirectoryOps{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Directory Ops",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Create Directory Oprtations",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays how many times the deletePath operation has been called (And how many total paths have been deleted)",
           "fieldConfig": {
@@ -1254,46 +1521,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 13,
             "w": 4,
             "x": 20,
             "y": 3
           },
+          "hiddenSeries": false,
           "id": 78,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_DeletePathOps{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master DeletePath Ops",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Delete Path Operations",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays the current number of pinned files in Alluxio",
           "fieldConfig": {
@@ -1326,46 +1645,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 7,
             "w": 4,
             "x": 4,
             "y": 9
           },
+          "hiddenSeries": false,
           "id": 70,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_FilesPinned{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Files Pinned",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Files Pinned",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays how many times the mount operation has been called (including failed invocations)",
           "fieldConfig": {
@@ -1398,46 +1769,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 7,
             "w": 4,
             "x": 8,
             "y": 9
           },
+          "hiddenSeries": false,
           "id": 72,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_MountOps{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Mount Ops",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Mount Operations",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays the current number of freed files in Alluxio",
           "fieldConfig": {
@@ -1470,46 +1893,98 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 7,
             "w": 4,
             "x": 12,
             "y": 9
           },
+          "hiddenSeries": false,
           "id": 74,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_FilesFreed{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Files Freed",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Files Freed",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
+          "aliasColors": {},
+          "bars": false,
           "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": "$alluxio_datasource",
           "description": "Displays how many times the unmount operation has been called",
           "fieldConfig": {
@@ -1542,43 +2017,91 @@
             },
             "overrides": []
           },
+          "fill": 1,
+          "fillGradient": 0,
           "gridPos": {
             "h": 7,
             "w": 4,
             "x": 16,
             "y": 9
           },
+          "hiddenSeries": false,
           "id": 76,
           "interval": null,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
+          "nullPointMode": "null",
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "textMode": "auto"
+            "alertThreshold": true
           },
-          "pluginVersion": "7.3.4",
+          "percentage": false,
+          "pluginVersion": "7.3.6",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
           "targets": [
             {
               "expr": "Master_UnmountOps{fluid_runtime=~\"$fluid_runtime\",namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} MasterUnmount Ops",
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Unmount Operations",
-          "type": "stat"
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "title": "Logical Operations",
@@ -1650,7 +2173,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1662,19 +2185,19 @@
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_GetStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetStatus  Total quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1760,7 +2283,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1772,19 +2295,19 @@
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_ListStatus_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master ListStatus quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1870,7 +2393,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1882,19 +2405,19 @@
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_getConfiguration\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master GetConfiguration quantile=0.99",
               "refId": "C"
             }
           ],
@@ -1984,7 +2507,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1996,19 +2519,19 @@
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.5\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.5",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.95\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.95",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"Master_blockHeartbeat_User:$alluxio_user\",fluid_runtime=~\"$fluid_runtime\",quantile=\"0.99\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master BlockHeartBeat quantile=0.99",
               "refId": "C"
             }
           ],
@@ -2086,7 +2609,7 @@
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 6
+            "y": 5
           },
           "hiddenSeries": false,
           "id": 98,
@@ -2106,7 +2629,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2118,13 +2641,13 @@
             {
               "expr": "{__name__=\"pools_Compressed_Class_Space_used\", fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Memory Pools Compressed Class Space Used",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"pools_Metaspace_used\", fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Memory Pools Metdspace Used",
               "refId": "B"
             },
             {
@@ -2144,7 +2667,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Master Pools Memory",
+          "title": "Master Memory Pools",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -2199,7 +2722,7 @@
             "h": 9,
             "w": 8,
             "x": 8,
-            "y": 6
+            "y": 5
           },
           "hiddenSeries": false,
           "id": 96,
@@ -2219,7 +2742,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2231,19 +2754,19 @@
             {
               "expr": "{__name__=\"heap_used\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Heap Used",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"heap_max\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Heap Max",
               "refId": "B"
             },
             {
               "expr": "{__name__=\"non_heap_used\",fluid_runtime=~\"$fluid_runtime\", namespace=~\"$namespace\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Non Heap Used",
               "refId": "C"
             }
           ],
@@ -2306,7 +2829,7 @@
             "h": 9,
             "w": 8,
             "x": 16,
-            "y": 6
+            "y": 5
           },
           "hiddenSeries": false,
           "id": 94,
@@ -2326,7 +2849,7 @@
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "7.3.4",
+          "pluginVersion": "7.3.6",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2338,13 +2861,13 @@
             {
               "expr": "{__name__=\"total_max\",fluid_runtime=~\"$fluid_runtime\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Total Max Memory",
               "refId": "A"
             },
             {
               "expr": "{__name__=\"total_used\",fluid_runtime=~\"$fluid_runtime\"}",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{fluid_runtime}} Master Total Used Memory",
               "refId": "B"
             }
           ],
@@ -2554,8 +3077,7 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "tags": [],
+          "selected": false,
           "text": [
             "All"
           ],
@@ -2571,25 +3093,9 @@
         "label": null,
         "multi": true,
         "name": "namespace",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "liqinglong",
-            "value": "liqinglong"
-          },
-          {
-            "selected": false,
-            "text": "zhangjin",
-            "value": "zhangjin"
-          }
-        ],
+        "options": [],
         "query": "label_values(namespace)",
-        "refresh": 0,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -2622,5 +3128,5 @@
   "timezone": "",
   "title": "Fluid-Prometheus-Grafana-Monitor",
   "uid": "oJnC7i4Mk",
-  "version": 45
+  "version": 3
 }

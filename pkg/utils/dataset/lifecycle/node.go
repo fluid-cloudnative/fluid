@@ -2,9 +2,10 @@ package lifecycle
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-logr/logr"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,7 +24,8 @@ func init() {
 	log = ctrl.Log.WithName("dataset.lifecycle")
 }
 
-// alreadyAssigned checks if the node is already assigned the runtime engine
+// AlreadyAssigned checks if the node is already assigned the runtime engine
+// If runtime engine cached dataset is exclusive, will check if any runtime engine already assigned the runtime engine
 func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assigned bool) {
 	// label := e.getCommonLabelname()
 
@@ -31,6 +33,16 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 
 	if len(node.Labels) > 0 {
 		_, assigned = node.Labels[label]
+	}
+
+	exclusiveness := runtimeInfo.IsExclusive()
+	if exclusiveness {
+		log.Info("Placement Mode", "IsExclusive", exclusiveness)
+		for _, nodeLabel := range node.Labels {
+			if strings.Contains(nodeLabel, common.LabelAnnotationPrefix) {
+				assigned = true
+			}
+		}
 	}
 
 	log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
@@ -47,6 +59,12 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 	// if e.alreadyAssignedByFluid(node) {
 	// 	return false
 	// }
+	label := common.Exclusive
+	_, cannotBeAssigned := node.Labels[label]
+	if cannotBeAssigned {
+		log.Info("node ", node.Name, "is exclusiveness, can not be assigned")
+		return false
+	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
@@ -82,9 +100,16 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	var (
-		labelName       = runtimeInfo.GetRuntimeLabelname()
-		labelCommonName = runtimeInfo.GetCommonLabelname()
+		labelName          = runtimeInfo.GetRuntimeLabelname()
+		labelCommonName    = runtimeInfo.GetCommonLabelname()
+		labelExclusiveName string
 	)
+
+	exclusiveness := runtimeInfo.IsExclusive()
+	log.Info("Placement Mode", "IsExclusive", exclusiveness)
+	if exclusiveness {
+		labelExclusiveName = common.Exclusive
+	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
@@ -102,6 +127,9 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 
 		toUpdate.Labels[labelName] = "true"
 		toUpdate.Labels[labelCommonName] = "true"
+		if exclusiveness {
+			toUpdate.Labels[labelExclusiveName] = "true"
+		}
 		totalRequirement, err := resource.ParseQuantity("0Gi")
 		if err != nil {
 			log.Error(err, "Failed to parse the total requirement")

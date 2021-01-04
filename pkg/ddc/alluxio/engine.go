@@ -42,6 +42,7 @@ type AlluxioEngine struct {
 	initImage              string
 	MetadataSyncDoneCh     chan MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
+	UnitTest               bool
 }
 
 // Build function builds the Alluxio Engine

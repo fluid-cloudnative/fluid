@@ -5,10 +5,20 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"strconv"
 )
+
+func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
+	var mediumType int
+	for _, level := range runtime.Spec.Tieredstore.Levels {
+		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
+	}
+	return mediumType
+}
 
 func (e *JindoEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
@@ -51,4 +61,46 @@ func (e *JindoEngine) getMasterStatefulset(name string, namespace string) (maste
 	}, master)
 
 	return master, err
+}
+
+func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
+	return e.name + "-jindofs-master"
+}
+
+func (e *JindoEngine) getWorkerDaemonsetName() (dsName string) {
+	return e.name + "-jindofs-worker"
+}
+
+func (e *JindoEngine) getFuseDaemonsetName() (dsName string) {
+	return e.name + "-jindofs-fuse"
+}
+
+func (e *JindoEngine) getDaemonset(name string, namespace string) (daemonset *appsv1.DaemonSet, err error) {
+	daemonset = &appsv1.DaemonSet{}
+	err = e.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, daemonset)
+
+	return daemonset, err
+}
+
+func (e *JindoEngine) getMasterPodInfo() (podName string, containerName string) {
+	podName = e.name + "-jindofs-master-0"
+	containerName = "jindofs-master"
+
+	return
+}
+
+// return total storage size of Jindo in bytes
+func (e *JindoEngine) TotalJindoStorageBytes(name string) (value int64, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	url := "jfs://" + name + "/"
+	ufsSize, err := fileUtils.GetUfsTotalSize(url)
+	e.Log.Info("jindo storage ufsSize", "ufsSize", ufsSize)
+	if err != nil {
+		e.Log.Error(err, "get total size")
+	}
+	return strconv.ParseInt(ufsSize, 10, 64)
 }

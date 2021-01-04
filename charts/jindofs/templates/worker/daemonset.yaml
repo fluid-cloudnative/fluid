@@ -44,15 +44,17 @@ spec:
           args: ["worker"]
           env:
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.namespace.rpc.port }}
+            value: {{ template "jindofs.fullname" . }}-master:8101
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:8101
           ports:
           - containerPort: 6101
             name: rpc
           volumeMounts:
             - name: bigboot-config
-              mountPath: /smartdata/conf/bigboot.cfg
-              subPath: worker.cfg
-            {{- range $name, $path := .Values.mounts.workersAndClients }}
+              mountPath: /bigboot.cfg
+              subPath: bigboot.cfg
+          {{- range $name, $path := .Values.mounts.workersAndClients }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
             {{- end }}

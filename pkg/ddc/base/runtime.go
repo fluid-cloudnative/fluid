@@ -37,6 +37,10 @@ type RuntimeInfoInterface interface {
 	GetCommonLabelname() string
 
 	GetRuntimeLabelname() string
+
+	IsExclusive() bool
+
+	SetupWithDataset(dataset *datav1alpha1.Dataset)
 }
 
 // The real Runtime Info should implement
@@ -46,6 +50,9 @@ type RuntimeInfo struct {
 	runtimeType string
 
 	tieredstore datav1alpha1.Tieredstore
+	exclusive   bool
+	// Check if the runtime info is already setup by the dataset
+	setup bool
 }
 
 func BuildRuntimeInfo(name string,
@@ -79,4 +86,17 @@ func (info *RuntimeInfo) GetNamespace() string {
 // GetRuntimeType gets runtime type
 func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
+}
+
+// IsExclusive determines if the runtime is exlusive
+func (info *RuntimeInfo) IsExclusive() bool {
+	return info.exclusive
+}
+
+// SetupWithDataset determines if need to setup with the info of dataset
+func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
+	if !info.setup {
+		info.exclusive = dataset.IsExclusiveMode()
+		info.setup = true
+	}
 }

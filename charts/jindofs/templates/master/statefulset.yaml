@@ -44,28 +44,18 @@ spec:
         - name: jindofs-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
-          resources:
-            {{- if .Values.worker.resources  }}
-            {{- if .Values.master.resources.limits }}
-            limits:
-              cpu: {{ .Values.master.resources.limits.cpu }}
-              memory: {{ .Values.master.resources.limits.memory }}
-            {{- end }}
-            {{- if .Values.master.resources.requests }}
-            requests:
-              cpu: {{ .Values.master.resources.requests.cpu }}
-              memory: {{ .Values.master.resources.requests.memory }}
-            {{- end }}
-            {{- end }}
           command: ["/entrypoint.sh"]
           args: ["master"]
+          env:
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master:8101
           ports:
           - containerPort: 8101
             name: rpc
           volumeMounts:
             - name: bigboot-config
-              mountPath: /smartdata/conf/bigboot.cfg
-              subPath: master.cfg
+              mountPath: /bigboot.cfg
+              subPath: bigboot.cfg
           {{- range $name, $path := .Values.mounts.master }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
