@@ -13,14 +13,38 @@ spec:
     name: Ready Masters
     priority: 10
     type: integer
+  - JSONPath: .status.desiredMasterNumberScheduled
+    name: Desired Masters
+    priority: 10
+    type: integer
+  - JSONPath: .status.masterPhase
+    name: Master Phase
+    type: string
   - JSONPath: .status.workerNumberReady
     name: Ready Workers
     priority: 10
     type: integer
+  - JSONPath: .status.desiredWorkerNumberScheduled
+    name: Desired Workers
+    priority: 10
+    type: integer
+  - JSONPath: .status.workerPhase
+    name: Worker Phase
+    type: string
   - JSONPath: .status.fuseNumberReady
     name: Ready Fuses
     priority: 10
     type: integer
+  - JSONPath: .status.desiredFuseNumberScheduled
+    name: Desired Fuses
+    priority: 10
+    type: integer
+  - JSONPath: .status.fusePhase
+    name: Fuse Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: data.fluid.io
   names:
     kind: JindoRuntime
