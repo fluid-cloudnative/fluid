@@ -42,7 +42,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 			return states, err
 		}
 		ufsTotal, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name)
-		if (err != nil) {
+		if err != nil {
 			e.Log.Info("Failed to get totalStorage when query cache status")
 			return states, err
 		}
@@ -54,7 +54,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 		usedInBytes, _ := utils.FromHumanSize(states.cached)
 		ufsTotalInBytes, _ := utils.FromHumanSize(dataset.Status.UfsTotal)
 		// jindofs calculate cached storage bytesize with block sum, so precentage will be over 100% if totally cached
-		percentTage := float64(usedInBytes)/float64(ufsTotalInBytes)
+		percentTage := float64(usedInBytes) / float64(ufsTotalInBytes)
 		if percentTage > 1 {
 			percentTage = 1
 		}

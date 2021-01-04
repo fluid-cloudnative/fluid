@@ -4,6 +4,7 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"regexp"
 	"strings"
 )
 
@@ -82,6 +83,19 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 			continue
 		}
 		jfsNamespace = jfsNamespace + mount.Name + ","
+		properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
+
+		if !strings.HasSuffix(mount.MountPoint, "/") {
+			mount.MountPoint = mount.MountPoint + "/"
+		}
+		// transform mountpoint for jfs uri format
+		var re = regexp.MustCompile(`(oss://(.*?))(/)`)
+		rm := re.FindStringSubmatch(mount.MountPoint)
+		if len(rm) < 2 {
+			e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+		}
+		mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
+
 		properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
 		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
 		properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
