@@ -154,6 +154,8 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
+          - name: backup
+            mountPath: /alluxio_backups
           {{ if .Values.initUsers.enabled -}}
           - name: user
             mountPath: /etc/passwd
@@ -270,7 +272,11 @@ spec:
           {{- end }}
       restartPolicy: Always
       volumes:
-        {{ if .Values.initUsers.enabled -}}
+        - name: backup
+          hostPath:
+            path: /alluxio_backups
+            type: DirectoryOrCreate
+  {{ if .Values.initUsers.enabled -}}
         - name: dir
           hostPath:
             path: {{ .Values.initUsers.dir }}

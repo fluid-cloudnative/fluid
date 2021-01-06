@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
+	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
 	"github.com/spf13/cobra"
 	"os"
 
@@ -125,6 +126,15 @@ func handle() {
 		mgr.GetEventRecorderFor("AlluxioRuntime"),
 	)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
+		os.Exit(1)
+	}
+
+	if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("DataBackup"),
+	)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
 		os.Exit(1)
 	}
 

@@ -26,9 +26,11 @@ rules:
       - alluxiodataloads
       - alluxioruntimes
       - datasets
+      - databackups
       - alluxiodataloads/status
       - alluxioruntimes/status
       - datasets/status
+      - databackups/status
     verbs:
       - '*'
   - apiGroups:

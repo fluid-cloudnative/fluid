@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -130,6 +131,63 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	}
 
 	return
+}
+
+// InitMetadataInfoFile init the metadata info file.
+func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) (err error) {
+	str := "if [ ! -f '" + filename + "' ]; then echo -e 'dataset: " + dataset + "\\nnamespace: "
+	str = str + a.namespace + "\\nufstotal: [Caculating]\\nfilenum: [Caculating]' > " + filename + ";fi"
+	var (
+		command = []string{ "bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		a.log.Info("InitMetadataInfoFile finished", "stdout", stdout)
+	}
+	return err
+}
+
+type KeyOfMetaDataFile string
+var(
+	DatasetName KeyOfMetaDataFile = "dataset"
+	Namespace KeyOfMetaDataFile = "namespace"
+	UfsTotal KeyOfMetaDataFile = "ufstotal"
+	FileNum KeyOfMetaDataFile = "filenum"
+)
+
+// InitMetadataInfoFile init the metadata info file.
+func (a AlluxioFileUtils) InsertMetaDataInfoIntoFile(key KeyOfMetaDataFile, value string, filename string) (err error) {
+	line := ""
+	switch key {
+	case DatasetName:
+		line = "1c"
+	case Namespace:
+		line = "2c"
+	case UfsTotal:
+		line = "3c"
+	case FileNum:
+		line = "4c"
+	default:
+		a.log.Error(errors.New("the key not in metadatafile"), "key", key)
+	}
+	var (
+		str = "sed -i '" + line + " " + string(key) + ": " + value + "' " + filename
+		command = []string{ "bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	a.log.Info("update info in metadata info file", "key", key, "value", value)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		a.log.Info("InsertMetaDataInfoIntoFile finished", "stdout", stdout)
+	}
+	return err
 }
 
 func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
