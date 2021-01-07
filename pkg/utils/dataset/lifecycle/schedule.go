@@ -27,6 +27,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		currentScheduledNodes                  = map[string]corev1.Node{}
 		newScheduledNodes                      = []corev1.Node{}
 		newScheduleNum        int32
+		log                   = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	)
 
 	err = runtimeClient.List(context.TODO(), nodeList, &client.ListOptions{})
