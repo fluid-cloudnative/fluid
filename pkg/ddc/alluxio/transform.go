@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -148,7 +149,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		return err
 	}
 
-	for _, level := range runtimeInfo.GetTieredstore().Levels {
+	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
 
 		// l := 0
 		// if level.MediumType == common.SSD {
@@ -159,15 +160,26 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
+		var paths []string
+		var quotas []string
+		for _, cachePath := range level.CachePaths {
+			paths = append(paths, fmt.Sprintf("%s/%s/%s", cachePath.Path, runtime.Namespace, runtime.Name))
+			quotas = append(quotas, utils.TranformQuantityToAlluxioUnit(cachePath.Quota))
+		}
+
+		pathConfigStr := strings.Join(paths, ",")
+		quotaConfigStr := strings.Join(quotas, ",")
+		mediumTypeConfigStr := strings.Join(*utils.FillSliceWithString(string(level.MediumType), len(paths)), ",")
+
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
 			Level:      l,
 			Type:       "hostPath",
-			Path:       fmt.Sprintf("%s/%s/%s", level.Path, runtime.Namespace, runtime.Name),
-			Mediumtype: string(level.MediumType),
+			Path:       pathConfigStr,
+			Mediumtype: mediumTypeConfigStr,
 			Low:        level.Low,
 			High:       level.High,
-			Quota:      utils.TranformQuantityToAlluxioUnit(level.Quota),
+			Quota:      quotaConfigStr,
 		})
 	}
 
