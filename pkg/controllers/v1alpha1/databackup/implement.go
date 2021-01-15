@@ -23,15 +23,20 @@ import (
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
+	"os"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -41,14 +46,16 @@ type DataBackupReconcilerImplement struct {
 	client.Client
 	Log      logr.Logger
 	Recorder record.EventRecorder
+	*DataBackupReconciler
 }
 
 // NewDataBackupReconcilerImplement returns a DataBackupReconcilerImplement
-func NewDataBackupReconcilerImplement(client client.Client, log logr.Logger, recorder record.EventRecorder) *DataBackupReconcilerImplement {
+func NewDataBackupReconcilerImplement(client client.Client, log logr.Logger, recorder record.EventRecorder, databackupReconciler *DataBackupReconciler) *DataBackupReconcilerImplement {
 	r := &DataBackupReconcilerImplement{
 		Client:   client,
 		Log:      log,
 		Recorder: recorder,
+		DataBackupReconciler: databackupReconciler,
 	}
 	return r
 }
@@ -57,14 +64,22 @@ func NewDataBackupReconcilerImplement(client client.Client, log logr.Logger, rec
 func (r *DataBackupReconcilerImplement) ReconcileDataBackupDeletion(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDataBackupDeletion")
 
-	// 1. Release lock on target dataset if necessary
-	err := r.releaseLockOnTargetDataset(ctx, log)
+	// 1. Delete release if exists
+	releaseName := utils.GetDataBackupReleaseName(ctx.DataBackup.Name)
+	err := helm.DeleteReleaseIfExists(releaseName, ctx.DataBackup.Namespace)
+	if err != nil {
+		log.Error(err, "can't delete release", "releaseName", releaseName)
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. Release lock on target dataset if necessary
+	err = r.releaseLockOnTargetDataset(ctx, log)
 	if err != nil {
 		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. remove finalizer
+	// 3. remove finalizer
 	if utils.HasDeletionTimestamp(ctx.DataBackup.ObjectMeta) {
 		ctx.DataBackup.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataBackup.ObjectMeta.Finalizers, cdatabackup.FINALIZER)
 		if err := r.Update(ctx, &ctx.DataBackup); err != nil {
@@ -74,45 +89,6 @@ func (r *DataBackupReconcilerImplement) ReconcileDataBackupDeletion(ctx reconcil
 		log.Info("Finalizer is removed")
 	}
 	return utils.NoRequeue()
-}
-
-// ReconcileDataBackup reconciles the DataBackup according to its phase status
-func (r *DataBackupReconcilerImplement) ReconcileDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("ReconcileDataBackup")
-	log.V(1).Info("process the cdatabackup", "cdatabackup", ctx.DataBackup)
-
-	// DataBackup's phase transition: None -> Pending -> Backuping -> Complete or Failed
-	switch ctx.DataBackup.Status.Phase {
-	case cdatabackup.PhaseNone:
-		return r.reconcileNoneDataBackup(ctx)
-	case cdatabackup.PhasePending:
-		return r.reconcilePendingDataBackup(ctx)
-	case cdatabackup.PhaseBackuping:
-		return r.reconcileBackupingDataBackup(ctx)
-	case cdatabackup.PhaseComplete:
-		return r.reconcileCompleteDataBackup(ctx)
-	case cdatabackup.PhaseFailed:
-		return r.reconcileFailedDataBackup(ctx)
-	default:
-		log.Info("Unknown DataBackup phase, won't reconcile it")
-	}
-	return utils.NoRequeue()
-}
-
-// reconcileNoneDataBackup reconciles DataBackups that are in `None` phase
-func (r *DataBackupReconcilerImplement) reconcileNoneDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileNoneDataBackup")
-	databackupToUpdate := ctx.DataBackup.DeepCopy()
-	databackupToUpdate.Status.Phase = cdatabackup.PhasePending
-	if len(databackupToUpdate.Status.Conditions) == 0 {
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{}
-	}
-	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
-		log.Error(err, "failed to update the databackup")
-		return utils.RequeueIfError(err)
-	}
-	log.V(1).Info("Update phase of the databackup to Pending successfully")
-	return utils.RequeueImmediately()
 }
 
 // reconcilePendingDataBackup reconciles DataBackups that are in `Pending` phase
@@ -229,18 +205,35 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		log.Error(err, "Failed to get alluxio-master")
 		return utils.RequeueIfError(err)
 	}
+
 	// 2. create backup Pod if not exist
-	backupPod, _ := kubeclient.GetPodByName(r.Client, ctx.DataBackup.Name, ctx.Namespace)
-	if backupPod == nil {
-		err = utils.CreateBackupPod(r.Client, masterPod, ctx.Dataset, &ctx.DataBackup)
-		if err != nil{
-			log.Error(err, "Failed to create backup Pod")
+	releaseName := utils.GetDataBackupReleaseName(ctx.DataBackup.Name)
+	existed, err := helm.CheckRelease(releaseName, ctx.Namespace)
+	if err != nil {
+		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", ctx.Namespace)
+		return utils.RequeueIfError(err)
+	}
+	// 2. install the helm chart if not exists and requeue
+	if !existed {
+		log.Info("DataBackup helm chart not installed yet, will install")
+		valueFileName, err := r.generateDataBackupValueFile(ctx.DataBackup, masterPod)
+		if err != nil {
+			log.Error(err, "failed to generate databackup chart's value file")
 			return utils.RequeueIfError(err)
 		}
+		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DATABACKUP_CHART
+		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
+		if err != nil {
+			log.Error(err, "failed to install databackup chart")
+			return utils.RequeueIfError(err)
+		}
+		log.Info("DataBackup helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
+
+		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
 	// 3. Check running status of the DataBackup Pod
-	backupPod, err = kubeclient.GetPodByName(r.Client, ctx.DataBackup.Name, ctx.Namespace)
+	backupPod, err := kubeclient.GetPodByName(r.Client, ctx.Dataset.Name + "-databackup-pod", ctx.Namespace)
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
@@ -263,59 +256,62 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
-// reconcileCompleteDataBackup reconciles DataBackups that are in `Complete` phase
-func (r *DataBackupReconcilerImplement) reconcileCompleteDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileCompleteDataBackup")
-	// 1. release lock on target dataset
-	err := r.releaseLockOnTargetDataset(ctx, log)
-	if err != nil {
-		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
-		return utils.RequeueIfError(err)
-	}
-	// 2. record and no requeue
-	log.Info("DataBackup success, no need to requeue")
-	return utils.NoRequeue()
-}
+// generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
+// marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
+func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v1alpha1.DataBackup, masterPod *v1.Pod) (valueFileName string, err error) {
+	nodeName, ip , rpcPort := utils.GetAddressOfMaster(masterPod)
 
-// reconcileFailedDataBackup reconciles DataBackups that are in `Failed` phase
-func (r *DataBackupReconcilerImplement) reconcileFailedDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileFailedDatabackup")
-	// 1. release lock on target dataset
-	err := r.releaseLockOnTargetDataset(ctx, log)
-	if err != nil {
-		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
-		return utils.RequeueIfError(err)
-	}
-	// 2. record and no requeue
-	log.Info("DataBackup failed, won't requeue")
-	return utils.NoRequeue()
-}
+	imageName, imageTag := docker.GetAlluxioWorkerImage(r.Client, databackup.Spec.Dataset, databackup.Namespace)
+	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-// releaseLockOnTargetDataset releases lock on target dataset if the lock currently belongs to reconciling DataLoad.
-// We use a key-value pair on the target dataset's status as the lock. To release the lock, we can simply set the value to empty.
-func (r *DataBackupReconcilerImplement) releaseLockOnTargetDataset(ctx reconcileRequestContext, log logr.Logger) error {
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := utils.GetDataset(r.Client, ctx.DataBackup.Spec.Dataset, ctx.DataBackup.Namespace)
-		if err != nil {
-			if utils.IgnoreNotFound(err) == nil {
-				log.Info("can't find target dataset, won't release lock", "targetDataset", ctx.DataBackup.Spec.Dataset)
-				return nil
-			}
-			// other error
-			return err
+	workdir := os.Getenv("FLUID_WORKDIR")
+	if workdir == "" {
+		workdir = "/tmp"
+	}
+
+	databackupInfo := cdatabackup.DataBackupInfo{
+		Namespace: databackup.Namespace,
+		Dataset: databackup.Spec.Dataset,
+		NodeName: nodeName,
+		Image: image,
+		JavaEnv: "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
+		Workdir: workdir,
+	}
+
+	path := databackup.Spec.BackupPath
+	pvcName := ""
+	subPath := ""
+	if strings.HasPrefix(path, common.VolumeScheme){
+		path = strings.TrimPrefix(path, common.VolumeScheme)
+		split := strings.Split(path, "/")
+		pvcName = split[0]
+		databackupInfo.PVCName = pvcName
+
+		subPath = strings.TrimPrefix(path, pvcName)
+		if subPath == "" {
+			subPath = "/"
+		} else if !strings.HasSuffix(subPath, "/") {
+			subPath = subPath + "/"
 		}
-		if dataset.Status.DataBackupRef != utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace) {
-			log.Info("Found DataBackuRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataLoadRef", dataset.Status.DataLoadRef)
-			return nil
-		}
-		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.Status.DataBackupRef = ""
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
-			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	return err
+
+	} else {
+		subPath = "/"
+	}
+	databackupInfo.SubPath = subPath
+
+	dataBackupValue := cdatabackup.DataBackupValue{DataBackupInfo: databackupInfo}
+	data, err := yaml.Marshal(dataBackupValue)
+	if err != nil {
+		return
+	}
+
+	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-backuper-values.yaml", databackup.Namespace, databackup.Name))
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(valueFile.Name(), data, 0400)
+	if err != nil {
+		return
+	}
+	return valueFile.Name(),nil
 }

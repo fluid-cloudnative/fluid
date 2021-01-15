@@ -144,6 +144,7 @@ type Master struct {
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
 	Ports        Ports             `yaml:"ports,omitempty"`
+	BackupPath   string            `yaml:"backupPath,omitempty"`
 }
 
 type Fuse struct {

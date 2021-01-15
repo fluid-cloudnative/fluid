@@ -9,7 +9,6 @@ DATASET_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/dataset-contro
 ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller
 CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
-BACKUP_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-databackup
 LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
 INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
 
@@ -64,9 +63,6 @@ alluxioruntime-controller-build: generate fmt vet
 
 jindoruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
-
-databackup-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -a -o bin/databackup cmd/databackup/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
@@ -124,9 +120,6 @@ docker-build-csi: generate fmt vet
 
 docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
-
-docker-build-backup:
-	docker build --no-cache . -f Dockerfile.databackup -t ${BACKUP_IMG}:${GIT_VERSION}
 
 docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}

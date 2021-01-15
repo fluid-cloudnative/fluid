@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.databackuper.dataset }}-databackup-script
+data:
+  databackuper.alluxio: |
+    #!/bin/bash
+    dataset=$DATASET_NAME
+    namespace=$DATASET_NAMESPACE
+    subpath=$BACKUP_SUBPATH
+
+    if   [   $BACKUP_PVC   ];
+    then
+    targetPath="/pvc"
+    else
+    targetPath="/alluxio_backups"
+    fi
+
+    result=$(alluxio fsadmin backup | sed -n '2p')
+
+    mkdir -p ${targetPath}${subpath}
+
+    metadatafile=${targetPath}${subpath}metadata-backup-${dataset}-${namespace}.gz
+    metainfofile=${targetPath}${subpath}${dataset}-${namespace}.yaml
+
+    mv ${result##*Backup URI         : }  ${metadatafile}
+    cp /alluxio_backups/${dataset}-${namespace}.yaml  ${metainfofile}
+
+    if [ ! -f "${metadatafile}" ]; then
+       echo "${metadatafile} backup failed"
+       exit 1
+    fi
+    if [ ! -f "${metainfofile}" ]; then
+       echo "${metainfofile} backup failed"
+       exit 1
+    fi
+
+
+
+
+
+
+

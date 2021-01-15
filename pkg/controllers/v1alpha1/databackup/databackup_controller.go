@@ -17,15 +17,20 @@ package databackup
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -54,7 +59,7 @@ func NewDataBackupReconciler(client client.Client,
 	r := &DataBackupReconciler{
 		Scheme: scheme,
 	}
-	r.DataBackupReconcilerImplement = NewDataBackupReconcilerImplement(client, log, recorder)
+	r.DataBackupReconcilerImplement = NewDataBackupReconcilerImplement(client, log, recorder, r)
 	return r
 }
 
@@ -109,7 +114,24 @@ func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	ctx.Dataset = dataset
-	return r.ReconcileDataBackup(ctx)
+
+	// DataBackup's phase transition: None -> Pending -> Backuping -> Complete or Failed
+	switch databackup.Status.Phase {
+	case cdatabackup.PhaseNone:
+		return r.reconcileNoneDataBackup(ctx)
+	case cdatabackup.PhasePending:
+		return r.reconcilePendingDataBackup(ctx)
+	case cdatabackup.PhaseBackuping:
+		return r.reconcileBackupingDataBackup(ctx)
+	case cdatabackup.PhaseComplete:
+		return r.reconcileCompleteDataBackup(ctx)
+	case cdatabackup.PhaseFailed:
+		return r.reconcileFailedDataBackup(ctx)
+	default:
+		ctx.Log.Info("Unknown DataBackup phase, won't reconcile it", "databackup", databackup)
+	}
+	return utils.NoRequeue()
+
 }
 
 // AddOwnerAndRequeue adds Owner and requeue
@@ -137,6 +159,81 @@ func (r *DataBackupReconciler) addFinalierAndRequeue(ctx reconcileRequestContext
 		return utils.RequeueIfError(err)
 	}
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.DataBackup.ObjectMeta.GetGeneration())
+}
+
+// reconcileNoneDataBackup reconciles DataBackups that are in `None` phase
+func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileNoneDataBackup")
+	databackupToUpdate := ctx.DataBackup.DeepCopy()
+	databackupToUpdate.Status.Phase = cdatabackup.PhasePending
+	if len(databackupToUpdate.Status.Conditions) == 0 {
+		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{}
+	}
+	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
+		log.Error(err, "failed to update the databackup")
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info("Update phase of the databackup to Pending successfully")
+	return utils.RequeueImmediately()
+}
+
+// reconcileCompleteDataBackup reconciles DataBackups that are in `Complete` phase
+func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileCompleteDataBackup")
+	// 1. release lock on target dataset
+	err := r.releaseLockOnTargetDataset(ctx, log)
+	if err != nil {
+		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
+		return utils.RequeueIfError(err)
+	}
+	// 2. record and no requeue
+	log.Info("DataBackup success, no need to requeue")
+	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupFailed, "DataBackup %s failed", ctx.DataBackup.Name)
+	return utils.NoRequeue()
+}
+
+// reconcileFailedDataBackup reconciles DataBackups that are in `Failed` phase
+func (r *DataBackupReconciler) reconcileFailedDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileFailedDatabackup")
+	// 1. release lock on target dataset
+	err := r.releaseLockOnTargetDataset(ctx, log)
+	if err != nil {
+		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
+		return utils.RequeueIfError(err)
+	}
+	// 2. record and no requeue
+	log.Info("DataBackup failed, won't requeue")
+	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupComplete, "DataBackup %s succeeded", ctx.DataBackup.Name)
+	return utils.NoRequeue()
+}
+
+// releaseLockOnTargetDataset releases lock on target dataset if the lock currently belongs to reconciling DataLoad.
+// We use a key-value pair on the target dataset's status as the lock. To release the lock, we can simply set the value to empty.
+func (r *DataBackupReconciler) releaseLockOnTargetDataset(ctx reconcileRequestContext, log logr.Logger) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(r.Client, ctx.DataBackup.Spec.Dataset, ctx.DataBackup.Namespace)
+		if err != nil {
+			if utils.IgnoreNotFound(err) == nil {
+				log.Info("can't find target dataset, won't release lock", "targetDataset", ctx.DataBackup.Spec.Dataset)
+				return nil
+			}
+			// other error
+			return err
+		}
+		if dataset.Status.DataBackupRef != utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace) {
+			log.Info("Found DataBackuRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataLoadRef", dataset.Status.DataLoadRef)
+			return nil
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.DataBackupRef = ""
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
+			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
 
 // SetupWithManager sets up the controller with the given controller manager

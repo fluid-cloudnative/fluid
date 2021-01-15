@@ -22,14 +22,7 @@ const (
 )
 
 const (
-	FINALIZER          = "fluid-databackup-controller-finalizer"
-	DATABACKUP_IMA_URL = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-databackup"
-	DATABACKUP_IMA_TAG = ":v0.5.0-c07460a"
-	BACKUP_RESULT_BACKUP_URI = "Backup URI         : "
-	BACPUP_PATH_HOST = "/alluxio_backups"
-	BACPUP_PATH_POD = "/alluxio_backups"
-	PVC_PATH_POD = "/pvc"
-	BACKUP_CONTAINER_NAME = "tool"
-
-
+	FINALIZER                = "fluid-databackup-controller-finalizer"
+	BACPUP_PATH_POD          = "/alluxio_backups"
+	DATABACKUP_CHART         = "fluid-databackup"
 )

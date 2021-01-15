@@ -1,8 +1,13 @@
 package docker
 
 import (
+	"context"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"regexp"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
 
@@ -41,4 +46,28 @@ func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (im
 	}
 
 	return
+}
+
+// GetAlluxioWorkerImage get the image of alluxio worker from alluxioruntime, env or default
+// TODO: Get image by calling runtime controller interface instead of reading runtime object
+func GetAlluxioWorkerImage(client client.Client, datasetName string, namespace string)(imageName string, imageTag string){
+	alluxioruntime := &v1alpha1.AlluxioRuntime{}
+	key := types.NamespacedName{
+		Name: datasetName,
+		Namespace: namespace,
+	}
+	err := client.Get(context.TODO(), key, alluxioruntime)
+	if err != nil || alluxioruntime.Spec.AlluxioVersion.Image == "" || alluxioruntime.Spec.AlluxioVersion.ImageTag == "" {
+		// when user have not define image url in env, will use the default
+		imageName = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+		imageTag = "2.3.0-SNAPSHOT-238b7eb"
+		imageName, imageTag = GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, imageName, imageTag)
+		return
+
+	}
+	// when user have define image url in alluxioruntime
+	imageName = alluxioruntime.Spec.AlluxioVersion.Image
+	imageTag = alluxioruntime.Spec.AlluxioVersion.ImageTag
+	return
+
 }

@@ -45,6 +45,10 @@ const (
 	DataLoadJobFailed = "DataLoadJobFailed"
 
 	DataLoadJobComplete = "DataLoadJobComplete"
+
+	DataBackupFailed = "DataBackupFailed"
+
+	DataBackupComplete = "DataBackupComplete"
 )
 
 type CacheStoreType string

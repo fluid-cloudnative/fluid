@@ -27,7 +27,11 @@ spec:
           args:
             - --development=false
           env:
-            {{- if .Values.runtime.mountRoot }}
+          {{- if .Values.workdir }}
+          - name: FLUID_WORKDIR
+            value: {{ .Values.workdir | quote }}
+          {{- end }}
+          {{- if .Values.runtime.mountRoot }}
             - name: MOUNT_ROOT
               value: {{ .Values.runtime.mountRoot | quote }}
             {{- end }}
