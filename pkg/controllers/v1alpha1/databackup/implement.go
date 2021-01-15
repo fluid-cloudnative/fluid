@@ -234,6 +234,10 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 
 	// 3. Check running status of the DataBackup Pod
 	backupPod, err := kubeclient.GetPodByName(r.Client, ctx.Dataset.Name + "-databackup-pod", ctx.Namespace)
+	if err != nil{
+		log.Error(err, "Failed to get databackup-pod")
+		return utils.RequeueIfError(err)
+	}
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
