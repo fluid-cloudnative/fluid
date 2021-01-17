@@ -81,7 +81,7 @@ type DataLoadStatus struct {
 	Conditions []DataLoadCondition `json:"conditions"`
 
 	// DurationTime describes the duration time of the dataload process.
-	DurationTime string `json:"durationTime,omitempty"`
+	DurationTime string `json:"durationTime"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
