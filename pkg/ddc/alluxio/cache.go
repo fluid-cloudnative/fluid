@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -95,7 +96,14 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 
 }
 
+// getCacheHitStates gets cache hit related info by parsing Alluxio metrics
 func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
+	// get cache hit states every 1 minute(CACHE_HIT_QUERY_INTERVAL_MIN * 20s)
+	cacheHitStates.timestamp = time.Now()
+	if e.lastCacheHitStates != nil && cacheHitStates.timestamp.Sub(e.lastCacheHitStates.timestamp).Minutes() < CACHE_HIT_QUERY_INTERVAL_MIN {
+		return *e.lastCacheHitStates
+	}
+
 	metrics, err := e.reportMetrics()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Alluxio metrics when get cache hit states")
@@ -111,14 +119,17 @@ func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
 		pattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
 			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			continue
 		}
 
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
 			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			continue
 		}
 
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
 			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			continue
 		}
 	}
 

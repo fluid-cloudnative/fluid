@@ -32,6 +32,10 @@ spec:
     name: TOTAL FILES
     priority: 11
     type: string
+  - JSONPath: .status.cacheStates.cacheHitRatio
+    name: CACHE HIT RATIO
+    priority: 10
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date

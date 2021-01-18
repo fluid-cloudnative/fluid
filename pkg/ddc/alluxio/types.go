@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
@@ -189,6 +190,8 @@ type cacheHitStates struct {
 	bytesReadLocal  int64
 	bytesReadRemote int64
 	bytesReadUfsAll int64
+
+	timestamp time.Time
 }
 
 type cacheStates struct {

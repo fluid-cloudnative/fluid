@@ -20,11 +20,11 @@ const (
 	// alluxioHome string = "/opt/alluxio"
 
 	// alluxioUser string = "fluid"
-	METRICS_PREFIX_BYTES_READ_LOCAL = "Cluster.BytesReadLocal"
+	METRICS_PREFIX_BYTES_READ_LOCAL = "Cluster.BytesReadLocal "
 
-	METRICS_PREFIX_BYTES_READ_REMOTE = "Cluster.BytesReadRemote"
+	METRICS_PREFIX_BYTES_READ_REMOTE = "Cluster.BytesReadRemote "
 
-	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll"
+	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll "
 
 	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
 
@@ -40,4 +40,6 @@ const (
 	AUTO_SELECT_PORT_MAX = 30000
 
 	PORT_NUM = 9
+
+	CACHE_HIT_QUERY_INTERVAL_MIN = 1
 )
