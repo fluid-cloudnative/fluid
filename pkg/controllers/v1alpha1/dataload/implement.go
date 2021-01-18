@@ -105,7 +105,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx reconcileRequest
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
 		dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{}
 	}
-	dataloadToUpdate.Status.DurationTime = "loading"
+	dataloadToUpdate.Status.DurationTime = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the cdataload")
 		return utils.RequeueIfError(err)
@@ -293,11 +293,10 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				}
 				if jobCondition.Type == batchv1.JobFailed {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
-					dataloadToUpdate.Status.DurationTime = "failed"
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
-					dataloadToUpdate.Status.DurationTime = jobCondition.LastProbeTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 				}
+				dataloadToUpdate.Status.DurationTime = jobCondition.LastProbeTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
