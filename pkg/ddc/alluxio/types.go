@@ -181,6 +181,16 @@ type Affinity struct {
 	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
 }
 
+type cacheHitStates struct {
+	cacheHitRatio  string
+	localHitRatio  string
+	remoteHitRatio string
+
+	bytesReadLocal  int64
+	bytesReadRemote int64
+	bytesReadUfsAll int64
+}
+
 type cacheStates struct {
 	cacheCapacity string
 	// cacheable        string
@@ -188,6 +198,7 @@ type cacheStates struct {
 	// highWaterMark    string
 	cached           string
 	cachedPercentage string
+	cacheHitStates   cacheHitStates
 	// nonCacheable     string
 }
 

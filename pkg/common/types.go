@@ -47,6 +47,16 @@ const (
 	CachedPercentage CacheStateName = "cachedPercentage"
 
 	CacheCapacity CacheStateName = "cacheCapacity"
+
+	// CacheHitRatio defines total cache hit ratio(both local hit and remote hit), it is a metric to learn
+	// how much profit a distributed cache brings.
+	CacheHitRatio CacheStateName = "cacheHitRatio"
+
+	// LocalHitRatio defines local hit ratio. It represents how many data is requested from local cache worker
+	LocalHitRatio CacheStateName = "localHitRatio"
+
+	// RemoteHitRatio defines remote hit ratio. It represents how many data is requested from remote cache worker(s).
+	RemoteHitRatio CacheStateName = "remoteHitRatio"
 )
 
 type ResourceList map[corev1.ResourceName]string

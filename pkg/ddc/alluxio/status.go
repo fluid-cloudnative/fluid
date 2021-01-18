@@ -80,6 +80,9 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage
 		runtimeToUpdate.Status.CacheStates[common.Cached] = states.cached
+		runtimeToUpdate.Status.CacheStates[common.CacheHitRatio] = states.cacheHitStates.cacheHitRatio
+		runtimeToUpdate.Status.CacheStates[common.LocalHitRatio] = states.cacheHitStates.localHitRatio
+		runtimeToUpdate.Status.CacheStates[common.RemoteHitRatio] = states.cacheHitStates.remoteHitRatio
 
 		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
 		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)

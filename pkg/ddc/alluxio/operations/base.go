@@ -355,6 +355,21 @@ func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 	return fileCount, nil
 }
 
+// ReportMetrics get alluxio metrics by running `alluxio fsadmin report metrics` command
+func (a AlluxioFileUtils) ReportMetrics() (metrics string, err error) {
+	var (
+		command = []string{"alluxio", "fsadmin", "report", "metrics"}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+	return stdout, err
+}
+
 // exec with timeout
 func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
