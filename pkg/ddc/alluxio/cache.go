@@ -113,23 +113,39 @@ func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
 		return
 	}
 
+	var localThroughput, remoteThroughput, ufsThroughput int64
 	strs := strings.Split(metrics, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		pattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
+		counterPattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
+		gaugePattern := regexp.MustCompile(`\(Type:\sGAUGE,\sValue:\s(.*)/MIN\)`)
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
-			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
-			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
 		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
-			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(pattern.FindStringSubmatch(str)[1])
+			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT) {
+			localThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT) {
+			remoteThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT) {
+			ufsThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 		}
 	}
 
@@ -138,6 +154,7 @@ func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
 		return
 	}
 
+	// Summarize local/remote cache hit ratio
 	deltaReadLocal := cacheHitStates.bytesReadLocal - e.lastCacheHitStates.bytesReadLocal
 	deltaReadRemote := cacheHitStates.bytesReadRemote - e.lastCacheHitStates.bytesReadRemote
 	deltaReadUfsAll := cacheHitStates.bytesReadUfsAll - e.lastCacheHitStates.bytesReadUfsAll
@@ -152,6 +169,18 @@ func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
 		cacheHitStates.localHitRatio = "0.0%"
 		cacheHitStates.remoteHitRatio = "0.0%"
 		cacheHitStates.cacheHitRatio = "0.0%"
+	}
+
+	// Summarize local/remote throughput ratio
+	totalThroughput := localThroughput + remoteThroughput + ufsThroughput
+	if totalThroughput != 0 {
+		cacheHitStates.localThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput)*100.0/float64(totalThroughput))
+		cacheHitStates.remoteThroughputRatio = fmt.Sprintf("%.1f%%", float64(remoteThroughput)*100.0/float64(totalThroughput))
+		cacheHitStates.cacheThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput+remoteThroughput)*100.0/float64(totalThroughput))
+	} else {
+		cacheHitStates.localThroughputRatio = "0.0%"
+		cacheHitStates.remoteThroughputRatio = "0.0%"
+		cacheHitStates.cacheThroughputRatio = "0.0%"
 	}
 
 	e.lastCacheHitStates = &cacheHitStates

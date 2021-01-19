@@ -187,6 +187,10 @@ type cacheHitStates struct {
 	localHitRatio  string
 	remoteHitRatio string
 
+	localThroughputRatio  string
+	remoteThroughputRatio string
+	cacheThroughputRatio  string
+
 	bytesReadLocal  int64
 	bytesReadRemote int64
 	bytesReadUfsAll int64

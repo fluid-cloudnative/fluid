@@ -57,6 +57,15 @@ const (
 
 	// RemoteHitRatio defines remote hit ratio. It represents how many data is requested from remote cache worker(s).
 	RemoteHitRatio CacheStateName = "remoteHitRatio"
+
+	// CacheThroughputRatio defines total cache hit throughput ratio, both local hit and remote hit are included.
+	CacheThroughputRatio CacheStateName = "cacheThroughputRatio"
+
+	// LocalThroughputRatio defines local cache hit throughput ratio.
+	LocalThroughputRatio CacheStateName = "localThroughputRatio"
+
+	// RemoteThroughputRatio defines remote cache hit throughput ratio.
+	RemoteThroughputRatio CacheStateName = "remoteThroughputRatio"
 )
 
 type ResourceList map[corev1.ResourceName]string

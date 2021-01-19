@@ -26,6 +26,12 @@ const (
 
 	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll "
 
+	METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT = "Cluster.BytesReadLocalThroughput "
+
+	METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT = "Cluster.BytesReadRemoteThroughput "
+
+	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
+
 	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
 
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
