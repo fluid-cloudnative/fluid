@@ -357,7 +357,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		return "", err
 	}
 
-	imageName, imageTag := docker.GetAlluxioWorkerImage(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataloadInfo := cdataload.DataLoadInfo{

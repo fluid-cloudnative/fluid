@@ -95,7 +95,7 @@ func (r *DataBackupReconcilerImplement) ReconcileDataBackupDeletion(ctx reconcil
 func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePendingDataBackup")
 	targetDataset := ctx.Dataset
-	// 1. Check if there's any Backinging pods(conflict DataBackup)
+	// 1. Check if there's any Backuping pods(conflict DataBackup)
 	conflictDataBackupRef := targetDataset.Status.DataBackupRef
 	myDataBackupRef := utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace)
 	if len(conflictDataBackupRef) != 0 && conflictDataBackupRef != myDataBackupRef {
@@ -265,7 +265,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v1alpha1.DataBackup, masterPod *v1.Pod) (valueFileName string, err error) {
 	nodeName, ip , rpcPort := utils.GetAddressOfMaster(masterPod)
 
-	imageName, imageTag := docker.GetAlluxioWorkerImage(r.Client, databackup.Spec.Dataset, databackup.Namespace)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	workdir := os.Getenv("FLUID_WORKDIR")

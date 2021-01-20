@@ -1,10 +1,7 @@
 package docker
 
 import (
-	"context"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,26 +45,32 @@ func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (im
 	return
 }
 
-// GetAlluxioWorkerImage get the image of alluxio worker from alluxioruntime, env or default
+// GetWorkerImage get the image of alluxio worker from alluxioruntime, env or default
 // TODO: Get image by calling runtime controller interface instead of reading runtime object
-func GetAlluxioWorkerImage(client client.Client, datasetName string, namespace string)(imageName string, imageTag string){
-	alluxioruntime := &v1alpha1.AlluxioRuntime{}
-	key := types.NamespacedName{
-		Name: datasetName,
-		Namespace: namespace,
+func GetWorkerImage(client client.Client, datasetName string, runtimeType string, namespace string)(imageName string, imageTag string){
+	configmapName := datasetName+ "-" + runtimeType + "-values"
+	configmap, err := kubeclient.GetConfigmapByName(client, configmapName, namespace)
+	if configmap != nil && err == nil {
+		for key, value := range configmap.Data {
+			if key == "data" {
+				splits := strings.Split(value, "\n")
+				for _, split := range splits {
+					if strings.HasPrefix(split, "image: "){
+						imageName = strings.TrimPrefix(split, "image: ")
+					}
+					if strings.HasPrefix(split, "imageTag: "){
+						imageTag = strings.TrimPrefix(split, "imageTag: ")
+					}
+				}
+			}
+		}
+
 	}
-	err := client.Get(context.TODO(), key, alluxioruntime)
-	if err != nil || alluxioruntime.Spec.AlluxioVersion.Image == "" || alluxioruntime.Spec.AlluxioVersion.ImageTag == "" {
-		// when user have not define image url in env, will use the default
+	if imageName == "" {
 		imageName = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-		imageTag = "2.3.0-SNAPSHOT-238b7eb"
-		imageName, imageTag = GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, imageName, imageTag)
-		return
-
 	}
-	// when user have define image url in alluxioruntime
-	imageName = alluxioruntime.Spec.AlluxioVersion.Image
-	imageTag = alluxioruntime.Spec.AlluxioVersion.ImageTag
+	if imageTag == "" {
+		imageTag = "2.3.0-SNAPSHOT-238b7eb"
+	}
 	return
-
 }

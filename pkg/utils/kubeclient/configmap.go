@@ -45,6 +45,26 @@ func IsConfigMapExist(client client.Client, name, namespace string) (found bool,
 	return found, err
 }
 
+// GetConfigmapByName gets configmap with given name and namespace of the configmap.
+func GetConfigmapByName(client client.Client, name, namespace string) (configmap *v1.ConfigMap, err error) {
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+
+	configmap = &v1.ConfigMap{}
+
+	if err = client.Get(context.TODO(), key, configmap); err != nil {
+		if apierrs.IsNotFound(err) {
+			err = nil
+			configmap = nil
+		}
+		return configmap, err
+	}
+
+	return
+}
+
 // DeleteConfigMap deletes the configmap given its name and namespace if the configmap exists.
 func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
