@@ -14,6 +14,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	"os"
 	"regexp"
 
@@ -97,4 +98,15 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
+}
+
+// BuildDataLoad function builds the alluxio DataLoadImplement
+func BuildDataLoad(ctx dataload.ReconcileRequestContext, runtimeType string) base.DataLoadImplement {
+	dataloadimplement := &AlluxioEngine{
+		name:                   ctx.Name,
+		namespace:              ctx.Namespace,
+		Log: 					ctx.Log,
+		runtimeType:            runtimeType,
+	}
+	return dataloadimplement
 }

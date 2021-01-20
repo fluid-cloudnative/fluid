@@ -33,8 +33,8 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-// reconcileRequestContext wraps up necessary info for reconciliation
-type reconcileRequestContext struct {
+// ReconcileRequestContext wraps up necessary info for reconciliation
+type ReconcileRequestContext struct {
 	context.Context
 	types.NamespacedName
 	Log      logr.Logger
@@ -63,7 +63,7 @@ func NewDataLoadReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads/status,verbs=get;update;patch
 // Reconcile reconciles the DataLoad object
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := reconcileRequestContext{
+	ctx := ReconcileRequestContext{
 		Context:        context.Background(),
 		NamespacedName: req.NamespacedName,
 		Log:            r.Log.WithValues("dataload", req.NamespacedName),
@@ -116,7 +116,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 // AddOwnerAndRequeue adds Owner and requeue
-func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
+func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx ReconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
 	ctx.DataLoad.ObjectMeta.OwnerReferences = append(ctx.DataLoad.GetOwnerReferences(), metav1.OwnerReference{
 		APIVersion: dataset.APIVersion,
 		Kind:       dataset.Kind,
@@ -131,7 +131,7 @@ func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dat
 	return utils.RequeueImmediately()
 }
 
-func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconciler) addFinalierAndRequeue(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
 	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DATALOAD_FINALIZER)
 	prevGeneration := ctx.DataLoad.ObjectMeta.GetGeneration()
