@@ -43,6 +43,7 @@ type AlluxioEngine struct {
 	MetadataSyncDoneCh     chan MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
+	lastCacheHitStates     *cacheHitStates
 }
 
 // Build function builds the Alluxio Engine
@@ -56,6 +57,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
+		lastCacheHitStates:     nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

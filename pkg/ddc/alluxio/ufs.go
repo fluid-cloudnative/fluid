@@ -77,11 +77,18 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
-// report alluxio summary
+// reportSummary reports alluxio summary
 func (e *AlluxioEngine) reportSummary() (summary string, err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUtils.ReportSummary()
+}
+
+// reportMetrics reports alluxio metrics
+func (e *AlluxioEngine) reportMetrics() (summary string, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	return fileUtils.ReportMetrics()
 }
 
 ////du the ufs
