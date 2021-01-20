@@ -17,7 +17,9 @@ package alluxio
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -25,11 +27,6 @@ import (
 
 // queryCacheStatus checks the cache status
 func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
-	//cacheCapacity, err := e.getCurrentCachedCapacity()
-	//if err != nil {
-	//	e.Log.Error(err, "Failed to sync the cache")
-	//	return states, err
-	//}
 	summary, err := e.reportSummary()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Alluxio summary when query cache status")
@@ -65,6 +62,8 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 		states.cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
 	}
 
+	states.cacheHitStates = e.getCacheHitStates()
+
 	return states, nil
 
 	// dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -95,6 +94,97 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	//	cachedPercentage: cachedPercentage,
 	//}, nil
 
+}
+
+// getCacheHitStates gets cache hit related info by parsing Alluxio metrics
+func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
+	// get cache hit states every 1 minute(CACHE_HIT_QUERY_INTERVAL_MIN * 20s)
+	cacheHitStates.timestamp = time.Now()
+	if e.lastCacheHitStates != nil && cacheHitStates.timestamp.Sub(e.lastCacheHitStates.timestamp).Minutes() < CACHE_HIT_QUERY_INTERVAL_MIN {
+		return *e.lastCacheHitStates
+	}
+
+	metrics, err := e.reportMetrics()
+	if err != nil {
+		e.Log.Error(err, "Failed to get Alluxio metrics when get cache hit states")
+		if e.lastCacheHitStates != nil {
+			return *e.lastCacheHitStates
+		}
+		return
+	}
+
+	var localThroughput, remoteThroughput, ufsThroughput int64
+	strs := strings.Split(metrics, "\n")
+	for _, str := range strs {
+		str = strings.TrimSpace(str)
+		counterPattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
+		gaugePattern := regexp.MustCompile(`\(Type:\sGAUGE,\sValue:\s(.*)/MIN\)`)
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
+			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
+			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
+			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT) {
+			localThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT) {
+			remoteThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
+			continue
+		}
+
+		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT) {
+			ufsThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
+		}
+	}
+
+	if e.lastCacheHitStates == nil {
+		e.lastCacheHitStates = &cacheHitStates
+		return
+	}
+
+	// Summarize local/remote cache hit ratio
+	deltaReadLocal := cacheHitStates.bytesReadLocal - e.lastCacheHitStates.bytesReadLocal
+	deltaReadRemote := cacheHitStates.bytesReadRemote - e.lastCacheHitStates.bytesReadRemote
+	deltaReadUfsAll := cacheHitStates.bytesReadUfsAll - e.lastCacheHitStates.bytesReadUfsAll
+	deltaReadTotal := deltaReadLocal + deltaReadRemote + deltaReadUfsAll
+
+	if deltaReadTotal != 0 {
+		cacheHitStates.localHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadLocal)*100.0/float64(deltaReadTotal))
+		cacheHitStates.remoteHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadRemote)*100.0/float64(deltaReadTotal))
+		cacheHitStates.cacheHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadLocal+deltaReadRemote)*100.0/float64(deltaReadTotal))
+	} else {
+		// No data is requested in last minute
+		cacheHitStates.localHitRatio = "0.0%"
+		cacheHitStates.remoteHitRatio = "0.0%"
+		cacheHitStates.cacheHitRatio = "0.0%"
+	}
+
+	// Summarize local/remote throughput ratio
+	totalThroughput := localThroughput + remoteThroughput + ufsThroughput
+	if totalThroughput != 0 {
+		cacheHitStates.localThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput)*100.0/float64(totalThroughput))
+		cacheHitStates.remoteThroughputRatio = fmt.Sprintf("%.1f%%", float64(remoteThroughput)*100.0/float64(totalThroughput))
+		cacheHitStates.cacheThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput+remoteThroughput)*100.0/float64(totalThroughput))
+	} else {
+		cacheHitStates.localThroughputRatio = "0.0%"
+		cacheHitStates.remoteThroughputRatio = "0.0%"
+		cacheHitStates.cacheThroughputRatio = "0.0%"
+	}
+
+	e.lastCacheHitStates = &cacheHitStates
+	return
 }
 
 // getCachedCapacityOfNode cacluates the node

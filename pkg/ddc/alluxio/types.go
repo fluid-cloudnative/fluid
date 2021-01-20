@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
@@ -181,6 +182,22 @@ type Affinity struct {
 	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
 }
 
+type cacheHitStates struct {
+	cacheHitRatio  string
+	localHitRatio  string
+	remoteHitRatio string
+
+	localThroughputRatio  string
+	remoteThroughputRatio string
+	cacheThroughputRatio  string
+
+	bytesReadLocal  int64
+	bytesReadRemote int64
+	bytesReadUfsAll int64
+
+	timestamp time.Time
+}
+
 type cacheStates struct {
 	cacheCapacity string
 	// cacheable        string
@@ -188,6 +205,7 @@ type cacheStates struct {
 	// highWaterMark    string
 	cached           string
 	cachedPercentage string
+	cacheHitStates   cacheHitStates
 	// nonCacheable     string
 }
 
