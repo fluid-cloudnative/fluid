@@ -139,10 +139,15 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	*/
 	// 1.if there is a pod which is using the dataset, then requeue
 	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
-	if err != nil || !should {
-		err := fmt.Errorf("dataset cannot be deleted because pvc is mounted or err appear when querying pvc")
-		ctx.Log.Error(err, "Failed to delete dataset", "DatasetDeleteError", ctx)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "dataset %s cannot be deleted because pvc is mounted or err appear when querying pvc", ctx.Dataset.Name)
+	if err != nil {
+		ctx.Log.Error(err, "Failed to delete dataset because cannot get PVC or PvcMountPods", "DatasetDeleteError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "dataset %s cannot be deleted because cannot get PVC or PvcMountPods", ctx.Dataset.Name)
+		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+	}
+	if !should {
+		err := fmt.Errorf("dataset cannot be deleted because pvc is mounted")
+		ctx.Log.Error(err, "Failed to delete dataset because pvc is mounted", "DatasetDeleteError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "dataset %s cannot be deleted because pvc is mounted", ctx.Dataset.Name)
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
