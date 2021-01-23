@@ -17,7 +17,7 @@ package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
@@ -110,5 +110,5 @@ type UnderFileSystemService interface {
 
 type DataLoadImplement interface{
 	// CreateDataLoadJob load the data
-	CreateDataLoadJob(ctx dataload.ReconcileRequestContext) (string, string, error)
+	CreateDataLoadJob(ctx requestcontext.ReconcileRequestContext) (string, string, error)
 }

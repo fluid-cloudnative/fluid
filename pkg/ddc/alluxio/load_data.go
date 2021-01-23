@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
@@ -31,7 +31,7 @@ import (
 )
 
 // LoadData load the data
-func (e *AlluxioEngine) CreateDataLoadJob (ctx dataload.ReconcileRequestContext) (releaseName string, jobName string, err error) {
+func (e *AlluxioEngine) CreateDataLoadJob (ctx requestcontext.ReconcileRequestContext) (releaseName string, jobName string, err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
