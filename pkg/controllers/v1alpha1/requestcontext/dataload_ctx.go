@@ -20,12 +20,14 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ReconcileRequestContext wraps up necessary info for reconciliation
 type ReconcileRequestContext struct {
 	context.Context
 	types.NamespacedName
+	client.Client
 	Log      logr.Logger
 	DataLoad datav1alpha1.DataLoad
 }

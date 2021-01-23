@@ -60,6 +60,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Context:        context.Background(),
 		NamespacedName: req.NamespacedName,
 		Log:            r.Log.WithValues("dataload", req.NamespacedName),
+		Client:			r.Client,
 	}
 
 	// 1. Get DataLoad object

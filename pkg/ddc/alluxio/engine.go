@@ -106,6 +106,7 @@ func BuildDataLoad(ctx requestcontext.ReconcileRequestContext, runtimeType strin
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Log: 					ctx.Log,
+		Client:					ctx.Client,
 		runtimeType:            runtimeType,
 	}
 	return dataloadimplement
