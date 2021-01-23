@@ -41,7 +41,7 @@ func (e *AlluxioEngine) CreateDataLoadJob (ctx requestcontext.ReconcileRequestCo
 	existed, err = helm.CheckRelease(releaseName, ctx.Namespace)
 	if err != nil {
 		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", ctx.Namespace)
-		return
+		return releaseName, jobName, err
 	}
 
 	// 2. install the helm chart if not exists and requeue
@@ -50,16 +50,16 @@ func (e *AlluxioEngine) CreateDataLoadJob (ctx requestcontext.ReconcileRequestCo
 		valueFileName, err := e.generateDataLoadValueFile(ctx.DataLoad)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
-			return
+			return releaseName, jobName, err
 		}
 		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
-			return
+			return releaseName, jobName, err
 		}
 	}
-	return
+	return releaseName, jobName, err
 }
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
