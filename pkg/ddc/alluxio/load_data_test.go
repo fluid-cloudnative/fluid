@@ -1,4 +1,4 @@
-package dataload
+package alluxio
 
 import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
