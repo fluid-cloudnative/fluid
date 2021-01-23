@@ -58,7 +58,7 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 * Build DataLoadImplement
  */
 func CreateDataLoad(ctx requestcontext.ReconcileRequestContext, runtimeType string) (dataloadImplement base.DataLoadImplement, err error) {
-	if buildDataLoadFunc , found := buildDataLoadFuncMap[runtimeType]; found{
+	if buildDataLoadFunc, found := buildDataLoadFuncMap[runtimeType]; found {
 		dataloadImplement = buildDataLoadFunc(ctx, runtimeType)
 	} else {
 		err = fmt.Errorf("failed to build the dataloadImplement due to the type %s is not found", ctx.NamespacedName)

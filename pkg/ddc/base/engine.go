@@ -108,7 +108,7 @@ type UnderFileSystemService interface {
 	TotalFileNums() (int64, error)
 }
 
-type DataLoadImplement interface{
+type DataLoadImplement interface {
 	// CreateDataLoadJob load the data
 	CreateDataLoadJob(ctx requestcontext.ReconcileRequestContext) (string, string, error)
 }

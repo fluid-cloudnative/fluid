@@ -33,7 +33,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-
 // DataLoadReconciler reconciles a DataLoad object
 type DataLoadReconciler struct {
 	Scheme *runtime.Scheme
@@ -60,7 +59,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Context:        context.Background(),
 		NamespacedName: req.NamespacedName,
 		Log:            r.Log.WithValues("dataload", req.NamespacedName),
-		Client:			r.Client,
+		Client:         r.Client,
 	}
 
 	// 1. Get DataLoad object

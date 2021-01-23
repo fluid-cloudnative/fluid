@@ -103,11 +103,11 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 // BuildDataLoad function builds the alluxio DataLoadImplement
 func BuildDataLoad(ctx requestcontext.ReconcileRequestContext, runtimeType string) base.DataLoadImplement {
 	dataloadimplement := &AlluxioEngine{
-		name:                   ctx.Name,
-		namespace:              ctx.Namespace,
-		Log: 					ctx.Log,
-		Client:					ctx.Client,
-		runtimeType:            runtimeType,
+		name:        ctx.Name,
+		namespace:   ctx.Namespace,
+		Log:         ctx.Log,
+		Client:      ctx.Client,
+		runtimeType: runtimeType,
 	}
 	return dataloadimplement
 }

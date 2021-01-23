@@ -31,7 +31,7 @@ import (
 )
 
 // LoadData load the data
-func (e *AlluxioEngine) CreateDataLoadJob (ctx requestcontext.ReconcileRequestContext) (releaseName string, jobName string, err error) {
+func (e *AlluxioEngine) CreateDataLoadJob(ctx requestcontext.ReconcileRequestContext) (releaseName string, jobName string, err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
