@@ -13,7 +13,6 @@ limitations under the License.
 package ddc
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
@@ -24,7 +23,7 @@ import (
 )
 
 type buildFunc func(id string, ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error)
-type buildDataLoadFunc func(ctx requestcontext.ReconcileRequestContext, runtimeType string) base.DataLoadImplement
+type buildDataLoadFunc func(ctx cruntime.ReconcileRequestContext) base.Implement
 
 var buildFuncMap map[string]buildFunc
 var buildDataLoadFuncMap map[string]buildDataLoadFunc
@@ -57,9 +56,9 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 /**
 * Build DataLoadImplement
  */
-func CreateDataLoad(ctx requestcontext.ReconcileRequestContext, runtimeType string) (dataloadImplement base.DataLoadImplement, err error) {
-	if buildDataLoadFunc, found := buildDataLoadFuncMap[runtimeType]; found {
-		dataloadImplement = buildDataLoadFunc(ctx, runtimeType)
+func CreateDataLoad(ctx cruntime.ReconcileRequestContext) (dataloadImplement base.Implement, err error) {
+	if buildDataLoadFunc, found := buildDataLoadFuncMap[ctx.RuntimeType]; found {
+		dataloadImplement = buildDataLoadFunc(ctx)
 	} else {
 		err = fmt.Errorf("failed to build the dataloadImplement due to the type %s is not found", ctx.NamespacedName)
 	}

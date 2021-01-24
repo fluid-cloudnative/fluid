@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
@@ -40,7 +40,7 @@ func NewDataLoadReconcilerImplement(client client.Client, log logr.Logger, recor
 }
 
 // ReconcileDataLoadDeletion reconciles the deletion of the DataLoad
-func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDataLoadDeletion")
 
 	// 1. Delete release if exists
@@ -71,7 +71,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx requestconte
 }
 
 // ReconcileDataLoad reconciles the DataLoad according to its phase status
-func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDataLoad")
 	log.V(1).Info("process the cdataload", "cdataload", ctx.DataLoad)
 
@@ -94,7 +94,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx requestcontext.Recon
 }
 
 // reconcileNoneDataLoad reconciles DataLoads that are in `DataLoadPhaseNone` phase
-func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNoneDataLoad")
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
 	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhasePending
@@ -110,7 +110,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx requestcontext.R
 }
 
 // reconcilePendingDataLoad reconciles DataLoads that are in `DataLoadPhasePending` phase
-func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePendingDataLoad")
 
 	// 1. Check existence of the target dataset
@@ -222,7 +222,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx requestcontex
 }
 
 // reconcileLoadingDataLoad reconciles DataLoads that are in `DataLoadPhaseLoading` phase
-func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadingDataLoad")
 
 	targetDataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
@@ -251,13 +251,21 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx requestcontex
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
-	dataloadImplement, err := ddc.CreateDataLoad(ctx, boundedRuntime.Type)
+	rctx := cruntime.ReconcileRequestContext{
+		Context: ctx.Context,
+		NamespacedName:	ctx.NamespacedName,
+		Log: ctx.Log,
+		Client: r.Client,
+		RuntimeType: boundedRuntime.Type,
+		DataLoad: ctx.DataLoad,
+	}
+	dataloadImplement, err := ddc.CreateDataLoad(rctx)
 	if err != nil {
 		log.Error(err, "failed to create dataloadimplement")
 		return utils.RequeueIfError(err)
 	}
 
-	releaseName, jobName, err := dataloadImplement.CreateDataLoadJob(ctx)
+	releaseName, jobName, err := dataloadImplement.CreateDataLoadJob(rctx)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
@@ -329,7 +337,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx requestcontex
 }
 
 // reconcileLoadedDataLoad reconciles DataLoads that are in `DataLoadPhaseComplete` phase
-func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadedDataLoad")
 	// 1. release lock on target dataset
 	err := r.releaseLockOnTargetDataset(ctx, log)
@@ -346,7 +354,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx requestcontext
 }
 
 // reconcileFailedDataLoad reconciles DataLoads that are in `DataLoadPhaseComplete` phase
-func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx requestcontext.ReconcileRequestContext) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailedDataLoad")
 	// 1. release lock on target dataset
 	err := r.releaseLockOnTargetDataset(ctx, log)
@@ -364,7 +372,7 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx requestcontext
 
 // releaseLockOnTargetDataset releases lock on target dataset if the lock currently belongs to reconciling DataLoad.
 // We use a key-value pair on the target dataset's status as the lock. To release the lock, we can simply set the value to empty.
-func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx requestcontext.ReconcileRequestContext, log logr.Logger) error {
+func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx ReconcileRequestContext, log logr.Logger) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
 		if err != nil {

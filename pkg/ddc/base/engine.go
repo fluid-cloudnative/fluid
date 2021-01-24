@@ -17,7 +17,6 @@ package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
@@ -92,6 +91,9 @@ type Implement interface {
 
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
+
+	// CreateDataLoadJob load the data
+	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext) (string, string, error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented
@@ -106,9 +108,4 @@ type UnderFileSystemService interface {
 	TotalStorageBytes() (int64, error)
 
 	TotalFileNums() (int64, error)
-}
-
-type DataLoadImplement interface {
-	// CreateDataLoadJob load the data
-	CreateDataLoadJob(ctx requestcontext.ReconcileRequestContext) (string, string, error)
 }

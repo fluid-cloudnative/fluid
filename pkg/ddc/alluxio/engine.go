@@ -14,7 +14,6 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/requestcontext"
 	"os"
 	"regexp"
 
@@ -101,13 +100,13 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 }
 
 // BuildDataLoad function builds the alluxio DataLoadImplement
-func BuildDataLoad(ctx requestcontext.ReconcileRequestContext, runtimeType string) base.DataLoadImplement {
+func BuildDataLoad(ctx cruntime.ReconcileRequestContext) base.Implement {
 	dataloadimplement := &AlluxioEngine{
 		name:        ctx.Name,
 		namespace:   ctx.Namespace,
 		Log:         ctx.Log,
 		Client:      ctx.Client,
-		runtimeType: runtimeType,
+		runtimeType: ctx.RuntimeType,
 	}
 	return dataloadimplement
 }
