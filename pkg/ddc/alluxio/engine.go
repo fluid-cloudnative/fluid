@@ -99,14 +99,15 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	return template, err
 }
 
-// BuildDataLoad function builds the alluxio DataLoadImplement
-func BuildDataLoad(ctx cruntime.ReconcileRequestContext) base.Implement {
-	dataloadimplement := &AlluxioEngine{
+// BuildDataLoadEngine function builds the alluxio DataLoadEngine
+func BuildDataLoadEngine(id string, ctx cruntime.ReconcileRequestContext) base.Engine {
+	dataloadEngine := &AlluxioEngine{
 		name:        ctx.Name,
 		namespace:   ctx.Namespace,
 		Log:         ctx.Log,
 		Client:      ctx.Client,
 		runtimeType: ctx.RuntimeType,
 	}
-	return dataloadimplement
+	template := base.NewTemplateEngine(dataloadEngine, id, ctx)
+	return template
 }

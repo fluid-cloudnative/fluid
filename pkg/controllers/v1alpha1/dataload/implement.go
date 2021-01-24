@@ -259,13 +259,14 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx ReconcileRequ
 		RuntimeType: boundedRuntime.Type,
 		DataLoad: ctx.DataLoad,
 	}
-	dataloadImplement, err := ddc.CreateDataLoad(rctx)
+	id := ddc.GenerateEngineID(rctx.NamespacedName)
+	dataloadEngine, err := ddc.CreateDataLoad(id, rctx)
 	if err != nil {
 		log.Error(err, "failed to create dataloadimplement")
 		return utils.RequeueIfError(err)
 	}
 
-	releaseName, jobName, err := dataloadImplement.CreateDataLoadJob(rctx)
+	releaseName, jobName, err := dataloadEngine.LoadData(rctx)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}

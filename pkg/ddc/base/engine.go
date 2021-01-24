@@ -41,6 +41,9 @@ type Engine interface {
 
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
+
+	// LoadData load the data
+	LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error)
 }
 
 // The real engine should implement
@@ -92,8 +95,9 @@ type Implement interface {
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
 
-	// CreateDataLoadJob load the data
-	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext) (string, string, error)
+	// LoadData load the data
+	LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error)
+
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented
