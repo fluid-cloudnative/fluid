@@ -97,7 +97,6 @@ type Implement interface {
 
 	// LoadData load the data
 	LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error)
-
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

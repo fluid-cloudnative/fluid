@@ -252,12 +252,12 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx ReconcileRequ
 	}
 
 	rctx := cruntime.ReconcileRequestContext{
-		Context: ctx.Context,
-		NamespacedName:	ctx.NamespacedName,
-		Log: ctx.Log,
-		Client: r.Client,
-		RuntimeType: boundedRuntime.Type,
-		DataLoad: ctx.DataLoad,
+		Context:        ctx.Context,
+		NamespacedName: ctx.NamespacedName,
+		Log:            ctx.Log,
+		Client:         r.Client,
+		RuntimeType:    boundedRuntime.Type,
+		DataLoad:       ctx.DataLoad,
 	}
 	id := ddc.GenerateEngineID(rctx.NamespacedName)
 	dataloadEngine, err := ddc.CreateDataLoad(id, rctx)

@@ -18,6 +18,6 @@ package base
 import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 // Load the data
-func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error){
+func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error) {
 	return t.Implement.LoadData(ctx)
 }
