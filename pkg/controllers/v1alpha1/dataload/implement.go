@@ -91,6 +91,8 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 		return r.reconcileLoadedDataLoad(ctx)
 	case cdataload.DataLoadPhaseFailed:
 		return r.reconcileFailedDataLoad(ctx)
+	case cdataload.DataLoadPhaseFinished:
+		return r.reconcileFinishedDataLoad(ctx)
 	default:
 		log.Info("Unknown DataLoad phase, won't reconcile it")
 	}
@@ -296,6 +298,8 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
+
+				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime
 				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
@@ -327,11 +331,20 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileReque
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. record event and no requeue
-	log.Info("DataLoad Loaded, no need to requeue")
+	// 2. record event
+	log.Info("DataLoad Loaded")
 	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
 	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobComplete, "DataLoad job %s succeeded", jobName)
-	return utils.NoRequeue()
+
+	// 3. update the phase of the dataload to Finished and requeue
+	dataloadToUpdate := ctx.DataLoad.DeepCopy()
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFinished
+	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
+		log.Error(err, "failed to update the dataload")
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info("Update phase of the dataload to Finished successfully")
+	return utils.RequeueImmediately()
 }
 
 // reconcileFailedDataLoad reconciles DataLoads that are in `DataLoadPhaseComplete` phase
@@ -344,11 +357,52 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. record event and no requeue
+	// 2. record event
 	log.Info("DataLoad failed, won't requeue")
 	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
 	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
-	return utils.NoRequeue()
+
+	// 3. update the phase of the dataload to Finished and requeue
+	dataloadToUpdata := ctx.DataLoad.DeepCopy()
+	dataloadToUpdata.Status.Phase = cdataload.DataLoadPhaseFinished
+	if err := r.Status().Update(context.TODO(), dataloadToUpdata); err != nil {
+		log.Error(err, "failed to updata the dataload")
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info("Updata phase of the dataload to Finished successfully")
+	return utils.RequeueImmediately()
+}
+
+// reconcileFinishedDataLoad reconciles DataLoads that are in `DataLoadPhaseFinished` phase
+// in order to delete DataLoad after TTL
+func (r *DataLoadReconcilerImplement) reconcileFinishedDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileFinishedDataLoad")
+
+	// 1. get the customized TTL. If not, use the default value.
+	ttlSecondsAfterFinished := ctx.DataLoad.Spec.TTLSecondsAfterFinished
+	var defaultTTL = cdataload.DATALOAD_DEFAULT_TTL
+	if ttlSecondsAfterFinished == nil {
+		ttlSecondsAfterFinished = &defaultTTL
+		log.Info("TTLSecondsAfterFinished is not set, use the default value", "ttlSecondsAfterFinished", defaultTTL)
+	}
+
+	// 2. check if the DataLoad has reached the TTL.
+	curTime := time.Now()
+	finishedTime := ctx.DataLoad.Status.FinishedTime.Time
+
+	// if reached the TTL, the delete it.
+	if curTime.Sub(finishedTime).Seconds() > float64(*ttlSecondsAfterFinished) {
+		log.Info("DataLoad has reached TTL, begin to delete it")
+		dataloadToUpdate := ctx.DataLoad.DeepCopy()
+		if err := r.Delete(context.TODO(), dataloadToUpdate); err != nil {
+			log.Error(err, "failed to delete the DataLoad")
+			return utils.RequeueIfError(err)
+		}
+		log.V(1).Info("Delete the DataLoad successfully")
+		return utils.RequeueImmediately()
+	}
+	// if not reached the TTL, then requeue.
+	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and

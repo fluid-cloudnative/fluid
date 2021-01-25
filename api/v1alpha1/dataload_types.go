@@ -70,6 +70,12 @@ type DataLoadSpec struct {
 
 	// Target defines target paths that needs to be loaded
 	Target []TargetPath `json:"target,omitempty"`
+
+	// TTLSecondsAfterFinished is the TTL to clean up dataload.
+	// It may take extra ReconcilePeriod seconds for the cleanup, since
+	// reconcile gets called periodically.
+	// Default to 172800 (2 days).
+	TTLSecondsAfterFinished *int `json:"ttlSecondsAfterFinished,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad
@@ -79,6 +85,9 @@ type DataLoadStatus struct {
 
 	// Conditions consists of transition information on DataLoad's Phase
 	Conditions []DataLoadCondition `json:"conditions"`
+
+	// FinishedTime describes the time when dataload is finished (complete or failed)
+	FinishedTime metav1.Time `json:"completionTime"`
 
 	// DurationTime describes the duration time of the dataload process.
 	DurationTime string `json:"durationTime"`
