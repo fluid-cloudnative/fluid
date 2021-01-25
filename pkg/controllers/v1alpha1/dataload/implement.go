@@ -298,8 +298,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
-
-				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime
+				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime.Unix()
 				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
@@ -387,11 +386,11 @@ func (r *DataLoadReconcilerImplement) reconcileFinishedDataLoad(ctx reconcileReq
 	}
 
 	// 2. check if the DataLoad has reached the TTL.
-	curTime := time.Now()
-	finishedTime := ctx.DataLoad.Status.FinishedTime.Time
+	curTime := time.Now().Unix()
+	finishedTime := ctx.DataLoad.Status.FinishedTime
 
 	// if reached the TTL, the delete it.
-	if curTime.Sub(finishedTime).Seconds() > float64(*ttlSecondsAfterFinished) {
+	if curTime - finishedTime > *ttlSecondsAfterFinished {
 		log.Info("DataLoad has reached TTL, begin to delete it")
 		dataloadToUpdate := ctx.DataLoad.DeepCopy()
 		if err := r.Delete(context.TODO(), dataloadToUpdate); err != nil {

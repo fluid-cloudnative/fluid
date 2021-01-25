@@ -40,7 +40,7 @@ const (
 const (
 	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
 	DATALOAD_CHART         = "fluid-dataloader"
-	DATALOAD_DEFAULT_TTL   = 60
+	DATALOAD_DEFAULT_TTL   int64 = 60
 	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
 	DATALOAD_SUFFIX_LENGTH = 5
 	ENV_DATALOADER_IMG     = "DATALOADER_IMG"

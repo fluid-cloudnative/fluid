@@ -75,7 +75,7 @@ type DataLoadSpec struct {
 	// It may take extra ReconcilePeriod seconds for the cleanup, since
 	// reconcile gets called periodically.
 	// Default to 172800 (2 days).
-	TTLSecondsAfterFinished *int `json:"ttlSecondsAfterFinished,omitempty"`
+	TTLSecondsAfterFinished *int64 `json:"ttlSecondsAfterFinished,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad
@@ -87,7 +87,7 @@ type DataLoadStatus struct {
 	Conditions []DataLoadCondition `json:"conditions"`
 
 	// FinishedTime describes the time when dataload is finished (complete or failed)
-	FinishedTime metav1.Time `json:"completionTime"`
+	FinishedTime int64 `json:"finishedTime,omitempty"`
 
 	// DurationTime describes the duration time of the dataload process.
 	DurationTime string `json:"durationTime"`
