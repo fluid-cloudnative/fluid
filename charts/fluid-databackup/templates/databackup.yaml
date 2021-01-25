@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ .Values.databackuper.dataset }}-databackup-pod
+  name: {{ .Values.databackuper.databackup }}-pod
   {{- if .Values.databackuper.namespace }}
   namespace: {{ .Values.databackuper.namespace }}
   {{- end }}
@@ -70,7 +70,7 @@ spec:
     {{- end }}
     - name: script
       configMap:
-        name: {{ .Values.databackuper.dataset  }}-databackup-script
+        name: {{ .Values.databackuper.databackup }}-script
         items:
             - key: databackuper.alluxio
               path: alluxio_databackup.sh

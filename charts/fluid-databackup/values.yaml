@@ -12,6 +12,10 @@ databackuper:
   # Description: the dataset that this DataBackup targets
   dataset: hbase
 
+  # Required
+  # Description: the name of DataBackup
+  databackup: hbase-backup
+
   # Optional
   # Description: the node to run the backup pod
   nodeName: cn-beijing.192.168.1.147

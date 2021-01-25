@@ -9,6 +9,7 @@ type DataBackupValue struct {
 type DataBackupInfo struct {
 	Namespace  string  `yaml:"namespace,omitempty"`
 	Dataset    string  `yaml:"dataset,omitempty"`
+	DataBackup string  `yaml:"databackup,omitempty"`
 	NodeName   string  `yaml:"nodeName,omitempty"`
 	Image      string  `yaml:"image,omitempty"`
 	JavaEnv    string  `yaml:"javaEnv,omitempty"`

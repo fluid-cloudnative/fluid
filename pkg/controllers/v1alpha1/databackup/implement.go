@@ -233,7 +233,8 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	}
 
 	// 3. Check running status of the DataBackup Pod
-	backupPod, err := kubeclient.GetPodByName(r.Client, ctx.Dataset.Name + "-databackup-pod", ctx.Namespace)
+	backupPodName := utils.GetDataBackupPodName(ctx.DataBackup.Name)
+	backupPod, err := kubeclient.GetPodByName(r.Client, backupPodName, ctx.Namespace)
 	if err != nil{
 		log.Error(err, "Failed to get databackup-pod")
 		return utils.RequeueIfError(err)
@@ -276,6 +277,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	databackupInfo := cdatabackup.DataBackupInfo{
 		Namespace: databackup.Namespace,
 		Dataset: databackup.Spec.Dataset,
+		DataBackup: databackup.Name,
 		NodeName: nodeName,
 		Image: image,
 		JavaEnv: "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),

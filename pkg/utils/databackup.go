@@ -50,3 +50,7 @@ func GetDataBackupReleaseName(name string) string {
 	return fmt.Sprintf("%s-charts", name)
 }
 
+// GetDataBackupPodName returns DataBackup pod's name given the DataBackup's name
+func GetDataBackupPodName(name string) string {
+	return fmt.Sprintf("%s-pod", name)
+}
