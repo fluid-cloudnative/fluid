@@ -14,7 +14,6 @@ package dataset
 
 import (
 	"context"
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
 	"time"
@@ -137,17 +136,11 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 			return utils.RequeueAfterInterval(time.Duration(1 * time.Second))
 		}
 	*/
-	// 1.if there is a pod which is using the dataset, then requeue
-	should, err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
+	// 1.if there is a pod which is using the dataset (or cannot judge), then requeue
+	err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
 	if err != nil {
-		ctx.Log.Error(err, "Failed to delete dataset because cannot get PVC or PvcMountPods", "DatasetDeleteError", ctx)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "dataset %s cannot be deleted because cannot get PVC or PvcMountPods", ctx.Dataset.Name)
-		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
-	}
-	if !should {
-		err := fmt.Errorf("dataset cannot be deleted because pvc is mounted")
-		ctx.Log.Error(err, "Failed to delete dataset because pvc is mounted", "DatasetDeleteError", ctx)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "dataset %s cannot be deleted because pvc is mounted", ctx.Dataset.Name)
+		ctx.Log.Error(err, "Failed to delete dataset", "DatasetDeleteError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "Failed to delete dataset because err: %s", err.Error())
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
