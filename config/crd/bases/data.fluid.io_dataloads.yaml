@@ -81,6 +81,12 @@ spec:
                 - path
                 type: object
               type: array
+            ttlSecondsAfterFinished:
+              description: TTLSecondsAfterFinished is the TTL to clean up dataload.
+                It may take extra ReconcilePeriod seconds for the cleanup, since reconcile
+                gets called periodically. Default to 172800 (2 days).
+              format: int64
+              type: integer
           type: object
         status:
           description: DataLoadStatus defines the observed state of DataLoad
@@ -125,6 +131,11 @@ spec:
               description: DurationTime describes the duration time of the dataload
                 process.
               type: string
+            finishedTime:
+              description: FinishedTime describes the time when dataload is finished
+                (complete or failed)
+              format: int64
+              type: integer
             phase:
               description: Phase describes current phase of DataLoad
               type: string

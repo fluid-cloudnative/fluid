@@ -392,7 +392,7 @@ func (r *DataLoadReconcilerImplement) reconcileFinishedDataLoad(ctx reconcileReq
 	finishedTime := ctx.DataLoad.Status.FinishedTime
 
 	// if reached the TTL, the delete it.
-	if curTime - finishedTime > *ttlSecondsAfterFinished {
+	if curTime-finishedTime > *ttlSecondsAfterFinished {
 		log.Info("DataLoad has reached TTL, begin to delete it")
 		dataloadToUpdate := ctx.DataLoad.DeepCopy()
 		if err := r.Delete(context.TODO(), dataloadToUpdate); err != nil {

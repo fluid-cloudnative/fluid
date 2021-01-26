@@ -18,13 +18,13 @@ package dataload
 type DataLoadPhase string
 
 const (
-	DataLoadPhaseNone     DataLoadPhase = ""
-	DataLoadPhasePending  DataLoadPhase = "Pending"
-	DataLoadPhaseLoading  DataLoadPhase = "Loading"
-	DataLoadPhaseCompleted DataLoadPhase = "Completed"
-	DataLoadPhaseFailed   DataLoadPhase = "Failed"
+	DataLoadPhaseNone                 DataLoadPhase = ""
+	DataLoadPhasePending              DataLoadPhase = "Pending"
+	DataLoadPhaseLoading              DataLoadPhase = "Loading"
+	DataLoadPhaseCompleted            DataLoadPhase = "Completed"
+	DataLoadPhaseFailed               DataLoadPhase = "Failed"
 	DataLoadPhaseCompletedAndFinished DataLoadPhase = "CompletedAndFinished"
-	DataLoadPhaseFailedAndFinished DataLoadPhase = "FailedAndFinished"
+	DataLoadPhaseFailedAndFinished    DataLoadPhase = "FailedAndFinished"
 )
 
 // DataLoadConditionType is a valid value for DataloadCondition.Type
@@ -39,10 +39,10 @@ const (
 )
 
 const (
-	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
-	DATALOAD_CHART         = "fluid-dataloader"
-	DATALOAD_DEFAULT_TTL   int64 = 60
-	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
-	DATALOAD_SUFFIX_LENGTH = 5
-	ENV_DATALOADER_IMG     = "DATALOADER_IMG"
+	DATALOAD_FINALIZER           = "fluid-dataload-controller-finalizer"
+	DATALOAD_CHART               = "fluid-dataloader"
+	DATALOAD_DEFAULT_TTL   int64 = 172800
+	DATALOAD_DEFAULT_IMAGE       = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
+	DATALOAD_SUFFIX_LENGTH       = 5
+	ENV_DATALOADER_IMG           = "DATALOADER_IMG"
 )
