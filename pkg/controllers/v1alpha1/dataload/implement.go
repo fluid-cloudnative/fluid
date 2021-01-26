@@ -87,11 +87,13 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 		return r.reconcilePendingDataLoad(ctx)
 	case cdataload.DataLoadPhaseLoading:
 		return r.reconcileLoadingDataLoad(ctx)
-	case cdataload.DataLoadPhaseComplete:
+	case cdataload.DataLoadPhaseCompleted:
 		return r.reconcileLoadedDataLoad(ctx)
 	case cdataload.DataLoadPhaseFailed:
 		return r.reconcileFailedDataLoad(ctx)
-	case cdataload.DataLoadPhaseFinished:
+	case cdataload.DataLoadPhaseCompletedAndFinished:
+		return r.reconcileFinishedDataLoad(ctx)
+	case cdataload.DataLoadPhaseFailedAndFinished:
 		return r.reconcileFinishedDataLoad(ctx)
 	default:
 		log.Info("Unknown DataLoad phase, won't reconcile it")
@@ -296,7 +298,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				if jobCondition.Type == batchv1.JobFailed {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
 				} else {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseCompleted
 				}
 				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime.Unix()
 				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
@@ -337,7 +339,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileReque
 
 	// 3. update the phase of the dataload to Finished and requeue
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
-	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFinished
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseCompletedAndFinished
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the dataload")
 		return utils.RequeueIfError(err)
@@ -363,7 +365,7 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 
 	// 3. update the phase of the dataload to Finished and requeue
 	dataloadToUpdata := ctx.DataLoad.DeepCopy()
-	dataloadToUpdata.Status.Phase = cdataload.DataLoadPhaseFinished
+	dataloadToUpdata.Status.Phase = cdataload.DataLoadPhaseFailedAndFinished
 	if err := r.Status().Update(context.TODO(), dataloadToUpdata); err != nil {
 		log.Error(err, "failed to updata the dataload")
 		return utils.RequeueIfError(err)
