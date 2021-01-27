@@ -168,6 +168,11 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 	if index == -1 {
 		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not ready")
+		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 	switch boundedRuntime.Type {
 	case common.ALLUXIO_RUNTIME:
