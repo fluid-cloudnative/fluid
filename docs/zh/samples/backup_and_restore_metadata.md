@@ -27,8 +27,8 @@ hbase   443.89MiB        0.00B    4.00GiB          0.0%                Bound   2
 
 ## 备份
 目前支持两种数据的备份：
-* 数据集的metadata
-* 数据集的一些关键统计信息
+* 数据集的metadata，包括文件系统metadata（例如文件系统inode tree）和block metadata（例如block位置）
+* 数据集的一些关键统计信息，包括数据量大小和文件数量
 
 ### 备份到PVC
 首先创建DataBackup文件：
@@ -72,6 +72,7 @@ hbase-worker-whmnv     2/2     Running       0          3m4s
 $ ls subpath1/subpath2/
 hbase-default.yaml  metadata-backup-hbase-default.gz
 ```
+其中，gz压缩包中是数据集的metadata，yaml文件中是数据集的一些关键统计信息
 
 ### 备份到本地
 
