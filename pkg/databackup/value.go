@@ -7,16 +7,13 @@ type DataBackupValue struct {
 
 // DataBackupInfo defines values used in DataBackup helm chart
 type DataBackupInfo struct {
-	Namespace  string  `yaml:"namespace,omitempty"`
-	Dataset    string  `yaml:"dataset,omitempty"`
-	DataBackup string  `yaml:"databackup,omitempty"`
-	NodeName   string  `yaml:"nodeName,omitempty"`
-	Image      string  `yaml:"image,omitempty"`
-	JavaEnv    string  `yaml:"javaEnv,omitempty"`
-	Workdir    string  `yaml:"workdir,omitempty"`
-	PVCName    string  `yaml:"pvcName,omitempty"`
-	SubPath    string  `yaml:"subPath,omitempty"`
+	Namespace  string `yaml:"namespace,omitempty"`
+	Dataset    string `yaml:"dataset,omitempty"`
+	DataBackup string `yaml:"databackup,omitempty"`
+	NodeName   string `yaml:"nodeName,omitempty"`
+	Image      string `yaml:"image,omitempty"`
+	JavaEnv    string `yaml:"javaEnv,omitempty"`
+	Workdir    string `yaml:"workdir,omitempty"`
+	PVCName    string `yaml:"pvcName,omitempty"`
+	Path       string `yaml:"path,omitempty"`
 }
-
-
-

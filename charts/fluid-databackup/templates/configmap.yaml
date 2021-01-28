@@ -7,21 +7,20 @@ data:
     #!/bin/bash
     dataset=$DATASET_NAME
     namespace=$DATASET_NAMESPACE
-    subpath=$BACKUP_SUBPATH
+    path=$BACKUP_PATH
 
     if   [   $BACKUP_PVC   ];
     then
-    targetPath="/pvc"
+    targetPath="/pvc${path}"
+    mkdir -p ${targetPath}
     else
-    targetPath="/alluxio_backups"
+    targetPath="/host/"
     fi
 
     result=$(alluxio fsadmin backup | sed -n '2p')
 
-    mkdir -p ${targetPath}${subpath}
-
-    metadatafile=${targetPath}${subpath}metadata-backup-${dataset}-${namespace}.gz
-    metainfofile=${targetPath}${subpath}${dataset}-${namespace}.yaml
+    metadatafile=${targetPath}metadata-backup-${dataset}-${namespace}.gz
+    metainfofile=${targetPath}${dataset}-${namespace}.yaml
 
     mv ${result##*Backup URI         : }  ${metadatafile}
     cp /alluxio_backups/${dataset}-${namespace}.yaml  ${metainfofile}

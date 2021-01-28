@@ -40,6 +40,14 @@ type DataBackupCondition struct {
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
+// BackupLocation describes the final backup location of DataBackup
+type BackupLocation struct {
+	// Path describes the path of backup, in the form of local://subpath or pvc://<pvcName>/subpath
+	Path string `json:"path,omitempty"`
+	// NodeName describes the nodeName of backup if Path is in the form of local://subpath
+	NodeName string `json:"nodeName,omitempty"`
+}
+
 // DataBackupSpec defines the desired state of DataBackup
 type DataBackupSpec struct {
 	// Dataset defines the target dataset of the DataBackup
@@ -52,16 +60,16 @@ type DataBackupSpec struct {
 type DataBackupStatus struct {
 	// Phase describes current phase of DataBackup
 	Phase databackup.Phase `json:"phase"`
-	// BackupPath tell user the path to save data of the DataBackup
-	BackupPath string `json:"backupPath,omitempty"`
-	// EntryCount tell user the count of files been backuped
-	EntryCount int `json:"entryCount,omitempty"`
+	// BackupLocation tell user the location to save data of the DataBackup
+	BackupLocation BackupLocation `json:"backupLocation,omitempty"`
 	// Conditions consists of transition information on DataBackup's Phase
 	Conditions []DataBackupCondition `json:"conditions"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="BackupPath",type="string",JSONPath=`.status.backupLocation.path`
+// +kubebuilder:printcolumn:name="BackupNodeName",type="string",JSONPath=`.status.backupLocation.nodeName`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

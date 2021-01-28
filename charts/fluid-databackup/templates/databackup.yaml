@@ -36,9 +36,9 @@ spec:
         - name: BACKUP_PVC
           value: {{ .Values.databackuper.pvcName | quote }}
         {{- end }}
-        {{- if .Values.databackuper.subPath }}
-        - name: BACKUP_SUBPATH
-          value: {{ .Values.databackuper.subPath | quote }}
+        {{- if .Values.databackuper.path }}
+        - name: BACKUP_PATH
+          value: {{ .Values.databackuper.path | quote }}
         {{- end }}
       volumeMounts:
         {{- if .Values.databackuper.workdir }}
@@ -50,6 +50,9 @@ spec:
         {{- if .Values.databackuper.pvcName }}
         - mountPath: /pvc
           name: pvc
+        {{- else }}
+        - mountPath: /host
+          name: host
         {{- end }}
   restartPolicy: Never
   volumes:
@@ -67,6 +70,10 @@ spec:
     - name: pvc
       persistentVolumeClaim:
         claimName: {{ .Values.databackuper.pvcName }}
+    {{- else }}
+    - name: host
+      hostPath:
+        path: {{ .Values.databackuper.path }}
     {{- end }}
     - name: script
       configMap:

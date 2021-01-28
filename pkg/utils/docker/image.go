@@ -47,18 +47,18 @@ func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (im
 
 // GetWorkerImage get the image of alluxio worker from alluxioruntime, env or default
 // TODO: Get image by calling runtime controller interface instead of reading runtime object
-func GetWorkerImage(client client.Client, datasetName string, runtimeType string, namespace string)(imageName string, imageTag string){
-	configmapName := datasetName+ "-" + runtimeType + "-values"
+func GetWorkerImage(client client.Client, datasetName string, runtimeType string, namespace string) (imageName string, imageTag string) {
+	configmapName := datasetName + "-" + runtimeType + "-values"
 	configmap, err := kubeclient.GetConfigmapByName(client, configmapName, namespace)
 	if configmap != nil && err == nil {
 		for key, value := range configmap.Data {
 			if key == "data" {
 				splits := strings.Split(value, "\n")
 				for _, split := range splits {
-					if strings.HasPrefix(split, "image: "){
+					if strings.HasPrefix(split, "image: ") {
 						imageName = strings.TrimPrefix(split, "image: ")
 					}
-					if strings.HasPrefix(split, "imageTag: "){
+					if strings.HasPrefix(split, "imageTag: ") {
 						imageTag = strings.TrimPrefix(split, "imageTag: ")
 					}
 				}

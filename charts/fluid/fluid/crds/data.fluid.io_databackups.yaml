@@ -15,6 +15,12 @@ spec:
   - JSONPath: .status.phase
     name: Phase
     type: string
+  - JSONPath: .status.backupLocation.path
+    name: BackupPath
+    type: string
+  - JSONPath: .status.backupLocation.nodeName
+    name: BackupNodeName
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -57,9 +63,19 @@ spec:
         status:
           description: DataBackupStatus defines the observed state of DataBackup
           properties:
-            backupPath:
-              description: BackupPath tell user the path to save data of the DataBackup
-              type: string
+            backupLocation:
+              description: BackupLocation tell user the location to save data of the
+                DataBackup
+              properties:
+                nodeName:
+                  description: NodeName describes the nodeName of backup if Path is
+                    in the form of local://subpath
+                  type: string
+                path:
+                  description: Path describes the path of backup, in the form of local://subpath
+                    or pvc://<pvcName>/subpath
+                  type: string
+              type: object
             conditions:
               description: Conditions consists of transition information on DataBackup's
                 Phase
@@ -96,9 +112,6 @@ spec:
                 - type
                 type: object
               type: array
-            entryCount:
-              description: EntryCount tell user the count of files been backuped
-              type: integer
             phase:
               description: Phase describes current phase of DataBackup
               type: string

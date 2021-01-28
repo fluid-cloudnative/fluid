@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -33,6 +34,7 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 	"time"
 )
 
@@ -180,13 +182,30 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 // reconcileCompleteDataBackup reconciles DataBackups that are in `Complete` phase
 func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileCompleteDataBackup")
-	// 1. release lock on target dataset
+	// 1. Update BackupPath of the databackup
+	databackupToUpdate := ctx.DataBackup.DeepCopy()
+	databackupToUpdate.Status.BackupLocation.Path = databackupToUpdate.Spec.BackupPath
+	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme) {
+		podName := databackupToUpdate.Name + "-pod"
+		backupPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
+		if err != nil {
+			log.Error(err, "Failed to get backup pod")
+			return utils.RequeueIfError(err)
+		}
+		databackupToUpdate.Status.BackupLocation.NodeName = backupPod.Spec.NodeName
+	}
+	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
+		log.Error(err, "the backup pod has completd, but failed to  update the databackup")
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info("Update BackupPath of the databackup  successfully")
+	// 2. release lock on target dataset
 	err := r.releaseLockOnTargetDataset(ctx, log)
 	if err != nil {
 		log.Error(err, "can't release lock on target dataset", "targetDataset", ctx.DataBackup.Spec.Dataset)
 		return utils.RequeueIfError(err)
 	}
-	// 2. record and no requeue
+	// 3. record and no requeue
 	log.Info("DataBackup success, no need to requeue")
 	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupFailed, "DataBackup %s failed", ctx.DataBackup.Name)
 	return utils.NoRequeue()

@@ -2,7 +2,7 @@
 
 ## 前提条件
 
-在运行该示例之前，请参考[安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考 [安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md) 完成安装，并检查Fluid各组件正常运行：
 
 ```shell
 $ kubectl get pod -n fluid-system
@@ -27,7 +27,7 @@ hbase   443.89MiB        0.00B    4.00GiB          0.0%                Bound   2
 
 ## 备份
 目前支持两种数据的备份：
-* 数据集的metadata，包括文件系统metadata（例如文件系统inode tree）和block metadata（例如block位置）
+* 数据集的metadata，包括文件系统metadata（例如文件系统inode tree）等
 * 数据集的一些关键统计信息，包括数据量大小和文件数量
 
 ### 备份到PVC
@@ -67,6 +67,13 @@ hbase-master-0         2/2     Running       0          3m36s
 hbase-worker-sqrzc     2/2     Running       0          3m4s
 hbase-worker-whmnv     2/2     Running       0          3m4s
 ```
+该DataBackup同样变为Complete状态：
+```bash
+$ kubectl get databackup
+NAME           DATASET   PHASE      BACKUPPATH                           BACKUPNODENAME     AGE
+hbase-backup   hbase     Complete   pvc://<pvcName>/subpath1/subpath2/                      30s
+```
+
 进入该PVC，查看对应子目录，发现生成的两个备份文件：
 ```bash
 $ ls subpath1/subpath2/
@@ -85,10 +92,25 @@ metadata:
   name: hbase-backup
 spec:
   dataset: hbase
-  backupPath: local://
+  backupPath: local:///data/subpath1/
 EOF
 ```
-backupPath必须设置为local://，不支持指定目录
-backup Pod执行完成后，会将刚刚的两个文件保存到本地的/tmp/alluxio-backup/<namespace>/<dataset>/目录下
+用户需要将local://后的路径替换为需要保存备份文件的本地路径
+
+片刻后，查看该DataBackup的状态：
+
+```bash
+$ kubectl get databackup
+NAME           DATASET   PHASE      BACKUPPATH                BACKUPNODENAME             AGE
+hbase-backup   hbase     Complete   local:///data/subpath1/   cn-beijing.192.168.1.146   30s
+```
+发现该DataBackup变为Complete状态，同时会显示保存位置所在的路径和NodeName
+
+查询NodeName对应的主机IP：
+```bash
+$ kubectl describe node cn-beijing.192.168.1.146
+```
+获得IP地址后，就可以从主机的对应目录取走文件刚刚的两个文件
+
 
 ## 恢复

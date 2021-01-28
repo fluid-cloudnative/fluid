@@ -137,7 +137,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			podName, containerName := e.getMasterPodInfo()
 			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 			metadataInfoFile := e.GetMetadataInfoFile()
-			err = fileUtils.InsertMetaDataInfoIntoFile(operations.FileNum, newFileNum , metadataInfoFile)
+			err = fileUtils.InsertMetaDataInfoIntoFile(operations.FileNum, newFileNum, metadataInfoFile)
 			if err != nil {
 				e.Log.Error(err, "Failed to InsertMetaDataInfoIntoFile of the dataset")
 			}

@@ -33,11 +33,12 @@ databackuper:
   workdir: /tmp
 
   # Required
-  # Description: the subpath to save data
-  subPath: /
+  # Description: the path to save data
+  path: /
 
   # Optional
   # Description: the pvc to save data
+  # if it is null, will backup in local
   # pvcName: test
 
 

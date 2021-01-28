@@ -17,12 +17,12 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -136,9 +136,9 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 // InitMetadataInfoFile init the metadata info file.
 func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) (err error) {
 	str := "if [ ! -f '" + filename + "' ]; then echo -e 'dataset: " + dataset + "\\nnamespace: "
-	str = str + a.namespace + "\\nufstotal: [Caculating]\\nfilenum: [Caculating]' > " + filename + ";fi"
+	str = str + a.namespace + "\\nufstotal: [Calculating]\\nfilenum: [Calculating]' > " + filename + ";fi"
 	var (
-		command = []string{ "bash", "-c", str}
+		command = []string{"bash", "-c", str}
 		stdout  string
 		stderr  string
 	)
@@ -152,11 +152,12 @@ func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) 
 }
 
 type KeyOfMetaDataFile string
-var(
+
+var (
 	DatasetName KeyOfMetaDataFile = "dataset"
-	Namespace KeyOfMetaDataFile = "namespace"
-	UfsTotal KeyOfMetaDataFile = "ufstotal"
-	FileNum KeyOfMetaDataFile = "filenum"
+	Namespace   KeyOfMetaDataFile = "namespace"
+	UfsTotal    KeyOfMetaDataFile = "ufstotal"
+	FileNum     KeyOfMetaDataFile = "filenum"
 )
 
 // InitMetadataInfoFile init the metadata info file.
@@ -175,8 +176,8 @@ func (a AlluxioFileUtils) InsertMetaDataInfoIntoFile(key KeyOfMetaDataFile, valu
 		a.log.Error(errors.New("the key not in metadatafile"), "key", key)
 	}
 	var (
-		str = "sed -i '" + line + " " + string(key) + ": " + value + "' " + filename
-		command = []string{ "bash", "-c", str}
+		str     = "sed -i '" + line + " " + string(key) + ": " + value + "' " + filename
+		command = []string{"bash", "-c", str}
 		stdout  string
 		stderr  string
 	)

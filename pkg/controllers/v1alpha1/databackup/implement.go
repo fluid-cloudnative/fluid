@@ -52,9 +52,9 @@ type DataBackupReconcilerImplement struct {
 // NewDataBackupReconcilerImplement returns a DataBackupReconcilerImplement
 func NewDataBackupReconcilerImplement(client client.Client, log logr.Logger, recorder record.EventRecorder, databackupReconciler *DataBackupReconciler) *DataBackupReconcilerImplement {
 	r := &DataBackupReconcilerImplement{
-		Client:   client,
-		Log:      log,
-		Recorder: recorder,
+		Client:               client,
+		Log:                  log,
+		Recorder:             recorder,
 		DataBackupReconciler: databackupReconciler,
 	}
 	return r
@@ -201,7 +201,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	// 1. get the alluxio-master Pod
 	podName := ctx.Dataset.Name + "-master-0"
 	masterPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
-	if err != nil{
+	if err != nil {
 		log.Error(err, "Failed to get alluxio-master")
 		return utils.RequeueIfError(err)
 	}
@@ -235,7 +235,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	// 3. Check running status of the DataBackup Pod
 	backupPodName := utils.GetDataBackupPodName(ctx.DataBackup.Name)
 	backupPod, err := kubeclient.GetPodByName(r.Client, backupPodName, ctx.Namespace)
-	if err != nil{
+	if err != nil {
 		log.Error(err, "Failed to get databackup-pod")
 		return utils.RequeueIfError(err)
 	}
@@ -248,7 +248,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		}
 		log.V(1).Info("Update phase of the databackup to Complete successfully")
 		return utils.RequeueImmediately()
-	} else if kubeclient.IsFailedPod(backupPod){
+	} else if kubeclient.IsFailedPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
 		if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
@@ -264,7 +264,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 // generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
 // marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
 func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v1alpha1.DataBackup, masterPod *v1.Pod) (valueFileName string, err error) {
-	nodeName, ip , rpcPort := utils.GetAddressOfMaster(masterPod)
+	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
@@ -275,35 +275,20 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	}
 
 	databackupInfo := cdatabackup.DataBackupInfo{
-		Namespace: databackup.Namespace,
-		Dataset: databackup.Spec.Dataset,
+		Namespace:  databackup.Namespace,
+		Dataset:    databackup.Spec.Dataset,
 		DataBackup: databackup.Name,
-		NodeName: nodeName,
-		Image: image,
-		JavaEnv: "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
-		Workdir: workdir,
+		NodeName:   nodeName,
+		Image:      image,
+		JavaEnv:    "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
+		Workdir:    workdir,
 	}
-
-	path := databackup.Spec.BackupPath
-	pvcName := ""
-	subPath := ""
-	if strings.HasPrefix(path, common.VolumeScheme){
-		path = strings.TrimPrefix(path, common.VolumeScheme)
-		split := strings.Split(path, "/")
-		pvcName = split[0]
-		databackupInfo.PVCName = pvcName
-
-		subPath = strings.TrimPrefix(path, pvcName)
-		if subPath == "" {
-			subPath = "/"
-		} else if !strings.HasSuffix(subPath, "/") {
-			subPath = subPath + "/"
-		}
-
-	} else {
-		subPath = "/"
+	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
+	if err != nil {
+		return
 	}
-	databackupInfo.SubPath = subPath
+	databackupInfo.PVCName = pvcName
+	databackupInfo.Path = path
 
 	dataBackupValue := cdatabackup.DataBackupValue{DataBackupInfo: databackupInfo}
 	data, err := yaml.Marshal(dataBackupValue)
@@ -319,5 +304,5 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	if err != nil {
 		return
 	}
-	return valueFile.Name(),nil
+	return valueFile.Name(), nil
 }
