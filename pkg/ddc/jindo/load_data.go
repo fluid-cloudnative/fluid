@@ -15,10 +15,13 @@ limitations under the License.
 
 package jindo
 
-import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+)
 
 // LoadData load the data
-func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext) (releaseName string, jobName string, err error) {
+func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (releaseName string, jobName string, err error) {
 	// todo
 	return releaseName, jobName, err
 }

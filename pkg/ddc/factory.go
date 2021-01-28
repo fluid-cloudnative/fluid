@@ -23,19 +23,13 @@ import (
 )
 
 type buildFunc func(id string, ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error)
-type buildDataLoadEngineFunc func(id string, ctx cruntime.ReconcileRequestContext) base.Engine
 
 var buildFuncMap map[string]buildFunc
-var buildDataLoadEngineFuncMap map[string]buildDataLoadEngineFunc
 
 func init() {
 	buildFuncMap = map[string]buildFunc{
 		"alluxio": alluxio.Build,
 		"jindo":   jindo.Build,
-	}
-
-	buildDataLoadEngineFuncMap = map[string]buildDataLoadEngineFunc{
-		"alluxio": alluxio.BuildDataLoadEngine,
 	}
 }
 
@@ -50,18 +44,6 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.NamespacedName)
 	}
 
-	return
-}
-
-/**
-* Build DataLoadImplement
- */
-func CreateDataLoad(id string, ctx cruntime.ReconcileRequestContext) (dataloadImplement base.Engine, err error) {
-	if buildDataLoadFunc, found := buildDataLoadEngineFuncMap[ctx.RuntimeType]; found {
-		dataloadImplement = buildDataLoadFunc(id, ctx)
-	} else {
-		err = fmt.Errorf("failed to build the dataloadImplement due to the type %s is not found", ctx.NamespacedName)
-	}
 	return
 }
 

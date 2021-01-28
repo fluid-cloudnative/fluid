@@ -39,5 +39,4 @@ type ReconcileRequestContext struct {
 	FinalizerName string
 	common.Category
 	Runtime  runtime.Object
-	DataLoad datav1alpha1.DataLoad
 }

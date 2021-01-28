@@ -17,7 +17,7 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -31,7 +31,7 @@ import (
 )
 
 // LoadData load the data
-func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext) (releaseName string, jobName string, err error) {
+func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (releaseName string, jobName string, err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
@@ -47,7 +47,7 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext) (releaseN
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(ctx.DataLoad)
+		valueFileName, err := e.generateDataLoadValueFile(targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return releaseName, jobName, err
@@ -64,8 +64,8 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext) (releaseN
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *AlluxioEngine) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
-	targetDataset, err := utils.GetDataset(e.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+func (e *AlluxioEngine) generateDataLoadValueFile(targetDataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+	targetDataset, err := utils.GetDataset(e.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
 	}
@@ -77,13 +77,13 @@ func (e *AlluxioEngine) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (v
 
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
+		TargetDataset: targetDataload.Spec.Dataset.Name,
+		LoadMetadata:  targetDataload.Spec.LoadMetadata,
 		Image:         image,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
-	for _, target := range dataload.Spec.Target {
+	for _, target := range targetDataload.Spec.Target {
 		fluidNative := isTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
 		targetPaths = append(targetPaths, cdataload.TargetPath{
 			Path:        target.Path,
@@ -98,7 +98,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (v
 		return
 	}
 
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
+	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", targetDataload.Namespace, targetDataload.Name))
 	if err != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (v
 
 // isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
 // We check this for the reason that native mount points need extra metadata sync operations.
-func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
+func isTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
 		if mount.Path != "" {

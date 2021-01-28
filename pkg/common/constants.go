@@ -30,6 +30,8 @@ const (
 
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
 
+	ErrorProcessDataLoadReason = "ErrorProcessDataLoad"
+
 	ErrorHelmInstall = "ErrorHelmInstall"
 
 	TargetDatasetNotFound = "TargetDatasetNotFound"

@@ -15,9 +15,12 @@ limitations under the License.
 
 package base
 
-import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+)
 
 // Load the data
-func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext) (string, string, error) {
-	return t.Implement.LoadData(ctx)
+func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error) {
+	return t.Implement.LoadData(ctx, targetDataload)
 }
