@@ -28,6 +28,8 @@ const (
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
+	ErrorDeleteDataset = "ErrorDeleteDataset"
+
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
 
 	ErrorHelmInstall = "ErrorHelmInstall"
