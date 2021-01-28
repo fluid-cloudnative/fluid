@@ -119,9 +119,10 @@ func handle() {
 	}
 
 	if err = (&datasetctl.DatasetReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("datasetctl").WithName("Dataset"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("datasetctl").WithName("Dataset"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Dataset"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
