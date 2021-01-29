@@ -87,7 +87,7 @@ type DataLoadStatus struct {
 	Conditions []DataLoadCondition `json:"conditions"`
 
 	// FinishedTime describes the time when dataload is finished (complete or failed)
-	FinishedTime int64 `json:"finishedTime,omitempty"`
+	FinishedTime string `json:"finishedTime,omitempty"`
 
 	// DurationTime describes the duration time of the dataload process.
 	DurationTime string `json:"durationTime"`

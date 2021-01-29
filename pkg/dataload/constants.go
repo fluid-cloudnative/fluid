@@ -21,10 +21,10 @@ const (
 	DataLoadPhaseNone                 DataLoadPhase = ""
 	DataLoadPhasePending              DataLoadPhase = "Pending"
 	DataLoadPhaseLoading              DataLoadPhase = "Loading"
-	DataLoadPhaseCompleted            DataLoadPhase = "Completed"
-	DataLoadPhaseFailed               DataLoadPhase = "Failed"
-	DataLoadPhaseCompletedAndFinished DataLoadPhase = "CompletedAndFinished"
-	DataLoadPhaseFailedAndFinished    DataLoadPhase = "FailedAndFinished"
+	DataLoadPhasePreCompleted         DataLoadPhase = "PreCompleted"
+	DataLoadPhasePreFailed            DataLoadPhase = "PreFailed"
+	DataLoadPhaseCompleted				DataLoadPhase = "Completed"
+	DataLoadPhaseFailed					DataLoadPhase = "Failed"
 )
 
 // DataLoadConditionType is a valid value for DataloadCondition.Type
@@ -33,7 +33,7 @@ type DataLoadConditionType string
 // These are valid conditions of a Dataload.
 const (
 	// DataloadComplete means the Dataload has completed its execution.
-	DataLoadComplete DataLoadConditionType = "Complete"
+	DataLoadCompleted DataLoadConditionType = "Completed"
 	// DataloadFailed means the Dataload has failed its execution.
 	DataLoadFailed DataLoadConditionType = "Failed"
 )

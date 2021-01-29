@@ -87,13 +87,13 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 		return r.reconcilePendingDataLoad(ctx)
 	case cdataload.DataLoadPhaseLoading:
 		return r.reconcileLoadingDataLoad(ctx)
-	case cdataload.DataLoadPhaseCompleted:
+	case cdataload.DataLoadPhasePreCompleted:
 		return r.reconcileLoadedDataLoad(ctx)
-	case cdataload.DataLoadPhaseFailed:
+	case cdataload.DataLoadPhasePreFailed:
 		return r.reconcileFailedDataLoad(ctx)
-	case cdataload.DataLoadPhaseCompletedAndFinished:
+	case cdataload.DataLoadPhaseCompleted:
 		return r.reconcileFinishedDataLoad(ctx)
-	case cdataload.DataLoadPhaseFailedAndFinished:
+	case cdataload.DataLoadPhaseFailed:
 		return r.reconcileFinishedDataLoad(ctx)
 	default:
 		log.Info("Unknown DataLoad phase, won't reconcile it")
@@ -296,11 +296,11 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 					},
 				}
 				if jobCondition.Type == batchv1.JobFailed {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhasePreFailed
 				} else {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseCompleted
+					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhasePreCompleted
 				}
-				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime.Unix()
+				dataloadToUpdate.Status.FinishedTime = jobCondition.LastTransitionTime.Time.String()
 				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
@@ -339,7 +339,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx reconcileReque
 
 	// 3. update the phase of the dataload to Finished and requeue
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
-	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseCompletedAndFinished
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseCompleted
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the dataload")
 		return utils.RequeueIfError(err)
@@ -365,7 +365,7 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 
 	// 3. update the phase of the dataload to Finished and requeue
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
-	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailedAndFinished
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to updata the dataload")
 		return utils.RequeueIfError(err)
@@ -389,10 +389,13 @@ func (r *DataLoadReconcilerImplement) reconcileFinishedDataLoad(ctx reconcileReq
 
 	// 2. check if the DataLoad has reached the TTL.
 	curTime := time.Now().Unix()
-	finishedTime := ctx.DataLoad.Status.FinishedTime
+	finishedTime, err := time.Parse(time.RFC3339, ctx.DataLoad.Status.FinishedTime)
+	if err != nil {
+		log.Info("failed to format the time", "finishedTime", ctx.DataLoad.Status.FinishedTime)
+	}
 
 	// if reached the TTL, the delete it.
-	if curTime-finishedTime > *ttlSecondsAfterFinished {
+	if curTime-finishedTime.Unix() > *ttlSecondsAfterFinished {
 		log.Info("DataLoad has reached TTL, begin to delete it")
 		dataloadToUpdate := ctx.DataLoad.DeepCopy()
 		if err := r.Delete(context.TODO(), dataloadToUpdate); err != nil {
