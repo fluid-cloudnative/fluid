@@ -364,9 +364,9 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 	r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
 
 	// 3. update the phase of the dataload to Finished and requeue
-	dataloadToUpdata := ctx.DataLoad.DeepCopy()
-	dataloadToUpdata.Status.Phase = cdataload.DataLoadPhaseFailedAndFinished
-	if err := r.Status().Update(context.TODO(), dataloadToUpdata); err != nil {
+	dataloadToUpdate := ctx.DataLoad.DeepCopy()
+	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailedAndFinished
+	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to updata the dataload")
 		return utils.RequeueIfError(err)
 	}
