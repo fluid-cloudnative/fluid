@@ -44,6 +44,9 @@ type Engine interface {
 
 	// LoadData load the data
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error)
+
+	// Ready check if the runtime is ready
+	Ready(ctx cruntime.ReconcileRequestContext) bool
 }
 
 // The real engine should implement
@@ -97,6 +100,9 @@ type Implement interface {
 
 	// LoadData load the data
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error)
+
+	// Ready check if the runtime is ready
+	Ready(ctx cruntime.ReconcileRequestContext) bool
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

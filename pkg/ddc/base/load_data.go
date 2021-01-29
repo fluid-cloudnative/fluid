@@ -24,3 +24,8 @@ import (
 func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error) {
 	return t.Implement.LoadData(ctx, targetDataload)
 }
+
+// Check if the runtime is ready
+func (t *TemplateEngine) Ready(ctx cruntime.ReconcileRequestContext) bool{
+	return t.Implement.Ready(ctx)
+}

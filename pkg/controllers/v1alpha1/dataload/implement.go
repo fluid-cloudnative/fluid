@@ -2,11 +2,9 @@ package dataload
 
 import (
 	"context"
-	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -80,7 +78,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx cruntime.ReconcileRe
 	case cdataload.DataLoadPhaseNone:
 		return r.reconcileNoneDataLoad(ctx, targetDataload)
 	case cdataload.DataLoadPhasePending:
-		return r.reconcilePendingDataLoad(ctx, targetDataload)
+		return r.reconcilePendingDataLoad(ctx, targetDataload, engine)
 	case cdataload.DataLoadPhaseLoading:
 		return r.reconcileLoadingDataLoad(ctx, targetDataload, engine)
 	case cdataload.DataLoadPhaseComplete:
@@ -110,7 +108,9 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx cruntime.Reconci
 }
 
 // reconcilePendingDataLoad reconciles DataLoads that are in `DataLoadPhasePending` phase
-func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.ReconcileRequestContext,
+	targetDataload datav1alpha1.DataLoad,
+	engine base.Engine) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePendingDataLoad")
 
 	// 1. Check existence of the target dataset
@@ -158,32 +158,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 	//runtimeConditions := targetDataset.Status.Conditions
 	//ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
-
-	var ready bool
-	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
-	if index == -1 {
-		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
-		r.Recorder.Eventf(&targetDataload,
-			v1.EventTypeNormal,
-			common.RuntimeNotReady,
-			"Bounded accelerate runtime not ready")
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}
-
-	switch boundedRuntime.Type {
-	case common.ALLUXIO_RUNTIME:
-		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
-		containerName := "alluxio-master"
-		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-		ready = fileUtils.Ready()
-	default:
-		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
-		r.Recorder.Eventf(&targetDataload,
-			v1.EventTypeNormal,
-			common.RuntimeNotReady,
-			"Bounded accelerate runtime not supported")
-	}
-
+	ready := engine.Ready(ctx)
 	if !ready {
 		log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
 		r.Recorder.Eventf(&targetDataload,
@@ -222,7 +197,9 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 }
 
 // reconcileLoadingDataLoad reconciles DataLoads that are in `DataLoadPhaseLoading` phase
-func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad, engine base.Engine) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.ReconcileRequestContext,
+	targetDataload datav1alpha1.DataLoad,
+	engine base.Engine) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadingDataLoad")
 
 	releaseName, jobName, err := engine.LoadData(ctx, targetDataload)
