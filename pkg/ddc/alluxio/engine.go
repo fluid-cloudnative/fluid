@@ -98,16 +98,3 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }
-
-// BuildDataLoadEngine function builds the alluxio DataLoadEngine
-func BuildDataLoadEngine(id string, ctx cruntime.ReconcileRequestContext) base.Engine {
-	dataloadEngine := &AlluxioEngine{
-		name:        ctx.Name,
-		namespace:   ctx.Namespace,
-		Log:         ctx.Log,
-		Client:      ctx.Client,
-		runtimeType: ctx.RuntimeType,
-	}
-	template := base.NewTemplateEngine(dataloadEngine, id, ctx)
-	return template
-}
