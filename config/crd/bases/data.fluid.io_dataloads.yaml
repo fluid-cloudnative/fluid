@@ -134,8 +134,7 @@ spec:
             finishedTime:
               description: FinishedTime describes the time when dataload is finished
                 (complete or failed)
-              format: int64
-              type: integer
+              type: string
             phase:
               description: Phase describes current phase of DataLoad
               type: string
