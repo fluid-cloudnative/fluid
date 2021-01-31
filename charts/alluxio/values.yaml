@@ -313,6 +313,11 @@ fuse:
 #      cpu: "4"
 #      memory: "4G"
 
+## HDFS Configuraions ##
+# hadoopConfig:
+#   configMap: hdfs-configmap
+#   includeHdfsSite: true
+#   includeCoreSite: true
 
 ##  Secrets ##
 

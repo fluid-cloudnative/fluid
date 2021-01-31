@@ -63,19 +63,25 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		return
 	}
 
-	// 5.transform the dataset if it has local path or volume
+	// 5.transform the hadoop non-default configurations
+	err = e.transformHadoopConfig(runtime, value)
+	if err != nil {
+		return
+	}
+
+	// 6.transform the dataset if it has local path or volume
 	e.transformDatasetToVolume(runtime, dataset, value)
 
-	// 6.transform the permission
+	// 7.transform the permission
 	e.transformPermission(runtime, value)
 
-	// 7.set optimization parameters
+	// 8.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
 
-	// 8.allocate port for fluid engine
+	// 9.allocate port for fluid engine
 	err = e.allocatePorts(value)
 
-	// 9.set engine properties
+	// 10.set engine properties
 	e.setPortProperties(runtime, value)
 	return
 }
