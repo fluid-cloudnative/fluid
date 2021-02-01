@@ -131,10 +131,6 @@ spec:
               description: DurationTime describes the duration time of the dataload
                 process.
               type: string
-            finishedTime:
-              description: FinishedTime describes the time when dataload is finished
-                (complete or failed)
-              type: string
             phase:
               description: Phase describes current phase of DataLoad
               type: string
