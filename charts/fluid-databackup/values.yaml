@@ -2,23 +2,23 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-databackuper:
+dataBackup:
   # Optional
   # Default: default
-  # Description: the namespace of the dataset and databackup
-  namespace: default
+  # Description: the namespace of the dataset and dataBackup
+  namespace: #<dataset-namespace>
 
   # Required
   # Description: the dataset that this DataBackup targets
-  dataset: hbase
+  dataset: #<dataset-name>
 
   # Required
   # Description: the name of DataBackup
-  databackup: hbase-backup
+  name: #<dataBackup-name>
 
   # Optional
   # Description: the node to run the backup pod
-  nodeName: cn-beijing.192.168.1.147
+  nodeName: #<alluxio-master-nodeName>
 
   # Required
   # Description: the backup pod image
@@ -26,7 +26,7 @@ databackuper:
 
   # Required
   # Description: the java Env to find the master
-  javaEnv: -Dalluxio.master.hostname=192.168.1.147 -Dalluxio.master.rpc.port=20000
+  javaEnv:
 
   # Required
   # Description: the work path in node

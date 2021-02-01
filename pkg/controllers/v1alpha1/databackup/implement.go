@@ -274,10 +274,10 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 		workdir = "/tmp"
 	}
 
-	databackupInfo := cdatabackup.DataBackupInfo{
+	dataBackup := cdatabackup.DataBackup{
 		Namespace:  databackup.Namespace,
 		Dataset:    databackup.Spec.Dataset,
-		DataBackup: databackup.Name,
+		Name:       databackup.Name,
 		NodeName:   nodeName,
 		Image:      image,
 		JavaEnv:    "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
@@ -287,10 +287,10 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	if err != nil {
 		return
 	}
-	databackupInfo.PVCName = pvcName
-	databackupInfo.Path = path
+	dataBackup.PVCName = pvcName
+	dataBackup.Path = path
 
-	dataBackupValue := cdatabackup.DataBackupValue{DataBackupInfo: databackupInfo}
+	dataBackupValue := cdatabackup.DataBackupValue{DataBackup: dataBackup}
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
 		return

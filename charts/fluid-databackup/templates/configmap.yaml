@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.databackuper.databackup }}-script
+  name: {{ .Values.dataBackup.name }}-script
 data:
   databackuper.alluxio: |
     #!/bin/bash

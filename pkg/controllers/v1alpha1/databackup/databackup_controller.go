@@ -86,7 +86,7 @@ func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 	}
 	ctx.DataBackup = *databackup
-	ctx.Log.V(1).Info("DataBackup found", "detail", databackup)
+	ctx.Log.Info("DataBackup found", "detail", databackup)
 
 	// 2. Reconcile deletion of the object if necessary
 	if utils.HasDeletionTimestamp(ctx.DataBackup.ObjectMeta) {

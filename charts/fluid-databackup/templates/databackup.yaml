@@ -1,53 +1,53 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ .Values.databackuper.databackup }}-pod
-  {{- if .Values.databackuper.namespace }}
-  namespace: {{ .Values.databackuper.namespace }}
+  name: {{ .Values.dataBackup.name }}-pod
+  {{- if .Values.dataBackup.namespace }}
+  namespace: {{ .Values.dataBackup.namespace }}
   {{- end }}
 spec:
-  {{- if .Values.databackuper.nodeName }}
-  nodeName: {{ .Values.databackuper.nodeName }}
+  {{- if .Values.dataBackup.nodeName }}
+  nodeName: {{ .Values.dataBackup.nodeName }}
   {{- end }}
   containers:
     - name: tool
       command: ["/bin/sh", "-c"]
       args:
         - "/scripts/alluxio_databackup.sh"
-      image: {{ .Values.databackuper.image }}
+      image: {{ .Values.dataBackup.image }}
       imagePullPolicy: IfNotPresent
       securityContext:
         runAsGroup: 0
         runAsUser: 0
       env:
-        {{- if .Values.databackuper.javaEnv }}
+        {{- if .Values.dataBackup.javaEnv }}
         - name: ALLUXIO_JAVA_OPTS
-          value: {{ .Values.databackuper.javaEnv | quote }}
+          value: {{ .Values.dataBackup.javaEnv | quote }}
         {{- end }}
-        {{- if .Values.databackuper.namespace }}
+        {{- if .Values.dataBackup.namespace }}
         - name: DATASET_NAMESPACE
-          value: {{ .Values.databackuper.namespace | quote }}
+          value: {{ .Values.dataBackup.namespace | quote }}
         {{- end }}
-        {{- if .Values.databackuper.dataset }}
+        {{- if .Values.dataBackup.dataset }}
         - name: DATASET_NAME
-          value: {{ .Values.databackuper.dataset | quote }}
+          value: {{ .Values.dataBackup.dataset | quote }}
         {{- end }}
-        {{- if .Values.databackuper.pvcName }}
+        {{- if .Values.dataBackup.pvcName }}
         - name: BACKUP_PVC
-          value: {{ .Values.databackuper.pvcName | quote }}
+          value: {{ .Values.dataBackup.pvcName | quote }}
         {{- end }}
-        {{- if .Values.databackuper.path }}
+        {{- if .Values.dataBackup.path }}
         - name: BACKUP_PATH
-          value: {{ .Values.databackuper.path | quote }}
+          value: {{ .Values.dataBackup.path | quote }}
         {{- end }}
       volumeMounts:
-        {{- if .Values.databackuper.workdir }}
+        {{- if .Values.dataBackup.workdir }}
         - name: backup
           mountPath: /alluxio_backups
         {{- end }}
         - mountPath: /scripts
           name: script
-        {{- if .Values.databackuper.pvcName }}
+        {{- if .Values.dataBackup.pvcName }}
         - mountPath: /pvc
           name: pvc
         {{- else }}
@@ -56,28 +56,28 @@ spec:
         {{- end }}
   restartPolicy: Never
   volumes:
-    {{- if .Values.databackuper.workdir }}
+    {{- if .Values.dataBackup.workdir }}
     - name: backup
       hostPath:
-        {{- if .Values.databackuper.namespace }}
-        path: {{ .Values.databackuper.workdir  }}/alluxio-backup/{{ .Values.databackuper.namespace }}/{{  .Values.databackuper.dataset }}
+        {{- if .Values.dataBackup.namespace }}
+        path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/{{ .Values.dataBackup.namespace }}/{{  .Values.dataBackup.dataset }}
         {{- else }}
-        path: {{ .Values.databackuper.workdir  }}/alluxio-backup/default/{{ .Values.databackuper.dataset }}
+        path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/default/{{ .Values.dataBackup.dataset }}
         {{- end }}
         type: DirectoryOrCreate
     {{- end }}
-    {{- if .Values.databackuper.pvcName }}
+    {{- if .Values.dataBackup.pvcName }}
     - name: pvc
       persistentVolumeClaim:
-        claimName: {{ .Values.databackuper.pvcName }}
+        claimName: {{ .Values.dataBackup.pvcName }}
     {{- else }}
     - name: host
       hostPath:
-        path: {{ .Values.databackuper.path }}
+        path: {{ .Values.dataBackup.path }}
     {{- end }}
     - name: script
       configMap:
-        name: {{ .Values.databackuper.databackup }}-script
+        name: {{ .Values.dataBackup.name }}-script
         items:
             - key: databackuper.alluxio
               path: alluxio_databackup.sh

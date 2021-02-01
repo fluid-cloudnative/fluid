@@ -95,7 +95,7 @@ master:
   # JVM options specific to the master container
   jvmOptions:
   nodeSelector: {}
-  backupPath: /tmp/alluxio-backup/default/hbase
+  backupPath:
 
 jobMaster:
   args:

@@ -42,7 +42,7 @@ type DataBackupCondition struct {
 
 // BackupLocation describes the final backup location of DataBackup
 type BackupLocation struct {
-	// Path describes the path of backup, in the form of local://subpath or pvc://<pvcName>/subpath
+	// Path describes the path of backup, in the form of local:///absolutePath or pvc://<pvcName>/subpath
 	Path string `json:"path,omitempty"`
 	// NodeName describes the nodeName of backup if Path is in the form of local://subpath
 	NodeName string `json:"nodeName,omitempty"`

@@ -12,7 +12,8 @@ csi-nodeplugin-fluid-fwgjh                  2/2     Running   0          8h
 csi-nodeplugin-fluid-ll8bq                  2/2     Running   0          8h
 dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 ```
-在部署Fluid时，可以通过修改charts中values.yaml中的workdir，配置Fluid工作目录，默认为/tmp目录：
+在部署Fluid时，可以通过修改charts中values.yaml中的workdir，配置Fluid工作目录
+工作目录主要用于暂存备份过程中的一些中间文件，默认为/tmp目录：
 ```yaml
 workdir: /tmp
 ```
