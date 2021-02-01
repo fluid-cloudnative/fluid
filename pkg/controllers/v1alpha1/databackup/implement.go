@@ -275,13 +275,13 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	}
 
 	dataBackup := cdatabackup.DataBackup{
-		Namespace:  databackup.Namespace,
-		Dataset:    databackup.Spec.Dataset,
-		Name:       databackup.Name,
-		NodeName:   nodeName,
-		Image:      image,
-		JavaEnv:    "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
-		Workdir:    workdir,
+		Namespace: databackup.Namespace,
+		Dataset:   databackup.Spec.Dataset,
+		Name:      databackup.Name,
+		NodeName:  nodeName,
+		Image:     image,
+		JavaEnv:   "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
+		Workdir:   workdir,
 	}
 	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
 	if err != nil {
