@@ -25,8 +25,3 @@ func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDatal
 	// todo
 	return releaseName, jobName, err
 }
-
-// Ready check if the jindoruntime is ready
-func (e *JindoEngine) Ready(ctx cruntime.ReconcileRequestContext) (ready bool) {
-	return ready
-}

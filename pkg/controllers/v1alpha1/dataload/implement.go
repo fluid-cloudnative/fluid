@@ -158,7 +158,12 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 	//runtimeConditions := targetDataset.Status.Conditions
 	//ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
-	ready := engine.Ready(ctx)
+	ready , err:= engine.Ready()
+	if err != nil {
+		log.Error(err, "Failed to check if the engine is ready.")
+		return utils.RequeueIfError(err)
+	}
+
 	if !ready {
 		log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
 		r.Recorder.Eventf(&targetDataload,

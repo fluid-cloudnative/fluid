@@ -20,7 +20,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
@@ -128,13 +127,3 @@ func isTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 	return false
 }
 
-// Ready check if the alluxioruntime is ready
-func (e *AlluxioEngine) Ready(ctx cruntime.ReconcileRequestContext) (ready bool) {
-	runtimeName := e.runtime.Name
-	runtimeNamespace := e.runtime.Namespace
-	podName := fmt.Sprintf("%s-master-0", runtimeName)
-	containerName := "alluxio-master"
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, runtimeNamespace, ctx.Log)
-	ready = fileUtils.Ready()
-	return ready
-}
