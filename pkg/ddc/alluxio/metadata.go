@@ -64,6 +64,15 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 // Any following calls to this function will try to get result of the working goroutine with a timeout, which
 // ensures the function won't block the following Sync operations(e.g. CheckAndUpdateRuntimeStatus) for a long time.
 func (e *AlluxioEngine) syncMetadataInternal() (err error) {
+	// init a MetadataInfoFile been saved in alluxio-master
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	metadataInfoFile := e.GetMetadataInfoFile()
+	err = fileUtils.InitMetadataInfoFile(e.name, metadataInfoFile)
+	if err != nil {
+		e.Log.Error(err, "Failed to InitMetadataInfoFile of the dataset")
+	}
+
 	if e.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout
 		select {
@@ -86,6 +95,11 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 						if err != nil {
 							return
 						}
+					}
+					// backup the ufs total result in local
+					err = fileUtils.InsertMetaDataInfoIntoFile(operations.UfsTotal, result.UfsTotal, metadataInfoFile)
+					if err != nil {
+						e.Log.Error(err, "Failed to InsertMetaDataInfoIntoFile of the dataset")
 					}
 					return
 				})

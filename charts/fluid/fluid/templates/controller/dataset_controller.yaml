@@ -43,9 +43,13 @@ spec:
         args:
           - --development=false
         env:
-          {{- if .Values.runtime.alluxio.dataload.image }}
-          - name: ALLUXIO_DATALOAD_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.dataload.image | quote }}
+          {{- if .Values.workdir }}
+          - name: FLUID_WORKDIR
+            value: {{ .Values.workdir | quote }}
+          {{- end }}
+          {{- if .Values.runtime.alluxio.runtime.image }}
+          - name: ALLUXIO_RUNTIME_IMAGE_ENV
+            value: {{ .Values.runtime.alluxio.runtime.image | quote }}
           {{- end }}
         ports:
         - containerPort: 8080

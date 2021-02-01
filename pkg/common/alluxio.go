@@ -20,7 +20,5 @@ const (
 
 	ALLUXIO_FUSE_IMAGE_ENV = "ALLUXIO_FUSE_IMAGE_ENV"
 
-	ALLUXIO_DATALOAD_IMAGE_ENV = "ALLUXIO_DATALOAD_IMAGE_ENV"
-
 	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
 )
