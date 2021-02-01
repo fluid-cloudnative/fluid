@@ -26,7 +26,7 @@ func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDa
 }
 
 // Check if the runtime is ready
-func (t *TemplateEngine) Ready(ctx cruntime.ReconcileRequestContext) (ready bool, err error) {
+func (t *TemplateEngine) Ready() (ready bool, err error) {
 	masterReady, err := t.Implement.CheckMasterReady()
 	if err != nil {
 		t.Log.Error(err, "Failed to check if the master is ready.")

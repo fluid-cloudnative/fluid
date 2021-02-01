@@ -35,12 +35,12 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDat
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
-	releaseName = utils.GetDataLoadReleaseName(ctx.Name)
+	releaseName = utils.GetDataLoadReleaseName(targetDataload.Name)
 	jobName = utils.GetDataLoadJobName(releaseName)
 	var existed bool
-	existed, err = helm.CheckRelease(releaseName, ctx.Namespace)
+	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
 	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", ctx.Namespace)
+		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataload.Namespace)
 		return releaseName, jobName, err
 	}
 
@@ -53,7 +53,7 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDat
 			return releaseName, jobName, err
 		}
 		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
-		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
+		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
 			return releaseName, jobName, err

@@ -211,24 +211,24 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
-	log.Info("DataLoad job helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
+	log.Info("DataLoad job helm chart successfullly installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
 
 	// 3. Check running status of the DataLoad job
 	log.V(1).Info("DataLoad chart already existed, check its running status")
-	job, err := utils.GetDataLoadJob(r.Client, jobName, ctx.Namespace)
+	job, err := utils.GetDataLoadJob(r.Client, jobName, targetDataload.Namespace)
 	if err != nil {
 		// helm release found but job missing, delete the helm release and requeue
 		if utils.IgnoreNotFound(err) == nil {
-			log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
+			log.Info("Related Job missing, will delete helm chart and retry", "namespace", targetDataload.Namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, targetDataload.Namespace); err != nil {
+				log.Error(err, "can't delete dataload release", "namespace", targetDataload.Namespace, "releaseName", releaseName)
 				return utils.RequeueIfError(err)
 			}
 			return utils.RequeueAfterInterval(20 * time.Second)
 		}
 		// other error
-		log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
+		log.Error(err, "can't get dataload job", "namespace", targetDataload.Namespace, "jobName", jobName)
 		return utils.RequeueIfError(err)
 	}
 
@@ -237,7 +237,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 			job.Status.Conditions[0].Type == batchv1.JobComplete {
 			// job either failed or complete, update DataLoad's phase status
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-				dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+				dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
 				if err != nil {
 					return err
 				}
@@ -274,7 +274,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 		}
 	}
 
-	log.V(1).Info("DataLoad job still runnning", "namespace", ctx.Namespace, "jobName", jobName)
+	log.V(1).Info("DataLoad job still runnning", "namespace", targetDataload.Namespace, "jobName", jobName)
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
@@ -290,7 +290,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx cruntime.Recon
 
 	// 2. record event and no requeue
 	log.Info("DataLoad Loaded, no need to requeue")
-	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
+	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobComplete, "DataLoad job %s succeeded", jobName)
 	return utils.NoRequeue()
 }
@@ -307,7 +307,7 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx cruntime.Recon
 
 	// 2. record event and no requeue
 	log.Info("DataLoad failed, won't requeue")
-	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
+	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
 	return utils.NoRequeue()
 }

@@ -68,7 +68,6 @@ func NewDataLoadReconciler(client client.Client,
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context.Background(),
-		NamespacedName: req.NamespacedName,
 		Log:            r.Log.WithValues("dataload", req.NamespacedName),
 		Recorder:		r.Recorder,
 		Client:			r.Client,
@@ -107,6 +106,10 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 	ctx.Dataset = targetDataset
+	ctx.NamespacedName = types.NamespacedName{
+		Name:	targetDataset.Name,
+		Namespace: targetDataset.Namespace,
+	}
 
 	//4. get the runtime
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
@@ -193,10 +196,7 @@ func (r *DataLoadReconciler) addFinalierAndRequeue(ctx cruntime.ReconcileRequest
 func (r *DataLoadReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 	found := false
-	id := ddc.GenerateEngineID(types.NamespacedName{
-		Name:	ctx.Dataset.Name,
-		Namespace: ctx.Dataset.Namespace,
-	})
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if engine, found = r.engines[id]; !found {
