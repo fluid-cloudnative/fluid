@@ -18,6 +18,16 @@ spec:
         control-plane: alluxioruntime-controller
     spec:
       serviceAccountName: alluxioruntime-controller
+      priorityClassName: system-cluster-critical
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
       tolerations:
       - operator: Exists
       #hostNetwork: true
