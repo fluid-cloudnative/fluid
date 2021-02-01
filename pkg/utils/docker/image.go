@@ -1,8 +1,10 @@
 package docker
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
 
@@ -40,5 +42,35 @@ func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (im
 		}
 	}
 
+	return
+}
+
+// GetWorkerImage get the image of alluxio worker from alluxioruntime, env or default
+// TODO: Get image by calling runtime controller interface instead of reading runtime object
+func GetWorkerImage(client client.Client, datasetName string, runtimeType string, namespace string) (imageName string, imageTag string) {
+	configmapName := datasetName + "-" + runtimeType + "-values"
+	configmap, err := kubeclient.GetConfigmapByName(client, configmapName, namespace)
+	if configmap != nil && err == nil {
+		for key, value := range configmap.Data {
+			if key == "data" {
+				splits := strings.Split(value, "\n")
+				for _, split := range splits {
+					if strings.HasPrefix(split, "image: ") {
+						imageName = strings.TrimPrefix(split, "image: ")
+					}
+					if strings.HasPrefix(split, "imageTag: ") {
+						imageTag = strings.TrimPrefix(split, "imageTag: ")
+					}
+				}
+			}
+		}
+
+	}
+	if imageName == "" {
+		imageName = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+	}
+	if imageTag == "" {
+		imageTag = "2.3.0-SNAPSHOT-238b7eb"
+	}
 	return
 }

@@ -28,6 +28,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -334,4 +335,8 @@ func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
 	// }
 
 	return
+}
+
+func (e *AlluxioEngine) GetMetadataInfoFile() string {
+	return cdatabackup.BACPUP_PATH_POD + "/" + e.name + "-" + e.namespace + ".yaml"
 }

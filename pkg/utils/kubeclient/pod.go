@@ -40,6 +40,11 @@ func IsCompletePod(pod *v1.Pod) bool {
 	return false
 }
 
+// IsSucceededPod determines if the pod is Succeeded
+func IsSucceededPod(pod *v1.Pod) bool {
+	return pod != nil && pod.Status.Phase == v1.PodSucceeded
+}
+
 // IsFailedPod determines if the pod is failed
 func IsFailedPod(pod *v1.Pod) bool {
 	return pod != nil && pod.Status.Phase == v1.PodFailed

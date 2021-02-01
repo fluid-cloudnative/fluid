@@ -17,11 +17,11 @@ package alluxio
 
 import (
 	"fmt"
-	"strings"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
+	"os"
+	"strings"
 )
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
@@ -216,6 +216,13 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 
 	value.Master = Master{}
+
+	backupRoot := os.Getenv("FLUID_WORKDIR")
+	if backupRoot == "" {
+		backupRoot = "/tmp"
+	}
+	value.Master.BackupPath = backupRoot + "/alluxio-backup/" + e.namespace + "/" + e.name
+
 	if runtime.Spec.Master.Replicas == 0 {
 		value.Master.Replicas = 1
 	} else {
