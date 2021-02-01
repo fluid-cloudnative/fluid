@@ -1,5 +1,5 @@
 apiVersion: v2
-name: fluid-databacker
+name: fluid-databackup
 description: A Helm chart for Fluid to backup data
 
 # A chart can be either an 'application' or a 'library' chart.
