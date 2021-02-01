@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sync"
 	"time"
@@ -105,7 +106,9 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 		}
 	}
+	ctx.Dataset = targetDataset
 
+	//4. get the runtime
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 	if index == -1 {
 		ctx.Log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
@@ -115,10 +118,8 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			"Bounded accelerate runtime not ready")
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
-
 	ctx.RuntimeType = boundedRuntime.Type
 
-	//4. get the runtime
 	switch ctx.RuntimeType {
 	case common.ALLUXIO_RUNTIME:
 		runtime, err := utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
@@ -188,11 +189,14 @@ func (r *DataLoadReconciler) addFinalierAndRequeue(ctx cruntime.ReconcileRequest
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, targetDataload.ObjectMeta.GetGeneration())
 }
 
-// GetOrCreateEngine gets the dataset
+// GetOrCreateEngine gets the Engine
 func (r *DataLoadReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 	found := false
-	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	id := ddc.GenerateEngineID(types.NamespacedName{
+		Name:	ctx.Dataset.Name,
+		Namespace: ctx.Dataset.Namespace,
+	})
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if engine, found = r.engines[id]; !found {
