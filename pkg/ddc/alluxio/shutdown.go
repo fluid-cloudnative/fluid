@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -170,24 +171,20 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelExclusiveName = common.Exclusive
 	)
 
-	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
-	if err != nil {
-		return
-	}
-
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
-
-	runtimeInfo, err := e.getRuntimeInfo()
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
 		return
 	}
 
-	if runtimeInfo.IsExclusive() {
-		labelNames = append(labelNames, labelExclusiveName)
+	err = e.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		return
 	}
 
 	// 1.select the nodes
-	// TODO(cheyang) Need consider node selector
 	var i int32 = 0
 	for _, node := range nodeList.Items {
 		if workers >= 0 {
@@ -201,6 +198,12 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		toUpdate := node.DeepCopy()
 		if len(toUpdate.Labels) == 0 {
 			continue
+		}
+
+		for _, label := range toUpdate.Labels {
+			if label == labelExclusiveName {
+				labelNames = append(labelNames, labelExclusiveName)
+			}
 		}
 
 		for _, label := range labelNames {
