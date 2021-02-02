@@ -19,7 +19,6 @@ spec:
       #priorityClassName: system-node-critical
       hostNetwork: true
       hostPID: true
-      priorityClassName: system-cluster-critical
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

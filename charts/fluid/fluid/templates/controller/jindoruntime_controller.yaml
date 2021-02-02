@@ -18,7 +18,6 @@ spec:
         control-plane: jindoruntime-controller
     spec:
       serviceAccountName: jindoruntime-controller
-      priorityClassName: system-cluster-critical
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
