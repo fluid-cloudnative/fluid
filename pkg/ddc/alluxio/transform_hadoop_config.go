@@ -31,7 +31,7 @@ func (e *AlluxioEngine) transformHadoopConfig(runtime *datav1alpha1.AlluxioRunti
 	}
 
 	var confFiles []string
-	for k, _ := range hadoopConfigMap.Data {
+	for k := range hadoopConfigMap.Data {
 		if k == HADOOP_CONF_HDFS_SITE_FILENAME {
 			value.HadoopConfig.IncludeHdfsSite = true
 			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_HDFS_SITE_FILENAME)
