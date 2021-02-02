@@ -136,6 +136,7 @@ Level order defined in `spec.tieredstore.levels` will not affect the actual leve
 Before Alluxio launched, Fluid will firstly sort the levels according to `mediumtype`, and storages with higher I/O throughput will get higher priority.
 That is, Fluid will sort tieredstores in the following orders: "MEM" < "SSD" < "HDD".
 
-> Note: For now, multi-tier configuration may lead to some issue like unexpected `Cached` and `CachedPercentage` in Dataset
+> Note: Alluxio uses a different way to report its capacity usage when using multi-tier configuration. 
+> For now, this will lead to some inaccuracy when showing `Dataset.Cached` and `Dataset.CachedPercentage` in Fluid.
 
 
