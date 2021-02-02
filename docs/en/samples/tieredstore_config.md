@@ -1,4 +1,4 @@
-# Demo - Allluxio Tieredstore Configuration
+# Demo - Alluxio Tieredstore Configuration
 
 [Alluxio](https://github.com/Alluxio/alluxio) is one of the distributed cache engines leveraged by Fluid.
 It supports tieredstores to store cached data in different location, for example different directories with different storage types.
