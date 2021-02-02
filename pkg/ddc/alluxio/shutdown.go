@@ -200,10 +200,9 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			continue
 		}
 
-		for _, label := range toUpdate.Labels {
-			if label == labelExclusiveName {
-				labelNames = append(labelNames, labelExclusiveName)
-			}
+		exclusiveLabelValue := e.namespace + "-" + e.name
+		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+			delete(toUpdate.Labels, labelExclusiveName)
 		}
 
 		for _, label := range labelNames {
