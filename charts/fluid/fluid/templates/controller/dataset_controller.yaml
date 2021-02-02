@@ -23,7 +23,6 @@ spec:
         control-plane: dataset-controller
     spec:
       serviceAccountName: dataset-controller
-      priorityClassName: system-cluster-critical
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

@@ -18,7 +18,6 @@ spec:
         control-plane: alluxioruntime-controller
     spec:
       serviceAccountName: alluxioruntime-controller
-      priorityClassName: system-cluster-critical
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
