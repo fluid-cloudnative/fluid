@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// transformSecurity transforms security configuration
+// transformHadoopConfig transforms the given value by checking existence of user-specific hadoop configurations
 func (e *AlluxioEngine) transformHadoopConfig(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	if len(runtime.Spec.HadoopConfig) == 0 {
 		return nil
