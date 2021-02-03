@@ -206,6 +206,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			if err != nil {
 				return err
 			}
+			e.Log.Info("node", node.Name, "removes %d labels", len(node.Labels)-len(toUpdate.Labels))
 		}
 	}
 
