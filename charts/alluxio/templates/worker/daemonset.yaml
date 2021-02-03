@@ -51,14 +51,17 @@ spec:
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
       initContainers:
-        {{ if .Values.initUsers.enabled -}}
         - name: init-users
           image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
           imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
           command: ["/entrypoint.sh"]
           args:
+            - "cache_clean"
+            {{ if .Values.initUsers.enabled -}}
             - "init_users"
             - "chmod_tierpath"
+            {{- end }}
+          {{ if .Values.initUsers.enabled -}}
           env:
           {{- if .Values.initUsers.envUsers }}
             - name: FLUID_INIT_USERS
@@ -68,17 +71,19 @@ spec:
             - name: FLUID_TIERSTORE_PATHS
               value: {{ .Values.initUsers.envTieredPaths | quote }}
           {{- end }}
+          {{- end }}
           volumeMounts:
+            {{ if .Values.initUsers.enabled -}}
             - name: dir
               mountPath: /tmp
             - name: user
               mountPath: /tmp/passwd
             - name: group
               mountPath: /tmp/group
-            {{- if .Values.tieredstore -}}
+            {{- end }}
+            {{- if .Values.tieredstore }}
 {{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
-            {{- end -}}
-        {{- end }}
+            {{- end }}
       containers:
         - name: alluxio-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
