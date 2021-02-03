@@ -207,7 +207,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Dataset ", e.name, "clear", "worker node", node.Name, "removes labels:", labelNames)
+			e.Log.Info("Dataset ", e.name, "clear", "worker node", node.Name, "removed labels", labelNames)
 		}
 	}
 
