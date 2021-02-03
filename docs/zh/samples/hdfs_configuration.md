@@ -50,6 +50,7 @@ spec:
   ...
   hadoopConfig: <configmap-name>
   ...
+EOF
 ```
 
 `configmap-name`须为之前创建的ConfigMap资源对象, 该ConfigMap必须与创建的AlluxioRuntime同处于同一Namespace. 其中必须包含以`hdfs-site.xml`或`core-site.xml`为键的键值对. Fluid会检查
@@ -69,5 +70,3 @@ hdfs-site.xml  core-site.xml
 ``` 
 
 至此, Alluxio能够根据用户指定的配置文件正常地访问HDFS集群.
-
-
