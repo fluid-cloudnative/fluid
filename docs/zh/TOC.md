@@ -20,6 +20,7 @@
   - [数据卷加速](samples/accelerate_pvc.md)
   - [以non-root用户身份使用Fluid](samples/nonroot_access.md)
   - [数据预加载](samples/data_warmup.md)
+  - [Alluxio分层存储配置](samples/tieredstore_config.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
 + 开发者指南

@@ -118,5 +118,5 @@ spec:
 
 `spec.tieredstore.levels`中定义的层级顺序不会影响Alluxio集群分层存储的层级顺序.在Alluxio集群启动前,Fluid会按照`mediumtype`对多个层级进行重排序,以保证数据访问速度快的存储介质("MEM" < "SSD" < "HDD")会被优先使用.
 
-> 注意: 在目前的Fluid版本下,多层存储配置可能会导致已缓存比例(Dataset资源对象中的`Cached`以及`CachedPercentage`属性)显示出错等一些问题.
+> 注意: 多层存储配置的Alluxio使用不同的方式计算存储使用量. 在目前的Fluid版本下,这会使得Alluxio已缓存比例(`Dataset.Cached`以及`Dataset.CachedPercentage`属性)受到一定的精确度影响. 
 
