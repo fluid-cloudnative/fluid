@@ -25,9 +25,9 @@ runtime:
     controller:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-a53c6c4
     runtime:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-d0434d1
     fuse:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-1-SNAPSHOT-9833d5f
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-1-SNAPSHOT-d0434d1
   jindo:
     enabled: false
     controller:
