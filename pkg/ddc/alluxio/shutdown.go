@@ -185,15 +185,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 	}
 
 	// 1.select the nodes
-	var i int32 = 0
 	for _, node := range nodeList.Items {
-		if workers >= 0 {
-			if i > workers {
-				e.Log.Info("destroy workers", "count", i)
-				break
-			}
-		}
-
 		// nodes = append(nodes, &node)
 		toUpdate := node.DeepCopy()
 		if len(toUpdate.Labels) == 0 {
@@ -215,8 +207,6 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 				return err
 			}
 		}
-
-		i++
 	}
 
 	return
