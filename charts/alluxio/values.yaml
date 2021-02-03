@@ -95,7 +95,13 @@ master:
   # JVM options specific to the master container
   jvmOptions:
   nodeSelector: {}
-  backupPath:
+  # backupPath is the path in the host to save metadata and   metadata info
+  backupPath: #<backupPath>
+  # restore is the location to restore metadata and metadata info  from
+  restore:
+    enabled: false
+    # path: /subpath/
+    # pvcName: pvc-local
 
 jobMaster:
   args:

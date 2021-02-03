@@ -191,6 +191,36 @@ func (a AlluxioFileUtils) InsertMetaDataInfoIntoFile(key KeyOfMetaDataFile, valu
 	return err
 }
 
+// QueryMetadataInfoFile query the metadata info file.
+func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
+	line := ""
+	switch key {
+	case DatasetName:
+		line = "1p"
+	case Namespace:
+		line = "2p"
+	case UfsTotal:
+		line = "3p"
+	case FileNum:
+		line = "4p"
+	default:
+		a.log.Error(errors.New("the key not in  metadatafile"), "key", key)
+	}
+	var (
+		str     = "sed -n '" + line + "' " + filename
+		command = []string{"bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with  expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		value = strings.TrimPrefix(stdout, string(key)+": ")
+	}
+	return
+}
+
 func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "mkdir", alluxioPath}

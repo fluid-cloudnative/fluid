@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -256,7 +257,33 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// 	value.Master.Env["ALLUXIO_UID"] = strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
 	// 	value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	// }
-
+	// if the dataset indicates a restore path, need to load the  backup file in it
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err == nil {
+		if dataset.Spec.DataRestoreLocation.Path != "" {
+			pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
+			if err != nil {
+				e.Log.Error(err, "restore path cannot analyse", "Path", dataset.Spec.DataRestoreLocation.Path)
+			}
+			if pvcName != "" {
+				value.Master.Restore.Enabled = true
+				value.Master.Restore.PVCName = pvcName
+				value.Master.Restore.Path = path
+				value.Master.Env["JOURNAL_BACKUP"] = "/pvc" + path + e.GetMetadataFileName()
+			} else if dataset.Spec.DataRestoreLocation.NodeName != "" {
+				value.Master.Restore.Enabled = true
+				if len(value.Master.NodeSelector) == 0 {
+					value.Master.NodeSelector = map[string]string{}
+				}
+				value.Master.NodeSelector["kubernetes.io/hostname"] = dataset.Spec.DataRestoreLocation.NodeName
+				value.Master.Env["JOURNAL_BACKUP"] = "/host/" + e.GetMetadataFileName()
+				value.Master.Restore.Path = path
+			} else {
+				err := errors.New("DataRestoreLocation in  Dataset cannot analyse, will not restore")
+				e.Log.Error(err, "restore path cannot analyse", "Location", dataset.Spec.DataRestoreLocation)
+			}
+		}
+	}
 	return
 }
 

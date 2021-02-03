@@ -154,6 +154,15 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
+          {{ if .Values.master.restore.enabled -}}
+          {{- if .Values.master.restore.pvcName }}
+          - name: pvc
+            mountPath: /pvc
+          {{- else }}
+          - name: host
+            mountPath: /host
+        {{- end }}
+        {{- end }}
           {{- if .Values.master.backupPath }}
           - name: backup
             mountPath: /alluxio_backups
@@ -274,6 +283,18 @@ spec:
           {{- end }}
       restartPolicy: Always
       volumes:
+        {{ if .Values.master.restore.enabled -}}
+        {{- if .Values.master.restore.pvcName }}
+        - name: pvc
+          persistentVolumeClaim:
+            claimName: {{ .Values.master.restore.pvcName }}
+        {{- else }}
+        - name: host
+          hostPath:
+            path: {{ .Values.master.restore.path }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- end }}
         {{- if .Values.master.backupPath }}
         - name: backup
           hostPath:
