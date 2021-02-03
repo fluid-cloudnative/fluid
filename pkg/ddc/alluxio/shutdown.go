@@ -192,13 +192,14 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			continue
 		}
 
+		for _, label := range labelNames {
+			delete(toUpdate.Labels, label)
+		}
+
 		exclusiveLabelValue := e.namespace + "-" + e.name
 		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 			delete(toUpdate.Labels, labelExclusiveName)
-		}
-
-		for _, label := range labelNames {
-			delete(toUpdate.Labels, label)
+			labelNames = append(labelNames, labelExclusiveName)
 		}
 
 		if len(toUpdate.Labels) < len(node.Labels) {
@@ -206,7 +207,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			if err != nil {
 				return err
 			}
-			e.Log.Info("node", node.Name, "removes %d labels", len(node.Labels)-len(toUpdate.Labels))
+			e.Log.Info("Dataset ", e.name, "clear", "worker node", node.Name, "removes labels:", labelNames)
 		}
 	}
 
