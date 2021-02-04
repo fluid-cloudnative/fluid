@@ -105,6 +105,9 @@ generate: controller-gen
 update-crd: manifests
 	cp config/crd/bases/* charts/fluid/fluid/crds
 
+update-api-doc:
+	bash tools/api-doc-gen/generate_api_doc.sh && mv tools/api-doc-gen/api_doc.md docs/zh/dev/api_doc.md && cp docs/zh/dev/api_doc.md docs/en/dev/api_doc.md
+
 # Build the docker image
 docker-build-dataset-controller: generate fmt vet
 	docker build --no-cache . -f Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
