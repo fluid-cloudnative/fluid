@@ -60,6 +60,14 @@ type Alluxio struct {
 	InitUsers InitUsers `yaml:"initUsers,omitempty"`
 
 	Monitoring string `yaml:"monitoring,omitempty"`
+
+	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
+}
+
+type HadoopConfig struct {
+	ConfigMap       string `yaml:"configMap"`
+	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
+	IncludeCoreSite bool   `yaml:"includeCoreSite"`
 }
 
 type UFSPath struct {

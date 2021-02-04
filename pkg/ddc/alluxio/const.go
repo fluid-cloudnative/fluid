@@ -48,4 +48,10 @@ const (
 	PORT_NUM = 9
 
 	CACHE_HIT_QUERY_INTERVAL_MIN = 1
+
+	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+
+	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+
+	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
 )
