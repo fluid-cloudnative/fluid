@@ -158,7 +158,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 	//runtimeConditions := targetDataset.Status.Conditions
 	//ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
-	ready , err:= engine.Ready()
+	ready, err := engine.Ready()
 	if err != nil {
 		log.Error(err, "Failed to check if the engine is ready.")
 		return utils.RequeueIfError(err)
@@ -207,14 +207,15 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 	engine base.Engine) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadingDataLoad")
 
-	releaseName, jobName, err := engine.LoadData(ctx, targetDataload)
-	if err != nil {
+	if err := engine.LoadData(ctx, targetDataload); err != nil {
 		return utils.RequeueIfError(err)
 	}
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
 	log.Info("DataLoad job helm chart successfullly installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
 
-	// 3. Check running status of the DataLoad job
+	// Check running status of the DataLoad job
 	log.V(1).Info("DataLoad chart already existed, check its running status")
 	job, err := utils.GetDataLoadJob(r.Client, jobName, targetDataload.Namespace)
 	if err != nil {

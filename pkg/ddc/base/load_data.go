@@ -21,7 +21,7 @@ import (
 )
 
 // Load the data
-func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error) {
+func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error {
 	return t.Implement.LoadData(ctx, targetDataload)
 }
 

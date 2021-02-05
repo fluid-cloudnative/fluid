@@ -43,7 +43,7 @@ type Engine interface {
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
 	// LoadData load the data
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error)
+	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
 
 	// Ready check if the runtime is ready
 	Ready() (ready bool, err error)
@@ -99,7 +99,7 @@ type Implement interface {
 	BindToDataset() (err error)
 
 	// LoadData load the data
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (string, string, error)
+	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

@@ -21,7 +21,7 @@ import (
 )
 
 // LoadData load the data
-func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (releaseName string, jobName string, err error) {
+func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	// todo
-	return releaseName, jobName, err
+	return err
 }

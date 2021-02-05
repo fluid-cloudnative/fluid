@@ -38,5 +38,5 @@ type ReconcileRequestContext struct {
 	RuntimeType   string
 	FinalizerName string
 	common.Category
-	Runtime  runtime.Object
+	Runtime runtime.Object
 }

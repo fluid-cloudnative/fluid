@@ -42,7 +42,7 @@ import (
 
 // DataLoadReconciler reconciles a DataLoad object
 type DataLoadReconciler struct {
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
 	engines map[string]base.Engine
 	mutex   *sync.Mutex
 	*DataLoadReconcilerImplement
@@ -54,8 +54,8 @@ func NewDataLoadReconciler(client client.Client,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataLoadReconciler {
 	r := &DataLoadReconciler{
-		Scheme: scheme,
-		mutex: &sync.Mutex{},
+		Scheme:  scheme,
+		mutex:   &sync.Mutex{},
 		engines: map[string]base.Engine{},
 	}
 	r.DataLoadReconcilerImplement = NewDataLoadReconcilerImplement(client, log, recorder)
@@ -67,11 +67,11 @@ func NewDataLoadReconciler(client client.Client,
 // Reconcile reconciles the DataLoad object
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := cruntime.ReconcileRequestContext{
-		Context:        context.Background(),
-		Log:            r.Log.WithValues("dataload", req.NamespacedName),
-		Recorder:		r.Recorder,
-		Client:			r.Client,
-		Category:		common.AccelerateCategory,
+		Context:  context.Background(),
+		Log:      r.Log.WithValues("dataload", req.NamespacedName),
+		Recorder: r.Recorder,
+		Client:   r.Client,
+		Category: common.AccelerateCategory,
 	}
 
 	// 1. Get DataLoad object
@@ -107,7 +107,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	ctx.Dataset = targetDataset
 	ctx.NamespacedName = types.NamespacedName{
-		Name:	targetDataset.Name,
+		Name:      targetDataset.Name,
 		Namespace: targetDataset.Namespace,
 	}
 
@@ -157,7 +157,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// 7. create or get engine
 	engine, err := r.GetOrCreateEngine(ctx)
-	if err != nil{
+	if err != nil {
 		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDataLoadReason, "Process DataLoad error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
 	}

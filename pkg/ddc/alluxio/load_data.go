@@ -31,17 +31,16 @@ import (
 )
 
 // LoadData load the data
-func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (releaseName string, jobName string, err error) {
+func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
-	releaseName = utils.GetDataLoadReleaseName(targetDataload.Name)
-	jobName = utils.GetDataLoadJobName(releaseName)
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
 	var existed bool
 	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
 	if err != nil {
 		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataload.Namespace)
-		return releaseName, jobName, err
+		return err
 	}
 
 	// 2. install the helm chart if not exists and requeue
@@ -50,16 +49,16 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDat
 		valueFileName, err := e.generateDataLoadValueFile(targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
-			return releaseName, jobName, err
+			return err
 		}
 		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
-			return releaseName, jobName, err
+			return err
 		}
 	}
-	return releaseName, jobName, err
+	return err
 }
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
@@ -126,4 +125,3 @@ func isTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 	}
 	return false
 }
-
