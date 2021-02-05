@@ -72,7 +72,7 @@ spec:
                     in the form of local://subpath
                   type: string
                 path:
-                  description: Path describes the path of backup, in the form of local://subpath
+                  description: Path describes the path of backup, in the form of local:///absolutePath
                     or pvc://<pvcName>/subpath
                   type: string
               type: object

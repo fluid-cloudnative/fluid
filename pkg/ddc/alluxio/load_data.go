@@ -69,9 +69,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(targetDataload datav1alpha1.Da
 		return "", err
 	}
 
-	imageName := "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-	imageTag := "2.3.0-SNAPSHOT-238b7eb"
-	imageName, imageTag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_DATALOAD_IMAGE_ENV, imageName, imageTag)
+	imageName, imageTag := docker.GetWorkerImage(e.Client, targetDataload.Spec.Dataset.Name, "alluxio", targetDataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataloadInfo := cdataload.DataLoadInfo{
