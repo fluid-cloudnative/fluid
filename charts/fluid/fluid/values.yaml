@@ -2,15 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+workdir: /tmp
+
 dataset:
   controller:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.5.0-54239af
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller:v0.5.0-4be7c32
 
 csi:
   registrar:
     image: registry.cn-hangzhou.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-54239af
+    image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi:v0.5.0-4be7c32
   kubelet:
     rootDir: /var/lib/kubelet
 
@@ -19,16 +21,14 @@ runtime:
   alluxio:
     enabled: true
     init:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-54239af
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.5.0-4be7c32
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-54239af
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.5.0-4be7c32
     runtime:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-2-SNAPSHOT-f4676d3
     fuse:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-1-SNAPSHOT-9833d5f
-    dataload:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
+      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-2-SNAPSHOT-f4676d3
   jindo:
     enabled: false
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-54239af
+      image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-4be7c32

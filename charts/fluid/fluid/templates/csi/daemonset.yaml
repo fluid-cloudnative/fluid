@@ -19,6 +19,15 @@ spec:
       #priorityClassName: system-node-critical
       hostNetwork: true
       hostPID: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
       containers:
         - name: node-driver-registrar
           image: "{{ .Values.csi.registrar.image }}"

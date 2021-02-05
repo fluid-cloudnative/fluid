@@ -174,6 +174,10 @@ type DatasetStatus struct {
 	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataLoad jobs.
 	DataLoadRef string `json:"dataLoadRef,omitempty"`
+
+	// DataBackupRef specifies the running Backup job that targets this Dataset.
+	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
+	DataBackupRef string `json:"dataBackupRef,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>
@@ -221,6 +225,7 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="HCFS URL",type="string",JSONPath=`.status.hcfs.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="TOTAL FILES",type="string",JSONPath=`.status.fileNum`,priority=11
+// +kubebuilder:printcolumn:name="CACHE HIT RATIO",type="string",JSONPath=`.status.cacheStates.cacheHitRatio`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

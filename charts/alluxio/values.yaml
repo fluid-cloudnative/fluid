@@ -95,6 +95,7 @@ master:
   # JVM options specific to the master container
   jvmOptions:
   nodeSelector: {}
+  backupPath:
 
 jobMaster:
   args:
@@ -312,6 +313,11 @@ fuse:
 #      cpu: "4"
 #      memory: "4G"
 
+## HDFS Configuraions ##
+# hadoopConfig:
+#   configMap: hdfs-configmap
+#   includeHdfsSite: true
+#   includeCoreSite: true
 
 ##  Secrets ##
 

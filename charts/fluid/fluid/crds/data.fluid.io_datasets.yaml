@@ -32,6 +32,10 @@ spec:
     name: TOTAL FILES
     priority: 11
     type: string
+  - JSONPath: .status.cacheStates.cacheHitRatio
+    name: CACHE HIT RATIO
+    priority: 10
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -310,6 +314,11 @@ spec:
                 - type
                 type: object
               type: array
+            dataBackupRef:
+              description: DataBackupRef specifies the running Backup job that targets
+                this Dataset. This is mainly used as a lock to prevent concurrent
+                DataBackup jobs.
+              type: string
             dataLoadRef:
               description: DataLoadRef specifies the running DataLoad job that targets
                 this Dataset. This is mainly used as a lock to prevent concurrent

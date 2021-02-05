@@ -99,6 +99,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx cruntime.Reconci
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
 		dataloadToUpdate.Status.Conditions = []datav1alpha1.DataLoadCondition{}
 	}
+	dataloadToUpdate.Status.DurationTime = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the cdataload")
 		return utils.RequeueIfError(err)
@@ -162,6 +163,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	if err != nil {
 		log.Error(err, "Failed to check if the engine is ready.")
 		return utils.RequeueIfError(err)
+
 	}
 
 	if !ready {
@@ -259,6 +261,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
+				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {

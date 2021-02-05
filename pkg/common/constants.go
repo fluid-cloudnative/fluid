@@ -28,6 +28,8 @@ const (
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
+	ErrorDeleteDataset = "ErrorDeleteDataset"
+
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
 
 	ErrorProcessDataLoadReason = "ErrorProcessDataLoad"
@@ -47,6 +49,10 @@ const (
 	DataLoadJobFailed = "DataLoadJobFailed"
 
 	DataLoadJobComplete = "DataLoadJobComplete"
+
+	DataBackupFailed = "DataBackupFailed"
+
+	DataBackupComplete = "DataBackupComplete"
 )
 
 type CacheStoreType string

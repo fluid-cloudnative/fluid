@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
 	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
@@ -119,9 +120,10 @@ func handle() {
 	}
 
 	if err = (&datasetctl.DatasetReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("datasetctl").WithName("Dataset"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("datasetctl").WithName("Dataset"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Dataset"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
@@ -133,6 +135,15 @@ func handle() {
 		mgr.GetEventRecorderFor("DataLoad"),
 	)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
+		os.Exit(1)
+	}
+
+	if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("DataBackup"),
+	)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
 		os.Exit(1)
 	}
 

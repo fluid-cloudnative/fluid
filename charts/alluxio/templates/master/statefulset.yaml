@@ -154,7 +154,18 @@ spec:
             name: embedded
           {{- end }}
           volumeMounts:
-          {{ if .Values.initUsers.enabled -}}
+          {{- if .Values.master.backupPath }}
+          - name: backup
+            mountPath: /alluxio_backups
+          {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+          - name: hdfs-confs
+            mountPath: /hdfs-config
+            readOnly: true
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initUsers.enabled }}
           - name: user
             mountPath: /etc/passwd
             readOnly: true
@@ -237,7 +248,14 @@ spec:
             name: job-embedded
           {{- end }}
           volumeMounts:
-          {{ if .Values.initUsers.enabled -}}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+          - name: hdfs-confs
+            mountPath: /hdfs-config
+            readOnly: true
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initUsers.enabled }}
           - name: user
             mountPath: /etc/passwd
             readOnly: true
@@ -270,7 +288,29 @@ spec:
           {{- end }}
       restartPolicy: Always
       volumes:
-        {{ if .Values.initUsers.enabled -}}
+        {{- if .Values.master.backupPath }}
+        - name: backup
+          hostPath:
+            path: {{ .Values.master.backupPath }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+            items:
+            {{ if .Values.hadoopConfig.includeHdfsSite -}}
+            - key: hdfs-site.xml
+              path: hdfs-site.xml
+            {{- end }}
+            {{- if .Values.hadoopConfig.includeCoreSite }}
+            - key: core-site.xml
+              path: core-site.xml
+            {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.initUsers.enabled }}
         - name: dir
           hostPath:
             path: {{ .Values.initUsers.dir }}
