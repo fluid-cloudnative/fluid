@@ -117,6 +117,10 @@ type DatasetSpec struct {
 	// +optional
 	NodeAffinity *CacheableNodeAffinity `json:"nodeAffinity,omitempty"`
 
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []v1.Toleration `json:"toleration,omitempty"`
+
 	// AccessModes contains all ways the volume backing the PVC can be mounted
 	// +optional
 	AccessModes []v1.PersistentVolumeAccessMode `json:"accessModes,omitempty"`
