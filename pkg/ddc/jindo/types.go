@@ -35,7 +35,7 @@ type Fuse struct {
 	Args           []string          `yaml:"args"`
 	HostPath       string            `yaml:"hostPath"`
 	NodeSelector   map[string]string `yaml:"nodeSelector,omitempty"`
-	FuseProperties map[string]int    `yaml:"properties"`
+	FuseProperties map[string]string `yaml:"properties"`
 }
 
 type Mounts struct {

@@ -60,7 +60,7 @@ type JindoFuseSpec struct {
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 
 	// Configurable properties for Jindo System. <br>
-	Properties map[string]int `json:"properties,omitempty"`
+	Properties map[string]string `json:"properties,omitempty"`
 
 	// Environment variables that will be used by Jindo Fuse
 	Env map[string]string `json:"env,omitempty"`
