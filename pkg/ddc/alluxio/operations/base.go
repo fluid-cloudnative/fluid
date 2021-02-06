@@ -133,6 +133,15 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	return
 }
 
+/*
+MetadataInfoFile is a yaml file to save the metadata info of dataset, such as ufs total and fileNum
+it is in the form of：
+	dataset: <Dataset>
+	namespace: <Namespace>
+	ufstotal: <ufstotal>
+	filenum: <filenum>
+ */
+
 // InitMetadataInfoFile init the metadata info file.
 func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) (err error) {
 	str := "if [ ! -f '" + filename + "' ]; then echo -e 'dataset: " + dataset + "\\nnamespace: "

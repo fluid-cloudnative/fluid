@@ -142,7 +142,7 @@ type DatasetSpec struct {
 
 	// DataRestoreLocation is the location to load data of dataset  been backuped
 	// +optional
-	DataRestoreLocation DataRestoreLocation `json:"dataRestoreLocation,omitempty"`
+	DataRestoreLocation *DataRestoreLocation `json:"dataRestoreLocation,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset

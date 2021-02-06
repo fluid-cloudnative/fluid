@@ -118,7 +118,7 @@ $ kubectl describe node cn-beijing.192.168.1.146
 要进行恢复，需要保证Dataset的名称与原来保持一致，否则会找不到备份文件
 
 ### 从PVC恢复
-在创建Datast时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径作为恢复路径
+在创建Dataset时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径作为恢复路径
 
 如果备份文件被移动过，需要修改路径
 ```bash
@@ -183,7 +183,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED  PERCENTAGE   PHASE   
 hbase   443.86MiB        0.00B    4.00GiB          0.0%                 Bound   20h
 ```
 ### 从本地恢复
-在创建Datast时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径和备份文件所在主机的nodeName
+在创建Dataset时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径和备份文件所在主机的nodeName
 
 如果备份文件被移动过，需要修改路径和nodeName
 ```bash

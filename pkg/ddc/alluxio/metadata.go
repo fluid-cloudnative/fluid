@@ -241,7 +241,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 				}
 			}
 
-			if result.Done == false {
+			if !result.Done {
 				result.Err = errors.New("GetMetadataInfoFailed")
 			} else {
 				result.Err = nil

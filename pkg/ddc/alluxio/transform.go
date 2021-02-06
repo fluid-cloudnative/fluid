@@ -259,18 +259,22 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// }
 	// if the dataset indicates a restore path, need to load the  backup file in it
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err == nil {
+	if err != nil {
+		e.Log.Error(err, "restore path cannot analyse because cannot get dataset")
+	} else {
 		if dataset.Spec.DataRestoreLocation.Path != "" {
 			pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
 			if err != nil {
 				e.Log.Error(err, "restore path cannot analyse", "Path", dataset.Spec.DataRestoreLocation.Path)
 			}
 			if pvcName != "" {
+				// RestorePath is in the form of pvc://<pvcName>/subpath
 				value.Master.Restore.Enabled = true
 				value.Master.Restore.PVCName = pvcName
 				value.Master.Restore.Path = path
 				value.Master.Env["JOURNAL_BACKUP"] = "/pvc" + path + e.GetMetadataFileName()
 			} else if dataset.Spec.DataRestoreLocation.NodeName != "" {
+				// RestorePath is in the form of local://subpath
 				value.Master.Restore.Enabled = true
 				if len(value.Master.NodeSelector) == 0 {
 					value.Master.NodeSelector = map[string]string{}
@@ -279,11 +283,13 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 				value.Master.Env["JOURNAL_BACKUP"] = "/host/" + e.GetMetadataFileName()
 				value.Master.Restore.Path = path
 			} else {
-				err := errors.New("DataRestoreLocation in  Dataset cannot analyse, will not restore")
+				// RestorePath in Dataset cannot analyse
+				err := errors.New("DataRestoreLocation in Dataset cannot analyse, will not restore")
 				e.Log.Error(err, "restore path cannot analyse", "Location", dataset.Spec.DataRestoreLocation)
 			}
 		}
 	}
+
 	return
 }
 
