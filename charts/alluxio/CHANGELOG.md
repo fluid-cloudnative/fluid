@@ -169,3 +169,10 @@
 - Make the port configurable
 - Make the cache worker directory configurable
 
+
+0.6.18
+
+- support HDFS configuration file
+- suppport metadata backup
+- support tolerations
+

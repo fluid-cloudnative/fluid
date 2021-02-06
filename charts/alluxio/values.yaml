@@ -57,6 +57,17 @@ properties:
 # Use labels to run Alluxio on a subset of the K8s nodes
 # nodeSelector: {}
 
+##
+## Example:
+##   - key: "toleration=key"
+##     operator: "Equal"
+##     value: "value"
+##     effect: "NoSchedule"
+##
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+
 ## Master ##
 
 master:
