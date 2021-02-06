@@ -759,7 +759,7 @@ func (in *JindoFuseSpec) DeepCopyInto(out *JindoFuseSpec) {
 	*out = *in
 	if in.Properties != nil {
 		in, out := &in.Properties, &out.Properties
-		*out = make(map[string]int, len(*in))
+		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
