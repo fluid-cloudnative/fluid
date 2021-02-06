@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/api/core/v1"
 )
 
 // The value yaml file
@@ -62,6 +63,8 @@ type Alluxio struct {
 	Monitoring string `yaml:"monitoring,omitempty"`
 
 	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
+
+	Tolerations []v1.Toleration `yaml:"tolerations,omitempty"`
 }
 
 type HadoopConfig struct {
