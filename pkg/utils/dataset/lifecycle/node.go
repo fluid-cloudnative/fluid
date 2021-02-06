@@ -62,7 +62,7 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 	// if e.alreadyAssignedByFluid(node) {
 	// 	return false
 	// }
-	label := common.Exclusive
+	label := common.LabelAnnotationExclusive
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	value, cannotBeAssigned := node.Labels[label]
 	if cannotBeAssigned {
@@ -115,7 +115,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	exclusiveness := runtimeInfo.IsExclusive()
 	log.Info("Placement Mode", "IsExclusive", exclusiveness)
 	if exclusiveness {
-		labelExclusiveName = common.Exclusive
+		labelExclusiveName = common.LabelAnnotationExclusive
 	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
@@ -135,7 +135,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		toUpdate.Labels[labelName] = "true"
 		toUpdate.Labels[labelCommonName] = "true"
 		if exclusiveness {
-			toUpdate.Labels[labelExclusiveName] = fmt.Sprintf("%s_%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+			toUpdate.Labels[labelExclusiveName] = fmt.Sprintf("%s-%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
 		}
 		totalRequirement, err := resource.ParseQuantity("0Gi")
 		if err != nil {

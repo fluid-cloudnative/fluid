@@ -22,6 +22,8 @@ const (
 	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "storage-"
 	// The dataset annotation
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+	// The exclusive label annotation. e.g. data.fluid.io/fluid-exclusive=default-hbase
+	LabelAnnotationExclusive = LabelAnnotationPrefix + "fluid-exclusive"
 )
 
 //Reason for Fluid events
@@ -102,8 +104,4 @@ var (
 	ExpectedFluidAnnotations = map[string]string{
 		"CreatedBy": "fluid",
 	}
-)
-
-const (
-	Exclusive string = "fluid_exclusive"
 )

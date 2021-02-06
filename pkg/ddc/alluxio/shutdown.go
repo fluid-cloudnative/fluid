@@ -168,7 +168,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
-		labelExclusiveName = common.Exclusive
+		labelExclusiveName = common.LabelAnnotationExclusive
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
@@ -199,7 +199,6 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		exclusiveLabelValue := e.namespace + "-" + e.name
 		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 			delete(toUpdate.Labels, labelExclusiveName)
-			labelNames = append(labelNames, labelExclusiveName)
 		}
 
 		if len(toUpdate.Labels) < len(node.Labels) {
