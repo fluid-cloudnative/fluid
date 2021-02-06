@@ -39,7 +39,6 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 			Dir:     e.getInitUserDir(),
 			//Args:       e.getInitUsersArgs(runtime),
 			EnvUsers:       e.getInitUserEnv(runtime),
-			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
 			//ImageInfo: ImageInfo{
 			//	Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
 			//	ImageTag:        "v0.3.0",
@@ -55,6 +54,8 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		}
 
 	}
+	// EnvTieredPaths will be clean even if not to init users
+	value.InitUsers.EnvTieredPaths = e.getInitTierPathsEnv(runtime)
 
 	// Overwrite ImageInfo.
 	// Priority: runtime.Spec.InitUsers > helm chart value > default value

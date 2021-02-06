@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
 set -e
 
-rm -rf /dev/shm/*/*/alluxioworker
+function printUsage() {
+    echo -e "Usage: Run command with related environment variable set"
+    echo
+    echo -e "Environment Variable "$FLUID_TIERSTORE_PATHS" is set:"
+    echo -e " PATH1:PATH2:PATH3..."
+
+}
+
+function main() {
+    paths="$FLUID_TIERSTORE_PATHS"
+    paths=(${paths//:/ })
+    if [[ "${#paths[*]}" -eq 0 ]]; then
+        printUsage
+        exit 1
+    fi
+    for path in "${paths[@]}"; do
+        rm -rf "$path"/alluxioworker
+    done
+}
+
+main "$@"

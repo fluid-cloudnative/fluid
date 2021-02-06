@@ -182,7 +182,13 @@ func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime
 	var tierPaths []string
 	for _, level := range runtime.Spec.Tieredstore.Levels {
 		paths := strings.Split(level.Path, ",")
-		tierPaths = append(tierPaths, paths...)
+		for _, path := range paths {
+			if !strings.HasSuffix(path, "/") {
+				path = path + "/"
+			}
+			path = path + e.namespace + "/" + e.name
+			tierPaths = append(tierPaths, path)
+		}
 	}
 	return strings.Join(tierPaths, ":")
 }
