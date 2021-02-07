@@ -18,10 +18,11 @@ package jindo
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	v1 "k8s.io/api/batch/v1"
 )
 
 // LoadData load the data
-func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
+func (e *JindoEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error) {
 	// todo
-	return err
+	return status, err
 }

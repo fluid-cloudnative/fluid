@@ -209,76 +209,61 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx cruntime.Reco
 	engine base.Engine) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileLoadingDataLoad")
 
-	if err := engine.LoadData(ctx, targetDataload); err != nil {
+	// load data and get the job status
+	jobStatus, err := engine.LoadData(ctx, targetDataload)
+	if err != nil {
+		log.Error(err, "failed to load data")
 		return utils.RequeueIfError(err)
 	}
 	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
 	jobName := utils.GetDataLoadJobName(releaseName)
-	log.Info("DataLoad job helm chart successfullly installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
-	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
 
-	// Check running status of the DataLoad job
-	log.V(1).Info("DataLoad chart already existed, check its running status")
-	job, err := utils.GetDataLoadJob(r.Client, jobName, targetDataload.Namespace)
-	if err != nil {
-		// helm release found but job missing, delete the helm release and requeue
-		if utils.IgnoreNotFound(err) == nil {
-			log.Info("Related Job missing, will delete helm chart and retry", "namespace", targetDataload.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, targetDataload.Namespace); err != nil {
-				log.Error(err, "can't delete dataload release", "namespace", targetDataload.Namespace, "releaseName", releaseName)
-				return utils.RequeueIfError(err)
-			}
-			return utils.RequeueAfterInterval(20 * time.Second)
+	// if the DataLoad job finished, update the DataLoad status
+	if jobStatus == batchv1.JobComplete || jobStatus == batchv1.JobFailed {
+		// job either failed or complete, update DataLoad's phase status
+		job, err := utils.GetDataLoadJob(r.Client, jobName, targetDataload.Namespace)
+		if err != nil {
+			log.Error(err, "can not get the job after it finished", "namespace", targetDataload.Namespace, "jobName", jobName)
+			return utils.RequeueIfError(err)
 		}
-		// other error
-		log.Error(err, "can't get dataload job", "namespace", targetDataload.Namespace, "jobName", jobName)
-		return utils.RequeueIfError(err)
-	}
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
+			if err != nil {
+				return err
+			}
+			dataloadToUpdate := dataload.DeepCopy()
+			jobCondition := job.Status.Conditions[0]
+			dataloadToUpdate.Status.Conditions = []datav1alpha1.DataLoadCondition{
+				{
+					Type:               cdataload.DataLoadConditionType(jobCondition.Type),
+					Status:             jobCondition.Status,
+					Reason:             jobCondition.Reason,
+					Message:            jobCondition.Message,
+					LastProbeTime:      jobCondition.LastProbeTime,
+					LastTransitionTime: jobCondition.LastTransitionTime,
+				},
+			}
+			if jobCondition.Type == batchv1.JobFailed {
+				dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+			} else {
+				dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
+			}
+			dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
-	if len(job.Status.Conditions) != 0 {
-		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
-			job.Status.Conditions[0].Type == batchv1.JobComplete {
-			// job either failed or complete, update DataLoad's phase status
-			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-				dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
-				if err != nil {
+			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
+				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
 					return err
 				}
-				dataloadToUpdate := dataload.DeepCopy()
-				jobCondition := job.Status.Conditions[0]
-				dataloadToUpdate.Status.Conditions = []datav1alpha1.DataLoadCondition{
-					{
-						Type:               cdataload.DataLoadConditionType(jobCondition.Type),
-						Status:             jobCondition.Status,
-						Reason:             jobCondition.Reason,
-						Message:            jobCondition.Message,
-						LastProbeTime:      jobCondition.LastProbeTime,
-						LastTransitionTime: jobCondition.LastTransitionTime,
-					},
-				}
-				if jobCondition.Type == batchv1.JobFailed {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
-				} else {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
-				}
-				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
-
-				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
-					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
-						return err
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				log.Error(err, "can't update dataload's phase status to Failed")
-				return utils.RequeueIfError(err)
 			}
-			return utils.RequeueImmediately()
+			return nil
+		})
+		if err != nil {
+			log.Error(err, "can't update dataload's phase status to Failed")
+			return utils.RequeueIfError(err)
 		}
 	}
 
-	log.V(1).Info("DataLoad job still runnning", "namespace", targetDataload.Namespace, "jobName", jobName)
+	log.V(1).Info("DataLoad job is still running", "namespace", targetDataload.Namespace, "jobName", jobName)
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 

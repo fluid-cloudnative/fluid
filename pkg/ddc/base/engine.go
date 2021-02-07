@@ -18,6 +18,7 @@ package base
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	v1 "k8s.io/api/batch/v1"
 )
 
 // Engine interface defines the interfaces that should be implemented
@@ -43,7 +44,7 @@ type Engine interface {
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
 	// LoadData load the data
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
+	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error)
 
 	// Ready check if the runtime is ready
 	Ready() (ready bool, err error)
@@ -98,8 +99,11 @@ type Implement interface {
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
 
-	// LoadData load the data
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
+	// CreateDataLoadJob creates the job to load data
+	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
+
+	// GetDataLoadJobStatus checks whether the DataLoad job is finished or not
+	GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

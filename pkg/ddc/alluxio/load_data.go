@@ -26,16 +26,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"strings"
 )
 
-// LoadData load the data
-func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
+// CreateDataLoadJob creates the job to load data
+func (e *AlluxioEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
 	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
 	var existed bool
 	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
 	if err != nil {
@@ -43,7 +46,7 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDat
 		return err
 	}
 
-	// 2. install the helm chart if not exists and requeue
+	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
 		valueFileName, err := e.generateDataLoadValueFile(targetDataload)
@@ -57,8 +60,38 @@ func (e *AlluxioEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDat
 			log.Error(err, "failed to install dataload chart")
 			return err
 		}
+		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
+		ctx.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
 	}
 	return err
+}
+
+// GetDataLoadJobStatus checks whether the DataLoad job is finished or not
+func (e *AlluxioEngine) GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status batchv1.JobConditionType, err error){
+	log := ctx.Log.WithName("checkDataLoadJobStatus")
+
+	// Check running status of the DataLoad job
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
+	log.V(1).Info("DataLoad chart already existed, check its running status")
+	job, err := utils.GetDataLoadJob(e.Client, jobName, targetDataload.Namespace)
+	if err != nil {
+		// helm release found but job missing, delete the helm release and requeue
+		if utils.IgnoreNotFound(err) == nil {
+			log.Info("Related Job missing, will delete helm chart and retry", "namespace", targetDataload.Namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, targetDataload.Namespace); err != nil {
+				log.Error(err, "can't delete dataload release", "namespace", targetDataload.Namespace, "releaseName", releaseName)
+				return "", err
+			}
+		}
+		// other error
+		log.Error(err, "can't get dataload job", "namespace", targetDataload.Namespace, "jobName", jobName)
+		return "", err
+	}
+	if len(job.Status.Conditions) != 0 {
+		status = job.Status.Conditions[0].Type
+	}
+	return status, err
 }
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and

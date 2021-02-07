@@ -18,11 +18,21 @@ package base
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	v1 "k8s.io/api/batch/v1"
 )
 
 // Load the data
-func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error {
-	return t.Implement.LoadData(ctx, targetDataload)
+func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error) {
+	if err = t.Implement.CreateDataLoadJob(ctx, targetDataload); err != nil {
+		t.Log.Error(err, "Failed to create the DataLoad job.")
+		return "", err
+	}
+	status, err = t.Implement.GetDataLoadJobStatus(ctx, targetDataload)
+	if err != nil {
+		t.Log.Error(err, "Failed to check whether the DataLoad job is finished or not")
+		return "", err
+	}
+	return status, nil
 }
 
 // Check if the runtime is ready
