@@ -111,13 +111,13 @@ var _ = Describe("TemplateEngine", func() {
 		It("Should load data successfully", func() {
 			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
 			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobComplete, nil)
-			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobComplete))
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobComplete), BeNil())
 		})
 
 		It("Should load data unsuccessfully", func() {
 			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
 			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobFailed, nil)
-			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobFailed))
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobFailed), BeNil())
 		})
 	})
 

@@ -43,10 +43,10 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
-	// LoadData load the data
+	// LoadData loads the data and returns DataLoad job status
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error)
 
-	// Ready check if the runtime is ready
+	// Ready checks if the runtime is ready
 	Ready() (ready bool, err error)
 }
 
@@ -102,7 +102,7 @@ type Implement interface {
 	// CreateDataLoadJob creates the job to load data
 	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
 
-	// GetDataLoadJobStatus checks whether the DataLoad job is finished or not
+	// GetDataLoadJobStatus returns the DataLoad job status
 	GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error)
 }
 

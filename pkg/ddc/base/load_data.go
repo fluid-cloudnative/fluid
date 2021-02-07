@@ -21,7 +21,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 )
 
-// Load the data
+// Load the data and return DataLoad job status
 func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status v1.JobConditionType, err error) {
 	if err = t.Implement.CreateDataLoadJob(ctx, targetDataload); err != nil {
 		t.Log.Error(err, "Failed to create the DataLoad job.")

@@ -27,7 +27,7 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 	return err
 }
 
-// GetDataLoadJobStatus checks whether the DataLoad job is finished or not
+// GetDataLoadJobStatus returns the DataLoad job status
 func (e *JindoEngine) GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status batchv1.JobConditionType, err error) {
 	// todo
 	return status, err
