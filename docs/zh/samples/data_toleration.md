@@ -21,10 +21,9 @@ $ cd <any-path>/tolerations
 ## 运行示例
 **查看全部结点**
 ```shell
-$ kubectl get nodes
-NAME                       STATUS   ROLES    AGE     VERSION
-cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1
-cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
+$ kubectl get no
+NAME                       STATUS   ROLES    AGE    VERSION
+cn-beijing.192.168.1.146   Ready    <none>   200d   v1.16.9-aliyun.1
 ```
 
 kubectl taint nodes node1 key=value:NoSchedule
@@ -36,13 +35,16 @@ $ kubectl taint nodes cn-beijing.192.168.1.146 hbase=true:NoSchedule
 在接下来的步骤中，我们将看到`NodeSelector`来管理集群中存放数据的位置，所以在这里标记期望的结点
 
 **再次查看结点**
+
 ```shell
-$ kubectl get node -L hbase-cache
-NAME                       STATUS   ROLES    AGE     VERSION            HBASE-CACHE
-cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1   true
-cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1   
+$ kubectl get node cn-beijing.192.168.1.146 -oyaml | grep taints -A3
+  taints:
+  - effect: NoSchedule
+    key: hbase
+    value: "true"
 ```
-目前，在全部2个结点中，仅有一个结点添加了`hbase-cache=true`的标签，接下来，我们希望数据缓存仅会被放置在该结点之上
+
+目前，节点增加了taints配置NoSchedule，这样默认数据集就无法放置到该节点上
 
 **检查待创建的Dataset资源对象**
 ```shell
@@ -55,17 +57,13 @@ spec:
   mounts:
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
       name: hbase
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: hbase-cache
-              operator: In
-              values:
-                - "true"
+  tolerations:
+    - key: hbase 
+      operator: Equal 
+      value: "true" 
 EOF
 ```
-在该`Dataset`资源对象的`spec`属性中，我们定义了一个`nodeSelectorTerm`的子属性，该子属性要求数据缓存必须被放置在具有`hbase-cache=true`标签的结点之上
+在该`Dataset`资源对象的`spec`属性中，我们定义了一个`tolerations`的属性，该子属性要求数据缓存可以放置到
 
 **创建Dataset资源对象**
 ```shell
@@ -81,7 +79,7 @@ kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
-  replicas: 2
+  replicas: 1
   tieredstore:
     levels:
       - mediumtype: MEM
@@ -101,7 +99,7 @@ spec:
       - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 EOF
 ```
-该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为2,这表明Fluid将会启动一个包含1个Alluxio Master和2个Alluxio Worker的Alluxio实例
+该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为1,这表明Fluid将会启动一个包含1个Alluxio Master和1个Alluxio Worker的Alluxio实例
 
 **创建AlluxioRuntime资源并查看状态**
 ```shell
@@ -120,7 +118,7 @@ hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beij
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
-hbase   1               1                 Ready          1               2                 PartialReady   1             2               PartialReady   4m3s
+hbase   1               1                 Ready          1               1                 Ready   1             1               Ready   4m3s
 ```
 与预想一致，`Worker Phase`状态此时为`PartialReady`，并且`Ready Workers: 1`小于`Desired Workers: 2`
 
