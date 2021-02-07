@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -108,8 +109,15 @@ var _ = Describe("TemplateEngine", func() {
 
 	Describe("LoadData", func() {
 		It("Should load data successfully", func() {
-			impl.EXPECT().LoadData(gomock.Eq(fakeCtx), gomock.Any()).Return(nil).Times(1)
-			Expect(t.LoadData(fakeCtx, fakeDataLoad)).To(BeNil())
+			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
+			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobComplete, nil)
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobComplete))
+		})
+
+		It("Should load data unsuccessfully", func() {
+			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
+			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobFailed, nil)
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobFailed))
 		})
 	})
 

@@ -8,6 +8,7 @@ import (
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	runtime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	gomock "github.com/golang/mock/gomock"
+	v1 "k8s.io/api/batch/v1"
 	reflect "reflect"
 )
 
@@ -120,11 +121,12 @@ func (mr *MockEngineMockRecorder) Sync(ctx interface{}) *gomock.Call {
 }
 
 // LoadData mocks base method
-func (m *MockEngine) LoadData(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
+func (m *MockEngine) LoadData(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) (v1.JobConditionType, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LoadData", ctx, targetDataload)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(v1.JobConditionType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // LoadData indicates an expected call of LoadData
@@ -504,18 +506,33 @@ func (mr *MockImplementMockRecorder) BindToDataset() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindToDataset", reflect.TypeOf((*MockImplement)(nil).BindToDataset))
 }
 
-// LoadData mocks base method
-func (m *MockImplement) LoadData(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
+// CreateDataLoadJob mocks base method
+func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadData", ctx, targetDataload)
+	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// LoadData indicates an expected call of LoadData
-func (mr *MockImplementMockRecorder) LoadData(ctx, targetDataload interface{}) *gomock.Call {
+// CreateDataLoadJob indicates an expected call of CreateDataLoadJob
+func (mr *MockImplementMockRecorder) CreateDataLoadJob(ctx, targetDataload interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockImplement)(nil).LoadData), ctx, targetDataload)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDataLoadJob", reflect.TypeOf((*MockImplement)(nil).CreateDataLoadJob), ctx, targetDataload)
+}
+
+// GetDataLoadJobStatus mocks base method
+func (m *MockImplement) GetDataLoadJobStatus(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) (v1.JobConditionType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDataLoadJobStatus", ctx, targetDataload)
+	ret0, _ := ret[0].(v1.JobConditionType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDataLoadJobStatus indicates an expected call of GetDataLoadJobStatus
+func (mr *MockImplementMockRecorder) GetDataLoadJobStatus(ctx, targetDataload interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataLoadJobStatus", reflect.TypeOf((*MockImplement)(nil).GetDataLoadJobStatus), ctx, targetDataload)
 }
 
 // MockUnderFileSystemService is a mock of UnderFileSystemService interface

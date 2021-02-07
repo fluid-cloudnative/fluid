@@ -67,7 +67,7 @@ func (e *AlluxioEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 }
 
 // GetDataLoadJobStatus checks whether the DataLoad job is finished or not
-func (e *AlluxioEngine) GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status batchv1.JobConditionType, err error){
+func (e *AlluxioEngine) GetDataLoadJobStatus(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (status batchv1.JobConditionType, err error) {
 	log := ctx.Log.WithName("checkDataLoadJobStatus")
 
 	// Check running status of the DataLoad job
