@@ -19,7 +19,7 @@ $ cd <any-path>/tolerations
 ```
 
 ## 运行示例
-**查看全部结点**
+**查看全部节点**
 ```shell
 $ kubectl get no
 NAME                       STATUS   ROLES    AGE    VERSION
@@ -28,13 +28,14 @@ cn-beijing.192.168.1.146   Ready    <none>   200d   v1.16.9-aliyun.1
 
 kubectl taint nodes node1 key=value:NoSchedule
 
-**使用标签标识结点**
+**为节点配置污点（taint）**
+
 ```shell
 $ kubectl taint nodes cn-beijing.192.168.1.146 hbase=true:NoSchedule
 ```
-在接下来的步骤中，我们将看到`NodeSelector`来管理集群中存放数据的位置，所以在这里标记期望的结点
+在接下来的步骤中，我们将看到节点上的污点配置
 
-**再次查看结点**
+**再次查看节点**
 
 ```shell
 $ kubectl get node cn-beijing.192.168.1.146 -oyaml | grep taints -A3
@@ -63,7 +64,7 @@ spec:
       value: "true" 
 EOF
 ```
-在该`Dataset`资源对象的`spec`属性中，我们定义了一个`tolerations`的属性，该子属性要求数据缓存可以放置到
+在该`Dataset`资源对象的`spec`属性中，我们定义了一个`tolerations`的属性，该子属性要求数据缓存可以放置到配置污点的节点
 
 **创建Dataset资源对象**
 ```shell
@@ -107,12 +108,12 @@ $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get pod -o wide
-NAME                 READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-42csf     1/1     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-master-0       2/2     Running   0          3m3s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
+hbase-fuse-n4tnc     1/1     Running   0          63m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-master-0       2/2     Running   0          85m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-worker-qs26l   2/2     Running   0          63m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
-在此处可以看到，尽管我们期望看见两个AlluxioWorker被启动，但仅有一组Alluxio Worker成功启动，并且运行在具有指定标签（即`hbase-cache=true`）的结点之上。
+在此处可以看到，AlluxioWorker被启动，并且运行在具有污点的节点之上。
 
 **检查AlluxioRuntime状态**
 ```shell
@@ -120,7 +121,6 @@ $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
 hbase   1               1                 Ready          1               1                 Ready   1             1               Ready   4m3s
 ```
-与预想一致，`Worker Phase`状态此时为`PartialReady`，并且`Ready Workers: 1`小于`Desired Workers: 2`
 
 **查看待创建的应用**
 
@@ -135,7 +135,7 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 2
+  replicas: 1
   serviceName: "nginx"
   podManagementPolicy: "Parallel"
   selector: # define how the deployment finds the pods it manages
@@ -146,18 +146,10 @@ spec:
       labels:
         app: nginx
     spec:
-      affinity:
-        # prevent two Nginx Pod from being scheduled at the same Node
-        # just for demonstrating tolerations demo
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - nginx
-            topologyKey: "kubernetes.io/hostname"
+      tolerations:
+      - key: hbase 
+        operator: Equal 
+        value: "true" 
       containers:
         - name: nginx
           image: nginx
@@ -170,7 +162,7 @@ spec:
             claimName: hbase
 EOF
 ```
-其中的`podAntiAffinity`可能会让人有一点疑惑，关于这个属性的解释如下：`podAntiAffinity`属性将会确保属于相同应用的多个Pod被分散到多个不同的结点，这样的配置能够让我们更加清晰的观察到Fluid的数据缓存亲和性调度是怎么进行的。所以简单来说，这只是一个专用于演示的属性，你不必太过在意它
+
 
 **运行应用**
 
@@ -184,55 +176,9 @@ statefulset.apps/nginx created
 $ kubectl get pod -o wide -l app=nginx
 NAME      READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
 nginx-0   1/1     Running   0          2m5s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-nginx-1   0/1     Pending   0          2m5s   <none>          <none>                     <none>           <none>
-```
-仅有一个Nginx Pod成功启动，并且运行在满足`nodeSelectorTerm`的结点之上
-
-**查看应用启动失败原因**
-```shell
-$ kubectl describe pod nginx-1
-...
-Events:
-  Type     Reason            Age        From               Message
-  ----     ------            ----       ----               -------
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
-```
-如上所示，一方面，为了满足`PodAntiAffinity`属性的要求，使得两个Nginx Pod无法被调度到同一节点。另一方面，由于目前满足Dataset资源对象亲和性要求的结点仅有一个，因此仅有一个Nginx Pod被成功调度
-
-**为另一个结点添加标签**
-```shell
-$ kubectl label node cn-beijing.192.168.1.147 hbase-cache=true
-```
-现在全部两个结点都具有相同的标签了，此时重新检查各个组件的运行状态
-```shell
-$ kubectl get pod -o wide
-NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-42csf     1/1     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-fuse-kth4g     1/1     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-master-0       2/2     Running   0          46m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-l62m4   2/2     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-worker-rvncl   2/2     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-```
-两个Alluxio Worker都成功启动，并且分别运行在两个结点上
-
-```shell
-$ kubectl get alluxioruntime hbase -o wide
-NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        46m43s
 ```
 
-```shell
-$ kubectl get pod -l app=nginx -o wide
-NAME      READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-nginx-0   1/1     Running   0          21m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-```
-另一个nginx Pod不再处于`Pending`状态，已经成功启动并运行在另一个结点上
-
-可见，可调度的数据缓存以及对应用的数据缓存亲和性调度都是被Fluid所支持的特性。在绝大多数情况下，这两个特性协同工作，为用户提供了一种更灵活更便捷的方式在Kubernetes集群中管理数据。
-
-可见，Fluid支持数据缓存的调度策略，这些调度策略为用户提供了更加灵活的数据缓存管理能力
+可以看到Nginx Pod成功启动，并且运行在配置taint的节点之上
 
 ## 环境清理
 ```shell

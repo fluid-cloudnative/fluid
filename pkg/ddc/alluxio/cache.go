@@ -264,6 +264,7 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	masterName := e.getMasterStatefulsetName()
 	master, err := e.getMasterStatefulset(masterName, e.namespace)
 	if err != nil {
+		e.Log.Info("Failed to get master", "err", err.Error())
 		return
 	}
 	if master.Status.ReadyReplicas == 0 {
