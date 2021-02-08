@@ -269,6 +269,8 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	if master.Status.ReadyReplicas == 0 {
 		e.Log.Info("The master is not ready, just skip clean cache.", "master", masterName)
 		return nil
+	} else {
+		e.Log.Info("The master is ready, so start cleaning cache", "master", masterName)
 	}
 
 	// 2. run clean action
