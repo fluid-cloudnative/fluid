@@ -272,7 +272,7 @@ spec:
                     type: string
                 type: object
               type: array
-            toleration:
+            tolerations:
               description: If specified, the pod's tolerations.
               items:
                 description: The pod this Toleration is attached to tolerates any
