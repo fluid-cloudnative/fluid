@@ -88,7 +88,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 			continue
 		}
 
-		if !node.Spec.Unschedulable {
+		if node.Spec.Unschedulable {
 			log.Info("Node is skipped because it is unschedulable", "node", node.Name)
 			continue
 		}
