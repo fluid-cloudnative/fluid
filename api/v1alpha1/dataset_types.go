@@ -119,7 +119,7 @@ type DatasetSpec struct {
 
 	// If specified, the pod's tolerations.
 	// +optional
-	Tolerations []v1.Toleration `json:"toleration,omitempty"`
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
 	// AccessModes contains all ways the volume backing the PVC can be mounted
 	// +optional
