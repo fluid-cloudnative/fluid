@@ -162,15 +162,17 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
 			metadataInfoRestoreFile := ""
-			if dataset.Spec.DataRestoreLocation.Path != "" {
-				pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
-				if err != nil {
-					e.Log.Error(err, "restore path cannot analyse", "Path", dataset.Spec.DataRestoreLocation.Path)
-				} else {
-					if pvcName != "" {
-						metadataInfoRestoreFile = "/pvc" + path + e.GetMetadataInfoFileName()
+			if dataset.Spec.DataRestoreLocation != nil {
+				if dataset.Spec.DataRestoreLocation.Path != "" {
+					pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
+					if err != nil {
+						e.Log.Error(err, "restore path cannot analyse", "Path", dataset.Spec.DataRestoreLocation.Path)
 					} else {
-						metadataInfoRestoreFile = "/host/" + e.GetMetadataInfoFileName()
+						if pvcName != "" {
+							metadataInfoRestoreFile = "/pvc" + path + e.GetMetadataInfoFileName()
+						} else {
+							metadataInfoRestoreFile = "/host/" + e.GetMetadataInfoFileName()
+						}
 					}
 				}
 			}

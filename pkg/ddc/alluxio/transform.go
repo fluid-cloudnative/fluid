@@ -48,7 +48,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	}
 
 	// 2.transform the masters
-	err = e.transformMasters(runtime, value)
+	err = e.transformMasters(runtime, dataset, value)
 	if err != nil {
 		return
 	}
@@ -226,7 +226,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 }
 
 // 2. Transform the masters
-func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
+func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
+	dataset *datav1alpha1.Dataset,
+	value *Alluxio) (err error) {
 
 	value.Master = Master{}
 
@@ -270,10 +272,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime, v
 	// 	value.Master.Env["ALLUXIO_GID"] = strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
 	// }
 	// if the dataset indicates a restore path, need to load the  backup file in it
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		e.Log.Error(err, "restore path cannot analyse because cannot get dataset")
-	} else {
+
+	if dataset.Spec.DataRestoreLocation != nil {
 		if dataset.Spec.DataRestoreLocation.Path != "" {
 			pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
 			if err != nil {
