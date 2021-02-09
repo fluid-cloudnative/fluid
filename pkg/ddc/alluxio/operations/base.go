@@ -140,7 +140,7 @@ it is in the form of：
 	namespace: <Namespace>
 	ufstotal: <ufstotal>
 	filenum: <filenum>
- */
+*/
 
 // InitMetadataInfoFile init the metadata info file.
 func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) (err error) {
