@@ -61,6 +61,10 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
       affinity:
       {{- if .Values.master.affinity }}
 {{ toYaml .Values.master.affinity | indent 8  }}

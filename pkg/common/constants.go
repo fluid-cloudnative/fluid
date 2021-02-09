@@ -105,5 +105,5 @@ var (
 )
 
 const (
-	Exclusive string = "fluid_exclusive"
+	FluidExclusiveKey string = "fluid_exclusive"
 )
