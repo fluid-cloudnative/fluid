@@ -2,6 +2,7 @@ package alluxio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -16,6 +17,7 @@ type MetadataSyncResult struct {
 	Done      bool
 	StartTime time.Time
 	UfsTotal  string
+	FileNum   string
 	Err       error
 }
 
@@ -90,6 +92,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 					}
 					datasetToUpdate := dataset.DeepCopy()
 					datasetToUpdate.Status.UfsTotal = result.UfsTotal
+					datasetToUpdate.Status.FileNum = result.FileNum
 					if !reflect.DeepEqual(datasetToUpdate, dataset) {
 						err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 						if err != nil {
@@ -101,10 +104,15 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 					if err != nil {
 						e.Log.Error(err, "Failed to InsertMetaDataInfoIntoFile of the dataset")
 					}
+					// backup the file num result in local
+					err = fileUtils.InsertMetaDataInfoIntoFile(operations.FileNum, result.FileNum, metadataInfoFile)
+					if err != nil {
+						e.Log.Error(err, "Failed to InsertMetaDataInfoIntoFile of the dataset")
+					}
 					return
 				})
 				if err != nil {
-					e.Log.Error(err, "Failed to update UfsTotal of the dataset")
+					e.Log.Error(err, "Failed to update UfsTotal and FileNum of the dataset")
 					return err
 				}
 			} else {
@@ -123,6 +131,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			}
 			datasetToUpdate := dataset.DeepCopy()
 			datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
+			datasetToUpdate.Status.FileNum = METADATA_SYNC_NOT_DONE_MSG
 			if !reflect.DeepEqual(dataset, datasetToUpdate) {
 				err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 				if err != nil {
@@ -152,48 +161,91 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 
 			e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
-			podName, containerName := e.getMasterPodInfo()
-			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-
-			// sync local dir if necessary
-			for _, mount := range dataset.Spec.Mounts {
-				if e.isFluidNativeScheme(mount.MountPoint) {
-					localDirPath := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
-					err = fileUtils.SyncLocalDir(localDirPath)
-					if err != nil {
-						e.Log.Error(err, fmt.Sprintf("Sync local dir failed when syncing metadata, path: %s", localDirPath), "name", e.name, "namespace", e.namespace)
-						result.Err = err
-						result.Done = false
-						resultChan <- result
-						return
+			metadataInfoRestoreFile := ""
+			if dataset.Spec.DataRestoreLocation.Path != "" {
+				pvcName, path, err := utils.ParseBackupRestorePath(dataset.Spec.DataRestoreLocation.Path)
+				if err != nil {
+					e.Log.Error(err, "restore path cannot analyse", "Path", dataset.Spec.DataRestoreLocation.Path)
+				} else {
+					if pvcName != "" {
+						metadataInfoRestoreFile = "/pvc" + path + e.GetMetadataInfoFileName()
+					} else {
+						metadataInfoRestoreFile = "/host/" + e.GetMetadataInfoFileName()
 					}
 				}
 			}
 
-			// load metadata
-			err = fileUtils.LoadMetadataWithoutTimeout("/")
-			if err != nil {
-				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
-				result.Err = err
-				result.Done = false
-				resultChan <- result
-				return
+			podName, containerName := e.getMasterPodInfo()
+			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+
+			if metadataInfoRestoreFile == "" {
+				// sync local dir if necessary
+				for _, mount := range dataset.Spec.Mounts {
+					if e.isFluidNativeScheme(mount.MountPoint) {
+						localDirPath := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
+						e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
+						err = fileUtils.SyncLocalDir(localDirPath)
+						if err != nil {
+							e.Log.Error(err, fmt.Sprintf("Sync local dir failed when syncing metadata, path: %s", localDirPath), "name", e.name, "namespace", e.namespace)
+							result.Err = err
+							result.Done = false
+							resultChan <- result
+							return
+						}
+					}
+				}
+
+				// load metadata
+				err = fileUtils.LoadMetadataWithoutTimeout("/")
+				if err != nil {
+					e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
+					result.Err = err
+					result.Done = false
+					resultChan <- result
+					return
+				}
+			}
+			result.Done = true
+
+			shouldGetUfsTotal := true
+			shouldGetFileNum := true
+			// restore metadata info from restore file
+			if metadataInfoRestoreFile != "" {
+				result.UfsTotal, err = fileUtils.QueryMetaDataInfoIntoFile(operations.UfsTotal, metadataInfoRestoreFile)
+				if err == nil && result.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
+					shouldGetUfsTotal = false
+				}
+				result.FileNum, err = fileUtils.QueryMetaDataInfoIntoFile(operations.FileNum, metadataInfoRestoreFile)
+				if err == nil && result.FileNum != METADATA_SYNC_NOT_DONE_MSG {
+					shouldGetFileNum = false
+				}
+			}
+			// get Ufs Total size
+			if shouldGetUfsTotal {
+				datasetUFSTotalBytes, err := e.TotalStorageBytes()
+				if err != nil {
+					e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
+					result.Done = false
+				} else {
+					result.UfsTotal = utils.BytesSize(float64(datasetUFSTotalBytes))
+				}
+			}
+			// get File Num
+			if shouldGetFileNum {
+				fileNum, err := e.getDataSetFileNum()
+				if err != nil {
+					e.Log.Error(err, "Get File Num failed when syncing metadata", "name", e.name, "namespace", e.namespace)
+					result.Done = false
+				} else {
+					result.FileNum = fileNum
+				}
 			}
 
-			// get total size
-			datasetUFSTotalBytes, err := e.TotalStorageBytes()
-			if err != nil {
-				e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
-				result.Err = err
-				result.Done = false
-				resultChan <- result
-				return
+			if !result.Done {
+				result.Err = errors.New("GetMetadataInfoFailed")
+			} else {
+				result.Err = nil
 			}
-			ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
-			result.Err = nil
-			result.UfsTotal = ufsTotal
-			result.Done = true
 			resultChan <- result
 		}(e.MetadataSyncDoneCh)
 	}

@@ -157,6 +157,13 @@ type Master struct {
 	Resources    common.Resources  `yaml:"resources,omitempty"`
 	Ports        Ports             `yaml:"ports,omitempty"`
 	BackupPath   string            `yaml:"backupPath,omitempty"`
+	Restore      Restore           `yaml:"restore,omitempty"`
+}
+
+type Restore struct {
+	Enabled bool   `yaml:"enabled,omitempty"`
+	Path    string `yaml:"path,omitempty"`
+	PVCName string `yaml:"pvcName,omitempty"`
 }
 
 type Fuse struct {

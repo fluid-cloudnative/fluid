@@ -338,5 +338,11 @@ func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {
-	return cdatabackup.BACPUP_PATH_POD + "/" + e.name + "-" + e.namespace + ".yaml"
+	return cdatabackup.BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
+}
+func (e *AlluxioEngine) GetMetadataFileName() string {
+	return "metadata-backup-" + e.name + "-" + e.namespace + ".gz"
+}
+func (e *AlluxioEngine) GetMetadataInfoFileName() string {
+	return e.name + "-" + e.namespace + ".yaml"
 }

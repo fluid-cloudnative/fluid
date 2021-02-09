@@ -115,3 +115,100 @@ $ kubectl describe node cn-beijing.192.168.1.146
 
 
 ## 恢复
+要进行恢复，需要保证Dataset的名称与原来保持一致，否则会找不到备份文件
+
+### 从PVC恢复
+在创建Dataset时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径作为恢复路径
+
+如果备份文件被移动过，需要修改路径
+```bash
+$ cat <<EOF > dataset.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: hbase
+spec:
+  dataRestoreLocation:
+    path: pvc://pvc-local/subpath1/
+  mounts:
+    - mountPoint:  https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.6/
+EOF
+```
+
+创建Dataset资源对象：
+```bash
+$ kubectl create -f dataset.yaml
+dataset.data.fluid.io/hbase created
+```
+
+AlluxioRuntime资源对象无需做特殊配置：
+```bash
+$ cat<<EOF >runtime.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: hbase
+spec:
+  replicas: 2
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+  properties:
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
+  fuse:
+    args:
+      - fuse
+      -  --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
+EOF
+```
+创建AlluxioRuntime资源对象：
+```bash
+$ kubectl create -f runtime.yaml
+alluxioruntime.data.fluid.io/hbase created
+```
+数据集加载时，将不再从UFS中加载metadata并统计UFS TOTAL SIZE等信息，而是从备份文件中恢复
+
+片刻后，Dataset进入Bound状态：
+```bash
+$ kubectl get dataset
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED  PERCENTAGE   PHASE   AGE
+hbase   443.86MiB        0.00B    4.00GiB          0.0%                 Bound   20h
+```
+### 从本地恢复
+在创建Dataset时，在spec中添加dataRestoreLocation，填入刚刚查询到的路径和备份文件所在主机的nodeName
+
+如果备份文件被移动过，需要修改路径和nodeName
+```bash
+$ cat <<EOF > dataset.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: hbase
+spec:
+  dataRestoreLocation:
+    path: local:///data/subpath1/
+    nodeName: cn-beijing.192.168.1.146
+  mounts:
+    - mountPoint:  https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/2.2.6/
+EOF
+```
+创建AlluxioRuntime资源对象：
+```bash
+$ kubectl create -f runtime.yaml
+alluxioruntime.data.fluid.io/hbase created
+```
+片刻后，Dataset进入Bound状态
+```bash
+$ kubectl get dataset
+NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED  PERCENTAGE   PHASE   AGE
+hbase   443.86MiB        0.00B    4.00GiB          0.0%                 Bound   20h
+```
+
