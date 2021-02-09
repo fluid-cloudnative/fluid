@@ -73,6 +73,19 @@ spec:
               items:
                 type: string
               type: array
+            dataRestoreLocation:
+              description: DataRestoreLocation is the location to load data of dataset  been
+                backuped
+              properties:
+                nodeName:
+                  description: NodeName describes the nodeName of restore if Path
+                    is  in the form of local://subpath
+                  type: string
+                path:
+                  description: Path describes the path of restore, in the form of  local://subpath
+                    or pvc://<pvcName>/subpath
+                  type: string
+              type: object
             mounts:
               description: Mount Points to be mounted on Alluxio.
               items:

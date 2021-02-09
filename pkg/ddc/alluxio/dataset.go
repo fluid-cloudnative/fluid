@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -127,22 +126,6 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		} else {
 			e.Log.Info("No need to update HCFS status")
 		}
-
-		newFileNum, err := e.getDataSetFileNum()
-		if err != nil {
-			return err
-		} else if newFileNum != datasetToUpdate.Status.FileNum {
-			datasetToUpdate.Status.FileNum = newFileNum
-			// backup the filenum result in local
-			podName, containerName := e.getMasterPodInfo()
-			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-			metadataInfoFile := e.GetMetadataInfoFile()
-			err = fileUtils.InsertMetaDataInfoIntoFile(operations.FileNum, newFileNum, metadataInfoFile)
-			if err != nil {
-				e.Log.Error(err, "Failed to InsertMetaDataInfoIntoFile of the dataset")
-			}
-		}
-
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
