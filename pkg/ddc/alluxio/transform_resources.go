@@ -127,3 +127,9 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 	}
 
 }
+
+func (e *AlluxioEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *Alluxio) {
+	if len(dataset.Spec.Tolerations) > 0 {
+		value.Tolerations = dataset.Spec.Tolerations
+	}
+}

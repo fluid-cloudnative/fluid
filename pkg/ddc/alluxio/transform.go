@@ -17,11 +17,12 @@ package alluxio
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
-	"os"
-	"strings"
 )
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
@@ -40,7 +41,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	value.FullnameOverride = e.name
 
 	// 1.transform the common part
-	err = e.transformCommonPart(runtime, value)
+	err = e.transformCommonPart(runtime, dataset, value)
 	if err != nil {
 		return
 	}
@@ -87,7 +88,9 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 }
 
 // 2. Transform the common part
-func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
+func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime,
+	dataset *datav1alpha1.Dataset,
+	value *Alluxio) (err error) {
 
 	value.Image, value.ImageTag = e.parseRuntimeImage()
 	// value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
@@ -214,6 +217,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	if runtime.Spec.Monitoring {
 		value.Monitoring = ALLUXIO_RUNTIME_METRICS_LABEL
 	}
+
+	// transform Tolerations
+	e.transformTolerations(dataset, value)
 
 	return
 }

@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -168,7 +167,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
-		labelExclusiveName = common.Exclusive
+		labelExclusiveName = utils.GetExclusiveKey()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
@@ -196,7 +195,7 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			delete(toUpdate.Labels, label)
 		}
 
-		exclusiveLabelValue := e.namespace + "-" + e.name
+		exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
 		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 			delete(toUpdate.Labels, labelExclusiveName)
 			labelNames = append(labelNames, labelExclusiveName)
