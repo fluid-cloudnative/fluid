@@ -184,6 +184,5 @@ nginx-0   1/1     Running   0          2m5s   192.168.1.146   cn-beijing.192.168
 ```shell
 $ kubectl delete -f .
 
-$ kubectl label node cn-beijing.192.168.1.146 hbase-cache-
-$ kubectl label node cn-beijing.192.168.1.147 hbase-cache-
+$ kubectl taint nodes cn-beijing.192.168.1.146 hbase=true:NoSchedule-
 ```
