@@ -213,13 +213,20 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			shouldGetFileNum := true
 			// restore metadata info from restore file
 			if metadataInfoRestoreFile != "" {
+				e.Log.Info("Metadata restore starts", "metadataInfoRestoreFile", metadataInfoRestoreFile, "dataset namespace", e.namespace, "dataset name", e.name)
 				result.UfsTotal, err = fileUtils.QueryMetaDataInfoIntoFile(operations.UfsTotal, metadataInfoRestoreFile)
 				if err == nil && result.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 					shouldGetUfsTotal = false
+					e.Log.Info("Metadata restores UfsTotal successfully")
+				} else {
+					e.Log.Error(err, "Failed to get UfsTotal from restore file", "name", e.name, "namespace", e.namespace)
 				}
 				result.FileNum, err = fileUtils.QueryMetaDataInfoIntoFile(operations.FileNum, metadataInfoRestoreFile)
 				if err == nil && result.FileNum != METADATA_SYNC_NOT_DONE_MSG {
 					shouldGetFileNum = false
+					e.Log.Info("Metadata restores FileNum successfully")
+				} else {
+					e.Log.Error(err, "Failed to get FileNum from restore file", "name", e.name, "namespace", e.namespace)
 				}
 			}
 			// get Ufs Total size
