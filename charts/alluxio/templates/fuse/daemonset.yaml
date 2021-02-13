@@ -56,6 +56,23 @@ spec:
       securityContext:
         fsGroup: {{ .Values.fuse.fsGroup }}
       affinity:
+      {{- if .Values.fuse.global }}
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - {{ template "alluxio.name" . }}
+                  - key: role
+                    operator: In
+                    values:
+                    - alluxio-worker
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- else }}
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -69,6 +86,7 @@ spec:
                 values:
                 - alluxio-worker
             topologyKey: kubernetes.io/hostname
+      {{- end }}
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-fuse
