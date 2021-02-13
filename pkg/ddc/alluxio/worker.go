@@ -65,8 +65,20 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
 		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = currentReplicas
 		runtimeToUpdate.Status.FusePhase = datav1alpha1.RuntimePhaseNotReady
-		runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-		runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
+
+		if runtimeToUpdate.Spec.Fuse.Global {
+			fuseName := e.getFuseDaemonsetName()
+			fuses, err := e.getDaemonset(fuseName, e.namespace)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
+		} else {
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
+		}
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
@@ -142,12 +154,21 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 		}
 	}
 
+	e.Log.Info("Fuse deploy mode", "global", runtime.Spec.Fuse.Global)
 	fuses, err := e.getDaemonset(fuseName, namespace)
 	if fuses.Status.NumberAvailable > 0 {
-		if runtime.Spec.Replicas == fuses.Status.NumberReady {
-			fuseReady = true
-		} else if fuses.Status.NumberReady >= 1 {
-			fusePartialReady = true
+		if runtime.Spec.Fuse.Global {
+			if fuses.Status.DesiredNumberScheduled == fuses.Status.CurrentNumberScheduled {
+				fuseReady = true
+			} else {
+				fusePartialReady = true
+			}
+		} else {
+			if runtime.Spec.Replicas == fuses.Status.NumberReady {
+				fuseReady = true
+			} else if fuses.Status.NumberReady >= 1 {
+				fusePartialReady = true
+			}
 		}
 	}
 

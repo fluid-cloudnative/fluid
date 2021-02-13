@@ -180,6 +180,7 @@ type Fuse struct {
 	HostNetwork        bool              `yaml:"hostNetwork,omitempty"`
 	Enabled            bool              `yaml:"enabled,omitempty"`
 	Resources          common.Resources  `yaml:"resources,omitempty"`
+	Global             bool              `yaml:"global,omitempty"`
 }
 
 type Tieredstore struct {
