@@ -115,6 +115,10 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     Fuse
                   type: object
+                global:
+                  description: If the fuse client should be deployed in global mode,
+                    otherwise the affinity should be considered
+                  type: boolean
                 image:
                   description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
                   type: string
@@ -130,6 +134,13 @@ spec:
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    fuse client to fit on a node, this option only effect when global
+                    is enabled
+                  type: object
                 properties:
                   additionalProperties:
                     type: string
