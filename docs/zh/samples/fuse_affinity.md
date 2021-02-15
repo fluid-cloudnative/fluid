@@ -5,10 +5,7 @@ Fuse客户端提供两种模式：
 
 1. global为false，该模式为Fuse客户端和缓存数据强制亲和性，此时Fuse客户端的数量等于Runtime的replicas数量。此配置默认模式，无需显式声明，好处是可以发挥数据的亲和性优点，但是Fuse客户端的部署就变得比较固定。
 
-2. global为true， 该模式为Fuse客户端可以在Kubernetes集群中全局部署，并不要求数据和Fuse客户端之间的强制亲和性，此时Fuse客户端的数量可能远远超Runtime的replicas数量。 建议此时可以通过nodeSelector来限制Fuse客户端的数量。
-
-
-默认的模式是Fuse客户端和缓存数据强制亲和性，该模式的好处是可以发挥数据的亲和性优点，但是Fuse客户端的部署就变得比较固定；而另一种方式是
+2. global为true， 该模式为Fuse客户端可以在Kubernetes集群中全局部署，并不要求数据和Fuse客户端之间的强制亲和性，此时Fuse客户端的数量可能远远超Runtime的replicas数量。 建议此时可以通过nodeSelector来指定Fuse客户端的部署范围。
 
 本文档将向你简单地展示上述特性
 
@@ -26,8 +23,8 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 
 ## 新建工作环境
 ```shell
-$ mkdir <any-path>/co-locality
-$ cd <any-path>/co-locality
+$ mkdir <any-path>/fuse-global-deployment
+$ cd <any-path>/fuse-global-deployment
 ```
 
 ## 运行示例
@@ -41,18 +38,18 @@ cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
 
 **使用标签标识结点**
 ```shell
-$ kubectl label nodes cn-beijing.192.168.1.146 hbase-cache=true
+$ kubectl label nodes cn-beijing.192.168.1.146 cache-node=true
 ```
 在接下来的步骤中，我们将使用`NodeSelector`来管理集群中存放数据的位置，所以在这里标记期望的结点
 
 **再次查看结点**
 ```shell
-$ kubectl get node -L hbase-cache
-NAME                       STATUS   ROLES    AGE     VERSION            HBASE-CACHE
+$ kubectl get node -L cache-node
+NAME                       STATUS   ROLES    AGE     VERSION            cache-node
 cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1   true
 cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1   
 ```
-目前，在全部2个结点中，仅有一个结点添加了`hbase-cache=true`的标签，接下来，我们希望数据缓存仅会被放置在该结点之上
+目前，在全部2个结点中，仅有一个结点添加了`cache-node=true`的标签，接下来，我们希望数据缓存仅会被放置在该结点之上
 
 **检查待创建的Dataset资源对象**
 ```shell
@@ -69,13 +66,13 @@ spec:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: hbase-cache
+            - key: cache-node
               operator: In
               values:
                 - "true"
 EOF
 ```
-在该`Dataset`资源对象的`spec`属性中，我们定义了一个`nodeSelectorTerm`的子属性，该子属性要求数据缓存必须被放置在具有`hbase-cache=true`标签的结点之上
+在该`Dataset`资源对象的`spec`属性中，我们定义了一个`nodeSelectorTerm`的子属性，该子属性要求数据缓存必须被放置在具有`cache-node=true`标签的结点之上
 
 **创建Dataset资源对象**
 ```shell
@@ -91,7 +88,7 @@ kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
-  replicas: 2
+  replicas: 1
   tieredstore:
     levels:
       - mediumtype: MEM
@@ -106,33 +103,76 @@ spec:
     alluxio.worker.network.reader.buffer.size: 256MB
     alluxio.user.streaming.data.timeout: 300sec
   fuse:
+    global: true
     args:
       - fuse
       - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 EOF
 ```
-该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为2,这表明Fluid将会启动一个包含1个Alluxio Master和2个Alluxio Worker的Alluxio实例
+
+该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为1,这表明Fluid将会启动一个包含1个Alluxio Master和1个Alluxio Worker的Alluxio实例。 另外一个值得注意的是Fuse包含`global: true`,  
+这样意味着Fuse可以全局部署，而不依赖于数据缓存的位置。
 
 **创建AlluxioRuntime资源并查看状态**
 ```shell
 $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
-$ kubectl get pod -o wide
-NAME                 READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-42csf     1/1     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-master-0       2/2     Running   0          3m3s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+$ kubectl get po -owide
+NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
+hbase-fuse-gfq7z     1/1     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
+hbase-fuse-lmk5p     1/1     Running   0          3m47s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-master-0       2/2     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
+hbase-worker-hvbp2   2/2     Running   0          3m1s    192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
-在此处可以看到，尽管我们期望看见两个AlluxioWorker被启动，但仅有一组Alluxio Worker成功启动，并且运行在具有指定标签（即`hbase-cache=true`）的结点之上。
+在此处可以看到，有一组Alluxio Worker成功启动，并且运行在具有指定标签（即`cache-node=true`）的结点之上。Alluixo Fuse的数量为2，运行在所有的子节点上。
 
 **检查AlluxioRuntime状态**
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
-NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
-hbase   1               1                 Ready          1               2                 PartialReady   1             2               PartialReady   4m3s
+NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
+hbase   1               1                 Ready          1               1                 Ready          2             2               Ready        12m
 ```
-与预想一致，`Worker Phase`状态此时为`PartialReady`，并且`Ready Workers: 1`小于`Desired Workers: 2`
+
+这里可以看到Alluxio Worker的数量为1，而Alluxio Fuse的数量为2。
+
+
+下面，我们希望通过配置node selector配置Fuse客户端，将其指定到集群中某个节点上。
+
+```shell
+$ cat<<EOF >runtime.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: hbase
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
+  properties:
+    alluxio.user.block.size.bytes.default: 256MB
+    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
+    alluxio.user.local.reader.chunk.size.bytes: 256MB
+    alluxio.worker.network.reader.buffer.size: 256MB
+    alluxio.user.streaming.data.timeout: 300sec
+  fuse:
+    global: true
+    nodeSelector:
+      kubernetes.io/hostname: cn-beijing.192.168.1.147
+    args:
+      - fuse
+      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
+EOF
+```
+
+该配置文件片段中，和之前runtime.yaml相比，在Fuse包含`global: true`的前提下,  还增加了nodeSelector, 这就
+
+
 
 **查看待创建的应用**
 
@@ -160,7 +200,7 @@ spec:
     spec:
       affinity:
         # prevent two Nginx Pod from being scheduled at the same Node
-        # just for demonstrating co-locality demo
+        # just for demonstrating/fuse-global-deployment demo
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -214,7 +254,7 @@ Events:
 
 **为另一个结点添加标签**
 ```shell
-$ kubectl label node cn-beijing.192.168.1.147 hbase-cache=true
+$ kubectl label node cn-beijing.192.168.1.147 cache-node=true
 ```
 现在全部两个结点都具有相同的标签了，此时重新检查各个组件的运行状态
 ```shell
@@ -250,6 +290,6 @@ nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.
 ```shell
 $ kubectl delete -f .
 
-$ kubectl label node cn-beijing.192.168.1.146 hbase-cache-
-$ kubectl label node cn-beijing.192.168.1.147 hbase-cache-
+$ kubectl label node cn-beijing.192.168.1.146 cache-node-
+$ kubectl label node cn-beijing.192.168.1.147 cache-node-
 ```
