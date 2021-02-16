@@ -17,10 +17,11 @@ package base
 
 import (
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strings"
 )
 
 // Runtime Information interface defines the interfaces that should be implemented
@@ -45,7 +46,11 @@ type RuntimeInfoInterface interface {
 
 	IsExclusive() bool
 
+	SetupFuseDeployMode(global bool, nodeSelector map[string]string)
+
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
+
+	GetFuseDeployMode() (global bool, nodeSelector map[string]string)
 }
 
 // The real Runtime Info should implement
@@ -60,6 +65,16 @@ type RuntimeInfo struct {
 	exclusive bool
 	// Check if the runtime info is already setup by the dataset
 	setup bool
+
+	// Fuse configuration
+	fuse Fuse
+}
+
+type Fuse struct {
+	// fuse is deployed in global mode
+	Global bool
+
+	NodeSelector map[string]string
 }
 
 type TieredstoreInfo struct {
@@ -136,6 +151,19 @@ func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 		info.exclusive = dataset.IsExclusiveMode()
 		info.setup = true
 	}
+}
+
+// SetupFuseDeployMode setups the fuse deploy mode
+func (info *RuntimeInfo) SetupFuseDeployMode(global bool, nodeSelector map[string]string) {
+	info.fuse.Global = global
+	info.fuse.NodeSelector = nodeSelector
+}
+
+// GetFuseDeployMode gets the fuse deploy mode
+func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[string]string) {
+	global = info.fuse.Global
+	nodeSelector = info.fuse.NodeSelector
+	return
 }
 
 func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (TieredstoreInfo, error) {

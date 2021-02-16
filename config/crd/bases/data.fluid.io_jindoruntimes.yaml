@@ -98,7 +98,7 @@ spec:
                   type: string
                 properties:
                   additionalProperties:
-                    type: integer
+                    type: string
                   description: Configurable properties for Jindo System. <br>
                   type: object
                 resources:
