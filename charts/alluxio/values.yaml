@@ -304,6 +304,10 @@ fuse:
   # Change both to true to deploy FUSE
   enabled: false
   clientEnabled: false
+  # Change global to true to enable fuse client deploy in global mode, which will deploy fuse client in all the nodes
+  # not consider the the worker and fuse  affinity
+  global: false
+  nodeSelector: {}
   # Properties for the jobWorker component
   properties:
   # Customize the MaxDirectMemorySize

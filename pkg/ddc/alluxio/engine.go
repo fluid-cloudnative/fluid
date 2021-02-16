@@ -76,6 +76,12 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	if err != nil {
 		return nil, err
 	}
+	if engine.runtime.Spec.Fuse.Global {
+		runtimeInfo.SetupFuseDeployMode(engine.runtime.Spec.Fuse.Global, engine.runtime.Spec.Fuse.NodeSelector)
+		ctx.Log.Info("Enable global mode for fuse")
+	} else {
+		ctx.Log.Info("Disable global mode for fuse")
+	}
 	engine.runtimeInfo = runtimeInfo
 
 	// Setup init image for Alluxio Engine
