@@ -588,6 +588,20 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>accessModes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
@@ -626,6 +640,20 @@ PlacementMode
 <em>(Optional)</em>
 <p>Manage switch for opening Multiple datasets single node deployment or not
 TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRestoreLocation</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataRestoreLocation">
+DataRestoreLocation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
 </td>
 </tr>
 </table>
@@ -1026,6 +1054,32 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to Alluxio Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>global</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the fuse client should be deployed in global mode,
+otherwise the affinity should be considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
 </td>
 </tr>
 </tbody>
@@ -1749,6 +1803,49 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.DataRestoreLocation">DataRestoreLocation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>)
+</p>
+<p>
+<p>DataRestoreLocation describes the spec restore location of  Dataset</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>path</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Path describes the path of restore, in the form of  local://subpath or pvc://<pvcName>/subpath</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeName describes the nodeName of restore if Path is  in the form of local://subpath</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.DatasetCondition">DatasetCondition
 </h3>
 <p>
@@ -1903,6 +2000,20 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>accessModes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
@@ -1941,6 +2052,20 @@ PlacementMode
 <em>(Optional)</em>
 <p>Manage switch for opening Multiple datasets single node deployment or not
 TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRestoreLocation</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataRestoreLocation">
+DataRestoreLocation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
 </td>
 </tr>
 </tbody>
@@ -2407,7 +2532,7 @@ string
 <td>
 <code>properties</code></br>
 <em>
-map[string]int
+map[string]string
 </em>
 </td>
 <td>
@@ -3512,5 +3637,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4be7c32</code>.
+on git commit <code>e7cd263</code>.
 </em></p>
