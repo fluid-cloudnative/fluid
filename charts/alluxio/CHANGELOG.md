@@ -178,6 +178,5 @@
 
 0.6.18
 
-- Decouple the fuse client and worker during scheduling  
-
-
+- Decouple the fuse client and worker during scheduling
+- Support worker and fuse prefered pod affinity
