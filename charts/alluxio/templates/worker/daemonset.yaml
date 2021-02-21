@@ -54,24 +54,6 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
-      affinity:
-        {{- if .Values.fuse.global }}
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                    - {{ template "alluxio.name" . }}
-                  - key: role
-                    operator: In
-                    values:
-                    - alluxio-fuse
-                topologyKey: kubernetes.io/hostname
-              weight: 100
-        {{- end }}  
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-users
