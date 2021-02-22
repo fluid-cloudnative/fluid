@@ -75,6 +75,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 				return err
 			}
 
+			// Clean the label to start the daemonset deployment
 			fusesToUpdate := fuses.DeepCopy()
 			e.Log.Info("check node labels of fuse before cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
 			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FLUID_FUSE_BALLOON_KEY)
