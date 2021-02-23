@@ -74,3 +74,8 @@ type Resources struct {
 	Requests ResourceList `yaml:"requests,omitempty"`
 	Limits   ResourceList `yaml:"limits,omitempty"`
 }
+
+const (
+	FLUID_FUSE_BALLOON_KEY   = "fluid_fuse_balloon"
+	FLUID_FUSE_BALLOON_VALUE = "true"
+)
