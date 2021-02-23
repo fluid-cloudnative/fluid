@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
@@ -69,6 +70,17 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		if runtimeToUpdate.Spec.Fuse.Global {
 			fuseName := e.getFuseDaemonsetName()
 			fuses, err := e.getDaemonset(fuseName, e.namespace)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+
+			// Clean the label to start the daemonset deployment
+			fusesToUpdate := fuses.DeepCopy()
+			e.Log.Info("check node labels of fuse before cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
+			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FLUID_FUSE_BALLOON_KEY)
+			e.Log.Info("check node labels of fuse after cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
+			err = e.Client.Update(context.TODO(), fusesToUpdate)
 			if err != nil {
 				e.Log.Error(err, "setupWorker")
 				return err
