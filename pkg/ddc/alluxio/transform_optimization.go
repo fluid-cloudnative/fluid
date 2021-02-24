@@ -50,7 +50,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.file.writetype.default", "MUST_CACHE")
 	setDefaultProperties(runtime, value, "alluxio.user.ufs.block.read.location.policy", "alluxio.client.block.policy.LocalFirstPolicy")
 	setDefaultProperties(runtime, value, "alluxio.user.block.write.location.policy.class", "alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy")
-	setDefaultProperties(runtime, value, "alluxio.worker.allocator.class", "alluxio.worker.block.allocator.GreedyAllocator")
+	setDefaultProperties(runtime, value, "alluxio.worker.allocator.class", "alluxio.worker.block.allocator.MaxFreeAllocator")
 	setDefaultProperties(runtime, value, "alluxio.user.block.size.bytes.default", "16MB")
 	setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "32MB")
@@ -76,7 +76,6 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.expiration.time", "2day")
 	// set the default max size of metadata cache
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.max.size", "6000000")
-	setDefaultProperties(runtime, value, "alluxio.user.direct.memory.io.enabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.fuse.cached.paths.max", "1000000")
 	setDefaultProperties(runtime, value, "alluxio.job.worker.threadpool.size", "164")
 	setDefaultProperties(runtime, value, "alluxio.user.worker.list.refresh.interval", "2min")
@@ -89,6 +88,29 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.job.master.finished.job.retention.time", "30sec")
 	// fixed with https://github.com/Alluxio/alluxio/issues/11437
 	setDefaultProperties(runtime, value, "alluxio.underfs.object.store.breadcrumbs.enabled", "false")
+
+	// "alluxio.user.direct.memory.io.enabled" is only safe when the workload is read only and the
+	// worker has only one tier and one storage directory in this tier.
+	readOnly := false
+	runtimeInfo := e.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			e.Log.Info("Error:", "err", err)
+		}
+
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == v1.ReadOnlyMany {
+					readOnly = true
+				}
+			}
+		}
+		tieredstoreInfo := runtimeInfo.GetTieredstoreInfo()
+		if readOnly && len(tieredstoreInfo.Levels) == 1 && len(tieredstoreInfo.Levels[0].CachePaths) == 1 {
+			setDefaultProperties(runtime, value, "alluxio.user.direct.memory.io.enabled", "true")
+		}
+	}
 }
 
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {

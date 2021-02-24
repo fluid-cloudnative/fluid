@@ -1,0 +1,44 @@
+# Default values for fluid-dataloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dataBackup:
+  # Optional
+  # Default: default
+  # Description: the namespace of the dataset and dataBackup
+  namespace: #<dataset-namespace>
+
+  # Required
+  # Description: the dataset that this DataBackup targets
+  dataset: #<dataset-name>
+
+  # Required
+  # Description: the name of DataBackup
+  name: #<dataBackup-name>
+
+  # Optional
+  # Description: the node to run the backup pod
+  nodeName: #<alluxio-master-nodeName>
+
+  # Required
+  # Description: the backup pod image
+  image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.4.1-1-SNAPSHOT-9833d5f
+
+  # Required
+  # Description: the java Env to find the master
+  javaEnv:
+
+  # Required
+  # Description: the work path in node
+  workdir: /tmp
+
+  # Required
+  # Description: the path to save data
+  path: /
+
+  # Optional
+  # Description: the pvc to save data
+  # if it is null, will backup in local
+  # pvcName: test
+
+

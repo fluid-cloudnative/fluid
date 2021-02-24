@@ -169,3 +169,14 @@
 - Make the port configurable
 - Make the cache worker directory configurable
 
+
+0.6.17
+
+- Support HDFS configuration file
+- Suppport metadata backup
+- Support tolerations
+
+0.6.18
+
+- Decouple the fuse client and worker during scheduling
+- Support worker and fuse prefered pod affinity

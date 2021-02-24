@@ -27,6 +27,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		currentScheduledNodes                  = map[string]corev1.Node{}
 		newScheduledNodes                      = []corev1.Node{}
 		newScheduleNum        int32
+		log                   = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	)
 
 	err = runtimeClient.List(context.TODO(), nodeList, &client.ListOptions{})
@@ -87,9 +88,23 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 			continue
 		}
 
-		if len(node.Spec.Taints) > 0 {
-			log.Info("Skip the node because it's tainted", "node", node.Name)
+		if node.Spec.Unschedulable {
+			log.Info("Node is skipped because it is unschedulable", "node", node.Name)
 			continue
+		}
+
+		if len(node.Spec.Taints) > 0 {
+			tolerateEffect := toleratesTaints(node.Spec.Taints, dataset.Spec.Tolerations)
+			if tolerateEffect {
+				log.Info("The tainted node also can be scheduled because of toleration effects",
+					"node", node.Name,
+					"taints", node.Spec.Taints,
+					"tolerations", dataset.Spec.Tolerations)
+			} else {
+				log.Info("Skip the node because it's tainted", "node", node.Name)
+				continue
+			}
+
 		}
 
 		if !AlreadyAssigned(runtimeInfo, node) {

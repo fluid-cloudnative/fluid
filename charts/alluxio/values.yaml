@@ -57,6 +57,17 @@ properties:
 # Use labels to run Alluxio on a subset of the K8s nodes
 # nodeSelector: {}
 
+##
+## Example:
+##   - key: "toleration=key"
+##     operator: "Equal"
+##     value: "value"
+##     effect: "NoSchedule"
+##
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+
 ## Master ##
 
 master:
@@ -95,6 +106,13 @@ master:
   # JVM options specific to the master container
   jvmOptions:
   nodeSelector: {}
+  # backupPath is the path in the host to save metadata and   metadata info
+  backupPath: #<backupPath>
+  # restore is the location to restore metadata and metadata info  from
+  restore:
+    enabled: false
+    # path: /subpath/
+    # pvcName: pvc-local
 
 jobMaster:
   args:
@@ -286,6 +304,10 @@ fuse:
   # Change both to true to deploy FUSE
   enabled: false
   clientEnabled: false
+  # Change global to true to enable fuse client deploy in global mode, which will deploy fuse client in all the nodes
+  # not consider the the worker and fuse  affinity
+  global: false
+  nodeSelector: {}
   # Properties for the jobWorker component
   properties:
   # Customize the MaxDirectMemorySize
@@ -312,6 +334,11 @@ fuse:
 #      cpu: "4"
 #      memory: "4G"
 
+## HDFS Configuraions ##
+# hadoopConfig:
+#   configMap: hdfs-configmap
+#   includeHdfsSite: true
+#   includeCoreSite: true
 
 ##  Secrets ##
 

@@ -43,6 +43,7 @@ type AlluxioEngine struct {
 	MetadataSyncDoneCh     chan MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
+	lastCacheHitStates     *cacheHitStates
 }
 
 // Build function builds the Alluxio Engine
@@ -56,6 +57,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
+		lastCacheHitStates:     nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
@@ -70,7 +72,17 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Setup runtime Info
-	engine.runtimeInfo = base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
+	runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
+	if err != nil {
+		return nil, err
+	}
+	if engine.runtime.Spec.Fuse.Global {
+		runtimeInfo.SetupFuseDeployMode(engine.runtime.Spec.Fuse.Global, engine.runtime.Spec.Fuse.NodeSelector)
+		ctx.Log.Info("Enable global mode for fuse")
+	} else {
+		ctx.Log.Info("Disable global mode for fuse")
+	}
+	engine.runtimeInfo = runtimeInfo
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
@@ -91,6 +103,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	err := kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
+	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }

@@ -100,6 +100,16 @@ type AlluxioFuseSpec struct {
 
 	// Arguments that will be passed to Alluxio Fuse
 	Args []string `json:"args,omitempty"`
+
+	// If the fuse client should be deployed in global mode,
+	// otherwise the affinity should be considered
+	// +optional
+	Global bool `json:"global,omitempty"`
+
+	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
+	// this option only effect when global is enabled
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // Level describes configurations a tier needs. <br>
@@ -112,14 +122,27 @@ type Level struct {
 	// +required
 	MediumType common.MediumType `json:"mediumtype"`
 
-	// File path to be used for the tier (e.g. /mnt/ramdisk)
+	// File paths to be used for the tier. Multiple paths are supported.
+	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
 	// +kubebuilder:validation:MinLength=1
 	// +required
 	Path string `json:"path,omitempty"`
 
-	// Quota for the tier. (e.g. 100GB)
-	// +required
+	// Quota for the whole tier. (e.g. 100Gi)
+	// Please note that if there're multiple paths used for this tierstore,
+	// the quota will be equally divided into these paths. If you'd like to
+	// set quota for each, path, see QuotaList for more information.
+	// +optional
 	Quota *resource.Quantity `json:"quota,omitempty"`
+
+	// QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma.
+	// Quotas in this list will be set to paths with the same order in Path.
+	// For example, with Path defined with "/mnt/cache1,/mnt/cache2" and QuotaList set to "100Gi, 50Gi",
+	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
+	// Also note that num of quotas must be consistent with the num of paths defined in Path.
+	// +optional
+	// +kubebuilder:validation:Pattern:="^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?,((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)+$"
+	QuotaList string `json:"quotaList,omitempty"`
 
 	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
 	// float64 is not supported, https://github.com/kubernetes-sigs/controller-tools/issues/245
@@ -217,6 +240,13 @@ type AlluxioRuntimeSpec struct {
 	// Manage monitoring for Alluxio Runtime
 	// +optional
 	Monitoring bool `json:"monitoring,omitempty"`
+
+	// Name of the configMap used to support HDFS configurations when using HDFS as Alluxio's UFS. The configMap
+	// must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
+	// For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content
+	// of the file as the value.
+	// +optional
+	HadoopConfig string `json:"hadoopConfig,omitempty"`
 }
 
 // +kubebuilder:object:root=true

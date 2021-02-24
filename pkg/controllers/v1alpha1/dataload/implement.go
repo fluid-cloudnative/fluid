@@ -105,6 +105,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx reconcileRequest
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
 		dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{}
 	}
+	dataloadToUpdate.Status.DurationTime = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the cdataload")
 		return utils.RequeueIfError(err)
@@ -167,6 +168,11 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 	if index == -1 {
 		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not ready")
+		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 	switch boundedRuntime.Type {
 	case common.ALLUXIO_RUNTIME:
@@ -295,6 +301,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
+				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
@@ -357,9 +364,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		return "", err
 	}
 
-	imageName := "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-	imageTag := "2.3.0-SNAPSHOT-238b7eb"
-	imageName, imageTag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_DATALOAD_IMAGE_ENV, imageName, imageTag)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataloadInfo := cdataload.DataLoadInfo{

@@ -18,6 +18,9 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
+  - JSONPath: .status.durationTime
+    name: Duration
+    type: string
   group: data.fluid.io
   names:
     kind: DataLoad
@@ -118,11 +121,16 @@ spec:
                 - type
                 type: object
               type: array
+            durationTime:
+              description: DurationTime describes the duration time of the dataload
+                process.
+              type: string
             phase:
               description: Phase describes current phase of DataLoad
               type: string
           required:
           - conditions
+          - durationTime
           - phase
           type: object
       type: object

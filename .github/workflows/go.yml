@@ -1,0 +1,44 @@
+name: Github Actions
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    env:
+      GOPATH: ${{ github.workspace }}
+      GO111MODULE: off
+      CI_TEST_FLAGS: -race -coverprofile=coverage.txt -covermode=atomic
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14
+    
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+    - name: CI Preparation
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+        arch=$(go env GOARCH)
+        curl -L https://go.kubebuilder.io/dl/2.3.1/linux/${arch} | tar -xz -C /tmp/
+        sudo mv /tmp/kubebuilder_2.3.1_linux_${arch} /usr/local/kubebuilder
+        export PATH=$PATH:/usr/local/kubebuilder/bin
+    
+    - name: CI script
+      run: |
+        make build
+        golangci-lint run --timeout=10m ./...
+        test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+        make test
+        bash <(curl -s https://codecov.io/bash)

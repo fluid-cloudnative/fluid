@@ -126,14 +126,6 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		} else {
 			e.Log.Info("No need to update HCFS status")
 		}
-
-		newFileNum, err := e.getDataSetFileNum()
-		if err != nil {
-			return err
-		} else if newFileNum != datasetToUpdate.Status.FileNum {
-			datasetToUpdate.Status.FileNum = newFileNum
-		}
-
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {

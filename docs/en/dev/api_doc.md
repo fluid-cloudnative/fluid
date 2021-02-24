@@ -7,9 +7,13 @@ Resource Types:
 <ul><li>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>
 </li><li>
+<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>
+</li><li>
 <a href="#data.fluid.io/v1alpha1.DataLoad">DataLoad</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
 </li></ul>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime
 </h3>
@@ -232,6 +236,33 @@ User
 <p>Manage the user to run Alluxio Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>monitoring</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Manage monitoring for Alluxio Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as Alluxio&rsquo;s UFS. The configMap
+must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -241,6 +272,102 @@ User
 <em>
 <a href="#data.fluid.io/v1alpha1.RuntimeStatus">
 RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.DataBackup">DataBackup
+</h3>
+<p>
+<p>DataBackup is the Schema for the backup API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>DataBackup</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataBackupSpec">
+DataBackupSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>dataset</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Dataset defines the target dataset of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>backupPath</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>BackupPath defines the target path to save data of the DataBackup</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataBackupStatus">
+DataBackupStatus
 </a>
 </em>
 </td>
@@ -461,6 +588,20 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>accessModes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
@@ -486,6 +627,35 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <p>Runtimes for supporting dataset (e.g. AlluxioRuntime)</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>placement</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PlacementMode">
+PlacementMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRestoreLocation</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataRestoreLocation">
+DataRestoreLocation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -495,6 +665,180 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <em>
 <a href="#data.fluid.io/v1alpha1.DatasetStatus">
 DatasetStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime
+</h3>
+<p>
+<p>JindoRuntime is the Schema for the jindoruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>JindoRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">
+JindoRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>jindoVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of Jindo.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
+JindoCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
+JindoCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">
+JindoFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Jindo Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Configurable properties for Jindo system. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Tieredstore">
+Tieredstore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by Jindo</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Jindo Runtime</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
 </a>
 </em>
 </td>
@@ -712,6 +1056,32 @@ already allocated to the pod.</p>
 <p>Arguments that will be passed to Alluxio Fuse</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>global</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the fuse client should be deployed in global mode,
+otherwise the affinity should be considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntimeRole">AlluxioRuntimeRole
@@ -899,6 +1269,74 @@ User
 <p>Manage the user to run Alluxio Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>monitoring</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Manage monitoring for Alluxio Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as Alluxio&rsquo;s UFS. The configMap
+must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.BackupLocation">BackupLocation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus</a>)
+</p>
+<p>
+<p>BackupLocation describes the final backup location of DataBackup</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>path</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Path describes the path of backup, in the form of local:///absolutePath or pvc://<pvcName>/subpath</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>NodeName describes the nodeName of backup if Path is in the form of local://subpath</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.CacheableNodeAffinity">CacheableNodeAffinity
@@ -972,6 +1410,194 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio User-CLI pin</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.DataBackupCondition">DataBackupCondition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus</a>)
+</p>
+<p>
+<p>DataBackupCondition describes conditions that explains transitions on phase</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code></br>
+<em>
+databackup.ConditionType
+</em>
+</td>
+<td>
+<p>Type of condition, either <code>Complete</code> or <code>Failed</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
+Kubernetes core/v1.ConditionStatus
+</a>
+</em>
+</td>
+<td>
+<p>Status of the condition, one of <code>True</code>, <code>False</code> or <code>Unknown</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Reason for the condition&rsquo;s last transition</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Message is a human-readable message indicating details about the transition</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastProbeTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastProbeTime describes last time this condition was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastTransitionTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastTransitionTime describes last time the condition transitioned from one status to another.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>)
+</p>
+<p>
+<p>DataBackupSpec defines the desired state of DataBackup</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>dataset</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Dataset defines the target dataset of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>backupPath</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>BackupPath defines the target path to save data of the DataBackup</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>)
+</p>
+<p>
+<p>DataBackupStatus defines the observed state of DataBackup</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>phase</code></br>
+<em>
+databackup.Phase
+</em>
+</td>
+<td>
+<p>Phase describes current phase of DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>backupLocation</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.BackupLocation">
+BackupLocation
+</a>
+</em>
+</td>
+<td>
+<p>BackupLocation tell user the location to save data of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataBackupCondition">
+[]DataBackupCondition
+</a>
+</em>
+</td>
+<td>
+<p>Conditions consists of transition information on DataBackup&rsquo;s Phase</p>
 </td>
 </tr>
 </tbody>
@@ -1164,6 +1790,60 @@ dataload.DataLoadPhase
 <p>Conditions consists of transition information on DataLoad&rsquo;s Phase</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>durationTime</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>DurationTime describes the duration time of the dataload process.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.DataRestoreLocation">DataRestoreLocation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>)
+</p>
+<p>
+<p>DataRestoreLocation describes the spec restore location of  Dataset</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>path</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Path describes the path of restore, in the form of  local://subpath or pvc://<pvcName>/subpath</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeName describes the nodeName of restore if Path is  in the form of local://subpath</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.DatasetCondition">DatasetCondition
@@ -1320,6 +2000,20 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </tr>
 <tr>
 <td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>accessModes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
@@ -1343,6 +2037,35 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 </td>
 <td>
 <p>Runtimes for supporting dataset (e.g. AlluxioRuntime)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>placement</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PlacementMode">
+PlacementMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Manage switch for opening Multiple datasets single node deployment or not
+TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRestoreLocation</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataRestoreLocation">
+DataRestoreLocation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
 </td>
 </tr>
 </tbody>
@@ -1461,6 +2184,93 @@ string
 This is mainly used as a lock to prevent concurrent DataLoad jobs.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>dataBackupRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>DataBackupRef specifies the running Backup job that targets this Dataset.
+This is mainly used as a lock to prevent concurrent DataBackup jobs.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EncryptOption">EncryptOption
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.Mount">Mount</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The name of encryptOption</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>valueFrom</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOptionSource">
+EncryptOptionSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The valueFrom of encryptOption</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EncryptOptionSource">EncryptOptionSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">EncryptOption</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>secretKeyRef</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.SecretKeySelector">
+SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The encryptInfo obtained from secret</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.HCFSStatus">HCFSStatus
@@ -1508,8 +2318,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
 </p>
 <p>
 <p>InitUsersSpec is a description of the initialize the users for runtime</p>
@@ -1723,7 +2532,7 @@ string
 <td>
 <code>properties</code></br>
 <em>
-map[string]int
+map[string]string
 </em>
 </td>
 <td>
@@ -1767,202 +2576,6 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to Jindo Fuse</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime
-</h3>
-<p>
-<p>JindoRuntime is the Schema for the jindoruntimes API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">
-JindoRuntimeSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>jindoVersion</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.VersionSpec">
-VersionSpec
-</a>
-</em>
-</td>
-<td>
-<p>The version information that instructs fluid to orchestrate a particular version of Jindo.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>master</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo master</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobMaster</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job master</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>worker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobWorker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job Worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>initUsers</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
-InitUsersSpec
-</a>
-</em>
-</td>
-<td>
-<p>The spec of init users</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>fuse</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">
-JindoFuseSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo Fuse</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>properties</code></br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-<p>Configurable properties for Jindo system. <br></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>tieredstore</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
-</a>
-</em>
-</td>
-<td>
-<p>Tiered storage used by Jindo</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>replicas</code></br>
-<em>
-int32
-</em>
-</td>
-<td>
-<p>The replicas of the worker, need to be specified</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAs</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.User">
-User
-</a>
-</em>
-</td>
-<td>
-<p>Manage the user to run Jindo Runtime</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
-RuntimeStatus
-</a>
-</em>
-</td>
-<td>
 </td>
 </tr>
 </tbody>
@@ -2012,19 +2625,6 @@ JindoCompTemplateSpec
 </tr>
 <tr>
 <td>
-<code>jobMaster</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job master</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>worker</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
@@ -2034,32 +2634,6 @@ JindoCompTemplateSpec
 </td>
 <td>
 <p>Desired state for Jindo worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>jobWorker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">
-JindoCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>Desired state for Jindo job Worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>initUsers</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
-InitUsersSpec
-</a>
-</em>
-</td>
-<td>
-<p>The spec of init users</p>
 </td>
 </tr>
 <tr>
@@ -2162,7 +2736,8 @@ string
 </em>
 </td>
 <td>
-<p>File path to be used for the tier (e.g. /mnt/ramdisk)</p>
+<p>File paths to be used for the tier. Multiple paths are supported.
+Multiple paths should be separated with comma. For example: &ldquo;/mnt/cache1,/mnt/cache2&rdquo;.</p>
 </td>
 </tr>
 <tr>
@@ -2175,7 +2750,27 @@ Kubernetes resource.Quantity
 </em>
 </td>
 <td>
-<p>Quota for the tier. (e.g. 100GB)</p>
+<em>(Optional)</em>
+<p>Quota for the whole tier. (e.g. 100Gi)
+Please note that if there&rsquo;re multiple paths used for this tierstore,
+the quota will be equally divided into these paths. If you&rsquo;d like to
+set quota for each, path, see QuotaList for more information.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>quotaList</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma.
+Quotas in this list will be set to paths with the same order in Path.
+For example, with Path defined with &ldquo;/mnt/cache1,/mnt/cache2&rdquo; and QuotaList set to &ldquo;100Gi, 50Gi&rdquo;,
+then we get 100GiB cache storage under &ldquo;/mnt/cache1&rdquo; and 50GiB under &ldquo;/mnt/cache2&rdquo;.
+Also note that num of quotas must be consistent with the num of paths defined in Path.</p>
 </td>
 </tr>
 <tr>
@@ -2293,8 +2888,30 @@ bool
 <p>Optional: Defaults to false (shared).</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>encryptOptions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">
+[]EncryptOption
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The secret information</p>
+</td>
+</tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.PlacementMode">PlacementMode
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>)
+</p>
+<p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.Runtime">Runtime
 </h3>
 <p>
@@ -2743,6 +3360,47 @@ common.CacheStateList
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.SecretKeySelector">SecretKeySelector
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EncryptOptionSource">EncryptOptionSource</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The name of required secret</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>key</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The required key in the secret</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.TargetDataset">TargetDataset
 </h3>
 <p>
@@ -2979,5 +3637,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>dfe295c</code>.
+on git commit <code>e7cd263</code>.
 </em></p>

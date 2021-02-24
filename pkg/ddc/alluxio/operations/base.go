@@ -17,6 +17,7 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -129,6 +130,103 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 		return
 	}
 
+	return
+}
+
+/*
+MetadataInfoFile is a yaml file to save the metadata info of dataset, such as ufs total and fileNum
+it is in the form of：
+	dataset: <Dataset>
+	namespace: <Namespace>
+	ufstotal: <ufstotal>
+	filenum: <filenum>
+*/
+
+// InitMetadataInfoFile init the metadata info file.
+func (a AlluxioFileUtils) InitMetadataInfoFile(dataset string, filename string) (err error) {
+	str := "if [ ! -f '" + filename + "' ]; then echo -e 'dataset: " + dataset + "\\nnamespace: "
+	str = str + a.namespace + "\\nufstotal: [Calculating]\\nfilenum: [Calculating]' > " + filename + ";fi"
+	var (
+		command = []string{"bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		a.log.Info("InitMetadataInfoFile finished", "stdout", stdout)
+	}
+	return err
+}
+
+type KeyOfMetaDataFile string
+
+var (
+	DatasetName KeyOfMetaDataFile = "dataset"
+	Namespace   KeyOfMetaDataFile = "namespace"
+	UfsTotal    KeyOfMetaDataFile = "ufstotal"
+	FileNum     KeyOfMetaDataFile = "filenum"
+)
+
+// InitMetadataInfoFile init the metadata info file.
+func (a AlluxioFileUtils) InsertMetaDataInfoIntoFile(key KeyOfMetaDataFile, value string, filename string) (err error) {
+	line := ""
+	switch key {
+	case DatasetName:
+		line = "1c"
+	case Namespace:
+		line = "2c"
+	case UfsTotal:
+		line = "3c"
+	case FileNum:
+		line = "4c"
+	default:
+		a.log.Error(errors.New("the key not in metadatafile"), "key", key)
+	}
+	var (
+		str     = "sed -i '" + line + " " + string(key) + ": " + value + "' " + filename
+		command = []string{"bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	a.log.Info("update info in metadata info file", "key", key, "value", value)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		a.log.Info("InsertMetaDataInfoIntoFile finished", "stdout", stdout)
+	}
+	return err
+}
+
+// QueryMetadataInfoFile query the metadata info file.
+func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
+	line := ""
+	switch key {
+	case DatasetName:
+		line = "1p"
+	case Namespace:
+		line = "2p"
+	case UfsTotal:
+		line = "3p"
+	case FileNum:
+		line = "4p"
+	default:
+		a.log.Error(errors.New("the key not in  metadatafile"), "key", key)
+	}
+	var (
+		str     = "sed -n '" + line + "' " + filename
+		command = []string{"bash", "-c", str}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with  expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	} else {
+		value = strings.TrimPrefix(stdout, string(key)+": ")
+	}
 	return
 }
 
@@ -353,6 +451,21 @@ func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 		return
 	}
 	return fileCount, nil
+}
+
+// ReportMetrics get alluxio metrics by running `alluxio fsadmin report metrics` command
+func (a AlluxioFileUtils) ReportMetrics() (metrics string, err error) {
+	var (
+		command = []string{"alluxio", "fsadmin", "report", "metrics"}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+	return stdout, err
 }
 
 // exec with timeout

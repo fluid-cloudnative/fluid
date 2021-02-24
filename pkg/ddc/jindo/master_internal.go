@@ -57,3 +57,7 @@ func (e *JindoEngine) generateJindoValueFile() (valueFileName string, err error)
 	}
 	return valueFileName, err
 }
+
+func (e *JindoEngine) getConfigmapName() string {
+	return e.name + "-" + e.runtimeType + "-values"
+}

@@ -18,6 +18,15 @@ spec:
         control-plane: alluxioruntime-controller
     spec:
       serviceAccountName: alluxioruntime-controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
       tolerations:
       - operator: Exists
       #hostNetwork: true
@@ -28,6 +37,10 @@ spec:
         args:
           - --development=false
         env:
+          {{- if .Values.workdir }}
+          - name: FLUID_WORKDIR
+            value: {{ .Values.workdir | quote }}
+          {{- end }}
           {{- if .Values.runtime.alluxio.init.image }}
           - name: ALLUXIO_INIT_IMAGE_ENV
             value: {{ .Values.runtime.alluxio.init.image | quote }}

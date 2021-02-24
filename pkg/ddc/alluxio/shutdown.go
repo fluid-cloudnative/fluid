@@ -21,12 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -167,36 +167,24 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
 		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
 		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
-		labelExclusiveName = common.Exclusive
+		labelExclusiveName = utils.GetExclusiveKey()
 	)
 
-	err = e.List(context.TODO(), nodeList, &client.ListOptions{})
-	if err != nil {
-		return
-	}
-
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
-
-	runtimeInfo, err := e.getRuntimeInfo()
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
 		return
 	}
 
-	if runtimeInfo.IsExclusive() {
-		labelNames = append(labelNames, labelExclusiveName)
+	err = e.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		return
 	}
 
 	// 1.select the nodes
-	// TODO(cheyang) Need consider node selector
-	var i int32 = 0
 	for _, node := range nodeList.Items {
-		if workers >= 0 {
-			if i > workers {
-				e.Log.Info("destroy workers", "count", i)
-				break
-			}
-		}
-
 		// nodes = append(nodes, &node)
 		toUpdate := node.DeepCopy()
 		if len(toUpdate.Labels) == 0 {
@@ -207,14 +195,19 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 			delete(toUpdate.Labels, label)
 		}
 
+		exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
+		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+			delete(toUpdate.Labels, labelExclusiveName)
+			labelNames = append(labelNames, labelExclusiveName)
+		}
+
 		if len(toUpdate.Labels) < len(node.Labels) {
 			err := e.Client.Update(context.TODO(), toUpdate)
 			if err != nil {
 				return err
 			}
+			e.Log.Info("Destory worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
 		}
-
-		i++
 	}
 
 	return

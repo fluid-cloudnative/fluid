@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
@@ -65,8 +66,31 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
 		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = currentReplicas
 		runtimeToUpdate.Status.FusePhase = datav1alpha1.RuntimePhaseNotReady
-		runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-		runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
+
+		if runtimeToUpdate.Spec.Fuse.Global {
+			fuseName := e.getFuseDaemonsetName()
+			fuses, err := e.getDaemonset(fuseName, e.namespace)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+
+			// Clean the label to start the daemonset deployment
+			fusesToUpdate := fuses.DeepCopy()
+			e.Log.Info("check node labels of fuse before cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
+			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FLUID_FUSE_BALLOON_KEY)
+			e.Log.Info("check node labels of fuse after cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
+			err = e.Client.Update(context.TODO(), fusesToUpdate)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
+		} else {
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
+		}
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
@@ -142,12 +166,21 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 		}
 	}
 
+	e.Log.Info("Fuse deploy mode", "global", runtime.Spec.Fuse.Global)
 	fuses, err := e.getDaemonset(fuseName, namespace)
 	if fuses.Status.NumberAvailable > 0 {
-		if runtime.Spec.Replicas == fuses.Status.NumberReady {
-			fuseReady = true
-		} else if fuses.Status.NumberReady >= 1 {
-			fusePartialReady = true
+		if runtime.Spec.Fuse.Global {
+			if fuses.Status.DesiredNumberScheduled == fuses.Status.CurrentNumberScheduled {
+				fuseReady = true
+			} else {
+				fusePartialReady = true
+			}
+		} else {
+			if runtime.Spec.Replicas == fuses.Status.NumberReady {
+				fuseReady = true
+			} else if fuses.Status.NumberReady >= 1 {
+				fusePartialReady = true
+			}
 		}
 	}
 

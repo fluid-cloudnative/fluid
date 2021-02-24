@@ -17,8 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/api/core/v1"
 )
 
 // The value yaml file
@@ -59,6 +61,16 @@ type Alluxio struct {
 	InitUsers InitUsers `yaml:"initUsers,omitempty"`
 
 	Monitoring string `yaml:"monitoring,omitempty"`
+
+	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
+
+	Tolerations []v1.Toleration `yaml:"tolerations,omitempty"`
+}
+
+type HadoopConfig struct {
+	ConfigMap       string `yaml:"configMap"`
+	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
+	IncludeCoreSite bool   `yaml:"includeCoreSite"`
 }
 
 type UFSPath struct {
@@ -144,6 +156,14 @@ type Master struct {
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
 	Ports        Ports             `yaml:"ports,omitempty"`
+	BackupPath   string            `yaml:"backupPath,omitempty"`
+	Restore      Restore           `yaml:"restore,omitempty"`
+}
+
+type Restore struct {
+	Enabled bool   `yaml:"enabled,omitempty"`
+	Path    string `yaml:"path,omitempty"`
+	PVCName string `yaml:"pvcName,omitempty"`
 }
 
 type Fuse struct {
@@ -160,6 +180,7 @@ type Fuse struct {
 	HostNetwork        bool              `yaml:"hostNetwork,omitempty"`
 	Enabled            bool              `yaml:"enabled,omitempty"`
 	Resources          common.Resources  `yaml:"resources,omitempty"`
+	Global             bool              `yaml:"global,omitempty"`
 }
 
 type Tieredstore struct {
@@ -181,6 +202,22 @@ type Affinity struct {
 	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
 }
 
+type cacheHitStates struct {
+	cacheHitRatio  string
+	localHitRatio  string
+	remoteHitRatio string
+
+	localThroughputRatio  string
+	remoteThroughputRatio string
+	cacheThroughputRatio  string
+
+	bytesReadLocal  int64
+	bytesReadRemote int64
+	bytesReadUfsAll int64
+
+	timestamp time.Time
+}
+
 type cacheStates struct {
 	cacheCapacity string
 	// cacheable        string
@@ -188,6 +225,7 @@ type cacheStates struct {
 	// highWaterMark    string
 	cached           string
 	cachedPercentage string
+	cacheHitStates   cacheHitStates
 	// nonCacheable     string
 }
 

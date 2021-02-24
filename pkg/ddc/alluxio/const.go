@@ -20,6 +20,17 @@ const (
 	// alluxioHome string = "/opt/alluxio"
 
 	// alluxioUser string = "fluid"
+	METRICS_PREFIX_BYTES_READ_LOCAL = "Cluster.BytesReadLocal "
+
+	METRICS_PREFIX_BYTES_READ_REMOTE = "Cluster.BytesReadRemote "
+
+	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll "
+
+	METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT = "Cluster.BytesReadLocalThroughput "
+
+	METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT = "Cluster.BytesReadRemoteThroughput "
+
+	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
 
 	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
 
@@ -35,4 +46,12 @@ const (
 	AUTO_SELECT_PORT_MAX = 30000
 
 	PORT_NUM = 9
+
+	CACHE_HIT_QUERY_INTERVAL_MIN = 1
+
+	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+
+	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+
+	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
 )

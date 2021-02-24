@@ -50,6 +50,10 @@ spec:
       {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-users
@@ -118,7 +122,14 @@ spec:
           - containerPort: {{ .Values.worker.ports.web }}
             name: web
           volumeMounts:
-            {{ if .Values.initUsers.enabled -}}
+            {{ if .Values.hadoopConfig  -}}
+            {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+            - name: hdfs-confs
+              mountPath: /hdfs-config
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if .Values.initUsers.enabled }}
             - name: user
               mountPath: /etc/passwd
               readOnly: true
@@ -193,7 +204,14 @@ spec:
           - containerPort: {{ .Values.jobWorker.ports.web }}
             name: job-web
           volumeMounts:
-            {{ if .Values.initUsers.enabled -}}
+            {{ if .Values.hadoopConfig -}}
+            {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+            - name: hdfs-confs
+              mountPath: /hdfs-config
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if .Values.initUsers.enabled }}
             - name: user
               mountPath: /etc/passwd
               readOnly: true
@@ -230,7 +248,23 @@ spec:
             {{- end }}
       restartPolicy: Always
       volumes:
-        {{ if .Values.initUsers.enabled -}}
+        {{ if .Values.hadoopConfig -}}
+        {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+            items:
+            {{ if .Values.hadoopConfig.includeHdfsSite -}}
+            - key: hdfs-site.xml
+              path: hdfs-site.xml
+            {{- end }}
+            {{- if .Values.hadoopConfig.includeCoreSite }}
+            - key: core-site.xml
+              path: core-site.xml
+            {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.initUsers.enabled }}
         - name: dir
           hostPath:
             path: {{ .Values.initUsers.dir }}

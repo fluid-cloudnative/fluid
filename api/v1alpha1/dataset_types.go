@@ -100,6 +100,16 @@ type Mount struct {
 	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
 }
 
+// DataRestoreLocation describes the spec restore location of  Dataset
+type DataRestoreLocation struct {
+	// Path describes the path of restore, in the form of  local://subpath or pvc://<pvcName>/subpath
+	// +optional
+	Path string `json:"path,omitempty"`
+	// NodeName describes the nodeName of restore if Path is  in the form of local://subpath
+	// +optional
+	NodeName string `json:"nodeName,omitempty"`
+}
+
 // DatasetSpec defines the desired state of Dataset
 type DatasetSpec struct {
 	// Mount Points to be mounted on Alluxio.
@@ -117,6 +127,10 @@ type DatasetSpec struct {
 	// +optional
 	NodeAffinity *CacheableNodeAffinity `json:"nodeAffinity,omitempty"`
 
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+
 	// AccessModes contains all ways the volume backing the PVC can be mounted
 	// +optional
 	AccessModes []v1.PersistentVolumeAccessMode `json:"accessModes,omitempty"`
@@ -129,6 +143,10 @@ type DatasetSpec struct {
 	// +kubebuilder:validation:Enum=Exclusive;"";Shared
 	// +optional
 	PlacementMode PlacementMode `json:"placement,omitempty"`
+
+	// DataRestoreLocation is the location to load data of dataset  been backuped
+	// +optional
+	DataRestoreLocation *DataRestoreLocation `json:"dataRestoreLocation,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset
@@ -174,6 +192,10 @@ type DatasetStatus struct {
 	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataLoad jobs.
 	DataLoadRef string `json:"dataLoadRef,omitempty"`
+
+	// DataBackupRef specifies the running Backup job that targets this Dataset.
+	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
+	DataBackupRef string `json:"dataBackupRef,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>
@@ -221,6 +243,7 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="HCFS URL",type="string",JSONPath=`.status.hcfs.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="TOTAL FILES",type="string",JSONPath=`.status.fileNum`,priority=11
+// +kubebuilder:printcolumn:name="CACHE HIT RATIO",type="string",JSONPath=`.status.cacheStates.cacheHitRatio`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

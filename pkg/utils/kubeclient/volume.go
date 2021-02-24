@@ -223,23 +223,16 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 	return err
 }
 
-// ShouldDeleteDataset should delete Dataset when no pod is using the volume
-func ShouldDeleteDataset(client client.Client, name, namespace string) (should bool, err error) {
+// ShouldDeleteDataset return no err when no pod is using the volume
+// If cannot get PVC, cannot get PvcMountPods, or running pod is using the volume, return corresponding error
+func ShouldDeleteDataset(client client.Client, name, namespace string) (err error) {
 	// 1. Check if the pvc exists
-	// exist, err := IsPersistentVolumeExist(client, name, common.ExpectedFluidAnnotations)
-	// if err != nil {
-	// 	return
-	// }
-	// if !exist {
-	// 	return true, nil
-	// }
-
 	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return
 	}
 	if !exist {
-		return true, nil
+		return nil
 	}
 
 	// 2. check if the pod on it is running
@@ -254,8 +247,7 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (should b
 			return
 		}
 	}
-	should = true
-	return
+	return nil
 }
 
 // ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer

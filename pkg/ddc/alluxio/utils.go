@@ -28,6 +28,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -178,9 +179,10 @@ func (e *AlluxioEngine) getInitUserEnv(runtime *datav1alpha1.AlluxioRuntime) str
 // Init tierPaths when running as a non-root user: chmod on each path
 // Example: "/dev/shm:/var/lib/docker/alluxio:/dev/ssd"
 func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime) string {
-	tierPaths := []string{}
+	var tierPaths []string
 	for _, level := range runtime.Spec.Tieredstore.Levels {
-		tierPaths = append(tierPaths, level.Path)
+		paths := strings.Split(level.Path, ",")
+		tierPaths = append(tierPaths, paths...)
 	}
 	return strings.Join(tierPaths, ":")
 }
@@ -333,4 +335,14 @@ func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
 	// }
 
 	return
+}
+
+func (e *AlluxioEngine) GetMetadataInfoFile() string {
+	return cdatabackup.BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
+}
+func (e *AlluxioEngine) GetMetadataFileName() string {
+	return "metadata-backup-" + e.name + "-" + e.namespace + ".gz"
+}
+func (e *AlluxioEngine) GetMetadataInfoFileName() string {
+	return e.name + "-" + e.namespace + ".yaml"
 }

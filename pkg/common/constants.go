@@ -28,6 +28,8 @@ const (
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
+	ErrorDeleteDataset = "ErrorDeleteDataset"
+
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
 
 	ErrorHelmInstall = "ErrorHelmInstall"
@@ -45,6 +47,10 @@ const (
 	DataLoadJobFailed = "DataLoadJobFailed"
 
 	DataLoadJobComplete = "DataLoadJobComplete"
+
+	DataBackupFailed = "DataBackupFailed"
+
+	DataBackupComplete = "DataBackupComplete"
 )
 
 type CacheStoreType string
@@ -99,5 +105,5 @@ var (
 )
 
 const (
-	Exclusive string = "fluid_exclusive"
+	FluidExclusiveKey string = "fluid_exclusive"
 )

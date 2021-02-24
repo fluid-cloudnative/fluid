@@ -4,6 +4,7 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"regexp"
 	"strings"
 )
 
@@ -25,10 +26,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 
 	value = &Jindo{
 		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.2.0",
+		ImageTag:        "3.3.2",
 		ImagePullPolicy: "Always",
 		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.2.0",
+		FuseImageTag:    "3.3.2",
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
@@ -82,6 +83,19 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 			continue
 		}
 		jfsNamespace = jfsNamespace + mount.Name + ","
+		properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
+
+		if !strings.HasSuffix(mount.MountPoint, "/") {
+			mount.MountPoint = mount.MountPoint + "/"
+		}
+		// transform mountpoint for jfs uri format
+		var re = regexp.MustCompile(`(oss://(.*?))(/)`)
+		rm := re.FindStringSubmatch(mount.MountPoint)
+		if len(rm) < 2 {
+			e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+		}
+		mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
+
 		properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
 		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
 		properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
@@ -173,27 +187,27 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 	return properties
 }
 
-func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]int {
+func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]string {
 	// default enable data-cache and disable meta-cache
-	properties := map[string]int{
-		"client.storage.rpc.port":                   6101,
-		"client.oss.retry":                          5,
-		"client.oss.upload.threads":                 4,
-		"client.oss.upload.queue.size":              5,
-		"client.oss.upload.max.parallelism":         16,
-		"client.oss.timeout.millisecond":            30000,
-		"client.oss.connection.timeout.millisecond": 3000,
-		"jfs.cache.meta-cache.enable":               0,
-		"jfs.cache.data-cache.enable":               1,
-		"jfs.cache.data-cache.slicecache.enable":    1,
+	properties := map[string]string{
+		"client.storage.rpc.port":                   "6101",
+		"client.oss.retry":                          "5",
+		"client.oss.upload.threads":                 "4",
+		"client.oss.upload.queue.size":              "5",
+		"client.oss.upload.max.parallelism":         "16",
+		"client.oss.timeout.millisecond":            "30000",
+		"client.oss.connection.timeout.millisecond": "3000",
+		"jfs.cache.meta-cache.enable":               "0",
+		"jfs.cache.data-cache.enable":               "1",
+		"jfs.cache.data-cache.slicecache.enable":    "1",
 	}
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
-		properties["jfs.cache.ram-cache.enable"] = 1
+		properties["jfs.cache.ram-cache.enable"] = "1"
 	} else if e.getTieredStoreType(runtime) == 1 || e.getTieredStoreType(runtime) == 2 {
 		// HDD and SSD
-		properties["jfs.cache.ram-cache.enable"] = 0
+		properties["jfs.cache.ram-cache.enable"] = "0"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
