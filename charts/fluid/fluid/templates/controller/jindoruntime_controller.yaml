@@ -41,9 +41,9 @@ spec:
             value: {{ .Values.workdir | quote }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
-            - name: MOUNT_ROOT
-              value: {{ .Values.runtime.mountRoot | quote }}
-            {{- end }}
+          - name: MOUNT_ROOT
+            value: {{ .Values.runtime.mountRoot | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics
