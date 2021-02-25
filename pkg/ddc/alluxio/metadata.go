@@ -31,14 +31,21 @@ func (e *AlluxioEngine) SyncMetadata() (err error) {
 		e.Log.Error(err, "Failed to check if should sync metadata")
 		return
 	}
+	// should sync metadata
 	if should {
 		should, err = e.shouldRestoreMetadata()
-		if err != nil || should {
+		if err != nil {
+			e.Log.Error(err, "Failed to check if should restore metadata, will not restore!")
+			should = false
+		}
+		// should restore metadata from backup
+		if should {
 			err = e.RestoreMetadataInternal()
 			if err == nil {
 				return
 			}
 		}
+		// load metadata again
 		return e.syncMetadataInternal()
 	}
 	return
@@ -72,7 +79,7 @@ func (e *AlluxioEngine) shouldRestoreMetadata() (should bool, err error) {
 	if err != nil {
 		return
 	}
-	if dataset.Spec.DataRestoreLocation.Path != "" {
+	if dataset.Spec.DataRestoreLocation != nil {
 		e.Log.V(1).Info("restore metadata of dataset from backup",
 			"dataset name", dataset.Name,
 			"dataset namespace", dataset.Namespace,
@@ -84,7 +91,7 @@ func (e *AlluxioEngine) shouldRestoreMetadata() (should bool, err error) {
 }
 
 // RestoreMetadataInternal restore metadata from backup
-// there are three kinds of date to be restored
+// there are three kinds of data to be restored
 // 1. metadata of dataset
 // 2. ufsTotal info of dataset
 // 3. fileNum info of dataset
