@@ -240,8 +240,10 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		return utils.RequeueIfError(err)
 	}
 	if kubeclient.IsSucceededPod(backupPod) {
+		timeCost := utils.CalTimeCost(ctx.DataBackup.CreationTimestamp.Unix())
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
+		databackupToUpdate.Status.TimeCost = timeCost
 		if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 			log.Error(err, "the backup pod has completd, but failed to update the databackup")
 			return utils.RequeueIfError(err)
@@ -249,8 +251,10 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		log.V(1).Info("Update phase of the databackup to Complete successfully")
 		return utils.RequeueImmediately()
 	} else if kubeclient.IsFailedPod(backupPod) {
+		timeCost := utils.CalTimeCost(ctx.DataBackup.CreationTimestamp.Unix())
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.TimeCost = timeCost
 		if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 			log.Error(err, "the backup pod has failed, but failed to update the databackup")
 			return utils.RequeueIfError(err)

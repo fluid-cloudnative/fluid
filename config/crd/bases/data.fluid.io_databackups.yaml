@@ -21,6 +21,9 @@ spec:
   - JSONPath: .status.backupLocation.nodeName
     name: BackupNodeName
     type: string
+  - JSONPath: .status.timeCost
+    name: TimeCost
+    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -114,6 +117,9 @@ spec:
               type: array
             phase:
               description: Phase describes current phase of DataBackup
+              type: string
+            timeCost:
+              description: TimeCost tell user how much time was spent to backup
               type: string
           required:
           - conditions

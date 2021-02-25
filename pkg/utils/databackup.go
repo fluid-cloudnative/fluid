@@ -9,7 +9,9 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // GetDataBackupRef returns the identity of the Backup by combining its namespace and name.
@@ -80,6 +82,30 @@ func ParseBackupRestorePath(backupRestorePath string) (pvcName string, path stri
 	}
 	if !strings.HasSuffix(path, "/") {
 		path = path + "/"
+	}
+	return
+}
+
+// CalTimeCost calculate the time cost of DataBackup
+// the result is a string in the form of **h**m**s
+func CalTimeCost(startTime int64) (timeCost string) {
+	var (
+		hour   int64
+		minute int64
+		second int64
+	)
+	diff := time.Now().Unix() - startTime
+	hour = diff / 3600
+	minute = (diff - hour*3600) / 60
+	second = diff - hour*3600 - minute*60
+	if hour != 0 {
+		timeCost = strconv.FormatInt(hour, 10) + "h" + strconv.FormatInt(minute, 10) + "m" + strconv.FormatInt(second, 10) + "s"
+	} else {
+		if minute != 0 {
+			timeCost = strconv.FormatInt(minute, 10) + "m" + strconv.FormatInt(second, 10) + "s"
+		} else {
+			timeCost = strconv.FormatInt(second, 10) + "s"
+		}
 	}
 	return
 }
