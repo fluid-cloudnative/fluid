@@ -23,7 +23,17 @@ data:
     metainfofile=${targetPath}${dataset}-${namespace}.yaml
 
     mv ${result##*Backup URI         : }  ${metadatafile}
-    cp /alluxio_backups/${dataset}-${namespace}.yaml  ${metainfofile}
+
+    result=$(alluxio fs count / | sed -n '2p')
+    arr=($result)
+    if [ ${#arr[@]} -ne "3" ]; then
+      exit 1
+    else
+      ufstotal=${arr[2]}
+      filenum=${arr[0]}
+    fi
+
+    echo -e "dataset: ${dataset}\nnamespace: ${namespace}\nufstotal: ${ufstotal}\nfilenum: ${filenum}" > ${metainfofile}
 
     if [ ! -f "${metadatafile}" ]; then
        echo "${metadatafile} backup failed"
