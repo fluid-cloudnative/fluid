@@ -27,7 +27,7 @@ run() {
 }
 
 helm_get() {
-  run helm get all "${1}" &>"$diagnose_dir/helm-${1}.yaml"
+  run helm get all -n ${runtime_namespace} "${1}" &>"$diagnose_dir/helm-${1}.yaml"
 }
 
 pod_status() {
@@ -71,8 +71,8 @@ core_component() {
 
 kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
-  kubectl describe dataset ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
-  kubectl describe alluxioruntime ${name} &>"${diagnose_dir}/alluxioruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
+  kubectl describe alluxioruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/alluxioruntime-${runtime_name}.yaml" 2>&1
   kubectl describe pv ${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
   kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
