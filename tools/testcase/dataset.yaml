@@ -1,8 +1,0 @@
-apiVersion: data.fluid.io/v1alpha1
-kind: Dataset
-metadata:
-  name: spark
-spec:
-  mounts:
-    - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
-      name: spark
