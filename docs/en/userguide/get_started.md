@@ -62,7 +62,7 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
       name: demo
     spec:
       mounts:
-        - mountPoint: https://mirror.bit.edu.cn/apache/spark/spark-3.0.1/
+        - mountPoint: https://mirrors.bit.edu.cn/apache/spark/spark-3.0.1/
           name: spark
     EOF
     ```  

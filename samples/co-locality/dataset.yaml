@@ -4,7 +4,7 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirror.bit.edu.cn/apache/hbase/stable/
+    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
       name: hbase
   nodeAffinity:
     required:

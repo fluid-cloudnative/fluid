@@ -62,7 +62,7 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
       name: demo
     spec:
       mounts:
-        - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+        - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
           name: spark
     EOF
     ```  
