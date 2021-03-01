@@ -71,8 +71,8 @@ hbase-worker-whmnv     2/2     Running       0          3m4s
 该DataBackup同样变为Complete状态：
 ```bash
 $ kubectl get databackup
-NAME           DATASET   PHASE      BACKUPPATH                           BACKUPNODENAME     AGE
-hbase-backup   hbase     Complete   pvc://<pvcName>/subpath1/subpath2/                      30s
+NAME           DATASET   PHASE      PPATH                                NODENAME     AGE
+hbase-backup   hbase     Complete   pvc://<pvcName>/subpath1/subpath2/   NA           30s
 ```
 
 进入该PVC，查看对应子目录，发现生成的两个备份文件：
@@ -102,7 +102,7 @@ EOF
 
 ```bash
 $ kubectl get databackup
-NAME           DATASET   PHASE      BACKUPPATH                BACKUPNODENAME             AGE
+NAME           DATASET   PHASE      PATH                      NODENAME                   AGE
 hbase-backup   hbase     Complete   local:///data/subpath1/   cn-beijing.192.168.1.146   30s
 ```
 发现该DataBackup变为Complete状态，同时会显示保存位置所在的路径和NodeName

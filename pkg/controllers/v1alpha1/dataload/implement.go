@@ -301,7 +301,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				} else {
 					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
 				}
-				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).String()
+				dataloadToUpdate.Status.DurationTime = jobCondition.LastTransitionTime.Sub(dataloadToUpdate.CreationTimestamp.Time).Round(time.Second).String()
 
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
