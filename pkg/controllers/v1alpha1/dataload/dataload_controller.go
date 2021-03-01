@@ -17,12 +17,19 @@ package dataload
 
 import (
 	"context"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -33,17 +40,11 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-// reconcileRequestContext wraps up necessary info for reconciliation
-type reconcileRequestContext struct {
-	context.Context
-	types.NamespacedName
-	Log      logr.Logger
-	DataLoad datav1alpha1.DataLoad
-}
-
 // DataLoadReconciler reconciles a DataLoad object
 type DataLoadReconciler struct {
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
+	engines map[string]base.Engine
+	mutex   *sync.Mutex
 	*DataLoadReconcilerImplement
 }
 
@@ -53,7 +54,9 @@ func NewDataLoadReconciler(client client.Client,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataLoadReconciler {
 	r := &DataLoadReconciler{
-		Scheme: scheme,
+		Scheme:  scheme,
+		mutex:   &sync.Mutex{},
+		engines: map[string]base.Engine{},
 	}
 	r.DataLoadReconcilerImplement = NewDataLoadReconcilerImplement(client, log, recorder)
 	return r
@@ -63,10 +66,12 @@ func NewDataLoadReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads/status,verbs=get;update;patch
 // Reconcile reconciles the DataLoad object
 func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := reconcileRequestContext{
-		Context:        context.Background(),
-		NamespacedName: req.NamespacedName,
-		Log:            r.Log.WithValues("dataload", req.NamespacedName),
+	ctx := cruntime.ReconcileRequestContext{
+		Context:  context.Background(),
+		Log:      r.Log.WithValues("dataload", req.NamespacedName),
+		Recorder: r.Recorder,
+		Client:   r.Client,
+		Category: common.AccelerateCategory,
 	}
 
 	// 1. Get DataLoad object
@@ -80,17 +85,16 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return utils.RequeueIfError(errors.Wrap(err, "failed to get DataLoad info"))
 		}
 	}
-
-	ctx.DataLoad = *dataload
+	targetDataload := *dataload
 	ctx.Log.V(1).Info("DataLoad found", "detail", dataload)
 
 	// 2. Reconcile deletion of the object if necessary
-	if utils.HasDeletionTimestamp(ctx.DataLoad.ObjectMeta) {
-		return r.ReconcileDataLoadDeletion(ctx)
+	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
+		return r.ReconcileDataLoadDeletion(ctx, targetDataload)
 	}
 
 	// 3. get the dataset
-	dataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, req.Namespace)
+	targetDataset, err := utils.GetDataset(r.Client, targetDataload.Spec.Dataset.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
@@ -101,29 +105,75 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 		}
 	}
-
-	// 4. add finalizer and requeue
-	if !utils.ContainsString(ctx.DataLoad.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
-		return r.addFinalierAndRequeue(ctx)
+	ctx.Dataset = targetDataset
+	ctx.NamespacedName = types.NamespacedName{
+		Name:      targetDataset.Name,
+		Namespace: targetDataset.Namespace,
 	}
 
-	// 5. add owner and requeue
-	if !utils.ContainsOwners(ctx.DataLoad.GetOwnerReferences(), dataset) {
-		return r.AddOwnerAndRequeue(ctx, dataset)
+	//4. get the runtime
+	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+	if index == -1 {
+		ctx.Log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
+		r.Recorder.Eventf(&targetDataload,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not ready")
+		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+	ctx.RuntimeType = boundedRuntime.Type
+
+	switch ctx.RuntimeType {
+	case common.ALLUXIO_RUNTIME:
+		runtime, err := utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		if err != nil {
+			if utils.IgnoreNotFound(err) == nil {
+				ctx.Log.V(1).Info("The runtime is not found", "runtime", ctx.NamespacedName)
+				return ctrl.Result{}, nil
+			} else {
+				ctx.Log.Error(err, "Failed to get the ddc runtime")
+				return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
+			}
+		}
+		ctx.Runtime = runtime
+		ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
+	default:
+		ctx.Log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+		r.Recorder.Eventf(&targetDataload,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not supported")
 	}
 
-	return r.ReconcileDataLoad(ctx)
+	// 5. add finalizer and requeue
+	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
+		return r.addFinalierAndRequeue(ctx, targetDataload)
+	}
+
+	// 6. add owner and requeue
+	if !utils.ContainsOwners(targetDataload.GetOwnerReferences(), targetDataset) {
+		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
+	}
+
+	// 7. create or get engine
+	engine, err := r.GetOrCreateEngine(ctx)
+	if err != nil {
+		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDataLoadReason, "Process DataLoad error %v", err)
+		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
+	}
+
+	return r.ReconcileDataLoad(ctx, targetDataload, engine)
 }
 
 // AddOwnerAndRequeue adds Owner and requeue
-func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dataset *datav1alpha1.Dataset) (ctrl.Result, error) {
-	ctx.DataLoad.ObjectMeta.OwnerReferences = append(ctx.DataLoad.GetOwnerReferences(), metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
+func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataLoad datav1alpha1.DataLoad, targetDataset *datav1alpha1.Dataset) (ctrl.Result, error) {
+	targetDataLoad.ObjectMeta.OwnerReferences = append(targetDataLoad.GetOwnerReferences(), metav1.OwnerReference{
+		APIVersion: targetDataset.APIVersion,
+		Kind:       targetDataset.Kind,
+		Name:       targetDataset.Name,
+		UID:        targetDataset.UID,
 	})
-	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
+	if err := r.Update(ctx, &targetDataLoad); err != nil {
 		ctx.Log.Error(err, "Failed to add ownerreference", "StatusUpdateError", ctx)
 		return utils.RequeueIfError(err)
 	}
@@ -131,15 +181,37 @@ func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, dat
 	return utils.RequeueImmediately()
 }
 
-func (r *DataLoadReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
-	ctx.DataLoad.ObjectMeta.Finalizers = append(ctx.DataLoad.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
+func (r *DataLoadReconciler) addFinalierAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
+	targetDataload.ObjectMeta.Finalizers = append(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
 	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DATALOAD_FINALIZER)
-	prevGeneration := ctx.DataLoad.ObjectMeta.GetGeneration()
-	if err := r.Update(ctx, &ctx.DataLoad); err != nil {
+	prevGeneration := targetDataload.ObjectMeta.GetGeneration()
+	if err := r.Update(ctx, &targetDataload); err != nil {
 		ctx.Log.Error(err, "failed to add finalizer to dataload", "StatusUpdateError", err)
 		return utils.RequeueIfError(err)
 	}
-	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.DataLoad.ObjectMeta.GetGeneration())
+	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, targetDataload.ObjectMeta.GetGeneration())
+}
+
+// GetOrCreateEngine gets the Engine
+func (r *DataLoadReconciler) GetOrCreateEngine(
+	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
+	found := false
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if engine, found = r.engines[id]; !found {
+		engine, err = ddc.CreateEngine(id,
+			ctx)
+		if err != nil {
+			return nil, err
+		}
+		r.engines[id] = engine
+		r.Log.V(1).Info("Put Engine to engine map")
+	} else {
+		r.Log.V(1).Info("Get Engine from engine map")
+	}
+
+	return engine, err
 }
 
 // SetupWithManager sets up the controller with the given controller manager

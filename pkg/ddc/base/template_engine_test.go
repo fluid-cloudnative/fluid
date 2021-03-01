@@ -1,12 +1,14 @@
 package base_test
 
 import (
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -22,6 +24,7 @@ var _ = Describe("TemplateEngine", func() {
 		Log:     fakeCtx.Log,
 		Context: fakeCtx,
 	}
+	var fakeDataLoad = v1alpha1.DataLoad{}
 	var impl *enginemock.MockImplement
 
 	BeforeEach(func() {
@@ -32,11 +35,7 @@ var _ = Describe("TemplateEngine", func() {
 
 	Describe("Setup", func() {
 		Context("When everything is set up", func() {
-			It("Should return immediately after checking setup", func() {
-				impl.EXPECT().IsSetupDone().Return(true, nil).Times(1)
-			})
 			It("Should check all if checking setup failed", func() {
-				impl.EXPECT().IsSetupDone().Return(false, nil).Times(1)
 				impl.EXPECT().ShouldSetupMaster().Return(false, nil).Times(1)
 				impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1)
 				impl.EXPECT().ShouldCheckUFS().Return(false, nil).Times(1)
@@ -52,7 +51,6 @@ var _ = Describe("TemplateEngine", func() {
 		Context("When nothing is set up", func() {
 			Context("When everything goes fine", func() {
 				It("Should set all up successfully", func() {
-					impl.EXPECT().IsSetupDone().Return(false, nil).Times(1)
 					impl.EXPECT().ShouldSetupMaster().Return(true, nil).Times(1)
 					impl.EXPECT().SetupMaster().Return(nil).Times(1)
 					impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1)
@@ -106,6 +104,28 @@ var _ = Describe("TemplateEngine", func() {
 		It("Should shutdown successfully", func() {
 			impl.EXPECT().Shutdown().Return(nil).Times(1)
 			Expect(t.Shutdown()).To(BeNil())
+		})
+	})
+
+	Describe("LoadData", func() {
+		It("Should load data successfully", func() {
+			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
+			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobComplete, nil)
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobComplete), BeNil())
+		})
+
+		It("Should load data unsuccessfully", func() {
+			impl.EXPECT().CreateDataLoadJob(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(nil).Times(1)
+			impl.EXPECT().GetDataLoadJobStatus(gomock.Eq(fakeCtx), gomock.Eq(fakeDataLoad)).Return(v1.JobFailed, nil)
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).Should(Equal(v1.JobFailed), BeNil())
+		})
+	})
+
+	Describe("Ready", func() {
+		It("Should ready successfully", func() {
+			impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1)
+			impl.EXPECT().CheckWorkersReady().Return(true, nil).Times(1)
+			Expect(t.Ready()).Should(Equal(true))
 		})
 	})
 })

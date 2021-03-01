@@ -79,7 +79,7 @@ func (e *AlluxioEngine) getDaemonset(name string, namespace string) (daemonset *
 
 // func (e *AlluxioEngine) getConfigMap(name string, namespace string) (configMap *corev1.ConfigMap, err error) {
 // 	configMap = &corev1.ConfigMap{}
-// 	err = e.Client.Get(context.TODO(), types.NamespacedName{
+// 	err = e.Client.Get(requestcontext.TODO(), types.NamespacedName{
 // 		Name:      name,
 // 		Namespace: namespace,
 // 	}, configMap)
@@ -119,7 +119,7 @@ func (e *AlluxioEngine) getFuseDaemonsetName() (dsName string) {
 //
 //	pods = []corev1.Pod{}
 //	podList := &corev1.PodList{}
-//	err = e.Client.List(context.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
+//	err = e.Client.List(requestcontext.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
 //	if err != nil {
 //		return pods, err
 //	}
