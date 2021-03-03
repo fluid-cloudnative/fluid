@@ -16,10 +16,13 @@ spec:
     name: Phase
     type: string
   - JSONPath: .status.backupLocation.path
-    name: BackupPath
+    name: Path
     type: string
   - JSONPath: .status.backupLocation.nodeName
-    name: BackupNodeName
+    name: NodeName
+    type: string
+  - JSONPath: .status.durationTime
+    name: Duration
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -112,11 +115,15 @@ spec:
                 - type
                 type: object
               type: array
+            durationTime:
+              description: DurationTime tell user how much time was spent to backup
+              type: string
             phase:
               description: Phase describes current phase of DataBackup
               type: string
           required:
           - conditions
+          - durationTime
           - phase
           type: object
       type: object
