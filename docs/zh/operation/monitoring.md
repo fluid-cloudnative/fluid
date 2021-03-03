@@ -113,7 +113,7 @@ $ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
-  name: monitoring
+  name: spark
 spec:
   mounts:
     - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
@@ -122,14 +122,14 @@ spec:
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: monitoring
+  name: spark
 spec:
-  replicas: 1
+  replicas: 2
   tieredstore:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 2Gi
+        quota: 1Gi
         high: "0.95"
         low: "0.7"
   properties:
