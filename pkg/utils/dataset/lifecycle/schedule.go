@@ -54,8 +54,17 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
+	fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
+	var nodes []corev1.Node
+
+	if fuseGlobal == true {
+		nodes = preferPvcMountNodes(nodeList.Items, runtimeClient, dataset.Name, dataset.Namespace)
+	} else {
+		nodes = nodeList.Items
+	}
+
 	// storageMap := tieredstore.GetLevelStorageMap(runtime)
-	for _, node := range nodeList.Items {
+	for _, node := range nodes {
 
 		if int32(len(currentScheduledNodes)) == desiredNum {
 			break
@@ -142,4 +151,30 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	}
 
 	return
+}
+
+// preferPvcMountNodes will prefer to chhoose PVC Mount Nodes when scale up
+func preferPvcMountNodes(nodes []corev1.Node, runtimeClient client.Client, pvcName string, namespace string) []corev1.Node {
+	var (
+		pvcMountNodes    []corev1.Node
+		pvcNotMountNodes []corev1.Node
+		log              = rootLog.WithValues("pvc", pvcName, "namespace", namespace)
+	)
+	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, pvcName, namespace)
+	if err != nil {
+		log.Error(err, "Failed to get PVC Mount Nodes, will not prefer to choose")
+		return nodes
+	}
+	if len(pvcMountNodesMap) == 0 {
+		log.Info("no PVC Mount Nodes, not need to prefer to choose")
+		return nodes
+	}
+	for _, node := range nodes {
+		if _, found := pvcMountNodesMap[node.Name]; found {
+			pvcMountNodes = append(pvcMountNodes, node)
+		} else {
+			pvcNotMountNodes = append(pvcNotMountNodes, node)
+		}
+	}
+	return append(pvcMountNodes, pvcNotMountNodes...)
 }
