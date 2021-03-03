@@ -25,7 +25,7 @@ $ kubectl apply -f integration/prometheus/prometheus.yaml
 
 ```yaml
 scrape_configs:
-  - job_name: 'alluxio master'
+  - job_name: 'alluxio runtime'
     metrics_path: /metrics/prometheus
     kubernetes_sd_configs:
       - role: endpoints
