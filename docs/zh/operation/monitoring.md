@@ -116,7 +116,7 @@ metadata:
   name: monitoring
 spec:
   mounts:
-    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+    - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
       name: spark
 ---
 apiVersion: data.fluid.io/v1alpha1

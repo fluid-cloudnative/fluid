@@ -492,7 +492,7 @@ tar -zxvf b2sdk-3.3.2.tar.gz
 
 ```
 $ cd /root
-$ wget https://mirror.bit.edu.cn/apache/spark/spark-2.4.6/spark-2.4.6-bin-hadoop2.7.tgz
+$ wget https://mirrors.bit.edu.cn/apache/spark/spark-2.4.6/spark-2.4.6-bin-hadoop2.7.tgz
 $ tar -xf spark-2.4.6-bin-hadoop2.7.tgz
 $ export SPARK_HOME=/root/spark-2.4.6-bin-hadoop2.7
 ```
