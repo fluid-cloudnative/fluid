@@ -36,19 +36,6 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 		return states, err
 	}
 
-	if dataset.Status.UfsTotal == "" {
-		if len(dataset.Spec.Mounts) < 1 {
-			e.Log.Info("no dataset find")
-			return states, err
-		}
-		ufsTotal, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name)
-		if err != nil {
-			e.Log.Info("Failed to get totalStorage when query cache status")
-			return states, err
-		}
-		dataset.Status.UfsTotal = utils.BytesSize(float64(ufsTotal))
-	}
-
 	// `dataset.Status.UfsTotal` probably haven't summed, in which case we won't compute cache percentage
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 		usedInBytes, _ := utils.FromHumanSize(states.cached)
