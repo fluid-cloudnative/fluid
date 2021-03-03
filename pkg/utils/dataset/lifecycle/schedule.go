@@ -57,7 +57,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
 	var nodes []corev1.Node
 
-	if fuseGlobal == true {
+	if fuseGlobal {
 		nodes = preferPvcMountNodes(nodeList.Items, runtimeClient, dataset.Name, dataset.Namespace)
 	} else {
 		nodes = nodeList.Items
