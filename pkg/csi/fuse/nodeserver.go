@@ -49,7 +49,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			} else {
 				glog.Infof("MkdirAll successful. %v", targetPath)
 			}
-			isMount = true
+			//isMount = true
 		} else {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
