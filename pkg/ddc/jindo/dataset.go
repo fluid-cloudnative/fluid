@@ -97,18 +97,6 @@ func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 			common.AccelerateCategory,
 			common.JINDO_RUNTIME))
 
-		// get ufsTotal bytesize
-		if len(dataset.Spec.Mounts) < 1 {
-			e.Log.Info("no dataset find")
-			return err
-		}
-		ufsTotal, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name)
-		if err != nil {
-			e.Log.Error(err, "get totalStorage")
-			return err
-		}
-		datasetToUpdate.Status.UfsTotal = utils.BytesSize(float64(ufsTotal))
-
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
