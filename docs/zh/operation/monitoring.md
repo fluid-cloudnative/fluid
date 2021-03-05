@@ -18,14 +18,14 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 ```shell
 $ cd fluid
-$ kubectl apply -f tools/monitoring/prometheus.yaml
+$ kubectl apply -f integration/prometheus/prometheus.yaml
 ```
 
 如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
 
 ```yaml
 scrape_configs:
-  - job_name: 'alluxio master'
+  - job_name: 'alluxio runtime'
     metrics_path: /metrics/prometheus
     kubernetes_sd_configs:
       - role: endpoints
@@ -59,7 +59,7 @@ $ docker run -d \
   grafana/grafana
 # In-CLuster 部署
 $ cd fluid
-$ kubectl apply -f tools/monitoring/grafana.yaml 
+$ kubectl apply -f integration/prometheus/grafana.yaml 
 ```
 
 
@@ -105,7 +105,7 @@ Events:                   <none>
 导入完成后点击Save & Test 显示 Data source is working 即可
 
 4. 导入模板文件
-grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`, 它的位置是`tools/monitoring/fluid-prometheus-grafana-monitor.json`
+grafana 选择导入模板 Json 文件 `fluid-prometheus-grafana-monitor.json`, 它的位置是`integration/prometheus/fluid-prometheus-grafana-monitor.json`
 
 5. 启动 fluid 任务
 ```yaml
@@ -113,23 +113,23 @@ $ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
-  name: monitoring
+  name: spark
 spec:
   mounts:
-    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+    - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
       name: spark
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: monitoring
+  name: spark
 spec:
-  replicas: 1
+  replicas: 2
   tieredstore:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 2Gi
+        quota: 1Gi
         high: "0.95"
         low: "0.7"
   properties:
