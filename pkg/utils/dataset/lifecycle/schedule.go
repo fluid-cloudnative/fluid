@@ -55,10 +55,16 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	}
 
 	fuseGlobal, nodeSelector := runtimeInfo.GetFuseDeployMode()
+
+	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
+	if err != nil {
+		log.Error(err, "Failed to get PVC Mount Nodes, will treat every node as with no PVC mount Pods")
+	}
+
 	var nodes []corev1.Node
 
 	if fuseGlobal {
-		nodes = sortNodesToBeScheduled(nodeList.Items, runtimeClient, dataset.Name, dataset.Namespace, nodeSelector)
+		nodes = sortNodesToBeScheduled(nodeList.Items, pvcMountNodesMap, nodeSelector)
 	} else {
 		nodes = nodeList.Items
 	}
@@ -154,7 +160,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 }
 
 // sortNodesToBeScheduled will sort nodes to be scheduled when scale up
-func sortNodesToBeScheduled(nodes []corev1.Node, runtimeClient client.Client, pvcName string, namespace string, nodeSelector map[string]string) []corev1.Node {
+func sortNodesToBeScheduled(nodes []corev1.Node, pvcMountNodesMap map[string]int64, nodeSelector map[string]string) []corev1.Node {
 	var (
 		// There are three slices which have different priorities
 		// 1. nodes which have PVC mount Pods on it now
@@ -163,13 +169,7 @@ func sortNodesToBeScheduled(nodes []corev1.Node, runtimeClient client.Client, pv
 		selectedNodes    []corev1.Node
 		// 3. nodes not selected by fuse, will never have PVC mount Pods
 		notSelectedNodes []corev1.Node
-		log              = rootLog.WithValues("pvc", pvcName, "namespace", namespace)
 	)
-	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, pvcName, namespace)
-	if err != nil {
-		log.Error(err, "Failed to get PVC Mount Nodes, will not prefer to choose")
-		return nodes
-	}
 
 	for _, node := range nodes {
 		if num, found := pvcMountNodesMap[node.Name]; found {
