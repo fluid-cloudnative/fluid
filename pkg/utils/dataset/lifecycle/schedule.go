@@ -3,7 +3,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -54,11 +54,11 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
-	fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
+	fuseGlobal, nodeSelector := runtimeInfo.GetFuseDeployMode()
 	var nodes []corev1.Node
 
 	if fuseGlobal {
-		nodes = preferPvcMountNodes(nodeList.Items, runtimeClient, dataset.Name, dataset.Namespace)
+		nodes = sortNodesToBeScheduled(nodeList.Items, runtimeClient, dataset.Name, dataset.Namespace, nodeSelector)
 	} else {
 		nodes = nodeList.Items
 	}
@@ -153,11 +153,16 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	return
 }
 
-// preferPvcMountNodes will prefer to chhoose PVC Mount Nodes when scale up
-func preferPvcMountNodes(nodes []corev1.Node, runtimeClient client.Client, pvcName string, namespace string) []corev1.Node {
+// sortNodesToBeScheduled will sort nodes to be scheduled when scale up
+func sortNodesToBeScheduled(nodes []corev1.Node, runtimeClient client.Client, pvcName string, namespace string, nodeSelector map[string]string) []corev1.Node {
 	var (
+		// There are three slices which have different priorities
+		// 1. nodes which have PVC mount Pods on it now
 		pvcMountNodes    []corev1.Node
-		pvcNotMountNodes []corev1.Node
+		// 2. nodes without PVC mount Pods on it but are selected by fuse, perhaps will have them in future
+		selectedNodes    []corev1.Node
+		// 3. nodes not selected by fuse, will never have PVC mount Pods
+		notSelectedNodes []corev1.Node
 		log              = rootLog.WithValues("pvc", pvcName, "namespace", namespace)
 	)
 	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, pvcName, namespace)
@@ -165,16 +170,36 @@ func preferPvcMountNodes(nodes []corev1.Node, runtimeClient client.Client, pvcNa
 		log.Error(err, "Failed to get PVC Mount Nodes, will not prefer to choose")
 		return nodes
 	}
-	if len(pvcMountNodesMap) == 0 {
-		log.Info("no PVC Mount Nodes, not need to prefer to choose")
-		return nodes
-	}
+
 	for _, node := range nodes {
-		if _, found := pvcMountNodesMap[node.Name]; found {
-			pvcMountNodes = append(pvcMountNodes, node)
+		if num, found := pvcMountNodesMap[node.Name]; found {
+			if len(pvcMountNodes) == 0 {
+				pvcMountNodes = append(pvcMountNodes, node)
+			} else {
+				// Binary Insertion
+				low := 0
+				high := len(pvcMountNodes) - 1
+				for low <= high {
+					middle := (low + high) / 2
+					if num > pvcMountNodesMap[pvcMountNodes[middle].Name] {
+						high = middle - 1
+					} else {
+						low = middle + 1
+					}
+				}
+				k := len(pvcMountNodes) - 1
+				pvcMountNodes = append(pvcMountNodes, pvcMountNodes[k])
+				for k >= low {
+					pvcMountNodes[k+1] = pvcMountNodes[k]
+					k = k - 1
+				}
+				pvcMountNodes[low] = node
+			}
+		} else if utils.ContainsSelector(node.GetLabels(), nodeSelector) {
+			selectedNodes = append(selectedNodes, node)
 		} else {
-			pvcNotMountNodes = append(pvcNotMountNodes, node)
+			notSelectedNodes = append(notSelectedNodes, node)
 		}
 	}
-	return append(pvcMountNodes, pvcNotMountNodes...)
+	return append(append(pvcMountNodes, selectedNodes...), notSelectedNodes...)
 }

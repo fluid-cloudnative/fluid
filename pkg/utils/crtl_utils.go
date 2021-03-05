@@ -97,6 +97,16 @@ func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Datase
 	return false
 }
 
+// ContainsSelector Determine whether the labels contain the selector
+func ContainsSelector(labels map[string]string, selector map[string]string) bool {
+	for key, value := range selector {
+		if labels[key] != value {
+			return false
+		}
+	}
+	return true
+}
+
 // RemoveString removes strings in a array, which is equal to a given string.
 func RemoveString(slice []string, s string) (result []string) {
 	for _, item := range slice {
