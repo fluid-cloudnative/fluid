@@ -51,6 +51,8 @@ const (
 	DataBackupFailed = "DataBackupFailed"
 
 	DataBackupComplete = "DataBackupComplete"
+
+	RuntimeScaleInFailed = "RuntimeScaleInFailed"
 )
 
 type CacheStoreType string

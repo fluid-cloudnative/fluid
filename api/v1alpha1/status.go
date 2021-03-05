@@ -135,10 +135,14 @@ const (
 	RuntimeWorkersInitialized RuntimeConditionType = "WorkersInitialized"
 	// WorkersReady means the Workers of runtime is ready
 	RuntimeWorkersReady RuntimeConditionType = "WorkersReady"
+	// RuntimeWorkerScaledIn means the workers of runtime just scaled in
+	RuntimeWorkerScaledIn RuntimeConditionType = "WorkersScaledIn"
 	// FusesInitialized means the fuses of runtime is initialized
 	RuntimeFusesInitialized RuntimeConditionType = "FusesInitialized"
 	// FusesReady means the fuses of runtime is ready
 	RuntimeFusesReady RuntimeConditionType = "FusesReady"
+	// RuntimeFusesScaledIn means the fuses of runtime just scaled in
+	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
 )
 
 const (
@@ -149,10 +153,14 @@ const (
 	RuntimeWorkersInitializedReason = "Workers are initialized"
 	// WorkersReady means the Workers of runtime is ready
 	RuntimeWorkersReadyReason = "Workers are ready"
+	// todo
+	RuntimeWorkersScaledInReason = "Workers scaled in"
 	// WorkersInitialized means the Workers of runtime is initialized
 	RuntimeFusesInitializedReason = "Fuses are initialized"
 	// WorkersReady means the Workers of runtime is ready
 	RuntimeFusesReadyReason = "Fuses are ready"
+	// todo
+	RuntimeFusesScaledInReason = "Fuses scaled in"
 )
 
 // Condition describes the state of the cache at a certain point.
