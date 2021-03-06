@@ -225,7 +225,6 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		worker2UsedCapacityMap, err := e.getWorkerUsedCapacity()
 		if err != nil {
 			e.Log.Info("Can't get worker used capacity when scaling in. Got err: %v", err)
-			err = nil
 		}
 
 		if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
