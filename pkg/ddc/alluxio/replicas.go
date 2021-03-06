@@ -51,18 +51,17 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		// 	return err
 		// }
 	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
-		replicas := runtime.Replicas()
 		// scale in
-		numToScaleIn := runtime.Status.CurrentWorkerNumberScheduled - replicas
-		numFail, err := e.destroyWorkers(numToScaleIn)
+		replicas := runtime.Replicas()
+		curReplicas, err := e.destroyWorkers(replicas)
 		if err != nil {
 			return err
 		}
 
-		if numFail != 0 {
+		if curReplicas > replicas {
 			ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeScaleInFailed,
 				"Alluxio workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
-				replicas, replicas+numFail)
+				replicas, curReplicas)
 		}
 
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -79,7 +78,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			}
 
 			runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-			runtimeToUpdate.Status.CurrentWorkerNumberScheduled = replicas + numFail
+			runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
 			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
 				"The workers scaled in.", corev1.ConditionTrue)
 			runtimeToUpdate.Status.Conditions =
@@ -87,7 +86,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 
 			if !runtimeToUpdate.Spec.Fuse.Global {
 				runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = replicas + numFail
+				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
 				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
 					"The fuses scaled in.", corev1.ConditionTrue)
 				runtimeToUpdate.Status.Conditions =
@@ -101,7 +100,10 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			return nil
 		})
 
-		//e.Log.V(1).Info("Scale in to be implemented")
+		if err != nil {
+			return err
+		}
+
 	} else {
 		e.Log.V(1).Info("Nothing to do")
 	}

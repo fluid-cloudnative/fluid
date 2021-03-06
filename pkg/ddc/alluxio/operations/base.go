@@ -419,6 +419,7 @@ func (a AlluxioFileUtils) ReportMetrics() (metrics string, err error) {
 	return stdout, err
 }
 
+// ReportCapacity get alluxio capacity info by running `alluxio fsadmin report capacity` command
 func (a AlluxioFileUtils) ReportCapacity() (report string, err error) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report", "capacity"}
