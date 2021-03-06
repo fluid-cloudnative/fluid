@@ -104,6 +104,9 @@ type RuntimeStatus struct {
 	// +optional
 	FuseNumberAvailable int32 `json:"fuseNumberAvailable,omitempty"`
 
+	// The setup time of runtime
+	SetupTime int64 `json:"SetupTime,omitempty"`
+
 	// Represents the latest available observations of a ddc runtime's current state.
 	// +patchMergeKey=type
 	// +patchStrategy=merge
