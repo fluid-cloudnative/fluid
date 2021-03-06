@@ -131,9 +131,9 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		// Update the setup time of Alluxio runtime
-		if ready && runtimeToUpdate.Status.SetupTime == 0 {
-			runtimeToUpdate.Status.SetupTime = int64(time.Now().Sub(runtime.ObjectMeta.CreationTimestamp.Local()).
-				Seconds())
+		if ready && runtimeToUpdate.Status.SetupPeriodSeconds == nil {
+			secs := int64(time.Now().Sub(runtime.ObjectMeta.CreationTimestamp.Local()).Seconds())
+			runtimeToUpdate.Status.SetupPeriodSeconds = &secs
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
