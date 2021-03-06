@@ -188,15 +188,17 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 	currentWorkers = int32(len(nodeList.Items))
 	if expectedWorkers >= currentWorkers {
-		e.Log.V(1).Info("No need to scale in. Skip.")
+		e.Log.Info("No need to scale in. Skip.")
 		return currentWorkers, nil
 	}
 
 	var nodes []corev1.Node
 	if expectedWorkers >= 0 {
+		e.Log.V(1).Info("Scale in Alluxio workers", "expectedWorkers", expectedWorkers)
 		// This is a scale in operation
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {
+			e.Log.Error(err, "getRuntimeInfo when scaling in")
 			return expectedWorkers, err
 		}
 
@@ -206,6 +208,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 			// So firstly we filter out such nodes
 			pvcMountNodes, err := kubeclient.GetPvcMountNodes(e.Client, e.name, e.namespace)
 			if err != nil {
+				e.Log.Error(err, "GetPvcMountNodes when scaling in")
 				return expectedWorkers, err
 			}
 
@@ -224,7 +227,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		// Since this is just a preference, anything unexpected will be ignored.
 		worker2UsedCapacityMap, err := e.getWorkerUsedCapacity()
 		if err != nil {
-			e.Log.Info("Can't get worker used capacity when scaling in. Got err: %v", err)
+			e.Log.Info("getWorkerUsedCapacity when scaling in. Got err: %v. Ignore it", err)
 		}
 
 		if worker2UsedCapacityMap != nil && len(nodes) >= 2 {

@@ -51,8 +51,8 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		// 	return err
 		// }
 	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
-		// scale in
 		replicas := runtime.Replicas()
+		e.Log.Info("Scaling in Alluxio workers", "expectedReplicas", replicas)
 		curReplicas, err := e.destroyWorkers(replicas)
 		if err != nil {
 			return err
