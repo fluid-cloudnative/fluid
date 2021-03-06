@@ -12,10 +12,10 @@ func TestAssignDatasetToNodes(t *testing.T) {
 	var nodes []corev1.Node
 	pvcMountNodesMap := map[string]int64{}
 
-	fuseSelectLabel := map[string]string{"fuse":"true"}
-	fuseNotSelectLabel := map[string]string{"fuse":"false"}
+	fuseSelectLabel := map[string]string{"fuse": "true"}
+	fuseNotSelectLabel := map[string]string{"fuse": "false"}
 
-	for i:=1; i<=100; i++{
+	for i := 1; i <= 100; i++ {
 		node := corev1.Node{}
 		nodeName := "node" + strconv.Itoa(i)
 		node.Name = nodeName
@@ -35,7 +35,7 @@ func TestAssignDatasetToNodes(t *testing.T) {
 	}
 	nodes = sortNodesToBeScheduled(nodes, pvcMountNodesMap, fuseSelectLabel)
 
-	for i:=0; i<len(nodes)-1; i++{
+	for i := 0; i < len(nodes)-1; i++ {
 		if nodes[i].Labels["fuse"] == "false" && nodes[i+1].Labels["fuse"] == "true" {
 			t.Errorf("the result of sort is not right")
 		}
