@@ -6,7 +6,7 @@ metadata:
 data:
   config.yaml: |
     rules:
-    - seriesQuery: '{__name__=~"Cluster_(CapacityTotal|CapacityUsed)",fluid_runtime!="",instance!="",job="alluxio runtime",namespace!=""}'
+    - seriesQuery: '{__name__=~"Cluster_(CapacityTotal|CapacityUsed)",fluid_runtime!="",instance!="",job="alluxio runtime",namespace!="",pod!=""}'
       seriesFilters:
       - is: ^Cluster_(CapacityTotal|CapacityUsed)$
       resources:
@@ -15,6 +15,8 @@ data:
             resource: namespace
           pod:
             resource: pods
+          fluid_runtime:
+            resource: datasets
       name:
         matches: "^(.*)"
         as: "capacity_used_rate"

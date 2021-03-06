@@ -14,3 +14,11 @@ rules:
   - get
   - watch
   - list
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datasets
+  verbs:
+  - get
+  - watch
+  - list
