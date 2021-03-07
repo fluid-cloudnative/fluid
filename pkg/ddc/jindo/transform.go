@@ -26,10 +26,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 
 	value = &Jindo{
 		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.3.2",
+		ImageTag:        "3.3.5",
 		ImagePullPolicy: "Always",
 		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.3.2",
+		FuseImageTag:    "3.3.5",
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
