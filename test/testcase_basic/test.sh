@@ -319,7 +319,7 @@ delete_dataset()
 main()
 {
     echo "begin to test..."
-#    get_fluid && \
+    get_fluid && \
     uninstall_fluid && \
     install_fluid
     create_dataset && \
