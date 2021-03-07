@@ -10,14 +10,10 @@ spec:
   minReplicas: 2
   maxReplicas: 4
   metrics:
-  - type: Object
-    object:
+  - type: Pods
+    pods:
       metric:
         name: capacity_used_rate
-      describedObject:
-        apiVersion: data.fluid.io/v1alpha1
-        kind: Dataset
-        name: spark
       target:
-        type: Value
-        averageValue: "60"
+       type: Value
+       averageValue: "15"

@@ -16,8 +16,7 @@ rules:
   - list
 - apiGroups:
   - data.fluid.io
-  resources:
-  - datasets
+  resources: ["*"]
   verbs:
   - get
   - watch

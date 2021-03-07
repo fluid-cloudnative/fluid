@@ -7,3 +7,7 @@ rules:
   - custom.metrics.k8s.io
   resources: ["*"]
   verbs: ["*"]
+- apiGroups:
+  - data.fluid.io
+  resources: ["*"]
+  verbs: ["*"]
