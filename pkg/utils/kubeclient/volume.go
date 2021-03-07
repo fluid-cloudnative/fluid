@@ -198,6 +198,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, erro
 
 // GetPvcMountNodes get nodes which have pods mounted the specific pvc for a given namespace
 // it will only return a map of nodeName and amount of PvcMountPods on it
+// if the Pvc mount Pod has completed, it will be ignored
 // if fail to get pvc mount Nodes, treat every nodes as with no PVC mount Pods
 func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]int64, error) {
 	pvcMountNodes := map[string]int64{}
@@ -208,6 +209,9 @@ func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]in
 	}
 
 	for _, pod := range pvcMountPods {
+		if IsCompletePod(&pod) {
+			continue
+		}
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {
 			continue
