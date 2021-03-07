@@ -68,7 +68,7 @@ install_fluid()
 {
     echo "create namespace..."
     local namespace=$(kubectl get namespace | awk '{print $1}' | grep ^fluid-system$)
-    if [[ namespace == "" ]]
+    if [[ $namespace == "" ]]
     then
         kubectl create namespace fluid-system
     else
@@ -89,7 +89,7 @@ install_fluid()
             local node_num=$(expr $(kubectl get nodes | wc -l) - 1)
             local csi_nodeplugin_num=$(kubectl get pod -n fluid-system | grep csi-nodeplugin | awk '$3=="Running"' | wc -l)
 
-            if [[ $alluxioruntime_controller_status == "Running" && $dataset_controller_status == "Running" && $csi_nodeplugin_num -eq node_num ]]
+            if [[ $alluxioruntime_controller_status == "Running" && $dataset_controller_status == "Running" && $csi_nodeplugin_num -eq $node_num ]]
             then
                 echo "fluid runs successfully."
                 break
