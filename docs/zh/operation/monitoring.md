@@ -44,6 +44,10 @@ scrape_configs:
       target_label: fluid_runtime
       replacement: $1
       action: replace
+    - source_labels: [__meta_kubernetes_endpoint_address_target_name]
+      target_label: pod
+      replacement: $1
+      action: replace
 ```
 
 #### 2. 部署 grafana
