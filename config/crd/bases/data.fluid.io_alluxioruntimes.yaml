@@ -101,6 +101,10 @@ spec:
                   format: int32
                   type: integer
               type: object
+            disablePrometheus:
+              description: Disable monitoring for Alluxio Runtime Promethous is enabled
+                by default
+              type: boolean
             fuse:
               description: Desired state for Alluxio Fuse
               properties:
@@ -430,9 +434,6 @@ spec:
                       type: object
                   type: object
               type: object
-            monitoring:
-              description: Manage monitoring for Alluxio Runtime
-              type: boolean
             properties:
               additionalProperties:
                 type: string
