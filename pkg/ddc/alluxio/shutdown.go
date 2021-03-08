@@ -162,7 +162,7 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 // This func returns currentWorkers representing how many workers are left after this process.
 func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
 	var (
-		nodeList *corev1.NodeList = &corev1.NodeList{}
+		nodeList = &corev1.NodeList{}
 
 		labelName          = e.getRuntimeLabelname()
 		labelCommonName    = e.getCommonLabelname()
@@ -175,7 +175,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
-		return
+		return currentWorkers, err
 	}
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{
@@ -183,7 +183,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 	})
 
 	if err != nil {
-		return
+		return currentWorkers, err
 	}
 
 	currentWorkers = int32(len(nodeList.Items))
@@ -199,45 +199,15 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {
 			e.Log.Error(err, "getRuntimeInfo when scaling in")
-			return expectedWorkers, err
+			return currentWorkers, err
 		}
 
-		if isGlobal, _ := runtimeInfo.GetFuseDeployMode(); !isGlobal {
-			// If fuses are deployed in non-global mode, workers and fuses will be scaled in together.
-			// It can be dangerous if we scale in nodes where there are pods using the related pvc.
-			// So firstly we filter out such nodes
-			pvcMountNodes, err := kubeclient.GetPvcMountNodes(e.Client, e.name, e.namespace)
-			if err != nil {
-				e.Log.Error(err, "GetPvcMountNodes when scaling in")
-				return expectedWorkers, err
-			}
-
-			for _, node := range nodeList.Items {
-				if _, found := pvcMountNodes[node.Name]; !found {
-					nodes = append(nodes, node)
-				}
-			}
-		} else {
-			// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
-			// All nodes with related label can be candidate nodes.
-			nodes = nodeList.Items
-		}
-
-		// Prefer to choose nodes with less data cache.
-		// Since this is just a preference, anything unexpected will be ignored.
-		worker2UsedCapacityMap, err := e.getWorkerUsedCapacity()
+		fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
+		nodes, err = e.sortNodesToShutdown(nodeList.Items, fuseGlobal)
 		if err != nil {
-			e.Log.Info("getWorkerUsedCapacity when scaling in. Got err: %v. Ignore it", err)
+			return currentWorkers, err
 		}
 
-		if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
-			// Sort candidate nodes by used capacity in ascending order
-			sort.Slice(nodes, func(i, j int) bool {
-				usageNodeA := getUsedCapacity(nodes[i], worker2UsedCapacityMap)
-				usageNodeB := getUsedCapacity(nodes[j], worker2UsedCapacityMap)
-				return usageNodeA < usageNodeB
-			})
-		}
 	} else {
 		// Destroy all workers. This is a subprocess during deletion of AlluxioRuntime
 		nodes = nodeList.Items
@@ -269,7 +239,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 			if err != nil {
 				return expectedWorkers, err
 			}
-			e.Log.Info("Destory worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
+			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
 		}
 
 		currentWorkers--
@@ -278,81 +248,43 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 	return currentWorkers, nil
 }
 
-// getWorkerUsedCapacity gets cache capacity usage for each worker as a map.
-// It parses result from stdout when executing `alluxio fsadmin report capacity` command
-// and extracts worker name(IP or hostname) along with used capacity for that worker
-func (e *AlluxioEngine) getWorkerUsedCapacity() (map[string]int64, error) {
-	// 2. run clean action
-	capacityReport, err := e.reportCapacity()
+func (e *AlluxioEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGlobal bool) (nodes []corev1.Node, err error) {
+	if !fuseGlobal {
+		// If fuses are deployed in non-global mode, workers and fuses will be scaled in together.
+		// It can be dangerous if we scale in nodes where there are pods using the related pvc.
+		// So firstly we filter out such nodes
+		pvcMountNodes, err := kubeclient.GetPvcMountNodes(e.Client, e.name, e.namespace)
+		if err != nil {
+			e.Log.Error(err, "GetPvcMountNodes when scaling in")
+			return nil, err
+		}
+
+		for _, node := range candidateNodes {
+			if _, found := pvcMountNodes[node.Name]; !found {
+				nodes = append(nodes, node)
+			}
+		}
+	} else {
+		// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
+		// All nodes with related label can be candidate nodes.
+		nodes = candidateNodes
+	}
+
+	// Prefer to choose nodes with less data cache.
+	// Since this is just a preference, anything unexpected will be ignored.
+	worker2UsedCapacityMap, err := e.GetWorkerUsedCapacity()
 	if err != nil {
-		return nil, err
+		e.Log.Info("GetWorkerUsedCapacity when sorting nodes to be shutdowned. Got err: %v. Ignore it", err)
 	}
 
-	// An Example of capacityReport:
-	/////////////////////////////////////////////////////////////////
-	// Capacity information for all workers:
-	//    Total Capacity: 4096.00MB
-	//        Tier: MEM  Size: 4096.00MB
-	//    Used Capacity: 443.89MB
-	//        Tier: MEM  Size: 443.89MB
-	//    Used Percentage: 10%
-	//    Free Percentage: 90%
-	//
-	// Worker Name      Last Heartbeat   Storage       MEM
-	// 192.168.1.147    0                capacity      2048.00MB
-	//                                   used          443.89MB (21%)
-	// 192.168.1.146    0                capacity      2048.00MB
-	//                                   used          0B (0%)
-	/////////////////////////////////////////////////////////////////
-	lines := strings.Split(capacityReport, "\n")
-	startIdx := -1
-	for i, line := range lines {
-		if strings.HasPrefix(line, "Worker Name") {
-			startIdx = i + 1
-			break
-		}
+	if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
+		// Sort candidate nodes by used capacity in ascending order
+		sort.Slice(nodes, func(i, j int) bool {
+			usageNodeA := lookUpUsedCapacity(nodes[i], worker2UsedCapacityMap)
+			usageNodeB := lookUpUsedCapacity(nodes[j], worker2UsedCapacityMap)
+			return usageNodeA < usageNodeB
+		})
 	}
 
-	if startIdx == -1 {
-		return nil, fmt.Errorf("can't parse result form alluxio fsadmin report capacity")
-	}
-
-	worker2UsedCapacityMap := make(map[string]int64)
-	lenLines := len(lines)
-	for lineIdx := startIdx; lineIdx < lenLines; lineIdx += 2 {
-		// e.g. ["192.168.1.147", "0", "capacity", "2048.00MB", "used", "443.89MB", "(21%)"]
-		workerInfoFields := append(strings.Fields(lines[lineIdx]), strings.Fields(lines[lineIdx+1])...)
-		workerName := workerInfoFields[0]
-		usedCapacity, _ := utils.FromHumanSize(workerInfoFields[5])
-		worker2UsedCapacityMap[workerName] = usedCapacity
-	}
-
-	return worker2UsedCapacityMap, nil
-}
-
-// getUsedCapacity looks up used capacity for a given node in a map.
-func getUsedCapacity(node corev1.Node, usedCapacityMap map[string]int64) int64 {
-	var ip, hostname string
-	for _, addr := range node.Status.Addresses {
-		if addr.Type == corev1.NodeInternalIP {
-			ip = addr.Address
-		}
-		if addr.Type == corev1.NodeInternalDNS {
-			hostname = addr.Address
-		}
-	}
-
-	if len(ip) != 0 {
-		if usedCapacity, found := usedCapacityMap[ip]; found {
-			return usedCapacity
-		}
-	}
-
-	if len(hostname) != 0 {
-		if usedCapacity, found := usedCapacityMap[hostname]; found {
-			return usedCapacity
-		}
-	}
-	// no info stored in Alluxio master. Scale in such node first.
-	return 0
+	return nodes, nil
 }
