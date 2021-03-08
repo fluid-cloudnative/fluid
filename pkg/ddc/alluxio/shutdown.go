@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -47,7 +48,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		close(e.MetadataSyncDoneCh)
 	}
 
-	err = e.destroyWorkers(-1)
+	_, err = e.destroyWorkers(-1)
 	if err != nil {
 		return
 	}
@@ -157,10 +158,11 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 	return nil
 }
 
-// destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
-func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
+// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
+// This func returns currentWorkers representing how many workers are left after this process.
+func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
 	var (
-		nodeList *corev1.NodeList = &corev1.NodeList{}
+		nodeList = &corev1.NodeList{}
 
 		labelName          = e.getRuntimeLabelname()
 		labelCommonName    = e.getCommonLabelname()
@@ -173,18 +175,49 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
-		return
+		return currentWorkers, err
 	}
 
 	err = e.List(context.TODO(), nodeList, &client.ListOptions{
 		LabelSelector: datasetLabels,
 	})
+
 	if err != nil {
-		return
+		return currentWorkers, err
+	}
+
+	currentWorkers = int32(len(nodeList.Items))
+	if expectedWorkers >= currentWorkers {
+		e.Log.Info("No need to scale in. Skip.")
+		return currentWorkers, nil
+	}
+
+	var nodes []corev1.Node
+	if expectedWorkers >= 0 {
+		e.Log.V(1).Info("Scale in Alluxio workers", "expectedWorkers", expectedWorkers)
+		// This is a scale in operation
+		runtimeInfo, err := e.getRuntimeInfo()
+		if err != nil {
+			e.Log.Error(err, "getRuntimeInfo when scaling in")
+			return currentWorkers, err
+		}
+
+		fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
+		nodes, err = e.sortNodesToShutdown(nodeList.Items, fuseGlobal)
+		if err != nil {
+			return currentWorkers, err
+		}
+
+	} else {
+		// Destroy all workers. This is a subprocess during deletion of AlluxioRuntime
+		nodes = nodeList.Items
 	}
 
 	// 1.select the nodes
-	for _, node := range nodeList.Items {
+	for _, node := range nodes {
+		if expectedWorkers == currentWorkers {
+			break
+		}
 		// nodes = append(nodes, &node)
 		toUpdate := node.DeepCopy()
 		if len(toUpdate.Labels) == 0 {
@@ -204,11 +237,54 @@ func (e *AlluxioEngine) destroyWorkers(workers int32) (err error) {
 		if len(toUpdate.Labels) < len(node.Labels) {
 			err := e.Client.Update(context.TODO(), toUpdate)
 			if err != nil {
-				return err
+				return expectedWorkers, err
 			}
-			e.Log.Info("Destory worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
+			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
 		}
+
+		currentWorkers--
 	}
 
-	return
+	return currentWorkers, nil
+}
+
+func (e *AlluxioEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGlobal bool) (nodes []corev1.Node, err error) {
+	if !fuseGlobal {
+		// If fuses are deployed in non-global mode, workers and fuses will be scaled in together.
+		// It can be dangerous if we scale in nodes where there are pods using the related pvc.
+		// So firstly we filter out such nodes
+		pvcMountNodes, err := kubeclient.GetPvcMountNodes(e.Client, e.name, e.namespace)
+		if err != nil {
+			e.Log.Error(err, "GetPvcMountNodes when scaling in")
+			return nil, err
+		}
+
+		for _, node := range candidateNodes {
+			if _, found := pvcMountNodes[node.Name]; !found {
+				nodes = append(nodes, node)
+			}
+		}
+	} else {
+		// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
+		// All nodes with related label can be candidate nodes.
+		nodes = candidateNodes
+	}
+
+	// Prefer to choose nodes with less data cache.
+	// Since this is just a preference, anything unexpected will be ignored.
+	worker2UsedCapacityMap, err := e.GetWorkerUsedCapacity()
+	if err != nil {
+		e.Log.Info("GetWorkerUsedCapacity when sorting nodes to be shutdowned. Got err: %v. Ignore it", err)
+	}
+
+	if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
+		// Sort candidate nodes by used capacity in ascending order
+		sort.Slice(nodes, func(i, j int) bool {
+			usageNodeA := lookUpUsedCapacity(nodes[i], worker2UsedCapacityMap)
+			usageNodeB := lookUpUsedCapacity(nodes[j], worker2UsedCapacityMap)
+			return usageNodeA < usageNodeB
+		})
+	}
+
+	return nodes, nil
 }

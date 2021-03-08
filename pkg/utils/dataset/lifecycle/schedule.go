@@ -164,9 +164,9 @@ func sortNodesToBeScheduled(nodes []corev1.Node, pvcMountNodesMap map[string]int
 	var (
 		// There are three slices which have different priorities
 		// 1. nodes which have PVC mount Pods on it now
-		pvcMountNodes    []corev1.Node
+		pvcMountNodes []corev1.Node
 		// 2. nodes without PVC mount Pods on it but are selected by fuse, perhaps will have them in future
-		selectedNodes    []corev1.Node
+		selectedNodes []corev1.Node
 		// 3. nodes not selected by fuse, will never have PVC mount Pods
 		notSelectedNodes []corev1.Node
 	)

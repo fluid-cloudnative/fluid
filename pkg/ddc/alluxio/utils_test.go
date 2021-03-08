@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	"testing"
 
@@ -209,6 +210,71 @@ func Test_isPortInUsed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isPortInUsed(tt.args.port, tt.args.usedPorts); got != tt.want {
 				t.Errorf("isPortInUsed() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_lookUpUsedCapacity(t *testing.T) {
+	type args struct {
+		node            corev1.Node
+		usedCapacityMap map[string]int64
+	}
+
+	internalIP := "192.168.1.147"
+	var usageForInternalIP int64 = 1024
+
+	internalHost := "slave001"
+	var usageForInternalHost int64 = 4096
+
+	usedCapacityMap := map[string]int64{}
+	usedCapacityMap[internalIP] = usageForInternalIP
+	usedCapacityMap[internalHost] = usageForInternalHost
+
+	tests := []struct {
+		name string
+		args args
+		want int64
+	}{
+		{
+			name: "test_lookUpUsedCapacity_ip",
+			args: args{
+				node: corev1.Node{
+					Status: corev1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: internalIP,
+							},
+						},
+					},
+				},
+				usedCapacityMap: usedCapacityMap,
+			},
+			want: usageForInternalIP,
+		},
+		{
+			name: "test_lookUpUsedCapacity_hostname",
+			args: args{
+				node: corev1.Node{
+					Status: corev1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalDNS,
+								Address: internalHost,
+							},
+						},
+					},
+				},
+				usedCapacityMap: usedCapacityMap,
+			},
+			want: usageForInternalHost,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := lookUpUsedCapacity(tt.args.node, tt.args.usedCapacityMap); got != tt.want {
+				t.Errorf("lookUpUsedCapacity() = %v, want %v", got, tt.want)
 			}
 		})
 	}
