@@ -215,7 +215,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		Enable:     true,
 	}
 
-	if runtime.Spec.Monitoring {
+	if !runtime.Spec.DisablePrometheus {
 		value.Monitoring = ALLUXIO_RUNTIME_METRICS_LABEL
 	}
 
