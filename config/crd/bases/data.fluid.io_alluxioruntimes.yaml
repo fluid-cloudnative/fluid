@@ -53,6 +53,9 @@ spec:
     singular: alluxioruntime
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.currentWorkerNumberScheduled
     status: {}
   validation:
     openAPIV3Schema:

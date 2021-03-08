@@ -127,32 +127,41 @@ type RuntimeConditionType string
 
 // These are valid conditions of a runtime.
 const (
-	// MasterInitialized means the master of runtime is initialized
+	// RuntimeMasterInitialized means the master of runtime is initialized
 	RuntimeMasterInitialized RuntimeConditionType = "MasterInitialized"
-	// MasterReady means the master of runtime is ready
+	// RuntimeMasterReady means the master of runtime is ready
 	RuntimeMasterReady RuntimeConditionType = "MasterReady"
-	// WorkersInitialized means the Workers of runtime is initialized
+	// RuntimeWorkersInitialized means the workers of runtime are initialized
 	RuntimeWorkersInitialized RuntimeConditionType = "WorkersInitialized"
-	// WorkersReady means the Workers of runtime is ready
+	// RuntimeWorkersReady means the workers of runtime are ready
 	RuntimeWorkersReady RuntimeConditionType = "WorkersReady"
-	// FusesInitialized means the fuses of runtime is initialized
+	// RuntimeWorkerScaledIn means the workers of runtime just scaled in
+	RuntimeWorkerScaledIn RuntimeConditionType = "WorkersScaledIn"
+	// RuntimeFusesInitialized means the fuses of runtime are initialized
 	RuntimeFusesInitialized RuntimeConditionType = "FusesInitialized"
-	// FusesReady means the fuses of runtime is ready
+	// RuntimeFusesReady means the fuses of runtime are ready
 	RuntimeFusesReady RuntimeConditionType = "FusesReady"
+	// RuntimeFusesScaledIn means the fuses of runtime just scaled in
+	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
 )
 
 const (
+	// RuntimeMasterInitializedReason means the master of runtime is initialized
 	RuntimeMasterInitializedReason = "Master is initialized"
-	// MasterReady means the master of runtime is ready
+	// RuntimeMasterReadyReason means the master of runtime is ready
 	RuntimeMasterReadyReason = "Master is ready"
-	// WorkersInitialized means the Workers of runtime is initialized
+	// RuntimeWorkersInitializedReason means the workers of runtime are initialized
 	RuntimeWorkersInitializedReason = "Workers are initialized"
-	// WorkersReady means the Workers of runtime is ready
+	// RuntimeWorkersReadyReason means the workers of runtime are ready
 	RuntimeWorkersReadyReason = "Workers are ready"
-	// WorkersInitialized means the Workers of runtime is initialized
+	// RuntimeWorkersScaledInReason means the workers of runtime just scaled in
+	RuntimeWorkersScaledInReason = "Workers scaled in"
+	// RuntimeFusesInitializedReason means the fuses of runtime are initialized
 	RuntimeFusesInitializedReason = "Fuses are initialized"
-	// WorkersReady means the Workers of runtime is ready
+	// RuntimeFusesReadyReason means the fuses of runtime are ready
 	RuntimeFusesReadyReason = "Fuses are ready"
+	// RuntimeFusesScaledInReason means the fuses of runtime just scaled in
+	RuntimeFusesScaledInReason = "Fuses scaled in"
 )
 
 // Condition describes the state of the cache at a certain point.

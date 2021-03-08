@@ -91,6 +91,13 @@ func (e *AlluxioEngine) reportMetrics() (summary string, err error) {
 	return fileUtils.ReportMetrics()
 }
 
+// reportCapacity reports alluxio capacity
+func (e *AlluxioEngine) reportCapacity() (summary string, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	return fileUtils.ReportCapacity()
+}
+
 ////du the ufs
 //func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
 //	podName, containerName := e.getMasterPodInfo()
