@@ -238,14 +238,15 @@ User
 </tr>
 <tr>
 <td>
-<code>monitoring</code></br>
+<code>disablePrometheus</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Manage monitoring for Alluxio Runtime</p>
+<p>Disable monitoring for Alluxio Runtime
+Promethous is enabled by default</p>
 </td>
 </tr>
 <tr>
@@ -1271,14 +1272,15 @@ User
 </tr>
 <tr>
 <td>
-<code>monitoring</code></br>
+<code>disablePrometheus</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Manage monitoring for Alluxio Runtime</p>
+<p>Disable monitoring for Alluxio Runtime
+Promethous is enabled by default</p>
 </td>
 </tr>
 <tr>
@@ -1585,6 +1587,17 @@ BackupLocation
 </td>
 <td>
 <p>BackupLocation tell user the location to save data of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>durationTime</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>DurationTime tell user how much time was spent to backup</p>
 </td>
 </tr>
 <tr>
@@ -3637,5 +3650,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>e7cd263</code>.
+on git commit <code>4955841</code>.
 </em></p>

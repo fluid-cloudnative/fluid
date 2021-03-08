@@ -146,10 +146,12 @@ spec:
     args:
     - fuse
     - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
-  # 指定该 runtime 需要监控, 默认为 false
-  monitoring: true  
+  # 默认在v0.5.0版本之后，alluxio runtime已经开启了Prometheous数据，如果需要关闭可以主动设置disablePrometheus: true
+  # disablePrometheus: false  
 EOF
 ```
+
+> 注意：默认Prometheous是开启的。如果需要关闭Prometheous，可以设置 disablePrometheus: true, 默认为 false
 
 6. 查看监控
 在 grafana HOME 中知道名为Fluid-Prometheus-Grafana-Monitor视图即可，如下所示:

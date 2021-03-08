@@ -237,9 +237,10 @@ type AlluxioRuntimeSpec struct {
 	// Manage the user to run Alluxio Runtime
 	RunAs *User `json:"runAs,omitempty"`
 
-	// Manage monitoring for Alluxio Runtime
+	// Disable monitoring for Alluxio Runtime
+	// Promethous is enabled by default
 	// +optional
-	Monitoring bool `json:"monitoring,omitempty"`
+	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
 
 	// Name of the configMap used to support HDFS configurations when using HDFS as Alluxio's UFS. The configMap
 	// must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
