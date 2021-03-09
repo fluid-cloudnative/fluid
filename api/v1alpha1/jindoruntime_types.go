@@ -76,6 +76,16 @@ type JindoFuseSpec struct {
 
 	// Arguments that will be passed to Jindo Fuse
 	Args []string `json:"args,omitempty"`
+
+	// If the fuse client should be deployed in global mode,
+	// otherwise the affinity should be considered
+	// +optional
+	Global bool `json:"global,omitempty"`
+
+	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
+	// this option only effect when global is enabled
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
@@ -107,6 +117,7 @@ type JindoRuntimeSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.currentWorkerNumberScheduled
 // +kubebuilder:printcolumn:name="Ready Masters",type="integer",JSONPath=`.status.masterNumberReady`,priority=10
 // +kubebuilder:printcolumn:name="Desired Masters",type="integer",JSONPath=`.status.desiredMasterNumberScheduled`,priority=10
 // +kubebuilder:printcolumn:name="Master Phase",type="string",JSONPath=`.status.masterPhase`,priority=0
