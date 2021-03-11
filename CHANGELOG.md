@@ -45,3 +45,19 @@
 
 - [MountVolume.SetUp failed in GKE](https://github.com/fluid-cloudnative/fluid/issues/222)
 - [fuse.csi.fluid.io not found in the list registered CSI drivers when node restart in k8s 1.15.1](https://github.com/fluid-cloudnative/fluid/issues/220)
+
+
+## v0.5.0
+
+### Features
+
+- Add Scale out/in support
+- Add Metadata Backup and Restore
+- Support Fuse global mode, and toleration
+- Enhance Prometheous support to Alluxio Runtime
+- Support New Runtime： Jindo
+- Support HDFS configuration
+
+### Bugs
+
+- [Fix compatibality issue of K8s 1.19+](https://github.com/fluid-cloudnative/fluid/issues/603)
