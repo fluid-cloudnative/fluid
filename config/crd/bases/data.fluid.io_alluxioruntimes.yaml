@@ -54,6 +54,7 @@ spec:
   scope: Namespaced
   subresources:
     scale:
+      labelSelectorPath: .status.selector
       specReplicasPath: .spec.replicas
       statusReplicasPath: .status.currentWorkerNumberScheduled
     status: {}
@@ -699,6 +700,9 @@ spec:
               type: string
             masterReason:
               description: Reason for Master's condition transition
+              type: string
+            selector:
+              description: Selector is used for auto-scaling
               type: string
             valueFile:
               description: config map used to set configurations
