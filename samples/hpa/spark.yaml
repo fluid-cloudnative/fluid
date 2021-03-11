@@ -1,23 +1,19 @@
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: spark
+  name: alluxio-custom-hpa
 spec:
   scaleTargetRef:
     apiVersion: data.fluid.io/v1alpha1
     kind: AlluxioRuntime
-    name: spark
-  minReplicas: 2
-  maxReplicas: 4
+    name: hbase
+  minReplicas: 1
+  maxReplicas: 3
   metrics:
-  - type: Object
-    object:
+  - type: Pods
+    pods:
       metric:
         name: capacity_used_rate
-      describedObject:
-        apiVersion: data.fluid.io/v1alpha1
-        kind: Dataset
-        name: spark
       target:
-        type: Value
-        averageValue: "60"
+       type: Value
+       averageValue: "30"
