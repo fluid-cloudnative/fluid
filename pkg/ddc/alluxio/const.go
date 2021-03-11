@@ -54,4 +54,8 @@ const (
 	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
 
 	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
+
+	POD_ROLE_TYPE = "role"
+
+	WOKRER_POD_ROLE = "alluxio-worker"
 )
