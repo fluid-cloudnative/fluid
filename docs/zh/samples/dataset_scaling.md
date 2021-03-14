@@ -81,8 +81,7 @@ AlluxioRuntime状态：
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1
-         Ready        4m55s
+hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        4m55s
 ```
 
 **Dataset扩容**
