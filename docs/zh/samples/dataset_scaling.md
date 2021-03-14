@@ -1,8 +1,10 @@
-# 示例-Dataset手动扩缩容
+# 示例 - Dataset手动扩缩容
 
 ## 前提条件
 
-Fluid v0.5: 请参考[安装文档](../userguide/install.md)完成安装
+- [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.5.0)
+
+请参考[Fluid安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md)完成安
 
 ## 新建工作环境
 ```shell
@@ -126,7 +128,7 @@ alluxioruntime.data.fluid.io/hbase scaled
 
 成功执行上述命令后，**如果目前环境中没有应用正在尝试访问该数据集**，那么就会触发Runtime的缩容。
 
-超出预期`replicas`数量的Runtime Worker将会被停止：
+超出指定`replicas`数量的Runtime Worker将会被停止：
 ```
 NAME                 READY   STATUS        RESTARTS   AGE
 hbase-fuse-8qgww     1/1     Running       0          21m
