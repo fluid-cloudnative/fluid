@@ -23,6 +23,7 @@
   - [以non-root用户身份使用Fluid](samples/nonroot_access.md)
   - [数据预加载](samples/data_warmup.md)
   - [Alluxio分层存储配置](samples/tieredstore_config.md)
+  - [Dataset手动扩缩容](samples/dataset_scaling.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
 + 开发者指南
