@@ -99,8 +99,7 @@ $ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r
 $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 ```
 
-> The dataset created in an older version, after the upgrading，will miss some new fields added newly, such as FileNum.
-> We have only tried to update from v0.3 and v0.4. If you upgrade directly from an older version, unknown types of errors may occur.
+> We recommend you to update from v0.3 and v0.4. If you have an older version, you'd better to reinstall it.
 
 ### Check Status of Component
 

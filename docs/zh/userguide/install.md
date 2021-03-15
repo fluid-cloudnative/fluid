@@ -92,8 +92,7 @@ $ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r
 $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 ```
 
-> 在旧版本创建的dataset，Fluid升级到新版本后，可能会缺失一些新增的字段（如FileNum）
-> 我们目前只尝试过从v0.3和v0.4升级到最新版，如果您从更旧的版本直接升级，可能会出现未知类型的错误。
+> 建议您从v0.3和v0.4升级。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
 ### 检查各组件状态
 
