@@ -48,7 +48,7 @@ TEST SUITE: None
 > The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
 
-### Upgrade Fluid with Helm
+### Upgrade Fluid to the latest version with Helm
 
 If you have installed an older version of Fluid before, you can use Helm to upgrade it.
 Before upgrading, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
@@ -62,23 +62,8 @@ hbase-master-0       2/2     Running   0          9h
 hbase-worker-bdbjg   2/2     Running   0          9h
 hbase-worker-rznd5   2/2     Running   0          9h
 ```
-#### Upgrade Fluid to v0.4.0
 
-```shell
-$ helm upgrade fluid fluid-0.4.0.tgz
-Release "fluid" has been upgraded. Happy Helming!
-NAME: fluid
-LAST DEPLOYED: Wed Nov  4 09:19:58 2020
-NAMESPACE: default
-STATUS: deployed
-REVISION: 2
-TEST SUITE: None
-```
-> We have only tried to update from v0.3 to v0.4. If you upgrade directly to v0.4 from an older version, unknown types of errors may occur.
-
-#### Upgrade Fluid to v0.4.0
-
-Because the command "helm upgrade" will not upgrade CRDs，we need to upgrade them manually：
+The command "helm upgrade" will not upgrade CRDs，we need to upgrade them manually：
 
 ```shell
 $ tar zxvf fluid-0.5.0.tgz ./
@@ -114,8 +99,8 @@ $ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r
 $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 ```
 
-> The dataset created in v0.4, after the upgrading，will miss some new fields added by v0.5.
-> We have only tried to update from v0.4 to v0.5. If you upgrade directly to v0.4 from an older version, unknown types of errors may occur.
+> The dataset created in an older version, after the upgrading，will miss some new fields added newly, such as FileNum.
+> We have only tried to update from v0.3 and v0.4. If you upgrade directly from an older version, unknown types of errors may occur.
 
 ### Check Status of Component
 

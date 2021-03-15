@@ -42,7 +42,7 @@ TEST SUITE: None
 
 > `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
 
-### 使用Helm更新Fluid
+### 使用Helm将Fluid更新到最新版本
 
 如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
 更新前，建议确保AlluxioRuntime资源对象中的各个组件已经顺利启动完成，也就是类似以下状态：
@@ -56,23 +56,6 @@ hbase-master-0       2/2     Running   0          9h
 hbase-worker-bdbjg   2/2     Running   0          9h
 hbase-worker-rznd5   2/2     Running   0          9h
 ```
-
-
-#### 更新到0.4.0
-
-```shell
-$ helm upgrade fluid fluid-0.4.0.tgz
-Release "fluid" has been upgraded. Happy Helming!
-NAME: fluid
-LAST DEPLOYED: Wed Nov  4 09:19:58 2020
-NAMESPACE: default
-STATUS: deployed
-REVISION: 2
-TEST SUITE: None
-```
-> 我们目前只尝试过从v0.3更新到v0.4，如果您从更旧的版本直接升级到v0.4，可能会出现未知类型的错误。
-
-#### 更新到0.5.0
 
 由于helm upgrade不会更新CRD，需要先对其手动进行更新：
 
@@ -109,8 +92,8 @@ $ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r
 $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 ```
 
-> 在v0.4版本创建的dataset，升级到v0.5后，会缺失一些v0.5新增的字段（如FileNum）
-> 我们目前只尝试过从v0.4更新到v0.5，如果您从更旧的版本直接升级到v0.5，可能会出现未知类型的错误。
+> 在旧版本创建的dataset，Fluid升级到新版本后，可能会缺失一些新增的字段（如FileNum）
+> 我们目前只尝试过从v0.3和v0.4升级到最新版，如果您从更旧的版本直接升级，可能会出现未知类型的错误。
 
 ### 检查各组件状态
 
