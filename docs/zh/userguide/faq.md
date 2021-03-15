@@ -99,3 +99,12 @@ kubectl get csidriver
 kubectl get csinode | grep <node_name>
 ```
 如果上述命令无输出，查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。因为Fluid的CSI组件通过固定地址的socket注册到kubelet，默认为`--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`。
+
+
+## 5. 为什么更新了fluid后，使用 `kubectl get` 查询更新前创建的dataset，发现相比新建的dataset缺少了某些字段？
+
+**回答**:由于我们在fluid的升级过程中可能更新了CRD，你在旧版本创建的dataset，会将CRD中新增的字段设置为空
+例如，如果你从v0.4或更早版本升级，那时候的dataset没有FileNum字段
+更新fluid后，如果你使用 `kubectl get` 命令，无法查询到该dataset的FileNum
+
+你可以重建dataset，新建的dataset会正常显示这些字段
