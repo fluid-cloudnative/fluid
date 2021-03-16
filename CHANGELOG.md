@@ -7,7 +7,7 @@
 - Support on-the-fly dataset cache scale out/in
 - Add Metadata backup and restore operation
 - Support Fuse global mode and toleration
-- Enhance Prometheous monitoring support for AlluxioRuntime
+- Enhance Prometheus monitoring support for AlluxioRuntime
 - Support new Runtime：JindoFS
 - Support HDFS configuration
 
