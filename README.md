@@ -14,8 +14,9 @@ English | [简体中文](./README-zh_CN.md)
 
 |![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
 |------------------|
-|Nov 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it, please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Oct 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s, please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Mar. 16th, 2021. Fluid v0.5.0 is **RELEASED**! It provides various new features, such as on-the-fly dataset scale out/in, metadata backup, support Fuse global mode and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Nov. 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it. Please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Oct. 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 
 ## What is Fluid?
 
