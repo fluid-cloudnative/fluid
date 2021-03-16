@@ -53,8 +53,9 @@ public class HDFSClient {
         RemoteIterator<LocatedFileStatus> sourceFiles = fs.listFiles(source, true);
         if(sourceFiles != null) {
             while(sourceFiles.hasNext()){
-                String targetFile = targetDir + sourceFiles.next().getPath().getName();
-                fs.copyToLocalFile(sourceFiles.next().getPath(), new Path(targetFile));
+                Path nextPath = sourceFiles.next().getPath();
+                String targetFile = targetDir + nextPath.getName();
+                fs.copyToLocalFile(nextPath, new Path(targetFile));
             }
         }
     }
