@@ -201,7 +201,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: fluid-hdfs-demo
-          image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
+          image: registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.3.0
           imagePullPolicy: Always
           env:
           - name: HADOOP_PORT
