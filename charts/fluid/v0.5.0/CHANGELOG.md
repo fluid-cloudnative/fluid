@@ -28,5 +28,3 @@
 * Remove hostnetwork from the controller config
 * Add JindoRuntime
 * Avoid running in virtual kubelet node
-
-### 0.6.0
