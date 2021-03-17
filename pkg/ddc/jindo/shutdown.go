@@ -116,7 +116,8 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 
 	var nodes []corev1.Node
 	if expectedWorkers >= 0 {
-		e.Log.V(1).Info("Scale in Jindo workers", "expectedWorkers", expectedWorkers)
+		e.Log.Info("Scale in Jindo workers", "expectedWorkers", expectedWorkers)
+
 		// This is a scale in operation
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {
@@ -131,7 +132,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		}
 
 	} else {
-		// Destroy all workers. This is a subprocess during deletion of AlluxioRuntime
+		// Destroy all workers. This is a subprocess during deletion of JindoRuntime
 		nodes = nodeList.Items
 	}
 
