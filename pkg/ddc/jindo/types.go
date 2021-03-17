@@ -16,6 +16,13 @@ type Jindo struct {
 	Worker          Worker            `yaml:"worker"`
 	Fuse            Fuse              `yaml:"fuse"`
 	Mounts          Mounts            `yaml:"mounts"`
+	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
+}
+
+type HadoopConfig struct {
+	ConfigMap       string `yaml:"configMap"`
+	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
+	IncludeCoreSite bool   `yaml:"includeCoreSite"`
 }
 
 type Master struct {

@@ -59,7 +59,14 @@ spec:
           {{- range $name, $path := .Values.mounts.master }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
-            {{- end }}
+          {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+            - name: hdfs-confs
+              mountPath: /hdfs-site.xml
+              subPath: hdfs-site.xml
+          {{- end }}
+          {{- end }}
             - mountPath: /etc/localtime
               name: volume-localtime
       restartPolicy: Always
@@ -74,6 +81,13 @@ spec:
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
           {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+        {{- end }}
+        {{- end }}
         - name: bigboot-config
           configMap:
             name: {{ template "jindofs.fullname" . }}-config

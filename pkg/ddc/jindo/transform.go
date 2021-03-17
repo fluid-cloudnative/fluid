@@ -53,10 +53,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 
 	value = &Jindo{
 		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.3.5",
+		ImageTag:        "3.5.0",
 		ImagePullPolicy: "Always",
 		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.3.5",
+		FuseImageTag:    "3.5.0",
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
@@ -86,7 +86,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
 	}
-	return value, nil
+	err = e.transformHadoopConfig(runtime, value)
+	return value, err
 }
 
 func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string) map[string]string {
@@ -106,28 +107,32 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 	}
 	jfsNamespace := ""
 	for _, mount := range dataset.Spec.Mounts {
-		if !strings.HasPrefix(mount.MountPoint, "oss://") {
-			continue
-		}
+
 		jfsNamespace = jfsNamespace + mount.Name + ","
-		properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
 		}
-		// transform mountpoint for jfs uri format
-		var re = regexp.MustCompile(`(oss://(.*?))(/)`)
-		rm := re.FindStringSubmatch(mount.MountPoint)
-		if len(rm) < 2 {
-			e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+		// transform mountpoint for oss or hdfs format
+		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
+			properties["jfs.namespaces."+mount.Name+".hdfs.uri"] = mount.MountPoint
+		} else {
+			if !strings.HasPrefix(mount.MountPoint, "oss://") {
+				continue
+			}
+
+			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
+			rm := re.FindStringSubmatch(mount.MountPoint)
+			if len(rm) < 2 {
+				e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+			}
+			mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
+			properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
+			properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
+			properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
+			properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 		}
-		mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
-
-		properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
 		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
-		properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
-		properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
-
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
