@@ -96,3 +96,12 @@ If the csidriver object exists, please check if the csi registered node contains
 kubectl get csinode | grep <node_name>
 ```
 If the above command has no output, check whether the kubelet configuration of the node which the task is scheduled on is the default value `/var/lib/kubelet`. Because Fluid's CSI component is registered to kubelet through a fixed address socket, the default value is `--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`.
+
+## 5. After upgrading fluid，why does the dataset created in older version miss some fields compared to a newly created dataset, when querying them via `kubectl get` command？
+
+**Answer**: During the upgrading, we perhaps have upgraded the CRDs. The dataset created in older version，will set the new fields in the CRDs to null
+For example, if you upgrade from v0.4 or before, the dataset did not have a 'FileNum' field at that time
+After upgrading fluid, if you use the `kubectl get` command, you cannot query the FileNum of the dataset
+
+You can recreate the dataset, and the new dataset will display these fields normally
+

@@ -467,6 +467,9 @@ spec:
             masterReason:
               description: Reason for Master's condition transition
               type: string
+            selector:
+              description: Selector is used for auto-scaling
+              type: string
             valueFile:
               description: config map used to set configurations
               type: string

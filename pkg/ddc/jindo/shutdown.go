@@ -117,6 +117,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 	var nodes []corev1.Node
 	if expectedWorkers >= 0 {
 		e.Log.Info("Scale in Jindo workers", "expectedWorkers", expectedWorkers)
+
 		// This is a scale in operation
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {
