@@ -6,7 +6,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: jindoruntimes.data.fluid.io
+  name: alluxioruntimes.data.fluid.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.masterNumberReady
@@ -47,16 +47,19 @@ spec:
     type: date
   group: data.fluid.io
   names:
-    kind: JindoRuntime
-    listKind: JindoRuntimeList
-    plural: jindoruntimes
-    singular: jindoruntime
+    kind: AlluxioRuntime
+    listKind: AlluxioRuntimeList
+    plural: alluxioruntimes
+    singular: alluxioruntime
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.currentWorkerNumberScheduled
     status: {}
   validation:
     openAPIV3Schema:
-      description: JindoRuntime is the Schema for the jindoruntimes API
+      description: AlluxioRuntime is the Schema for the alluxioruntimes API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -71,38 +74,89 @@ spec:
         metadata:
           type: object
         spec:
-          description: JindoRuntimeSpec defines the desired state of JindoRuntime
+          description: AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
           properties:
-            fuse:
-              description: Desired state for Jindo Fuse
+            alluxioVersion:
+              description: The version information that instructs fluid to orchestrate
+                a particular version of Alluxio.
               properties:
-                args:
-                  description: Arguments that will be passed to Jindo Fuse
-                  items:
-                    type: string
-                  type: array
-                env:
-                  additionalProperties:
-                    type: string
-                  description: Environment variables that will be used by Jindo Fuse
-                  type: object
                 image:
-                  description: Image for Jindo Fuse(e.g. jindo/jindo-fuse)
+                  description: Image (e.g. alluxio/alluxio)
                   type: string
                 imagePullPolicy:
                   description: 'One of the three policies: `Always`, `IfNotPresent`,
                     `Never`'
                   type: string
                 imageTag:
-                  description: Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
+                  description: Image tag (e.g. 2.3.0-SNAPSHOT)
                   type: string
+              type: object
+            data:
+              description: Management strategies for the dataset to which the runtime
+                is bound
+              properties:
+                pin:
+                  description: Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio
+                    User-CLI pin</a>
+                  type: boolean
+                replicas:
+                  description: The copies of the dataset
+                  format: int32
+                  type: integer
+              type: object
+            disablePrometheus:
+              description: Disable monitoring for Alluxio Runtime Promethous is enabled
+                by default
+              type: boolean
+            fuse:
+              description: Desired state for Alluxio Fuse
+              properties:
+                args:
+                  description: Arguments that will be passed to Alluxio Fuse
+                  items:
+                    type: string
+                  type: array
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    Fuse
+                  type: object
+                global:
+                  description: If the fuse client should be deployed in global mode,
+                    otherwise the affinity should be considered
+                  type: boolean
+                image:
+                  description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
+                  type: string
+                imagePullPolicy:
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
+                  type: string
+                imageTag:
+                  description: Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)
+                  type: string
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    fuse client to fit on a node, this option only effect when global
+                    is enabled
+                  type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for Jindo System. <br>
+                  description: Configurable properties for Alluxio System. <br> Refer
+                    to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 resources:
-                  description: Resources that will be requested by Jindo Fuse. <br>
+                  description: Resources that will be requested by Alluxio Fuse. <br>
                     <br> Resources are not allowed for ephemeral containers. Ephemeral
                     containers use spare resources already allocated to the pod.
                   properties:
@@ -130,38 +184,90 @@ spec:
                       type: object
                   type: object
               type: object
-            jindoVersion:
-              description: The version information that instructs fluid to orchestrate
-                a particular version of Jindo.
+            hadoopConfig:
+              description: Name of the configMap used to support HDFS configurations
+                when using HDFS as Alluxio's UFS. The configMap must be in the same
+                namespace with the AlluxioRuntime. The configMap should contain user-specific
+                HDFS conf files in it. For now, only "hdfs-site.xml" and "core-site.xml"
+                are supported. It must take the filename of the conf file as the key
+                and content of the file as the value.
+              type: string
+            initUsers:
+              description: The spec of init users
               properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by initialize
+                    the users for runtime
+                  type: object
                 image:
-                  description: Image (e.g. alluxio/alluxio)
+                  description: Image for initialize the users for runtime(e.g. alluxio/alluxio-User
+                    init)
                   type: string
                 imagePullPolicy:
                   description: 'One of the three policies: `Always`, `IfNotPresent`,
                     `Never`'
                   type: string
                 imageTag:
-                  description: Image tag (e.g. 2.3.0-SNAPSHOT)
+                  description: Image Tag for initialize the users for runtime(e.g.
+                    2.3.0-SNAPSHOT)
                   type: string
+                resources:
+                  description: Resources that will be requested by initialize the
+                    users for runtime. <br> <br> Resources are not allowed for ephemeral
+                    containers. Ephemeral containers use spare resources already allocated
+                    to the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
               type: object
-            master:
-              description: Desired state for Jindo master
+            jobMaster:
+              description: Desired state for Alluxio job master
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Jindo component.
-                    <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Jindo component. <br>
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -171,7 +277,138 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Jindo component.
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+              type: object
+            jobWorker:
+              description: Desired state for Alluxio job Worker
+              properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
+                ports:
+                  additionalProperties:
+                    type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
+                  type: object
+                properties:
+                  additionalProperties:
+                    type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
+                  type: object
+                replicas:
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
+                  format: int32
+                  minimum: 1
+                  type: integer
+                resources:
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+              type: object
+            jvmOptions:
+              description: Options for JVM
+              items:
+                type: string
+              type: array
+            master:
+              description: Desired state for Alluxio master
+              properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
+                ports:
+                  additionalProperties:
+                    type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
+                  type: object
+                properties:
+                  additionalProperties:
+                    type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
+                  type: object
+                replicas:
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
+                  format: int32
+                  minimum: 1
+                  type: integer
+                resources:
+                  description: Resources that will be requested by the Alluxio component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -203,14 +440,16 @@ spec:
             properties:
               additionalProperties:
                 type: string
-              description: Configurable properties for Jindo system. <br>
+              description: Configurable properties for Alluxio system. <br> Refer
+                to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                Configuration Properties</a> for more info
               type: object
             replicas:
               description: The replicas of the worker, need to be specified
               format: int32
               type: integer
             runAs:
-              description: Manage the user to run Jindo Runtime
+              description: Manage the user to run Alluxio Runtime
               properties:
                 gid:
                   description: The gid to run the alluxio runtime
@@ -233,7 +472,7 @@ spec:
               - user
               type: object
             tieredstore:
-              description: Tiered storage used by Jindo
+              description: Tiered storage used by Alluxio
               properties:
                 levels:
                   description: configurations for multiple tiers
@@ -290,22 +529,30 @@ spec:
                   type: array
               type: object
             worker:
-              description: Desired state for Jindo worker
+              description: Desired state for Alluxio worker
               properties:
                 env:
                   additionalProperties:
                     type: string
-                  description: Environment variables that will be used by Jindo component.
-                    <br>
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
                   type: object
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
                 ports:
                   additionalProperties:
                     type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
                   type: object
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the Jindo component. <br>
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -315,7 +562,7 @@ spec:
                   minimum: 1
                   type: integer
                 resources:
-                  description: Resources that will be requested by the Jindo component.
+                  description: Resources that will be requested by the Alluxio component.
                     <br> <br> Resources are not allowed for ephemeral containers.
                     Ephemeral containers use spare resources already allocated to
                     the pod.
@@ -452,9 +699,6 @@ spec:
               type: string
             masterReason:
               description: Reason for Master's condition transition
-              type: string
-            selector:
-              description: Selector is used for auto-scaling
               type: string
             valueFile:
               description: config map used to set configurations
