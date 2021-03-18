@@ -19,6 +19,7 @@ import (
 	"context"
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"reflect"
 	"time"
@@ -131,9 +132,11 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		// Update the setup time of Alluxio runtime
-		if ready && runtimeToUpdate.Status.SetupPeriodSeconds == nil {
-			secs := int64(time.Since(runtime.ObjectMeta.CreationTimestamp.Local()).Seconds())
-			runtimeToUpdate.Status.SetupPeriodSeconds = &secs
+		if ready && runtimeToUpdate.Status.SetupDuration == nil {
+			//secs := time.Since(runtime.ObjectMeta.CreationTimestamp.Local())
+			setupDuration := time.Since(runtime.ObjectMeta.CreationTimestamp.Local())
+			runtimeToUpdate.Status.SetupDuration = new(metav1.Duration)
+			runtimeToUpdate.Status.SetupDuration.Duration = setupDuration
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {

@@ -105,7 +105,7 @@ type RuntimeStatus struct {
 	FuseNumberAvailable int32 `json:"fuseNumberAvailable,omitempty"`
 
 	// The setup time of runtime in seconds
-	SetupPeriodSeconds *int64 `json:"setupPeriodSeconds,omitempty"`
+	SetupDuration *metav1.Duration `json:"setupDuration,omitempty"`
 
 	// Represents the latest available observations of a ddc runtime's current state.
 	// +patchMergeKey=type
