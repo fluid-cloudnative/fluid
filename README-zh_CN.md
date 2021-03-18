@@ -93,10 +93,17 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 </pre>
 </details>
 
-<details open>
+<details>
 <summary>演示 4: 数据预热</summary>
 <pre>
 <a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/287213603893.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
+</pre>
+</details>
+
+<details open>
+<summary>演示 5: 在线不停机数据集缓存扩缩容</summary>
+<pre>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/302459823704.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000004852/O1CN013kKkea1liGNWo2DOE_!!6000000004852-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
 </pre>
 </details>
 
