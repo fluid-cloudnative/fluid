@@ -3,7 +3,9 @@ package jindo
 import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"regexp"
 	"strconv"
 	"strings"
@@ -51,21 +53,21 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
+	jindoSmartdataImage, smartdataTag := e.parseSmartDataImage()
+	jindoFuseImage, fuseTag := e.parseFuseImage()
+
 	value = &Jindo{
-		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.5.0",
+		Image:           jindoSmartdataImage,
+		ImageTag:        smartdataTag,
 		ImagePullPolicy: "Always",
-		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.5.0",
+		FuseImage:       jindoFuseImage,
+		FuseImageTag:    fuseTag,
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
 		UseHostNetwork:  true,
 		UseHostPID:      true,
-		/*Properties:map[string]string{
-			"logDir": "/mnt/disk1/bigboot/log",
-		},*/
-		Properties: e.transformPriority(metaPath),
+		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount:     1,
 			NodeSelector:     map[string]string{},
@@ -282,4 +284,28 @@ func (e *JindoEngine) transformFuseArg() []string {
 		return e.runtime.Spec.Fuse.Args
 	}
 	return []string{"-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"}
+}
+
+func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		defaultTag   = "3.5.0"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	return
+}
+
+func (e *JindoEngine) parseFuseImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
+		defaultTag   = "3.5.0"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	return
 }

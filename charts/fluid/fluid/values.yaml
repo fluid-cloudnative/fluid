@@ -29,6 +29,10 @@ runtime:
     fuse:
       image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.4.1-2-SNAPSHOT-bfff8c6
   jindo:
-    enabled: false
+    enabled: true
+    smartdata:
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.0
+    fuse:
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.0
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller:v0.5.0-ce65f9e
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindoruntime-controller:v0.5.0-hdfscache
