@@ -96,10 +96,17 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 </pre>
 </details>
 
-<details open>
+<details>
 <summary>Demo 4: Preload dataset with Fluid</summary>
 <pre>
 <a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/287213603893.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
+</pre>
+</details>
+
+<details open>
+<summary>Demo 5: On-the-fly dataset cache scaling</summary>
+<pre>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/302459823704.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
 </pre>
 </details>
 
