@@ -146,9 +146,9 @@ spec:
               type: object
             hadoopConfig:
               description: Name of the configMap used to support HDFS configurations
-                when using HDFS as Alluxio's UFS. The configMap must be in the same
-                namespace with the AlluxioRuntime. The configMap should contain user-specific
-                HDFS conf files in it. For now, only "hdfs-site.xml" and "core-site.xml"
+                when using HDFS as JindoFS's UFS. The configMap must be in the same
+                namespace with the JindoRuntime. The configMap should contain user-specific
+                HDFS conf files in it. For now, only "hdfs-site.xml"
                 are supported. It must take the filename of the conf file as the key
                 and content of the file as the value.
               type: string
