@@ -47,6 +47,10 @@ spec:
             value: {{ template "jindofs.fullname" . }}-master:8101
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
             value: {{ template "jindofs.fullname" . }}-master:8101
+          - name: STORAGE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           ports:
           - containerPort: 6101
             name: rpc
