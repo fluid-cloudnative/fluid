@@ -27,14 +27,14 @@
 ![image.png](https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/docs/docs-003.png)
 <a name="vdrsi"></a>
 ### 2.2 配置参数
-完整的配置模板如下：<br />这里举例的镜像资源是cn-shanghai区的地址，版本号为3.5.0。**请使用安装配置页面展示的默认的image地址和tag版本。**
+完整的配置模板如下：<br />这里举例的镜像资源是cn-shanghai区的地址，版本号为3.5.1。**请使用安装配置页面展示的默认的image地址和tag版本。**
 
 ```yaml
 image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata
-imageTag: "3.5.0"
+imageTag: "3.5.1"
 imagePullPolicy: Always
 fuseImage: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse
-fuseImageTag: "3.5.0"
+fuseImageTag: "3.5.1"
 user: 0
 group: 0
 fsGroup: 0
@@ -232,7 +232,7 @@ spec:
     dnsPolicy: ClusterFirstWithHostNet
     containers:
     - name: jindofs-demo-app2
-      image: "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.0"
+      image: "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.1"
       command: ["tail"]
       args: ["-f", "/dev/null"]
       env:
@@ -329,8 +329,8 @@ client.read.cache-on-read.enable=1
 <br />下载b2sdk包进行解压
 
 ```
-wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.5.0.tar.gz
-tar -zxvf b2sdk-3.5.0.tar.gz
+wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.5.1.tar.gz
+tar -zxvf b2sdk-3.5.1.tar.gz
 ```
 
 将JindoFS SDK的jar包复制到spark目录下
@@ -484,8 +484,8 @@ worker:
 本文演示用方法二制作Spark镜像。<br />首先我们下载b2sdk包进行解压
 
 ```
-wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.5.0.tar.gz
-tar -zxvf b2sdk-3.5.0.tar.gz
+wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.5.1.tar.gz
+tar -zxvf b2sdk-3.5.1.tar.gz
 ```
 
 从[spark下载页面](https://spark.apache.org/downloads.html)下载所需的spark版本，本次实验选择的saprk版本为2.4.7。运行如下命令下载spark并解压：

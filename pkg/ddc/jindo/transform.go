@@ -290,7 +290,7 @@ func (e *JindoEngine) transformFuseArg() []string {
 func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.5.0"
+		defaultTag   = "3.5.1"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
@@ -302,7 +302,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.5.0"
+		defaultTag   = "3.5.1"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
