@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -236,4 +237,25 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 	})
 
 	return
+}
+
+// getWorkerSelectors gets the selector of the worker
+func (e *AlluxioEngine) getWorkerSelectors() string {
+	labels := map[string]string{
+		"release":     e.name,
+		POD_ROLE_TYPE: WOKRER_POD_ROLE,
+		"app":         common.ALLUXIO_RUNTIME,
+	}
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: labels,
+	}
+
+	selectorValue := ""
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		e.Log.Error(err, "Failed to parse the labelSelector of the runtime", "labels", labels)
+	} else {
+		selectorValue = selector.String()
+	}
+	return selectorValue
 }
