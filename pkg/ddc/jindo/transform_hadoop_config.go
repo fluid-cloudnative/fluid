@@ -29,15 +29,12 @@ func (e *JindoEngine) transformHadoopConfig(runtime *datav1alpha1.JindoRuntime, 
 		return err
 	}
 
-	var confFiles []string
 	for k := range hadoopConfigMap.Data {
 		switch k {
 		case HADOOP_CONF_HDFS_SITE_FILENAME:
 			value.HadoopConfig.IncludeHdfsSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+HADOOP_CONF_HDFS_SITE_FILENAME)
 		case HADOOP_CONF_CORE_SITE_FILENAME:
 			value.HadoopConfig.IncludeCoreSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+HADOOP_CONF_CORE_SITE_FILENAME)
 		}
 	}
 
