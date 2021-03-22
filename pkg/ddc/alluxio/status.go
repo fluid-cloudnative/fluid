@@ -17,11 +17,11 @@ package alluxio
 
 import (
 	"context"
-	"reflect"
-
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
+	"reflect"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
@@ -128,6 +128,11 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		if masterReady && workerReady && fuseReady {
 			ready = true
+		}
+
+		// Update the setup time of Alluxio runtime
+		if ready && runtimeToUpdate.Status.SetupDuration == "" {
+			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time)
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {

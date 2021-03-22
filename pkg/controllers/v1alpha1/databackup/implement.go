@@ -242,7 +242,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
-		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
+		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time)
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
 				Type:               cdatabackup.Complete,
@@ -262,7 +262,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	} else if kubeclient.IsFailedPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
-		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
+		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time)
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
 				Type:               cdatabackup.Failed,

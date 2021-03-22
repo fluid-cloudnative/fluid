@@ -215,7 +215,7 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 		ready, err := engine.Setup(ctx)
 		if err != nil {
 			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
-			log.Error(err, "Failed to steup the ddc engine")
+			log.Error(err, "Failed to setup the ddc engine")
 			// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
 		}
 		if !ready {

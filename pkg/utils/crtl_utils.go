@@ -122,3 +122,8 @@ func RemoveString(slice []string, s string) (result []string) {
 func HasDeletionTimestamp(obj metav1.ObjectMeta) bool {
 	return !obj.GetDeletionTimestamp().IsZero()
 }
+
+// CalculateDuration generates a string of duration from creationTime and now
+func CalculateDuration(creationTime time.Time) string {
+	return time.Since(creationTime).Round(time.Second).String()
+}

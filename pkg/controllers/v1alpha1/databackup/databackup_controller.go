@@ -171,6 +171,7 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 	if len(databackupToUpdate.Status.Conditions) == 0 {
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{}
 	}
+	databackupToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "failed to update the databackup")
 		return utils.RequeueIfError(err)
