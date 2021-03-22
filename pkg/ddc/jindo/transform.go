@@ -1,4 +1,3 @@
-
 package jindo
 
 import (
@@ -81,7 +80,6 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Fuse: Fuse{
 			Args:           e.transformFuseArg(),
 			HostPath:       e.getMountPoint(),
-			NodeSelector:   e.transformNodeSelector(),
 			FuseProperties: e.transformFuse(runtime),
 		},
 		Mounts: Mounts{
@@ -90,6 +88,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		},
 	}
 	err = e.transformHadoopConfig(runtime, value)
+	err = e.transformFuseNodeSelector(runtime, value)
 	return value, err
 }
 
@@ -251,6 +250,23 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[stri
 		}
 	}
 	return properties
+}
+
+func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	value.Fuse.NodeSelector = map[string]string{}
+	if runtime.Spec.Fuse.Global {
+		value.Fuse.Global = true
+		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+		}
+		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
+		e.Log.Info("Enable Fuse's global mode")
+	} else {
+		labelName := e.getCommonLabelname()
+		value.Fuse.NodeSelector[labelName] = "true"
+		e.Log.Info("Disable Fuse's global mode")
+	}
+	return nil
 }
 
 func (e *JindoEngine) transformNodeSelector() map[string]string {

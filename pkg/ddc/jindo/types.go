@@ -43,6 +43,7 @@ type Fuse struct {
 	HostPath       string            `yaml:"hostPath"`
 	NodeSelector   map[string]string `yaml:"nodeSelector,omitempty"`
 	FuseProperties map[string]string `yaml:"properties"`
+	Global         bool              `yaml:"global,omitempty"`
 }
 
 type Mounts struct {
