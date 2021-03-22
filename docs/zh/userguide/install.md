@@ -156,6 +156,12 @@ $ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n
 
 ### 卸载Fluid
 
+为了安全的卸载fluid，在卸载前，首先需要检查fluid相关的自定义资源对象是否已被清除：
+```shell
+kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
+```
+如果确认已经删除所有资源对象，则可以安全卸载fluid：
+
 ```shell
 $ helm delete fluid
 $ kubectl delete -f fluid/crds
