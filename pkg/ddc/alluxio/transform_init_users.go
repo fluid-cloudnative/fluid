@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -24,7 +25,7 @@ import (
 // transform dataset which has ufsPaths and ufsVolumes
 func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
-	value.InitUsers = InitUsers{
+	value.InitUsers = docker.InitUsers{
 		Enabled: false,
 	}
 
@@ -34,11 +35,11 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		// value.UserInfo.PasswdPath = e.getPasswdPath()
 		// value.UserInfo.GroupPath = e.getGroupsPath()
 		// value.UserInfo.Args = e.getInitUsersArgs(runtime)
-		value.InitUsers = InitUsers{
+		value.InitUsers = docker.InitUsers{
 			Enabled: true,
 			Dir:     e.getInitUserDir(),
 			//Args:       e.getInitUsersArgs(runtime),
-			EnvUsers:       e.getInitUserEnv(runtime),
+			EnvUsers:       GetInitUserEnv(runtime.Spec.RunAs),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
 			//ImageInfo: ImageInfo{
 			//	Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
@@ -48,7 +49,7 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 		}
 
 		initImageInfo := strings.Split(e.initImage, ":")
-		value.InitUsers.ImageInfo = ImageInfo{
+		value.InitUsers.ImageInfo = docker.ImageInfo{
 			Image:           initImageInfo[0],
 			ImageTag:        initImageInfo[1],
 			ImagePullPolicy: "IfNotPresent",

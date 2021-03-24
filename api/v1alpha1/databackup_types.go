@@ -16,7 +16,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/databackup"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,10 +23,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// ConditionType is a valid value for DataBackupCondition.Type
+type ConditionType string
+
+// These are valid conditions of a DataBackup.
+const (
+	// Complete means the DataBackup has completed its execution.
+	Complete ConditionType = "Complete"
+	// Failed means the DataBackup has failed its execution.
+	Failed ConditionType = "Failed"
+)
+
 // DataBackupCondition describes conditions that explains transitions on phase
 type DataBackupCondition struct {
 	// Type of condition, either `Complete` or `Failed`
-	Type databackup.ConditionType `json:"type"`
+	Type ConditionType `json:"type"`
 	// Status of the condition, one of `True`, `False` or `Unknown`
 	Status v1.ConditionStatus `json:"status"`
 	// Reason for the condition's last transition
@@ -54,12 +64,24 @@ type DataBackupSpec struct {
 	Dataset string `json:"dataset,omitempty"`
 	// BackupPath defines the target path to save data of the DataBackup
 	BackupPath string `json:"backupPath,omitempty"`
+	// Manage the user to run Alluxio DataBackup
+	RunAs *User `json:"runAs,omitempty"`
 }
+
+type Phase string
+
+const (
+	PhaseNone      Phase = ""
+	PhasePending   Phase = "Pending"
+	PhaseBackuping Phase = "Backuping"
+	PhaseComplete  Phase = "Complete"
+	PhaseFailed    Phase = "Failed"
+)
 
 // DataBackupStatus defines the observed state of DataBackup
 type DataBackupStatus struct {
 	// Phase describes current phase of DataBackup
-	Phase databackup.Phase `json:"phase"`
+	Phase Phase `json:"phase"`
 	// BackupLocation tell user the location to save data of the DataBackup
 	BackupLocation BackupLocation `json:"backupLocation,omitempty"`
 	// DurationTime tell user how much time was spent to backup

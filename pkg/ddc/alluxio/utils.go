@@ -156,24 +156,21 @@ func (e *AlluxioEngine) getInitUserDir() string {
 	return dir
 }
 
-func (e *AlluxioEngine) getInitUsersArgs(runtime *datav1alpha1.AlluxioRuntime) []string {
-	uid := strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
-	gid := strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
-	username := runtime.Spec.RunAs.UserName
-	args := []string{uid + ":" + username + ":" + gid,
-		gid + ":" + runtime.Spec.RunAs.GroupName}
+func GetBackupUserDir(namespace string, name string) string {
+	return fmt.Sprintf("/tmp/backupuser/%s/%s", namespace, name)
+}
 
-	// groups := runtime.Spec.RunAs.Groups
-	// for _, group := range groups {
-	// 	gid = strconv.FormatInt(group.ID, 10)
-	// 	var tmp string = " " + gid + ":" + group.Name
-	// 	args = append(args, tmp)
-	// }
+func getInitUsersArgs(user *datav1alpha1.User) []string {
+	uid := strconv.FormatInt(*user.UID, 10)
+	gid := strconv.FormatInt(*user.GID, 10)
+	username := user.UserName
+	args := []string{uid + ":" + username + ":" + gid,
+		gid + ":" + user.GroupName}
 	return args
 }
 
-func (e *AlluxioEngine) getInitUserEnv(runtime *datav1alpha1.AlluxioRuntime) string {
-	return strings.Join(e.getInitUsersArgs(runtime), ",")
+func GetInitUserEnv(user *datav1alpha1.User) string {
+	return strings.Join(getInitUsersArgs(user), ",")
 }
 
 // Init tierPaths when running as a non-root user: chmod on each path

@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
@@ -104,7 +105,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               v1alpha1.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "conflictDataBackupRef",
 				Message:            "Found other Databackup that is in Backinging phase",
@@ -112,7 +113,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 				LastTransitionTime: metav1.NewTime(time.Now()),
 			},
 		}
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = v1alpha1.PhaseFailed
 
 		if err := r.Status().Update(ctx, databackupToUpdate); err != nil {
 			return utils.RequeueIfError(err)
@@ -155,7 +156,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               v1alpha1.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "PathNotSupported",
 				Message:            "Only support pvc and local path now",
@@ -163,7 +164,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 				LastTransitionTime: metav1.NewTime(time.Now()),
 			},
 		}
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = v1alpha1.PhaseFailed
 
 		if err := r.Status().Update(ctx, databackupToUpdate); err != nil {
 			return utils.RequeueIfError(err)
@@ -186,7 +187,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	// 4. update phase to Backuping
 	log.Info("Get lock on target dataset, try to update phase")
 	dataBackupToUpdate := ctx.DataBackup.DeepCopy()
-	dataBackupToUpdate.Status.Phase = cdatabackup.PhaseBackuping
+	dataBackupToUpdate.Status.Phase = v1alpha1.PhaseBackuping
 	if err := r.Client.Status().Update(context.TODO(), dataBackupToUpdate); err != nil {
 		log.Error(err, "failed to update cdatabackup's status to Backuping, will retry")
 		return utils.RequeueIfError(err)
@@ -216,7 +217,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataBackup helm chart not installed yet, will install")
-		valueFileName, err := r.generateDataBackupValueFile(ctx.DataBackup, masterPod)
+		valueFileName, err := r.generateDataBackupValueFile(ctx, masterPod)
 		if err != nil {
 			log.Error(err, "failed to generate databackup chart's value file")
 			return utils.RequeueIfError(err)
@@ -241,11 +242,11 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	}
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
+		databackupToUpdate.Status.Phase = v1alpha1.PhaseComplete
 		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
-				Type:               cdatabackup.Complete,
+				Type:               v1alpha1.Complete,
 				Status:             v1.ConditionTrue,
 				Reason:             "BackupSuccessful",
 				Message:            "Backup Pod exec successfully and finish",
@@ -261,11 +262,11 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		return utils.RequeueImmediately()
 	} else if kubeclient.IsFailedPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = v1alpha1.PhaseFailed
 		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               v1alpha1.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "BackupFailed",
 				Message:            "Backup Pod exec failed and exit",
@@ -285,7 +286,8 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 
 // generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
 // marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
-func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v1alpha1.DataBackup, masterPod *v1.Pod) (valueFileName string, err error) {
+func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcileRequestContext, masterPod *v1.Pod) (valueFileName string, err error) {
+	databackup := ctx.DataBackup
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
@@ -313,6 +315,33 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	dataBackup.Path = path
 
 	dataBackupValue := cdatabackup.DataBackupValue{DataBackup: dataBackup}
+
+	dataBackupValue.InitUsers = docker.InitUsers{
+		Enabled: false,
+	}
+	if databackup.Spec.RunAs != nil {
+		dataBackupValue.UserInfo.User = int(*databackup.Spec.RunAs.UID)
+		dataBackupValue.UserInfo.Group = int(*databackup.Spec.RunAs.GID)
+		dataBackupValue.UserInfo.FSGroup = 0
+		dataBackupValue.InitUsers = docker.InitUsers{
+			Enabled:  true,
+			EnvUsers: alluxio.GetInitUserEnv(databackup.Spec.RunAs),
+			Dir:      alluxio.GetBackupUserDir(dataBackup.Namespace, dataBackup.Name),
+		}
+	}
+
+	var runtime v1alpha1.AlluxioRuntime
+	initUsers := docker.ImageInfo{}
+	err = r.Get(ctx, ctx.NamespacedName, &runtime)
+	if err == nil {
+		initUsers = docker.ImageInfo{
+			Image:           runtime.Spec.InitUsers.Image,
+			ImageTag:        runtime.Spec.InitUsers.ImageTag,
+			ImagePullPolicy: runtime.Spec.InitUsers.ImagePullPolicy,
+		}
+	}
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.GetInitUserImage(initUsers)
+
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
 		return

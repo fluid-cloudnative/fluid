@@ -18,6 +18,7 @@ package alluxio
 import (
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"os"
 	"strings"
 
@@ -109,7 +110,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.ImagePullPolicy = runtime.Spec.AlluxioVersion.ImagePullPolicy
 	}
 
-	value.UserInfo = UserInfo{
+	value.UserInfo = docker.UserInfo{
 		User:    0,
 		FSGroup: 0,
 		Group:   0,

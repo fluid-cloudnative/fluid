@@ -1,12 +1,34 @@
 package docker
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
+
+type UserInfo struct {
+	User    int `yaml:"user"`
+	Group   int `yaml:"group"`
+	FSGroup int `yaml:"fsGroup"`
+}
+
+// The InitContainer to init the users for other Containers
+type InitUsers struct {
+	ImageInfo      `yaml:",inline"`
+	EnvUsers       string `yaml:"envUsers"`
+	Dir            string `yaml:"dir"`
+	Enabled        bool   `yaml:"enabled,omitempty"`
+	EnvTieredPaths string `yaml:"envTieredPaths"`
+}
+
+type ImageInfo struct {
+	Image           string `yaml:"image"`
+	ImageTag        string `yaml:"imageTag"`
+	ImagePullPolicy string `yaml:"imagePullPolicy"`
+}
 
 // ParseDockerImage extracts repo and tag from image. An empty string is returned if no tag is discovered.
 func ParseDockerImage(image string) (name string, tag string) {
@@ -71,6 +93,34 @@ func GetWorkerImage(client client.Client, datasetName string, runtimeType string
 	}
 	if imageTag == "" {
 		imageTag = "2.3.0-SNAPSHOT-238b7eb"
+	}
+	return
+}
+
+func GetInitUserImage(specImage ImageInfo) (Image string, ImageTag string, ImagePullPolicy string) {
+	var initImage = ""
+	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
+		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+			initImage = value
+		}
+	}
+	if len(initImage) == 0 {
+		initImage = common.DEFAULT_ALLUXIO_INIT_IMAGE
+	}
+	initImageInfo := strings.Split(initImage, ":")
+	Image = initImageInfo[0]
+	ImageTag = initImageInfo[1]
+	ImagePullPolicy = "IfNotPresent"
+	if len(specImage.Image) > 0 {
+		Image = specImage.Image
+	}
+
+	if len(specImage.ImageTag) > 0 {
+		ImageTag = specImage.ImageTag
+	}
+
+	if len(specImage.ImagePullPolicy) > 0 {
+		ImagePullPolicy = specImage.ImagePullPolicy
 	}
 	return
 }

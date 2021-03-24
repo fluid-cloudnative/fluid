@@ -132,17 +132,7 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := &AlluxioEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-			}
-			got := e.getInitUsersArgs(tt.fields.runtime)
+			got := getInitUsersArgs(tt.fields.runtime.Spec.RunAs)
 			var ne bool
 			for i, src := range got {
 				if src != tt.want[i] {

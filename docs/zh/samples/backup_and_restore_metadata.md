@@ -113,6 +113,42 @@ $ kubectl describe node cn-beijing.192.168.1.146
 ```
 获得IP地址后，就可以从主机的对应目录取走文件刚刚的两个文件
 
+### 使用non-root身份进行备份
+
+如果用户指定的数据备份目录只能以特定uid访问时，需要通过设置DataBackup的RunAs参数指定特定用户来进行备份
+
+假如每台主机的/data/subpath1/目录都属于fluid-user-1用户
+
+修改刚刚的DataBackup：
+```bash
+$ cat <<EOF > backup.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataBackup
+metadata:
+  name: hbase-backup
+spec:
+  dataset: hbase
+  backupPath: local:///data/subpath1/
+  runAs:
+    uid: 1201
+    gid: 1201
+    user: fluid-user-1
+    group: fluid-user-1
+EOF
+```
+
+等待备份完成后，前往指定的备份位置，查看刚刚备份的文件：
+
+```bash
+$ ls -al
+total 217108
+drwxr-s--- 2 fluid-user-1 fluid-user-1      4096 Mar 24 18:34 .
+drwxr-sr-x 5 root         root              4096 Mar 23 17:02 ..
+-rw-r--r-- 1 fluid-user-1 fluid-user-1        79 Mar 24 18:34 hbase-default.yaml
+-rw-r--r-- 1 fluid-user-1 fluid-user-1 222303277 Mar 24 18:28 metadata-backup-hbase-default.gz
+```
+
+这表明我们以fluid-user-1的用户身份保存了备份文件
 
 ## 恢复
 要进行恢复，需要保证Dataset的名称与原来保持一致，否则会找不到备份文件
