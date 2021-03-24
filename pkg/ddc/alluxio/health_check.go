@@ -165,7 +165,8 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 
 		runtimeToUpdate := runtime.DeepCopy()
 
-		if workers.Status.NumberUnavailable > 0 || workers.Status.NumberAvailable == 0 {
+		if workers.Status.NumberUnavailable > 0 ||
+			(workers.Status.DesiredNumberScheduled > 0 && workers.Status.NumberAvailable == 0) {
 			// if workers.Status.NumberReady != workers.Status.DesiredNumberScheduled {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
