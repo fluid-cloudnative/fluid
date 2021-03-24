@@ -254,7 +254,8 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 
 		// if fuses.Status.NumberReady != fuses.Status.DesiredNumberScheduled {
-		if fuses.Status.NumberUnavailable > 0 || fuses.Status.NumberAvailable == 0 {
+		if fuses.Status.NumberUnavailable > 0 ||
+			(fuses.Status.DesiredNumberScheduled > 0 && fuses.Status.NumberAvailable == 0) {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
