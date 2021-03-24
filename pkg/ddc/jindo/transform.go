@@ -300,13 +300,18 @@ func (e *JindoEngine) transformFuseArg() []string {
 	if len(e.runtime.Spec.Fuse.Args) > 0 {
 		return e.runtime.Spec.Fuse.Args
 	}
-	return []string{"-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"}
+	dataset, _ := utils.GetDataset(e.Client, e.name, e.namespace)
+	var baseArg = "-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"
+	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
+		baseArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name + " " + baseArg
+	}
+	return []string{baseArg}
 }
 
 func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.5.1"
+		defaultTag   = "3.5.2"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
@@ -318,7 +323,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.5.1"
+		defaultTag   = "3.5.2"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
