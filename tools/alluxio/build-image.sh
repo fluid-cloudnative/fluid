@@ -9,7 +9,7 @@ set -e -u -o pipefail
 # Following arguments are initialized with the default value.
 #alluxio_git='https://github.com/Alluxio/alluxio.git'
 alluxio_git='https://github.com/Alluxio/alluxio.git'
-branch="release-branch-2.4.1-2"
+branch="release-2.5.0-1"
 tag=""
 commit=""
 alluxio_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
