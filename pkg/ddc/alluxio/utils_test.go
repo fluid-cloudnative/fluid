@@ -101,14 +101,9 @@ func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 
 func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	type fields struct {
-		runtime                *datav1alpha1.AlluxioRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
+		runtime *datav1alpha1.AlluxioRuntime
+		Log     logr.Logger
+		Client  client.Client
 	}
 	f := func(s int64) *int64 {
 		return &s
