@@ -123,7 +123,11 @@ func HasDeletionTimestamp(obj metav1.ObjectMeta) bool {
 	return !obj.GetDeletionTimestamp().IsZero()
 }
 
-// CalculateDuration generates a string of duration from creationTime and now
-func CalculateDuration(creationTime time.Time) string {
-	return time.Since(creationTime).Round(time.Second).String()
+// CalculateDuration generates a string of duration from creationTime and finishTime
+// if finish time is zero, use current time as default
+func CalculateDuration(creationTime time.Time, finishTime time.Time) string {
+	if finishTime.IsZero() {
+		finishTime = time.Now()
+	}
+	return finishTime.Sub(creationTime).Round(time.Second).String()
 }

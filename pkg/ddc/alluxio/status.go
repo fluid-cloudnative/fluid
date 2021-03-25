@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 	"reflect"
+	"time"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
@@ -132,7 +133,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		// Update the setup time of Alluxio runtime
 		if ready && runtimeToUpdate.Status.SetupDuration == "" {
-			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time)
+			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
