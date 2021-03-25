@@ -66,7 +66,7 @@ spec:
       serviceAccountName: prometheus
       containers:
       - name: prometheus
-        image: prom/prometheus
+        image: prom/prometheus:v2.24.0
         args:
           - '--storage.tsdb.path=/prometheus'
           - '--storage.tsdb.retention=$(STORAGE_RETENTION)'
@@ -124,7 +124,7 @@ data:
     rule_files:
       - "/etc/prometheus-rules/*.rules"
     scrape_configs:
-    - job_name: 'alluxio master'
+    - job_name: 'alluxio runtime'
       metrics_path: /metrics/prometheus
       kubernetes_sd_configs:
         - role: endpoints
@@ -141,5 +141,9 @@ data:
         action: replace
       - source_labels: [__meta_kubernetes_service_label_release]
         target_label: fluid_runtime 
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_endpoint_address_target_name]
+        target_label: pod 
         replacement: $1
         action: replace

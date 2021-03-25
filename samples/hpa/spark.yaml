@@ -1,0 +1,19 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: alluxio-custom-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: data.fluid.io/v1alpha1
+    kind: AlluxioRuntime
+    name: hbase
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: capacity_used_rate
+      target:
+       type: Value
+       averageValue: "30"

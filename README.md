@@ -14,8 +14,9 @@ English | [简体中文](./README-zh_CN.md)
 
 |![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
 |------------------|
-|Nov 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it, please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Oct 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s, please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Mar. 16th, 2021. Fluid v0.5.0 is **RELEASED**! It provides various new features, such as on-the-fly dataset scale out/in, metadata backup, support Fuse global mode and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Nov. 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it. Please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Oct. 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 
 ## What is Fluid?
 
@@ -95,10 +96,17 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 </pre>
 </details>
 
-<details open>
+<details>
 <summary>Demo 4: Preload dataset with Fluid</summary>
 <pre>
 <a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/287213603893.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
+</pre>
+</details>
+
+<details open>
+<summary>Demo 5: On-the-fly dataset cache scaling</summary>
+<pre>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/302459823704.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000004852/O1CN013kKkea1liGNWo2DOE_!!6000000004852-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
 </pre>
 </details>
 

@@ -22,7 +22,8 @@ type JindoEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	//initImage              string
-	runtimeInfo base.RuntimeInfoInterface
+	runtimeInfo        base.RuntimeInfoInterface
+	MetadataSyncDoneCh chan MetadataSyncResult
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {

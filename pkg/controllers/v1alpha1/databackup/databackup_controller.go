@@ -193,6 +193,8 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 			return utils.RequeueIfError(err)
 		}
 		databackupToUpdate.Status.BackupLocation.NodeName = backupPod.Spec.NodeName
+	} else {
+		databackupToUpdate.Status.BackupLocation.NodeName = "NA"
 	}
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "the backup pod has completd, but failed to  update the databackup")

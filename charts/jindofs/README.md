@@ -27,14 +27,14 @@
 ![image.png](https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/docs/docs-003.png)
 <a name="vdrsi"></a>
 ### 2.2 配置参数
-完整的配置模板如下：<br />这里举例的镜像资源是cn-shanghai区的地址，版本号为3.3.2。**请使用安装配置页面展示的默认的image地址和tag版本。**
+完整的配置模板如下：<br />这里举例的镜像资源是cn-shanghai区的地址，版本号为3.3.5。**请使用安装配置页面展示的默认的image地址和tag版本。**
 
 ```yaml
 image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata
-imageTag: "3.3.2"
+imageTag: "3.3.5"
 imagePullPolicy: Always
 fuseImage: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse
-fuseImageTag: "3.3.2"
+fuseImageTag: "3.3.5"
 user: 0
 group: 0
 fsGroup: 0
@@ -232,7 +232,7 @@ spec:
     dnsPolicy: ClusterFirstWithHostNet
     containers:
     - name: jindofs-demo-app2
-      image: "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.3.2"
+      image: "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.3.5"
       command: ["tail"]
       args: ["-f", "/dev/null"]
       env:
@@ -329,8 +329,8 @@ client.read.cache-on-read.enable=1
 <br />下载b2sdk包进行解压
 
 ```
-wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.3.2.tar.gz
-tar -zxvf b2sdk-3.3.2.tar.gz
+wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.3.5.tar.gz
+tar -zxvf b2sdk-3.3.5.tar.gz
 ```
 
 将JindoFS SDK的jar包复制到spark目录下
@@ -484,33 +484,33 @@ worker:
 本文演示用方法二制作Spark镜像。<br />首先我们下载b2sdk包进行解压
 
 ```
-wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.3.2.tar.gz
-tar -zxvf b2sdk-3.3.2.tar.gz
+wget https://smartdata-binary.oss-cn-shanghai.aliyuncs.com/b2sdk-3.3.5.tar.gz
+tar -zxvf b2sdk-3.3.5.tar.gz
 ```
 
-从[spark下载页面](https://spark.apache.org/downloads.html)下载所需的spark版本，本次实验选择的saprk版本为2.4.6。运行如下命令下载spark并解压：
+从[spark下载页面](https://spark.apache.org/downloads.html)下载所需的spark版本，本次实验选择的saprk版本为2.4.7。运行如下命令下载spark并解压：
 
 ```
 $ cd /root
-$ wget https://mirror.bit.edu.cn/apache/spark/spark-2.4.6/spark-2.4.6-bin-hadoop2.7.tgz
-$ tar -xf spark-2.4.6-bin-hadoop2.7.tgz
-$ export SPARK_HOME=/root/spark-2.4.6-bin-hadoop2.7
+$ wget https://mirrors.bit.edu.cn/apache/spark/spark-2.4.7/spark-2.4.7-bin-hadoop2.7.tgz
+$ tar -xf spark-2.4.7-bin-hadoop2.7.tgz
+$ export SPARK_HOME=/root/spark-2.4.7-bin-hadoop2.7
 ```
 
 <br />将JindoFS SDK拷贝到Spark目录下
 
 ```
-$ cp sdk/lib/jindofs-sdk-2.*.jar spark-2.4.6-bin-hadoop2.7/jars/
+$ cp sdk/lib/jindofs-sdk-2.*.jar spark-2.4.7-bin-hadoop2.7/jars/
 ```
 
 开始构建镜像：
 
 ```
-cd ./spark-2.4.6-bin-hadoop2.7
-docker build -t spark-jindofs:2.4.6 -f kubernetes/dockerfiles/spark/Dockerfile
+cd ./spark-2.4.7-bin-hadoop2.7
+docker build -t spark-jindofs:2.4.7 -f kubernetes/dockerfiles/spark/Dockerfile
 ```
 
-请记住镜像名称“spark-jindofs:2.4.6”，在向k8s提交spark job中会用到这个信息。<br />镜像构建完成以后，对镜像的处理有两种方式：
+请记住镜像名称“spark-jindofs:2.4.7”，在向k8s提交spark job中会用到这个信息。<br />镜像构建完成以后，对镜像的处理有两种方式：
 
 - 如果有私有镜像仓库，将该镜像推送到私有镜像仓库中，同时保证k8s集群节点能够pull该镜像
 - 如果没有私有镜像仓库，那么需要使用docker save命令将该镜像导出，然后scp到k8s集群的各个节点，在每个节点上使用docker load命令将镜像导入，这样就能保证每个节点上都存在该镜像。

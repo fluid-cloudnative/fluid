@@ -62,6 +62,7 @@ func isMounted(absPath string) (bool, error) {
 			continue
 		}
 		if tokens[1] == absPath {
+			glog.Infof("found mount info %s for %s", line, absPath)
 			return true, nil
 		}
 	}

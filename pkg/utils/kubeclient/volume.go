@@ -196,6 +196,35 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, erro
 	return pods, err
 }
 
+// GetPvcMountNodes get nodes which have pods mounted the specific pvc for a given namespace
+// it will only return a map of nodeName and amount of PvcMountPods on it
+// if the Pvc mount Pod has completed, it will be ignored
+// if fail to get pvc mount Nodes, treat every nodes as with no PVC mount Pods
+func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]int64, error) {
+	pvcMountNodes := map[string]int64{}
+	pvcMountPods, err := GetPvcMountPods(e, pvcName, namespace)
+	if err != nil {
+		log.Error(err, "Failed to get PVC Mount Nodes because cannot list pods")
+		return pvcMountNodes, err
+	}
+
+	for _, pod := range pvcMountPods {
+		if IsCompletePod(&pod) {
+			continue
+		}
+		nodeName := pod.Spec.NodeName
+		if nodeName == "" {
+			continue
+		}
+		if _, found := pvcMountNodes[nodeName]; !found {
+			pvcMountNodes[nodeName] = 1
+		} else {
+			pvcMountNodes[nodeName] = pvcMountNodes[nodeName] + 1
+		}
+	}
+	return pvcMountNodes, nil
+}
+
 // RemoveProtectionFinalizer remove finalizers of PersistentVolumeClaim
 // if all owners that this PVC is mounted by are inactive (Succeed or Failed)
 func RemoveProtectionFinalizer(client client.Client, name, namespace string) (err error) {

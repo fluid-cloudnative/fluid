@@ -53,7 +53,7 @@ metadata:
   name: spark
 spec:
   mounts:
-    - mountPoint: https://mirror.bit.edu.cn/apache/spark/
+    - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
       name: spark
   nodeAffinity:
     required:

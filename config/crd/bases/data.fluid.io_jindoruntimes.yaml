@@ -53,6 +53,9 @@ spec:
     singular: jindoruntime
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.currentWorkerNumberScheduled
     status: {}
   validation:
     openAPIV3Schema:
@@ -86,6 +89,10 @@ spec:
                     type: string
                   description: Environment variables that will be used by Jindo Fuse
                   type: object
+                global:
+                  description: If the fuse client should be deployed in global mode,
+                    otherwise the affinity should be considered
+                  type: boolean
                 image:
                   description: Image for Jindo Fuse(e.g. jindo/jindo-fuse)
                   type: string
@@ -96,6 +103,13 @@ spec:
                 imageTag:
                   description: Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
                   type: string
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    fuse client to fit on a node, this option only effect when global
+                    is enabled
+                  type: object
                 properties:
                   additionalProperties:
                     type: string
@@ -452,6 +466,9 @@ spec:
               type: string
             masterReason:
               description: Reason for Master's condition transition
+              type: string
+            selector:
+              description: Selector is used for auto-scaling
               type: string
             valueFile:
               description: config map used to set configurations

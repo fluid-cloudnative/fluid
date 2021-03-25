@@ -9,8 +9,9 @@
 
 |![更新](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) 最新进展：|
 |------------------|
-|Nov 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|
-|Oct 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
+|Mar. 16th, 2021. Fluid v0.5.0 **发布**! 提供一系列新功能，包括提供数据集缓存的在线弹性扩缩容，元数据备份与恢复，Fuse全局模式部署等，详情参见 [CHANGELOG](CHANGELOG.md)。|
+|Nov. 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|
+|Oct. 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
 
 ## 什么是Fluid
 
@@ -92,10 +93,17 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 </pre>
 </details>
 
-<details open>
+<details>
 <summary>演示 4: 数据预热</summary>
 <pre>
 <a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/287213603893.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000005626/O1CN01JJ9Fb91rQktps7K3R_!!6000000005626-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
+</pre>
+</details>
+
+<details open>
+<summary>演示 5: 在线不停机数据集缓存扩缩容</summary>
+<pre>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/302459823704.mp4" rel="nofollow"><img src="https://img.alicdn.com/imgextra/i4/6000000004852/O1CN013kKkea1liGNWo2DOE_!!6000000004852-0-tbvideo.jpg" alt="" style="max-width:100%;"></a>
 </pre>
 </details>
 

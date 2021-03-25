@@ -42,9 +42,10 @@ TEST SUITE: None
 
 > `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
 
-### 使用Helm更新Fluid
+### 使用Helm将Fluid更新到最新版本
 
-更新前，建议确保AlluxioRuntime资源对象中的各个组件得以顺利启动，也就是类似以下状态：
+如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
+更新前，建议确保AlluxioRuntime资源对象中的各个组件已经顺利启动完成，也就是类似以下状态：
 
 ```shell
 $ kubectl get pod
@@ -55,19 +56,43 @@ hbase-master-0       2/2     Running   0          9h
 hbase-worker-bdbjg   2/2     Running   0          9h
 hbase-worker-rznd5   2/2     Running   0          9h
 ```
-如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
+
+由于helm upgrade不会更新CRD，需要先对其手动进行更新：
 
 ```shell
-$ helm upgrade fluid fluid-0.4.0.tgz
+$ tar zxvf fluid-0.5.0.tgz ./
+$ kubectl apply -f fluid/crds/.
+```
+
+更新：
+```shell
+$ helm upgrade fluid fluid/
 Release "fluid" has been upgraded. Happy Helming!
 NAME: fluid
-LAST DEPLOYED: Wed Nov  4 09:19:58 2020
+LAST DEPLOYED: Fri Mar 12 09:22:32 2021
 NAMESPACE: default
 STATUS: deployed
 REVISION: 2
 TEST SUITE: None
 ```
-> 我们目前只尝试过从v0.3更新到v0.4，如果您从更旧的版本直接升级到v0.4，可能会出现未知类型的错误。
+此时，旧版本的controller不会自动结束，新版本的controller会停留在Pending状态：
+```shell
+$ kubectl -n fluid-system get pods
+NAME                                         READY   STATUS    RESTARTS   AGE
+alluxioruntime-controller-56687869f6-g9l9n   0/1     Pending   0          96s
+alluxioruntime-controller-5b64fdbbb-j9h6r    1/1     Running   0          3m55s
+csi-nodeplugin-fluid-r6crn                   2/2     Running   0          94s
+csi-nodeplugin-fluid-wvhdn                   2/2     Running   0          87s
+dataset-controller-5b7848dbbb-rjkl9          1/1     Running   0          3m55s
+dataset-controller-64bf45c497-w8ncb          0/1     Pending   0          96s
+```
+手动进行删除：
+```shell
+$ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r 
+$ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
+```
+
+> 建议您从v0.3和v0.4升级。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
 ### 检查各组件状态
 
@@ -75,9 +100,12 @@ TEST SUITE: None
 
 ```shell
 $ kubectl get crd | grep data.fluid.io
-alluxiodataloads.data.fluid.io          2020-07-24T06:54:50Z
-alluxioruntimes.data.fluid.io           2020-07-24T06:54:50Z
-datasets.data.fluid.io                  2020-07-24T06:54:50Z
+alluxiodataloads.data.fluid.io          2021-03-12T00:00:47Z
+alluxioruntimes.data.fluid.io           2021-03-12T00:00:47Z
+databackups.data.fluid.io               2021-03-12T00:03:45Z
+dataloads.data.fluid.io                 2021-03-12T00:00:47Z
+datasets.data.fluid.io                  2021-03-12T00:00:47Z
+jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
 ```
 
 **查看各Pod的状态:**
@@ -128,6 +156,12 @@ $ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n
 
 ### 卸载Fluid
 
+为了安全的卸载fluid，在卸载前，首先需要检查fluid相关的自定义资源对象是否已被清除：
+```shell
+kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
+```
+如果确认已经删除所有资源对象，则可以安全卸载fluid：
+
 ```shell
 $ helm delete fluid
 $ kubectl delete -f fluid/crds
@@ -139,9 +173,9 @@ $ kubectl delete ns fluid-system
 
 ### 高级配置
 
-在一些特定的云厂商实现下， 默认mount根目录`/alluxio-mnt`是不可写的,因此需要修改目录位置
+在一些特定的云厂商实现下， 默认mount根目录`/runtime-mnt`是不可写的,因此需要修改目录位置
 
 ```
-helm install fluid --set runtime.mountRoot=/var/lib/docker/alluxio-mnt fluid
+helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
 ```
 

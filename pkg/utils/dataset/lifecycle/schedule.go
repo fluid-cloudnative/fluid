@@ -3,7 +3,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -54,8 +54,23 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
+	fuseGlobal, nodeSelector := runtimeInfo.GetFuseDeployMode()
+
+	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
+	if err != nil {
+		log.Error(err, "Failed to get PVC Mount Nodes, will treat every node as with no PVC mount Pods")
+	}
+
+	var nodes []corev1.Node
+
+	if fuseGlobal {
+		nodes = sortNodesToBeScheduled(nodeList.Items, pvcMountNodesMap, nodeSelector)
+	} else {
+		nodes = nodeList.Items
+	}
+
 	// storageMap := tieredstore.GetLevelStorageMap(runtime)
-	for _, node := range nodeList.Items {
+	for _, node := range nodes {
 
 		if int32(len(currentScheduledNodes)) == desiredNum {
 			break
@@ -142,4 +157,49 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	}
 
 	return
+}
+
+// sortNodesToBeScheduled will sort nodes to be scheduled when scale up
+func sortNodesToBeScheduled(nodes []corev1.Node, pvcMountNodesMap map[string]int64, nodeSelector map[string]string) []corev1.Node {
+	var (
+		// There are three slices which have different priorities
+		// 1. nodes which have PVC mount Pods on it now
+		pvcMountNodes []corev1.Node
+		// 2. nodes without PVC mount Pods on it but are selected by fuse, perhaps will have them in future
+		selectedNodes []corev1.Node
+		// 3. nodes not selected by fuse, will never have PVC mount Pods
+		notSelectedNodes []corev1.Node
+	)
+
+	for _, node := range nodes {
+		if num, found := pvcMountNodesMap[node.Name]; found {
+			if len(pvcMountNodes) == 0 {
+				pvcMountNodes = append(pvcMountNodes, node)
+			} else {
+				// Binary Insertion
+				low := 0
+				high := len(pvcMountNodes) - 1
+				for low <= high {
+					middle := (low + high) / 2
+					if num > pvcMountNodesMap[pvcMountNodes[middle].Name] {
+						high = middle - 1
+					} else {
+						low = middle + 1
+					}
+				}
+				k := len(pvcMountNodes) - 1
+				pvcMountNodes = append(pvcMountNodes, pvcMountNodes[k])
+				for k >= low {
+					pvcMountNodes[k+1] = pvcMountNodes[k]
+					k = k - 1
+				}
+				pvcMountNodes[low] = node
+			}
+		} else if utils.ContainsSelector(node.GetLabels(), nodeSelector) {
+			selectedNodes = append(selectedNodes, node)
+		} else {
+			notSelectedNodes = append(notSelectedNodes, node)
+		}
+	}
+	return append(append(pvcMountNodes, selectedNodes...), notSelectedNodes...)
 }

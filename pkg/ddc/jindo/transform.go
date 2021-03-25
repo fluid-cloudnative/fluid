@@ -5,6 +5,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -19,17 +20,43 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
-	dataPath := runtime.Spec.Tieredstore.Levels[0].Path
-	if strings.HasSuffix(dataPath, "/") {
-		dataPath = strings.TrimRight(dataPath, "/")
+	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
+	stroagePath := runtime.Spec.Tieredstore.Levels[0].Path
+	originPath := strings.Split(stroagePath, ",")
+	for _, value := range originPath {
+		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/bigboot")
 	}
+	metaPath := cachePaths[0]
+	dataPath := strings.Join(cachePaths, ",")
+
+	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
+	if runtime.Spec.Tieredstore.Levels[0].Quota != nil {
+		userSetQuota = append(userSetQuota, utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota))
+	}
+
+	if runtime.Spec.Tieredstore.Levels[0].QuotaList != "" {
+		quotaList := runtime.Spec.Tieredstore.Levels[0].QuotaList
+		quotas := strings.Split(quotaList, ",")
+		if len(quotas) != len(originPath) {
+			err = fmt.Errorf("the num of cache path and quota must be equal")
+			return
+		}
+		for _, value := range quotas {
+			quota := ""
+			if strings.HasSuffix(value, "Gi") {
+				quota = strings.ReplaceAll(value, "Gi", "g")
+			}
+			userSetQuota = append(userSetQuota, quota)
+		}
+	}
+	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
 	value = &Jindo{
 		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.3.2",
+		ImageTag:        "3.3.5",
 		ImagePullPolicy: "Always",
 		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.3.2",
+		FuseImageTag:    "3.3.5",
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
@@ -38,31 +65,31 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		/*Properties:map[string]string{
 			"logDir": "/mnt/disk1/bigboot/log",
 		},*/
-		Properties: e.transformPriority(dataPath),
+		Properties: e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount:     1,
 			NodeSelector:     map[string]string{},
-			MasterProperties: e.transformMaster(runtime, dataPath),
+			MasterProperties: e.transformMaster(runtime, metaPath),
 		},
 		Worker: Worker{
 			NodeSelector:     e.transformNodeSelector(),
-			WorkerProperties: e.transformWorker(runtime, dataPath),
+			WorkerProperties: e.transformWorker(runtime, metaPath, dataPath, userQuotas),
 		},
 		Fuse: Fuse{
 			Args:           e.transformFuseArg(),
 			HostPath:       e.getMountPoint(),
 			NodeSelector:   e.transformNodeSelector(),
-			FuseProperties: e.transformFuse(runtime, dataPath),
+			FuseProperties: e.transformFuse(runtime),
 		},
 		Mounts: Mounts{
-			Master:            e.transformMountPath(dataPath),
-			WorkersAndClients: e.transformMountPath(dataPath),
+			Master:            e.transformMasterMountPath(metaPath),
+			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
 	}
 	return value, nil
 }
 
-func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]string {
+func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string) map[string]string {
 	properties := map[string]string{
 		"namespace.rpc.port": "8101",
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
@@ -71,7 +98,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 		"namespace.backend.type":        "rocksdb",
 	}
 
-	properties["namespace.meta-dir"] = dataPath + "/bigboot/server"
+	properties["namespace.meta-dir"] = metaPath + "/server"
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -136,20 +163,20 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, dataPa
 	return properties
 }
 
-func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]string {
+func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string) map[string]string {
 
 	properties := map[string]string{
 		"storage.rpc.port": "6101",
 	}
 
-	properties["namespace.meta-dir"] = dataPath + "/bigboot/bignode"
+	properties["namespace.meta-dir"] = metaPath + "/bignode"
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
-		properties["storage.ram.cache.size"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
+		properties["storage.ram.cache.size"] = userQuotas
 		//properties["storage.ram.cache.size"] = "90g"
 
-		properties["storage.slicelet.buffer.size"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
+		properties["storage.slicelet.buffer.size"] = userQuotas
 		//properties["storage.slicelet.buffer.size"] = "90g"
 	}
 	// HDD and SSD
@@ -164,10 +191,10 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 	       high: "0.4"
 	       low: "0.2"
 	*/
-	properties["storage.data-dirs"] = dataPath + "/bigboot"
+	properties["storage.data-dirs"] = dataPath
 	//properties["storage.data-dirs"] = "/mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot"
 
-	properties["storage.temp-data-dirs"] = dataPath + "/bigboot/tmp"
+	properties["storage.temp-data-dirs"] = metaPath + "/tmp"
 	//properties["storage.temp-data-dirs"] = "/mnt/disk1/bigboot/tmp"
 
 	properties["storage.watermark.high.ratio"] = runtime.Spec.Tieredstore.Levels[0].High
@@ -176,7 +203,7 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 	properties["storage.watermark.low.ratio"] = runtime.Spec.Tieredstore.Levels[0].Low
 	//properties["storage.watermark.low.ratio"] = "0.2"
 
-	properties["storage.data-dirs.capacities"] = utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota)
+	properties["storage.data-dirs.capacities"] = userQuotas
 	///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
@@ -187,7 +214,7 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPa
 	return properties
 }
 
-func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, dataPath string) map[string]string {
+func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[string]string {
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
 		"client.storage.rpc.port":                   "6101",
@@ -225,15 +252,23 @@ func (e *JindoEngine) transformNodeSelector() map[string]string {
 	return properties
 }
 
-func (e *JindoEngine) transformPriority(dataPath string) map[string]string {
+func (e *JindoEngine) transformPriority(metaPath string) map[string]string {
 	properties := map[string]string{}
-	properties["logDir"] = dataPath + "/bigboot/log"
+	properties["logDir"] = metaPath + "/log"
 	return properties
 }
 
-func (e *JindoEngine) transformMountPath(dataPath string) map[string]string {
+func (e *JindoEngine) transformMasterMountPath(metaPath string) map[string]string {
 	properties := map[string]string{}
-	properties["1"] = dataPath
+	properties["1"] = metaPath
+	return properties
+}
+
+func (e *JindoEngine) transformWorkerMountPath(originPath []string) map[string]string {
+	properties := map[string]string{}
+	for index, value := range originPath {
+		properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
+	}
 	return properties
 }
 

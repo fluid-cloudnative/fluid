@@ -48,9 +48,10 @@ TEST SUITE: None
 > The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
 
-### Upgrade Fluid with Helm
+### Upgrade Fluid to the latest version with Helm
 
-Before updating, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
+If you have installed an older version of Fluid before, you can use Helm to upgrade it.
+Before upgrading, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
 
 ```shell
 $ kubectl get pod
@@ -61,19 +62,44 @@ hbase-master-0       2/2     Running   0          9h
 hbase-worker-bdbjg   2/2     Running   0          9h
 hbase-worker-rznd5   2/2     Running   0          9h
 ```
-If you have installed an older version of Fluid before, you can use Helm to update it.
+
+The command "helm upgrade" will not upgrade CRDs，we need to upgrade them manually：
 
 ```shell
-$ helm upgrade fluid fluid-0.4.0.tgz
+$ tar zxvf fluid-0.5.0.tgz ./
+$ kubectl apply -f fluid/crds/.
+```
+
+upgrade fluid：
+```shell
+$ helm upgrade fluid fluid/
 Release "fluid" has been upgraded. Happy Helming!
 NAME: fluid
-LAST DEPLOYED: Wed Nov  4 09:19:58 2020
+LAST DEPLOYED: Fri Mar 12 09:22:32 2021
 NAMESPACE: default
 STATUS: deployed
 REVISION: 2
 TEST SUITE: None
 ```
-> We have only tried to update from v0.3 to v0.4. If you upgrade directly to v0.4 from an older version, unknown types of errors may occur.
+
+The old version of controller will not terminate automatically, the new version will stay in the Pending status：
+```shell
+$ kubectl -n fluid-system get pods
+NAME                                         READY   STATUS    RESTARTS   AGE
+alluxioruntime-controller-56687869f6-g9l9n   0/1     Pending   0          96s
+alluxioruntime-controller-5b64fdbbb-j9h6r    1/1     Running   0          3m55s
+csi-nodeplugin-fluid-r6crn                   2/2     Running   0          94s
+csi-nodeplugin-fluid-wvhdn                   2/2     Running   0          87s
+dataset-controller-5b7848dbbb-rjkl9          1/1     Running   0          3m55s
+dataset-controller-64bf45c497-w8ncb          0/1     Pending   0          96s
+```
+delete them manually：
+```shell
+$ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r 
+$ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
+```
+
+> We recommend you to update from v0.3 and v0.4. If you have an older version, you'd better to reinstall it.
 
 ### Check Status of Component
 
@@ -84,6 +110,9 @@ $ kubectl get crd | grep data.fluid.io
 alluxiodataloads.data.fluid.io          2020-07-24T06:54:50Z
 alluxioruntimes.data.fluid.io           2020-07-24T06:54:50Z
 datasets.data.fluid.io                  2020-07-24T06:54:50Z
+dataloads.data.fluid.io                 2021-03-12T00:00:47Z
+datasets.data.fluid.io                  2021-03-12T00:00:47Z
+jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
 ```
 
 **Check the status of pods:**
@@ -91,9 +120,10 @@ datasets.data.fluid.io                  2020-07-24T06:54:50Z
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-controller-manager-7f99c884dd-894g9   1/1     Running   0          5m28s
-csi-nodeplugin-fluid-dm9b8            2/2     Running   0          5m28s
-csi-nodeplugin-fluid-hwtvh            2/2     Running   0          5m28s
+alluxioruntime-controller-5dfb5c7966-mkgzb   1/1     Running   0          2d1h
+csi-nodeplugin-fluid-64h69                   2/2     Running   0          2d1h
+csi-nodeplugin-fluid-tc7fx                   2/2     Running   0          2d1h
+dataset-controller-7c4bc68b96-26mcb          1/1     Running   0          2d1h
 ```
 
 If the Pod status is as shown above, then Fluid is installed on your Kubernetes cluster successfully!
@@ -132,6 +162,12 @@ For more use cases about Fluid, please refer to our demos:
 
 ### Uninstall Fluid
 
+For uninstalling fluid safely, we should check weather Custom Resource Objects about fluid have been deleted completely first:
+```shell
+kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
+```
+If you confirm that all Custom resource objects about fluid have been deleted, you can safely uninstall fluid:
+
 ```shell
 $ helm delete fluid
 $ kubectl delete -f fluid/crds
@@ -143,8 +179,8 @@ $ kubectl delete ns fluid-system
 
 ### Advanced Configuration
 
-In some cloud vendors, the default mount root directory `/alluxio-mnt` is not writable, so you have to modify the directory location
+In some cloud vendors, the default mount root directory `/runtime-mnt` is not writable, so you have to modify the directory location
 
 ```
-helm install fluid --set runtime.mountRoot=/var/lib/docker/alluxio-mnt fluid
+helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
 ```

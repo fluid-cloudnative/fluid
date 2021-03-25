@@ -86,7 +86,7 @@ func (a JindoFileUtils) GetUfsTotalSize(url string) (summary string, err error) 
 		stderr  string
 	)
 
-	stdout, stderr, err = a.exec(command, false)
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
 
 	str := strings.Fields(stdout)
 
