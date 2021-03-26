@@ -67,6 +67,11 @@ spec:
               subPath: hdfs-site.xml
           {{- end }}
           {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
             - mountPath: /etc/localtime
               name: volume-localtime
       restartPolicy: Always
@@ -87,6 +92,11 @@ spec:
           configMap:
             name: {{ .Values.hadoopConfig.configMap }}
         {{- end }}
+        {{- end }}
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
         {{- end }}
         - name: bigboot-config
           configMap:

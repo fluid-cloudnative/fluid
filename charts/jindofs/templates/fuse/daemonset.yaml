@@ -81,12 +81,22 @@ spec:
               subPath: hdfs-site.xml
           {{- end }}
           {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
       restartPolicy: Always
       volumes:
         - name: jindofs-fuse-device
           hostPath:
             path: /dev/fuse
             type: CharDevice
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
+        {{- end }}
         - hostPath:
             path: /etc/localtime
             type: ''

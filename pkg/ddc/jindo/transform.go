@@ -78,7 +78,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			WorkerProperties: e.transformWorker(runtime, metaPath, dataPath, userQuotas),
 		},
 		Fuse: Fuse{
-			Args:           e.transformFuseArg(),
+			Args:           e.transformFuseArg(runtime),
 			HostPath:       e.getMountPoint(),
 			FuseProperties: e.transformFuse(runtime),
 		},
@@ -89,6 +89,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	err = e.transformHadoopConfig(runtime, value)
 	err = e.transformFuseNodeSelector(runtime, value)
+	err = e.transformSecret(runtime, value)
+	err = e.transformToken(runtime, value)
 	return value, err
 }
 
@@ -296,14 +298,29 @@ func (e *JindoEngine) transformWorkerMountPath(originPath []string) map[string]s
 	return properties
 }
 
-func (e *JindoEngine) transformFuseArg() []string {
-	if len(e.runtime.Spec.Fuse.Args) > 0 {
-		return e.runtime.Spec.Fuse.Args
-	}
+func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []string {
 	dataset, _ := utils.GetDataset(e.Client, e.name, e.namespace)
 	var baseArg = "-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"
+	var rootArg = ""
+	var secretArg = ""
 	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
-		baseArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name + " " + baseArg
+		rootArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name
+		baseArg = rootArg + " " + baseArg
+	}
+	if len(runtime.Spec.Secret) != 0 {
+		secretArg = "-ocredential_provider=secrets:///token/"
+		baseArg = secretArg + " " + baseArg
+	}
+
+	if len(e.runtime.Spec.Fuse.Args) > 0 {
+		properties := e.runtime.Spec.Fuse.Args
+		if rootArg != "" {
+			properties = append(properties, rootArg)
+		}
+		if len(runtime.Spec.Secret) != 0 {
+			properties = append(properties, secretArg)
+		}
+		return properties
 	}
 	return []string{baseArg}
 }
@@ -330,4 +347,21 @@ func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	e.Log.Info("Set image", "image", image, "tag", tag)
 
 	return
+}
+
+func (e *JindoEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Secret) != 0 {
+		value.Secret = runtime.Spec.Secret
+	}
+	return nil
+}
+
+func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Secret) != 0 {
+		properties := map[string]string{
+			"default.credential.provider": "secrets:///token/",
+		}
+		value.Master.TokenProperties = properties
+	}
+	return nil
 }

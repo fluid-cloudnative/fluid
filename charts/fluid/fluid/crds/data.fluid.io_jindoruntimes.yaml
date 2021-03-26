@@ -146,9 +146,9 @@ spec:
               type: object
             hadoopConfig:
               description: Name of the configMap used to support HDFS configurations
-                when using HDFS as JindoFS's UFS. The configMap must be in the same
+                when using HDFS as Jindo's UFS. The configMap must be in the same
                 namespace with the JindoRuntime. The configMap should contain user-specific
-                HDFS conf files in it. For now, only "hdfs-site.xml"
+                HDFS conf files in it. For now, only "hdfs-site.xml" and "core-site.xml"
                 are supported. It must take the filename of the conf file as the key
                 and content of the file as the value.
               type: string
@@ -254,6 +254,8 @@ spec:
               - uid
               - user
               type: object
+            secret:
+              type: string
             tieredstore:
               description: Tiered storage used by Jindo
               properties:

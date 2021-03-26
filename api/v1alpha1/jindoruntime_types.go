@@ -114,12 +114,14 @@ type JindoRuntimeSpec struct {
 	// Manage the user to run Jindo Runtime
 	RunAs *User `json:"runAs,omitempty"`
 
-	// Name of the configMap used to support HDFS configurations when using HDFS as Alluxio's UFS. The configMap
-	// must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
+	// Name of the configMap used to support HDFS configurations when using HDFS as Jindo's UFS. The configMap
+	// must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it.
 	// For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content
 	// of the file as the value.
 	// +optional
 	HadoopConfig string `json:"hadoopConfig,omitempty"`
+
+	Secret string `json:"secret,omitempty"`
 }
 
 // +kubebuilder:object:root=true

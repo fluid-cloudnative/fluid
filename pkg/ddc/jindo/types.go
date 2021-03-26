@@ -17,6 +17,7 @@ type Jindo struct {
 	Fuse            Fuse              `yaml:"fuse"`
 	Mounts          Mounts            `yaml:"mounts"`
 	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
+	Secret          string            `yaml:"secret,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -30,6 +31,7 @@ type Master struct {
 	Resources        Resources         `yaml:"resources"`
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	MasterProperties map[string]string `yaml:"properties"`
+	TokenProperties  map[string]string `yaml:"secretProperties"`
 }
 
 type Worker struct {
