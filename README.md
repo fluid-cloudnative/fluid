@@ -110,6 +110,10 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 </pre>
 </details>
 
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md)  for the  roadmap details. It may be updated from time to time.
+
 ## Community
 
 Feel free to reach out if you have any questions. The maintainers of this project are reachable via:
@@ -125,6 +129,6 @@ DingTalk:
 
 Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
-## Open Srouce License
+## Open Source License
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
