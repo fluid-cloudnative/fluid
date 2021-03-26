@@ -44,15 +44,15 @@ spec:
           args: ["worker"]
           env:
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
           - name: STORAGE_ADDRESS
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
           ports:
-          - containerPort: 6101
+          - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc
           volumeMounts:
             - name: bigboot-config

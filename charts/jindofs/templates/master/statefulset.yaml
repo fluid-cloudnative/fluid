@@ -48,9 +48,9 @@ spec:
           args: ["master"]
           env:
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
           ports:
-          - containerPort: 8101
+          - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc
           volumeMounts:
             - name: bigboot-config

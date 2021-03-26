@@ -32,12 +32,19 @@ type Master struct {
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	MasterProperties map[string]string `yaml:"properties"`
 	TokenProperties  map[string]string `yaml:"secretProperties"`
+	Port             Ports             `yaml:"ports,omitempty"`
 }
 
 type Worker struct {
 	Resources        Resources         `yaml:"resources"`
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	WorkerProperties map[string]string `yaml:"properties"`
+	Port             Ports             `yaml:"ports,omitempty"`
+}
+
+type Ports struct {
+	Rpc int `yaml:"rpc,omitempty"`
+	Web int `yaml:"web,omitempty"`
 }
 
 type Fuse struct {

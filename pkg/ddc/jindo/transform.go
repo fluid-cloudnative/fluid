@@ -69,18 +69,15 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		UseHostPID:      true,
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
-			ReplicaCount:     1,
-			NodeSelector:     map[string]string{},
-			MasterProperties: e.transformMaster(runtime, metaPath),
+			ReplicaCount: 1,
+			NodeSelector: map[string]string{},
 		},
 		Worker: Worker{
-			NodeSelector:     e.transformNodeSelector(),
-			WorkerProperties: e.transformWorker(runtime, metaPath, dataPath, userQuotas),
+			NodeSelector: e.transformNodeSelector(),
 		},
 		Fuse: Fuse{
-			Args:           e.transformFuseArg(runtime),
-			HostPath:       e.getMountPoint(),
-			FuseProperties: e.transformFuse(runtime),
+			Args:     e.transformFuseArg(runtime),
+			HostPath: e.getMountPoint(),
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath),
@@ -91,23 +88,29 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	err = e.transformFuseNodeSelector(runtime, value)
 	err = e.transformSecret(runtime, value)
 	err = e.transformToken(runtime, value)
+	err = e.allocatePorts(value)
+	err = e.transformMaster(runtime, metaPath, value)
+	err = e.transformWorker(runtime, metaPath, dataPath, userQuotas, value)
+	err = e.transformFuse(runtime, value)
 	return value, err
 }
 
-func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string) map[string]string {
+func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo) (err error) {
 	properties := map[string]string{
-		"namespace.rpc.port": "8101",
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
 		"namespace.filelet.cache.size":  "100000",
 		"namespace.blocklet.cache.size": "1000000",
 		"namespace.backend.type":        "rocksdb",
 	}
 
+	//"namespace.rpc.port": "8101",
+	properties["namespace.rpc.port"] = strconv.Itoa(value.Master.Port.Rpc)
+
 	properties["namespace.meta-dir"] = metaPath + "/server"
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		return properties
+		return err
 	}
 	jfsNamespace := ""
 	for _, mount := range dataset.Spec.Mounts {
@@ -169,14 +172,16 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 			properties[k] = v
 		}
 	}
-	return properties
+
+	value.Master.MasterProperties = properties
+	return nil
 }
 
-func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string) map[string]string {
+func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string, value *Jindo) (err error) {
 
-	properties := map[string]string{
-		"storage.rpc.port": "6101",
-	}
+	properties := map[string]string{}
+	// "storage.rpc.port": "6101",
+	properties["storage.rpc.port"] = strconv.Itoa(value.Worker.Port.Rpc)
 
 	properties["namespace.meta-dir"] = metaPath + "/bignode"
 
@@ -220,13 +225,13 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 			properties[k] = v
 		}
 	}
-	return properties
+	value.Worker.WorkerProperties = properties
+	return nil
 }
 
-func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[string]string {
+func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
-		"client.storage.rpc.port":                   "6101",
 		"client.oss.retry":                          "5",
 		"client.oss.upload.threads":                 "4",
 		"client.oss.upload.queue.size":              "5",
@@ -237,6 +242,9 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[stri
 		"jfs.cache.data-cache.enable":               "1",
 		"jfs.cache.data-cache.slicecache.enable":    "1",
 	}
+
+	// "client.storage.rpc.port": "6101",
+	properties["client.storage.rpc.port"] = string(value.Worker.Port.Rpc)
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
@@ -251,7 +259,8 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[stri
 			properties[k] = v
 		}
 	}
-	return properties
+	value.Fuse.FuseProperties = properties
+	return nil
 }
 
 func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
@@ -364,4 +373,11 @@ func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *
 		value.Master.TokenProperties = properties
 	}
 	return nil
+}
+
+func (e *JindoEngine) allocatePorts(value *Jindo) error {
+	masterPort, clientPort, err := e.getAvaliablePort()
+	value.Master.Port.Rpc = masterPort
+	value.Worker.Port.Rpc = clientPort
+	return err
 }
