@@ -10,3 +10,4 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
+| Unisound     | @ldd91  | Staging     | Used in some specific scenarios |
