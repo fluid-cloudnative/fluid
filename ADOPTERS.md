@@ -1,6 +1,6 @@
 # Adopters Of Fluid 
 
-Below are the adopters of project Fluid. If you are using Fliud to simplify and accelerate the data access in Kubernetes, please feel free to add yourself into the following list by a pull request. There're several phases as follow:
+Below are the adopters of project Fluid. If you are using Fluid to simplify and accelerate the data access in Kubernetes, please feel free to add yourself into the following list by a pull request. There're several phases as follow:
 
 * **Evaluation:** Known Fluid, that's interesting; evaluating the features/scopes of Fluid
 * **Testing:** Take Fluid as one of candidates, testing Kubernetes cluster with Fluid
