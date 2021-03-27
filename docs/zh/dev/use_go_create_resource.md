@@ -1,4 +1,6 @@
-## fluid使用Go客户端创建和删除Dataset以及AlluxioRuntime
+## 如何使用Go客户端创建、删除fluid资源
+
+下面以创建和删除Dataset和AlluxioRuntime为例，展示如何通过使用Go客户端创建、删除fluid资源。
 
 ### 要创建的对象对应的yaml文件
 
