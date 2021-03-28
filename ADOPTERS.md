@@ -7,6 +7,7 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 * **Staging:** Decide to use Fluid, testing it in pre-product environment
 * **Production:** Already put Fluid into product environment
 
-
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
+| China Telecom Jiangsu Branch | qiulingwei.js@chinatelecom.cn | staging | AI Platform on k8s |
+
