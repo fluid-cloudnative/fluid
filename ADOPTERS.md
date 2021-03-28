@@ -9,5 +9,5 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
-| China Telecom Jiangsu Branch | qiulingwei.js@chinatelecom.cn | staging | We had installed Fluid in our AI platform pre-product environment. Also, we are planning to put it into product environment to accelerate our calculation tasks. |
+| China Telecom Jiangsu Branch | qiulingwei.js@chinatelecom.cn | staging | AI Platform on k8s |
 
