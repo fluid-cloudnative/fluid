@@ -12,4 +12,5 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 | China Telecom Jiangsu Branch | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
 | [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging  | Atlas Deep Learning Platform |
 | [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Staging  | PAI Deep Learning Containers |
+| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](mahao@4paradigm.com) | Testing  | 4Paradigm Sage EE |
 
