@@ -127,7 +127,7 @@ DingTalk:
 
 ## Contributing
 
-Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
+Fluid is an open source project with neutral IP. Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Adopters
 
@@ -136,7 +136,7 @@ If you are intrested in Fluid and would like to share your experiences with othe
 
 ## Open Source License
 
-Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details. It is vendor-neutral.
 
 ## Code of Conduct
 
