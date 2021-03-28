@@ -10,4 +10,5 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
 | China Telecom Jiangsu Branch | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
+| Unisound  | [@ldd91](lvdongdong@unisound.com) | Staging  | Atlas Deep Learning Platform |
 
