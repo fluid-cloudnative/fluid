@@ -137,3 +137,9 @@ If you are intrested in Fluid and would like to share your experiences with othe
 ## Open Source License
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+
+## Code of Conduct
+
+Fluid adopts [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+
+

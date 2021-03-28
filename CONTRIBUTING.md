@@ -2,7 +2,7 @@
 Welcome to Fluid! We would greatly appreciate it if you could make any contributions to get Fluid improved. This document aims to give you some basic instructions on how to make your contribution accepted by Fluid.
 
 ## Code of Conduct
-Before any contribution you'd like to make, please have a look at the [code of conduct](code-of-conduct.md), which details how contributors are expected to conduct themselves as part of the fluid-cloudnative Community.
+Before any contribution you'd like to make, please have a look at the [code of conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md), which details how contributors are expected to conduct themselves as part of the fluid-cloudnative Community.
 
 ## Filing Issues
 Issues might be the most common way to get yourself engaged in Fluid project. No matter if you are a user or a developer, you may have some feedback based on daily use or some great ideas that may better improve Fluid, and here's where "issue" comes in. We'd be very glad to hear your voices, so  feel free to file issues to Fluid.
