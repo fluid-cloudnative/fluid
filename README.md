@@ -129,6 +129,11 @@ DingTalk:
 
 Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
+## Adopters
+
+If you are intrested in Fluid and would like to share your experiences with others, you are warmly welcome to add your information on [ADOPTERS.md](ADOPTERS.md) page. We will continuousely discuss new requirements and feature design with you in advance.
+
+
 ## Open Source License
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
