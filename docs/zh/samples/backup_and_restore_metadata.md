@@ -2,7 +2,7 @@
 
 ## 前提条件
 
-在运行该示例之前，请参考 [安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md) 完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考 [安装文档](../userguide/install.md) 完成安装，并检查Fluid各组件正常运行：
 
 ```shell
 $ kubectl get pod -n fluid-system
@@ -115,7 +115,11 @@ $ kubectl describe node cn-beijing.192.168.1.146
 
 ### 使用non-root身份进行备份
 
-如果用户指定的数据备份目录只能以特定uid访问时，需要通过设置DataBackup的RunAs参数指定特定用户来进行备份
+如果用户指定的数据备份目录只能以特定uid访问时，需要通过设置RunAs参数指定特定用户来进行备份
+
+如果您已经参考 [示例 - 使用Fluid访问非root用户的数据](./nonroot_access.md) 为AlluxioRuntime配置了RunAs参数，默认进行备份的用户与启动缓存引擎的用户相同
+
+如果您没有为AlluxioRuntime配置RunAs参数，或者您希望以其他用户进行备份，可以通过为DataBackup配置RunAs参数进行设置
 
 假如每台主机的/data/subpath1/目录都属于fluid-user-1用户
 

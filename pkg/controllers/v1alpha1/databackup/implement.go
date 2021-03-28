@@ -319,27 +319,37 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	dataBackupValue.InitUsers = docker.InitUsers{
 		Enabled: false,
 	}
-	if databackup.Spec.RunAs != nil {
-		dataBackupValue.UserInfo.User = int(*databackup.Spec.RunAs.UID)
-		dataBackupValue.UserInfo.Group = int(*databackup.Spec.RunAs.GID)
-		dataBackupValue.UserInfo.FSGroup = 0
-		dataBackupValue.InitUsers = docker.InitUsers{
-			Enabled:  true,
-			EnvUsers: alluxio.GetInitUserEnv(databackup.Spec.RunAs),
-			Dir:      alluxio.GetBackupUserDir(dataBackup.Namespace, dataBackup.Name),
-		}
-	}
 
 	var runtime v1alpha1.AlluxioRuntime
+	var runAs *v1alpha1.User
 	initUsers := docker.ImageInfo{}
+
+	// get the runAs and initUsers imageInfo from runtime
 	err = r.Get(ctx, ctx.NamespacedName, &runtime)
 	if err == nil {
+		runAs = runtime.Spec.RunAs
 		initUsers = docker.ImageInfo{
 			Image:           runtime.Spec.InitUsers.Image,
 			ImageTag:        runtime.Spec.InitUsers.ImageTag,
 			ImagePullPolicy: runtime.Spec.InitUsers.ImagePullPolicy,
 		}
 	}
+	// databackup.Spec.RunAs > runtime.Spec.RunAs > root
+	if databackup.Spec.RunAs != nil {
+		runAs = databackup.Spec.RunAs
+	}
+
+	if runAs != nil {
+		dataBackupValue.UserInfo.User = int(*runAs.UID)
+		dataBackupValue.UserInfo.Group = int(*runAs.GID)
+		dataBackupValue.UserInfo.FSGroup = 0
+		dataBackupValue.InitUsers = docker.InitUsers{
+			Enabled:  true,
+			EnvUsers: alluxio.GetInitUserEnv(runAs),
+			Dir:      alluxio.GetBackupUserDir(dataBackup.Namespace, dataBackup.Name),
+		}
+	}
+
 	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.GetInitUserImage(initUsers)
 
 	data, err := yaml.Marshal(dataBackupValue)
