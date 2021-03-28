@@ -127,7 +127,7 @@ DingTalk:
 
 ## Contributing
 
-Fluid is an open source project with neutral IP. Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
+Contributions are highly welcomed and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Adopters
 
