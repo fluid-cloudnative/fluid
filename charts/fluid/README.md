@@ -1,0 +1,23 @@
+fluid charts
+===============
+
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
+
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.
+
+Install
+-------
+
+Fluid has been integrated with [Helm](https://helm.sh/). Deploy fluid using `helm`:
+
+```bash
+helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
+helm install fluid fluid/fluid
+```
+
+More information about the helm chart could be found at [Artifact Hub](https://artifacthub.io/packages/helm/fluid/fluid).
+
+License
+-------
+
+**Fluid** is under the Apache 2.0 license. See the [LICENSE](https://github.com/fluid-cloudnative/fluid/blob/master/LICENSE) file for details. It is vendor-neutral..
