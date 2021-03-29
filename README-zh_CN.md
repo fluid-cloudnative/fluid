@@ -59,14 +59,6 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 - Golang 1.12+
 - Helm 3
 
-## 使用Helm部署Fluid
-
-使用`helm`命令部署fluid:
-```bash
-helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
-helm install fluid fluid/fluid
-```
-
 ## 快速开始
 
 你可以通过 [快速开始](docs/zh/userguide/get_started.md) 在Kubernetes集群中测试Fluid.

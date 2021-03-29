@@ -63,14 +63,6 @@ Fluid manages and schedules Alluxio Runtime to achieve dataset visibility, elast
 - Golang 1.12+
 - Helm 3
 
-## Deploy with Helm
-
-Fluid has been integrated with [Helm](https://helm.sh/). Deploy fluid using `helm`:
-```bash
-helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
-helm install fluid fluid/fluid
-```
-
 ## Quick Start
 
 You can follow our [Get Started](docs/en/userguide/get_started.md) guide to quickly start a testing Kubernetes cluster.
