@@ -15,4 +15,4 @@ Below are the adopters of project Fluid. If you are using Fluid to simplify and 
 | [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](mahao@4paradigm.com) | Testing | 4Paradigm Sage EE |
 | [weibo.com](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Staging | weibo deep learning platform |
 | [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](chrisydxie@tencent.com) | Testing | Tencent Kubernetes Engine |
-
+| [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](zhoupeijie@kanzhun.com) | Staging | Alsenal AI Platform |
