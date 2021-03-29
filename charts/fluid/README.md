@@ -20,4 +20,4 @@ More information about the helm chart could be found at [Artifact Hub](https://a
 License
 -------
 
-**Fluid** is under the Apache 2.0 license. See the [LICENSE](https://github.com/fluid-cloudnative/fluid/blob/master/LICENSE) file for details. It is vendor-neutral..
+**Fluid** is under the Apache 2.0 license. See the [LICENSE](https://github.com/fluid-cloudnative/fluid/blob/master/LICENSE) file for details. It is vendor-neutral.
