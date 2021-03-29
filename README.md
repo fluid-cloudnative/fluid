@@ -8,6 +8,7 @@
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 
 # Fluid
 English | [简体中文](./README-zh_CN.md)
@@ -61,6 +62,14 @@ Fluid manages and schedules Alluxio Runtime to achieve dataset visibility, elast
 - Kubernetes version > 1.14, and support CSI
 - Golang 1.12+
 - Helm 3
+
+## Deploy with Helm
+
+Fluid has been integrated with [Helm](https://helm.sh/). Deploy fluid using `helm`:
+```bash
+helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
+helm install fluid fluid/fluid
+```
 
 ## Quick Start
 

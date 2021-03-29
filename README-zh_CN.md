@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
+
 # Fluid
 
 [English](./README.md) | 简体中文
@@ -56,6 +58,14 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 - Kubernetes version > 1.14, 支持CSI
 - Golang 1.12+
 - Helm 3
+
+## 使用Helm部署Fluid
+
+使用`helm`命令部署fluid:
+```bash
+helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
+helm install fluid fluid/fluid
+```
 
 ## 快速开始
 
