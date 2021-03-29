@@ -244,7 +244,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 	}
 
 	// "client.storage.rpc.port": "6101",
-	properties["client.storage.rpc.port"] = string(value.Worker.Port.Rpc)
+	properties["client.storage.rpc.port"] = strconv.Itoa(value.Worker.Port.Rpc)
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
