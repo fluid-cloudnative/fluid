@@ -5,16 +5,6 @@ fluid charts
 
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.
 
-Install
--------
-
-Fluid has been integrated with [Helm](https://helm.sh/). Deploy fluid using `helm`:
-
-```bash
-helm repo add fluid http://fluid.oss-cn-shanghai.aliyuncs.com/charts/
-helm install fluid fluid/fluid
-```
-
 More information about the helm chart could be found at [Artifact Hub](https://artifacthub.io/packages/helm/fluid/fluid).
 
 License
