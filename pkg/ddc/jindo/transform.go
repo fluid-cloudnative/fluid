@@ -44,11 +44,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			return
 		}
 		for _, value := range quotas {
-			quota := ""
 			if strings.HasSuffix(value, "Gi") {
-				quota = strings.ReplaceAll(value, "Gi", "g")
+				value = strings.ReplaceAll(value, "Gi", "g")
 			}
-			userSetQuota = append(userSetQuota, quota)
+			userSetQuota = append(userSetQuota, value)
 		}
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
