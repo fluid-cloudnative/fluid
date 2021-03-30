@@ -114,6 +114,8 @@ type JindoRuntimeSpec struct {
 	// Manage the user to run Jindo Runtime
 	RunAs *User `json:"runAs,omitempty"`
 
+	User string `json:"user,omitempty"`
+
 	// Name of the configMap used to support HDFS configurations when using HDFS as Jindo's UFS. The configMap
 	// must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it.
 	// For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content

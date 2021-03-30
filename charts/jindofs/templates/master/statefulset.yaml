@@ -49,6 +49,10 @@ spec:
           env:
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
             value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+          {{- if .Values.fuse.runAs }}
+          - name: RUN_AS_USER
+            value: {{ .Values.fuse.runAs }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc

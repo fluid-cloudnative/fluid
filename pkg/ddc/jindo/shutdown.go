@@ -3,7 +3,6 @@ package jindo
 import (
 	"context"
 	"fmt"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -14,22 +13,8 @@ import (
 
 // shut down the Jindo engine
 func (e *JindoEngine) Shutdown() (err error) {
-	if e.retryShutdown < e.gracefulShutdownLimits {
-		//err = e.cleanupCache()
-		err = nil
-		if err != nil {
-			e.retryShutdown = e.retryShutdown + 1
-			e.Log.Info("clean cache failed",
-				// "engine", e,
-				"retry times", e.retryShutdown)
-			return
-		}
-	}
 
-	/* TODO metadata sync
-	if e.MetadataSyncDoneCh != nil {
-		close(e.MetadataSyncDoneCh)
-	}*/
+	err = e.invokeCleanCache()
 
 	_, err = e.destroyWorkers(-1)
 	if err != nil {

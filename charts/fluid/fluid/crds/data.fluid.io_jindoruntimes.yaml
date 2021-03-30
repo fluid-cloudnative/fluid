@@ -313,6 +313,8 @@ spec:
                     type: object
                   type: array
               type: object
+            user:
+              type: string
             worker:
               description: Desired state for Jindo worker
               properties:
