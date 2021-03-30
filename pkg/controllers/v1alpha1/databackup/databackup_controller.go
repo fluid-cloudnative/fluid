@@ -98,7 +98,7 @@ func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
-			// no datset means no metadata, not necessary to ReconcileDatabackup
+			// no dataset means no metadata, not necessary to ReconcileDatabackup
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
 			ctx.Log.Error(err, "Failed to get the ddc dataset")
@@ -171,6 +171,7 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 	if len(databackupToUpdate.Status.Conditions) == 0 {
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{}
 	}
+	databackupToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "failed to update the databackup")
 		return utils.RequeueIfError(err)
