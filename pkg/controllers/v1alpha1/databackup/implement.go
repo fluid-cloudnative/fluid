@@ -242,7 +242,14 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
-		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
+		var successTime time.Time
+		if len(backupPod.Status.Conditions) != 0 {
+			successTime = backupPod.Status.Conditions[0].LastTransitionTime.Time
+		} else {
+			// fail to get successTime, use current time as default
+			successTime = time.Now()
+		}
+		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time, successTime)
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
 				Type:               cdatabackup.Complete,
@@ -250,7 +257,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 				Reason:             "BackupSuccessful",
 				Message:            "Backup Pod exec successfully and finish",
 				LastProbeTime:      metav1.NewTime(time.Now()),
-				LastTransitionTime: metav1.NewTime(time.Now()),
+				LastTransitionTime: metav1.NewTime(successTime),
 			},
 		}
 		if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
@@ -262,7 +269,14 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	} else if kubeclient.IsFailedPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
-		databackupToUpdate.Status.DurationTime = time.Since(databackupToUpdate.CreationTimestamp.Time).Round(time.Second).String()
+		var failedTime time.Time
+		if len(backupPod.Status.Conditions) != 0 {
+			failedTime = backupPod.Status.Conditions[0].LastTransitionTime.Time
+		} else {
+			// fail to get successTime, use current time as default
+			failedTime = time.Now()
+		}
+		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time, failedTime)
 		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
 			{
 				Type:               cdatabackup.Failed,
@@ -270,7 +284,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 				Reason:             "BackupFailed",
 				Message:            "Backup Pod exec failed and exit",
 				LastProbeTime:      metav1.NewTime(time.Now()),
-				LastTransitionTime: metav1.NewTime(time.Now()),
+				LastTransitionTime: metav1.NewTime(failedTime),
 			},
 		}
 		if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {

@@ -80,14 +80,14 @@ type DataLoadStatus struct {
 	// Conditions consists of transition information on DataLoad's Phase
 	Conditions []DataLoadCondition `json:"conditions"`
 
-	// DurationTime describes the duration time of the dataload process.
-	DurationTime string `json:"durationTime"`
+	// Duration tell user how much time was spent to load the data
+	Duration string `json:"duration"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.durationTime`
+// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +genclient

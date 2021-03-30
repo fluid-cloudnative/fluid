@@ -21,7 +21,7 @@ spec:
   - JSONPath: .status.backupLocation.nodeName
     name: NodeName
     type: string
-  - JSONPath: .status.durationTime
+  - JSONPath: .status.duration
     name: Duration
     type: string
   - JSONPath: .metadata.creationTimestamp
@@ -115,15 +115,15 @@ spec:
                 - type
                 type: object
               type: array
-            durationTime:
-              description: DurationTime tell user how much time was spent to backup
+            duration:
+              description: Duration tell user how much time was spent to backup
               type: string
             phase:
               description: Phase describes current phase of DataBackup
               type: string
           required:
           - conditions
-          - durationTime
+          - duration
           - phase
           type: object
       type: object

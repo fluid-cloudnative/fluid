@@ -62,8 +62,8 @@ type DataBackupStatus struct {
 	Phase databackup.Phase `json:"phase"`
 	// BackupLocation tell user the location to save data of the DataBackup
 	BackupLocation BackupLocation `json:"backupLocation,omitempty"`
-	// DurationTime tell user how much time was spent to backup
-	DurationTime string `json:"durationTime"`
+	// Duration tell user how much time was spent to backup
+	Duration string `json:"duration"`
 	// Conditions consists of transition information on DataBackup's Phase
 	Conditions []DataBackupCondition `json:"conditions"`
 }
@@ -72,7 +72,7 @@ type DataBackupStatus struct {
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Path",type="string",JSONPath=`.status.backupLocation.path`
 // +kubebuilder:printcolumn:name="NodeName",type="string",JSONPath=`.status.backupLocation.nodeName`
-// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.durationTime`
+// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
