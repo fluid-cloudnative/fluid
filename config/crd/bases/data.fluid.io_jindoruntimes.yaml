@@ -176,6 +176,12 @@ spec:
                   description: Environment variables that will be used by Jindo component.
                     <br>
                   type: object
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
@@ -323,6 +329,12 @@ spec:
                     type: string
                   description: Environment variables that will be used by Jindo component.
                     <br>
+                  type: object
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
                   type: object
                 ports:
                   additionalProperties:

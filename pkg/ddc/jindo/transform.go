@@ -69,7 +69,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: 1,
-			NodeSelector: map[string]string{},
+			NodeSelector: e.transformMasterSelector(runtime),
 		},
 		Worker: Worker{
 			NodeSelector: e.transformNodeSelector(),
@@ -284,6 +284,14 @@ func (e *JindoEngine) transformNodeSelector() map[string]string {
 	labelName := e.getCommonLabelname()
 	properties := map[string]string{}
 	properties[labelName] = "true"
+	return properties
+}
+
+func (e *JindoEngine) transformMasterSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
+	properties := map[string]string{}
+	if runtime.Spec.Master.NodeSelector != nil {
+		properties = runtime.Spec.Master.NodeSelector
+	}
 	return properties
 }
 

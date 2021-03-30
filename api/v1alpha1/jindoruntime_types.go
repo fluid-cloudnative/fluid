@@ -45,6 +45,10 @@ type JindoCompTemplateSpec struct {
 
 	// Environment variables that will be used by Jindo component. <br>
 	Env map[string]string `json:"env,omitempty"`
+
+	// NodeSelector is a selector which must be true for the master to fit on a node
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
