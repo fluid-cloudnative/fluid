@@ -3,7 +3,9 @@ package jindo
 import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"regexp"
 	"strconv"
 	"strings"
@@ -42,92 +44,126 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			return
 		}
 		for _, value := range quotas {
-			quota := ""
 			if strings.HasSuffix(value, "Gi") {
-				quota = strings.ReplaceAll(value, "Gi", "g")
+				value = strings.ReplaceAll(value, "Gi", "g")
 			}
-			userSetQuota = append(userSetQuota, quota)
+			userSetQuota = append(userSetQuota, value)
 		}
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
+	jindoSmartdataImage, smartdataTag := e.parseSmartDataImage()
+	jindoFuseImage, fuseTag := e.parseFuseImage()
+
 	value = &Jindo{
-		Image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		ImageTag:        "3.3.5",
+		Image:           jindoSmartdataImage,
+		ImageTag:        smartdataTag,
 		ImagePullPolicy: "Always",
-		FuseImage:       "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse",
-		FuseImageTag:    "3.3.5",
+		FuseImage:       jindoFuseImage,
+		FuseImageTag:    fuseTag,
 		User:            0,
 		Group:           0,
 		FsGroup:         0,
 		UseHostNetwork:  true,
 		UseHostPID:      true,
-		/*Properties:map[string]string{
-			"logDir": "/mnt/disk1/bigboot/log",
-		},*/
-		Properties: e.transformPriority(metaPath),
+		Properties:      e.transformPriority(metaPath),
 		Master: Master{
-			ReplicaCount:     1,
-			NodeSelector:     map[string]string{},
-			MasterProperties: e.transformMaster(runtime, metaPath),
+			ReplicaCount: 1,
+			NodeSelector: e.transformMasterSelector(runtime),
 		},
 		Worker: Worker{
-			NodeSelector:     e.transformNodeSelector(),
-			WorkerProperties: e.transformWorker(runtime, metaPath, dataPath, userQuotas),
+			NodeSelector: e.transformNodeSelector(),
 		},
 		Fuse: Fuse{
-			Args:           e.transformFuseArg(),
-			HostPath:       e.getMountPoint(),
-			NodeSelector:   e.transformNodeSelector(),
-			FuseProperties: e.transformFuse(runtime),
+			Args:     e.transformFuseArg(runtime),
+			HostPath: e.getMountPoint(),
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath),
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
 	}
-	return value, nil
+	err = e.transformHadoopConfig(runtime, value)
+	if err != nil {
+		return
+	}
+	err = e.transformFuseNodeSelector(runtime, value)
+	if err != nil {
+		return
+	}
+	err = e.transformSecret(runtime, value)
+	if err != nil {
+		return
+	}
+	err = e.transformToken(runtime, value)
+	if err != nil {
+		return
+	}
+	err = e.allocatePorts(value)
+	if err != nil {
+		return
+	}
+	err = e.transformMaster(runtime, metaPath, value)
+	if err != nil {
+		return
+	}
+	err = e.transformWorker(runtime, metaPath, dataPath, userQuotas, value)
+	if err != nil {
+		return
+	}
+	err = e.transformFuse(runtime, value)
+	if err != nil {
+		return
+	}
+	err = e.transformRunAsUser(runtime, value)
+	return value, err
 }
 
-func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string) map[string]string {
+func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo) (err error) {
 	properties := map[string]string{
-		"namespace.rpc.port": "8101",
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
 		"namespace.filelet.cache.size":  "100000",
 		"namespace.blocklet.cache.size": "1000000",
 		"namespace.backend.type":        "rocksdb",
 	}
 
+	//"namespace.rpc.port": "8101",
+	properties["namespace.rpc.port"] = strconv.Itoa(value.Master.Port.Rpc)
+
 	properties["namespace.meta-dir"] = metaPath + "/server"
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		return properties
+		return err
 	}
 	jfsNamespace := ""
 	for _, mount := range dataset.Spec.Mounts {
-		if !strings.HasPrefix(mount.MountPoint, "oss://") {
-			continue
-		}
+
 		jfsNamespace = jfsNamespace + mount.Name + ","
-		properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
 		}
-		// transform mountpoint for jfs uri format
-		var re = regexp.MustCompile(`(oss://(.*?))(/)`)
-		rm := re.FindStringSubmatch(mount.MountPoint)
-		if len(rm) < 2 {
-			e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+		// transform mountpoint for oss or hdfs format
+		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
+			properties["jfs.namespaces."+mount.Name+".hdfs.uri"] = mount.MountPoint
+		} else {
+			if !strings.HasPrefix(mount.MountPoint, "oss://") {
+				continue
+			}
+
+			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
+			rm := re.FindStringSubmatch(mount.MountPoint)
+			if len(rm) < 2 {
+				e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
+			}
+			mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
+			properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
+			properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
+			properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
+			properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 		}
-		mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
-
-		properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
 		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
-		properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
-		properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
-
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
@@ -160,14 +196,16 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 			properties[k] = v
 		}
 	}
-	return properties
+
+	value.Master.MasterProperties = properties
+	return nil
 }
 
-func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string) map[string]string {
+func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string, value *Jindo) (err error) {
 
-	properties := map[string]string{
-		"storage.rpc.port": "6101",
-	}
+	properties := map[string]string{}
+	// "storage.rpc.port": "6101",
+	properties["storage.rpc.port"] = strconv.Itoa(value.Worker.Port.Rpc)
 
 	properties["namespace.meta-dir"] = metaPath + "/bignode"
 
@@ -211,13 +249,13 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 			properties[k] = v
 		}
 	}
-	return properties
+	value.Worker.WorkerProperties = properties
+	return nil
 }
 
-func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[string]string {
+func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
-		"client.storage.rpc.port":                   "6101",
 		"client.oss.retry":                          "5",
 		"client.oss.upload.threads":                 "4",
 		"client.oss.upload.queue.size":              "5",
@@ -228,6 +266,9 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[stri
 		"jfs.cache.data-cache.enable":               "1",
 		"jfs.cache.data-cache.slicecache.enable":    "1",
 	}
+
+	// "client.storage.rpc.port": "6101",
+	properties["client.storage.rpc.port"] = strconv.Itoa(value.Worker.Port.Rpc)
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
@@ -242,13 +283,39 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime) map[stri
 			properties[k] = v
 		}
 	}
-	return properties
+	value.Fuse.FuseProperties = properties
+	return nil
+}
+
+func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	value.Fuse.NodeSelector = map[string]string{}
+	if runtime.Spec.Fuse.Global {
+		value.Fuse.Global = true
+		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+		}
+		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
+		e.Log.Info("Enable Fuse's global mode")
+	} else {
+		labelName := e.getCommonLabelname()
+		value.Fuse.NodeSelector[labelName] = "true"
+		e.Log.Info("Disable Fuse's global mode")
+	}
+	return nil
 }
 
 func (e *JindoEngine) transformNodeSelector() map[string]string {
 	labelName := e.getCommonLabelname()
 	properties := map[string]string{}
 	properties[labelName] = "true"
+	return properties
+}
+
+func (e *JindoEngine) transformMasterSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
+	properties := map[string]string{}
+	if runtime.Spec.Master.NodeSelector != nil {
+		properties = runtime.Spec.Master.NodeSelector
+	}
 	return properties
 }
 
@@ -272,9 +339,84 @@ func (e *JindoEngine) transformWorkerMountPath(originPath []string) map[string]s
 	return properties
 }
 
-func (e *JindoEngine) transformFuseArg() []string {
-	if len(e.runtime.Spec.Fuse.Args) > 0 {
-		return e.runtime.Spec.Fuse.Args
+func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []string {
+	dataset, _ := utils.GetDataset(e.Client, e.name, e.namespace)
+	var baseArg = "-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"
+	var rootArg = ""
+	var secretArg = ""
+	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
+		rootArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name
+		baseArg = rootArg + " " + baseArg
 	}
-	return []string{"-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"}
+	if len(runtime.Spec.Secret) != 0 {
+		secretArg = "-ocredential_provider=secrets:///token/"
+		baseArg = secretArg + " " + baseArg
+	}
+
+	if len(e.runtime.Spec.Fuse.Args) > 0 {
+		properties := e.runtime.Spec.Fuse.Args
+		if rootArg != "" {
+			properties = append(properties, rootArg)
+		}
+		if len(runtime.Spec.Secret) != 0 {
+			properties = append(properties, secretArg)
+		}
+		return properties
+	}
+	return []string{baseArg}
+}
+
+func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		defaultTag   = "3.5.2"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	return
+}
+
+func (e *JindoEngine) parseFuseImage() (image, tag string) {
+	var (
+		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
+		defaultTag   = "3.5.2"
+	)
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
+	e.Log.Info("Set image", "image", image, "tag", tag)
+
+	return
+}
+
+func (e *JindoEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Secret) != 0 {
+		value.Secret = runtime.Spec.Secret
+	}
+	return nil
+}
+
+func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Secret) != 0 {
+		properties := map[string]string{
+			"default.credential.provider": "secrets:///token/",
+		}
+		value.Master.TokenProperties = properties
+	}
+	return nil
+}
+
+func (e *JindoEngine) allocatePorts(value *Jindo) error {
+	masterPort, clientPort, err := e.getAvaliablePort()
+	value.Master.Port.Rpc = masterPort
+	value.Worker.Port.Rpc = clientPort
+	return err
+}
+
+func (e *JindoEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
+	if len(runtime.Spec.User) != 0 {
+		value.Fuse.RunAs = runtime.Spec.User
+	}
+	return nil
 }

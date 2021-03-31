@@ -3,7 +3,6 @@ package jindo
 import (
 	"context"
 	"fmt"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -14,22 +13,11 @@ import (
 
 // shut down the Jindo engine
 func (e *JindoEngine) Shutdown() (err error) {
-	if e.retryShutdown < e.gracefulShutdownLimits {
-		//err = e.cleanupCache()
-		err = nil
-		if err != nil {
-			e.retryShutdown = e.retryShutdown + 1
-			e.Log.Info("clean cache failed",
-				// "engine", e,
-				"retry times", e.retryShutdown)
-			return
-		}
-	}
 
-	/* TODO metadata sync
-	if e.MetadataSyncDoneCh != nil {
-		close(e.MetadataSyncDoneCh)
-	}*/
+	err = e.invokeCleanCache()
+	if err != nil {
+		return
+	}
 
 	_, err = e.destroyWorkers(-1)
 	if err != nil {
@@ -117,7 +105,6 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 	var nodes []corev1.Node
 	if expectedWorkers >= 0 {
 		e.Log.Info("Scale in Jindo workers", "expectedWorkers", expectedWorkers)
-
 		// This is a scale in operation
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {

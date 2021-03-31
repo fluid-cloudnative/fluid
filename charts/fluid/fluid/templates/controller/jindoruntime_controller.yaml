@@ -44,6 +44,14 @@ spec:
           - name: MOUNT_ROOT
             value: {{ .Values.runtime.mountRoot | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.smartdata.image }}
+          - name: JINDO_SMARTDATA_IMAGE_ENV
+            value: {{ .Values.runtime.jindo.smartdata.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.jindo.fuse.image }}
+          - name: JINDO_FUSE_IMAGE_ENV
+            value: {{ .Values.runtime.jindo.fuse.image | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics

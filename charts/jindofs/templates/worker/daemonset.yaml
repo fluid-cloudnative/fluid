@@ -44,11 +44,19 @@ spec:
           args: ["worker"]
           env:
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+          {{- if .Values.fuse.runAs }}
+          - name: RUN_AS_USER
+            value: {{ .Values.fuse.runAs }}
+          {{- end }}
+          - name: STORAGE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           ports:
-          - containerPort: 6101
+          - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc
           volumeMounts:
             - name: bigboot-config
@@ -58,6 +66,18 @@ spec:
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
             {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+            - name: hdfs-confs
+              mountPath: /hdfs-site.xml
+              subPath: hdfs-site.xml
+          {{- end }}
+          {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
             - mountPath: /etc/localtime
               name: volume-localtime
       restartPolicy: Always
@@ -72,6 +92,18 @@ spec:
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
           {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
+        {{- end }}
         - name: bigboot-config
           configMap:
             name: {{ template "jindofs.fullname" . }}-config

@@ -49,7 +49,11 @@ spec:
           {{- end }}
           env:
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:8101
+            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+          {{- if .Values.fuse.runAs }}
+          - name: RUN_AS_USER
+            value: {{ .Values.fuse.runAs }}
+          {{- end }}
           - name: CLIENT_STORAGE_RPC_HOST
             valueFrom:
               fieldRef:
@@ -74,12 +78,29 @@ spec:
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
             {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+            - name: hdfs-confs
+              mountPath: /hdfs-site.xml
+              subPath: hdfs-site.xml
+          {{- end }}
+          {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
       restartPolicy: Always
       volumes:
         - name: jindofs-fuse-device
           hostPath:
             path: /dev/fuse
             type: CharDevice
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
+        {{- end }}
         - hostPath:
             path: /etc/localtime
             type: ''
@@ -94,6 +115,13 @@ spec:
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
           {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+        {{- end }}
+        {{- end }}
         - name: bigboot-config
           configMap:
             name: {{ template "jindofs.fullname" . }}-config
