@@ -16,6 +16,14 @@ type Jindo struct {
 	Worker          Worker            `yaml:"worker"`
 	Fuse            Fuse              `yaml:"fuse"`
 	Mounts          Mounts            `yaml:"mounts"`
+	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
+	Secret          string            `yaml:"secret,omitempty"`
+}
+
+type HadoopConfig struct {
+	ConfigMap       string `yaml:"configMap"`
+	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
+	IncludeCoreSite bool   `yaml:"includeCoreSite"`
 }
 
 type Master struct {
@@ -23,12 +31,20 @@ type Master struct {
 	Resources        Resources         `yaml:"resources"`
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	MasterProperties map[string]string `yaml:"properties"`
+	TokenProperties  map[string]string `yaml:"secretProperties"`
+	Port             Ports             `yaml:"ports,omitempty"`
 }
 
 type Worker struct {
 	Resources        Resources         `yaml:"resources"`
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	WorkerProperties map[string]string `yaml:"properties"`
+	Port             Ports             `yaml:"ports,omitempty"`
+}
+
+type Ports struct {
+	Rpc int `yaml:"rpc,omitempty"`
+	Web int `yaml:"web,omitempty"`
 }
 
 type Fuse struct {
@@ -36,6 +52,8 @@ type Fuse struct {
 	HostPath       string            `yaml:"hostPath"`
 	NodeSelector   map[string]string `yaml:"nodeSelector,omitempty"`
 	FuseProperties map[string]string `yaml:"properties"`
+	Global         bool              `yaml:"global,omitempty"`
+	RunAs          string            `yaml:"runAs,omitempty"`
 }
 
 type Mounts struct {

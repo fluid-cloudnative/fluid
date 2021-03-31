@@ -4,11 +4,11 @@
 
 
 image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
-imageTag: "3.3.5"
+imageTag: "3.5.2"
 imagePullPolicy: Always
 
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
-fuseImageTag: "3.3.5"
+fuseImageTag: "3.5.2"
 
 user: 0
 group: 0

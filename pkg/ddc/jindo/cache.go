@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 )
@@ -53,4 +54,27 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 
 	return states, nil
+}
+
+// clean cache
+func (e *JindoEngine) invokeCleanCache() (err error) {
+	// 1. Check if master is ready, if not, just return
+	masterName := e.getMasterStatefulsetName()
+	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	if err != nil {
+		e.Log.Info("Failed to get master", "err", err.Error())
+		return
+	}
+	if master.Status.ReadyReplicas == 0 {
+		e.Log.Info("The master is not ready, just skip clean cache.", "master", masterName)
+		return nil
+	} else {
+		e.Log.Info("The master is ready, so start cleaning cache", "master", masterName)
+	}
+
+	// 2. run clean action
+	podName, containerName := e.getMasterPodInfo()
+	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	e.Log.Info("cleaning cache and wait for a while")
+	return fileUitls.CleanCache()
 }

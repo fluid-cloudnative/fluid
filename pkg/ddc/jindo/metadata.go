@@ -131,7 +131,11 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				e.Log.Info("no dataset find")
 				result.Err = errors.New("Dataset Bind Error")
 			}
-			datasetUFSTotalBytes, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name)
+			useStsSecret := false
+			if len(e.runtime.Spec.Secret) != 0 {
+				useStsSecret = true
+			}
+			datasetUFSTotalBytes, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name, useStsSecret)
 			if err != nil {
 				e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Done = false

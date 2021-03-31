@@ -79,12 +79,16 @@ func (a JindoFileUtils) ReportSummary() (summary string, err error) {
 	return stdout, err
 }
 
-func (a JindoFileUtils) GetUfsTotalSize(url string) (summary string, err error) {
+func (a JindoFileUtils) GetUfsTotalSize(url string, useStsSecret bool) (summary string, err error) {
 	var (
 		command = []string{"hadoop", "fs", "-count", url}
 		stdout  string
 		stderr  string
 	)
+
+	if useStsSecret {
+		command = []string{"hadoop", "fs", "-Dfs.jfs.credentials.provider=com.aliyun.emr.fs.auth.CustomCredentialsProvider ", "-Daliyun.oss.provider.url=secrets:///token/", "-count", url}
+	}
 
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
 

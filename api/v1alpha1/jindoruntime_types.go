@@ -45,6 +45,10 @@ type JindoCompTemplateSpec struct {
 
 	// Environment variables that will be used by Jindo component. <br>
 	Env map[string]string `json:"env,omitempty"`
+
+	// NodeSelector is a selector which must be true for the master to fit on a node
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -113,6 +117,17 @@ type JindoRuntimeSpec struct {
 
 	// Manage the user to run Jindo Runtime
 	RunAs *User `json:"runAs,omitempty"`
+
+	User string `json:"user,omitempty"`
+
+	// Name of the configMap used to support HDFS configurations when using HDFS as Jindo's UFS. The configMap
+	// must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it.
+	// For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content
+	// of the file as the value.
+	// +optional
+	HadoopConfig string `json:"hadoopConfig,omitempty"`
+
+	Secret string `json:"secret,omitempty"`
 }
 
 // +kubebuilder:object:root=true

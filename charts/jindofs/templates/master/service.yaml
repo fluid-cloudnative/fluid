@@ -10,7 +10,7 @@ metadata:
     role: jindofs-master
 spec:
   ports:
-  - port: 8101
+  - port: {{ .Values.master.ports.rpc }}
     name: rpc
   clusterIP: None
   selector:
