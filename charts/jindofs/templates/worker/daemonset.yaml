@@ -96,6 +96,7 @@ spec:
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
         - name: hdfs-confs
           configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
         {{- end }}
         {{- end }}
         {{- if .Values.secret }}
