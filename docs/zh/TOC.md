@@ -33,3 +33,5 @@
   - [API_Doc](dev/api_doc.md)
   - [JVM性能分析](dev/profiling.md)
   - [如何增加新Runtime实现](dev/runtime_dev_guide.md)
+  - [如何使用Go客户端创建、删除fluid资源](dev/use_go_create_resource.md)
+

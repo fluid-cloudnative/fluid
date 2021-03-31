@@ -8,6 +8,7 @@
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 
 # Fluid
 English | [简体中文](./README-zh_CN.md)
@@ -110,6 +111,10 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 </pre>
 </details>
 
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md)  for the  roadmap details. It may be updated from time to time.
+
 ## Community
 
 Feel free to reach out if you have any questions. The maintainers of this project are reachable via:
@@ -123,8 +128,17 @@ DingTalk:
 
 ## Contributing
 
-Contributions are welcome and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
+Contributions are highly welcomed and greatly appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
-## Open Srouce License
+## Adopters
 
-Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+If you are intrested in Fluid and would like to share your experiences with others, you are warmly welcome to add your information on [ADOPTERS.md](ADOPTERS.md) page. We will continuousely discuss new requirements and feature design with you in advance.
+
+
+## Open Source License
+
+Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details. It is vendor-neutral.
+
+## Code of Conduct
+
+Fluid adopts [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).

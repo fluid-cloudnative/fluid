@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
+
 # Fluid
 
 [English](./README.md) | 简体中文
@@ -123,3 +125,7 @@ Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只�
 ## 开源协议
 
 Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文件。
+
+## 行为准则
+
+Fluid 遵守 [CNCF 行为准则](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).

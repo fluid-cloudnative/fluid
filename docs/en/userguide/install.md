@@ -162,6 +162,12 @@ For more use cases about Fluid, please refer to our demos:
 
 ### Uninstall Fluid
 
+For uninstalling fluid safely, we should check weather Custom Resource Objects about fluid have been deleted completely first:
+```shell
+kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
+```
+If you confirm that all Custom resource objects about fluid have been deleted, you can safely uninstall fluid:
+
 ```shell
 $ helm delete fluid
 $ kubectl delete -f fluid/crds

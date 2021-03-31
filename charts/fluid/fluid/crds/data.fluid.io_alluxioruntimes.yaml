@@ -704,6 +704,10 @@ spec:
             selector:
               description: Selector is used for auto-scaling
               type: string
+            setupDuration:
+              description: Duration tell user how much time was spent to setup the
+                runtime
+              type: string
             valueFile:
               description: config map used to set configurations
               type: string
