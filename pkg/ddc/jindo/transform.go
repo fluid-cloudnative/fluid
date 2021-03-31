@@ -84,13 +84,37 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		},
 	}
 	err = e.transformHadoopConfig(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformFuseNodeSelector(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformSecret(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformToken(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.allocatePorts(value)
+	if err != nil {
+		return
+	}
 	err = e.transformMaster(runtime, metaPath, value)
+	if err != nil {
+		return
+	}
 	err = e.transformWorker(runtime, metaPath, dataPath, userQuotas, value)
+	if err != nil {
+		return
+	}
 	err = e.transformFuse(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformRunAsUser(runtime, value)
 	return value, err
 }

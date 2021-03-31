@@ -15,6 +15,9 @@ import (
 func (e *JindoEngine) Shutdown() (err error) {
 
 	err = e.invokeCleanCache()
+	if err != nil {
+		return
+	}
 
 	_, err = e.destroyWorkers(-1)
 	if err != nil {
