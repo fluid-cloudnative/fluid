@@ -141,7 +141,7 @@ type Level struct {
 	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
 	// Also note that num of quotas must be consistent with the num of paths defined in Path.
 	// +optional
-	// +kubebuilder:validation:Pattern:="^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?,((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)+$"
+	// +kubebuilder:validation:Pattern:="^((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+)))),)+((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?)$"
 	QuotaList string `json:"quotaList,omitempty"`
 
 	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
