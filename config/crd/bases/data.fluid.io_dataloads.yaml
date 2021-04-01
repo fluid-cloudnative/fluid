@@ -89,8 +89,7 @@ spec:
               description: Conditions consists of transition information on DataLoad's
                 Phase
               items:
-                description: DataLoadCondition describes conditions that explains
-                  transitions on phase
+                description: Condition explains the transitions on phase
                 properties:
                   lastProbeTime:
                     description: LastProbeTime describes last time this condition
