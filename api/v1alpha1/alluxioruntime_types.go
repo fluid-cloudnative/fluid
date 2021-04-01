@@ -171,30 +171,6 @@ type Data struct {
 	Pin bool `json:"pin"`
 }
 
-// Run as
-type User struct {
-	// The uid to run the alluxio runtime
-	UID *int64 `json:"uid"`
-
-	// The gid to run the alluxio runtime
-	GID *int64 `json:"gid"`
-
-	// The user name to run the alluxio runtime
-	UserName string `json:"user"`
-
-	// The group name to run the alluxio runtime
-	GroupName string `json:"group"`
-
-	// The groups for the alluxio runtime user
-	// Groups []Group `json:"groups"`
-}
-
-// group
-// type Group struct {
-// 	ID   int64  `json:"id"`
-// 	Name string `json:"name"`
-// }
-
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
