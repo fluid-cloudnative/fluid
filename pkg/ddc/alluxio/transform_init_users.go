@@ -16,6 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -24,31 +26,22 @@ import (
 // transform dataset which has ufsPaths and ufsVolumes
 func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
-	value.InitUsers = InitUsers{
+	value.InitUsers = common.InitUsers{
 		Enabled: false,
 	}
 
 	if runtime.Spec.RunAs != nil {
 		value.UserInfo.User = int(*runtime.Spec.RunAs.UID)
 		value.UserInfo.Group = int(*runtime.Spec.RunAs.GID)
-		// value.UserInfo.PasswdPath = e.getPasswdPath()
-		// value.UserInfo.GroupPath = e.getGroupsPath()
-		// value.UserInfo.Args = e.getInitUsersArgs(runtime)
-		value.InitUsers = InitUsers{
-			Enabled: true,
-			Dir:     e.getInitUserDir(),
-			//Args:       e.getInitUsersArgs(runtime),
-			EnvUsers:       e.getInitUserEnv(runtime),
+		value.InitUsers = common.InitUsers{
+			Enabled:        true,
+			Dir:            e.getInitUserDir(),
+			EnvUsers:       utils.GetInitUserEnv(runtime.Spec.RunAs),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
-			//ImageInfo: ImageInfo{
-			//	Image:           "registry.cn-hangzhou.aliyuncs.com/fluid/init-users",
-			//	ImageTag:        "v0.3.0",
-			//	ImagePullPolicy: "IfNotPresent",
-			//},
 		}
 
 		initImageInfo := strings.Split(e.initImage, ":")
-		value.InitUsers.ImageInfo = ImageInfo{
+		value.InitUsers.ImageInfo = common.ImageInfo{
 			Image:           initImageInfo[0],
 			ImageTag:        initImageInfo[1],
 			ImagePullPolicy: "IfNotPresent",

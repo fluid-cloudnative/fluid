@@ -156,26 +156,6 @@ func (e *AlluxioEngine) getInitUserDir() string {
 	return dir
 }
 
-func (e *AlluxioEngine) getInitUsersArgs(runtime *datav1alpha1.AlluxioRuntime) []string {
-	uid := strconv.FormatInt(*runtime.Spec.RunAs.UID, 10)
-	gid := strconv.FormatInt(*runtime.Spec.RunAs.GID, 10)
-	username := runtime.Spec.RunAs.UserName
-	args := []string{uid + ":" + username + ":" + gid,
-		gid + ":" + runtime.Spec.RunAs.GroupName}
-
-	// groups := runtime.Spec.RunAs.Groups
-	// for _, group := range groups {
-	// 	gid = strconv.FormatInt(group.ID, 10)
-	// 	var tmp string = " " + gid + ":" + group.Name
-	// 	args = append(args, tmp)
-	// }
-	return args
-}
-
-func (e *AlluxioEngine) getInitUserEnv(runtime *datav1alpha1.AlluxioRuntime) string {
-	return strings.Join(e.getInitUsersArgs(runtime), ",")
-}
-
 // Init tierPaths when running as a non-root user: chmod on each path
 // Example: "/dev/shm:/var/lib/docker/alluxio:/dev/ssd"
 func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime) string {

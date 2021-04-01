@@ -83,3 +83,8 @@ func ParseBackupRestorePath(backupRestorePath string) (pvcName string, path stri
 	}
 	return
 }
+
+// GetBackupUserDir generate the temp dir of backup user
+func GetBackupUserDir(namespace string, name string) string {
+	return fmt.Sprintf("/tmp/backupuser/%s/%s", namespace, name)
+}

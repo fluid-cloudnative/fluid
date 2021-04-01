@@ -16,8 +16,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/dataload"
-	v1 "k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,22 +43,6 @@ type TargetPath struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// DataLoadCondition describes conditions that explains transitions on phase
-type DataLoadCondition struct {
-	// Type of condition, either `Complete` or `Failed`
-	Type dataload.DataLoadConditionType `json:"type"`
-	// Status of the condition, one of `True`, `False` or `Unknown`
-	Status v1.ConditionStatus `json:"status"`
-	// Reason for the condition's last transition
-	Reason string `json:"reason,omitempty"`
-	// Message is a human-readable message indicating details about the transition
-	Message string `json:"message,omitempty"`
-	// LastProbeTime describes last time this condition was updated.
-	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
-	// LastTransitionTime describes last time the condition transitioned from one status to another.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-}
-
 // DataLoadSpec defines the desired state of DataLoad
 type DataLoadSpec struct {
 	// Dataset defines the target dataset of the DataLoad
@@ -75,10 +58,10 @@ type DataLoadSpec struct {
 // DataLoadStatus defines the observed state of DataLoad
 type DataLoadStatus struct {
 	// Phase describes current phase of DataLoad
-	Phase dataload.DataLoadPhase `json:"phase"`
+	Phase common.Phase `json:"phase"`
 
 	// Conditions consists of transition information on DataLoad's Phase
-	Conditions []DataLoadCondition `json:"conditions"`
+	Conditions []Condition `json:"conditions"`
 
 	// Duration tell user how much time was spent to load the data
 	Duration string `json:"duration"`

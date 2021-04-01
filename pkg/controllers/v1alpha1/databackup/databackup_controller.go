@@ -119,15 +119,15 @@ func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	// DataBackup's phase transition: None -> Pending -> Backuping -> Complete or Failed
 	switch databackup.Status.Phase {
-	case cdatabackup.PhaseNone:
+	case common.PhaseNone:
 		return r.reconcileNoneDataBackup(ctx)
-	case cdatabackup.PhasePending:
+	case common.PhasePending:
 		return r.reconcilePendingDataBackup(ctx)
-	case cdatabackup.PhaseBackuping:
-		return r.reconcileBackupingDataBackup(ctx)
-	case cdatabackup.PhaseComplete:
+	case common.PhaseExecuting:
+		return r.reconcileExecutingDataBackup(ctx)
+	case common.PhaseComplete:
 		return r.reconcileCompleteDataBackup(ctx)
-	case cdatabackup.PhaseFailed:
+	case common.PhaseFailed:
 		return r.reconcileFailedDataBackup(ctx)
 	default:
 		ctx.Log.Info("Unknown DataBackup phase, won't reconcile it", "databackup", databackup)
@@ -167,9 +167,9 @@ func (r *DataBackupReconciler) addFinalierAndRequeue(ctx reconcileRequestContext
 func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNoneDataBackup")
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
-	databackupToUpdate.Status.Phase = cdatabackup.PhasePending
+	databackupToUpdate.Status.Phase = common.PhasePending
 	if len(databackupToUpdate.Status.Conditions) == 0 {
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{}
+		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{}
 	}
 	databackupToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
