@@ -41,4 +41,16 @@ dataBackup:
   # if it is null, will backup in local
   # pvcName: test
 
+initUsers:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  args: "1000"
+  envUsers: ""
+  dir: ""
 
+# Security Context
+user: 1000
+group: 1000
+fsGroup: 1000

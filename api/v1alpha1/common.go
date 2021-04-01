@@ -15,7 +15,11 @@ limitations under the License.
 
 package v1alpha1
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // InitUsersSpec is a description of the initialize the users for runtime
 type InitUsersSpec struct {
@@ -59,4 +63,32 @@ type VersionSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+}
+
+// Condition explains the transitions on phase
+type Condition struct {
+	// Type of condition, either `Complete` or `Failed`
+	Type common.ConditionType `json:"type"`
+	// Status of the condition, one of `True`, `False` or `Unknown`
+	Status corev1.ConditionStatus `json:"status"`
+	// Reason for the condition's last transition
+	Reason string `json:"reason,omitempty"`
+	// Message is a human-readable message indicating details about the transition
+	Message string `json:"message,omitempty"`
+	// LastProbeTime describes last time this condition was updated.
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	// LastTransitionTime describes last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+}
+
+// User explains the user and group to run a Container
+type User struct {
+	// The uid to run the alluxio runtime
+	UID *int64 `json:"uid"`
+	// The gid to run the alluxio runtime
+	GID *int64 `json:"gid"`
+	// The user name to run the alluxio runtime
+	UserName string `json:"user"`
+	// The group name to run the alluxio runtime
+	GroupName string `json:"group"`
 }
