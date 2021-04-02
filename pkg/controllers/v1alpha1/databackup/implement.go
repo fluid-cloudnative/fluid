@@ -99,20 +99,20 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	conflictDataBackupRef := targetDataset.Status.DataBackupRef
 	myDataBackupRef := utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace)
 	if len(conflictDataBackupRef) != 0 && conflictDataBackupRef != myDataBackupRef {
-		log.V(1).Info("Found other DataBackups that is in Backuping phase, will backoff", "other DataBackup", conflictDataBackupRef)
+		log.V(1).Info("Found other DataBackups that is in Executing phase, will backoff", "other DataBackup", conflictDataBackupRef)
 
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
+		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               common.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "conflictDataBackupRef",
-				Message:            "Found other Databackup that is in Backinging phase",
+				Message:            "Found other DataBackup that is in Executing phase",
 				LastProbeTime:      metav1.NewTime(time.Now()),
 				LastTransitionTime: metav1.NewTime(time.Now()),
 			},
 		}
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = common.PhaseFailed
 
 		if err := r.Status().Update(ctx, databackupToUpdate); err != nil {
 			return utils.RequeueIfError(err)
@@ -153,9 +153,9 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	if !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.PathScheme) && !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.VolumeScheme) {
 		log.Error(fmt.Errorf("PathNotSupported"), "don't support path in this form", "path", ctx.DataBackup.Spec.BackupPath)
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
+		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               common.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "PathNotSupported",
 				Message:            "Only support pvc and local path now",
@@ -163,7 +163,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 				LastTransitionTime: metav1.NewTime(time.Now()),
 			},
 		}
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = common.PhaseFailed
 
 		if err := r.Status().Update(ctx, databackupToUpdate); err != nil {
 			return utils.RequeueIfError(err)
@@ -183,21 +183,21 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 			return utils.RequeueAfterInterval(20 * time.Second)
 		}
 	}
-	// 4. update phase to Backuping
+	// 4. update phase to Executing
 	log.Info("Get lock on target dataset, try to update phase")
 	dataBackupToUpdate := ctx.DataBackup.DeepCopy()
-	dataBackupToUpdate.Status.Phase = cdatabackup.PhaseBackuping
+	dataBackupToUpdate.Status.Phase = common.PhaseExecuting
 	if err := r.Client.Status().Update(context.TODO(), dataBackupToUpdate); err != nil {
-		log.Error(err, "failed to update cdatabackup's status to Backuping, will retry")
+		log.Error(err, "failed to update cdatabackup's status to Executing, will retry")
 		return utils.RequeueIfError(err)
 	}
-	log.V(1).Info("update cdatabackup's status to Backuping successfully")
+	log.V(1).Info("update cdatabackup's status to Executing successfully")
 	return utils.RequeueImmediately()
 }
 
-// reconcileBackupingDataBackup reconciles DataBackups that are in `Backuping` phase
-func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileBackupingDataBackup")
+// reconcileExecutingDataBackup reconciles DataBackups that are in `Executing` phase
+func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileExecutingDataBackup")
 	// 1. get the alluxio-master Pod
 	podName := ctx.Dataset.Name + "-master-0"
 	masterPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
@@ -216,7 +216,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataBackup helm chart not installed yet, will install")
-		valueFileName, err := r.generateDataBackupValueFile(ctx.DataBackup, masterPod)
+		valueFileName, err := r.generateDataBackupValueFile(ctx, masterPod)
 		if err != nil {
 			log.Error(err, "failed to generate databackup chart's value file")
 			return utils.RequeueIfError(err)
@@ -241,7 +241,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 	}
 	if kubeclient.IsSucceededPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseComplete
+		databackupToUpdate.Status.Phase = common.PhaseComplete
 		var successTime time.Time
 		if len(backupPod.Status.Conditions) != 0 {
 			successTime = backupPod.Status.Conditions[0].LastTransitionTime.Time
@@ -250,9 +250,9 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 			successTime = time.Now()
 		}
 		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time, successTime)
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
+		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{
 			{
-				Type:               cdatabackup.Complete,
+				Type:               common.Complete,
 				Status:             v1.ConditionTrue,
 				Reason:             "BackupSuccessful",
 				Message:            "Backup Pod exec successfully and finish",
@@ -268,7 +268,7 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 		return utils.RequeueImmediately()
 	} else if kubeclient.IsFailedPod(backupPod) {
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
-		databackupToUpdate.Status.Phase = cdatabackup.PhaseFailed
+		databackupToUpdate.Status.Phase = common.PhaseFailed
 		var failedTime time.Time
 		if len(backupPod.Status.Conditions) != 0 {
 			failedTime = backupPod.Status.Conditions[0].LastTransitionTime.Time
@@ -277,9 +277,9 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 			failedTime = time.Now()
 		}
 		databackupToUpdate.Status.Duration = utils.CalculateDuration(databackupToUpdate.CreationTimestamp.Time, failedTime)
-		databackupToUpdate.Status.Conditions = []v1alpha1.DataBackupCondition{
+		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{
 			{
-				Type:               cdatabackup.Failed,
+				Type:               common.Failed,
 				Status:             v1.ConditionTrue,
 				Reason:             "BackupFailed",
 				Message:            "Backup Pod exec failed and exit",
@@ -299,7 +299,8 @@ func (r *DataBackupReconcilerImplement) reconcileBackupingDataBackup(ctx reconci
 
 // generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
 // marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
-func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v1alpha1.DataBackup, masterPod *v1.Pod) (valueFileName string, err error) {
+func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcileRequestContext, masterPod *v1.Pod) (valueFileName string, err error) {
+	databackup := ctx.DataBackup
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
@@ -327,6 +328,43 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(databackup v
 	dataBackup.Path = path
 
 	dataBackupValue := cdatabackup.DataBackupValue{DataBackup: dataBackup}
+
+	dataBackupValue.InitUsers = common.InitUsers{
+		Enabled: false,
+	}
+
+	var runtime v1alpha1.AlluxioRuntime
+	var runAs *v1alpha1.User
+	initUsers := common.ImageInfo{}
+
+	// get the runAs and initUsers imageInfo from runtime
+	err = r.Get(ctx, ctx.NamespacedName, &runtime)
+	if err == nil {
+		runAs = runtime.Spec.RunAs
+		initUsers = common.ImageInfo{
+			Image:           runtime.Spec.InitUsers.Image,
+			ImageTag:        runtime.Spec.InitUsers.ImageTag,
+			ImagePullPolicy: runtime.Spec.InitUsers.ImagePullPolicy,
+		}
+	}
+	// databackup.Spec.RunAs > runtime.Spec.RunAs > root
+	if databackup.Spec.RunAs != nil {
+		runAs = databackup.Spec.RunAs
+	}
+
+	if runAs != nil {
+		dataBackupValue.UserInfo.User = int(*runAs.UID)
+		dataBackupValue.UserInfo.Group = int(*runAs.GID)
+		dataBackupValue.UserInfo.FSGroup = 0
+		dataBackupValue.InitUsers = common.InitUsers{
+			Enabled:  true,
+			EnvUsers: utils.GetInitUserEnv(runAs),
+			Dir:      utils.GetBackupUserDir(dataBackup.Namespace, dataBackup.Name),
+		}
+	}
+
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.GetInitUserImage(initUsers)
+
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
 		return

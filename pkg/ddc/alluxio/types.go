@@ -27,8 +27,8 @@ import (
 type Alluxio struct {
 	FullnameOverride string `yaml:"fullnameOverride"`
 
-	ImageInfo `yaml:",inline"`
-	UserInfo  `yaml:",inline"`
+	common.ImageInfo `yaml:",inline"`
+	common.UserInfo  `yaml:",inline"`
 
 	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
 	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
@@ -58,7 +58,7 @@ type Alluxio struct {
 
 	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
 
-	InitUsers InitUsers `yaml:"initUsers,omitempty"`
+	InitUsers common.InitUsers `yaml:"initUsers,omitempty"`
 
 	Monitoring string `yaml:"monitoring,omitempty"`
 
@@ -81,28 +81,6 @@ type UFSPath struct {
 type UFSVolume struct {
 	Name          string `yaml:"name"`
 	ContainerPath string `yaml:"containerPath"`
-}
-
-type ImageInfo struct {
-	Image           string `yaml:"image"`
-	ImageTag        string `yaml:"imageTag"`
-	ImagePullPolicy string `yaml:"imagePullPolicy"`
-}
-
-type UserInfo struct {
-	User    int `yaml:"user"`
-	Group   int `yaml:"group"`
-	FSGroup int `yaml:"fsGroup"`
-}
-
-// The container to init the users
-type InitUsers struct {
-	ImageInfo `yaml:",inline"`
-	//Args       []string `yaml:"args"`
-	EnvUsers       string `yaml:"envUsers"`
-	Dir            string `yaml:"dir"`
-	Enabled        bool   `yaml:"enabled,omitempty"`
-	EnvTieredPaths string `yaml:"envTieredPaths"`
 }
 
 type Metastore struct {

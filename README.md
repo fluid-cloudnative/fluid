@@ -74,7 +74,7 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 - [English](docs/en/TOC.md)
 - [简体中文](docs/zh/TOC.md)
 
-## Qucik Demo
+## Quick Demo
 
 <details>
 <summary>Demo 1: Accelerate Remote File Accessing with Fluid</summary>

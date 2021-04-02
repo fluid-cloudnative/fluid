@@ -13,12 +13,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dataload
+package utils
 
-const (
-	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
-	DATALOAD_CHART         = "fluid-dataloader"
-	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
-	DATALOAD_SUFFIX_LENGTH = 5
-	ENV_DATALOADER_IMG     = "DATALOADER_IMG"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"strconv"
+	"strings"
 )
+
+func GetInitUsersArgs(user *datav1alpha1.User) []string {
+	uid := strconv.FormatInt(*user.UID, 10)
+	gid := strconv.FormatInt(*user.GID, 10)
+	username := user.UserName
+	args := []string{uid + ":" + username + ":" + gid,
+		gid + ":" + user.GroupName}
+	return args
+}
+
+func GetInitUserEnv(user *datav1alpha1.User) string {
+	return strings.Join(GetInitUsersArgs(user), ",")
+}

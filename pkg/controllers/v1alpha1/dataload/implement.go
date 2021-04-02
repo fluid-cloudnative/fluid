@@ -79,17 +79,17 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 	log := ctx.Log.WithName("ReconcileDataLoad")
 	log.V(1).Info("process the cdataload", "cdataload", ctx.DataLoad)
 
-	// DataLoad's phase transition: None -> Pending -> Loading -> Loaded or Failed
+	// DataLoad's phase transition: None -> Pending -> Executing -> Loaded or Failed
 	switch ctx.DataLoad.Status.Phase {
-	case cdataload.DataLoadPhaseNone:
+	case common.PhaseNone:
 		return r.reconcileNoneDataLoad(ctx)
-	case cdataload.DataLoadPhasePending:
+	case common.PhasePending:
 		return r.reconcilePendingDataLoad(ctx)
-	case cdataload.DataLoadPhaseLoading:
-		return r.reconcileLoadingDataLoad(ctx)
-	case cdataload.DataLoadPhaseComplete:
+	case common.PhaseExecuting:
+		return r.reconcileExecutingDataLoad(ctx)
+	case common.PhaseComplete:
 		return r.reconcileLoadedDataLoad(ctx)
-	case cdataload.DataLoadPhaseFailed:
+	case common.PhaseFailed:
 		return r.reconcileFailedDataLoad(ctx)
 	default:
 		log.Info("Unknown DataLoad phase, won't reconcile it")
@@ -101,9 +101,9 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoad(ctx reconcileRequestCont
 func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNoneDataLoad")
 	dataloadToUpdate := ctx.DataLoad.DeepCopy()
-	dataloadToUpdate.Status.Phase = cdataload.DataLoadPhasePending
+	dataloadToUpdate.Status.Phase = common.PhasePending
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
-		dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{}
+		dataloadToUpdate.Status.Conditions = []v1alpha1.Condition{}
 	}
 	dataloadToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
@@ -177,15 +177,15 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	//	return utils.RequeueAfterInterval(20 * time.Second)
 	//}
 
-	// 3. Check if there's any loading DataLoad jobs(conflict DataLoad)
+	// 3. Check if there's any Executing DataLoad jobs(conflict DataLoad)
 	conflictDataLoadRef := targetDataset.Status.DataLoadRef
 	myDataLoadRef := utils.GetDataLoadRef(ctx.DataLoad.Name, ctx.DataLoad.Namespace)
 	if len(conflictDataLoadRef) != 0 && conflictDataLoadRef != myDataLoadRef {
-		log.V(1).Info("Found other DataLoads that is in Loading phase, will backoff", "other DataLoad", conflictDataLoadRef)
+		log.V(1).Info("Found other DataLoads that is in Executing phase, will backoff", "other DataLoad", conflictDataLoadRef)
 		r.Recorder.Eventf(&ctx.DataLoad,
 			v1.EventTypeNormal,
 			common.DataLoadCollision,
-			"Found other Dataload(%s) that is in Loading phase, will backoff",
+			"Found other Dataload(%s) that is in Executing phase, will backoff",
 			conflictDataLoadRef)
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
@@ -294,24 +294,24 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 		}
 	}
 
-	// 6. update phase to Loading
-	// We offload the helm install logic to `reconcileLoadingDataLoad` to
+	// 6. update phase to Executing
+	// We offload the helm install logic to `reconcileExecutingDataLoad` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataLoad job will never start and all other DataLoads will be blocked forever.
 	log.Info("Get lock on target dataset, try to update phase")
 	dataLoadToUpdate := ctx.DataLoad.DeepCopy()
-	dataLoadToUpdate.Status.Phase = cdataload.DataLoadPhaseLoading
+	dataLoadToUpdate.Status.Phase = common.PhaseExecuting
 	if err = r.Client.Status().Update(context.TODO(), dataLoadToUpdate); err != nil {
-		log.Error(err, "failed to update cdataload's status to Loading, will retry")
+		log.Error(err, "failed to update cdataload's status to Executing, will retry")
 		return utils.RequeueIfError(err)
 	}
-	log.V(1).Info("update cdataload's status to Loading successfully")
+	log.V(1).Info("update cdataload's status to Executing successfully")
 	return utils.RequeueImmediately()
 }
 
-// reconcileLoadingDataLoad reconciles DataLoads that are in `DataLoadPhaseLoading` phase
-func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("reconcileLoadingDataLoad")
+// reconcileExecutingDataLoad reconciles DataLoads that are in `Executing` phase
+func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileExecutingDataLoad")
 
 	// 1. Check if the helm release already exists
 	releaseName := utils.GetDataLoadReleaseName(ctx.Name)
@@ -370,9 +370,9 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 				}
 				dataloadToUpdate := dataload.DeepCopy()
 				jobCondition := job.Status.Conditions[0]
-				dataloadToUpdate.Status.Conditions = []v1alpha1.DataLoadCondition{
+				dataloadToUpdate.Status.Conditions = []v1alpha1.Condition{
 					{
-						Type:               cdataload.DataLoadConditionType(jobCondition.Type),
+						Type:               common.ConditionType(jobCondition.Type),
 						Status:             jobCondition.Status,
 						Reason:             jobCondition.Reason,
 						Message:            jobCondition.Message,
@@ -381,9 +381,9 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 					},
 				}
 				if jobCondition.Type == batchv1.JobFailed {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+					dataloadToUpdate.Status.Phase = common.PhaseFailed
 				} else {
-					dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseComplete
+					dataloadToUpdate.Status.Phase = common.PhaseComplete
 				}
 				dataloadToUpdate.Status.Duration = utils.CalculateDuration(dataloadToUpdate.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 
@@ -402,7 +402,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadingDataLoad(ctx reconcileRequ
 		}
 	}
 
-	log.V(1).Info("DataLoad job still runnning", "namespace", ctx.Namespace, "jobName", jobName)
+	log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "jobName", jobName)
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 

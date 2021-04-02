@@ -141,7 +141,7 @@ type Level struct {
 	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
 	// Also note that num of quotas must be consistent with the num of paths defined in Path.
 	// +optional
-	// +kubebuilder:validation:Pattern:="^((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+)))),)+((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?)$"
+	// +kubebuilder:validation:Pattern:="^((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+)))),)+((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$"
 	QuotaList string `json:"quotaList,omitempty"`
 
 	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
@@ -170,30 +170,6 @@ type Data struct {
 	// +optional
 	Pin bool `json:"pin"`
 }
-
-// Run as
-type User struct {
-	// The uid to run the alluxio runtime
-	UID *int64 `json:"uid"`
-
-	// The gid to run the alluxio runtime
-	GID *int64 `json:"gid"`
-
-	// The user name to run the alluxio runtime
-	UserName string `json:"user"`
-
-	// The group name to run the alluxio runtime
-	GroupName string `json:"group"`
-
-	// The groups for the alluxio runtime user
-	// Groups []Group `json:"groups"`
-}
-
-// group
-// type Group struct {
-// 	ID   int64  `json:"id"`
-// 	Name string `json:"name"`
-// }
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {

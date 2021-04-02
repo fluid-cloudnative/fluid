@@ -79,3 +79,52 @@ const (
 	FLUID_FUSE_BALLOON_KEY   = "fluid_fuse_balloon"
 	FLUID_FUSE_BALLOON_VALUE = "true"
 )
+
+// UserInfo to run a Container
+type UserInfo struct {
+	User    int `yaml:"user"`
+	Group   int `yaml:"group"`
+	FSGroup int `yaml:"fsGroup"`
+}
+
+// The InitContainer to init the users for other Containers
+type InitUsers struct {
+	ImageInfo      `yaml:",inline"`
+	EnvUsers       string `yaml:"envUsers"`
+	Dir            string `yaml:"dir"`
+	Enabled        bool   `yaml:"enabled,omitempty"`
+	EnvTieredPaths string `yaml:"envTieredPaths"`
+}
+
+// ImageInfo to run a Container
+type ImageInfo struct {
+	// Image of a Container
+	Image string `yaml:"image"`
+	// ImageTag of a Container
+	ImageTag string `yaml:"imageTag"`
+	// ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`
+	ImagePullPolicy string `yaml:"imagePullPolicy"`
+}
+
+// Phase is a valid value of a task stage
+type Phase string
+
+// These are possible phases of a Task
+const (
+	PhaseNone      Phase = ""
+	PhasePending   Phase = "Pending"
+	PhaseExecuting Phase = "Executing"
+	PhaseComplete  Phase = "Complete"
+	PhaseFailed    Phase = "Failed"
+)
+
+// ConditionType is a valid value for Condition.Type
+type ConditionType string
+
+// These are valid conditions of a Task
+const (
+	// Complete means the task has completed its execution.
+	Complete ConditionType = "Complete"
+	// Failed means the task has failed its execution.
+	Failed ConditionType = "Failed"
+)
