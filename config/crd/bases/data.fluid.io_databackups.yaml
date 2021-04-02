@@ -62,6 +62,29 @@ spec:
             dataset:
               description: Dataset defines the target dataset of the DataBackup
               type: string
+            runAs:
+              description: Manage the user to run Alluxio DataBackup
+              properties:
+                gid:
+                  description: The gid to run the alluxio runtime
+                  format: int64
+                  type: integer
+                group:
+                  description: The group name to run the alluxio runtime
+                  type: string
+                uid:
+                  description: The uid to run the alluxio runtime
+                  format: int64
+                  type: integer
+                user:
+                  description: The user name to run the alluxio runtime
+                  type: string
+              required:
+              - gid
+              - group
+              - uid
+              - user
+              type: object
           type: object
         status:
           description: DataBackupStatus defines the observed state of DataBackup
@@ -83,8 +106,7 @@ spec:
               description: Conditions consists of transition information on DataBackup's
                 Phase
               items:
-                description: DataBackupCondition describes conditions that explains
-                  transitions on phase
+                description: Condition explains the transitions on phase
                 properties:
                   lastProbeTime:
                     description: LastProbeTime describes last time this condition

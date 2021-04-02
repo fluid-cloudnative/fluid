@@ -1,8 +1,14 @@
 package databackup
 
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+)
+
 // DataBackupValue defines the value yaml file used in DataBackup helm chart
 type DataBackupValue struct {
-	DataBackup DataBackup `yaml:"dataBackup"`
+	DataBackup      DataBackup `yaml:"dataBackup"`
+	common.UserInfo `yaml:",inline"`
+	InitUsers       common.InitUsers `yaml:"initUsers,omitempty"`
 }
 
 // DataBackup defines values used in DataBackup helm chart

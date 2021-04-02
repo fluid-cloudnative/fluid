@@ -16,29 +16,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/databackup"
-	v1 "k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// DataBackupCondition describes conditions that explains transitions on phase
-type DataBackupCondition struct {
-	// Type of condition, either `Complete` or `Failed`
-	Type databackup.ConditionType `json:"type"`
-	// Status of the condition, one of `True`, `False` or `Unknown`
-	Status v1.ConditionStatus `json:"status"`
-	// Reason for the condition's last transition
-	Reason string `json:"reason,omitempty"`
-	// Message is a human-readable message indicating details about the transition
-	Message string `json:"message,omitempty"`
-	// LastProbeTime describes last time this condition was updated.
-	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
-	// LastTransitionTime describes last time the condition transitioned from one status to another.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-}
 
 // BackupLocation describes the final backup location of DataBackup
 type BackupLocation struct {
@@ -54,18 +37,20 @@ type DataBackupSpec struct {
 	Dataset string `json:"dataset,omitempty"`
 	// BackupPath defines the target path to save data of the DataBackup
 	BackupPath string `json:"backupPath,omitempty"`
+	// Manage the user to run Alluxio DataBackup
+	RunAs *User `json:"runAs,omitempty"`
 }
 
 // DataBackupStatus defines the observed state of DataBackup
 type DataBackupStatus struct {
 	// Phase describes current phase of DataBackup
-	Phase databackup.Phase `json:"phase"`
+	Phase common.Phase `json:"phase"`
 	// BackupLocation tell user the location to save data of the DataBackup
 	BackupLocation BackupLocation `json:"backupLocation,omitempty"`
 	// Duration tell user how much time was spent to backup
 	Duration string `json:"duration"`
 	// Conditions consists of transition information on DataBackup's Phase
-	Conditions []DataBackupCondition `json:"conditions"`
+	Conditions []Condition `json:"conditions"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset`
