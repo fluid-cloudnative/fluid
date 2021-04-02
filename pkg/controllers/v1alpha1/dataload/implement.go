@@ -133,7 +133,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 				return err
 			}
 			dataloadToUpdate := dataload.DeepCopy()
-			dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+			dataloadToUpdate.Status.Phase = common.PhaseFailed
 
 			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
@@ -265,7 +265,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 				return err
 			}
 			dataloadToUpdate := dataload.DeepCopy()
-			dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+			dataloadToUpdate.Status.Phase = common.PhaseFailed
 
 			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
@@ -281,7 +281,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 		return utils.NoRequeue()
 	}
 
-	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and
+	// 6. lock the target dataset. Make sure only one DataLoad can win the lock and
 	// the losers have to requeue and go through the whole reconciliation loop.
 	log.Info("No conflicts detected, try to lock the target dataset")
 	datasetToUpdate := targetDataset.DeepCopy()
@@ -294,7 +294,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 		}
 	}
 
-	// 6. update phase to Executing
+	// 7. update phase to Executing
 	// We offload the helm install logic to `reconcileExecutingDataLoad` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataLoad job will never start and all other DataLoads will be blocked forever.
