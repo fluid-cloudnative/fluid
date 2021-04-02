@@ -36,7 +36,11 @@ const (
 
 	TargetDatasetNotFound = "TargetDatasetNotFound"
 
+	TargetDatasetPathNotFound = "TargetDatasetPathNotFound"
+
 	TargetDatasetNotReady = "TargetDatasetNotReady"
+
+	TargetDatasetNamespaceNotSame = "TargetDatasetNamespaceNotSame"
 
 	DataLoadCollision = "DataLoadCollision"
 

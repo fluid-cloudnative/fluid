@@ -118,7 +118,38 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx reconcileRequest
 func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePendingDataLoad")
 
-	// 1. Check existence of the target dataset
+	// 1. Check dataload namespace and dataset namespace need to be same
+	if ctx.DataLoad.Namespace != ctx.DataLoad.Spec.Dataset.Namespace {
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.TargetDatasetNamespaceNotSame,
+			"Dataload(%s) namespace is not same as dataset",
+			ctx.DataLoad.Name)
+
+		// Update DataLoad's phase to Failed, and no requeue
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+			if err != nil {
+				return err
+			}
+			dataloadToUpdate := dataload.DeepCopy()
+			dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+
+			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
+				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			log.Error(err, "can't update dataload's phase status to Failed")
+			return utils.RequeueIfError(err)
+		}
+		return utils.NoRequeue()
+	}
+
+	// 3. Check existence of the target dataset
 	targetDataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
@@ -195,6 +226,59 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 			common.RuntimeNotReady,
 			"Bounded accelerate runtime not ready")
 		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+
+	// 5. Check existence of the targetPath in alluxio
+	var notExisted bool
+	switch boundedRuntime.Type {
+	case common.ALLUXIO_RUNTIME:
+		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+		containerName := "alluxio-master"
+		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		for _, target := range ctx.DataLoad.Spec.Target {
+			isexist, err := fileUtils.IsExist(target.Path)
+			if err != nil {
+				return utils.RequeueAfterInterval(20 * time.Second)
+			}
+			if !isexist {
+				notExisted = true
+			}
+		}
+	default:
+		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not supported")
+	}
+
+	if notExisted {
+		r.Recorder.Eventf(&ctx.DataLoad,
+			v1.EventTypeNormal,
+			common.TargetDatasetPathNotFound,
+			"Dataload target dataset's path is not existed")
+
+		// Update DataLoad's phase to Failed, and no requeue
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+			if err != nil {
+				return err
+			}
+			dataloadToUpdate := dataload.DeepCopy()
+			dataloadToUpdate.Status.Phase = cdataload.DataLoadPhaseFailed
+
+			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
+				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			log.Error(err, "can't update dataload's phase status to Failed")
+			return utils.RequeueIfError(err)
+		}
+		return utils.NoRequeue()
 	}
 
 	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and
