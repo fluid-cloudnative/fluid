@@ -55,7 +55,6 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "alluxio.worker.network.reader.buffer.size", "32MB")
-	setDefaultProperties(runtime, value, "alluxio.worker.file.buffer.size", "320MB")
 	// Enable metrics as default for better monitoring result, if you have performance concern, feel free to turn it off
 	setDefaultProperties(runtime, value, "alluxio.user.metrics.collection.enabled", "true")
 	setDefaultProperties(runtime, value, "alluxio.master.rpc.executor.max.pool.size", "1024")
