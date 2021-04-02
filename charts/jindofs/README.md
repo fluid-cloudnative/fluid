@@ -9,7 +9,9 @@ http://www.tpc.org/tpcds/results/tpcds_perf_results.asp?resulttype=all
 ### JindoFS
 EMR Jindo 有计算和存储两大部分，存储的部分叫 JindoFS。JindoFS 是阿里云针对云上存储定制的自研大数据存储服务，完全兼容 Hadoop 文件系统接口，给客户带来更加灵活、高效的计算存储方案，目前已验证支持阿里云 EMR 中所有的计算服务和引擎：Spark、Flink、Hive、MapReduce、Presto、Impala 等。Jindo FS 有两种使用模式，块存储模式和缓存模式。下面我们来分析下，JindoFS 是如何来解决大数据上的存储问题的。
 
+<div align="center">
 <img src="https://ucc.alicdn.com/pic/developer-ecology/d37dd8d3bdc246c59e4eae22dd5eef32.png" align="center">
+</div>
 
 ### 块存储模式
 计算和存储分离是业界的趋势，OSS 这样的云上存储能力是无限大的，成本上非常有优势，如何利用 OSS 提供的无限存储能力，同时又高效地操作文件系统的元数据。JindoFS 块存储模式提供了一套完整的云原生解决方案。
