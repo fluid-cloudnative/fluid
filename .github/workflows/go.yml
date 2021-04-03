@@ -37,6 +37,7 @@ jobs:
     
     - name: CI script
       run: |
+        make manifests
         make build
         golangci-lint run --timeout=10m ./...
         test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
