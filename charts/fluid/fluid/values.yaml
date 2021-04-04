@@ -29,7 +29,7 @@ runtime:
     fuse:
       image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-1-SNAPSHOT-cb60e05
   jindo:
-    enabled: true
+    enabled: false
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.2
     fuse:
