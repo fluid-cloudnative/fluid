@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"strconv"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -109,6 +110,19 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 		if readOnly && len(tieredstoreInfo.Levels) == 1 && len(tieredstoreInfo.Levels[0].CachePaths) == 1 {
 			setDefaultProperties(runtime, value, "alluxio.user.direct.memory.io.enabled", "true")
 		}
+	}
+}
+
+// optimizeDefaultPropertiesAndFuseForHTTP sets the default value for properties and fuse when the mounts are all HTTP.
+func (e *AlluxioEngine) optimizeDefaultPropertiesAndFuseForHTTP(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+	setDefaultProperties(runtime, value, "alluxio.user.block.size.bytes.default", "256MB")
+	setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "256MB")
+	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "256MB")
+	setDefaultProperties(runtime, value, "alluxio.worker.network.reader.buffer.size", "256MB")
+	setDefaultProperties(runtime, value, "alluxio.user.streaming.data.timeout", "300sec")
+
+	if len(runtime.Spec.Fuse.Args) == 0 {
+		value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], "max_readahead=0"}, ",")
 	}
 }
 

@@ -102,6 +102,10 @@ const (
 	PathScheme string = "local://"
 
 	VolumeScheme string = "pvc://"
+
+	HttpScheme string = "http://"
+
+	HttpsScheme string = "https://"
 )
 
 var (
