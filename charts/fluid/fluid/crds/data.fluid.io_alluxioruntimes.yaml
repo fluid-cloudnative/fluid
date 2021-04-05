@@ -43,7 +43,7 @@ spec:
     name: Fuse Phase
     type: string
   - JSONPath: .status.apiGateway.endpoint
-    name: APIGateway
+    name: API Gateway
     priority: 10
     type: string
   - JSONPath: .metadata.creationTimestamp
