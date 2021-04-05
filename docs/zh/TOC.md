@@ -24,6 +24,7 @@
   - [数据预加载](samples/data_warmup.md)
   - [Alluxio分层存储配置](samples/tieredstore_config.md)
   - [Dataset手动扩缩容](samples/dataset_scaling.md)
+  - [通过REST API访问](samples/api_proxy.md)
 + 更多Runtime实现
   - [使用 JindoRuntime](https://github.com/aliyun/alibabacloud-jindofs/blob/master/docs/jindo_fluid/jindo_fluid_overview.md)
 + 运维指南
