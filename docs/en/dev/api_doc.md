@@ -909,6 +909,36 @@ RuntimeStatus
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.APIGatewayStatus">APIGatewayStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">RuntimeStatus</a>)
+</p>
+<p>
+<p>API Gateway</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>endpoint</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Endpoint for accessing</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec
 </h3>
 <p>
@@ -3475,6 +3505,19 @@ string
 <p>Selector is used for auto-scaling</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>apiGateway</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.APIGatewayStatus">
+APIGatewayStatus
+</a>
+</em>
+</td>
+<td>
+<p>APIGatewayStatus represents rest api gateway status</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.SecretKeySelector">SecretKeySelector
@@ -3755,5 +3798,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>96a3c68</code>.
+on git commit <code>f6f81a6</code>.
 </em></p>
