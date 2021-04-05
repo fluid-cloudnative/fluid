@@ -53,6 +53,12 @@ type HCFSStatus struct {
 	UnderlayerFileSystemVersion string `json:"underlayerFileSystemVersion,omitempty"`
 }
 
+// API Gateway
+type APIGatewayStatus struct {
+	// Endpoint for accessing
+	Endpoint string `json:"endpoint,omitempty"`
+}
+
 // VersionSpec represents the settings for the  version that fluid is orchestrating.
 type VersionSpec struct {
 	// Image (e.g. alluxio/alluxio)

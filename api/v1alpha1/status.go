@@ -117,6 +117,9 @@ type RuntimeStatus struct {
 
 	// Selector is used for auto-scaling
 	Selector string `json:"selector,omitempty"` // this must be the string form of the selector
+
+	// APIGatewayStatus represents rest api gateway status
+	APIGatewayStatus *APIGatewayStatus `json:"apiGateway,omitempty"`
 }
 
 type RuntimePhase string
