@@ -18,7 +18,7 @@ version: 0.6.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application.
-appVersion: 0.6.0-d04cd4d
+appVersion: 0.6.0-7dab91e
 home: https://github.com/fluid-cloudnative/fluid
 keywords:
   - category:data
