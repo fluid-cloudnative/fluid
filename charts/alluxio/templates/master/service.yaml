@@ -21,6 +21,8 @@
 {{- $jobMasterWebPort := .Values.jobMaster.ports.web }}
 {{- $masterEmbeddedPort := .Values.master.ports.embedded }}
 {{- $jobMasterEmbeddedPort := .Values.jobMaster.ports.embedded }}
+{{- $isAPIGatewayEnabled := .Values.apiGateway.enabled }}
+{{- $apiGatewayPort := .Values.apiGateway.ports.rest }}
 {{- $name := include "alluxio.name" . }}
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
@@ -50,6 +52,10 @@ spec:
       name: job-rpc
     - port: {{ $jobMasterWebPort }}
       name: job-web
+    {{- if $isAPIGatewayEnabled }}
+    - port: {{ $apiGatewayPort }}
+      name: rest
+    {{- end }}
     {{- if $isHaEmbedded }}
     - port: {{ $masterEmbeddedPort }}
       name: embedded

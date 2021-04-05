@@ -128,6 +128,7 @@ func (e *AlluxioEngine) setPortProperties(runtime *datav1alpha1.AlluxioRuntime, 
 	setDefaultProperties(runtime, value, "alluxio.job.worker.rpc.port", strconv.Itoa(value.JobWorker.Ports.Rpc))
 	setDefaultProperties(runtime, value, "alluxio.job.worker.web.port", strconv.Itoa(value.JobWorker.Ports.Web))
 	setDefaultProperties(runtime, value, "alluxio.job.worker.data.port", strconv.Itoa(value.JobWorker.Ports.Data))
+
 	if value.Master.Ports.Embedded != 0 && value.JobMaster.Ports.Embedded != 0 {
 		setDefaultProperties(runtime, value, "alluxio.master.embedded.journal.port", strconv.Itoa(value.Master.Ports.Embedded))
 		setDefaultProperties(runtime, value, "alluxio.job.master.embedded.journal.port", strconv.Itoa(value.JobMaster.Ports.Embedded))

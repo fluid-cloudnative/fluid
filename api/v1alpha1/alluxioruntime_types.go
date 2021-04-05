@@ -33,6 +33,9 @@ const (
 
 	// Fuse is the type for chief worker of Alluxio cluster.
 	Fuse AlluxioRuntimeRole = "fuse"
+
+	// API Gateway is the API Gateway of Alluxio cluster.
+	APIGateway AlluxioRuntimeRole = "apiGateway"
 )
 
 // AlluxioCompTemplateSpec is a description of the Alluxio commponents
@@ -65,6 +68,10 @@ type AlluxioCompTemplateSpec struct {
 
 	// Environment variables that will be used by Alluxio component. <br>
 	Env map[string]string `json:"env,omitempty"`
+
+	// Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -187,6 +194,9 @@ type AlluxioRuntimeSpec struct {
 
 	// Desired state for Alluxio job Worker
 	JobWorker AlluxioCompTemplateSpec `json:"jobWorker,omitempty"`
+
+	// Desired state for Alluxio API Gateway
+	APIGateway AlluxioCompTemplateSpec `json:"apiGateway,omitempty"`
 
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`

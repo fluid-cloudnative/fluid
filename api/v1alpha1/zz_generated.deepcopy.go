@@ -181,6 +181,7 @@ func (in *AlluxioRuntimeSpec) DeepCopyInto(out *AlluxioRuntimeSpec) {
 	in.JobMaster.DeepCopyInto(&out.JobMaster)
 	in.Worker.DeepCopyInto(&out.Worker)
 	in.JobWorker.DeepCopyInto(&out.JobWorker)
+	in.APIGateway.DeepCopyInto(&out.APIGateway)
 	in.InitUsers.DeepCopyInto(&out.InitUsers)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	if in.Properties != nil {
