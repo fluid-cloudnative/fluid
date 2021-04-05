@@ -137,7 +137,6 @@ spec:
           ports:
           - containerPort: {{ .Values.apiGateway.ports.rest }}
             name: rest
-          restartPolicy: Always
         {{- end }}
         - name: alluxio-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
