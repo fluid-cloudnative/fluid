@@ -121,7 +121,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	// 1. Check dataload namespace and dataset namespace need to be same
 	if ctx.DataLoad.Namespace != ctx.DataLoad.Spec.Dataset.Namespace {
 		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
+			v1.EventTypeWarning,
 			common.TargetDatasetNamespaceNotSame,
 			"Dataload(%s) namespace is not same as dataset",
 			ctx.DataLoad.Name)
@@ -236,11 +236,11 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 		containerName := "alluxio-master"
 		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		for _, target := range ctx.DataLoad.Spec.Target {
-			isexist, err := fileUtils.IsExist(target.Path)
+			isExist, err := fileUtils.IsExist(target.Path)
 			if err != nil {
 				return utils.RequeueAfterInterval(20 * time.Second)
 			}
-			if !isexist {
+			if !isExist {
 				notExisted = true
 			}
 		}
@@ -254,7 +254,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 
 	if notExisted {
 		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
+			v1.EventTypeWarning,
 			common.TargetDatasetPathNotFound,
 			"Dataload target dataset's path is not existed")
 
