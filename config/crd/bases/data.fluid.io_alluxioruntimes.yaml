@@ -92,6 +92,73 @@ spec:
                   description: Image tag (e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
+            apiGateway:
+              description: Desired state for Alluxio API Gateway
+              properties:
+                enabled:
+                  description: Enabled or Disabled for the components. For now, only  API
+                    Gateway is enabled or disabled.
+                  type: boolean
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by Alluxio
+                    component. <br>
+                  type: object
+                jvmOptions:
+                  description: Options for JVM
+                  items:
+                    type: string
+                  type: array
+                ports:
+                  additionalProperties:
+                    type: integer
+                  description: 'Ports used by Alluxio(e.g. rpc: 19998 for master)'
+                  type: object
+                properties:
+                  additionalProperties:
+                    type: string
+                  description: Configurable properties for the Alluxio component.
+                    <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Alluxio
+                    Configuration Properties</a> for more info
+                  type: object
+                replicas:
+                  description: Replicas is the desired number of replicas of the given
+                    template. If unspecified, defaults to 1. replicas is the min replicas
+                    of dataset in the cluster
+                  format: int32
+                  minimum: 1
+                  type: integer
+                resources:
+                  description: Resources that will be requested by the Alluxio component.
+                    <br> <br> Resources are not allowed for ephemeral containers.
+                    Ephemeral containers use spare resources already allocated to
+                    the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+              type: object
             data:
               description: Management strategies for the dataset to which the runtime
                 is bound
@@ -247,6 +314,10 @@ spec:
             jobMaster:
               description: Desired state for Alluxio job master
               properties:
+                enabled:
+                  description: Enabled or Disabled for the components. For now, only  API
+                    Gateway is enabled or disabled.
+                  type: boolean
                 env:
                   additionalProperties:
                     type: string
@@ -310,6 +381,10 @@ spec:
             jobWorker:
               description: Desired state for Alluxio job Worker
               properties:
+                enabled:
+                  description: Enabled or Disabled for the components. For now, only  API
+                    Gateway is enabled or disabled.
+                  type: boolean
                 env:
                   additionalProperties:
                     type: string
@@ -378,6 +453,10 @@ spec:
             master:
               description: Desired state for Alluxio master
               properties:
+                enabled:
+                  description: Enabled or Disabled for the components. For now, only  API
+                    Gateway is enabled or disabled.
+                  type: boolean
                 env:
                   additionalProperties:
                     type: string
@@ -532,6 +611,10 @@ spec:
             worker:
               description: Desired state for Alluxio worker
               properties:
+                enabled:
+                  description: Enabled or Disabled for the components. For now, only  API
+                    Gateway is enabled or disabled.
+                  type: boolean
                 env:
                   additionalProperties:
                     type: string

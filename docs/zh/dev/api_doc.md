@@ -139,6 +139,19 @@ AlluxioCompTemplateSpec
 </tr>
 <tr>
 <td>
+<code>apiGateway</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">
+AlluxioCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Alluxio API Gateway</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>initUsers</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.InitUsersSpec">
@@ -358,6 +371,19 @@ string
 </td>
 <td>
 <p>BackupPath defines the target path to save data of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Alluxio DataBackup</p>
 </td>
 </tr>
 </table>
@@ -831,6 +857,41 @@ User
 <p>Manage the user to run Jindo Runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>user</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as Jindo&rsquo;s UFS. The configMap
+must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secret</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -941,6 +1002,18 @@ map[string]string
 </td>
 <td>
 <p>Environment variables that will be used by Alluxio component. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.</p>
 </td>
 </tr>
 </tbody>
@@ -1173,6 +1246,19 @@ AlluxioCompTemplateSpec
 </tr>
 <tr>
 <td>
+<code>apiGateway</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">
+AlluxioCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for Alluxio API Gateway</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>initUsers</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.InitUsersSpec">
@@ -1373,6 +1459,98 @@ Kubernetes core/v1.NodeSelector
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.Condition">Condition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus</a>, 
+<a href="#data.fluid.io/v1alpha1.DataLoadStatus">DataLoadStatus</a>)
+</p>
+<p>
+<p>Condition explains the transitions on phase</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code></br>
+<em>
+common.ConditionType
+</em>
+</td>
+<td>
+<p>Type of condition, either <code>Complete</code> or <code>Failed</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
+Kubernetes core/v1.ConditionStatus
+</a>
+</em>
+</td>
+<td>
+<p>Status of the condition, one of <code>True</code>, <code>False</code> or <code>Unknown</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Reason for the condition&rsquo;s last transition</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Message is a human-readable message indicating details about the transition</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastProbeTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastProbeTime describes last time this condition was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastTransitionTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastTransitionTime describes last time the condition transitioned from one status to another.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Data">Data
 </h3>
 <p>
@@ -1416,97 +1594,6 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.DataBackupCondition">DataBackupCondition
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus</a>)
-</p>
-<p>
-<p>DataBackupCondition describes conditions that explains transitions on phase</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>type</code></br>
-<em>
-databackup.ConditionType
-</em>
-</td>
-<td>
-<p>Type of condition, either <code>Complete</code> or <code>Failed</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
-Kubernetes core/v1.ConditionStatus
-</a>
-</em>
-</td>
-<td>
-<p>Status of the condition, one of <code>True</code>, <code>False</code> or <code>Unknown</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>reason</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Reason for the condition&rsquo;s last transition</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>message</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Message is a human-readable message indicating details about the transition</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lastProbeTime</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<p>LastProbeTime describes last time this condition was updated.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lastTransitionTime</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<p>LastTransitionTime describes last time the condition transitioned from one status to another.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec
 </h3>
 <p>
@@ -1546,6 +1633,19 @@ string
 <p>BackupPath defines the target path to save data of the DataBackup</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Alluxio DataBackup</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.DataBackupStatus">DataBackupStatus
@@ -1569,7 +1669,7 @@ string
 <td>
 <code>phase</code></br>
 <em>
-databackup.Phase
+common.Phase
 </em>
 </td>
 <td>
@@ -1591,117 +1691,26 @@ BackupLocation
 </tr>
 <tr>
 <td>
-<code>durationTime</code></br>
+<code>duration</code></br>
 <em>
 string
 </em>
 </td>
 <td>
-<p>DurationTime tell user how much time was spent to backup</p>
+<p>Duration tell user how much time was spent to backup</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>conditions</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.DataBackupCondition">
-[]DataBackupCondition
+<a href="#data.fluid.io/v1alpha1.Condition">
+[]Condition
 </a>
 </em>
 </td>
 <td>
 <p>Conditions consists of transition information on DataBackup&rsquo;s Phase</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.DataLoadCondition">DataLoadCondition
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.DataLoadStatus">DataLoadStatus</a>)
-</p>
-<p>
-<p>DataLoadCondition describes conditions that explains transitions on phase</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>type</code></br>
-<em>
-dataload.DataLoadConditionType
-</em>
-</td>
-<td>
-<p>Type of condition, either <code>Complete</code> or <code>Failed</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
-Kubernetes core/v1.ConditionStatus
-</a>
-</em>
-</td>
-<td>
-<p>Status of the condition, one of <code>True</code>, <code>False</code> or <code>Unknown</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>reason</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Reason for the condition&rsquo;s last transition</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>message</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Message is a human-readable message indicating details about the transition</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lastProbeTime</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<p>LastProbeTime describes last time this condition was updated.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lastTransitionTime</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<p>LastTransitionTime describes last time the condition transitioned from one status to another.</p>
 </td>
 </tr>
 </tbody>
@@ -1783,7 +1792,7 @@ bool
 <td>
 <code>phase</code></br>
 <em>
-dataload.DataLoadPhase
+common.Phase
 </em>
 </td>
 <td>
@@ -1794,8 +1803,8 @@ dataload.DataLoadPhase
 <td>
 <code>conditions</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.DataLoadCondition">
-[]DataLoadCondition
+<a href="#data.fluid.io/v1alpha1.Condition">
+[]Condition
 </a>
 </em>
 </td>
@@ -1805,13 +1814,13 @@ dataload.DataLoadPhase
 </tr>
 <tr>
 <td>
-<code>durationTime</code></br>
+<code>duration</code></br>
 <em>
 string
 </em>
 </td>
 <td>
-<p>DurationTime describes the duration time of the dataload process.</p>
+<p>Duration tell user how much time was spent to load the data</p>
 </td>
 </tr>
 </tbody>
@@ -2489,6 +2498,18 @@ map[string]string
 <p>Environment variables that will be used by Jindo component. <br></p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the master to fit on a node</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec
@@ -2589,6 +2610,32 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to Jindo Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>global</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the fuse client should be deployed in global mode,
+otherwise the affinity should be considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
 </td>
 </tr>
 </tbody>
@@ -2708,6 +2755,41 @@ User
 </td>
 <td>
 <p>Manage the user to run Jindo Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>user</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as Jindo&rsquo;s UFS. The configMap
+must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secret</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -3349,6 +3431,17 @@ available (ready for at least spec.minReadySeconds)</p>
 </tr>
 <tr>
 <td>
+<code>setupDuration</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Duration tell user how much time was spent to setup the runtime</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>conditions</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.RuntimeCondition">
@@ -3369,6 +3462,17 @@ common.CacheStateList
 </td>
 <td>
 <p>CacheStatus represents the total resources of the dataset.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selector</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Selector is used for auto-scaling</p>
 </td>
 </tr>
 </tbody>
@@ -3534,11 +3638,12 @@ int32
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
 </p>
 <p>
-<p>Run as</p>
+<p>User explains the user and group to run a Container</p>
 </p>
 <table>
 <thead>
@@ -3650,5 +3755,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4955841</code>.
+on git commit <code>96a3c68</code>.
 </em></p>
