@@ -135,7 +135,7 @@ spec:
           - configMapRef:
               name: {{ $fullName }}-config
           ports:
-          - containerPort: {{ .Values.master.apiGateway.ports.rest }}
+          - containerPort: {{ .Values.apiGateway.ports.rest }}
             name: rest
           restartPolicy: Always
         {{- end }}
