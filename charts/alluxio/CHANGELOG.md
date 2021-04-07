@@ -180,3 +180,9 @@
 
 - Decouple the fuse client and worker during scheduling
 - Support worker and fuse prefered pod affinity
+
+0.6.19
+
+- Add API Server Proxy to Alluxio master
+
+

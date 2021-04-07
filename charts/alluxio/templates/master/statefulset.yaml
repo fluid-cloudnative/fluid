@@ -114,6 +114,30 @@ spec:
             mountPath: /journal
       {{- end}}
       containers:
+        {{- if .Values.apiGateway.enabled }}
+        - name: api-gateway
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.apiGateway.resources  }}
+{{ include "alluxio.apiGateway.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.apiGateway.args }}
+          args:
+{{ toYaml .Values.apiGateway.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          - name: ALLUXIO_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          envFrom:
+          - configMapRef:
+              name: {{ $fullName }}-config
+          ports:
+          - containerPort: {{ .Values.apiGateway.ports.rest }}
+            name: rest
+        {{- end }}
         - name: alluxio-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}

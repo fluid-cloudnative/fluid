@@ -75,6 +75,28 @@ resources:
     {{- end }}
 {{- end -}}
 
+{{- define "alluxio.apiGateway.resources" -}}
+resources:
+  limits:
+    {{- if .Values.apiGateway.resources.limits }}
+      {{- if .Values.apiGateway.resources.limits.cpu  }}
+    cpu: {{ .Values.apiGateway.resources.limits.cpu }}
+      {{- end }}
+      {{- if .Values.apiGateway.resources.limits.memory  }}
+    memory: {{ .Values.apiGateway.resources.limits.memory }}
+      {{- end }}
+    {{- end }}
+  requests:
+    {{- if .Values.apiGateway.resources.requests }}
+      {{- if .Values.apiGateway.resources.requests.cpu  }}
+    cpu: {{ .Values.apiGateway.resources.requests.cpu }}
+      {{- end }}
+      {{- if .Values.apiGateway.resources.requests.memory  }}
+    memory: {{ .Values.apiGateway.resources.requests.memory }}
+      {{- end }}
+    {{- end }}
+{{- end -}}
+
 {{- define "alluxio.master.resources" -}}
 resources:
   limits:

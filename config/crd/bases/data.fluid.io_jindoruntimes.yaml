@@ -386,6 +386,13 @@ spec:
         status:
           description: RuntimeStatus defines the observed state of Runtime
           properties:
+            apiGateway:
+              description: APIGatewayStatus represents rest api gateway status
+              properties:
+                endpoint:
+                  description: Endpoint for accessing
+                  type: string
+              type: object
             cacheStates:
               additionalProperties:
                 type: string

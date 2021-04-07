@@ -33,6 +33,9 @@ const (
 
 	// Fuse is the type for chief worker of Alluxio cluster.
 	Fuse AlluxioRuntimeRole = "fuse"
+
+	// API Gateway is the API Gateway of Alluxio cluster.
+	APIGateway AlluxioRuntimeRole = "apiGateway"
 )
 
 // AlluxioCompTemplateSpec is a description of the Alluxio commponents
@@ -65,6 +68,10 @@ type AlluxioCompTemplateSpec struct {
 
 	// Environment variables that will be used by Alluxio component. <br>
 	Env map[string]string `json:"env,omitempty"`
+
+	// Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -188,6 +195,9 @@ type AlluxioRuntimeSpec struct {
 	// Desired state for Alluxio job Worker
 	JobWorker AlluxioCompTemplateSpec `json:"jobWorker,omitempty"`
 
+	// Desired state for Alluxio API Gateway
+	APIGateway AlluxioCompTemplateSpec `json:"apiGateway,omitempty"`
+
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
@@ -238,6 +248,7 @@ type AlluxioRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
 // +kubebuilder:printcolumn:name="Desired Fuses",type="integer",JSONPath=`.status.desiredFuseNumberScheduled`,priority=10
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
+// +kubebuilder:printcolumn:name="API Gateway",type="string",JSONPath=`.status.apiGateway.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
 // +genclient
 

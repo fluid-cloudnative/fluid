@@ -160,6 +160,21 @@ journal:
   format:
     runFormat: false # Change to true to format journal
 
+apiGateway:
+  enabled: false
+  args:
+    - proxy
+  properties:
+  resources:
+    limits:
+#      cpu: "4"
+#      memory: "4G"
+    requests:
+#      cpu: "1"
+#      memory: "2G"
+  ports:
+    rest: 39999
+
 
 # You can enable metastore to use ROCKS DB instead of Heap
 # metastore:

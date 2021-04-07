@@ -245,6 +245,13 @@ func (e *AlluxioEngine) getAvaliablePort() (allocatedPorts []int, err error) {
 		portNum = PORT_NUM + 2
 	}
 
+	if e.runtime.Spec.APIGateway.Enabled {
+		portNum += 1
+		e.Log.Info("enable API Gateway", "portNum", portNum)
+	} else {
+		e.Log.Info("disable API Gateway")
+	}
+
 	for i := 0; i < portNum; i++ {
 		found := false
 		for port := AUTO_SELECT_PORT_MIN; port <= AUTO_SELECT_PORT_MAX; port++ {
