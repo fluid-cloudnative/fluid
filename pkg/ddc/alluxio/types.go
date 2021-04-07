@@ -45,6 +45,8 @@ type Alluxio struct {
 
 	Fuse Fuse `yaml:"fuse,omitempty"`
 
+	APIGateway APIGateway `yaml:"apiGateway,omitempty"`
+
 	Tieredstore Tieredstore `yaml:"tieredstore,omitempty"`
 
 	Metastore Metastore `yaml:"metastore,omitempty"`
@@ -104,6 +106,12 @@ type Ports struct {
 	Web      int `yaml:"web,omitempty"`
 	Embedded int `yaml:"embedded,omitempty"`
 	Data     int `yaml:"data,omitempty"`
+	Rest     int `yaml:"rest,omitempty"`
+}
+
+type APIGateway struct {
+	Enabled bool  `yaml:"enabled,omitempty"`
+	Ports   Ports `yaml:"ports,omitempty"`
 }
 
 type JobMaster struct {

@@ -75,6 +75,19 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 					cond)
 
+			if runtime.Spec.APIGateway.Enabled {
+				if runtimeToUpdate.Status.APIGatewayStatus == nil {
+					runtimeToUpdate.Status.APIGatewayStatus, err = e.GetAPIGatewayStatus()
+					if err != nil {
+						return err
+					}
+				} else {
+					e.Log.Info("No need to update APIGateway status")
+				}
+			} else {
+				e.Log.Info("No need to update APIGateway status")
+			}
+
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			}
