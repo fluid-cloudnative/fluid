@@ -2,7 +2,7 @@ package jindo
 
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-func (e *JindoEngine) getStoragetLabelname(read common.ReadType, storage common.StorageType) string {
+func (e *JindoEngine) getStorageLabelname(read common.ReadType, storage common.StorageType) string {
 	return common.LabelAnnotationStorageCapacityPrefix +
 		string(read) +
 		e.runtimeType +

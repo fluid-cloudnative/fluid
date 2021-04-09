@@ -167,9 +167,9 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 		labelName          = e.getRuntimeLabelname()
 		labelCommonName    = e.getCommonLabelname()
-		labelMemoryName    = e.getStoragetLabelname(common.HumanReadType, common.MemoryStorageType)
-		labelDiskName      = e.getStoragetLabelname(common.HumanReadType, common.DiskStorageType)
-		labelTotalname     = e.getStoragetLabelname(common.HumanReadType, common.TotalStorageType)
+		labelMemoryName    = e.getStorageLabelname(common.HumanReadType, common.MemoryStorageType)
+		labelDiskName      = e.getStorageLabelname(common.HumanReadType, common.DiskStorageType)
+		labelTotalname     = e.getStorageLabelname(common.HumanReadType, common.TotalStorageType)
 		labelExclusiveName = utils.GetExclusiveKey()
 	)
 
