@@ -18,7 +18,7 @@ package common
 const (
 	// LabelAnnotationPrefix is the prefix of every labels and annotations added by the controller.
 	LabelAnnotationPrefix = "fluid.io/"
-	// The format is data.fluid.io/s-{runtime_type}-{data_set_name}, s means storage
+	// The format is fluid.io/s-{runtime_type}-{data_set_name}, s means storage
 	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "s-"
 	// The dataset annotation
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
