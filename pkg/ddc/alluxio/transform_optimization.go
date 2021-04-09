@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strconv"
 	"strings"
 
@@ -114,15 +115,25 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 }
 
 // optimizeDefaultPropertiesAndFuseForHTTP sets the default value for properties and fuse when the mounts are all HTTP.
-func (e *AlluxioEngine) optimizeDefaultPropertiesAndFuseForHTTP(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
-	setDefaultProperties(runtime, value, "alluxio.user.block.size.bytes.default", "256MB")
-	setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "256MB")
-	setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "256MB")
-	setDefaultProperties(runtime, value, "alluxio.worker.network.reader.buffer.size", "256MB")
-	setDefaultProperties(runtime, value, "alluxio.user.streaming.data.timeout", "300sec")
+func (e *AlluxioEngine) optimizeDefaultPropertiesAndFuseForHTTP(runtime *datav1alpha1.AlluxioRuntime, dataset *datav1alpha1.Dataset, value *Alluxio) {
+	var isHTTP = true
+	for _, mount := range dataset.Spec.Mounts {
+		// the mount is not http
+		if !(strings.HasPrefix(mount.MountPoint, common.HttpScheme) || strings.HasPrefix(mount.MountPoint, common.HttpsScheme)) {
+			isHTTP = false
+			break
+		}
+	}
 
-	if len(runtime.Spec.Fuse.Args) == 0 {
-		value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], "max_readahead=0"}, ",")
+	if isHTTP {
+		setDefaultProperties(runtime, value, "alluxio.user.block.size.bytes.default", "256MB")
+		setDefaultProperties(runtime, value, "alluxio.user.streaming.reader.chunk.size.bytes", "256MB")
+		setDefaultProperties(runtime, value, "alluxio.user.local.reader.chunk.size.bytes", "256MB")
+		setDefaultProperties(runtime, value, "alluxio.worker.network.reader.buffer.size", "256MB")
+		setDefaultProperties(runtime, value, "alluxio.user.streaming.data.timeout", "300sec")
+		if len(runtime.Spec.Fuse.Args) == 0 {
+			value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], "max_readahead=0"}, ",")
+		}
 	}
 }
 

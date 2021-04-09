@@ -87,15 +87,6 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
             quota: 2Gi
             high: "0.95"
             low: "0.7"
-      properties:
-        alluxio.user.block.size.bytes.default: 256MB
-        alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-        alluxio.user.local.reader.chunk.size.bytes: 256MB
-        alluxio.worker.network.reader.buffer.size: 256MB
-      fuse:
-        args:
-          - fuse
-          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
     EOF
     ```
     

@@ -83,27 +83,16 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 8.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
 
-	var isHTTP = true
-	for _, mount := range dataset.Spec.Mounts {
-		// the mount is not http
-		if !(strings.HasPrefix(mount.MountPoint, common.HttpScheme) || strings.HasPrefix(mount.MountPoint, common.HttpsScheme)) {
-			isHTTP = false
-			break
-		}
-	}
+	// 9. set optimization parameters if all the mounts are HTTP
+	e.optimizeDefaultPropertiesAndFuseForHTTP(runtime, dataset, value)
 
-	// the mounts are all http
-	if isHTTP {
-		e.optimizeDefaultPropertiesAndFuseForHTTP(runtime, value)
-	}
-
-	// 9.allocate port for fluid engine
+	// 10.allocate port for fluid engine
 	err = e.allocatePorts(value)
 	if err != nil {
 		return
 	}
 
-	// 10.set engine properties
+	// 11.set engine properties
 	e.setPortProperties(runtime, value)
 
 	// 11.set API Gateway
