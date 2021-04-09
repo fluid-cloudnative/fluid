@@ -17,7 +17,7 @@ package alluxio
 
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-func (e *AlluxioEngine) getStoragetLabelname(read common.ReadType, storage common.StorageType) string {
+func (e *AlluxioEngine) getStorageLabelname(read common.ReadType, storage common.StorageType) string {
 	return common.LabelAnnotationStorageCapacityPrefix +
 		string(read) +
 		e.runtimeType +
