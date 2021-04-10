@@ -16,27 +16,11 @@ limitations under the License.
 package jindo
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 )
 
-func (e *JindoEngine) getDeprecatedStorageLabelname(read common.ReadType, storage common.StorageType) string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix +
-		string(read) +
-		e.runtimeType +
-		"-" +
-		string(storage) +
-		e.namespace +
-		"-" +
-		e.name
-}
-
 func (e *JindoEngine) getDeprecatedCommonLabelname() string {
 	return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
-}
-
-func (e *JindoEngine) getDeprecatedRuntimeLabelname() string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.namespace + "-" + e.name
 }
 
 func (e *JindoEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {

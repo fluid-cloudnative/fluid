@@ -16,27 +16,11 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 )
 
-func (e *AlluxioEngine) getDeprecatedStorageLabelname(read common.ReadType, storage common.StorageType) string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix +
-		string(read) +
-		e.runtimeType +
-		"-" +
-		string(storage) +
-		e.namespace +
-		"-" +
-		e.name
-}
-
 func (e *AlluxioEngine) getDeprecatedCommonLabelname() string {
 	return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
-}
-
-func (e *AlluxioEngine) getDeprecatedRuntimeLabelname() string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.namespace + "-" + e.name
 }
 
 func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {
