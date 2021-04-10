@@ -3,7 +3,7 @@ package common
 type ReadType string
 
 const (
-	HumanReadType ReadType = "human-"
+	HumanReadType ReadType = "h-"
 
 	// rawReadType readType = "raw-"
 )
@@ -11,9 +11,9 @@ const (
 type StorageType string
 
 const (
-	MemoryStorageType StorageType = "mem-"
+	MemoryStorageType StorageType = "m-"
 
-	DiskStorageType StorageType = "disk-"
+	DiskStorageType StorageType = "d-"
 
-	TotalStorageType StorageType = "total-"
+	TotalStorageType StorageType = "t-"
 )
