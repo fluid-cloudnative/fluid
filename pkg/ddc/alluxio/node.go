@@ -34,6 +34,12 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 		return
 	}
 
+	deprecated, err := e.HasDeprecatedCommonLabelname()
+	if err != nil {
+		return
+	}
+
+	e.runtimeInfo.SetDeprecatedNodeLabel(deprecated)
 	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
 		dataset,
 		e.Client,

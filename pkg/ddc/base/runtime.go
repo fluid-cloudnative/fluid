@@ -38,7 +38,13 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeType() string
 
-	GetStoragetLabelname(read common.ReadType, storage common.StorageType) string
+	// GetStoragetLabelname(read common.ReadType, storage common.StorageType) string
+
+	GetLabelnameForMemory() string
+
+	GetLabelnameForDisk() string
+
+	GetLabelnameForTotal() string
 
 	GetCommonLabelname() string
 
@@ -51,6 +57,10 @@ type RuntimeInfoInterface interface {
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
 	GetFuseDeployMode() (global bool, nodeSelector map[string]string)
+
+	SetDeprecatedNodeLabel(deprecated bool)
+
+	IsDeprecatedNodeLabel() bool
 }
 
 // The real Runtime Info should implement
@@ -68,6 +78,9 @@ type RuntimeInfo struct {
 
 	// Fuse configuration
 	fuse Fuse
+
+	// Check if the deprecated node label is used
+	deprecatedNodeLabel bool
 }
 
 type Fuse struct {
@@ -164,6 +177,16 @@ func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[stri
 	global = info.fuse.Global
 	nodeSelector = info.fuse.NodeSelector
 	return
+}
+
+// SetDeprecatedNodeLabel set the DeprecatedNodeLabel
+func (info *RuntimeInfo) SetDeprecatedNodeLabel(deprecated bool) {
+	info.deprecatedNodeLabel = deprecated
+}
+
+// IsDeprecatedNodeLabel checks if using deprecated node label
+func (info *RuntimeInfo) IsDeprecatedNodeLabel() bool {
+	return info.deprecatedNodeLabel
 }
 
 func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (TieredstoreInfo, error) {

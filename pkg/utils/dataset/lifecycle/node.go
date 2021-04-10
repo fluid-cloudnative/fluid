@@ -144,14 +144,14 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		for key, requirement := range storageMap {
 			value := utils.TranformQuantityToUnits(requirement)
 			if key == common.MemoryCacheStore {
-				toUpdate.Labels[runtimeInfo.GetStoragetLabelname(common.HumanReadType, common.MemoryStorageType)] = value
+				toUpdate.Labels[runtimeInfo.GetLabelnameForMemory()] = value
 			} else {
-				toUpdate.Labels[runtimeInfo.GetStoragetLabelname(common.HumanReadType, common.DiskStorageType)] = value
+				toUpdate.Labels[runtimeInfo.GetLabelnameForDisk()] = value
 			}
 			totalRequirement.Add(*requirement)
 		}
 		totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-		toUpdate.Labels[runtimeInfo.GetStoragetLabelname(common.HumanReadType, common.TotalStorageType)] = totalValue
+		toUpdate.Labels[runtimeInfo.GetLabelnameForTotal()] = totalValue
 
 		// toUpdate.Labels[labelNameToAdd] = "true"
 		err = client.Update(context.TODO(), toUpdate)
