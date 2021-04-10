@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -166,9 +167,9 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 		labelName          = e.getRuntimeLabelname()
 		labelCommonName    = e.getCommonLabelname()
-		labelMemoryName    = e.getStoragetLabelname(humanReadType, memoryStorageType)
-		labelDiskName      = e.getStoragetLabelname(humanReadType, diskStorageType)
-		labelTotalname     = e.getStoragetLabelname(humanReadType, totalStorageType)
+		labelMemoryName    = e.getStorageLabelname(common.HumanReadType, common.MemoryStorageType)
+		labelDiskName      = e.getStorageLabelname(common.HumanReadType, common.DiskStorageType)
+		labelTotalname     = e.getStorageLabelname(common.HumanReadType, common.TotalStorageType)
 		labelExclusiveName = utils.GetExclusiveKey()
 	)
 
