@@ -88,16 +88,6 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
             quota: 2Gi
             high: "0.95"
             low: "0.7"
-      properties:
-        alluxio.user.block.size.bytes.default: 256MB
-        alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-        alluxio.user.local.reader.chunk.size.bytes: 256MB
-        alluxio.worker.network.reader.buffer.size: 256MB
-        alluxio.user.streaming.data.timeout: 300sec
-      fuse:
-        args:
-          - fuse
-          - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
     EOF
     ```
     使用`kubectl`完成创建  

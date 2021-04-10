@@ -35,16 +35,6 @@ spec:
         quota: 8Gi
         high: "0.95"
         low: "0.7"
-  properties:
-    alluxio.user.block.size.bytes.default: 256MB
-    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-    alluxio.user.local.reader.chunk.size.bytes: 256MB
-    alluxio.worker.network.reader.buffer.size: 256MB
-    alluxio.user.streaming.data.timeout: 300sec
-  fuse:
-    args:
-      - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 ```
 
 ### go客户端代码
@@ -276,16 +266,6 @@ spec:
         quota: 8Gi
         high: "0.95"
         low: "0.7"
-  properties:
-    alluxio.user.block.size.bytes.default: 256MB
-    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-    alluxio.user.local.reader.chunk.size.bytes: 256MB
-    alluxio.worker.network.reader.buffer.size: 256MB
-    alluxio.user.streaming.data.timeout: 300sec
-  fuse:
-    args:
-      - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 `
 
 func createObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, gvk schema.GroupVersionKind, namespace string, manifest []byte) error{
