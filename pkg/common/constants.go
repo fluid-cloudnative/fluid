@@ -106,6 +106,7 @@ const (
 	HttpScheme string = "http://"
 
 	HttpsScheme string = "https://"
+
 )
 
 var (
