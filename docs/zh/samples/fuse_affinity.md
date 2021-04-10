@@ -155,7 +155,7 @@ spec:
   fuse:
     global: true
     nodeSelector:
-          kubernetes.io/hostname: cn-beijing.192.168.1.147
+      kubernetes.io/hostname: cn-beijing.192.168.1.147
 EOF
 ```
 
