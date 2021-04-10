@@ -21,8 +21,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -95,7 +93,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 11.set engine properties
 	e.setPortProperties(runtime, value)
 
-	// 11.set API Gateway
+	// 12.set API Gateway
 	err = e.transformAPIGateway(runtime, value)
 	return
 }
