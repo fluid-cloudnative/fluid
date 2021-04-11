@@ -15,10 +15,17 @@ limitations under the Licensinfo.
 
 package base
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
+)
 
-func (info *RuntimeInfo) GetStoragetLabelname(read common.ReadType, storage common.StorageType) string {
-	return common.LabelAnnotationStorageCapacityPrefix +
+func (info *RuntimeInfo) getStoragetLabelname(read common.ReadType, storage common.StorageType) string {
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if info.IsDeprecatedNodeLabel() {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+	return prefix +
 		string(read) +
 		info.runtimeType +
 		"-" +
@@ -28,10 +35,50 @@ func (info *RuntimeInfo) GetStoragetLabelname(read common.ReadType, storage comm
 		info.name
 }
 
+func (info *RuntimeInfo) GetLabelnameForMemory() string {
+	read := common.HumanReadType
+	storage := common.MemoryStorageType
+	if info.IsDeprecatedNodeLabel() {
+		read = deprecated.HumanReadType
+		storage = deprecated.MemoryStorageType
+	}
+	return info.getStoragetLabelname(read, storage)
+}
+
+func (info *RuntimeInfo) GetLabelnameForDisk() string {
+	read := common.HumanReadType
+	storage := common.DiskStorageType
+	if info.IsDeprecatedNodeLabel() {
+		read = deprecated.HumanReadType
+		storage = deprecated.DiskStorageType
+	}
+	return info.getStoragetLabelname(read, storage)
+}
+
+func (info *RuntimeInfo) GetLabelnameForTotal() string {
+	read := common.HumanReadType
+	storage := common.TotalStorageType
+	if info.IsDeprecatedNodeLabel() {
+		read = deprecated.HumanReadType
+		storage = deprecated.TotalStorageType
+	}
+	return info.getStoragetLabelname(read, storage)
+}
+
 func (info *RuntimeInfo) GetCommonLabelname() string {
-	return common.LabelAnnotationStorageCapacityPrefix + info.namespace + "-" + info.name
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if info.IsDeprecatedNodeLabel() {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+
+	return prefix + info.namespace + "-" + info.name
 }
 
 func (info *RuntimeInfo) GetRuntimeLabelname() string {
-	return common.LabelAnnotationStorageCapacityPrefix + info.runtimeType + "-" + info.namespace + "-" + info.name
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if info.IsDeprecatedNodeLabel() {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+
+	return prefix + info.runtimeType + "-" + info.namespace + "-" + info.name
 }

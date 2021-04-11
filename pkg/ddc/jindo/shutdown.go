@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -74,18 +73,32 @@ func (e *JindoEngine) cleanAll() (err error) {
 
 // destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
 func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
-	var (
-		nodeList *corev1.NodeList = &corev1.NodeList{}
+	deprecatedLabel, err := e.HasDeprecatedCommonLabelname()
+	if err != nil {
+		return currentWorkers, err
+	}
 
-		labelName          = e.getRuntimeLabelname()
-		labelCommonName    = e.getCommonLabelname()
-		labelMemoryName    = e.getStorageLabelname(common.HumanReadType, common.MemoryStorageType)
-		labelDiskName      = e.getStorageLabelname(common.HumanReadType, common.DiskStorageType)
-		labelTotalname     = e.getStorageLabelname(common.HumanReadType, common.TotalStorageType)
+	if deprecatedLabel {
+		e.Log.Info("Use depercated nodeSelector label")
+	} else {
+		e.Log.Info("Use New nodeSelector label")
+	}
+
+	runtimeInfo := e.runtimeInfo
+	runtimeInfo.SetDeprecatedNodeLabel(deprecatedLabel)
+
+	var (
+		nodeList           = &corev1.NodeList{}
 		labelExclusiveName = utils.GetExclusiveKey()
+		labelName          = runtimeInfo.GetRuntimeLabelname()
+		labelCommonName    = runtimeInfo.GetCommonLabelname()
+		labelMemoryName    = runtimeInfo.GetLabelnameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelnameForDisk()
+		labelTotalname     = runtimeInfo.GetLabelnameForTotal()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+	e.Log.Info("check node labels", "labelNames", labelNames)
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
 		return
