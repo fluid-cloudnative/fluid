@@ -50,6 +50,8 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeLabelname() string
 
+	GetPersistentVolumeName() string
+
 	IsExclusive() bool
 
 	SetupFuseDeployMode(global bool, nodeSelector map[string]string)
@@ -61,6 +63,10 @@ type RuntimeInfoInterface interface {
 	SetDeprecatedNodeLabel(deprecated bool)
 
 	IsDeprecatedNodeLabel() bool
+
+	SetDeprecatedPVName(deprecated bool)
+
+	IsDeprecatedPVName() bool
 }
 
 // The real Runtime Info should implement
@@ -81,6 +87,9 @@ type RuntimeInfo struct {
 
 	// Check if the deprecated node label is used
 	deprecatedNodeLabel bool
+
+	// Check if the deprecated PV naming style is used
+	deprecatedPVName bool
 }
 
 type Fuse struct {
@@ -187,6 +196,14 @@ func (info *RuntimeInfo) SetDeprecatedNodeLabel(deprecated bool) {
 // IsDeprecatedNodeLabel checks if using deprecated node label
 func (info *RuntimeInfo) IsDeprecatedNodeLabel() bool {
 	return info.deprecatedNodeLabel
+}
+
+func (info *RuntimeInfo) SetDeprecatedPVName(deprecated bool) {
+	info.deprecatedPVName = deprecated
+}
+
+func (info *RuntimeInfo) IsDeprecatedPVName() bool {
+	return info.deprecatedPVName
 }
 
 func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (TieredstoreInfo, error) {
