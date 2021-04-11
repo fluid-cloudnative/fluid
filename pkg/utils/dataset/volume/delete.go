@@ -17,7 +17,7 @@ func DeleteFusePersistentVolume(client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
 
-	deprecated, err := hasDeprecatedPersistentVolumeName(client, runtime, log)
+	deprecated, err := HasDeprecatedPersistentVolumeName(client, runtime, log)
 	if err != nil {
 		return err
 	}

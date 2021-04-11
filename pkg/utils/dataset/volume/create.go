@@ -26,7 +26,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 		return err
 	}
 
-	deprecated, err := hasDeprecatedPersistentVolumeName(client, runtime, log)
+	deprecated, err := HasDeprecatedPersistentVolumeName(client, runtime, log)
 	if err != nil {
 		return err
 	}

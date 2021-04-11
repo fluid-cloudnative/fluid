@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func hasDeprecatedPersistentVolumeName(client client.Client, runtime base.RuntimeInfoInterface, log logr.Logger) (deprecated bool, err error) {
+func HasDeprecatedPersistentVolumeName(client client.Client, runtime base.RuntimeInfoInterface, log logr.Logger) (deprecated bool, err error) {
 	deprecated, err = kubeclient.IsPersistentVolumeExist(client, runtime.GetName(), common.ExpectedFluidAnnotations)
 	if err != nil {
 		log.Error(err, "Failed to check if deprecated PV exists", "expeceted PV name", runtime.GetName())
