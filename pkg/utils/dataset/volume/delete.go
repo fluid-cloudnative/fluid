@@ -17,19 +17,35 @@ func DeleteFusePersistentVolume(client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeExist(client, runtime.GetName(), common.ExpectedFluidAnnotations)
+	deprecated, err := hasDeprecatedPersistentVolumeName(client, runtime, log)
+	if err != nil {
+		return err
+	}
+	runtime.SetDeprecatedPVName(deprecated)
+	pvName := runtime.GetPersistentVolumeName()
+
+	err = deleteFusePersistentVolumeIfExists(client, pvName, log)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log logr.Logger) (err error) {
+	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
 	}
 
 	if found {
-		err = kubeclient.DeletePersistentVolume(client, runtime.GetName())
+		err = kubeclient.DeletePersistentVolume(client, pvName)
 		if err != nil {
 			return err
 		}
 		retries := 500
 		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeExist(client, runtime.GetName(), common.ExpectedFluidAnnotations)
+			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
 			if err != nil {
 				return err
 			}
@@ -43,9 +59,9 @@ func DeleteFusePersistentVolume(client client.Client,
 
 		if found {
 			return fmt.Errorf("the PV %s is not cleaned up",
-				runtime.GetName())
+				pvName)
 		} else {
-			log.Info("the PV is deleted successfully", "name", runtime.GetName())
+			log.Info("the PV is deleted successfully", "name", pvName)
 		}
 	}
 
