@@ -88,16 +88,6 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
-  properties:
-    alluxio.user.block.size.bytes.default: 256MB
-    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-    alluxio.user.local.reader.chunk.size.bytes: 256MB
-    alluxio.worker.network.reader.buffer.size: 256MB
-    alluxio.user.streaming.data.timeout: 300sec
-  fuse:
-    args:
-      - fuse
-      - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0
 EOF
 ```
 该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。上述配置片段中的`spec.replicas`属性被设置为1,这表明Fluid将会启动一个包含1个Alluxio Master和1个Alluxio Worker的Alluxio实例
