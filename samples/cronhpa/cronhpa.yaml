@@ -1,0 +1,22 @@
+apiVersion: autoscaling.alibabacloud.com/v1beta1
+kind: CronHorizontalPodAutoscaler
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: spark
+  namespace: default
+spec:
+   scaleTargetRef:
+      apiVersion: data.fluid.io/v1alpha1
+      kind: AlluxioRuntime
+      name: spark
+   excludeDates:
+   # exclude May 1st
+   - "* * * 1 5 *"
+   jobs:
+   - name: "scale-down"
+     schedule: "0 0 8 ? * 1-6"
+     targetSize: 0
+   - name: "scale-up"
+     schedule: "0 30 21 ? * 1-5" 
+     targetSize: 3
