@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -162,18 +161,33 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
 func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
-	var (
-		nodeList = &corev1.NodeList{}
+	deprecatedLabel, err := e.HasDeprecatedCommonLabelname()
+	if err != nil {
+		return currentWorkers, err
+	}
 
-		labelName          = e.getRuntimeLabelname()
-		labelCommonName    = e.getCommonLabelname()
-		labelMemoryName    = e.getStorageLabelname(common.HumanReadType, common.MemoryStorageType)
-		labelDiskName      = e.getStorageLabelname(common.HumanReadType, common.DiskStorageType)
-		labelTotalname     = e.getStorageLabelname(common.HumanReadType, common.TotalStorageType)
+	if deprecatedLabel {
+		e.Log.Info("Use depercated nodeSelector label")
+	} else {
+		e.Log.Info("Use New nodeSelector label")
+	}
+
+	runtimeInfo := e.runtimeInfo
+	runtimeInfo.SetDeprecatedNodeLabel(deprecatedLabel)
+
+	var (
+		nodeList           = &corev1.NodeList{}
 		labelExclusiveName = utils.GetExclusiveKey()
+		labelName          = runtimeInfo.GetRuntimeLabelname()
+		labelCommonName    = runtimeInfo.GetCommonLabelname()
+		labelMemoryName    = runtimeInfo.GetLabelnameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelnameForDisk()
+		labelTotalname     = runtimeInfo.GetLabelnameForTotal()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+	e.Log.Info("check node labels", "labelNames", labelNames)
+
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
 		return currentWorkers, err
@@ -195,7 +209,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 	var nodes []corev1.Node
 	if expectedWorkers >= 0 {
-		e.Log.V(1).Info("Scale in Alluxio workers", "expectedWorkers", expectedWorkers)
+		e.Log.Info("Scale in Alluxio workers", "expectedWorkers", expectedWorkers)
 		// This is a scale in operation
 		runtimeInfo, err := e.getRuntimeInfo()
 		if err != nil {

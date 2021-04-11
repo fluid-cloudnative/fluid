@@ -13,10 +13,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package alluxio
+package deprecated
 
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-func (e *AlluxioEngine) getCommonLabelname() string {
-	return common.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
-}
+const (
+	HumanReadType common.ReadType = "human-"
+
+	// rawReadType readType = "raw-"
+)
+
+const (
+	MemoryStorageType common.StorageType = "mem-"
+
+	DiskStorageType common.StorageType = "disk-"
+
+	TotalStorageType common.StorageType = "total-"
+)
+
+const (
+	LabelAnnotationPrefix = "data.fluid.io/"
+	// The format is data.fluid.io/storage-{runtime_type}-{data_set_name}
+	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "storage-"
+)
