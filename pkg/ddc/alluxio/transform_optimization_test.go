@@ -46,6 +46,44 @@ func TestOptimizeDefaultProperties(t *testing.T) {
 	}
 }
 
+func TestOptimizeDefaultPropertiesAndFuseForHTTP(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		dataset      *datav1alpha1.Dataset
+		key          string
+		expect       string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Properties: map[string]string{},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Fuse: Fuse{
+				Args: []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"},
+			},
+		},
+			&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{MountPoint: "https://mirrors.bit.edu.cn/apache/zookeeper/zookeeper-3.6.2/"},
+						//{MountPoint: "local:///root/test-data"},
+					},
+				},
+			},
+			"alluxio.user.block.size.bytes.default", "256MB"},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultProperties(test.runtime, test.alluxioValue)
+		engine.optimizeDefaultPropertiesAndFuseForHTTP(test.runtime, test.dataset, test.alluxioValue)
+		if test.alluxioValue.Properties[test.key] != test.expect {
+			t.Errorf("expected %s, got %v for key %s", test.expect, test.alluxioValue.Properties[test.key], test.key)
+		}
+	}
+}
+
 func TestOptimizeDefaultPropertiesWithSet(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime

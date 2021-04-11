@@ -21,9 +21,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 )
@@ -82,16 +81,19 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	// 8.set optimization parameters
 	e.optimizeDefaultProperties(runtime, value)
 
-	// 9.allocate port for fluid engine
+	// 9. set optimization parameters if all the mounts are HTTP
+	e.optimizeDefaultPropertiesAndFuseForHTTP(runtime, dataset, value)
+
+	// 10.allocate port for fluid engine
 	err = e.allocatePorts(value)
 	if err != nil {
 		return
 	}
 
-	// 10.set engine properties
+	// 11.set engine properties
 	e.setPortProperties(runtime, value)
 
-	// 11.set API Gateway
+	// 12.set API Gateway
 	err = e.transformAPIGateway(runtime, value)
 	return
 }
