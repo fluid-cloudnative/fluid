@@ -26,11 +26,6 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 		return err
 	}
 
-	//deprecated, err := HasDeprecatedPersistentVolumeName(client, runtime, log)
-	//if err != nil {
-	//	return err
-	//}
-	//runtime.SetDeprecatedPVName(deprecated)
 	pvName := runtime.GetPersistentVolumeName()
 
 	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)

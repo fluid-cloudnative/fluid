@@ -161,21 +161,6 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
 func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
-	//TODO: delete this
-	//deprecatedLabel, err := e.HasDeprecatedCommonLabelname()
-	//if err != nil {
-	//	return currentWorkers, err
-	//}
-	//
-	//if deprecatedLabel {
-	//	e.Log.Info("Use depercated nodeSelector label")
-	//} else {
-	//	e.Log.Info("Use New nodeSelector label")
-	//}
-	//
-	//runtimeInfo := e.runtimeInfo
-	//runtimeInfo.SetDeprecatedNodeLabel(deprecatedLabel)
-
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return currentWorkers, err

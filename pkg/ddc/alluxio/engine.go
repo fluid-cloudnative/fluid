@@ -72,20 +72,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	_, err := engine.getRuntimeInfo()
-	//TODO: Delete this
-	//engine.getRuntimeInfo()
-	// Setup runtime Info
-	//runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if engine.runtime.Spec.Fuse.Global {
-	//	runtimeInfo.SetupFuseDeployMode(engine.runtime.Spec.Fuse.Global, engine.runtime.Spec.Fuse.NodeSelector)
-	//	ctx.Log.Info("Enable global mode for fuse")
-	//} else {
-	//	ctx.Log.Info("Disable global mode for fuse")
-	//}
-	//engine.runtimeInfo = runtimeInfo
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {

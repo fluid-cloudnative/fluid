@@ -30,9 +30,16 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.Tieredstore)
-		e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
 		if err != nil {
 			return e.runtimeInfo, err
+		}
+
+		// Setup Fuse Deploy Mode
+		if runtime.Spec.Fuse.Global {
+			e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
+			e.Log.Info("Enable global mode for fuse")
+		} else {
+			e.Log.Info("Disable global mode for fuse")
 		}
 
 		if !e.UnitTest {
