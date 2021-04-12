@@ -18,6 +18,7 @@ package alluxio
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // getRuntimeInfo gets runtime info
@@ -32,6 +33,24 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
 		if err != nil {
 			return e.runtimeInfo, err
+		}
+
+		if !e.UnitTest {
+			// Check if the runtime is using deprecated labels
+			isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
+			if err != nil {
+				return e.runtimeInfo, err
+			}
+			e.runtimeInfo.SetDeprecatedNodeLabel(isLabelDeprecated)
+
+			// Check if the runtime is using deprecated naming style for PersistentVolumes
+			isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(e.Client, e.runtimeInfo, e.Log)
+			if err != nil {
+				return e.runtimeInfo, err
+			}
+			e.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
+
+			e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
 		}
 	}
 
