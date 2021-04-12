@@ -25,9 +25,9 @@ runtime:
     controller:
       image: registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-629adef
     runtime:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:release-2.5.0-1-SNAPSHOT-cb60e05
+      image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-1-SNAPSHOT-cb60e05
     fuse:
-      image: registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-1-SNAPSHOT-cb60e05
+      image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-1-SNAPSHOT-cb60e05
   jindo:
     enabled: false
     smartdata:
