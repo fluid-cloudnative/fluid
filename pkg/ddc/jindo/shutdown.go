@@ -14,9 +14,8 @@ import (
 
 // shut down the Jindo engine
 func (e *JindoEngine) Shutdown() (err error) {
-	if false {
-		err = e.invokeCleanCache()
-	}
+
+	//err = e.invokeCleanCache()
 	if err != nil {
 		return
 	}
