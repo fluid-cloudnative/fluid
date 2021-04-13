@@ -1,16 +1,16 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/runtime-controller
+IMG ?= registry.aliyuncs.com/fluid/runtime-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # The Image URL to use in docker build and push
-DATASET_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/dataset-controller
-ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/alluxioruntime-controller
-JINDORUNTIME_CONTROLLER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/jindoruntime-controller
-CSI_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-csi
-LOADER_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader
-INIT_USERS_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+DATASET_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/dataset-controller
+ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/alluxioruntime-controller
+JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controller
+CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
+LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
+INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
