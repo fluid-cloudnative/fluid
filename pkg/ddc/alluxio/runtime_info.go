@@ -77,9 +77,5 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	//if !e.UnitTest {
-
-	//}
-
 	return e.runtimeInfo, nil
 }
