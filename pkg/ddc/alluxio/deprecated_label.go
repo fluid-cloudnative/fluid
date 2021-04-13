@@ -13,18 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package jindo
+package alluxio
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func (e *JindoEngine) getDeprecatedCommonLabelname() string {
+func (e *AlluxioEngine) getDeprecatedCommonLabelname() string {
 	return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 }
 
-func (e *JindoEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {
+func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {
 
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 
@@ -41,6 +41,7 @@ func (e *JindoEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error
 	workers, err := e.getDaemonset(workerName, namespace)
 	if err != nil {
 		if apierrs.IsNotFound(err) {
+			e.Log.Info("Workers with deprecated label not found")
 			deprecated = false
 			err = nil
 			return
