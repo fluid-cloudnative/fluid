@@ -12,8 +12,8 @@ alluxio_git='https://github.com/Alluxio/alluxio.git'
 branch="release-2.5.0-1"
 tag=""
 commit=""
-alluxio_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-alluxio_fuse_image_name="registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
+alluxio_image_name="registry.aliyuncs.com/alluxio/alluxio"
+alluxio_fuse_image_name="registry.aliyuncs.com/alluxio/alluxio-fuse"
 
 dev_container_name="alluxio-dev-test"
 

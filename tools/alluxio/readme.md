@@ -18,7 +18,7 @@ You can run this script to customize your own image with the following parameter
 -c, --commit
     Set the commit_id. If you don't assign it, the default commit_id is empty.
 -a, --alluxio_image_name alluxio_image_name
-    Set the alluxio image name. If you don't assign it, the default alluxio image name is "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio".
+    Set the alluxio image name. If you don't assign it, the default alluxio image name is "registry.aliyuncs.com/alluxio/alluxio".
 -f, --alluxio_fuse_image_name alluxio_fuse_image_name
-    Set the alluxio fuse image name. If you don't assign it, the default alluxio fuse image name is "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse".
+    Set the alluxio fuse image name. If you don't assign it, the default alluxio fuse image name is "registry.aliyuncs.com/alluxio/alluxio-fuse".
 ```
