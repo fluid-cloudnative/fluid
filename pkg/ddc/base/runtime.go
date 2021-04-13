@@ -80,7 +80,7 @@ type RuntimeInfo struct {
 
 	exclusive bool
 	// Check if the runtime info is already setup by the dataset
-	setup bool
+	//setup bool
 
 	// Fuse configuration
 	fuse Fuse
@@ -169,10 +169,11 @@ func (info *RuntimeInfo) IsExclusive() bool {
 
 // SetupWithDataset determines if need to setup with the info of dataset
 func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
-	if !info.setup {
-		info.exclusive = dataset.IsExclusiveMode()
-		info.setup = true
-	}
+	info.exclusive = dataset.IsExclusiveMode()
+	//if !info.setup {
+	//	info.exclusive = dataset.IsExclusiveMode()
+	//	info.setup = true
+	//}
 }
 
 // SetupFuseDeployMode setups the fuse deploy mode
