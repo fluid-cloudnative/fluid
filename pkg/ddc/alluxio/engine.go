@@ -72,6 +72,9 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	_, err := engine.getRuntimeInfo()
+	if err != nil {
+		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
+	}
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
