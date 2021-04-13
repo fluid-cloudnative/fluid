@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (e *AlluxioEngine) getDeprecatedCommonLabelname() string {
@@ -39,6 +40,11 @@ func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err err
 
 	workers, err := e.getDaemonset(workerName, namespace)
 	if err != nil {
+		if apierrs.IsNotFound(err) {
+			deprecated = false
+			err = nil
+			return
+		}
 		e.Log.Error(err, "Failed to get worker", "workerName", workerName)
 		return deprecated, err
 	}
