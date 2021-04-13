@@ -1,6 +1,8 @@
 package volume
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -18,7 +20,7 @@ func HasDeprecatedPersistentVolumeName(client client.Client, runtime base.Runtim
 	if deprecated {
 		log.Info("Found deprecated PV", "pv name", runtime.GetName())
 	} else {
-		log.Info("No deprecated PV found, create pv instead", "runtime", runtime.GetName())
+		log.Info("No deprecated PV found", "pv name", fmt.Sprintf("%s-%s", runtime.GetNamespace(), runtime.GetName()))
 	}
 
 	return
