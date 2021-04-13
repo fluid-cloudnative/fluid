@@ -158,7 +158,7 @@ func TestBuildRuntimeInfo(t *testing.T) {
 				namespace:   "default",
 				runtimeType: runtimetype,
 				exclusive:   false,
-				setup:       false,
+				//setup:       false,
 			},
 			wantErr: false,
 		},
