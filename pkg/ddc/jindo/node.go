@@ -17,12 +17,6 @@ func (e *JindoEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum i
 		return
 	}
 
-	deprecated, err := e.HasDeprecatedCommonLabelname()
-	if err != nil {
-		return
-	}
-
-	e.runtimeInfo.SetDeprecatedNodeLabel(deprecated)
 	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
 		dataset,
 		e.Client,

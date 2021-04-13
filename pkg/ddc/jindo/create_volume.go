@@ -3,7 +3,6 @@ package jindo
 import (
 	"context"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -47,11 +46,6 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 		return err
 	}
 
-	deprecated, err := volume.HasDeprecatedPersistentVolumeName(e.Client, runtime, e.Log)
-	if err != nil {
-		return err
-	}
-	runtime.SetDeprecatedPVName(deprecated)
 	pvName := runtime.GetPersistentVolumeName()
 
 	found, err := kubeclient.IsPersistentVolumeExist(e.Client, pvName, expectedAnnotations)

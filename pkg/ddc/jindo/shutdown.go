@@ -73,19 +73,10 @@ func (e *JindoEngine) cleanAll() (err error) {
 
 // destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
 func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
-	deprecatedLabel, err := e.HasDeprecatedCommonLabelname()
+	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return currentWorkers, err
 	}
-
-	if deprecatedLabel {
-		e.Log.Info("Use depercated nodeSelector label")
-	} else {
-		e.Log.Info("Use New nodeSelector label")
-	}
-
-	runtimeInfo := e.runtimeInfo
-	runtimeInfo.SetDeprecatedNodeLabel(deprecatedLabel)
 
 	var (
 		nodeList           = &corev1.NodeList{}

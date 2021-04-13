@@ -71,6 +71,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
+	// Build and setup runtime info
 	_, err := engine.getRuntimeInfo()
 	if err != nil {
 		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)

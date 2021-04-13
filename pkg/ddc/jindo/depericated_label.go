@@ -17,6 +17,7 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (e *JindoEngine) getDeprecatedCommonLabelname() string {
@@ -39,6 +40,11 @@ func (e *JindoEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error
 
 	workers, err := e.getDaemonset(workerName, namespace)
 	if err != nil {
+		if apierrs.IsNotFound(err) {
+			deprecated = false
+			err = nil
+			return
+		}
 		e.Log.Error(err, "Failed to get worker", "workerName", workerName)
 		return deprecated, err
 	}
