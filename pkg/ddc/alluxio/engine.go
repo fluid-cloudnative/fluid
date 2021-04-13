@@ -71,18 +71,11 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
-	// Setup runtime Info
-	runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
+	// Build and setup runtime info
+	_, err := engine.getRuntimeInfo()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
 	}
-	if engine.runtime.Spec.Fuse.Global {
-		runtimeInfo.SetupFuseDeployMode(engine.runtime.Spec.Fuse.Global, engine.runtime.Spec.Fuse.NodeSelector)
-		ctx.Log.Info("Enable global mode for fuse")
-	} else {
-		ctx.Log.Info("Disable global mode for fuse")
-	}
-	engine.runtimeInfo = runtimeInfo
 
 	// Setup init image for Alluxio Engine
 	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {

@@ -48,12 +48,11 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
-	// Setup runtime Info
-	runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, engine.runtimeType, engine.runtime.Spec.Tieredstore)
+	// Build and setup runtime info
+	_, err := engine.getRuntimeInfo()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
 	}
-	engine.runtimeInfo = runtimeInfo
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
