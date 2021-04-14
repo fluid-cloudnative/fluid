@@ -29,16 +29,16 @@ $ kubectl create ns fluid-system
 $ helm install fluid fluid
 ```
 
-3. 部署或配置 Prometheus
+3. 部署或配置Prometheus
 
-这里通过Prometheus对于AlluxioRuntime的缓存引擎暴露的 Metrics 进行收集，如果集群内无 prometheus:
+这里通过Prometheus对于AlluxioRuntime的缓存引擎暴露的Metrics进行收集，如果集群内无prometheus:
 
 ```shell
 $ cd fluid
 $ kubectl apply -f integration/prometheus/prometheus.yaml
 ```
 
-如集群内有 prometheus,可将以下配置写到 prometheus 配置文件中:
+如集群内有prometheus,可将以下配置写到prometheus配置文件中:
 
 ```yaml
 scrape_configs:
@@ -78,11 +78,11 @@ NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 prometheus-svc   NodePort   172.16.135.24   <none>        9090:32114/TCP   2m7s
 ```
 
-如果希望可视化监控指标，您可以安装Grafana验证监控数据，具体操作可以参考[文档](../operation/monitoring.md)
+如果希望可视化监控指标，您可以安装Grafana验证监控数据，具体操作可以参考[文档](monitoring.md)
 
 ![](../../media/images/dataset_auto_scaling.png)
 
-5. 部署 metrics server
+5. 部署metrics server
 
 检查该集群是否包括metrics-server, 执行kubectl top node有正确输出可以显示内存和CPU，则该集群metrics server配置正确
 
@@ -100,7 +100,7 @@ NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 $ kubectl create -f integration/metrics-server
 ```
 
-6. 部署 custom-metrics-api 组件
+6. 部署custom-metrics-api组件
 
 为了基于自定义指标进行扩展，你需要拥有两个组件。第一个组件是从应用程序收集指标并将其存储到Prometheus时间序列数据库。第二个组件使用收集的度量指标来扩展Kubernetes自定义metrics API，即 k8s-prometheus-adapter。第一个组件在第三步部署完成，下面部署第二个组件：
 
@@ -217,7 +217,7 @@ dataset.data.fluid.io/spark created
 alluxioruntime.data.fluid.io/spark created
 ```
 
-8. 查看这个Dataset是否处于可用状态, 可以看到该数据集的数据总量为2.71GiB， 目前Fluid提供的缓存节点数为1，可以提供的最大缓存能力为1GiB。此时数据量是无法满足全量数据缓存的需求。
+8. 查看这个Dataset是否处于可用状态, 可以看到该数据集的数据总量为2.71GiB，目前Fluid提供的缓存节点数为1，可以提供的最大缓存能力为1GiB。此时数据量是无法满足全量数据缓存的需求。
 
 ```shell
 $ kubectl get dataset
@@ -251,7 +251,7 @@ $ kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/data
 }
 ```
 
-10. 创建 HPA任务
+10. 创建HPA任务
 
 ```yaml
 $ cat<<EOF > hpa.yaml
@@ -294,7 +294,7 @@ EOF
 - 规则：触发扩容行为的条件为Dataset对象的缓存数据量占总缓存能力的90%; 扩容对象为AlluxioRuntime, 最小副本数为1，最大副本数为4; 而Dataset和AlluxioRuntime的对象需要在同一个namespace。
 - 策略： 可以K8s 1.18以上的版本，可以分别针对扩容和缩容场景设置稳定时间和一次扩缩容步长比例。比如在本例子, 一次扩容周期为10分钟(periodSeconds),扩容时新增2个副本数，当然这也不可以超过 maxReplicas 的限制；而完成一次扩容后, 冷却时间(stabilizationWindowSeconds)为20分钟; 而缩容策略可以选择直接关闭。
 
-11. 查看HPA配置， 当前缓存空间的数据占比为0。远远低于触发扩容的条件
+11. 查看HPA配置，当前缓存空间的数据占比为0。远远低于触发扩容的条件
 
 ```shell
 $ kubectl get hpa
