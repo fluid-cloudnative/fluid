@@ -105,3 +105,6 @@ After upgrading fluid, if you use the `kubectl get` command, you cannot query th
 
 You can recreate the dataset, and the new dataset will display these fields normally
 
+## 6. Why do I run the example [Nonroot access](../samples/nonroot_access.md), and I  encounter mkdir permission denied error
+
+**Answer**: In nonroot scenirio,Firstly,you have to check that you pass the right useinfo to runtime,Secondly,you should check the alluxio master pod status,and use journalctl to see the kubelet logs in the node of alluxio master pod.the mkdir error was cause when mount the hostpath to container,So we have to check the root have right permission to exec the directory.We can use stat to check if root can exec the directory.
