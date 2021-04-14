@@ -107,4 +107,16 @@ You can recreate the dataset, and the new dataset will display these fields norm
 
 ## 6. Why do I run the example [Nonroot access](../samples/nonroot_access.md), and I  encounter mkdir permission denied error
 
-**Answer**: In nonroot scenirio,Firstly,you have to check that you pass the right useinfo to runtime,Secondly,you should check the alluxio master pod status,and use journalctl to see the kubelet logs in the node of alluxio master pod.the mkdir error was cause when mount the hostpath to container,So we have to check the root have right permission to exec the directory.We can use stat to check if root can exec the directory.
+**Answer**: In nonroot scenirio,Firstly,you have to check that you pass the right useinfo to runtime,Secondly,you should check the alluxio master pod status,and use journalctl to see the kubelet logs in the node of alluxio master pod.the mkdir error was cause when mount the hostpath to container,So we have to check the root have right permission to exec the directory.We can use stat to check if root can exec the directory.For example in the below root have permission to operator /dir
+```
+$ stat /dir
+  File: ‘/dir’
+  Size: 32              Blocks: 0          IO Block: 4096   directory
+Device: fd00h/64768d    Inode: 83          Links: 3
+Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2021-04-14 23:35:47.928805350 +0800
+Modify: 2021-01-19 00:16:21.539559082 +0800
+Change: 2021-01-19 00:16:21.539559082 +0800
+ Birth: -
+
+```
