@@ -67,7 +67,7 @@ scrape_configs:
       action: replace
 ```
 
-4. 验证 Prometheus 安装成功
+4. 验证Prometheus安装成功
 
 ```shell
 $ kubectl get ep -n kube-system  prometheus-svc
