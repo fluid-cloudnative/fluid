@@ -29,11 +29,12 @@ func (e *AlluxioEngine) transformPermission(runtime *datav1alpha1.AlluxioRuntime
 			value.Properties = map[string]string{}
 		}
 	}
-	value.Properties["alluxio.master.security.impersonation.root.users"] = "*"
-	value.Properties["alluxio.master.security.impersonation.root.groups"] = "*"
+	setDefaultProperties(runtime, value, "alluxio.master.security.impersonation.root.users", "*")
+	setDefaultProperties(runtime, value, "alluxio.master.security.impersonation.root.groups", "*")
+	setDefaultProperties(runtime, value, "alluxio.security.authorization.permission.enabled", "false")
 	// if runtime.Spec.RunAs != nil {
 	// 	value.Properties[fmt.Sprintf("alluxio.master.security.impersonation.%d.users", runtime.Spec.RunAs.UID)]
 	// 	value.Properties[fmt.Sprintf("alluxio.master.security.impersonation.%d.groups", runtime.Spec.RunAs.GID)]
 	// }
-	value.Properties["alluxio.security.authorization.permission.enabled"] = "false"
+
 }
