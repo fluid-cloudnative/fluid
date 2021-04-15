@@ -1,26 +1,26 @@
 # 示例 - Dataset自定义弹性扩缩容
-Fluid可以通过创建Dataset对象将数据分散到Kubernetes计算节点中，作为数据交换的介质，可以有效避免了数据的远程写入和读取，提升了数据使用的效率。
+Fluid 可以通过创建 Dataset 对象将数据分散到 Kubernetes 计算节点中，作为数据交换的介质，可以有效避免了数据的远程写入和读取，提升了数据使用的效率。
 但是这里的问题是数据缓存的资源预估和预留。由于在数据生产消费之前，精准的数据预估是比较难以满足的，使用按需扩缩容对于使用者更加友好。
-按需扩缩容技术类似于page cache，对于用户而言这一层是透明的但是它带来的加速效果是很明显的。
+按需扩缩容技术类似于 page cache，对于用户而言这一层是透明的但是它带来的加速效果是很明显的。
 
-通过自定义HPA机制，使得Fluid引入了缓存弹性伸缩能力。弹性伸缩的条件就是当已有缓存数据量达到一定比例时就会发生弹性扩容缓存空间。例如
-触发条件设置为占比超过80%，总的缓存空间为10G,当数据占满到8G缓存空间时，就会触发扩缩容。
+通过自定义 HPA 机制，使得 Fluid 引入了缓存弹性伸缩能力。弹性伸缩的条件就是当已有缓存数据量达到一定比例时就会发生弹性扩容缓存空间。例如
+触发条件设置为占比超过 80%，总的缓存空间为 10G,当数据占满到 8G 缓存空间时，就会触发扩缩容。
 
 本文将向你展示这一特性。
 
 ## 前提条件
-推荐使用Kubernetes 1.18以上，因为在1.18之前，HPA是无法自定义扩缩容策略的，都是通过硬编码实现的。而在1.18后，用户可以自定义扩缩容策略的，比如可以定义一次扩容后的冷却时间。
+推荐使用 Kubernetes 1.18 以上，因为在 1.18 之前，HPA 是无法自定义扩缩容策略的，都是通过硬编码实现的。而在1.18后，用户可以自定义扩缩容策略的，比如可以定义一次扩容后的冷却时间。
 
 
 ## 具体步骤
 
-1. 安装jq工具方便解析json，在本例子中我们使用操作系统是centos，可以通过yum安装jq
+1. 安装 jq 工具方便解析 json，在本例子中我们使用操作系统是 Centos，可以通过 yum 安装 jq
 
 ```shell
 $ yum install -y jq
 ```
 
-2. 下载、安装Fluid最新版
+2. 下载、安装 Fluid 最新版
 
 ```shell
 $ git clone https://github.com/fluid-cloudnative/fluid.git
@@ -29,16 +29,16 @@ $ kubectl create ns fluid-system
 $ helm install fluid fluid
 ```
 
-3. 部署或配置Prometheus
+3. 部署或配置 Prometheus
 
-这里通过Prometheus对于AlluxioRuntime的缓存引擎暴露的Metrics进行收集，如果集群内无prometheus:
+这里通过 Prometheus 对于 AlluxioRuntime 的缓存引擎暴露的 Metrics 进行收集，如果集群内无 Prometheus:
 
 ```shell
 $ cd fluid
 $ kubectl apply -f integration/prometheus/prometheus.yaml
 ```
 
-如集群内有prometheus,可将以下配置写到prometheus配置文件中:
+如集群内有 Prometheus,可将以下配置写到 Prometheus 配置文件中:
 
 ```yaml
 scrape_configs:
@@ -67,7 +67,7 @@ scrape_configs:
       action: replace
 ```
 
-4. 验证Prometheus安装成功
+4. 验证 Prometheus 安装成功
 
 ```shell
 $ kubectl get ep -n kube-system  prometheus-svc
@@ -78,13 +78,13 @@ NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 prometheus-svc   NodePort   172.16.135.24   <none>        9090:32114/TCP   2m7s
 ```
 
-如果希望可视化监控指标，您可以安装Grafana验证监控数据，具体操作可以参考[文档](monitoring.md)
+如果希望可视化监控指标，您可以安装 Grafana 验证监控数据，具体操作可以参考[文档](monitoring.md)
 
 ![](../../media/images/dataset_auto_scaling.png)
 
-5. 部署metrics server
+5. 部署 metrics server
 
-检查该集群是否包括metrics-server, 执行kubectl top node有正确输出可以显示内存和CPU，则该集群metrics server配置正确
+检查该集群是否包括 metrics-server, 执行 kubectl top node 有正确输出可以显示内存和 CPU，则该集群 metrics server 配置正确
 
 ```shell
 $ kubectl top node
@@ -100,11 +100,11 @@ NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 $ kubectl create -f integration/metrics-server
 ```
 
-6. 部署custom-metrics-api组件
+6. 部署 custom-metrics-api 组件
 
-为了基于自定义指标进行扩展，你需要拥有两个组件。第一个组件是从应用程序收集指标并将其存储到Prometheus时间序列数据库。第二个组件使用收集的度量指标来扩展Kubernetes自定义metrics API，即 k8s-prometheus-adapter。第一个组件在第三步部署完成，下面部署第二个组件：
+为了基于自定义指标进行扩展，你需要拥有两个组件。第一个组件是从应用程序收集指标并将其存储到 Prometheus 时间序列数据库。第二个组件使用收集的度量指标来扩展 Kubernetes 自定义 metrics API，即 k8s-prometheus-adapter。第一个组件在第三步部署完成，下面部署第二个组件：
 
-如果已经配置了custom-metrics-api，在adapter的configmap配置中增加与dataset相关的配置
+如果已经配置了 custom-metrics-api，在 adapter 的 configmap 配置中增加与 dataset 相关的配置
 
 ```yaml
 apiVersion: v1
@@ -140,7 +140,7 @@ $ kubectl create -f integration/custom-metrics-api
 ```
 
 
-> 注意：因为custom-metrics-api对接集群中的Prometheous的访问地址，请替换prometheous url为你真正使用的Prometheous地址。
+> 注意：因为 custom-metrics-api 对接集群中的 Prometheous 的访问地址，请替换 Prometheous url 为你真正使用的 Prometheous 地址。
 
 
 检查自定义指标
@@ -183,7 +183,7 @@ $ kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1" | jq
 }
 ```
 
-7. 提交测试使用的Dataset
+7. 提交测试使用的 Dataset
 
 ```yaml
 $ cat<<EOF >dataset.yaml
@@ -217,7 +217,7 @@ dataset.data.fluid.io/spark created
 alluxioruntime.data.fluid.io/spark created
 ```
 
-8. 查看这个Dataset是否处于可用状态, 可以看到该数据集的数据总量为2.71GiB，目前Fluid提供的缓存节点数为1，可以提供的最大缓存能力为1GiB。此时数据量是无法满足全量数据缓存的需求。
+8. 查看这个 Dataset 是否处于可用状态, 可以看到该数据集的数据总量为 2.71GiB，目前 Fluid 提供的缓存节点数为 1，可以提供的最大缓存能力为 1GiB。此时数据量是无法满足全量数据缓存的需求。
 
 ```shell
 $ kubectl get dataset
@@ -225,7 +225,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   A
 spark   2.71GiB          0.00B    1.00GiB          0.0%                Bound   7m38s
 ```
 
-9. 当该Dataset处于可用状态后，查看是否已经可以从custom-metrics-api获得监控指标
+9. 当该 Dataset 处于可用状态后，查看是否已经可以从 custom-metrics-api 获得监控指标
 
 ```shell
 $ kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/datasets.data.fluid.io/*/capacity_used_rate" | jq
@@ -251,7 +251,7 @@ $ kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/data
 }
 ```
 
-10. 创建HPA任务
+10. 创建 HPA 任务
 
 ```yaml
 $ cat<<EOF > hpa.yaml
@@ -291,10 +291,10 @@ EOF
 
 首先，我们解读一下从样例配置，这里主要有两部分一个是扩缩容的规则，另一个是扩缩容的灵敏度：
 
-- 规则：触发扩容行为的条件为Dataset对象的缓存数据量占总缓存能力的90%; 扩容对象为AlluxioRuntime, 最小副本数为1，最大副本数为4; 而Dataset和AlluxioRuntime的对象需要在同一个namespace。
-- 策略： 可以K8s 1.18以上的版本，可以分别针对扩容和缩容场景设置稳定时间和一次扩缩容步长比例。比如在本例子, 一次扩容周期为10分钟(periodSeconds),扩容时新增2个副本数，当然这也不可以超过 maxReplicas 的限制；而完成一次扩容后, 冷却时间(stabilizationWindowSeconds)为20分钟; 而缩容策略可以选择直接关闭。
+- 规则：触发扩容行为的条件为 Dataset 对象的缓存数据量占总缓存能力的 90%; 扩容对象为 AlluxioRuntime, 最小副本数为 1，最大副本数为 4; 而 Dataset 和 AlluxioRuntime 的对象需要在同一个 namespace。
+- 策略： 可以 K8s 1.18 以上的版本，可以分别针对扩容和缩容场景设置稳定时间和一次扩缩容步长比例。比如在本例子, 一次扩容周期为 10 分钟(periodSeconds),扩容时新增 2 个副本数，当然这也不可以超过 maxReplicas 的限制；而完成一次扩容后, 冷却时间(stabilizationWindowSeconds)为 20 分钟; 而缩容策略可以选择直接关闭。
 
-11. 查看HPA配置，当前缓存空间的数据占比为0。远远低于触发扩容的条件
+11. 查看 HPA 配置，当前缓存空间的数据占比为 0。远远低于触发扩容的条件
 
 ```shell
 $ kubectl get hpa
@@ -350,7 +350,7 @@ NAME    DATASET   PHASE       AGE   DURATION
 spark   spark     Executing   15s   Unfinished
 ```
 
-13. 此时可以发现缓存的数据量接近了Fluid可以提供的缓存能力（1GiB）同时触发了弹性伸缩的条件
+13. 此时可以发现缓存的数据量接近了 Fluid 可以提供的缓存能力（1GiB）同时触发了弹性伸缩的条件
 
 ```shell
 $  kubectl  get dataset
@@ -358,7 +358,7 @@ NAME    UFS TOTAL SIZE   CACHED       CACHE CAPACITY   CACHED PERCENTAGE   PHASE
 spark   2.71GiB          1020.92MiB   1.00GiB          36.8%               Bound   5m15s
 ```
 
-从HPA的监控，可以看到Alluxio Runtime的扩容已经开始, 可以发现扩容的步长为2
+从 HPA 的监控，可以看到 Alluxio Runtime 的扩容已经开始, 可以发现扩容的步长为 2
 
 ```shell
 $ kubectl get hpa
@@ -399,7 +399,7 @@ Events:
   Normal   SuccessfulRescale             6s                     horizontal-pod-autoscaler  New size: 3; reason: Dataset metric capacity_used_rate above target
 ```
 
-14. 在等待一段时间之后发现数据集的缓存空间由1GiB提升到了3GiB，数据缓存已经接近完成
+14. 在等待一段时间之后发现数据集的缓存空间由 1GiB 提升到了 3GiB，数据缓存已经接近完成
 
 ```shell
 $ kubectl  get dataset
@@ -407,7 +407,7 @@ NAME    UFS TOTAL SIZE   CACHED    CACHE CAPACITY   CACHED PERCENTAGE   PHASE   
 spark   2.71GiB          2.59GiB   3.00GiB          95.6%               Bound   12m
 ```
 
-15. 观察HPA的状态，可以发现此时Dataset对应的runtime的replicas数量为3， 已经使用的缓存空间比例capacity_used_rate为85%，已经不会触发缓存扩容。
+15. 观察 HPA 的状态，可以发现此时 Dataset 对应的 runtime 的 replicas 数量为 3， 已经使用的缓存空间比例 capacity_used_rate 为 85%，已经不会触发缓存扩容。
 
 ```shell
 $ kubectl get hpa
@@ -424,4 +424,4 @@ $ kubectl delete dataset spark
 
 ## 总结
 
-Fluid提供了结合Prometheous，Kubernetes HPA和Custom Metrics能力，根据占用缓存空间的比例触发自动弹性伸缩的能力，实现缓存能力的按需使用。这样能够帮助用户更加灵活的使用通过分布式缓存提升数据访问加速能力，后续我们会提供定时扩缩的能力，为扩缩容提供更强的确定性。
+Fluid提供了结合 Prometheous，Kubernetes HPA 和 Custom Metrics 能力，根据占用缓存空间的比例触发自动弹性伸缩的能力，实现缓存能力的按需使用。这样能够帮助用户更加灵活的使用通过分布式缓存提升数据访问加速能力，后续我们会提供定时扩缩的能力，为扩缩容提供更强的确定性。
