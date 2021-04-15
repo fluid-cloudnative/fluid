@@ -26,7 +26,7 @@ kubectl describe pvc <dataset_name> -n <dataset_namespace> | \
 ```
 
 
-## 3.Why do I run the example [Speed up Accessing Remote Files](../samples/accelerate_data_accessing.md), and I will encounter Input/output error when copying files for the first time. Similar to the following:
+## 3.Why do I run the example [Speed up Accessing Remote Files](../samples/accelerate_data_accessing.md), and I will encounter an input/output error when copying files for the first time. Similar to the following:
 
 ```
 time cp ./pyspark-2.4.6.tar.gz /tmp/
@@ -40,13 +40,13 @@ sys	0m0.092s
 
 What caused this to happen？
 
-**Answer**: The purpose of this example is to allow users to use the existing mirror download address of Apache software based on Http protocol to demonstrate the ability of data copy acceleration without building UFS (underlayer file system). However, in actual scenarios, the implementation of WebUFS is generally not used。But there are three limitations in this example：
+**Answer**: The purpose of this example is to allow users to use the existing mirror download address of Apache software based on Http protocol to demonstrate the ability of data copy acceleration without building UFS (underlayer file system). However, in actual scenarios, the implementation of WebUFS is generally not used. But there are three limitations in this example：
 
 1.Availability and access speed of Apache software mirror download address.
 
 2.WebUFS is derived from Alluxio's community contribution and it is not the optimal implementation. For example, the implementation is not based on offset-based breakpoint resuming, which leads to the need to trigger WebUFS to read a large number of data blocks for each remote read operation.
 
-3.Since the copy behavior is implemented based on Fuse, the upper limit of each Fuse chunk read is 128KB under the Linux Kernel; The larger the file is, the first copy will trigger a large number of read operations.
+3.Since the copy behavior is implemented based on Fuse, the upper limit of each Fuse chunk read is 128KB under the Linux Kernel; The larger the file is, the first copy will trigger a large number of reading operations.
 
 In response to this problem, we proposed an optimized solution:
 
@@ -74,7 +74,7 @@ time alluxio fs  distributedLoad --replication 1 /
 
 ## 4. Why does the `driver name fuse.csi.fluid.io not found in the list of registered CSI drivers` error appear when I create a task to mount the PVC created by Runtime?
 
-**Answer**: Please check whether the kubelet configuration of the node which the task is scheduled on is the default value `/var/lib/kubelet`.
+**Answer**: Please check whether the kubelet configuration of the node on which the task is scheduled is the default value `/var/lib/kubelet`.
 
 First, check whether Fluid's CSI component is normal using the command.
 
@@ -95,7 +95,7 @@ If the csidriver object exists, please check if the csi registered node contains
 ```
 kubectl get csinode | grep <node_name>
 ```
-If the above command has no output, check whether the kubelet configuration of the node which the task is scheduled on is the default value `/var/lib/kubelet`. Because Fluid's CSI component is registered to kubelet through a fixed address socket, the default value is `--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`.
+If the above command has no output, check whether the kubelet configuration of the node to which the task is scheduled is the default value `/var/lib/kubelet`. Because Fluid's CSI component is registered to kubelet through a fixed address socket, the default value is `--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`.
 
 ## 5. After upgrading fluid，why does the dataset created in older version miss some fields compared to a newly created dataset, when querying them via `kubectl get` command？
 
@@ -107,7 +107,7 @@ You can recreate the dataset, and the new dataset will display these fields norm
 
 ## 6. Why do I run the example [Nonroot access](../samples/nonroot_access.md), and I  encounter mkdir permission denied error
 
-**Answer**: In nonroot scenirio,Firstly,you have to check that you pass the right useinfo to runtime,Secondly,you should check the alluxio master pod status,and use journalctl to see the kubelet logs in the node of alluxio master pod.the mkdir error was cause when mount the hostpath to container,So we have to check the root have right permission to exec the directory.We can use stat to check if root can exec the directory.For example in the below root have permission to operator /dir
+**Answer**: In nonroot scenario, Firstly, you have to check that you pass the right useinfo to runtime, Secondly, you should check the alluxio master pod status, and use journalctl to see the kubelet logs in the node of alluxio master pod. The mkdir error was caused when mounting the hostpath to the container, So we have to check the root has the right permission to exec the directory. We can use stat to check if root can exec the directory. For example in the below root have permission to operator /dir
 ```
 $ stat /dir
   File: ‘/dir’
