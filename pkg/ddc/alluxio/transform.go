@@ -401,7 +401,7 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 			return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), index+2)
 		}
 		value.Master.Ports.Embedded = allocatedPorts[index]
-		value.Master.Ports.Embedded = allocatedPorts[index+1]
+		value.JobMaster.Ports.Embedded = allocatedPorts[index+1]
 		index += 2
 	}
 
