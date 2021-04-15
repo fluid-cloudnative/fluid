@@ -95,7 +95,7 @@ If the csidriver object exists, please check if the csi registered node contains
 ```
 kubectl get csinode | grep <node_name>
 ```
-If the above command has no output, check whether the kubelet configuration of the node to which the task is scheduled is the default value `/var/lib/kubelet`. Because Fluid's CSI component is registered to kubelet through a fixed address socket, the default value is `--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`.
+If the above command has no output, check whether the kubelet configuration of the node on which the task is scheduled is the default value `/var/lib/kubelet`. Because Fluid's CSI component is registered to kubelet through a fixed address socket, the default value is `--csi-address=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock --kubelet-registration-path=/var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock`.
 
 ## 5. After upgrading fluid，why does the dataset created in older version miss some fields compared to a newly created dataset, when querying them via `kubectl get` command？
 
@@ -107,7 +107,9 @@ You can recreate the dataset, and the new dataset will display these fields norm
 
 ## 6. Why do I run the example [Nonroot access](../samples/nonroot_access.md), and I  encounter mkdir permission denied error
 
-**Answer**: In nonroot scenario, Firstly, you have to check that you pass the right useinfo to runtime, Secondly, you should check the alluxio master pod status, and use journalctl to see the kubelet logs in the node of alluxio master pod. The mkdir error was caused when mounting the hostpath to the container, So we have to check the root has the right permission to exec the directory. We can use stat to check if root can exec the directory. For example in the below root have permission to operator /dir
+**Answer**: In non-root scenario, you have to check if you pass the right user info to runtime first. Secondly, you should 
+check the alluxio master pod status, and use journalctl to see the kubelet logs in the node of alluxio master pod. The mkdir 
+error was caused when mounting the hostpath to the container and therefor we have to check the root has the right permission to exec the directory.
 ```
 $ stat /dir
   File: ‘/dir’
