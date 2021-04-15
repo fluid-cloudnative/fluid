@@ -136,16 +136,6 @@ spec:
         quota: 1Gi
         high: "0.95"
         low: "0.7"
-  properties:
-    alluxio.user.block.size.bytes.default: 256MB
-    alluxio.user.streaming.reader.chunk.size.bytes: 256MB
-    alluxio.user.local.reader.chunk.size.bytes: 256MB
-    alluxio.worker.network.reader.buffer.size: 256MB
-    alluxio.user.streaming.data.timeout: 300sec
-  fuse:
-    args:
-    - fuse
-    - --fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,max_readahead=0
   # 默认在v0.5.0版本之后，alluxio runtime已经开启了Prometheous数据，如果需要关闭可以主动设置disablePrometheus: true
   # disablePrometheus: false  
 EOF
