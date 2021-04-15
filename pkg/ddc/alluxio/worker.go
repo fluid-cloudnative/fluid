@@ -86,6 +86,14 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 				e.Log.Error(err, "setupWorker")
 				return err
 			}
+
+			// Get the latest fuse status
+			fuses, err = e.getDaemonset(fuseName, e.namespace)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+
 			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
 			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
 		} else {
