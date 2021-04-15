@@ -381,26 +381,28 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 
 	index := 9
 	if e.runtime.Spec.APIGateway.Enabled {
-		if len(allocatedPorts) <= index {
+		if len(allocatedPorts) < index+1 {
 			e.Log.Info("the number of port check failed, when api gateway is enabled",
-				"PORT_NUM", index+1,
+				"expected len", index+1,
 				"len(allocatedPorts)", len(allocatedPorts),
 				"allocatedPorts", allocatedPorts)
-			return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), PORT_NUM)
+			return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), index+1)
 		}
 		value.APIGateway.Ports.Rest = allocatedPorts[index]
+		index += 1
 	}
 
 	if e.runtime.Spec.Master.Replicas > 1 {
-		if len(allocatedPorts) <= index+2 {
+		if len(allocatedPorts) < index+2 {
 			e.Log.Info("the number of port check failed, when Embedded is enabled",
-				"index", index+2,
+				"expected len", index+2,
 				"len(allocatedPorts)", len(allocatedPorts),
 				"allocatedPorts", allocatedPorts)
-			return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), PORT_NUM)
+			return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), index+2)
 		}
+		value.Master.Ports.Embedded = allocatedPorts[index]
 		value.Master.Ports.Embedded = allocatedPorts[index+1]
-		value.Master.Ports.Embedded = allocatedPorts[index+2]
+		index += 2
 	}
 
 	// } else {
