@@ -22,11 +22,17 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	for len(dataset.Spec.Mounts) < 1 {
+		err = fmt.Errorf("no dataset can be found")
+	}
+	ns := dataset.Spec.Mounts[0].Name
+
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
 	stroagePath := runtime.Spec.Tieredstore.Levels[0].Path
 	originPath := strings.Split(stroagePath, ",")
 	for _, value := range originPath {
-		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/bigboot")
+		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+ns+"/bigboot")
 	}
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
