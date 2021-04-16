@@ -26,7 +26,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	stroagePath := runtime.Spec.Tieredstore.Levels[0].Path
 	originPath := strings.Split(stroagePath, ",")
 	for _, value := range originPath {
-		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/bigboot")
+		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
+			e.namespace+"/"+e.name+"/bigboot")
 	}
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
