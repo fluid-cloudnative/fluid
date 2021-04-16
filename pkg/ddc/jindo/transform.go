@@ -22,7 +22,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	dataset, _ := utils.GetDataset(e.Client, e.name, e.namespace)
 	for len(dataset.Spec.Mounts) < 1 {
 		err = fmt.Errorf("no dataset can be found")
 	}
