@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -87,8 +88,16 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 				return err
 			}
 
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fusesToUpdate.Status.DesiredNumberScheduled
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fusesToUpdate.Status.CurrentNumberScheduled
+			time.Sleep(10*time.Second)
+			// Get the latest fuse status
+			fuses, err = e.getDaemonset(fuseName, e.namespace)
+			if err != nil {
+				e.Log.Error(err, "setupWorker")
+				return err
+			}
+
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
 		} else {
 			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
 			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
