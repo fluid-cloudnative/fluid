@@ -18,6 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"sort"
 	"strings"
 	"time"
@@ -54,6 +55,11 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 	}
 
 	err = e.destroyMaster()
+	if err != nil {
+		return
+	}
+
+	err = e.releasePorts()
 	if err != nil {
 		return
 	}
@@ -136,6 +142,34 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 	// }
 
 	return fmt.Errorf("the remaining cached is not cleaned up, check again")
+}
+
+func (e *AlluxioEngine) releasePorts() (err error) {
+	//TODO(xuzhihao): Move this function to utils
+	var valueConfigMapName = e.name + "-" + e.runtimeType + "-values"
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		return err
+	}
+
+	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapName, e.namespace)
+	if err != nil {
+		return err
+	}
+
+	// The value configMap is not found
+	if cm == nil {
+		return nil
+	}
+
+	portsToRelease, err := parsePortsFromConfigMap(cm)
+	if err != nil {
+		return err
+	}
+
+	allocator.ReleaseReservedPorts(portsToRelease)
+	return nil
 }
 
 // cleanAll cleans up the all
