@@ -1,8 +1,6 @@
 apiVersion: autoscaling.alibabacloud.com/v1beta1
 kind: CronHorizontalPodAutoscaler
 metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: spark
   namespace: default
 spec:
