@@ -1,0 +1,30 @@
+{{ if .Values.runtime.jindo.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluid-webhook
+  namespace: fluid-system
+  labels:
+    control-plane: fluid-webhook
+spec:
+  selector:
+    matchLabels:
+      control-plane: fluid-webhook
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: fluid-webhook
+    spec:
+      serviceAccountName: fluid-webhook
+      containers:
+        - image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-webhook:v1
+          name: manager
+          command: ["fluid-webhook", "start"]
+          args:
+            - --development=false
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
+{{- end }}

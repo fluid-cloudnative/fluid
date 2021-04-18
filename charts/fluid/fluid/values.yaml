@@ -38,3 +38,7 @@ runtime:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.0
     controller:
       image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-db75dcf
+
+webhook:
+  enabled: true
+
