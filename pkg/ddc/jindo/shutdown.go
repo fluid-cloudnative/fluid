@@ -3,6 +3,7 @@ package jindo
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -21,6 +22,11 @@ func (e *JindoEngine) Shutdown() (err error) {
 	}*/
 
 	_, err = e.destroyWorkers(-1)
+	if err != nil {
+		return
+	}
+
+	err = e.releasePorts()
 	if err != nil {
 		return
 	}
@@ -49,6 +55,34 @@ func (e *JindoEngine) destroyMaster() (err error) {
 		}
 	}
 	return
+}
+
+func (e *JindoEngine) releasePorts() (err error) {
+	var valueConfigMapname = e.name + "-jindofs-config"
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		return err
+	}
+
+	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapname, e.namespace)
+	if err != nil {
+		return err
+	}
+
+	// The value configMap is not found
+	if cm == nil {
+		e.Log.Info("value configMap not found, there might be some unreleased ports", "valueConfigMapName", valueConfigMapname)
+		return nil
+	}
+
+	portsToRelease, err := parsePortsFromConfigMap(cm)
+	if err != nil {
+		return err
+	}
+
+	allocator.ReleaseReservedPorts(portsToRelease)
+	return nil
 }
 
 // cleanAll cleans up the all

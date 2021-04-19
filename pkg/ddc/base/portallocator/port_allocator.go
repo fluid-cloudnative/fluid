@@ -86,6 +86,7 @@ func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, 
 }
 
 func (alloc *RuntimePortAllocator) ReleaseReservedPorts(ports []int) {
+	alloc.log.Info("Releasing reserved logs", "ports to be released", ports)
 	for _, port := range ports {
 		err := alloc.pa.Release(port)
 		if err != nil {
