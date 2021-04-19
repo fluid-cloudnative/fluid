@@ -16,11 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -39,29 +37,13 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 			EnvUsers:       utils.GetInitUserEnv(runtime.Spec.RunAs),
 			EnvTieredPaths: e.getInitTierPathsEnv(runtime),
 		}
-
-		initImageInfo := strings.Split(e.initImage, ":")
-		value.InitUsers.ImageInfo = common.ImageInfo{
-			Image:           initImageInfo[0],
-			ImageTag:        initImageInfo[1],
-			ImagePullPolicy: "IfNotPresent",
-		}
-
 	}
 
-	// Overwrite ImageInfo.
-	// Priority: runtime.Spec.InitUsers > helm chart value > default value
-	if len(runtime.Spec.InitUsers.Image) > 0 {
-		value.InitUsers.Image = runtime.Spec.InitUsers.Image
-	}
+	image := runtime.Spec.InitUsers.Image
+	tag := runtime.Spec.InitUsers.ImageTag
+	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
 
-	if len(runtime.Spec.InitUsers.ImageTag) > 0 {
-		value.InitUsers.ImageTag = runtime.Spec.InitUsers.ImageTag
-	}
-
-	if len(runtime.Spec.InitUsers.ImagePullPolicy) > 0 {
-		value.InitUsers.ImagePullPolicy = runtime.Spec.InitUsers.ImagePullPolicy
-	}
+	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = e.parseInitImage(image, tag, imagePullPolicy)
 
 	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
 

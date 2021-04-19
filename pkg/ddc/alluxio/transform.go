@@ -104,21 +104,11 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	dataset *datav1alpha1.Dataset,
 	value *Alluxio) (err error) {
 
-	value.Image, value.ImageTag = e.parseRuntimeImage()
-	// value.Image = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-	if runtime.Spec.AlluxioVersion.Image != "" {
-		value.Image = runtime.Spec.AlluxioVersion.Image
-	}
+	image := runtime.Spec.AlluxioVersion.Image
+	imageTag := runtime.Spec.AlluxioVersion.ImageTag
+	imagePullPolicy := runtime.Spec.AlluxioVersion.ImagePullPolicy
 
-	// value.ImageTag = "2.3.0-SNAPSHOT-238b7eb"
-	if runtime.Spec.AlluxioVersion.ImageTag != "" {
-		value.ImageTag = runtime.Spec.AlluxioVersion.ImageTag
-	}
-
-	value.ImagePullPolicy = "IfNotPresent"
-	if runtime.Spec.AlluxioVersion.ImagePullPolicy != "" {
-		value.ImagePullPolicy = runtime.Spec.AlluxioVersion.ImagePullPolicy
-	}
+	value.Image, value.ImageTag, value.ImagePullPolicy = e.parseRuntimeImage(image, imageTag, imagePullPolicy)
 
 	value.UserInfo = common.UserInfo{
 		User:    0,

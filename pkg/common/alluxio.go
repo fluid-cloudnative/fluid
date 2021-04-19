@@ -12,8 +12,6 @@ const (
 
 	ALLUXIO_DATA_LOADER_IMAGE_ENV = "AlluxioDataLoaderImage"
 
-	// DEFAULT_ALLUXIO_DATA_LOADER_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-data-loader:v2.2.0"
-
 	ALLUXIO_INIT_IMAGE_ENV = "ALLUXIO_INIT_IMAGE_ENV"
 
 	ALLUXIO_RUNTIME_IMAGE_ENV = "ALLUXIO_RUNTIME_IMAGE_ENV"
@@ -21,6 +19,14 @@ const (
 	ALLUXIO_FUSE_IMAGE_ENV = "ALLUXIO_FUSE_IMAGE_ENV"
 
 	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
+
+	DEFAULT_ALLUXIO_RUNTIME_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226"
+
+	DEFAULT_ALLUXIO_FUSE_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226"
+
+	DEFAULT_ALLUXIO_DATA_LOADER_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-238b7eb"
+
+	DEFAULT_ALLUXIO_DATA_BACKUPER_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-238b7eb"
 )
 
 var (

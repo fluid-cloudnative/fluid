@@ -178,28 +178,61 @@ func isPortInUsed(port int, usedPorts []int) bool {
 	return false
 }
 
-func (e *AlluxioEngine) parseRuntimeImage() (image, tag string) {
-	var (
-		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
-	)
+func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = "IfNotPresent"
+	}
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImage, defaultTag)
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(image) == 0 && len(tag) == 0 {
+		runtimeImage := common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
+		runtimeImageInfo := strings.Split(runtimeImage, ":")
 
-	return
+		defaultImage := runtimeImageInfo[0]
+		defaultTag := runtimeImageInfo[1]
+
+		image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImage, defaultTag)
+	}
+	e.Log.Info("Set runtime image", "image", image, "tag", tag)
+
+	return image, tag, imagePullPolicy
 }
 
-func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
-	var (
-		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
-		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
-	)
+func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = "IfNotPresent"
+	}
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(image) == 0 && len(tag) == 0 {
+		fuseImage := common.DEFAULT_ALLUXIO_FUSE_IMAGE
+		fuseImageInfo := strings.Split(fuseImage, ":")
 
-	return
+		defaultImage := fuseImageInfo[0]
+		defaultTag := fuseImageInfo[1]
+
+		image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
+	}
+	e.Log.Info("Set fuse image", "image", image, "tag", tag)
+
+	return image, tag, imagePullPolicy
+}
+
+func (e *AlluxioEngine) parseInitImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = "IfNotPresent"
+	}
+
+	if len(image) == 0 && len(tag) == 0 {
+		initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
+		initImageInfo := strings.Split(initImage, ":")
+
+		defaultImage := initImageInfo[0]
+		defaultTag := initImageInfo[1]
+
+		image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage, defaultTag)
+	}
+	e.Log.Info("Set init image", "image", image, "tag", tag)
+
+	return image, tag, imagePullPolicy
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {
