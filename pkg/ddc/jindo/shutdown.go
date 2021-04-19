@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -62,12 +63,12 @@ func (e *JindoEngine) releasePorts() (err error) {
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "GetRuntimePortAllocator when releasePorts")
 	}
 
 	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapname, e.namespace)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "GetConfigmapByName when releasePorts")
 	}
 
 	// The value configMap is not found
@@ -78,7 +79,7 @@ func (e *JindoEngine) releasePorts() (err error) {
 
 	portsToRelease, err := parsePortsFromConfigMap(cm)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parsePortsFromConfigMap when releasePorts")
 	}
 
 	allocator.ReleaseReservedPorts(portsToRelease)

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"time"
@@ -145,17 +146,16 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 }
 
 func (e *AlluxioEngine) releasePorts() (err error) {
-	//TODO(xuzhihao): Move this function to utils
-	var valueConfigMapName = e.name + "-" + e.runtimeType + "-values"
+	var valueConfigMapName = e.getConfigmapName()
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "GetRuntimePortAllocator when releasePorts")
 	}
 
 	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapName, e.namespace)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "GetConfigmapByName when releasePorts")
 	}
 
 	// The value configMap is not found
@@ -165,7 +165,7 @@ func (e *AlluxioEngine) releasePorts() (err error) {
 
 	portsToRelease, err := parsePortsFromConfigMap(cm)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parsePortsFromConfigMap when releasePorts")
 	}
 
 	allocator.ReleaseReservedPorts(portsToRelease)

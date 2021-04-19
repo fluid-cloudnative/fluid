@@ -61,12 +61,12 @@ func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
 
 func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, err error) {
 	if alloc.pa == nil {
-		return nil, errors.Errorf("Runtime port allocator not setup")
+		return nil, errors.New("Runtime port allocator not setup")
 	}
 
 	for i := 0; i < portNum; i++ {
 		if availPort, err := alloc.pa.AllocateNext(); err != nil {
-			alloc.log.Error(err, "can't allocate next")
+			alloc.log.Error(err, "can't allocate next, all ports are in use")
 			break
 		} else {
 			ports = append(ports, availPort)
@@ -78,19 +78,18 @@ func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, 
 		for _, reservedPort := range ports {
 			_ = alloc.pa.Release(reservedPort)
 		}
-		return nil, errors.Errorf("can't get available ports, only %d ports are available", len(ports))
+		return nil, errors.Errorf("can't get enough available ports, only %d ports are available", len(ports))
 	}
 
-	alloc.log.Info("GetAvailablePorts", "expecetedPortNum", portNum, "gotPorts", ports)
+	alloc.log.Info("Successfully allocated ports", "expeceted port num", portNum, "allocated ports", ports)
 	return ports, nil
 }
 
 func (alloc *RuntimePortAllocator) ReleaseReservedPorts(ports []int) {
-	alloc.log.Info("Releasing reserved logs", "ports to be released", ports)
+	alloc.log.Info("Releasing reserved ports", "ports to be released", ports)
 	for _, port := range ports {
-		err := alloc.pa.Release(port)
-		if err != nil {
-			alloc.log.Info("can't release port, ignore it", "port", port)
+		if err := alloc.pa.Release(port); err != nil {
+			alloc.log.Error(err, "can't release port", "port", port)
 		}
 	}
 }

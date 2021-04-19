@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +31,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 	var datasets v1alpha1.DatasetList
 	err = client.List(context.TODO(), &datasets)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't list datasets when GetReservedPorts")
 	}
 
 	for _, dataset := range datasets.Items {
@@ -43,7 +44,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 			configMapName := fmt.Sprintf("%s-%s-values", accelerateRuntime.Name, accelerateRuntime.Type)
 			configMap, err := kubeclient.GetConfigmapByName(client, configMapName, accelerateRuntime.Namespace)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "GetConfigMapByName when GetReservedPorts")
 			}
 
 			if configMap == nil {
@@ -52,7 +53,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 
 			reservedPorts, err := parsePortsFromConfigMap(configMap)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "parsePortsFromConfigMap when GetReservedPorts")
 			}
 			ports = append(ports, reservedPorts...)
 		}
