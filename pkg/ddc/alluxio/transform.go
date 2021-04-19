@@ -402,7 +402,9 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 		}
 		value.Master.Ports.Embedded = allocatedPorts[index]
 		value.JobMaster.Ports.Embedded = allocatedPorts[index+1]
-		index += 2
+		// Comment for the time being， If add other port below, need release the comment
+		// Common Allocate Port in pr #727
+		// index += 2
 	}
 
 	// } else {
