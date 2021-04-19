@@ -17,6 +17,7 @@ var propertiesToCheck = []string{
 	"namespace.rpc.port",
 }
 
+// GetReservedPorts defines restoration logic for JindoRuntime
 func GetReservedPorts(client client.Client) (ports []int, err error) {
 	var datasets v1alpha1.DatasetList
 	err = client.List(context.TODO(), &datasets)
@@ -51,6 +52,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 	return ports, nil
 }
 
+// parsePortsFromConfigMap extracts port usage infomation given a configMap
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	if conf, ok := configMap.Data["bigboot.cfg"]; ok {
 		cfgConfs := strings.Split(conf, "\n")

@@ -27,6 +27,7 @@ var propertiesToCheck = []string{
 	"alluxio.job.master.embedded.journal.port",
 }
 
+// GetReservedPorts defines restoration logic for AlluxioRuntime
 func GetReservedPorts(client client.Client) (ports []int, err error) {
 	var datasets v1alpha1.DatasetList
 	err = client.List(context.TODO(), &datasets)
@@ -61,6 +62,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 	return ports, nil
 }
 
+// parsePortsFromConfigMap extracts port usage infomation given a configMap
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	var value Alluxio
 	if v, ok := configMap.Data["data"]; ok {
