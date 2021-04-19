@@ -337,7 +337,6 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 
 	var runtime v1alpha1.AlluxioRuntime
 	var runAs *v1alpha1.User
-	initUsers := common.ImageInfo{}
 
 	// get the runAs and initUsers imageInfo from runtime
 	err = r.Get(ctx, types.NamespacedName{
@@ -346,12 +345,8 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}, &runtime)
 	if err == nil {
 		runAs = runtime.Spec.RunAs
-		initUsers = common.ImageInfo{
-			Image:           runtime.Spec.InitUsers.Image,
-			ImageTag:        runtime.Spec.InitUsers.ImageTag,
-			ImagePullPolicy: runtime.Spec.InitUsers.ImagePullPolicy,
-		}
 	}
+
 	// databackup.Spec.RunAs > runtime.Spec.RunAs > root
 	if databackup.Spec.RunAs != nil {
 		runAs = databackup.Spec.RunAs
@@ -368,7 +363,20 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		}
 	}
 
-	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.GetInitUserImage(initUsers)
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag = r.parseInitUserImage()
+
+	if len (runtime.Spec.InitUsers.Image) > 0 {
+		dataBackupValue.InitUsers.Image = runtime.Spec.InitUsers.Image
+	}
+
+	if len (runtime.Spec.InitUsers.ImageTag) > 0 {
+		dataBackupValue.InitUsers.ImageTag = runtime.Spec.InitUsers.ImageTag
+	}
+
+	dataBackupValue.InitUsers.ImagePullPolicy = "IfNotPresent"
+	if len (runtime.Spec.InitUsers.ImagePullPolicy) > 0 {
+		dataBackupValue.InitUsers.ImagePullPolicy = runtime.Spec.InitUsers.ImagePullPolicy
+	}
 
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
@@ -384,4 +392,16 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+func (r *DataBackupReconcilerImplement) parseInitUserImage() (image, tag string) {
+	initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
+	initImageInfo := strings.Split(initImage, ":")
+	defaultImage := initImageInfo[0]
+	defaultTag := initImageInfo[1]
+
+	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage, defaultTag)
+	r.Log.Info("Set image", "image", image, "tag", tag)
+
+	return
 }

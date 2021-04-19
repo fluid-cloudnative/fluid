@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
@@ -82,34 +81,6 @@ func GetWorkerImage(client client.Client, datasetName string, runtimeType string
 		if runtimeType == common.JINDO_RUNTIME {
 			imageTag = "3.5.0"
 		}
-	}
-	return
-}
-
-func GetInitUserImage(specImage common.ImageInfo) (Image string, ImageTag string, ImagePullPolicy string) {
-	var initImage = ""
-	if value, existed := os.LookupEnv(common.ALLUXIO_INIT_IMAGE_ENV); existed {
-		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
-			initImage = value
-		}
-	}
-	if len(initImage) == 0 {
-		initImage = common.DEFAULT_ALLUXIO_INIT_IMAGE
-	}
-	initImageInfo := strings.Split(initImage, ":")
-	Image = initImageInfo[0]
-	ImageTag = initImageInfo[1]
-	ImagePullPolicy = "IfNotPresent"
-	if len(specImage.Image) > 0 {
-		Image = specImage.Image
-	}
-
-	if len(specImage.ImageTag) > 0 {
-		ImageTag = specImage.ImageTag
-	}
-
-	if len(specImage.ImagePullPolicy) > 0 {
-		ImagePullPolicy = specImage.ImagePullPolicy
 	}
 	return
 }
