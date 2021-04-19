@@ -35,7 +35,7 @@ spec:
           command: ["jindoruntime-controller", "start"]
           args:
             - --development=false
-            - --runtime-node-port-range=18000-19999
+            - --runtime-node-port-range={{ .Values.runtime.jindo.portRange }}
           env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

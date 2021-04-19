@@ -19,6 +19,7 @@ csi:
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
+    portRange: 20000-25000
     enabled: true
     init:
       image: registry.aliyuncs.com/fluid/init-users:v0.6.0-2ecf3ec
@@ -29,6 +30,7 @@ runtime:
     fuse:
       image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c
   jindo:
+    portRange: 18000-19999
     enabled: false
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.2

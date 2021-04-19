@@ -36,7 +36,7 @@ spec:
         command: ["alluxioruntime-controller", "start"]
         args:
           - --development=false
-          - --runtime-node-port-range=20000-25000
+          - --runtime-node-port-range={{ .Values.runtime.alluxio.portRange }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR
