@@ -117,6 +117,10 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.FuseNumberReady = int32(fuses.Status.NumberReady)
 		runtimeToUpdate.Status.FuseNumberUnavailable = int32(fuses.Status.NumberUnavailable)
 		runtimeToUpdate.Status.FuseNumberAvailable = int32(fuses.Status.NumberAvailable)
+		if runtimeToUpdate.Spec.Fuse.Global {
+			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
+			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
+		}
 		if fuses.Status.DesiredNumberScheduled == fuses.Status.NumberReady {
 			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
 			fuseReady = true

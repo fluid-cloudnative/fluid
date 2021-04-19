@@ -96,8 +96,6 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 				return err
 			}
 
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
 		} else {
 			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
 			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
