@@ -21,11 +21,13 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	jindoctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,6 +44,7 @@ var (
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
+	portRange            string
 )
 
 var cmd = &cobra.Command{
@@ -72,6 +75,7 @@ func init() {
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
+	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -121,6 +125,15 @@ func handle() {
 		setupLog.Error(err, "unable to create controller", "controller", "JindoRuntime")
 		os.Exit(1)
 	}
+
+	pr, err := net.ParsePortRange(portRange)
+	if err != nil {
+		setupLog.Error(err, "can't parse port range. Port range must be like <min>-max")
+		os.Exit(1)
+	}
+	setupLog.Info("port range parsed", "port range", pr.String())
+
+	portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, jindo.GetReservedPorts)
 
 	setupLog.Info("starting jindoruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

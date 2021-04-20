@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/net"
 	"os"
 
 	"go.uber.org/zap/zapcore"
@@ -48,6 +50,7 @@ var (
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
+	portRange            string
 )
 
 var cmd = &cobra.Command{
@@ -78,6 +81,7 @@ func init() {
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
+	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -127,6 +131,15 @@ func handle() {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
 		os.Exit(1)
 	}
+
+	pr, err := net.ParsePortRange(portRange)
+	if err != nil {
+		setupLog.Error(err, "can't parse port range. Port range must be like <min>-<max>")
+		os.Exit(1)
+	}
+	setupLog.Info("port range parsed", "port range", pr.String())
+
+	portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, alluxio.GetReservedPorts)
 
 	setupLog.Info("starting alluxioruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
