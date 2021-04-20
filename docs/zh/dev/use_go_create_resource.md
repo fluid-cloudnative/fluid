@@ -177,21 +177,7 @@ func main() {
 					},
 				},
 			},
-			Properties: map[string]string{
-				"alluxio.user.block.size.bytes.default" : "256MB",
-				"alluxio.user.streaming.reader.chunk.size.bytes" : "256MB",
-				"alluxio.user.local.reader.chunk.size.bytes" : "256MB",
-				"alluxio.worker.network.reader.buffer.size" : "256MB",
-				"alluxio.user.streaming.data.timeout" : "300sec",
-			},
-			Fuse: v1alpha1.AlluxioFuseSpec{
-				Args: []string{
-					"fuse",
-					"--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,max_readahead=0",
-				},
-			},
 		},
-
 	}
 
 	manifest, err := json.Marshal(dsManifest)
@@ -251,7 +237,6 @@ func main() {
 		fmt.Println("delete the dataset successfully!")
 	}
 }
-
 ```
 
 #### 通过格式化的字符串来创建Dataset和AlluxioRuntime的manifest
