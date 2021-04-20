@@ -18,14 +18,13 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"reflect"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
+	"reflect"
 )
 
 // SetupWorkers checks the desired and current replicas of workers and makes an update
@@ -86,8 +85,6 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 				e.Log.Error(err, "setupWorker")
 				return err
 			}
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
 		} else {
 			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
 			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
