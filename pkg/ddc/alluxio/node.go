@@ -29,11 +29,11 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 	}
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.Info("AssignNodesToCache", "dataset", dataset)
 	if err != nil {
 		return
 	}
 
+	e.Log.Info("AssignNodesToCache", "dataset", dataset)
 	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
 		dataset,
 		e.Client,
