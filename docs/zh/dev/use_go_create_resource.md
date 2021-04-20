@@ -55,8 +55,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
@@ -65,7 +66,7 @@ import (
 
 func createObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, gvk schema.GroupVersionKind, namespace string, manifest []byte) error{
 	obj := &unstructured.Unstructured{}
-	decoder := syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
 	if _, _, err := decoder.Decode(manifest, &gvk, obj); err != nil {
 		return err
@@ -79,6 +80,23 @@ func createObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResour
 
 func deleteObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, namespace string, name string) error{
 	return dynamicClient.Resource(gvr).Namespace(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+}
+
+func getObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, namespace string, name string, obj runtime.Object) error {
+	data, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	dataJson, err := data.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(dataJson, obj); err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -122,7 +140,7 @@ func main() {
 			},
 		},
 	}
-	
+
 	runtimeGVR := schema.GroupVersionResource{
 		Group:    "data.fluid.io",
 		Version:  "v1alpha1",
@@ -187,12 +205,12 @@ func main() {
 	} else {
 		fmt.Println("create the dataset successfully!")
 	}
-	
+
 	manifest, err = json.Marshal(arManifest)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// create the runtime
 	if err = createObject(dynamicClient, runtimeGVR, runtimeGVK, "default", manifest); err != nil {
 		panic(err)
@@ -200,7 +218,24 @@ func main() {
 		fmt.Println("create the runtime successfully!")
 	}
 
-	time.Sleep(120 * time.Second)
+	// check whether the dataset is ready
+	var ready bool = false
+	var dataset v1alpha1.Dataset
+	for !ready {
+		// get the dataset
+		if err = getObject(dynamicClient, datasetGVR, "default", "spark", &dataset); err != nil {
+			panic(err)
+		} else {
+			status := dataset.Status.Phase
+			if status == v1alpha1.BoundDatasetPhase {
+				fmt.Println("the dataset is bound.")
+				ready = true
+			} else {
+				fmt.Println("the dataset is not bound, wait 10 seconds.")
+				time.Sleep(10 * time.Second)
+			}
+		}
+	}
 
 	// delete the runtime
 	if err = deleteObject(dynamicClient, runtimeGVR, "default", "spark"); err != nil{
@@ -208,7 +243,6 @@ func main() {
 	} else {
 		fmt.Println("delete the runtime successfully!")
 	}
-
 
 	// delete the dataset
 	if err = deleteObject(dynamicClient, datasetGVR, "default", "spark"); err != nil{
@@ -230,10 +264,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	"time"
@@ -270,7 +307,7 @@ spec:
 
 func createObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, gvk schema.GroupVersionKind, namespace string, manifest []byte) error{
 	obj := &unstructured.Unstructured{}
-	decoder := syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
 	if _, _, err := decoder.Decode(manifest, &gvk, obj); err != nil {
 		return err
@@ -284,6 +321,23 @@ func createObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResour
 
 func deleteObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, namespace string, name string) error{
 	return dynamicClient.Resource(gvr).Namespace(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+}
+
+func getObject(dynamicClient dynamic.Interface, gvr schema.GroupVersionResource, namespace string, name string, obj runtime.Object) error {
+	data, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	dataJson, err := data.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(dataJson, obj); err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -334,7 +388,24 @@ func main() {
 		fmt.Println("create the runtime successfully!")
 	}
 
-	time.Sleep(120 * time.Second)
+	// check whether the dataset is ready
+	var ready bool = false
+	var dataset v1alpha1.Dataset
+	for !ready {
+		// get the dataset
+		if err = getObject(dynamicClient, datasetGVR, "default", "spark", &dataset); err != nil {
+			panic(err)
+		} else {
+			status := dataset.Status.Phase
+			if status == v1alpha1.BoundDatasetPhase {
+				fmt.Println("the dataset is bound.")
+				ready = true
+			} else {
+				fmt.Println("the dataset is not bound, wait 10 seconds.")
+				time.Sleep(10 * time.Second)
+			}
+		}
+	}
 
 	// delete the runtime
 	if err = deleteObject(dynamicClient, runtimeGVR, "default", "spark"); err != nil{
@@ -350,6 +421,5 @@ func main() {
 		fmt.Println("delete the dataset successfully!")
 	}
 }
-
 ```
 
