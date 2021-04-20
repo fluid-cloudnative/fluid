@@ -34,7 +34,9 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		return err
 	}
 
-	if runtime.Replicas() > runtime.Status.CurrentWorkerNumberScheduled {
+	desireReplicas := runtime.Replicas()
+	if desireReplicas > runtime.Status.CurrentWorkerNumberScheduled {
+
 		err = e.SetupWorkers()
 		if err != nil {
 			return err
@@ -45,12 +47,53 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			return err
 		}
 
+		// update conditions
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			runtime, err := e.getRuntime()
+			if err != nil {
+				return err
+			}
+
+			runtimeToUpdate := runtime.DeepCopy()
+			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersScaledOutReason, datav1alpha1.RuntimeWorkersScaledOutReason,
+				"The workers are scale out.", corev1.ConditionTrue)
+			runtimeToUpdate.Status.Conditions =
+				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+					cond)
+			if !runtimeToUpdate.Spec.Fuse.Global {
+				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledOut, datav1alpha1.RuntimeFusesScaledOutReason,
+					"The fuses are scale out.", corev1.ConditionTrue)
+				runtimeToUpdate.Status.Conditions =
+					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+						fuseCond)
+			}
+
+			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// add the event
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		currentReplicas := runtime.Status.CurrentWorkerNumberScheduled
+		desireReplicas := runtime.Status.DesiredWorkerNumberScheduled
+		ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Alluxio runtime scaled out. current replicas: %d, desired replicas: %d.", currentReplicas, desireReplicas)
+
 		// _, err := e.CheckAndUpdateRuntimeStatus()
 		// if err != nil {
 		// 	e.Log.Error(err, "Check if the runtime is ready")
 		// 	return err
 		// }
-	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
+	} else if desireReplicas < runtime.Status.CurrentWorkerNumberScheduled {
 		replicas := runtime.Replicas()
 		e.Log.Info("Scaling in Alluxio workers", "expectedReplicas", replicas)
 		curReplicas, err := e.destroyWorkers(replicas)
@@ -62,6 +105,8 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeScaleInFailed,
 				"Alluxio workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
 				replicas, curReplicas)
+		} else {
+			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Alluxio runtime scaled in. current replicas: %d, desired replicas: %d.", curReplicas, desireReplicas)
 		}
 
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
