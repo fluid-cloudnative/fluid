@@ -2,6 +2,8 @@
 cloud.google.com/go/compute/metadata
 # github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile
+# github.com/brahma-adshonor/gohook v1.1.9
+github.com/brahma-adshonor/gohook
 # github.com/container-storage-interface/spec v1.2.0
 github.com/container-storage-interface/spec/lib/go/csi
 # github.com/davecgh/go-spew v1.1.1
@@ -138,6 +140,8 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
+# golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c
+golang.org/x/arch/x86/x86asm
 # golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
@@ -346,9 +350,6 @@ k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/netutil
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/apiserver v0.18.5 => k8s.io/apiserver v0.18.5
-k8s.io/apiserver/pkg/features
-k8s.io/apiserver/pkg/util/feature
 # k8s.io/client-go v0.18.5 => k8s.io/client-go v0.18.5
 k8s.io/client-go/discovery
 k8s.io/client-go/dynamic
@@ -429,18 +430,16 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/retry
 k8s.io/client-go/util/workqueue
-# k8s.io/component-base v0.18.5 => k8s.io/component-base v0.18.5
-k8s.io/component-base/featuregate
 # k8s.io/klog v1.0.0
 k8s.io/klog
 # k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 k8s.io/kube-openapi/pkg/util/proto
 # k8s.io/kubernetes v1.18.5
-k8s.io/kubernetes/pkg/api/v1/pod
 k8s.io/kubernetes/pkg/apis/core
 k8s.io/kubernetes/pkg/apis/core/helper
 k8s.io/kubernetes/pkg/apis/core/v1/helper
-k8s.io/kubernetes/pkg/features
+k8s.io/kubernetes/pkg/registry/core/service/allocator
+k8s.io/kubernetes/pkg/registry/core/service/portallocator
 # k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 k8s.io/utils/buffer
 k8s.io/utils/exec
