@@ -494,13 +494,15 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 	}
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
-	dataloadImage := common.DEFAULT_ALLUXIO_DATA_LOADER_IMAGE
+	dataloadImage := common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
 	dataloadImageInfo := strings.Split(dataloadImage, ":")
 	if len(imageName) == 0 {
-		imageName = dataloadImageInfo[0]
+		defaultImageName := dataloadImageInfo[0]
+		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageName)
 	}
 	if len(imageTag) == 0 {
-		imageTag = dataloadImageInfo[1]
+		defaultImageTag := dataloadImageInfo[1]
+		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageTag)
 	}
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 

@@ -306,13 +306,15 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
-	databackupImage := common.DEFAULT_ALLUXIO_DATA_BACKUPER_IMAGE
+	databackupImage := common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
 	databackupImageInfo := strings.Split(databackupImage, ":")
 	if len(imageName) == 0 {
-		imageName = databackupImageInfo[0]
+		defaultImageName := databackupImageInfo[0]
+		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageName)
 	}
 	if len(imageTag) == 0 {
-		imageTag = databackupImageInfo[1]
+		defaultImageTag := databackupImageInfo[1]
+		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageTag)
 	}
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
@@ -397,14 +399,20 @@ func (r *DataBackupReconcilerImplement) parseInitImage(image string, tag string,
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = "IfNotPresent"
 	}
-	if len(image) == 0 && len(tag) == 0 {
-		initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
-		initImageInfo := strings.Split(initImage, ":")
-		defaultImage := initImageInfo[0]
-		defaultTag := initImageInfo[1]
 
-		image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage, defaultTag)
+	initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
+	initImageInfo := strings.Split(initImage, ":")
+
+	if len(image) == 0 {
+		defaultImage := initImageInfo[0]
+		image = docker.GetImageRepoFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage)
 	}
+
+	if len(tag) == 0 {
+		defaultTag := initImageInfo[1]
+		tag = docker.GetImageTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultTag)
+	}
+
 	r.Log.Info("Set init image", "image", image, "tag", tag)
 
 	return image, tag, imagePullPolicy

@@ -23,22 +23,33 @@ func ParseDockerImage(image string) (name string, tag string) {
 	return
 }
 
-// GetImageRepoTagFromEnv parse the image and tag from environment varaibles, if it's not existed or
-func GetImageRepoTagFromEnv(envName, defaultImage string, defaultTag string) (image, tag string) {
+// GetImageRepoFromEnv parse the image from environment varaibles, if it's not existed, return the default value
+func GetImageRepoFromEnv(envName, defaultImage string) (image string) {
 
 	image = defaultImage
+
+	if value, existed := os.LookupEnv(envName); existed {
+		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+			k, _ := ParseDockerImage(value)
+			if len(k) > 0 {
+				image = k
+			}
+		}
+	}
+
+	return
+}
+
+// GetImageTagFromEnv parse the image tag from environment varaibles, if it's not existed, return the default value
+func GetImageTagFromEnv(envName, defaultTag string) (tag string) {
+
 	tag = defaultTag
 
 	if value, existed := os.LookupEnv(envName); existed {
 		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
-			k, v := ParseDockerImage(value)
-			if len(k) > 0 {
-				image = k
-
-			}
+			_, v := ParseDockerImage(value)
 			if len(v) > 0 {
 				tag = v
-
 			}
 		}
 	}
