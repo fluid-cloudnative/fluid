@@ -137,7 +137,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 	if err != nil {
 		return err
 	}
-	jfsNamespace := "fluid_jindo"
+	jfsNamespace := "jindo"
 	for _, mount := range dataset.Spec.Mounts {
 
 		//jfsNamespace = jfsNamespace + mount.Name + ","
@@ -348,7 +348,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 	var rootArg = ""
 	var secretArg = ""
 	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
-		rootArg = "-oroot_ns=fluid_jindo"
+		rootArg = "-oroot_ns=jindo"
 		baseArg = rootArg + " " + baseArg
 	}
 	if len(runtime.Spec.Secret) != 0 {
