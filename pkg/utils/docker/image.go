@@ -71,7 +71,7 @@ func GetWorkerImage(client client.Client, datasetName string, runtimeType string
 		imageName = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
 	}
 	if imageTag == "" {
-		imageTag = "3.5.1"
+		imageTag = "3.5.0"
 	}
 	return
 }
