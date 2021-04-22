@@ -31,8 +31,8 @@ runtime:
   jindo:
     enabled: false
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.2
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.1
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.2
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.1
     controller:
       image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-092d82f

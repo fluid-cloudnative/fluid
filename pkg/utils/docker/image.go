@@ -68,10 +68,10 @@ func GetWorkerImage(client client.Client, datasetName string, runtimeType string
 
 	}
 	if imageName == "" {
-		imageName = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+		imageName = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
 	}
 	if imageTag == "" {
-		imageTag = "2.3.0-SNAPSHOT-238b7eb"
+		imageTag = "3.5.1"
 	}
 	return
 }

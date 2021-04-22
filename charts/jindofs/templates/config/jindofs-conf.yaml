@@ -37,3 +37,6 @@ data:
     {{ $key }} = {{ $val }}
     {{- end}}
     client.read.storagepolicy.ignore = true
+  ClientOption: |
+    STORAGE_NAMESPACE_RPC_ADDRESS={{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+    CLIENT_NAMESPACE_RPC_ADDRESS={{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}

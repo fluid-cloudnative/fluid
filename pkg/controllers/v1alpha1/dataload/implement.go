@@ -211,6 +211,8 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 		containerName := "alluxio-master"
 		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		ready = fileUtils.Ready()
+	case common.JINDO_RUNTIME:
+		ready = true
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataLoad,
@@ -244,6 +246,8 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 				notExisted = true
 			}
 		}
+	case common.JINDO_RUNTIME:
+		notExisted = false
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataLoad,
@@ -448,14 +452,16 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		return "", err
 	}
 
-	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindo", dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         image,
+		BackoffLimit:   3,
+		TargetDataset:  dataload.Spec.Dataset.Name,
+		LoadMetadata:   dataload.Spec.LoadMetadata,
+		Image:          image,
+		CacheSmallData: dataload.Spec.CacheSmallData,
+		HdfsConfig:     dataload.Spec.HdfsConfig,
 	}
 
 	targetPaths := []cdataload.TargetPath{}

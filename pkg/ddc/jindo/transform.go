@@ -137,10 +137,12 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 	if err != nil {
 		return err
 	}
-	jfsNamespace := ""
+	jfsNamespace := "fluid_jindo"
 	for _, mount := range dataset.Spec.Mounts {
 
-		jfsNamespace = jfsNamespace + mount.Name + ","
+		//jfsNamespace = jfsNamespace + mount.Name + ","
+
+		mount.Name = jfsNamespace
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
@@ -346,7 +348,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 	var rootArg = ""
 	var secretArg = ""
 	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
-		rootArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name
+		rootArg = "-oroot_ns=fluid_jindo"
 		baseArg = rootArg + " " + baseArg
 	}
 	if len(runtime.Spec.Secret) != 0 {
@@ -370,7 +372,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.5.2"
+		defaultTag   = "3.5.1"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
@@ -382,7 +384,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.5.2"
+		defaultTag   = "3.5.1"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)

@@ -21,6 +21,12 @@ type DataLoadInfo struct {
 
 	// Image specifies the image that the DataLoad job uses
 	Image string `yaml:"image,omitempty"`
+
+	// CacheSmallData specifies if the dataload job should Cache Small Data
+	CacheSmallData bool `yaml:"cacheSmallData,omitempty"`
+
+	// add HdfsConfig for JindoRuntime
+	HdfsConfig string `yaml:"hdfsConfig,omitempty"`
 }
 
 type TargetPath struct {

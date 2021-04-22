@@ -6,36 +6,25 @@ metadata:
     release: {{ .Release.Name }}
     role: dataload-job
 data:
-  dataloader.alluxio.init: |
+  dataloader.jindo.init: |
     #!/usr/bin/env bash
     set -xe
-    alluxio_env_vars=(
-      ALLUXIO_CLASSPATH
-      ALLUXIO_HOSTNAME
-      ALLUXIO_JARS
-      ALLUXIO_JAVA_OPTS
-      ALLUXIO_MASTER_JAVA_OPTS
-      ALLUXIO_PROXY_JAVA_OPTS
-      ALLUXIO_RAM_FOLDER
-      ALLUXIO_USER_JAVA_OPTS
-      ALLUXIO_WORKER_JAVA_OPTS
-      ALLUXIO_JOB_MASTER_JAVA_OPTS
-      ALLUXIO_JOB_WORKER_JAVA_OPTS
+    jindo_env_vars=(
+      STORAGE_ADDRESS
     )
-    ALLUXIO_HOME=/opt/alluxio
-    function public::alluxio::init_conf() {
+    function public::jindo::init_conf() {
       local IFS=$'\n' # split by line instead of space
       for keyvaluepair in $(env); do
         # split around the first "="
         key=$(echo ${keyvaluepair} | cut -d= -f1)
         value=$(echo ${keyvaluepair} | cut -d= -f2-)
-        if [[ "${alluxio_env_vars[*]}" =~ "${key}" ]]; then
-          echo "export ${key}=\"${value}\"" >> $ALLUXIO_HOME/conf/alluxio-env.sh
+        if [[ "${jindo_env_vars[*]}" =~ "${key}" ]]; then
+          export ${key}=\"${value}\"
         fi
       done
     }
     main() {
-      public::alluxio::init_conf
+      public::jindo::init_conf
     }
     main
   dataloader.distributedLoad: |
@@ -45,21 +34,36 @@ data:
     function distributedLoad() {
         local path=$1
         local replica=$2
-        alluxio fs setReplication --max $replica -R $path
+        local default=$3
+        echo -e "loadpath everypath $default"
+
         if [[ $needLoadMetadata == 'true' ]]; then
-            time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path
+            echo -e "metadata cache start"
+            echo -e "loadpath $default$path"
+            #time jindo jfs -metaSync -R $default$path
         else
-            time alluxio fs distributedLoad --replication $replica $path
+            echo -e "no need to cache metadata"
         fi
+
+        echo -e "data cache start"
+        if [[ $cacheSmallData == 'true' ]]; then
+            echo -e "enable cacheSmallData"
+            echo -e "loadpath $default$path"
+            #time jindo jfs -cache -s -l $default$path
+        else
+            echo -e "disable cacheSmallData"
+            echo -e "loadpath $default$path"
+            #time jindo jfs -cache -s $default$path
+        fi
+
+        echo -e "distributedLoad and sleep start now"
+        sleep 10m
     }
     
     function main() {
         needLoadMetadata="$NEED_LOAD_METADATA"
-        if [[ $needLoadMetadata == 'true' ]]; then
-            if [[ -d "/data" ]]; then
-                du -sh "/data"
-            fi
-        fi
+        cacheSmallData="$Cache_SMALL_DATA"
+        dafault="jfs://fluid_jindo"
         paths="$DATA_PATH"
         paths=(${paths//:/ })
         replicas="$PATH_REPLICAS"
@@ -68,7 +72,7 @@ data:
             local path="${paths[i]}"
             local replica="${replicas[i]}"
             echo -e "distributedLoad on $path starts"
-            distributedLoad ${paths[i]} ${replicas[i]}
+            distributedLoad ${paths[i]} ${replicas[i]} ${dafault}
             echo -e "distributedLoad on $path ends"
         done
     }
