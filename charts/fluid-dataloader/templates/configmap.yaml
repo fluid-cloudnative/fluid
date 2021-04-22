@@ -59,7 +59,7 @@ data:
     function main() {
         needLoadMetadata="$NEED_LOAD_METADATA"
         cacheSmallData="$Cache_SMALL_DATA"
-        dafault="jfs://fluid_jindo"
+        dafault="jfs://jindo"
         paths="$DATA_PATH"
         paths=(${paths//:/ })
         replicas="$PATH_REPLICAS"
