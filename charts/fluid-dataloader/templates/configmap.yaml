@@ -44,6 +44,14 @@ data:
         fi
 
         #echo -e "data cache start"
+
+
+       time jindo jfs -cache -s  $default$path
+
+       -m:
+
+       time jindo jfs -cache -s -m -r 1 $default$path
+
         if [[ $cacheSmallData == 'true' ]]; then
             echo -e "cache small data start $default$path"
             time jindo jfs -cache -s -l $default$path

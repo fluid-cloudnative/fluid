@@ -138,6 +138,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		return err
 	}
 	jfsNamespace := "jindo"
+	mode := "oss"
 	for _, mount := range dataset.Spec.Mounts {
 
 		//jfsNamespace = jfsNamespace + mount.Name + ","
@@ -146,10 +147,16 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
+			mode = "hdfs"
 		}
 		// transform mountpoint for oss or hdfs format
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
 			properties["jfs.namespaces."+mount.Name+".hdfs.uri"] = mount.MountPoint
+		} else if strings.HasPrefix(mount.MountPoint, "s3://") {
+			properties["jfs.namespaces."+mount.Name+".s3.uri"] = mount.MountPoint
+			properties["jfs.namespaces."+mount.Name+".s3.access.key"] = mount.Options["fs.s3.accessKeyId"]
+			properties["jfs.namespaces."+mount.Name+".s3.access.secret"] = mount.Options["fs.s3.accessKeySecret"]
+			mode = "s3"
 		} else {
 			if !strings.HasPrefix(mount.MountPoint, "oss://") {
 				continue
@@ -180,11 +187,11 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 			if err != nil {
 				e.Log.Info("decode value failed")
 			}
-			if key == "fs.oss.accessKeyId" {
-				properties["jfs.namespaces."+mount.Name+".oss.access.key"] = string(value)
+			if key == "fs."+mode+".accessKeyId" {
+				properties["jfs.namespaces."+mount.Name+"."+mode+".access.key"] = string(value)
 			}
-			if key == "fs.oss.accessKeySecret" {
-				properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = string(value)
+			if key == "fs."+mode+".accessKeySecret" {
+				properties["jfs.namespaces."+mount.Name+"."+mode+".access.secret"] = string(value)
 			}
 			e.Log.Info("get from secret")
 		}
@@ -200,7 +207,12 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		}
 	}
 
+	if mode == "oss" || mode == "s3" {
+		value.Master.OssKey = properties["jfs.namespaces.jindo."+mode+".access.key"]
+		value.Master.OssSecret = properties["jfs.namespaces.jindo."+mode+".access.secret"]
+	}
 	value.Master.MasterProperties = properties
+
 	return nil
 }
 

@@ -37,6 +37,15 @@ data:
     {{ $key }} = {{ $val }}
     {{- end}}
     client.read.storagepolicy.ignore = true
-  ClientOption: |
-    STORAGE_NAMESPACE_RPC_ADDRESS={{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
-    CLIENT_NAMESPACE_RPC_ADDRESS={{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+  core-site.xml: |
+    <?xml version="1.0"?>
+    <configuration>
+      <property>
+          <name>jindo.common.accessKeyId</name>
+          <value>{{ .Values.master.osskey }}</value>
+        </property>
+        <property>
+          <name>jindo.common.accessKeySecret</name>
+          <value>{{ .Values.master.osssecret }}</value>
+        </property>
+    </configuration>
