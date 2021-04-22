@@ -43,22 +43,8 @@ data:
             echo -e "$default$path no need to cache metadata"
         fi
 
-        #echo -e "data cache start"
-
-
-       time jindo jfs -cache -s  $default$path
-
-       -m:
-
-       time jindo jfs -cache -s -m -r 1 $default$path
-
-        if [[ $cacheSmallData == 'true' ]]; then
-            echo -e "cache small data start $default$path"
-            time jindo jfs -cache -s -l $default$path
-        else
-            echo -e "cache data start $default$path"
-            time jindo jfs -cache -s $default$path
-        fi
+        echo -e "data cache start $default$path"
+        time jindo jfs -cache -s $default$path
 
         #echo -e "distributedLoad and sleep start now"
         #sleep 10m
