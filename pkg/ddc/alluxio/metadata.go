@@ -105,7 +105,7 @@ func (e *AlluxioEngine) shouldRestoreMetadata() (should bool, err error) {
 	return
 }
 
-// RestoreMetadataInternal restore metadata from backup
+// RestoreMetadataInternal restores metadata from backup
 // there are three kinds of data to be restored
 // 1. metadata of dataset
 // 2. ufsTotal info of dataset
@@ -169,7 +169,7 @@ func (e *AlluxioEngine) RestoreMetadataInternal() (err error) {
 	return
 }
 
-// syncMetadataInternal do the actual work of metadata sync
+// syncMetadataInternal does the actual work of metadata sync
 // At any time, there is at most one goroutine working on metadata sync. First call to
 // this function will start a goroutine including the following two steps:
 //   1. load metadata

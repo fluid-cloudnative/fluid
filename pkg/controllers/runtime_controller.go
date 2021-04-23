@@ -131,11 +131,11 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 8.Start to reconciles runtime
+	// 8.Start to reconcile runtime
 	return r.implement.ReconcileRuntime(engine, ctx)
 }
 
-// ReconcileRuntimeDeletion reconcile runtime deletion
+// ReconcileRuntimeDeletion reconciles runtime deletion
 func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileRuntimeDeletion")
 	log.V(1).Info("process the Runtime Deletion", "Runtime", ctx.NamespacedName)

@@ -54,7 +54,7 @@ func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	return
 }
 
-// shouldMountUFS check if there's any UFS that need to be mounted
+// shouldMountUFS checks if there's any UFS that need to be mounted
 func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	e.Log.V(1).Info("get dataset info", "dataset", dataset)
@@ -63,9 +63,9 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUitls.Ready()
+	ready := fileUtils.Ready()
 	if !ready {
 		should = false
 		err = fmt.Errorf("the UFS is not ready")
@@ -79,7 +79,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 			continue
 		}
 		alluxioPath := fmt.Sprintf("/%s", mount.Name)
-		mounted, err := fileUitls.IsMounted(alluxioPath)
+		mounted, err := fileUtils.IsMounted(alluxioPath)
 		if err != nil {
 			should = false
 			return should, err

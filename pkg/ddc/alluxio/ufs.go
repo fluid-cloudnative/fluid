@@ -31,7 +31,7 @@ func (e *AlluxioEngine) FreeStorageBytes() (value int64, err error) {
 	return e.freeStorageBytesInternal()
 }
 
-// return total storage size of Alluxio in bytes
+// TotalStorageBytes returns total storage size of Alluxio in bytes
 func (e *AlluxioEngine) TotalStorageBytes() (value int64, err error) {
 	// return e.totalStorageBytesInternal()
 	return e.totalStorageBytesInternal()
@@ -50,7 +50,7 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
-// PrepareUFS do all the UFS preparations
+// PrepareUFS does all the UFS preparations
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	// 1. Mount UFS (Synchronous Operation)
 	shouldMountUfs, err := e.shouldMountUFS()
