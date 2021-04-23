@@ -31,6 +31,7 @@ import (
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"os"
 	"reflect"
@@ -338,7 +339,10 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	initUsers := common.ImageInfo{}
 
 	// get the runAs and initUsers imageInfo from runtime
-	err = r.Get(ctx, ctx.NamespacedName, &runtime)
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: databackup.Namespace,
+		Name:      databackup.Spec.Dataset,
+	}, &runtime)
 	if err == nil {
 		runAs = runtime.Spec.RunAs
 		initUsers = common.ImageInfo{
