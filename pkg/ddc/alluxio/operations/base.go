@@ -151,7 +151,7 @@ var (
 	FileNum     KeyOfMetaDataFile = "filenum"
 )
 
-// QueryMetadataInfoFile query the metadata info file.
+// QueryMetaDataInfoIntoFile queries the metadata info file.
 func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
 	line := ""
 	switch key {
