@@ -37,13 +37,13 @@ data:
         local default=$3
 
         if [[ $needLoadMetadata == 'true' ]]; then
-            echo -e "metadata cache start $default$path"
+            #echo -e "metadata cache start $default$path"
             time jindo jfs -metaSync -R $default$path
         else
             echo -e "$default$path no need to cache metadata"
         fi
 
-        echo -e "data cache start $default$path"
+        #echo -e "data cache start $default$path"
         time jindo jfs -cache -s $default$path
 
         #echo -e "distributedLoad and sleep start now"
