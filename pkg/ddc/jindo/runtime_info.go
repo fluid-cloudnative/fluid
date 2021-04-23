@@ -18,6 +18,13 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return e.runtimeInfo, err
 		}
 
+		if runtime.Spec.Fuse.Global {
+			e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
+			e.Log.Info("Enable global mode for fuse")
+		} else {
+			e.Log.Info("Disable global mode for fuse")
+		}
+
 		// Check if the runtime is using deprecated labels
 		isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
 		if err != nil {
@@ -47,6 +54,8 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		e.runtimeInfo.SetupWithDataset(dataset)
+
+		e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 	}
 
 	return e.runtimeInfo, nil
