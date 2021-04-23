@@ -5,12 +5,6 @@ import (
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-var (
-	expectedAnnotations = map[string]string{
-		"CreatedBy": "fluid",
-	}
-)
-
 // CreateVolume creates volume
 func (e *JindoEngine) CreateVolume() (err error) {
 	if e.runtime == nil {
