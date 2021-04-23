@@ -68,6 +68,9 @@ spec:
             - name: bigboot-config
               mountPath: /bigboot.cfg
               subPath: bigboot.cfg
+            - name: bigboot-config
+              mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
+              subPath: core-site.xml
             {{- if .Values.dataloader.hdfsConfig }}
             - name: hdfs-confs
               mountPath: /hdfs-site.xml
