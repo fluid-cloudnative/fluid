@@ -210,7 +210,7 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 	}
 	// 3. record and no requeue
 	log.Info("DataBackup success, no need to requeue")
-	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupFailed, "DataBackup %s failed", ctx.DataBackup.Name)
+	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupComplete, "DataBackup %s succeeded", ctx.DataBackup.Name)
 	return utils.NoRequeue()
 }
 
@@ -225,7 +225,7 @@ func (r *DataBackupReconciler) reconcileFailedDataBackup(ctx reconcileRequestCon
 	}
 	// 2. record and no requeue
 	log.Info("DataBackup failed, won't requeue")
-	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeNormal, common.DataBackupComplete, "DataBackup %s succeeded", ctx.DataBackup.Name)
+	r.Recorder.Eventf(&ctx.DataBackup, v1.EventTypeWarning, common.DataBackupFailed, "DataBackup %s failed", ctx.DataBackup.Name)
 	return utils.NoRequeue()
 }
 

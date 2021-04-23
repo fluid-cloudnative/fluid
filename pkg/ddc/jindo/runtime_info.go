@@ -55,6 +55,8 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		e.runtimeInfo.SetupWithDataset(dataset)
+
+		e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 	}
 
 	return e.runtimeInfo, nil

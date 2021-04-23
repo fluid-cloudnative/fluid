@@ -6,33 +6,35 @@ workdir: /tmp
 
 dataset:
   controller:
-    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-092d82f
+    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-ed9b1be
 
 csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-092d82f
+    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-ed9b1be
   kubelet:
     rootDir: /var/lib/kubelet
 
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
+    portRange: 20000-25000
     enabled: true
     init:
-      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-092d82f
+      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-ed9b1be
     controller:
-      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-092d82f
+      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-ed9b1be
     runtime:
-      image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-1-SNAPSHOT-cb60e05
+      image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-2-SNAPSHOT-52ad95c
     fuse:
-      image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-1-SNAPSHOT-cb60e05
+      image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c
   jindo:
+    portRange: 18000-19999
     enabled: false
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.0
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.0
     controller:
-      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-092d82f
+      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-ed9b1be

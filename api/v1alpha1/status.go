@@ -146,12 +146,16 @@ const (
 	RuntimeWorkersReady RuntimeConditionType = "WorkersReady"
 	// RuntimeWorkerScaledIn means the workers of runtime just scaled in
 	RuntimeWorkerScaledIn RuntimeConditionType = "WorkersScaledIn"
+	// RuntimeWorkerScaledIn means the workers of runtime just scaled out
+	RuntimeWorkerScaledOut RuntimeConditionType = "WorkersScaledOut"
 	// RuntimeFusesInitialized means the fuses of runtime are initialized
 	RuntimeFusesInitialized RuntimeConditionType = "FusesInitialized"
 	// RuntimeFusesReady means the fuses of runtime are ready
 	RuntimeFusesReady RuntimeConditionType = "FusesReady"
 	// RuntimeFusesScaledIn means the fuses of runtime just scaled in
 	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
+	// RuntimeFusesScaledOut means the fuses of runtime just scaled out
+	RuntimeFusesScaledOut RuntimeConditionType = "FusesScaledOut"
 )
 
 const (
@@ -165,12 +169,16 @@ const (
 	RuntimeWorkersReadyReason = "Workers are ready"
 	// RuntimeWorkersScaledInReason means the workers of runtime just scaled in
 	RuntimeWorkersScaledInReason = "Workers scaled in"
+	// RuntimeWorkersScaledInReason means the workers of runtime just scaled out
+	RuntimeWorkersScaledOutReason = "Workers scaled out"
 	// RuntimeFusesInitializedReason means the fuses of runtime are initialized
 	RuntimeFusesInitializedReason = "Fuses are initialized"
 	// RuntimeFusesReadyReason means the fuses of runtime are ready
 	RuntimeFusesReadyReason = "Fuses are ready"
 	// RuntimeFusesScaledInReason means the fuses of runtime just scaled in
 	RuntimeFusesScaledInReason = "Fuses scaled in"
+	// RuntimeFusesScaledInReason means the fuses of runtime just scaled out
+	RuntimeFusesScaledOutReason = "Fuses scaled out"
 )
 
 // Condition describes the state of the cache at a certain point.

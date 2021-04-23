@@ -3,16 +3,14 @@ package jindo
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
@@ -106,93 +104,4 @@ func (e *JindoEngine) TotalJindoStorageBytes(name string, useStsSecret bool) (va
 		e.Log.Error(err, "get total size")
 	}
 	return strconv.ParseInt(ufsSize, 10, 64)
-}
-
-func (e *JindoEngine) getAvaliablePort() (masterRpcPort int, clientRpcPort int, err error) {
-	masterRpcPort = 8101
-	clientRpcPort = 6101
-
-	usedPorts, err := getK8sClusterUsedPort(e.Client)
-
-	// lookup masterRpcPort
-	found := false
-	for port := DEFAULT_MASTER_RPC_PORT; port <= JINDO_MASTER_PORT_MAX; port++ {
-		if !isPortInUsed(port, usedPorts) {
-			masterRpcPort = port
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		err = fmt.Errorf("no free pod find to assign for master from %d to %d", DEFAULT_MASTER_RPC_PORT, JINDO_MASTER_PORT_MAX)
-	}
-
-	// lookup masterRpcPort
-	found = false
-	for port := DEFAULT_WORKER_RPC_PORT; port <= JINDO_WORKER_PORT_MAX; port++ {
-		if !isPortInUsed(port, usedPorts) {
-			clientRpcPort = port
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		err = fmt.Errorf("no free pod find to assign for client from %d to %d", DEFAULT_WORKER_RPC_PORT, JINDO_WORKER_PORT_MAX)
-	}
-
-	return masterRpcPort, clientRpcPort, err
-}
-
-func getK8sClusterUsedPort(client client.Client) ([]int, error) {
-	k8sClusterUsedPorts := []int{}
-	pods := &v1.PodList{}
-	services := &v1.ServiceList{}
-
-	err := client.List(context.TODO(), pods)
-	if err != nil {
-		return k8sClusterUsedPorts, err
-	}
-	for _, pod := range pods.Items {
-		// fileter pod
-		if kubeclient.ExcludeInactivePod(&pod) {
-			continue
-		}
-		for _, container := range pod.Spec.Containers {
-			for _, port := range container.Ports {
-				usedHostPort := port.HostPort
-				if pod.Spec.HostNetwork {
-					usedHostPort = port.ContainerPort
-				}
-
-				k8sClusterUsedPorts = append(k8sClusterUsedPorts, int(usedHostPort))
-			}
-		}
-	}
-
-	err = client.List(context.TODO(), services)
-	if err != nil {
-		return k8sClusterUsedPorts, err
-	}
-	for _, service := range services.Items {
-		if service.Spec.Type == v1.ServiceTypeNodePort || service.Spec.Type == v1.ServiceTypeLoadBalancer {
-			for _, port := range service.Spec.Ports {
-				k8sClusterUsedPorts = append(k8sClusterUsedPorts, int(port.NodePort))
-			}
-		}
-	}
-
-	fmt.Printf("Get K8S used ports, %++v", k8sClusterUsedPorts)
-
-	return k8sClusterUsedPorts, err
-}
-
-func isPortInUsed(port int, usedPorts []int) bool {
-	for _, usedPort := range usedPorts {
-		if port == usedPort {
-			return true
-		}
-	}
-	return false
 }

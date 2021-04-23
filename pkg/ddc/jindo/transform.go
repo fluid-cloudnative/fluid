@@ -4,6 +4,7 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"regexp"
@@ -423,10 +424,27 @@ func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *
 }
 
 func (e *JindoEngine) allocatePorts(value *Jindo) error {
-	masterPort, clientPort, err := e.getAvaliablePort()
-	value.Master.Port.Rpc = masterPort
-	value.Worker.Port.Rpc = clientPort
-	return err
+	// For now, Jindo only needs two ports for master and client rpc respectively
+	expectedPortNum := 2
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		e.Log.Error(err, "can't get runtime port allocator")
+		return err
+	}
+
+	allocatedPorts, err := allocator.GetAvailablePorts(expectedPortNum)
+	if err != nil {
+		e.Log.Error(err, "can't get available ports", "expected port num", expectedPortNum)
+		return err
+	}
+
+	index := 0
+	value.Master.Port.Rpc = allocatedPorts[index]
+	index++
+	value.Worker.Port.Rpc = allocatedPorts[index]
+
+	return nil
 }
 
 func (e *JindoEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
