@@ -107,6 +107,31 @@ NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED
 hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        17m
 ```
 
+查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
+```
+$ kubectl describe alluxioruntime hbase
+...
+  Conditions:
+    ...
+    Last Probe Time:                2021-04-23T07:54:03Z
+    Last Transition Time:           2021-04-23T07:54:03Z
+    Message:                        The workers are scale out.
+    Reason:                         Workers scaled out
+    Status:                         True
+    Type:                           Workers scaled out
+    Last Probe Time:                2021-04-23T07:54:03Z
+    Last Transition Time:           2021-04-23T07:54:03Z
+    Message:                        The fuses are scale out.
+    Reason:                         Fuses scaled out
+    Status:                         True
+    Type:                           FusesScaledOut
+...
+Events:
+  Type    Reason   Age   From            Message
+  ----    ------   ----  ----            -------
+  Normal  Succeed  2m2s  AlluxioRuntime  Alluxio runtime scaled out. current replicas: 2, desired replicas: 2.
+```
+
 **Dataset缩容**
 
 与扩容类似，缩容时同样可以使用`kubectl scale`对Runtime的Worker数量进行调整：
@@ -141,6 +166,32 @@ AlluxioRuntime中的`Ready Workers`以及`Ready Fuses`字段同样变为`1`：
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
 hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        30m
+```
+
+查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
+```
+$ kubectl describe alluxioruntime hbase
+...
+  Conditions:
+    ...
+    Last Probe Time:                2021-04-23T08:00:55Z
+    Last Transition Time:           2021-04-23T08:00:55Z
+    Message:                        The workers scaled in.
+    Reason:                         Workers scaled in
+    Status:                         True
+    Type:                           WorkersScaledIn
+    Last Probe Time:                2021-04-23T08:00:55Z
+    Last Transition Time:           2021-04-23T08:00:55Z
+    Message:                        The fuses scaled in.
+    Reason:                         Fuses scaled in
+    Status:                         True
+    Type:                           FusesScaledIn
+...
+Events:
+  Type     Reason               Age    From            Message
+  ----     ------               ----   ----            -------
+  Normal   Succeed              6m56s  AlluxioRuntime  Alluxio runtime scaled out. current replicas: 2, desired replicas: 2.
+  Normal   Succeed              4s     AlluxioRuntime  Alluxio runtime scaled in. current replicas: 1, desired replicas: 1.
 ```
 
 Fluid提供的这种扩缩容能力能够帮助用户或是集群管理员适时地调整数据集缓存所占用的集群资源，减少某个不频繁使用的数据集的缓存容量（缩容），或者按需增加某数据集的缓存容量（扩容），以实现更加精细的资源分配，提高资源利用率。
