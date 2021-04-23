@@ -58,7 +58,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 
 	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
 	if err != nil {
-		log.Error(err, "Failed to get PVC Mount Nodes, will treat every node as with no PVC mount Pods")
+		log.Error(err, "Failed to get PVC Mount Nodes, will treat every node as no PVC mount Pods")
 	}
 
 	var nodes []corev1.Node
@@ -159,7 +159,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	return
 }
 
-// sortNodesToBeScheduled will sort nodes to be scheduled when scale up
+// sortNodesToBeScheduled sorts nodes to be scheduled when scale up
 func sortNodesToBeScheduled(nodes []corev1.Node, pvcMountNodesMap map[string]int64, nodeSelector map[string]string) []corev1.Node {
 	var (
 		// There are three slices which have different priorities

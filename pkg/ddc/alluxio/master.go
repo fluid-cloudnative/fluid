@@ -101,10 +101,6 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 		}
 	}
 
-	if err != nil {
-		return
-	}
-
 	return
 }
 
