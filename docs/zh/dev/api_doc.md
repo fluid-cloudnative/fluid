@@ -1046,6 +1046,18 @@ bool
 <p>Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the master to fit on a node</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec
@@ -3798,5 +3810,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>01c0b49</code>.
+on git commit <code>7d8b02e</code>.
 </em></p>
