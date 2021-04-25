@@ -57,6 +57,9 @@ type DataLoadSpec struct {
 	// CacheSmallData specifies if the dataload job should Cache Small Data
 	CacheSmallData bool `json:"cacheSmallData,omitempty"`
 
+	// CacheSmallData specifies if the dataload job should Cache Small Data
+	LoadMemoryData bool `json:"loadMemoryData,omitempty"`
+
 	// add HdfsConfig for JindoRuntime
 	HdfsConfig string `json:"hdfsConfig,omitempty"`
 }

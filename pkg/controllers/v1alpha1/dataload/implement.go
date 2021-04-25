@@ -476,6 +476,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		LoadMetadata:   dataload.Spec.LoadMetadata,
 		Image:          image,
 		CacheSmallData: dataload.Spec.CacheSmallData,
+		LoadMemoryData: dataload.Spec.LoadMemoryData,
 		HdfsConfig:     dataload.Spec.HdfsConfig,
 	}
 

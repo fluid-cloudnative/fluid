@@ -43,8 +43,12 @@ data:
             echo -e "$default$path no need to cache metadata"
         fi
 
-        #echo -e "data cache start $default$path"
-        time jindo jfs -cache -s $default$path
+        if [[ $loadMemoryData == 'true' ]]; then
+            #echo -e "metadata cache start $default$path"
+            time jindo jfs -cache -s -m -r $replica $default$path
+        else
+            time jindo jfs -cache -s -r $replica $default$path
+        fi
 
         #echo -e "distributedLoad and sleep start now"
         #sleep 10m
@@ -53,6 +57,7 @@ data:
     function main() {
         needLoadMetadata="$NEED_LOAD_METADATA"
         cacheSmallData="$Cache_SMALL_DATA"
+        loadMemoryData="$LOAD_MEMORY_DATA"
         dafault="jfs://jindo"
         paths="$DATA_PATH"
         paths=(${paths//:/ })

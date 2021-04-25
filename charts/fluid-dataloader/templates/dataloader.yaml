@@ -57,6 +57,8 @@ spec:
               value: {{ default false .Values.dataloader.loadMetadata | quote }}
             - name: Cache_SMALL_DATA
               value: {{ default false .Values.dataloader.cacheSmallData | quote }}
+            - name: LOAD_MEMORY_DATA
+              value: {{ default false .Values.dataloader.loadMemoryData | quote }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS

@@ -25,6 +25,9 @@ type DataLoadInfo struct {
 	// CacheSmallData specifies if the dataload job should Cache Small Data
 	CacheSmallData bool `yaml:"cacheSmallData,omitempty"`
 
+	// CacheSmallData specifies if the dataload job should Cache Small Data
+	LoadMemoryData bool `yaml:"loadMemoryData,omitempty"`
+
 	// add HdfsConfig for JindoRuntime
 	HdfsConfig string `yaml:"hdfsConfig,omitempty"`
 }
