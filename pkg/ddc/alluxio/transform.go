@@ -18,9 +18,10 @@ package alluxio
 import (
 	"errors"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"os"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -275,6 +276,9 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 
 	value.Master.HostNetwork = true
 
+	nodeSelector := e.transformMasterSelector(runtime)
+	value.Master.NodeSelector = nodeSelector
+
 	// // check the run as
 	// if runtime.Spec.RunAs != nil {
 	// 	value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
@@ -482,3 +486,11 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 // 		value.JobMaster.Ports.Embedded = 20003
 // 	}
 // }
+
+func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRuntime) map[string]string {
+	properties := map[string]string{}
+	if runtime.Spec.Master.NodeSelector != nil {
+		properties = runtime.Spec.Master.NodeSelector
+	}
+	return properties
+}
