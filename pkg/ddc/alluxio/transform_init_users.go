@@ -19,6 +19,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -43,7 +44,7 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 	tag := runtime.Spec.InitUsers.ImageTag
 	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
 
-	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = e.parseInitImage(image, tag, imagePullPolicy)
+	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, tag, imagePullPolicy, common.ALLUXIO_INIT_IMAGE_ENV)
 
 	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
 

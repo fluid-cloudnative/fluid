@@ -222,29 +222,6 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 	return image, tag, imagePullPolicy
 }
 
-func (e *AlluxioEngine) parseInitImage(image string, tag string, imagePullPolicy string) (string, string, string) {
-	if len(imagePullPolicy) == 0 {
-		imagePullPolicy = "IfNotPresent"
-	}
-
-	initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
-	initImageInfo := strings.Split(initImage, ":")
-
-	if len(image) == 0 {
-		defaultImage := initImageInfo[0]
-		image = docker.GetImageRepoFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage)
-	}
-
-	if len(tag) == 0 {
-		defaultTag := initImageInfo[1]
-		tag = docker.GetImageTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultTag)
-	}
-
-	e.Log.Info("Set init image", "image", image, "tag", tag)
-
-	return image, tag, imagePullPolicy
-}
-
 func (e *AlluxioEngine) GetMetadataInfoFile() string {
 	return cdatabackup.BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
 }

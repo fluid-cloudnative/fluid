@@ -377,7 +377,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	imageTag = runtime.Spec.InitUsers.ImageTag
 	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
 
-	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = r.parseInitImage(image, imageTag, imagePullPolicy)
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, imageTag, imagePullPolicy, common.ALLUXIO_INIT_IMAGE_ENV)
 
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
@@ -393,27 +393,4 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		return
 	}
 	return valueFile.Name(), nil
-}
-
-func (r *DataBackupReconcilerImplement) parseInitImage(image string, tag string, imagePullPolicy string) (string, string, string) {
-	if len(imagePullPolicy) == 0 {
-		imagePullPolicy = "IfNotPresent"
-	}
-
-	initImage := common.DEFAULT_ALLUXIO_INIT_IMAGE
-	initImageInfo := strings.Split(initImage, ":")
-
-	if len(image) == 0 {
-		defaultImage := initImageInfo[0]
-		image = docker.GetImageRepoFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultImage)
-	}
-
-	if len(tag) == 0 {
-		defaultTag := initImageInfo[1]
-		tag = docker.GetImageTagFromEnv(common.ALLUXIO_INIT_IMAGE_ENV, defaultTag)
-	}
-
-	r.Log.Info("Set init image", "image", image, "tag", tag)
-
-	return image, tag, imagePullPolicy
 }

@@ -57,6 +57,28 @@ func GetImageTagFromEnv(envName, defaultTag string) (tag string) {
 	return
 }
 
+// ParseInitImage parses the init image and image tag
+func ParseInitImage(image, tag, imagePullPolicy, envName string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = "IfNotPresent"
+	}
+
+	initImage := common.DEFAULT_INIT_IMAGE
+	initImageInfo := strings.Split(initImage, ":")
+
+	if len(image) == 0 {
+		defaultImage := initImageInfo[0]
+		image = GetImageRepoFromEnv(envName, defaultImage)
+	}
+
+	if len(tag) == 0 {
+		defaultTag := initImageInfo[1]
+		tag = GetImageTagFromEnv(envName, defaultTag)
+	}
+
+	return image, tag, imagePullPolicy
+}
+
 // GetWorkerImage get the image of alluxio worker from alluxioruntime, env or default
 // TODO: Get image by calling runtime controller interface instead of reading runtime object
 func GetWorkerImage(client client.Client, datasetName string, runtimeType string, namespace string) (imageName string, imageTag string) {

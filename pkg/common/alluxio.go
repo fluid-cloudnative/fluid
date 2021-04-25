@@ -18,7 +18,7 @@ const (
 
 	ALLUXIO_FUSE_IMAGE_ENV = "ALLUXIO_FUSE_IMAGE_ENV"
 
-	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
+	DEFAULT_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
 
 	DEFAULT_ALLUXIO_RUNTIME_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226"
 
