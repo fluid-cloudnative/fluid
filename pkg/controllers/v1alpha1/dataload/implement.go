@@ -12,7 +12,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	alluxioOperations "github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	jindoOperations "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -209,10 +210,13 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	case common.ALLUXIO_RUNTIME:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "alluxio-master"
-		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		ready = fileUtils.Ready()
 	case common.JINDO_RUNTIME:
-		ready = true
+		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
+		containerName := "jindofs-master"
+		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		ready = fileUtils.Ready()
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataLoad,
@@ -236,7 +240,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	case common.ALLUXIO_RUNTIME:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "alluxio-master"
-		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		for _, target := range ctx.DataLoad.Spec.Target {
 			isExist, err := fileUtils.IsExist(target.Path)
 			if err != nil {
@@ -247,7 +251,18 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 			}
 		}
 	case common.JINDO_RUNTIME:
-		notExisted = false
+		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
+		containerName := "jindofs-master"
+		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		for _, target := range ctx.DataLoad.Spec.Target {
+			isExist, err := fileUtils.IsExist(target.Path)
+			if err != nil {
+				return utils.RequeueAfterInterval(20 * time.Second)
+			}
+			if !isExist {
+				notExisted = true
+			}
+		}
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataLoad,
@@ -492,7 +507,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 }
 
 // isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
-// We check this for the reason that native mount points need extra metadata sync operations.
+// We check this for the reason that native mount points need extra metadata sync alluxioOperations.
 func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
