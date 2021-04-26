@@ -144,19 +144,17 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 
 		//jfsNamespace = jfsNamespace + mount.Name + ","
 
-		mount.Name = jfsNamespace
-
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
 			mode = "hdfs"
 		}
 		// transform mountpoint for oss or hdfs format
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
-			properties["jfs.namespaces."+mount.Name+".hdfs.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.hdfs.uri"] = mount.MountPoint
 		} else if strings.HasPrefix(mount.MountPoint, "s3://") {
-			properties["jfs.namespaces."+mount.Name+".s3.uri"] = mount.MountPoint
-			properties["jfs.namespaces."+mount.Name+".s3.access.key"] = mount.Options["fs.s3.accessKeyId"]
-			properties["jfs.namespaces."+mount.Name+".s3.access.secret"] = mount.Options["fs.s3.accessKeySecret"]
+			properties["jfs.namespaces.jindo.s3.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.s3.access.key"] = mount.Options["fs.s3.accessKeyId"]
+			properties["jfs.namespaces.jindo.s3.access.secret"] = mount.Options["fs.s3.accessKeySecret"]
 			mode = "s3"
 		} else {
 			if !strings.HasPrefix(mount.MountPoint, "oss://") {
@@ -169,12 +167,12 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 				e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
 			}
 			mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
-			properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
-			properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
-			properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
-			properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
+			properties["jfs.namespaces.jindo.oss.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
+			properties["jfs.namespaces.jindo.oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
+			properties["jfs.namespaces.jindo.oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 		}
-		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
+		properties["jfs.namespaces.jindo.mode"] = "cache"
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
@@ -189,10 +187,10 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 				e.Log.Info("decode value failed")
 			}
 			if key == "fs."+mode+".accessKeyId" {
-				properties["jfs.namespaces."+mount.Name+"."+mode+".access.key"] = string(value)
+				properties["jfs.namespaces.jindo."+mode+".access.key"] = string(value)
 			}
 			if key == "fs."+mode+".accessKeySecret" {
-				properties["jfs.namespaces."+mount.Name+"."+mode+".access.secret"] = string(value)
+				properties["jfs.namespaces.jindo."+mode+".access.secret"] = string(value)
 			}
 			e.Log.Info("get from secret")
 		}
@@ -280,7 +278,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		"client.oss.connection.timeout.millisecond": "3000",
 		"jfs.cache.meta-cache.enable":               "0",
 		"jfs.cache.data-cache.enable":               "1",
-		"jfs.cache.data-cache.slicecache.enable":    "1",
+		"jfs.cache.data-cache.slicecache.enable":    "0",
 	}
 
 	// "client.storage.rpc.port": "6101",
