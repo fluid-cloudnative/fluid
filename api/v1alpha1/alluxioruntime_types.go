@@ -72,6 +72,10 @@ type AlluxioCompTemplateSpec struct {
 	// Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+
+	// NodeSelector is a selector which must be true for the master to fit on a node
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
