@@ -108,3 +108,25 @@ kubectl get csinode | grep <node_name>
 更新fluid后，如果你使用 `kubectl get` 命令，无法查询到该dataset的FileNum
 
 你可以重建dataset，新建的dataset会正常显示这些字段
+
+## 6. 为什么在运行示例 [Nonroot access](../samples/nonroot_access.md)时，遇到了 mkdir 权限被拒绝的问题？
+
+**回答**:在非 root 用户情况下，你首先必须要检查是否将正确的用户信息传递给了 runtime。其次你应该检查 Alluxio master pod 的状态，并使用 journalctl 去查看 Alluxio master pod 节点对应 kubelet 的日志。
+当将 hostpath 挂载到容器中，可能会造成无法创建文件的问题，因此我们必须要去检查 root 是否具有权限。例如在如下的情况中 root 是有权限使用 /dir。
+```
+$ stat /dir
+  File: ‘/dir’
+  Size: 32              Blocks: 0          IO Block: 4096   directory
+Device: fd00h/64768d    Inode: 83          Links: 3
+Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2021-04-14 23:35:47.928805350 +0800
+Modify: 2021-01-19 00:16:21.539559082 +0800
+Change: 2021-01-19 00:16:21.539559082 +0800
+ Birth: -
+
+```
+
+## 7. 为什么在应用程序中使用 PVC 时会产生了 Volume Attachment 超时问题？
+**回答**:首先需要使用命令`kubectl get csidriver`查看是否安装了 CSI Driver。
+如果没有安装，使用命令`kubectl apply -f charts/fluid/fluid/templates/csi/driver.yaml`进行安装，然后观察 PVC 是否成功挂载到应用程序中。
+如果仍未能解决，使用`export KUBECONFIG=/etc/kubernetes/kubelet.conf && kubectl get csidriver`来查看kubelet能够具有权限看到csidriver。

@@ -120,3 +120,8 @@ Change: 2021-01-19 00:16:21.539559082 +0800
  Birth: -
 
 ```
+
+## 7. Why does volume attachment timeout occur when PVC is used in an application?
+**Answer**: First, you need to use the command `kubectl get csidriver` to check whether CSI driver is installed.
+If not, you should use the command `kubectl apply -f charts/fluid/fluid/templates/CSI/driver.yaml` to install it, and then observe whether the PVC is successfully mounted into the application.
+If it is not solved, you shall use the command `export KUBECONFIG=/etc/kubernetes/kubelet.conf && kubectl get csidriver` to check kubelet whether has permission to see the csidriver or not. 
