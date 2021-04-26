@@ -277,7 +277,9 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 	value.Master.HostNetwork = true
 
 	nodeSelector := e.transformMasterSelector(runtime)
-	value.Master.NodeSelector = nodeSelector
+	if len(nodeSelector) != 0 {
+		value.Master.NodeSelector = nodeSelector
+	}
 
 	// // check the run as
 	// if runtime.Spec.RunAs != nil {
