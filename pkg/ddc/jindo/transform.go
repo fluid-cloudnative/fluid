@@ -146,11 +146,11 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
-			mode = "hdfs"
 		}
 		// transform mountpoint for oss or hdfs format
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
 			properties["jfs.namespaces.jindo.hdfs.uri"] = mount.MountPoint
+			mode = "hdfs"
 		} else if strings.HasPrefix(mount.MountPoint, "s3://") {
 			properties["jfs.namespaces.jindo.s3.uri"] = mount.MountPoint
 			properties["jfs.namespaces.jindo.s3.access.key"] = mount.Options["fs.s3.accessKeyId"]
