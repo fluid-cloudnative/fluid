@@ -19,7 +19,7 @@ csi:
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
-    portRange: 20000-25000
+    portRange: 20000-26000
     enabled: true
     init:
       image: registry.aliyuncs.com/fluid/init-users:v0.6.0-52f3c5b
