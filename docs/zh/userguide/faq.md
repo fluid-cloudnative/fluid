@@ -127,6 +127,10 @@ Change: 2021-01-19 00:16:21.539559082 +0800
 ```
 
 ## 7. 为什么在应用程序中使用 PVC 时会产生了 Volume Attachment 超时问题？
-**回答**:首先需要使用命令`kubectl get csidriver`查看是否安装了 CSI Driver。
+**回答**:Volume Attachment 超时问题是 Kubelet 进行请求 CSI Driver 时未收到 CSI Driver 的响应而造成的超时。
+该问题是由于 Fluid 的 CSI Driver 没有安装，或者kubelet没有访问 CSI Driver 的权限导致的。
+由于 CSI Driver 是由 Kubelet 进行回调，但是如果 Fluid 没有安装 CSI Driver 或者 Kubelet 没有权限查看 CSI Driver，就会导致 CSI Plugin 没有被正确触发。
+
+首先需要使用命令`kubectl get csidriver`查看是否安装了 CSI Driver。
 如果没有安装，使用命令`kubectl apply -f charts/fluid/fluid/templates/csi/driver.yaml`进行安装，然后观察 PVC 是否成功挂载到应用程序中。
-如果仍未能解决，使用`export KUBECONFIG=/etc/kubernetes/kubelet.conf && kubectl get csidriver`来查看kubelet能够具有权限看到csidriver。
+如果仍未能解决，使用`export KUBECONFIG=/etc/kubernetes/kubelet.conf && kubectl get csidriver`来查看 Kubelet 能够具有权限看到 CSI Driver。
