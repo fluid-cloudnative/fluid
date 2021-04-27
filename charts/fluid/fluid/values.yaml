@@ -6,13 +6,13 @@ workdir: /tmp
 
 dataset:
   controller:
-    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-52f3c5b
+    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-1c250b2
 
 csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-52f3c5b
+    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-1c250b2
   kubelet:
     rootDir: /var/lib/kubelet
 
@@ -22,9 +22,9 @@ runtime:
     portRange: 20000-26000
     enabled: true
     init:
-      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-52f3c5b
+      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-1c250b2
     controller:
-      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-52f3c5b
+      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-1c250b2
     runtime:
       image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-2-SNAPSHOT-52ad95c
     fuse:
@@ -37,4 +37,4 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.2
     controller:
-      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-52f3c5b
+      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-1c250b2
