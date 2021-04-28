@@ -108,19 +108,14 @@ func (a *MutatingHandler) InjectPreferToPod(pod *corev1.Pod) {
 	// todo: Parallel execution of all plugins
 	for _, plugin := range plugins.Registry(a.Client) {
 		pluginPreferredSchedulingTerms := plugin.NodePrefer(*pod)
-		for _, pluginPreferredSchedulingTerm := range pluginPreferredSchedulingTerms {
-			nodePreferTerms = append(nodePreferTerms, pluginPreferredSchedulingTerm)
-		}
+		nodePreferTerms = append(nodePreferTerms, pluginPreferredSchedulingTerms...)
 
 		pluginPodAffinityTerms := plugin.PodPrefer(*pod)
-		for _, pluginPodAffinityTerm := range pluginPodAffinityTerms {
-			podPreferTerms = append(podPreferTerms, pluginPodAffinityTerm)
-		}
+		podPreferTerms = append(podPreferTerms, pluginPodAffinityTerms...)
 
 		pluginPodAntiAffinityTerms := plugin.PodNotPrefer(*pod)
-		for _, pluginPodAntiAffinityTerms := range pluginPodAntiAffinityTerms {
-			podAntiPreferTerms = append(podAntiPreferTerms, pluginPodAntiAffinityTerms)
-		}
+		podAntiPreferTerms = append(podAntiPreferTerms, pluginPodAntiAffinityTerms...)
+
 	}
 
 	// generate the final affinity
