@@ -1,4 +1,4 @@
-{{ if .Values.runtime.jindo.enabled -}}
+{{ if .Values.webhook.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +18,7 @@ spec:
     spec:
       serviceAccountName: fluid-webhook
       containers:
-        - image: registry.cn-hangzhou.aliyuncs.com/fluid/fluid-webhook:v1
+        - image: {{ .Values.webhook.image | quote }}
           name: manager
           command: ["fluid-webhook", "start"]
           args:

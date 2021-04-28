@@ -69,7 +69,7 @@ func init() {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
-	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for pillar controller.")
+	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -121,7 +121,7 @@ func handle() {
 	}
 	hookServer := mgr.GetWebhookServer()
 	hookServer.Register(common.WEBHOOK_SERVICE_PATH, &webhook.Admission{
-		Handler: fluidWebhook.NewMutatingHandler(mgr.GetClient(), common.WEBHOOK_SERVICE_NAME),
+		Handler: fluidWebhook.NewMutatingHandler(mgr.GetClient()),
 	})
 
 	setupLog.Info("starting webhook-manager")

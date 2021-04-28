@@ -11,7 +11,7 @@ JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controll
 CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
 LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
 INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
-WEBHOOK_IMG ?= registry.cn-hangzhou.aliyuncs.com/fluid/fluid-webhook
+WEBHOOK_IMG ?= registry.aliyuncs.com/fluid/fluid-webhook
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)

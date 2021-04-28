@@ -41,4 +41,5 @@ runtime:
 
 webhook:
   enabled: true
+  image: registry.aliyuncs.com/fluid/fluid-webhook:v0.6.0-2ecf3ec
 

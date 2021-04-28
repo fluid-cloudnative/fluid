@@ -1,4 +1,4 @@
-{{ if .Values.runtime.jindo.enabled -}}
+{{ if .Values.webhook.enabled -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -16,6 +16,14 @@ rules:
     resources:
       - datasets
       - alluxioruntimes
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - persistentvolumeclaims
     verbs:
       - get
       - list

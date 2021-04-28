@@ -1,5 +1,4 @@
 /*
-Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,12 +18,10 @@ package webhook
 import (
 	"context"
 	"encoding/json"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -37,14 +34,11 @@ type MutatingHandler struct {
 	Client client.Client
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
-	// the serviceName of webhook-manager
-	serviceName string
 }
 
-func NewMutatingHandler(c client.Client, serviceName string) *MutatingHandler {
+func NewMutatingHandler(c client.Client) *MutatingHandler {
 	return &MutatingHandler{
-		Client:      c,
-		serviceName: serviceName,
+		Client: c,
 	}
 }
 
@@ -58,73 +52,17 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 		setupLog.Error(err, "unable to decoder pod from req")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if pod.Labels["app"] == "alluxio" || pod.Labels["Fluid-Injection"] == "disabled" {
-		return admission.Allowed("no need to prefer")
-	}
-	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 
-	var datasetList = &v1alpha1.DatasetList{}
-	var alluxioRuntime = &v1alpha1.AlluxioRuntime{}
-	err = a.Client.List(ctx, datasetList)
-	if err != nil {
-		setupLog.Error(err, "unable to list dataset")
-		return admission.Errored(http.StatusBadRequest, err)
+	// check whether should inject
+	if pod.Labels["Fluid-Injection"] == "disabled" {
+		return admission.Allowed("injection is disabled, no need to prefer")
+	}
+	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" {
+		return admission.Allowed("fluid Pods, will not prefer")
 	}
 
-	var preferredSchedulingTerms []corev1.PreferredSchedulingTerm
-	for _, dataset := range datasetList.Items {
-		ifMount := false
-		for _, pvcName := range pvcNames {
-			if dataset.Name == pvcName && dataset.Namespace == pod.Namespace {
-				// pod has a mounted dataset
-				ifMount = true
-				err = a.Client.Get(ctx, types.NamespacedName{
-					Namespace: dataset.Namespace,
-					Name:      dataset.Name,
-				}, alluxioRuntime)
-				if err != nil {
-					setupLog.Error(err, "unable to get alluxioRuntime")
-					continue
-				}
-				if alluxioRuntime.Spec.Fuse.Global == true {
-					// Pod should prefer to choose nodes with this dataset
-					preferredSchedulingTerms = append(preferredSchedulingTerms, corev1.PreferredSchedulingTerm{
-						Weight: 1,
-						Preference: corev1.NodeSelectorTerm{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "data.fluid.io/storage-" + dataset.Namespace + "-" + dataset.Name,
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"true"},
-								},
-							},
-						},
-					})
-				}
-			}
-		}
-		if !ifMount {
-			// pod has no relationship with this dataset
-			preferredSchedulingTerms = append(preferredSchedulingTerms, corev1.PreferredSchedulingTerm{
-				Weight: 1,
-				Preference: corev1.NodeSelectorTerm{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      "data.fluid.io/storage-" + dataset.Namespace + "-" + dataset.Name,
-							Operator: corev1.NodeSelectorOpNotIn,
-							Values:   []string{"true"},
-						},
-					},
-				},
-			})
-		}
-	}
-
-	pod.Spec.Affinity = &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerms,
-		},
-	}
+	// inject prefer and not prefer info to pod
+	a.InjectPreferToPod(pod)
 
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
@@ -139,4 +77,80 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 func (a *MutatingHandler) InjectDecoder(d *admission.Decoder) error {
 	a.decoder = d
 	return nil
+}
+
+// InjectPreferToPod will call all plugins to get total prefer info
+func (a *MutatingHandler) InjectPreferToPod(pod *corev1.Pod) {
+	var (
+		nodePreferTerms     []corev1.PreferredSchedulingTerm
+		podPreferTerms      []corev1.WeightedPodAffinityTerm
+		podAntiPreferTerms  []corev1.WeightedPodAffinityTerm
+		nodeRequireTerms    *corev1.NodeSelector
+		podRequireTerms     []corev1.PodAffinityTerm
+		podAntiRequireTerms []corev1.PodAffinityTerm
+	)
+	// get the origin prefer and require terms from pod
+	if pod.Spec.Affinity != nil {
+		if pod.Spec.Affinity.NodeAffinity != nil {
+			nodePreferTerms = pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+			nodeRequireTerms = pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+		}
+		if pod.Spec.Affinity.PodAffinity != nil {
+			podPreferTerms = pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+			podRequireTerms = pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+		}
+		if pod.Spec.Affinity.PodAntiAffinity != nil {
+			podPreferTerms = pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+			podAntiRequireTerms = pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+		}
+	}
+
+	// todo: Parallel execution of all plugins
+	for _, plugin := range plugins.Registry(a.Client) {
+		pluginPreferredSchedulingTerms := plugin.NodePrefer(*pod)
+		for _, pluginPreferredSchedulingTerm := range pluginPreferredSchedulingTerms {
+			nodePreferTerms = append(nodePreferTerms, pluginPreferredSchedulingTerm)
+		}
+
+		pluginPodAffinityTerms := plugin.PodPrefer(*pod)
+		for _, pluginPodAffinityTerm := range pluginPodAffinityTerms {
+			podPreferTerms = append(podPreferTerms, pluginPodAffinityTerm)
+		}
+
+		pluginPodAntiAffinityTerms := plugin.PodNotPrefer(*pod)
+		for _, pluginPodAntiAffinityTerms := range pluginPodAntiAffinityTerms {
+			podAntiPreferTerms = append(podAntiPreferTerms, pluginPodAntiAffinityTerms)
+		}
+	}
+
+	// generate the final affinity
+	nodeAffinity := corev1.NodeAffinity{}
+	if len(nodePreferTerms) != 0 {
+		nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = nodePreferTerms
+	}
+	if nodeRequireTerms != nil {
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = nodeRequireTerms
+	}
+
+	podAffinity := corev1.PodAffinity{}
+	if len(podPreferTerms) != 0 {
+		podAffinity.PreferredDuringSchedulingIgnoredDuringExecution = podPreferTerms
+	}
+	if len(podRequireTerms) != 0 {
+		podAffinity.RequiredDuringSchedulingIgnoredDuringExecution = podRequireTerms
+	}
+
+	podAntiAffinity := corev1.PodAntiAffinity{}
+	if len(podAntiPreferTerms) != 0 {
+		podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = podAntiPreferTerms
+	}
+	if len(podAntiRequireTerms) != 0 {
+		podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = podAntiRequireTerms
+	}
+
+	pod.Spec.Affinity = &corev1.Affinity{
+		NodeAffinity:    &nodeAffinity,
+		PodAffinity:     &podAffinity,
+		PodAntiAffinity: &podAntiAffinity,
+	}
 }
