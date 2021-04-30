@@ -24,4 +24,5 @@
 + Developer Guide
   - [How to develop](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
+  - [Develop with Kind on MacOS](dev/dev_with_kind.md)
 
