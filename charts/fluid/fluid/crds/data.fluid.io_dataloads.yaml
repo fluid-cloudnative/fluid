@@ -49,10 +49,6 @@ spec:
         spec:
           description: DataLoadSpec defines the desired state of DataLoad
           properties:
-            cacheSmallData:
-              description: CacheSmallData specifies if the dataload job should Cache
-                Small Data
-              type: boolean
             dataset:
               description: Dataset defines the target dataset of the DataLoad
               properties:
@@ -68,6 +64,10 @@ spec:
             hdfsConfig:
               description: add HdfsConfig for JindoRuntime
               type: string
+            loadMemoryData:
+              description: LoadMemoryData specifies if the dataload job should load
+                memory or not
+              type: boolean
             loadMetadata:
               description: LoadMetadata specifies if the dataload job should load
                 metadata

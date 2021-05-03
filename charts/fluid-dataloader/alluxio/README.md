@@ -2,7 +2,7 @@
 
 ## Prerequisite
 - Dataset deployed
-- Jindo Runtime deployed
+- Alluxio Runtime deployed
 - Dataset mountPoint mounted
 - Dataset-related PV, PVC created
 
@@ -15,7 +15,7 @@ NAME         STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 ```
 Say `<pvc-name>` is the name of your dataset-related PVC, usually it's the same name as your dataset.
 
-2. get num of Jindo workers
+2. get num of Alluxio workers
 ```shell script
 kubectl get pod -l release=<dataset-name> | grep -c "worker"
 ```
@@ -42,7 +42,7 @@ TEST SUITE: None
 
 Some dataloader jobs will be launched. You will see multiple jobs running on different nodes:
 ```shell script
-kubectl get pod -o wide -l role=Jindo-dataloader
+kubectl get pod -o wide -l role=alluxio-dataloader
 ```
 
 Once some job completes, you can check time consumed during data prefetch:

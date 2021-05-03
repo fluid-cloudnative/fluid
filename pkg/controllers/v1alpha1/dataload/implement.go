@@ -467,7 +467,9 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		return "", err
 	}
 
-	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindo", dataload.Spec.Dataset.Namespace)
+	_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, boundedRuntime.Type, dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataloadInfo := cdataload.DataLoadInfo{
@@ -475,7 +477,6 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 		TargetDataset:  dataload.Spec.Dataset.Name,
 		LoadMetadata:   dataload.Spec.LoadMetadata,
 		Image:          image,
-		CacheSmallData: dataload.Spec.CacheSmallData,
 		LoadMemoryData: dataload.Spec.LoadMemoryData,
 		HdfsConfig:     dataload.Spec.HdfsConfig,
 	}

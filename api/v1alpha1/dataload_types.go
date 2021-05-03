@@ -54,10 +54,7 @@ type DataLoadSpec struct {
 	// Target defines target paths that needs to be loaded
 	Target []TargetPath `json:"target,omitempty"`
 
-	// CacheSmallData specifies if the dataload job should Cache Small Data
-	CacheSmallData bool `json:"cacheSmallData,omitempty"`
-
-	// CacheSmallData specifies if the dataload job should Cache Small Data
+	// LoadMemoryData specifies if the dataload job should load memory or not
 	LoadMemoryData bool `json:"loadMemoryData,omitempty"`
 
 	// add HdfsConfig for JindoRuntime

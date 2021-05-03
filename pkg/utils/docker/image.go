@@ -68,10 +68,20 @@ func GetWorkerImage(client client.Client, datasetName string, runtimeType string
 
 	}
 	if imageName == "" {
-		imageName = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		if runtimeType == "alluxio" {
+			imageName = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
+		}
+		if runtimeType == "jindo" {
+			imageName = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		}
 	}
 	if imageTag == "" {
-		imageTag = "3.5.0"
+		if runtimeType == "alluxio" {
+			imageTag = "2.3.0-SNAPSHOT-238b7eb"
+		}
+		if runtimeType == "jindo" {
+			imageTag = "3.5.0"
+		}
 	}
 	return
 }
