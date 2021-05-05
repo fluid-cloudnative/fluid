@@ -10,11 +10,12 @@ The following are the adopters of project Fluid. If you are using Fluid to simpl
 The companies/organizations are listed in alphabetical order grouped by the phase.
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
+| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](mahao@4paradigm.com) | Testing | 4Paradigm Sage EE |
 | [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](zhoupeijie@kanzhun.com) | Staging | Alsenal AI Platform |
 | [China Telecom](https://www.chinatelecom-h.com/en/global/home.php) | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
-| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Staging  | PAI Deep Learning Containers |
-| [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
-| [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Staging | weibo deep learning platform |
-| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](mahao@4paradigm.com) | Testing | 4Paradigm Sage EE |
 | [HAOMO](http://haomo.ai/)  | [@tongyan](tongyan@haomo.ai) | Testing | HAOMO Auto Machine Learning Platform |
+| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Staging  | PAI Deep Learning Containers |
+| [Qihoo 360](http://www.360.cn/)  | [@yuchang](https://github.com/70data) | Production | BigData platform |
 | [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](chrisydxie@tencent.com) | Testing | Tencent Kubernetes Engine |
+| [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
+| [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Production | weibo deep learning platform |
