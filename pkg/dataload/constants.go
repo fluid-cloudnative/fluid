@@ -21,6 +21,4 @@ const (
 	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
 	DATALOAD_SUFFIX_LENGTH = 5
 	ENV_DATALOADER_IMG     = "DATALOADER_IMG"
-	DATALOAD_ALLUXIO_CHART = "alluxio"
-	DATALOAD_JINDO_CHART   = "jindo"
 )

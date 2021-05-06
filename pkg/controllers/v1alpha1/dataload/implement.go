@@ -350,11 +350,11 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRe
 			return utils.RequeueIfError(err)
 		}
 		chartName := ""
-		if boundedRuntimeType == "alluxio" {
-			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + cdataload.DATALOAD_ALLUXIO_CHART
+		if boundedRuntimeType == common.ALLUXIO_RUNTIME {
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.ALLUXIO_RUNTIME
 		}
-		if boundedRuntimeType == "jindo" {
-			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + cdataload.DATALOAD_JINDO_CHART
+		if boundedRuntimeType == common.JINDO_RUNTIME {
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
 		}
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
