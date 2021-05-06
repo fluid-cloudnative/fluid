@@ -344,12 +344,18 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRe
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := r.generateDataLoadValueFile(ctx.DataLoad)
+		valueFileName, boundedRuntimeType, err := r.generateDataLoadValueFile(ctx.DataLoad)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return utils.RequeueIfError(err)
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
+		chartName := ""
+		if boundedRuntimeType == "alluxio" {
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + cdataload.DATALOAD_ALLUXIO_CHART
+		}
+		if boundedRuntimeType == "jindo" {
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + cdataload.DATALOAD_JINDO_CHART
+		}
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -461,10 +467,10 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
+func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, boundedRuntimeType string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
@@ -505,7 +511,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 	if err != nil {
 		return
 	}
-	return valueFile.Name(), nil
+	return valueFile.Name(), boundedRuntime.Type, nil
 }
 
 // isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
