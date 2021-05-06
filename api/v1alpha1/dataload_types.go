@@ -53,12 +53,6 @@ type DataLoadSpec struct {
 
 	// Target defines target paths that needs to be loaded
 	Target []TargetPath `json:"target,omitempty"`
-
-	// LoadMemoryData specifies if the dataload job should load memory or not
-	LoadMemoryData bool `json:"loadMemoryData,omitempty"`
-
-	// add HdfsConfig for JindoRuntime
-	HdfsConfig string `json:"hdfsConfig,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad

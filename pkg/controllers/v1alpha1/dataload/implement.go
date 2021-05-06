@@ -478,13 +478,27 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, boundedRuntime.Type, dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
+	runtime, err := utils.GetJindoRuntime(r.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+	if err != nil {
+		return
+	}
+	hadoopConfig := runtime.Spec.HadoopConfig
+	loadMemoryData := false
+	if len(runtime.Spec.Tieredstore.Levels) == 0 {
+		err = fmt.Errorf("the Tieredstore is null")
+		return
+	}
+	if runtime.Spec.Tieredstore.Levels[0].MediumType == "MEM" {
+		loadMemoryData = true
+	}
+
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:   3,
 		TargetDataset:  dataload.Spec.Dataset.Name,
 		LoadMetadata:   dataload.Spec.LoadMetadata,
 		Image:          image,
-		LoadMemoryData: dataload.Spec.LoadMemoryData,
-		HdfsConfig:     dataload.Spec.HdfsConfig,
+		LoadMemoryData: loadMemoryData,
+		HdfsConfig:     hadoopConfig,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
