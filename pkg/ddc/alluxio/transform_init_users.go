@@ -44,7 +44,7 @@ func (e *AlluxioEngine) transformInitUsers(runtime *datav1alpha1.AlluxioRuntime,
 	tag := runtime.Spec.InitUsers.ImageTag
 	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
 
-	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, tag, imagePullPolicy, common.ALLUXIO_INIT_IMAGE_ENV)
+	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, tag, imagePullPolicy, common.DEFAULT_INIT_IMAGE_ENV)
 
 	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
 

@@ -43,7 +43,7 @@ spec:
             value: {{ .Values.workdir | quote }}
           {{- end }}
           {{- if .Values.runtime.alluxio.init.image }}
-          - name: ALLUXIO_INIT_IMAGE_ENV
+          - name: DEFAULT_INIT_IMAGE_ENV
             value: {{ .Values.runtime.alluxio.init.image | quote }}
           {{- end }}
           {{- if .Values.runtime.alluxio.runtime.image }}
