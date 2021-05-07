@@ -71,8 +71,7 @@ tolerations: []
 ## Master ##
 
 master:
-  count: 1 # Controls the number of StatefulSets. For multiMaster mode increase this to >1.
-  replicas: 1 # Controls #replicas in a StatefulSet and should not be modified in the usual case.
+  replicaCount: 1 # Controls the number of StatefulSets. For multiMaster mode increase this to >1.
   env:
     # Extra environment variables for the master pod
     # Example:

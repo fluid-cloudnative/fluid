@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // The value yaml file
@@ -91,8 +91,16 @@ type Metastore struct {
 }
 
 type Journal struct {
-	VolumeType string `yaml:"volumeType,omitempty"`
-	Size       string `yaml:"size,omitempty"`
+	Type         string `yaml:"type,omitempty"`
+	VolumeType   string `yaml:"volumeType,omitempty"`
+	Size         string `yaml:"size,omitempty"`
+	UFSType      string `yaml:"ufsType,omitempty"`
+	Format       Format `yaml:"format,omitempty"`
+	StorageClass string `yaml:"storageClass,omitempty"`
+}
+
+type Format struct {
+	RunFormat bool `yaml:"runFormat,omitempty"`
 }
 
 type ShortCircuit struct {

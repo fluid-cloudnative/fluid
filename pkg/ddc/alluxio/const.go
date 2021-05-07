@@ -58,4 +58,10 @@ const (
 	POD_ROLE_TYPE = "role"
 
 	WOKRER_POD_ROLE = "alluxio-worker"
+
+	JOURNAL_TYPE_UFS = "UFS"
+
+	JOURNAL_TYPE_EMBEDDED = "EMBEDDED"
+
+	ALLUXIO_JOURNAL = "alluxio-journal"
 )

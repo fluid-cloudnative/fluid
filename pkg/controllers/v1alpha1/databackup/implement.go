@@ -18,6 +18,13 @@ package databackup
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
@@ -28,18 +35,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // DataBackupReconcilerImplement implements the actual reconciliation logic of DataBackupReconciler
@@ -200,7 +201,37 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecutingDataBackup")
 	// 1. get the alluxio-master Pod
-	podName := ctx.Dataset.Name + "-master-0"
+	// For HA Mode, need find the leading master pod name
+	targetDataset := ctx.Dataset
+	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+	if index == -1 {
+		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
+	}
+
+	var podName string
+	if boundedRuntime.MasterReplicas <= 1 {
+		podName = ctx.Dataset.Name + "-master-0"
+	} else {
+		var err error
+		switch boundedRuntime.Type {
+		case common.ALLUXIO_RUNTIME:
+			execPodName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+			containerName := "alluxio-master"
+			fileUtils := operations.NewAlluxioFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
+			podName, err = fileUtils.MasterPodName()
+		default:
+			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+			r.Recorder.Eventf(&ctx.DataBackup,
+				v1.EventTypeNormal,
+				common.RuntimeNotReady,
+				"Bounded accelerate runtime not supported")
+		}
+		if err != nil {
+			log.Error(err, "failed to get master pod name, will retry")
+			return utils.RequeueIfError(err)
+		}
+	}
+
 	masterPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
 	if err != nil {
 		log.Error(err, "Failed to get alluxio-master")

@@ -25,13 +25,14 @@ import (
 )
 
 // NewRuntimeCondition creates a new Cache condition.
-func NewRuntime(name, namespace string, category common.Category, runtimeType string) data.Runtime {
+func NewRuntime(name, namespace string, category common.Category, runtimeType string, replicas int32) data.Runtime {
 	return data.Runtime{
 		Name:      name,
 		Namespace: namespace,
 		Category:  category,
 		// Engine:    engine,
-		Type: runtimeType,
+		Type:           runtimeType,
+		MasterReplicas: replicas,
 	}
 }
 

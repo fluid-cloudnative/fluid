@@ -469,3 +469,22 @@ func (a AlluxioFileUtils) execWithoutTimeout(command []string, verbose bool) (st
 
 	return
 }
+
+func (a AlluxioFileUtils) MasterPodName() (masterPodName string, err error) {
+	var (
+		command = []string{"alluxio", "fsadmin", "report"}
+		stdout  string
+		stderr  string
+	)
+	stdout, stderr, err = a.exec(command, true)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return stdout, err
+	}
+
+	str := strings.Split(stdout, "\n")
+	data := strings.Fields(str[1])
+	address := strings.Split(data[2], ":")[0]
+
+	return address, nil
+}

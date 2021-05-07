@@ -16,14 +16,15 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strconv"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -160,6 +161,23 @@ func (e *AlluxioEngine) setPortProperties(runtime *datav1alpha1.AlluxioRuntime, 
 	if value.Master.Ports.Embedded != 0 && value.JobMaster.Ports.Embedded != 0 {
 		setDefaultProperties(runtime, value, "alluxio.master.embedded.journal.port", strconv.Itoa(value.Master.Ports.Embedded))
 		setDefaultProperties(runtime, value, "alluxio.job.master.embedded.journal.port", strconv.Itoa(value.JobMaster.Ports.Embedded))
+	}
+
+	// If use EMBEDDED HA Mode, need set alluxio.master.embedded.journal.addresses
+	if value.Master.Replicas > 1 {
+		var journalAddresses string
+		var journalAddress string
+		var i int
+		for i = 0; i < int(value.Master.Replicas); i++ {
+			if i == int(value.Master.Replicas-1) {
+				journalAddress = value.FullnameOverride + "-" + "master-" + strconv.Itoa(i) + ":" + strconv.Itoa(value.Master.Ports.Embedded)
+			} else {
+				journalAddress = value.FullnameOverride + "-" + "master-" + strconv.Itoa(i) + ":" + strconv.Itoa(value.Master.Ports.Embedded) + ","
+			}
+
+			journalAddresses += journalAddress
+		}
+		setDefaultProperties(runtime, value, "alluxio.master.embedded.journal.addresses", journalAddresses)
 	}
 }
 

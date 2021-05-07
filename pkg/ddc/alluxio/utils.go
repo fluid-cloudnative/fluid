@@ -213,11 +213,17 @@ func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
 func (e *AlluxioEngine) GetMetadataInfoFile() string {
 	return cdatabackup.BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
 }
+
 func (e *AlluxioEngine) GetMetadataFileName() string {
 	return "metadata-backup-" + e.name + "-" + e.namespace + ".gz"
 }
+
 func (e *AlluxioEngine) GetMetadataInfoFileName() string {
 	return e.name + "-" + e.namespace + ".yaml"
+}
+
+func (e *AlluxioEngine) GetJournalPVCClaimName(name string) string {
+	return ALLUXIO_JOURNAL + "-" + name
 }
 
 // GetWorkerUsedCapacity gets cache capacity usage for each worker as a map.
