@@ -306,16 +306,31 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
-	databackupImage := common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
-	databackupImageInfo := strings.Split(databackupImage, ":")
+
 	if len(imageName) == 0 {
-		defaultImageName := databackupImageInfo[0]
-		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageName)
+		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(imageName) == 0 {
+			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(defaultImageInfo) < 1 {
+				panic("invalid default databackup image!")
+			} else {
+				imageName = defaultImageInfo[0]
+			}
+		}
 	}
+
 	if len(imageTag) == 0 {
-		defaultImageTag := databackupImageInfo[1]
-		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImageTag)
+		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(imageTag) == 0 {
+			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(defaultImageInfo) < 2 {
+				panic("invalid default databackup image!")
+			} else {
+				imageTag = defaultImageInfo[1]
+			}
+		}
 	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	workdir := os.Getenv("FLUID_WORKDIR")

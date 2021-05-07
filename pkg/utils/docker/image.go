@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+const ImageTagEnvRegexFormat = "^\\S+:\\S+$"
+
+var (
+	ImageTagEnvRegex = regexp.MustCompile(ImageTagEnvRegexFormat)
+)
+
 // ParseDockerImage extracts repo and tag from image. An empty string is returned if no tag is discovered.
 func ParseDockerImage(image string) (name string, tag string) {
 	matches := strings.Split(image, ":")
@@ -23,57 +29,60 @@ func ParseDockerImage(image string) (name string, tag string) {
 	return
 }
 
-// GetImageRepoFromEnv parse the image from environment varaibles, if it's not existed, return the default value
-func GetImageRepoFromEnv(envName, defaultImage string) (image string) {
-
-	image = defaultImage
-
+// GetImageRepoFromEnv parse the image from environment variables, if it's not existed, return the default value
+func GetImageRepoFromEnv(envName string) (image string) {
 	if value, existed := os.LookupEnv(envName); existed {
-		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+		if matched := ImageTagEnvRegex.MatchString(value); matched {
 			k, _ := ParseDockerImage(value)
 			if len(k) > 0 {
 				image = k
 			}
 		}
 	}
-
 	return
 }
 
 // GetImageTagFromEnv parse the image tag from environment varaibles, if it's not existed, return the default value
-func GetImageTagFromEnv(envName, defaultTag string) (tag string) {
-
-	tag = defaultTag
-
+func GetImageTagFromEnv(envName string) (tag string) {
 	if value, existed := os.LookupEnv(envName); existed {
-		if matched, err := regexp.MatchString("^\\S+:\\S+$", value); err == nil && matched {
+		if matched := ImageTagEnvRegex.MatchString(value); matched {
 			_, v := ParseDockerImage(value)
 			if len(v) > 0 {
 				tag = v
 			}
 		}
 	}
-
 	return
 }
 
 // ParseInitImage parses the init image and image tag
 func ParseInitImage(image, tag, imagePullPolicy, envName string) (string, string, string) {
 	if len(imagePullPolicy) == 0 {
-		imagePullPolicy = "IfNotPresent"
+		imagePullPolicy = common.DefaultImagePullPolicy
 	}
 
-	initImage := common.DEFAULT_INIT_IMAGE
-	initImageInfo := strings.Split(initImage, ":")
-
 	if len(image) == 0 {
-		defaultImage := initImageInfo[0]
-		image = GetImageRepoFromEnv(envName, defaultImage)
+		image = GetImageRepoFromEnv(envName)
+		if len(image) == 0 {
+			initImageInfo := strings.Split(common.DEFAULT_INIT_IMAGE, ":")
+			if len(initImageInfo) < 1 {
+				panic("invalid default init image!")
+			} else {
+				image = initImageInfo[0]
+			}
+		}
 	}
 
 	if len(tag) == 0 {
-		defaultTag := initImageInfo[1]
-		tag = GetImageTagFromEnv(envName, defaultTag)
+		tag = GetImageTagFromEnv(envName)
+		if len(tag) == 0 {
+			initImageInfo := strings.Split(common.DEFAULT_INIT_IMAGE, ":")
+			if len(initImageInfo) < 2 {
+				panic("invalid default init image!")
+			} else {
+				tag = initImageInfo[1]
+			}
+		}
 	}
 
 	return image, tag, imagePullPolicy
