@@ -344,17 +344,37 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRe
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, boundedRuntimeType, err := r.generateDataLoadValueFile(ctx.DataLoad)
+
+		targetDataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
 		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return utils.RequeueIfError(err)
+			log.Error(err, "targetDataset not exists", "targetDataset", releaseName, "namespace", ctx.DataLoad.Spec.Dataset.Name)
 		}
+
+		_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+
 		chartName := ""
-		if boundedRuntimeType == common.ALLUXIO_RUNTIME {
+		valueFileName := ""
+		switch boundedRuntime.Type {
+		case common.ALLUXIO_RUNTIME:
+			valueFileName, err = r.generateDataLoadValueFile(ctx.DataLoad)
+			if err != nil {
+				log.Error(err, "failed to generate dataload chart's value file")
+				return utils.RequeueIfError(err)
+			}
 			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.ALLUXIO_RUNTIME
-		}
-		if boundedRuntimeType == common.JINDO_RUNTIME {
+		case common.JINDO_RUNTIME:
+			valueFileName, err = r.generateJindoDataLoadValueFile(ctx.DataLoad)
+			if err != nil {
+				log.Error(err, "failed to generate dataload chart's value file")
+				return utils.RequeueIfError(err)
+			}
 			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
+		default:
+			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+			r.Recorder.Eventf(&ctx.DataLoad,
+				v1.EventTypeNormal,
+				common.RuntimeNotReady,
+				"Bounded accelerate runtime not supported")
 		}
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
@@ -467,38 +487,20 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx reconcileReque
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, boundedRuntimeType string, err error) {
+func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
-
-	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, boundedRuntime.Type, dataload.Spec.Dataset.Namespace)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-	runtime, err := utils.GetJindoRuntime(r.Client, boundedRuntime.Name, boundedRuntime.Namespace)
-	if err != nil {
-		return
-	}
-	hadoopConfig := runtime.Spec.HadoopConfig
-	loadMemoryData := false
-	if len(runtime.Spec.Tieredstore.Levels) == 0 {
-		err = fmt.Errorf("the Tieredstore is null")
-		return
-	}
-	if runtime.Spec.Tieredstore.Levels[0].MediumType == "MEM" {
-		loadMemoryData = true
-	}
-
 	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:   3,
-		TargetDataset:  dataload.Spec.Dataset.Name,
-		LoadMetadata:   dataload.Spec.LoadMetadata,
-		Image:          image,
-		LoadMemoryData: loadMemoryData,
-		HdfsConfig:     hadoopConfig,
+		BackoffLimit:  3,
+		TargetDataset: dataload.Spec.Dataset.Name,
+		LoadMetadata:  dataload.Spec.LoadMetadata,
+		Image:         image,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -525,7 +527,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 	if err != nil {
 		return
 	}
-	return valueFile.Name(), boundedRuntime.Type, nil
+	return valueFile.Name(), nil
 }
 
 // isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
