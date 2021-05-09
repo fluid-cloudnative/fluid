@@ -16,7 +16,6 @@ limitations under the License.
 package alluxio
 
 import (
-	"fmt"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -29,25 +28,25 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 	mounts := dataset.Spec.Mounts
 	for _, mount := range mounts {
 		// if mount.MountPoint
-		if strings.HasPrefix(mount.MountPoint, common.PathScheme) {
+		if strings.HasPrefix(mount.MountPoint, common.PathScheme.String()) {
 			if len(value.UFSPaths) == 0 {
 				value.UFSPaths = []UFSPath{}
 			}
 
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
-			ufsPath.ContainerPath = fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
-			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme)
+			ufsPath.ContainerPath = UFSPathBuilder{}.GenLocalStoragePath(mount)
+			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme.String())
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
-		} else if strings.HasPrefix(mount.MountPoint, common.VolumeScheme) {
+		} else if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
-				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme),
-				ContainerPath: fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name),
+				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()),
+				ContainerPath: UFSPathBuilder{}.GenLocalStoragePath(mount),
 			})
 		}
 	}
