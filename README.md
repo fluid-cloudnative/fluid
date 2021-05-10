@@ -10,18 +10,19 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 
+## What is Fluid?
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
+
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
 |![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
 |------------------|
+|April. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
 |Mar. 16th, 2021. Fluid v0.5.0 is **RELEASED**! It provides various new features, such as on-the-fly dataset scale out/in, metadata backup, support Fuse global mode and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 |Nov. 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 |Oct. 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 
-## What is Fluid?
-
-Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications.
 <div align="center">
     <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" height="60%" width="60%" alt="">
 </div>
