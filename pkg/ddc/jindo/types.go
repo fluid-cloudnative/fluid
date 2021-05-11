@@ -33,6 +33,8 @@ type Master struct {
 	MasterProperties map[string]string `yaml:"properties"`
 	TokenProperties  map[string]string `yaml:"secretProperties"`
 	Port             Ports             `yaml:"ports,omitempty"`
+	OssKey           string            `yaml:"osskey,omitempty"`
+	OssSecret        string            `yaml:"osssecret,omitempty"`
 }
 
 type Worker struct {

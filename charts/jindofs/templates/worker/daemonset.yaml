@@ -62,6 +62,9 @@ spec:
             - name: bigboot-config
               mountPath: /bigboot.cfg
               subPath: bigboot.cfg
+            - name: bigboot-config
+              mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
+              subPath: core-site.xml
           {{- range $name, $path := .Values.mounts.workersAndClients }}
             - name: datavolume-{{ $name }}
               mountPath: "{{ $path }}"
