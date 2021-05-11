@@ -56,11 +56,16 @@ func (r *DataLoadReconcilerImplement) generateJindoDataLoadValueFile(dataload v1
 		})
 	}
 	dataloadInfo.TargetPaths = targetPaths
-
-	jindoOptions := cdataload.JindoOptions{}
-	jindoOptions.LoadMemoryData = loadMemoryData
-	jindoOptions.HdfsConfig = hadoopConfig
-	dataloadInfo.JindoOptions = jindoOptions
+	options := map[string]string{}
+	if loadMemoryData {
+		options["loadMemoryData"] = "true"
+	} else {
+		options["loadMemoryData"] = "false"
+	}
+	if hadoopConfig != "" {
+		options["hdfsConfig"] = hadoopConfig
+	}
+	dataloadInfo.Options = options
 
 	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
 	data, err := yaml.Marshal(dataLoadValue)

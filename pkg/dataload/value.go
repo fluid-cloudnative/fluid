@@ -24,6 +24,8 @@ type DataLoadInfo struct {
 
 	// JindoOptions specifies the options that jindoruntime uses
 	JindoOptions JindoOptions `yaml:"jindoOptions,omitempty"`
+
+	Options map[string]string `yaml:"options,omitempty"`
 }
 
 type JindoOptions struct {

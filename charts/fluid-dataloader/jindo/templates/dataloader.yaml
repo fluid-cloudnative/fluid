@@ -55,8 +55,12 @@ spec:
                   fieldPath: status.podIP
             - name: NEED_LOAD_METADATA
               value: {{ default false .Values.dataloader.loadMetadata | quote }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "loadMemoryData" }}
             - name: LOAD_MEMORY_DATA
-              value: {{ default false .Values.dataloader.loadMemoryData | quote }}
+              value: {{ default false $val | quote }}
+            {{- end }}
+            {{- end }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
@@ -71,10 +75,12 @@ spec:
             - name: bigboot-config
               mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
               subPath: core-site.xml
-            {{- if .Values.dataloader.hdfsConfig }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "hdfsConfig" }}
             - name: hdfs-confs
               mountPath: /hdfs-site.xml
               subPath: hdfs-site.xml
+            {{- end }}
             {{- end }}
             - mountPath: /scripts
               name: data-load-script
@@ -88,10 +94,12 @@ spec:
         - name: bigboot-config
           configMap:
             name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-config
-        {{- if .Values.dataloader.hdfsConfig }}
+        {{- range $key, $val := .Values.dataloader.options }}
+        {{- if eq $key "hdfsConfig" }}
         - name: hdfs-confs
           configMap:
-            name: {{ .Values.dataloader.hdfsConfig }}
+            name: {{ $val }}
+        {{- end }}
         {{- end }}
         - name: data-load-script
           configMap:
