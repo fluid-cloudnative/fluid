@@ -138,17 +138,24 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 	if err != nil {
 		return err
 	}
-	jfsNamespace := ""
+	jfsNamespace := "jindo"
+	mode := "oss"
 	for _, mount := range dataset.Spec.Mounts {
 
-		jfsNamespace = jfsNamespace + mount.Name + ","
+		//jfsNamespace = jfsNamespace + mount.Name + ","
 
 		if !strings.HasSuffix(mount.MountPoint, "/") {
 			mount.MountPoint = mount.MountPoint + "/"
 		}
 		// transform mountpoint for oss or hdfs format
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
-			properties["jfs.namespaces."+mount.Name+".hdfs.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.hdfs.uri"] = mount.MountPoint
+			mode = "hdfs"
+		} else if strings.HasPrefix(mount.MountPoint, "s3://") {
+			properties["jfs.namespaces.jindo.s3.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.s3.access.key"] = mount.Options["fs.s3.accessKeyId"]
+			properties["jfs.namespaces.jindo.s3.access.secret"] = mount.Options["fs.s3.accessKeySecret"]
+			mode = "s3"
 		} else {
 			if !strings.HasPrefix(mount.MountPoint, "oss://") {
 				continue
@@ -160,12 +167,12 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 				e.Log.Info("incorrect muountpath", "mount.MountPoint", mount.MountPoint)
 			}
 			mount.MountPoint = strings.Replace(mount.MountPoint, rm[1], rm[1]+"."+mount.Options["fs.oss.endpoint"], 1)
-			properties["jfs.namespaces."+mount.Name+".oss.uri"] = mount.MountPoint
-			properties["jfs.namespaces."+mount.Name+".oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
-			properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
-			properties["jfs.namespaces."+mount.Name+".oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
+			properties["jfs.namespaces.jindo.oss.uri"] = mount.MountPoint
+			properties["jfs.namespaces.jindo.oss.access.key"] = mount.Options["fs.oss.accessKeyId"]
+			properties["jfs.namespaces.jindo.oss.access.secret"] = mount.Options["fs.oss.accessKeySecret"]
+			properties["jfs.namespaces.jindo.oss.access.endpoint"] = mount.Options["fs.oss.endpoint"]
 		}
-		properties["jfs.namespaces."+mount.Name+".mode"] = "cache"
+		properties["jfs.namespaces.jindo.mode"] = "cache"
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
@@ -179,11 +186,11 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 			if err != nil {
 				e.Log.Info("decode value failed")
 			}
-			if key == "fs.oss.accessKeyId" {
-				properties["jfs.namespaces."+mount.Name+".oss.access.key"] = string(value)
+			if key == "fs."+mode+".accessKeyId" {
+				properties["jfs.namespaces.jindo."+mode+".access.key"] = string(value)
 			}
-			if key == "fs.oss.accessKeySecret" {
-				properties["jfs.namespaces."+mount.Name+".oss.access.secret"] = string(value)
+			if key == "fs."+mode+".accessKeySecret" {
+				properties["jfs.namespaces.jindo."+mode+".access.secret"] = string(value)
 			}
 			e.Log.Info("get from secret")
 		}
@@ -199,7 +206,12 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		}
 	}
 
+	if mode == "oss" || mode == "s3" {
+		value.Master.OssKey = properties["jfs.namespaces.jindo."+mode+".access.key"]
+		value.Master.OssSecret = properties["jfs.namespaces.jindo."+mode+".access.secret"]
+	}
 	value.Master.MasterProperties = properties
+
 	return nil
 }
 
@@ -266,7 +278,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		"client.oss.connection.timeout.millisecond": "3000",
 		"jfs.cache.meta-cache.enable":               "0",
 		"jfs.cache.data-cache.enable":               "1",
-		"jfs.cache.data-cache.slicecache.enable":    "1",
+		"jfs.cache.data-cache.slicecache.enable":    "0",
 	}
 
 	// "client.storage.rpc.port": "6101",
@@ -347,7 +359,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 	var rootArg = ""
 	var secretArg = ""
 	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {
-		rootArg = "-oroot_ns=" + dataset.Spec.Mounts[0].Name
+		rootArg = "-oroot_ns=jindo"
 		baseArg = rootArg + " " + baseArg
 	}
 	if len(runtime.Spec.Secret) != 0 {
@@ -371,7 +383,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.5.2"
+		defaultTag   = "3.5.0"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
@@ -383,7 +395,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.5.2"
+		defaultTag   = "3.5.0"
 	)
 
 	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)

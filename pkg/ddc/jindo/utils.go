@@ -97,7 +97,7 @@ func (e *JindoEngine) getMasterPodInfo() (podName string, containerName string) 
 func (e *JindoEngine) TotalJindoStorageBytes(name string, useStsSecret bool) (value int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	url := "jfs://" + name + "/"
+	url := "jfs://jindo/"
 	ufsSize, err := fileUtils.GetUfsTotalSize(url, useStsSecret)
 	e.Log.Info("jindo storage ufsSize", "ufsSize", ufsSize)
 	if err != nil {
