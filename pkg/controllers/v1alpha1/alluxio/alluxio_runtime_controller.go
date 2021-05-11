@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"context"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"sync"
 
@@ -98,8 +99,9 @@ func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 //SetupWithManager setups the manager with RuntimeReconciler
-func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.AlluxioRuntime{}).
 		Complete(r)
 }

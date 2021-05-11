@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/net"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"go.uber.org/zap/zapcore"
 
@@ -46,11 +47,12 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	short                bool
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
-	portRange            string
+	short                   bool
+	metricsAddr             string
+	enableLeaderElection    bool
+	development             bool
+	portRange               string
+	maxConcurrentReconciles int
 )
 
 var cmd = &cobra.Command{
@@ -82,6 +84,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
+	startCmd.Flags().IntVar(&maxConcurrentReconciles, "max-concurrent-reconciles", 1, "Set max concurrent workers for reconcilation")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -123,11 +126,15 @@ func handle() {
 		os.Exit(1)
 	}
 
+	controllerOptions := controller.Options{
+		MaxConcurrentReconciles: maxConcurrentReconciles,
+	}
+
 	if err = (alluxioctl.NewRuntimeReconciler(mgr.GetClient(),
 		ctrl.Log.WithName("alluxioctl").WithName("AlluxioRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("AlluxioRuntime"),
-	)).SetupWithManager(mgr); err != nil {
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AlluxioRuntime")
 		os.Exit(1)
 	}

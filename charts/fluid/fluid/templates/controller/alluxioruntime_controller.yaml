@@ -37,6 +37,7 @@ spec:
         args:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.alluxio.portRange }}
+          - --max-concurrent-reconciles={{ .Values.runtime.alluxio.maxReconciles }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR
