@@ -21,6 +21,9 @@ type DataLoadInfo struct {
 
 	// Image specifies the image that the DataLoad job uses
 	Image string `yaml:"image,omitempty"`
+
+	// Options specifies the extra dataload properties for runtime
+	Options map[string]string `yaml:"options,omitempty"`
 }
 
 type TargetPath struct {

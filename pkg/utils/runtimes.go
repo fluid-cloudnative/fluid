@@ -65,3 +65,17 @@ func GetAlluxioRuntime(client client.Client, name, namespace string) (*data.Allu
 	}
 	return &runtime, nil
 }
+
+// GetJindoRuntime gets Jindo Runtime object with the given name and namespace
+func GetJindoRuntime(client client.Client, name, namespace string) (*data.JindoRuntime, error) {
+
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.JindoRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+	return &runtime, nil
+}

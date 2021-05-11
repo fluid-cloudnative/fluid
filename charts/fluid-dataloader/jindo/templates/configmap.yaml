@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-data-load-script" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+data:
+  dataloader.jindo.init: |
+    #!/usr/bin/env bash
+    set -xe
+    jindo_env_vars=(
+      STORAGE_ADDRESS
+    )
+    function public::jindo::init_conf() {
+      local IFS=$'\n' # split by line instead of space
+      for keyvaluepair in $(env); do
+        # split around the first "="
+        key=$(echo ${keyvaluepair} | cut -d= -f1)
+        value=$(echo ${keyvaluepair} | cut -d= -f2-)
+        if [[ "${jindo_env_vars[*]}" =~ "${key}" ]]; then
+          export ${key}=\"${value}\"
+        fi
+      done
+    }
+    main() {
+      public::jindo::init_conf
+    }
+    main
+  dataloader.distributedLoad: |
+    #!/usr/bin/env bash
+    set -xe
+
+    function distributedLoad() {
+        local path=$1
+        local replica=$2
+        local default=$3
+
+        if [[ $needLoadMetadata == 'true' ]]; then
+            #echo -e "metadata cache start $default$path"
+            time jindo jfs -metaSync -R $default$path
+        else
+            echo -e "$default$path no need to cache metadata"
+        fi
+
+        if [[ $loadMemoryData == 'true' ]]; then
+            #echo -e "metadata cache start $default$path"
+            time jindo jfs -cache -s -m -r $replica $default$path
+        else
+            time jindo jfs -cache -s -r $replica $default$path
+        fi
+
+        #echo -e "distributedLoad and sleep start now"
+        #sleep 10m
+    }
+    
+    function main() {
+        needLoadMetadata="$NEED_LOAD_METADATA"
+        loadMemoryData="$LOAD_MEMORY_DATA"
+        dafault="jfs://jindo"
+        paths="$DATA_PATH"
+        paths=(${paths//:/ })
+        replicas="$PATH_REPLICAS"
+        replicas=(${replicas//:/ })
+        for((i=0;i<${#paths[@]};i++)) do
+            local path="${paths[i]}"
+            local replica="${replicas[i]}"
+            echo -e "distributedLoad on $path starts"
+            distributedLoad ${paths[i]} ${replicas[i]} ${dafault}
+            #echo -e "distributedLoad on $path ends"
+        done
+    }
+    
+    main "$@"
+
+
+
+
+

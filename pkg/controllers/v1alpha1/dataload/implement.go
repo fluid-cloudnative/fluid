@@ -12,7 +12,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	alluxioOperations "github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	jindoOperations "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -209,7 +210,12 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	case common.ALLUXIO_RUNTIME:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "alluxio-master"
-		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		ready = fileUtils.Ready()
+	case common.JINDO_RUNTIME:
+		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
+		containerName := "jindofs-master"
+		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		ready = fileUtils.Ready()
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
@@ -234,7 +240,20 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx reconcileRequ
 	case common.ALLUXIO_RUNTIME:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "alluxio-master"
-		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		for _, target := range ctx.DataLoad.Spec.Target {
+			isExist, err := fileUtils.IsExist(target.Path)
+			if err != nil {
+				return utils.RequeueAfterInterval(20 * time.Second)
+			}
+			if !isExist {
+				notExisted = true
+			}
+		}
+	case common.JINDO_RUNTIME:
+		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
+		containerName := "jindofs-master"
+		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		for _, target := range ctx.DataLoad.Spec.Target {
 			isExist, err := fileUtils.IsExist(target.Path)
 			if err != nil {
@@ -325,12 +344,38 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRe
 	// 2. install the helm chart if not exists and requeue
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := r.generateDataLoadValueFile(ctx.DataLoad)
+
+		targetDataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
 		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return utils.RequeueIfError(err)
+			log.Error(err, "targetDataset not exists", "targetDataset", releaseName, "namespace", ctx.DataLoad.Spec.Dataset.Name)
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
+
+		_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+
+		chartName := ""
+		valueFileName := ""
+		switch boundedRuntime.Type {
+		case common.ALLUXIO_RUNTIME:
+			valueFileName, err = r.generateDataLoadValueFile(ctx.DataLoad)
+			if err != nil {
+				log.Error(err, "failed to generate dataload chart's value file")
+				return utils.RequeueIfError(err)
+			}
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.ALLUXIO_RUNTIME
+		case common.JINDO_RUNTIME:
+			valueFileName, err = r.generateJindoDataLoadValueFile(ctx.DataLoad)
+			if err != nil {
+				log.Error(err, "failed to generate dataload chart's value file")
+				return utils.RequeueIfError(err)
+			}
+			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
+		default:
+			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+			r.Recorder.Eventf(&ctx.DataLoad,
+				v1.EventTypeNormal,
+				common.RuntimeNotReady,
+				"Bounded accelerate runtime not supported")
+		}
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -486,7 +531,7 @@ func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha
 }
 
 // isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
-// We check this for the reason that native mount points need extra metadata sync operations.
+// We check this for the reason that native mount points need extra metadata sync alluxioOperations.
 func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
