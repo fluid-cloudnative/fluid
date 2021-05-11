@@ -22,18 +22,8 @@ type DataLoadInfo struct {
 	// Image specifies the image that the DataLoad job uses
 	Image string `yaml:"image,omitempty"`
 
-	// JindoOptions specifies the options that jindoruntime uses
-	JindoOptions JindoOptions `yaml:"jindoOptions,omitempty"`
-
+	// Options specifies the extra dataload properties for runtime
 	Options map[string]string `yaml:"options,omitempty"`
-}
-
-type JindoOptions struct {
-	// LoadMemoryData specifies if the dataload job should load memory or not
-	LoadMemoryData bool `yaml:"loadMemoryData,omitempty"`
-
-	// add HdfsConfig for JindoRuntime
-	HdfsConfig string `yaml:"hdfsConfig,omitempty"`
 }
 
 type TargetPath struct {
