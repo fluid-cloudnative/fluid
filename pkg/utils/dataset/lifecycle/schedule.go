@@ -18,6 +18,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -33,10 +34,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+// TODO: move this to some Scheduler-like struct
+// schedulerMutex is a mutex to protect the scheduling process from race condition
+var schedulerMutex = sync.Mutex{}
+
 func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	dataset *datav1alpha1.Dataset,
 	runtimeClient client.Client,
 	desiredNum int32) (currentScheduleNum int32, err error) {
+
+	// Only one worker can enter this area and the reconciling runtime CR can be scheduled
+	schedulerMutex.Lock()
+	defer schedulerMutex.Unlock()
+
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}
 		alreadySchedNodeList  *corev1.NodeList = &corev1.NodeList{}
