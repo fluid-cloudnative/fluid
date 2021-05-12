@@ -16,70 +16,78 @@ limitations under the License.
 package prefernodeswithcache
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 /*
    This plugin is for pods with a mounted dataset.
-   If the runtime is in fuse mode, they should prefer nods with the mounted dataset on them.
+   If the runtime is in fuse mode, they should prefer nodes with the mounted dataset on them.
 
 */
 
-var setupLog = ctrl.Log.WithName("PreferNodesWithCache")
+const NAME = "PreferNodesWithCache"
 
 type PreferNodesWithCache struct {
 	client client.Client
+	name   string
 }
 
 func NewPlugin(c client.Client) *PreferNodesWithCache {
 	return &PreferNodesWithCache{
 		client: c,
+		name:   NAME,
 	}
 }
 
-func (p *PreferNodesWithCache) NodePrefer(pod corev1.Pod) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm) {
-	pvcNames := kubeclient.GetPVCNamesFromPod(&pod)
-	for _, pvcName := range pvcNames {
-		setupLog.Info(pvcName)
-		isDatasetPVC, err := kubeclient.IsDatasetPVC(p.client, pvcName, pod.Namespace)
-		if err != nil {
-			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
-			continue
+func (p *PreferNodesWithCache) GetName() string {
+	return p.name
+}
+
+func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (finish bool) {
+	if len(runtimeInfos) == 0 {
+		return
+	}
+	var preferredSchedulingTerms []corev1.PreferredSchedulingTerm
+	for _, runtimeInfo := range runtimeInfos {
+		// if runtime in global mode, inject a new PreferredSchedulingTerm
+		global, _ := runtimeInfo.GetFuseDeployMode()
+		if global {
+			preferredSchedulingTerm := getPreferredSchedulingTerm(runtimeInfo)
+			preferredSchedulingTerms = append(preferredSchedulingTerms, preferredSchedulingTerm)
 		}
-		if isDatasetPVC {
-			global, err := utils.IsFuseGlobal(p.client, pvcName, pod.Namespace)
-			if err != nil {
-				setupLog.Error(err, "unable to get alluxioRuntime, will ignore it", "alluxioRuntime", pvcName)
-				continue
+	}
+	if len(preferredSchedulingTerms) == 0 {
+		return
+	}
+	if pod.Spec.Affinity != nil {
+		if pod.Spec.Affinity.NodeAffinity != nil {
+			pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+				append(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+					preferredSchedulingTerms...)
+		} else {
+			pod.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerms,
 			}
-			if global {
-				preferredSchedulingTerm := getPreferredSchedulingTerm(pvcName, pod.Namespace)
-				preferredSchedulingTerms = append(preferredSchedulingTerms, preferredSchedulingTerm)
-			}
+		}
+	} else {
+		pod.Spec.Affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerms,
+			},
 		}
 	}
 	return
 }
 
-func (p *PreferNodesWithCache) PodPrefer(corev1.Pod) (weightedPodAffinityTerms []corev1.WeightedPodAffinityTerm) {
-	return
-}
-
-func (p *PreferNodesWithCache) PodNotPrefer(corev1.Pod) (weightedPodAffinityTerms []corev1.WeightedPodAffinityTerm) {
-	return
-}
-
-func getPreferredSchedulingTerm(name, namespace string) corev1.PreferredSchedulingTerm {
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.PreferredSchedulingTerm {
 	return corev1.PreferredSchedulingTerm{
 		Weight: 50,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{
-					Key:      "fluid.io/s-" + namespace + "-" + name,
+					Key:      runtimeInfo.GetCommonLabelname(),
 					Operator: corev1.NodeSelectorOpIn,
 					Values:   []string{"true"},
 				},

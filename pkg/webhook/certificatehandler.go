@@ -16,7 +16,7 @@ limitations under the License.
 package webhook
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	admissionreg "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"

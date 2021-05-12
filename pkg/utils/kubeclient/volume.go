@@ -335,6 +335,6 @@ func IsDatasetPVC(client client.Client, name string, namespace string) (find boo
 	if err != nil {
 		return
 	}
-	_, find = pvc.Labels["fluid.io/s-"+namespace+"-"+name]
+	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix + namespace + "-" + name]
 	return
 }

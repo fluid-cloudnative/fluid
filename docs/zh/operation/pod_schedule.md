@@ -14,6 +14,17 @@ $ kubectl label namespace default Fluid-Injection=enabled
 ```
 如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签Fluid-Injection=disabled
 
+例如，使用yaml文件方式创建一个nginx Pod时，应对yaml文件做如下修改：
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    Fluid-Injection: disabled
+......
+```
+
 **查看全部结点**
 ```shell
 $ kubectl get nodes

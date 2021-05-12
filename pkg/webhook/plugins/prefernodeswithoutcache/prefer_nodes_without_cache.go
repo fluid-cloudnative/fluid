@@ -16,10 +16,9 @@ limitations under the License.
 package prefernodeswithoutcache
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,19 +28,19 @@ import (
 
 */
 
-var setupLog = ctrl.Log.WithName("PreferNodesWithoutCache")
+const NAME = "PreferNodesWithoutCache"
 
 type PreferNodesWithoutCache struct {
 	client client.Client
+	name   string
 }
 
 func NewPlugin(c client.Client) *PreferNodesWithoutCache {
 	return &PreferNodesWithoutCache{
 		client: c,
+		name:   NAME,
 	}
 }
-
-var Plugin = PreferNodesWithoutCache{}
 
 var weightedPodAffinityTerm = corev1.WeightedPodAffinityTerm{
 	Weight: 50,
@@ -59,30 +58,37 @@ var weightedPodAffinityTerm = corev1.WeightedPodAffinityTerm{
 	},
 }
 
-func (p *PreferNodesWithoutCache) NodePrefer(corev1.Pod) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm) {
-	return
+func (p *PreferNodesWithoutCache) GetName() string {
+	return p.name
 }
 
-func (p *PreferNodesWithoutCache) PodPrefer(corev1.Pod) (weightedPodAffinityTerms []corev1.WeightedPodAffinityTerm) {
-	return
-}
-
-func (p *PreferNodesWithoutCache) PodNotPrefer(pod corev1.Pod) (weightedPodAffinityTerms []corev1.WeightedPodAffinityTerm) {
-	pvcNames := kubeclient.GetPVCNamesFromPod(&pod)
-
-	datasetMountPod := false
-	for _, pvcName := range pvcNames {
-		find, err := kubeclient.IsDatasetPVC(p.client, pvcName, pod.Namespace)
-		if err != nil {
-			setupLog.Error(err, "unable to get pvc")
-			continue
-		}
-		if find {
-			datasetMountPod = true
-		}
+func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (finish bool) {
+	if len(runtimeInfos) != 0 {
+		return
 	}
-	if !datasetMountPod {
-		weightedPodAffinityTerms = append(weightedPodAffinityTerms, weightedPodAffinityTerm)
+
+	// if the pod has no mounted dataset, no need to call other plugins
+	finish = true
+	if pod.Spec.Affinity != nil {
+		if pod.Spec.Affinity.PodAntiAffinity != nil {
+			pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+				append(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+					weightedPodAffinityTerm)
+		} else {
+			pod.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					weightedPodAffinityTerm,
+				},
+			}
+		}
+	} else {
+		pod.Spec.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					weightedPodAffinityTerm,
+				},
+			},
+		}
 	}
 	return
 }

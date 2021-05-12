@@ -16,27 +16,25 @@ limitations under the License.
 package plugins
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type PreferInterface interface {
-	// NodePrefer get the node prefer terms for pod
-	NodePrefer(corev1.Pod) []corev1.PreferredSchedulingTerm
-	// PodPrefer gets the pod prefer terms for pod
-	PodPrefer(corev1.Pod) []corev1.WeightedPodAffinityTerm
-	// PodNotPrefer gets the pod anti prefer terms for pod
-	PodNotPrefer(corev1.Pod) []corev1.WeightedPodAffinityTerm
+type AffinityInterface interface {
+	// InjectAffinity injects affinity info into pod
+	// if a plugin return true, it means that no need to call other plugins
+	InjectAffinity(*corev1.Pod, []base.RuntimeInfoInterface) (finish bool)
+	// GetName returns the name of plugin
+	GetName() string
 }
 
-// MapPlugins is a map to record all active plugins
-var MapPlugins map[string]PreferInterface
-
-func Registry(client client.Client) map[string]PreferInterface {
-	return map[string]PreferInterface{
-		"PreferNodesWithCache":    prefernodeswithcache.NewPlugin(client),
-		"PreferNodesWithoutCache": prefernodeswithoutcache.NewPlugin(client),
+// Registry return a slice of active plugins in a defined order
+func Registry(client client.Client) []AffinityInterface {
+	return []AffinityInterface{
+		prefernodeswithoutcache.NewPlugin(client),
+		prefernodeswithcache.NewPlugin(client),
 	}
 }
