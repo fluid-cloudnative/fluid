@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
@@ -258,8 +259,8 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 
 			// sync local dir if necessary
 			for _, mount := range dataset.Spec.Mounts {
-				if e.isFluidNativeScheme(mount.MountPoint) {
-					localDirPath := fmt.Sprintf("%s/%s", e.getLocalStorageDirectory(), mount.Name)
+				if common.IsFluidNativeScheme(mount.MountPoint) {
+					localDirPath := UFSPathBuilder{}.GenLocalStoragePath(mount)
 					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
 					err = fileUtils.SyncLocalDir(localDirPath)
 					if err != nil {

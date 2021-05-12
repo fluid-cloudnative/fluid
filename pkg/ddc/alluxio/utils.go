@@ -139,14 +139,6 @@ func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
 }
 
-func (e *AlluxioEngine) isFluidNativeScheme(mountPoint string) bool {
-	return strings.HasPrefix(mountPoint, common.PathScheme) || strings.HasPrefix(mountPoint, common.VolumeScheme)
-}
-
-func (e *AlluxioEngine) getLocalStorageDirectory() string {
-	return "/underFSStorage"
-}
-
 func (e *AlluxioEngine) getInitUserDir() string {
 	dir := fmt.Sprintf("/tmp/fluid/%s/%s", e.namespace, e.name)
 	e.Log.Info("Generate InitUser dir")

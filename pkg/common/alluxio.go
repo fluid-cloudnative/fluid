@@ -22,3 +22,11 @@ const (
 
 	DEFAULT_ALLUXIO_INIT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
 )
+
+var (
+	// alluxio ufs root path
+	AlluxioMountPathFormat = RootDirPath + "%s"
+
+	AlluxioLocalStorageRootPath   = "/underFSStorage"
+	AlluxioLocalStoragePathFormat = AlluxioLocalStorageRootPath + "/%s"
+)
