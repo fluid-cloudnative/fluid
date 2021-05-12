@@ -18,6 +18,13 @@ package databackup
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
@@ -28,18 +35,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // DataBackupReconcilerImplement implements the actual reconciliation logic of DataBackupReconciler
@@ -151,7 +152,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	}
 
 	// 3. check the path
-	if !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.PathScheme) && !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.VolumeScheme) {
+	if !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.PathScheme.String()) && !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.VolumeScheme.String()) {
 		log.Error(fmt.Errorf("PathNotSupported"), "don't support path in this form", "path", ctx.DataBackup.Spec.BackupPath)
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{

@@ -100,16 +100,6 @@ const (
 	AccelerateCategory Category = "Accelerate"
 )
 
-const (
-	PathScheme string = "local://"
-
-	VolumeScheme string = "pvc://"
-
-	HttpScheme string = "http://"
-
-	HttpsScheme string = "https://"
-)
-
 var (
 	ExpectedFluidAnnotations = map[string]string{
 		"CreatedBy": "fluid",
@@ -118,4 +108,8 @@ var (
 
 const (
 	FluidExclusiveKey string = "fluid_exclusive"
+)
+
+const (
+	RootDirPath = "/"
 )

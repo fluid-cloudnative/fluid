@@ -21,10 +21,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 )
@@ -131,10 +130,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	e.transformInitUsers(runtime, value)
 
 	// TODO: support nodeAffinity
-	// nodeAffinity := runtime.Spec.Placement.All().NodeAffinity
-	// if nodeAffinity != nil {
-
-	// }
 
 	if len(runtime.Spec.Properties) > 0 {
 		value.Properties = runtime.Spec.Properties
@@ -142,26 +137,33 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.Properties = map[string]string{}
 	}
 
+	// generate alluxio root ufs by dataset spec mounts
+	uRootPath, m := UFSPathBuilder{}.GenAlluxioUFSRootPath(dataset.Spec.Mounts)
+	// attach mount options when direct mount ufs endpoint
+	if m != nil {
+		if mOptions, err := e.genUFSMountOptions(*m); err != nil {
+			return err
+		} else {
+			for k, v := range mOptions {
+				value.Properties[k] = v
+			}
+		}
+	}
+	// set alluxio root ufs
+	value.Properties["alluxio.master.mount.table.root.ufs"] = uRootPath
+
+	// Set the max replication
 	dataReplicas := runtime.Spec.Data.Replicas
 	if dataReplicas <= 0 {
 		dataReplicas = 1
 	}
-	// Set the max replication
 	value.Properties["alluxio.user.file.replication.max"] = fmt.Sprintf("%d", dataReplicas)
-
-	// set default storage
-	value.Properties["alluxio.master.mount.table.root.ufs"] = e.getLocalStorageDirectory()
 
 	if len(runtime.Spec.JvmOptions) > 0 {
 		value.JvmOptions = runtime.Spec.JvmOptions
 	}
 
 	value.Fuse.ShortCircuitPolicy = "local"
-
-	// TODO: support JVMOpitons from string to array
-	// if len(runtime.Spec.JvmOptions) > 0 {
-	// 	value.JvmOptions = strings.Join(runtime.Spec.JvmOptions, " ")
-	// }
 
 	// value.Enablefluid = true
 	levels := []Level{}
@@ -172,13 +174,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	}
 
 	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
-
-		// l := 0
-		// if level.MediumType == common.SSD {
-		// 	l = 1
-		// } else if level.MediumType == common.HDD {
-		// 	l = 2
-		// }
 
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
@@ -206,15 +201,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	}
 
 	value.Tieredstore.Levels = levels
-
-	// value.Metastore = Metastore{
-	// 	VolumeType: "emptyDir",
-	// }
-
-	// quantity, err := resource.ParseQuantity("10Gi")
-	// if err != nil {
-	// 	return err
-	// }
 
 	value.Journal = Journal{
 		VolumeType: "emptyDir",

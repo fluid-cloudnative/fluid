@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 // GetDataBackupRef returns the identity of the Backup by combining its namespace and name.
@@ -64,13 +65,13 @@ func ParseBackupRestorePath(backupRestorePath string) (pvcName string, path stri
 		err = errors.New("DataBackupRestorePath is empty, cannot parse")
 		return
 	}
-	if strings.HasPrefix(backupRestorePath, common.VolumeScheme) {
-		path = strings.TrimPrefix(backupRestorePath, common.VolumeScheme)
+	if strings.HasPrefix(backupRestorePath, common.VolumeScheme.String()) {
+		path = strings.TrimPrefix(backupRestorePath, common.VolumeScheme.String())
 		split := strings.Split(path, "/")
 		pvcName = split[0]
 		path = strings.TrimPrefix(path, pvcName)
-	} else if strings.HasPrefix(backupRestorePath, common.PathScheme) {
-		path = strings.TrimPrefix(backupRestorePath, common.PathScheme)
+	} else if strings.HasPrefix(backupRestorePath, common.PathScheme.String()) {
+		path = strings.TrimPrefix(backupRestorePath, common.PathScheme.String())
 	} else {
 		err = errors.New("DataBackupRestorePath is not in supported formats, cannot parse")
 		return
