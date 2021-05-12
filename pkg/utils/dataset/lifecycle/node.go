@@ -17,20 +17,19 @@ package lifecycle
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"strings"
 
 	"github.com/go-logr/logr"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 )
 
@@ -120,67 +119,48 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	var (
-		labelName          = runtimeInfo.GetRuntimeLabelname()
-		labelCommonName    = runtimeInfo.GetCommonLabelname()
-		labelExclusiveName string
-		log                = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+		labelName       = runtimeInfo.GetRuntimeLabelname()
+		labelCommonName = runtimeInfo.GetCommonLabelname()
+		log             = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	)
 
 	exclusiveness := runtimeInfo.IsExclusive()
 	log.Info("Placement Mode", "IsExclusive", exclusiveness)
-	if exclusiveness {
-		labelExclusiveName = utils.GetExclusiveKey()
-	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		nodeName := nodeToLabel.Name
-		node, err := kubeclient.GetNode(client, nodeName)
-		if err != nil {
-			log.Error(err, "GetNode In labelCacheNode")
-			return err
-		}
-		toUpdate := node.DeepCopy()
-		if toUpdate.Labels == nil {
-			toUpdate.Labels = make(map[string]string)
-		}
+	toUpdate := nodeToLabel.DeepCopy()
+	if toUpdate.Labels == nil {
+		toUpdate.Labels = make(map[string]string)
+	}
 
-		toUpdate.Labels[labelName] = "true"
-		toUpdate.Labels[labelCommonName] = "true"
-		if exclusiveness {
-			// toUpdate.Labels[labelExclusiveName] = fmt.Sprintf("%s_%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
-			toUpdate.Labels[labelExclusiveName] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
-		}
-		totalRequirement, err := resource.ParseQuantity("0Gi")
-		if err != nil {
-			log.Error(err, "Failed to parse the total requirement")
-		}
-		for key, requirement := range storageMap {
-			value := utils.TranformQuantityToUnits(requirement)
-			if key == common.MemoryCacheStore {
-				toUpdate.Labels[runtimeInfo.GetLabelnameForMemory()] = value
-			} else {
-				toUpdate.Labels[runtimeInfo.GetLabelnameForDisk()] = value
-			}
-			totalRequirement.Add(*requirement)
-		}
-		totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-		toUpdate.Labels[runtimeInfo.GetLabelnameForTotal()] = totalValue
+	toUpdate.Labels[labelName] = "true"
+	toUpdate.Labels[labelCommonName] = "true"
+	if exclusiveness {
+		toUpdate.Labels[utils.GetExclusiveKey()] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
 
-		// toUpdate.Labels[labelNameToAdd] = "true"
-		err = client.Update(context.TODO(), toUpdate)
-		if err != nil {
-			log.Error(err, "LabelCachedNodes")
-			return err
+	totalRequirement, err := resource.ParseQuantity("0Gi")
+	if err != nil {
+		return errors.Wrap(err, "Failed to parse the total requirement")
+	}
+	for key, requirement := range storageMap {
+		value := utils.TranformQuantityToUnits(requirement)
+		if key == common.MemoryCacheStore {
+			toUpdate.Labels[runtimeInfo.GetLabelnameForMemory()] = value
+		} else {
+			toUpdate.Labels[runtimeInfo.GetLabelnameForDisk()] = value
 		}
-		return nil
-	})
+		totalRequirement.Add(*requirement)
+	}
+	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
+	toUpdate.Labels[runtimeInfo.GetLabelnameForTotal()] = totalValue
 
+	// toUpdate.Labels[labelNameToAdd] = "true"
+	err = client.Update(context.TODO(), toUpdate)
 	if err != nil {
 		log.Error(err, "LabelCacheNode")
 		return err
 	}
-
 	return nil
 }
