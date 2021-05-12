@@ -11,7 +11,7 @@
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 
 ## What is Fluid?
-Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
+Fluid is an open-source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
 
 # Fluid
 English | [简体中文](./README-zh_CN.md)
@@ -31,15 +31,15 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Native Support for DataSet Abstraction__
 
-    	Functionalize the basic support capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
+  	Functionalize the basic support capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
 
 - __Cloud Data Warming up and Accessing Acceleration__
 
-    	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio inside) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
+  	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio inside) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
 
 - __Co-Orchestration for Data and Application__
 
-    	During application scheduling and data placement on the cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
+  	During application scheduling and data placement on the cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
 
 - __Support Multiple Namespaces Management__
 
@@ -51,12 +51,12 @@ English | [简体中文](./README-zh_CN.md)
 
 ## Key Concepts
 
-**Dataset**: A DataSet is a set of logically related data that will be used by a computing engine, such as Spark for big data and TensorFlow for AI scenarios. And intelligent applications based on these data will create the core value in the industry. Dataset management actually involves multiple dimensions, such as security, version management and data acceleration. We hope to start with data acceleration and provide support for the management of datasets. 
+**Dataset**: A DataSet is a set of data logically related that can be used by computing engines, such as Spark for big data analytics and TensorFlow for AI applications. Intelligently leveraging data often creates core industry values. Managing DataSets may require features in different dimensions, such as security, version management and data acceleration. We hope to start with data acceleration to support the management of datasets. 
 
-**Runtime**: The execution engine that implements dataset security, version management and data acceleration capabilities defines a series of interfaces in the life cycle. The management and acceleration of datasets can be supported by implementing these interfaces.
+**Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to mangage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
 
-**AlluxioRuntime**: From [Alluixo](https://www.alluxio.org/), 
-Fluid manages and schedules Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. It is an engine which supports data management and caching of datasets.
+**AlluxioRuntime**: Based on open-source [Alluixo](https://www.alluxio.io/), 
+Fluid can manage and schedule Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. This is one engine which supports data management and caching of Datasets.
 
 ## Prerequisites
 
