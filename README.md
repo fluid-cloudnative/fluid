@@ -11,7 +11,7 @@
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 
 ## What is Fluid?
-Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intesive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
 
 # Fluid
 English | [简体中文](./README-zh_CN.md)
@@ -31,15 +31,15 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Native Support for DataSet Abstraction__
 
-	Make the abilities needed by data-intensive applictions as navtive-supported functions, to achieve efficient data access and reduce the cost of multidimensional management.
+    	Functionalize the basic support capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
 
 - __Cloud Data Warming up and Accessing Acceleration__
 
-    Fluid empowers Distributed Cache Capaicty(Alluixo inside) in Kubernetes with  **Observability**, **Portability**, **Horizontal Scalability**
+    	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio inside) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
 
 - __Co-Orchestration for Data and Application__
 
-    During application scheduling and data placement on cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
+    	During application scheduling and data placement on the cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
 
 - __Support Multiple Namespaces Management__
 
@@ -51,9 +51,9 @@ English | [简体中文](./README-zh_CN.md)
 
 ## Key Concepts
 
-**Dataset**:  A set of logically related data that will be used by a computing engine, such as Spark for big data and TensorFlow for AI scenarios. The management of dataset has many metrics, has multiple dimensions, such as security, version management and data acceleration. And we hope to start with data acceleration and provide support for the management of data sets.
+**Dataset**: A DataSet is a set of logically related data that will be used by a computing engine, such as Spark for big data and TensorFlow for AI scenarios. And intelligent applications based on these data will create the core value in the industry. Dataset management actually involves multiple dimensions, such as security, version management and data acceleration. We hope to start with data acceleration and provide support for the management of datasets. 
 
-**Runtime**:  Security, version management and data acceleration, and defines a series of life cycle interfaces. You can implement them.
+**Runtime**: The execution engine that implements dataset security, version management and data acceleration capabilities defines a series of interfaces in the life cycle. The management and acceleration of datasets can be supported by implementing these interfaces.
 
 **AlluxioRuntime**: From [Alluixo](https://www.alluxio.org/), 
 Fluid manages and schedules Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. It is an engine which supports data management and caching of datasets.
