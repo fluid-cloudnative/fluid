@@ -541,7 +541,7 @@ func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Data
 
 		//todo(xuzhihao): HasPrefix is not enough.
 		if strings.HasPrefix(targetPath, mountPointOnDDCEngine) &&
-			(strings.HasPrefix(mount.MountPoint, common.PathScheme) || strings.HasPrefix(mount.MountPoint, common.VolumeScheme)) {
+			(strings.HasPrefix(mount.MountPoint, common.PathScheme.String()) || strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String())) {
 			return true
 		}
 	}

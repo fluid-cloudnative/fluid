@@ -186,7 +186,7 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 	// 1. Update BackupPath of the databackup
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
 	databackupToUpdate.Status.BackupLocation.Path = databackupToUpdate.Spec.BackupPath
-	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme) {
+	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme.String()) {
 		podName := databackupToUpdate.Name + "-pod"
 		backupPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
 		if err != nil {
