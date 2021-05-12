@@ -31,11 +31,11 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Native Support for DataSet Abstraction__
 
-  	Functionalize the basic support capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
+  	Implement the basic capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
 
 - __Cloud Data Warming up and Accessing Acceleration__
 
-  	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio inside) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
+  	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
 
 - __Co-Orchestration for Data and Application__
 
@@ -43,11 +43,11 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Support Multiple Namespaces Management__
 
-  	User can create and manage datasets in multiple namespaces
+  	User can create and manage datasets in multiple namespaces.
 
 - __Support Heterogeneous Data Source Management__
 
-  	Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages
+  	Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages.
 
 ## Key Concepts
 
