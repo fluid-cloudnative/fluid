@@ -19,7 +19,7 @@ csi:
 runtime:
   mountRoot: /runtime-mnt
   alluxio:
-    maxReconciles: 1
+    runtimeWorkers: 1
     portRange: 20000-26000
     enabled: true
     init:

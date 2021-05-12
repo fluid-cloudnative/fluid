@@ -84,7 +84,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
-	startCmd.Flags().IntVar(&maxConcurrentReconciles, "max-concurrent-reconciles", 1, "Set max concurrent workers for reconcilation")
+	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 1, "Set max concurrent workers for AlluxioRuntime controller")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
