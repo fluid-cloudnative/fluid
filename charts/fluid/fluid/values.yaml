@@ -31,6 +31,7 @@ runtime:
     fuse:
       image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c
   jindo:
+    runtimeWorkers: 1
     portRange: 18000-19999
     enabled: false
     smartdata:
