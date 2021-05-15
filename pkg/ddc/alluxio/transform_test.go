@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -63,5 +64,108 @@ func TestTransformFuse(t *testing.T) {
 		if test.value.Fuse.Args[1] != test.expect[1] {
 			t.Errorf("expected %v, got %v", test.expect, test.value.Fuse.Args)
 		}
+	}
+}
+
+func TestAlluxioEngine_transformJournal(t *testing.T) {
+	type fields struct {
+		runtime *datav1alpha1.AlluxioRuntime
+	}
+	type args struct {
+		value *Alluxio
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "test0",
+			fields: fields{
+				&datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Replicas: 3,
+							Properties: map[string]string{
+								"alluxio.master.journal.type": "EMBEDDED",
+							},
+							Journal: datav1alpha1.Journal{
+								VolumeType: "memory",
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				value: &Alluxio{
+					Journal: Journal{
+						Type:       JOURNAL_TYPE_EMBEDDED,
+						VolumeType: "emptyDir",
+						Size:       "30Gi",
+						Format:     Format{RunFormat: true},
+					},
+				},
+			},
+		},
+		{
+			name: "test1",
+			fields: fields{
+				&datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Journal: datav1alpha1.Journal{
+								VolumeType:   "pvc",
+								StorageClass: "standard",
+							},
+							Replicas: 3,
+						},
+						Properties: map[string]string{
+							"alluxio.master.journal.type": "EMBEDDED",
+						},
+					},
+				},
+			},
+			args: args{
+				value: &Alluxio{
+					Journal: Journal{
+						Type:         JOURNAL_TYPE_EMBEDDED,
+						VolumeType:   "persistentVolumeClaim",
+						StorageClass: "standard",
+						Format:       Format{RunFormat: true},
+					},
+				},
+			},
+		},
+		{
+			name: "test2",
+			fields: fields{
+				&datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{},
+				},
+			},
+			args: args{
+				value: &Alluxio{
+					Journal: Journal{
+						Type:       JOURNAL_TYPE_UFS,
+						VolumeType: "emptyDir",
+						Size:       "30Gi",
+						UFSType:    "local",
+						Format:     Format{RunFormat: false},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime: tt.fields.runtime,
+			}
+			value := &Alluxio{}
+			e.transformJournal(e.runtime, value)
+			if !reflect.DeepEqual(value, tt.args.value) {
+				t.Errorf("transformJournal() value = %v, want %v", value, tt.args.value)
+			}
+		})
 	}
 }
