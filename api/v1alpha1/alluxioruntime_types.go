@@ -83,11 +83,11 @@ type AlluxioCompTemplateSpec struct {
 
 type Journal struct {
 	// VolumeType for alluxio ha mode, now support pvc and memory
-	VolumeType string `yaml:"volumeType,omitempty"`
+	VolumeType string `json:"volumeType,omitempty"`
 	// Format enable or disable format journal before alluxio master start
-	Format bool `yaml:"format,omitempty"`
+	Format bool `json:"format,omitempty"`
 	// StorageClass for PersistentVolumeClaim needed when VolumeType is pvc
-	StorageClass string `yaml:"storageClass,omitempty"`
+	StorageClass string `json:"storageClass,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse

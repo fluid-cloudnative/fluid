@@ -109,11 +109,33 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
+                journal:
+                  description: Journal is a journal setting for embedded raft journal
+                  properties:
+                    format:
+                      description: Format enable or disable format journal before
+                        alluxio master start
+                      type: boolean
+                    storageClass:
+                      description: StorageClass for PersistentVolumeClaim needed when
+                        VolumeType is pvc
+                      type: string
+                    volumeType:
+                      description: VolumeType for alluxio ha mode, now support pvc
+                        and memory
+                      type: string
+                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
@@ -328,11 +350,33 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
+                journal:
+                  description: Journal is a journal setting for embedded raft journal
+                  properties:
+                    format:
+                      description: Format enable or disable format journal before
+                        alluxio master start
+                      type: boolean
+                    storageClass:
+                      description: StorageClass for PersistentVolumeClaim needed when
+                        VolumeType is pvc
+                      type: string
+                    volumeType:
+                      description: VolumeType for alluxio ha mode, now support pvc
+                        and memory
+                      type: string
+                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
@@ -395,11 +439,33 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
+                journal:
+                  description: Journal is a journal setting for embedded raft journal
+                  properties:
+                    format:
+                      description: Format enable or disable format journal before
+                        alluxio master start
+                      type: boolean
+                    storageClass:
+                      description: StorageClass for PersistentVolumeClaim needed when
+                        VolumeType is pvc
+                      type: string
+                    volumeType:
+                      description: VolumeType for alluxio ha mode, now support pvc
+                        and memory
+                      type: string
+                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
@@ -467,11 +533,33 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
+                journal:
+                  description: Journal is a journal setting for embedded raft journal
+                  properties:
+                    format:
+                      description: Format enable or disable format journal before
+                        alluxio master start
+                      type: boolean
+                    storageClass:
+                      description: StorageClass for PersistentVolumeClaim needed when
+                        VolumeType is pvc
+                      type: string
+                    volumeType:
+                      description: VolumeType for alluxio ha mode, now support pvc
+                        and memory
+                      type: string
+                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
@@ -625,11 +713,33 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
+                journal:
+                  description: Journal is a journal setting for embedded raft journal
+                  properties:
+                    format:
+                      description: Format enable or disable format journal before
+                        alluxio master start
+                      type: boolean
+                    storageClass:
+                      description: StorageClass for PersistentVolumeClaim needed when
+                        VolumeType is pvc
+                      type: string
+                    volumeType:
+                      description: VolumeType for alluxio ha mode, now support pvc
+                        and memory
+                      type: string
+                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
                     type: string
                   type: array
+                nodeSelector:
+                  additionalProperties:
+                    type: string
+                  description: NodeSelector is a selector which must be true for the
+                    master to fit on a node
+                  type: object
                 ports:
                   additionalProperties:
                     type: integer
