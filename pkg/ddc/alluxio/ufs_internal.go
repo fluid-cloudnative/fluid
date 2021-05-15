@@ -18,8 +18,11 @@ package alluxio
 import (
 	"fmt"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/pkg/errors"
 )
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -74,11 +77,11 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 
 	// Check if any of the Mounts has not been mounted in Alluxio
 	for _, mount := range dataset.Spec.Mounts {
-		if e.isFluidNativeScheme(mount.MountPoint) {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := fmt.Sprintf("/%s", mount.Name)
+		alluxioPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		mounted, err := fileUtils.IsMounted(alluxioPath)
 		if err != nil {
 			should = false
@@ -91,13 +94,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 		}
 	}
 
-	// maybe we should check mounts other than UfsTotal
-	//if dataset.Status.UfsTotal == "" {
-	//	should = true
-	//}
-
 	return should, err
-
 }
 
 // mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
@@ -117,42 +114,26 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 
 	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. Hostpath or PVC)
 	for _, mount := range dataset.Spec.Mounts {
-		if e.isFluidNativeScheme(mount.MountPoint) {
+		mount := mount
+		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
 
-		alluxioPath := fmt.Sprintf("/%s", mount.Name)
+		alluxioPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+
 		mounted, err := fileUitls.IsMounted(alluxioPath)
 		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)
 		if err != nil {
 			return err
 		}
 
-		// Initialize mountOptions using options
-		mountOptions := map[string]string{}
-		for key, value := range mount.Options {
-			mountOptions[key] = value
+		mOptions, err := e.genUFSMountOptions(mount)
+		if err != nil {
+			return errors.Wrapf(err, "gen ufs mount options by spec mount item failure,mount name:%s", mount.Name)
 		}
 
-		// Configure mountOptions using encryptOptions
-		// If encryptOptions have the same key with options, it will overwrite the corresponding value
-		for _, encryptOption := range mount.EncryptOptions {
-			key := encryptOption.Name
-			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-
-			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
-			if err != nil {
-				e.Log.Info("can't get the secret")
-				return err
-			}
-
-			value := secret.Data[secretKeyRef.Key]
-			e.Log.Info("get value from secret")
-
-			mountOptions[key] = string(value)
-		}
 		if !mounted {
-			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
+			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
 				return err
 			}
@@ -160,4 +141,33 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 
 	}
 	return nil
+}
+
+// alluxio mount options
+func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]string, error) {
+
+	// initialize alluxio mount options
+	mOptions := map[string]string{}
+	if len(m.Options) > 0 {
+		mOptions = m.Options
+	}
+
+	// if encryptOptions have the same key with options
+	// it will overwrite the corresponding value
+	for _, item := range m.EncryptOptions {
+
+		sRef := item.ValueFrom.SecretKeyRef
+		secret, err := utils.GetSecret(e.Client, sRef.Name, e.namespace)
+		if err != nil {
+			e.Log.Error(err, "get secret by mount encrypt options failed", "name", item.Name)
+			return mOptions, err
+		}
+
+		e.Log.Info("get value from secret", "mount name", m.Name, "secret key", sRef.Key)
+
+		v := secret.Data[sRef.Key]
+		mOptions[item.Name] = string(v)
+	}
+
+	return mOptions, nil
 }

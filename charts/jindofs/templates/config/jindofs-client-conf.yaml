@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ template "jindofs.fullname" . }}-client-config
+  labels:
+    name: {{ template "jindofs.fullname" . }}-client-config
+    app: {{ template "jindofs.name" . }}-client
+    chart: {{ template "jindofs.chart" . }}-client
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+  CLIENT_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}

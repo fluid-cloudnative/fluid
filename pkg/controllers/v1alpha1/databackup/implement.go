@@ -152,7 +152,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	}
 
 	// 3. check the path
-	if !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.PathScheme) && !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.VolumeScheme) {
+	if !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.PathScheme.String()) && !strings.HasPrefix(ctx.DataBackup.Spec.BackupPath, common.VolumeScheme.String()) {
 		log.Error(fmt.Errorf("PathNotSupported"), "don't support path in this form", "path", ctx.DataBackup.Spec.BackupPath)
 		databackupToUpdate := ctx.DataBackup.DeepCopy()
 		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{

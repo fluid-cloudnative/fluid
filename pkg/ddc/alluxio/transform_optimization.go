@@ -22,8 +22,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -120,7 +120,7 @@ func (e *AlluxioEngine) optimizeDefaultPropertiesAndFuseForHTTP(runtime *datav1a
 	var isHTTP = true
 	for _, mount := range dataset.Spec.Mounts {
 		// the mount is not http
-		if !(strings.HasPrefix(mount.MountPoint, common.HttpScheme) || strings.HasPrefix(mount.MountPoint, common.HttpsScheme)) {
+		if !(strings.HasPrefix(mount.MountPoint, common.HttpScheme.String()) || strings.HasPrefix(mount.MountPoint, common.HttpsScheme.String())) {
 			isHTTP = false
 			break
 		}

@@ -5,6 +5,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -52,6 +53,11 @@ func (e *JindoEngine) generateJindoValueFile() (valueFileName string, err error)
 	e.Log.V(1).Info("Save the values file", "valueFile", valueFileName)
 
 	err = ioutil.WriteFile(valueFileName, data, 0400)
+	if err != nil {
+		return
+	}
+
+	err = kubectl.CreateConfigMapFromFile(e.getConfigmapName(), "data", valueFileName, e.namespace)
 	if err != nil {
 		return
 	}

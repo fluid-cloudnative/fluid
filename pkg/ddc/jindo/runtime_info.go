@@ -18,6 +18,7 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return e.runtimeInfo, err
 		}
 
+		// Setup Fuse Deploy Mode
 		if runtime.Spec.Fuse.Global {
 			e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
 			e.Log.Info("Enable global mode for fuse")
