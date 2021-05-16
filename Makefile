@@ -11,6 +11,7 @@ JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controll
 CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
 LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
 INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
+WEBHOOK_IMG ?= registry.aliyuncs.com/fluid/fluid-webhook
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -63,6 +64,9 @@ alluxioruntime-controller-build: generate fmt vet
 
 jindoruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+
+fluid-webhook-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
@@ -126,6 +130,9 @@ docker-build-loader:
 
 docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
+
+docker-build-fluid-webhook:
+	docker build --no-cache . -f Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller

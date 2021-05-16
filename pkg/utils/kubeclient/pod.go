@@ -91,3 +91,14 @@ func ExcludeInactivePod(pod *v1.Pod) bool {
 	}
 	return false
 }
+
+// GetPVCNamesFromPod get names of pvc mounted by Pod
+func GetPVCNamesFromPod(pod *v1.Pod) (pvcNames []string) {
+	for _, volume := range pod.Spec.Volumes {
+		if volume.PersistentVolumeClaim == nil {
+			continue
+		}
+		pvcNames = append(pvcNames, volume.PersistentVolumeClaim.ClaimName)
+	}
+	return
+}
