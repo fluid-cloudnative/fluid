@@ -324,3 +324,17 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 
 	return
 }
+
+// IsDatasetPVC check whether the PVC is a dataset PVC
+func IsDatasetPVC(client client.Client, name string, namespace string) (find bool, err error) {
+	pvc := &v1.PersistentVolumeClaim{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, pvc)
+	if err != nil {
+		return
+	}
+	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix + namespace + "-" + name]
+	return
+}

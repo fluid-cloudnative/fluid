@@ -17,6 +17,8 @@ package base
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -255,4 +257,47 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (Tieredstore
 		})
 	}
 	return tieredstoreInfo, nil
+}
+
+// GetRuntimeInfo gets the RuntimeInfo according to name and namespace of it
+func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoInterface, error) {
+	dataset, err := utils.GetDataset(client, name, namespace)
+	if err != nil {
+		return &RuntimeInfo{}, err
+	}
+
+	var runtimeType string
+	if len(dataset.Status.Runtimes) != 0 {
+		runtimeType = dataset.Status.Runtimes[0].Type
+	}
+	switch runtimeType {
+	case "":
+		err = fmt.Errorf("fail to get runtime type")
+		return &RuntimeInfo{}, err
+	case "alluxio":
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.Tieredstore{})
+		if err != nil {
+			return runtimeInfo, err
+		}
+		alluxioRuntime, err := utils.GetAlluxioRuntime(client, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
+		return runtimeInfo, nil
+	case "jindo":
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "jindo", datav1alpha1.Tieredstore{})
+		if err != nil {
+			return runtimeInfo, err
+		}
+		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
+		return runtimeInfo, nil
+	default:
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.Tieredstore{})
+		return runtimeInfo, err
+	}
 }
