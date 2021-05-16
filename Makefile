@@ -65,7 +65,7 @@ alluxioruntime-controller-build: generate fmt vet
 jindoruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
-fluid-webhook-build:
+webhook-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
@@ -131,7 +131,7 @@ docker-build-loader:
 docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
 
-docker-build-fluid-webhook:
+docker-build-webhook:
 	docker build --no-cache . -f Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 # Push the docker image
@@ -153,8 +153,11 @@ docker-push-loader: docker-build-loader
 docker-push-init-users: docker-build-init-users
 	docker push ${INIT_USERS_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-csi docker-build-init-users
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users
+docker-push-webhook: docker-build-webhook
+	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
+
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook
 
 # find or download controller-gen
 # download controller-gen if necessary
