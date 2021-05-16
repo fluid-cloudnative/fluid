@@ -18,10 +18,11 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
-	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	corev1 "k8s.io/api/core/v1"
@@ -56,12 +57,12 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 
 	// check whether should inject
 	if pod.Labels["Fluid-Injection"] == "disabled" {
-		setupLog.Info("injection is disabled, will not inject", "Pod", pod.Name, "Namespace", pod.Namespace)
-		return admission.Allowed("injection is disabled, will not inject")
+		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
 	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" {
-		setupLog.Info("fluid Pods, will not inject", "Pod", pod.Name, "Namespace", pod.Namespace)
-		return admission.Allowed("fluid Pods, will not inject")
+		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}
 
 	// inject affinity info into pod
