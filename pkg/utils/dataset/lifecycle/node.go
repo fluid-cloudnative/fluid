@@ -70,8 +70,6 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 
 // CanbeAssigned checks if the node is already assigned the runtime engine
 func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
-	// TODO(cheyang): the different dataset can be put in the same node, but it has to handle port conflict
-	// Delete by (xieydd),  handle port conflict
 	// TODO(xieydd): Resource consumption of multi dataset same node
 	// if e.alreadyAssignedByFluid(node) {
 	// 	return false
@@ -119,17 +117,39 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 }
 
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	// Label to be added
 	var (
-		labelName          = runtimeInfo.GetRuntimeLabelname()
-		labelCommonName    = runtimeInfo.GetCommonLabelname()
-		labelExclusiveName string
-		log                = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+		// runtimeLabel indicates the specific runtime pod is on the node
+		// e.g. fluid.io/s-alluxio-default-hbase=true
+		runtimeLabel = runtimeInfo.GetRuntimeLabelname()
+
+		// commonLabel indicates that any of fluid supported runtime is on the node
+		// e.g. fluid.io/s-default-hbase=true
+		commonLabel = runtimeInfo.GetCommonLabelname()
+
+		// memCapacityLabel indicates in-memory cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
+		memCapacityLabel = runtimeInfo.GetLabelnameForMemory()
+
+		// diskCapacityLabel indicates on-disk cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-d-default-hbase=2GiB
+		diskCapacityLabel = runtimeInfo.GetLabelnameForDisk()
+
+		// totalCapacityLabel indicates total cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-t-default-hbase=3GiB
+		totalCapacityLabel = runtimeInfo.GetLabelnameForTotal()
+
+		// exclusiveLabel is the label key indicates the node is exclusively assigned
+		// e.g. fluid_exclusive=default_hbase
+		exclusiveLabel string
 	)
+
+	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
 	exclusiveness := runtimeInfo.IsExclusive()
 	log.Info("Placement Mode", "IsExclusive", exclusiveness)
 	if exclusiveness {
-		labelExclusiveName = utils.GetExclusiveKey()
+		exclusiveLabel = utils.GetExclusiveKey()
 	}
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
@@ -146,29 +166,25 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			toUpdate.Labels = make(map[string]string)
 		}
 
-		toUpdate.Labels[labelName] = "true"
-		toUpdate.Labels[labelCommonName] = "true"
+		toUpdate.Labels[runtimeLabel] = "true"
+		toUpdate.Labels[commonLabel] = "true"
 		if exclusiveness {
-			// toUpdate.Labels[labelExclusiveName] = fmt.Sprintf("%s_%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
-			toUpdate.Labels[labelExclusiveName] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+			toUpdate.Labels[exclusiveLabel] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
 		}
-		totalRequirement, err := resource.ParseQuantity("0Gi")
-		if err != nil {
-			log.Error(err, "Failed to parse the total requirement")
-		}
+
+		totalRequirement := resource.MustParse("0Gi")
 		for key, requirement := range storageMap {
 			value := utils.TranformQuantityToUnits(requirement)
 			if key == common.MemoryCacheStore {
-				toUpdate.Labels[runtimeInfo.GetLabelnameForMemory()] = value
+				toUpdate.Labels[memCapacityLabel] = value
 			} else {
-				toUpdate.Labels[runtimeInfo.GetLabelnameForDisk()] = value
+				toUpdate.Labels[diskCapacityLabel] = value
 			}
 			totalRequirement.Add(*requirement)
 		}
 		totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-		toUpdate.Labels[runtimeInfo.GetLabelnameForTotal()] = totalValue
+		toUpdate.Labels[totalCapacityLabel] = totalValue
 
-		// toUpdate.Labels[labelNameToAdd] = "true"
 		err = client.Update(context.TODO(), toUpdate)
 		if err != nil {
 			log.Error(err, "LabelCachedNodes")
