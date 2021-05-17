@@ -45,7 +45,7 @@ func (p *PreferNodesWithCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (finish bool) {
+func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
 	if len(runtimeInfos) == 0 {
 		return
 	}

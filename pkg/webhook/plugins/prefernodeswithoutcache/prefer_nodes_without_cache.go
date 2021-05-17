@@ -62,13 +62,13 @@ func (p *PreferNodesWithoutCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (finish bool) {
+func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
 	if len(runtimeInfos) != 0 {
 		return
 	}
 
 	// if the pod has no mounted dataset, no need to call other plugins
-	finish = true
+	shouldStop = true
 	if pod.Spec.Affinity != nil {
 		if pod.Spec.Affinity.PodAntiAffinity != nil {
 			pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
