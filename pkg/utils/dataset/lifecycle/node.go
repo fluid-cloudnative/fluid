@@ -18,9 +18,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"reflect"
 	"strings"
 	"time"
 
@@ -121,6 +119,7 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
+// LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	// Label to be added
 	var (
@@ -147,6 +146,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 
 	nodeName := nodeToLabel.Name
 	var toUpdate *v1.Node
+	var updatedLabels []string
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		node, err := kubeclient.GetNode(client, nodeName)
 		if err != nil {
@@ -159,12 +159,15 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		}
 
 		toUpdate.Labels[runtimeLabel] = "true"
+		updatedLabels = append(updatedLabels, runtimeLabel)
 		toUpdate.Labels[commonLabel] = "true"
+		updatedLabels = append(updatedLabels, commonLabel)
 		if exclusiveness {
 			toUpdate.Labels[exclusiveLabel] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+			updatedLabels = append(updatedLabels, exclusiveLabel)
 		}
 
-		labelNodeWithCapacityInfo(toUpdate, runtimeInfo)
+		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &updatedLabels)
 
 		err = client.Update(context.TODO(), toUpdate)
 		if err != nil {
@@ -183,14 +186,11 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	// This is to ensure the controller can get up-to-date cluster status during the following scheduling
 	// loop.
 	if err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
-		node := &v1.Node{}
-		namespacedName := types.NamespacedName{
-			Name: nodeName,
-		}
-		if err := client.Get(context.TODO(), namespacedName, node); err != nil {
+		node, err := kubeclient.GetNode(client, nodeName)
+		if err != nil {
 			return false, fmt.Errorf("failed to get node: %w", err)
 		}
-		return reflect.DeepEqual(toUpdate, node), nil
+		return utils.ContainsAll(node.Labels, updatedLabels), nil
 	}); err != nil {
 		log.Error(err, "wait polling in LabelCacheNode")
 	}
@@ -198,7 +198,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	return nil
 }
 
-func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface) {
+func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, updatedLabels *[]string) {
 	var (
 		// memCapacityLabel indicates in-memory cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
@@ -220,11 +220,14 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 		value := utils.TranformQuantityToUnits(requirement)
 		if key == common.MemoryCacheStore {
 			toUpdate.Labels[memCapacityLabel] = value
+			*updatedLabels = append(*updatedLabels, memCapacityLabel)
 		} else {
 			toUpdate.Labels[diskCapacityLabel] = value
+			*updatedLabels = append(*updatedLabels, diskCapacityLabel)
 		}
 		totalRequirement.Add(*requirement)
 	}
 	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
 	toUpdate.Labels[totalCapacityLabel] = totalValue
+	*updatedLabels = append(*updatedLabels, totalCapacityLabel)
 }
