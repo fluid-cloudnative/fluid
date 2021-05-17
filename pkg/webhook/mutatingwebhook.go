@@ -108,8 +108,8 @@ func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 
 	pluginsList := plugins.Registry(a.Client)
 	for _, plugin := range pluginsList {
-		finish := plugin.InjectAffinity(pod, runtimeInfos)
-		if finish {
+		shouldStop := plugin.InjectAffinity(pod, runtimeInfos)
+		if shouldStop {
 			setupLog.Info("the plugin return true, no need to call other plugins", "plugin", plugin.GetName())
 			break
 		}
