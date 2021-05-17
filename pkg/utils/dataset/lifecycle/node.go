@@ -185,6 +185,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	// Wait at most 30s for cache in controller-runtime successfully catching up with api-server
 	// This is to ensure the controller can get up-to-date cluster status during the following scheduling
 	// loop.
+	pollStartTime := time.Now()
 	if err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
 		node, err := kubeclient.GetNode(client, nodeName)
 		if err != nil {
@@ -193,6 +194,8 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		return utils.ContainsAll(node.Labels, updatedLabels), nil
 	}); err != nil {
 		log.Error(err, "wait polling in LabelCacheNode")
+	} else {
+		utils.TimeTrack(pollStartTime, "polling up-to-date cache status when scheduling", "nodeToLabel", nodeToLabel.Name)
 	}
 
 	return nil
