@@ -18,8 +18,6 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
-	"k8s.io/client-go/util/retry"
 	"sync"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -40,8 +38,6 @@ import (
 // schedulerMutex is a mutex to protect the scheduling process from race condition
 var schedulerMutex = sync.Mutex{}
 
-// AssignDatasetToNodes schedules datasets by assigning runtime pod to nodes.
-// This is a thread-safe function to make sure there is only one dataset in scheduling at any time.
 func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	dataset *datav1alpha1.Dataset,
 	runtimeClient client.Client,
@@ -60,12 +56,12 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log                   = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	)
 
-	// 1. Get snapshots of n lists for scheduling
 	err = runtimeClient.List(context.TODO(), nodeList, &client.ListOptions{})
 	if err != nil {
 		return
 	}
 
+	// datasetLabels := labels.SelectorFromSet(labels.Set(map[string]string{e.getCommonLabelname(): "true"}))
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetCommonLabelname()))
 	if err != nil {
 		return currentScheduleNum, err
@@ -79,144 +75,114 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		}
 	}
 
-	// 2. When in fuse global mode, sort nodes by number of running workloads on it.
+	for _, node := range alreadySchedNodeList.Items {
+		currentScheduledNodes[node.Name] = node
+		log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
+	}
+
 	fuseGlobal, nodeSelector := runtimeInfo.GetFuseDeployMode()
+
+	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
+	if err != nil {
+		log.Error(err, "Failed to get PVC Mount Nodes, will treat every node as no PVC mount Pods")
+	}
+
 	var nodes []corev1.Node
 
 	if fuseGlobal {
-		pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
-		if err != nil {
-			log.Error(err, "Failed to get PVC Mount Nodes, will treat every n as no PVC mount Pods")
-		}
 		nodes = sortNodesToBeScheduled(nodeList.Items, pvcMountNodesMap, nodeSelector)
 	} else {
 		nodes = nodeList.Items
 	}
 
-	// 3. Pick nodes that is already scheduled with this runtime worker pod
-	for _, node := range alreadySchedNodeList.Items {
-		currentScheduledNodes[node.Name] = node
-		log.Info("Node is already assigned", "n", node.Name, "dataset", dataset.Name)
-	}
-
-	// 4. Filter and label nodes until desired num of replicas is reached
-	for _, n := range nodes {
+	// storageMap := tieredstore.GetLevelStorageMap(runtime)
+	for _, node := range nodes {
 
 		if int32(len(currentScheduledNodes)) == desiredNum {
 			break
 		}
 
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			nodeName := n.Name
-			node, err := kubeclient.GetNode(runtimeClient, nodeName)
-			if err != nil {
-				log.Error(err, "GetNode in AssignDatasetToNodes", "nodeName", nodeName)
-				return err
-			}
-
-			// No need to label the node if it fails the node filter
-			if !filterNode(*node, currentScheduledNodes, dataset, runtimeInfo, log) {
-				return nil
-			}
-
-			if err = LabelCacheNode(*node, runtimeInfo, runtimeClient); err != nil {
-				return err
-			}
-
-			// The candidate node is successfully labeled
-			log.Info("New Node to schedule",
-				"dataset", runtimeInfo.GetName(),
-				"node", n.Name)
-			newScheduledNodes = append(newScheduledNodes, n)
-			currentScheduledNodes[n.Name] = n
-			return nil
-		})
-
-		if err != nil {
-			log.Error(err, "Scheduling node in AssignDatasetToNodes", "nodeName", n.Name)
-			return int32(len(currentScheduledNodes)), err
+		if _, found := currentScheduledNodes[node.Name]; found {
+			log.Info("Node is skipped because it is already assigned", "node", node.Name)
+			continue
 		}
+
+		// if runtime.Spec.Placement.All().NodeAffinity != nil {
+		// 	terms := runtime.Spec.Placement.All().NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		// 	if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
+		// 		log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+		// 		continue
+		// 	}
+		// }
+		if dataset.Spec.NodeAffinity != nil {
+			if dataset.Spec.NodeAffinity.Required != nil {
+				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
+				if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
+					log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
+					continue
+				}
+			}
+		}
+
+		if !kubeclient.IsReady(node) {
+			log.Info("Node is skipped because it is not ready", "node", node.Name)
+			continue
+		}
+
+		if node.Spec.Unschedulable {
+			log.Info("Node is skipped because it is unschedulable", "node", node.Name)
+			continue
+		}
+
+		if len(node.Spec.Taints) > 0 {
+			tolerateEffect := toleratesTaints(node.Spec.Taints, dataset.Spec.Tolerations)
+			if tolerateEffect {
+				log.Info("The tainted node also can be scheduled because of toleration effects",
+					"node", node.Name,
+					"taints", node.Spec.Taints,
+					"tolerations", dataset.Spec.Tolerations)
+			} else {
+				log.Info("Skip the node because it's tainted", "node", node.Name)
+				continue
+			}
+
+		}
+
+		if !AlreadyAssigned(runtimeInfo, node) {
+			if !CanbeAssigned(runtimeInfo, node) {
+				log.Info("Node is skipped because it is not assigned and also can't be assigned", "node", node.Name)
+				continue
+			} else {
+				newScheduledNodes = append(newScheduledNodes, node)
+				log.Info("New Node to schedule",
+					"dataset", runtimeInfo.GetName(),
+					"node", node.Name)
+			}
+		} else {
+			log.Info("Node is already scheduled for dataset",
+				"dataset", runtimeInfo.GetName(),
+				"node", node.Name)
+		}
+
+		currentScheduledNodes[node.Name] = node
 	}
 
 	currentScheduleNum = int32(len(currentScheduledNodes))
 	newScheduleNum = int32(len(newScheduledNodes))
-	log.Info("node scheduled for dataset",
+	log.Info("Find node to schedule or scheduled for dataset",
 		"dataset", runtimeInfo.GetName(),
 		"currentScheduleNum", currentScheduleNum,
 		"newScheduleNum", newScheduleNum)
+	// 2.Add label to the selected node
+
+	for _, node := range newScheduledNodes {
+		err = LabelCacheNode(node, runtimeInfo, runtimeClient)
+		if err != nil {
+			return
+		}
+	}
 
 	return
-}
-
-// filterNode checks if the given runtime can be scheduled on the given node
-func filterNode(node corev1.Node,
-	currentScheduledNodes map[string]corev1.Node,
-	dataset *datav1alpha1.Dataset,
-	runtimeInfo base.RuntimeInfoInterface,
-	log logr.Logger) bool {
-
-	if _, found := currentScheduledNodes[node.Name]; found {
-		log.Info("Node is filtered out because it is already assigned", "node", node.Name)
-		return false
-	}
-
-	// if runtime.Spec.Placement.All().NodeAffinity != nil {
-	// 	terms := runtime.Spec.Placement.All().NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
-	// 	if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-	// 		log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
-	// 		continue
-	// 	}
-	// }
-	if dataset.Spec.NodeAffinity != nil {
-		if dataset.Spec.NodeAffinity.Required != nil {
-			terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
-			if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-				log.Info("Node is filtered out because it can't meet node selector terms", "node", node.Name)
-				return false
-			}
-		}
-	}
-
-	if !kubeclient.IsReady(node) {
-		log.Info("Node is filtered out because it is not ready", "node", node.Name)
-		return false
-	}
-
-	if node.Spec.Unschedulable {
-		log.Info("Node is filtered out because it is unschedulable", "node", node.Name)
-		return false
-	}
-
-	if len(node.Spec.Taints) > 0 {
-		tolerateEffect := toleratesTaints(node.Spec.Taints, dataset.Spec.Tolerations)
-		if tolerateEffect {
-			log.Info("The tainted node also can be scheduled because of toleration effects",
-				"node", node.Name,
-				"taints", node.Spec.Taints,
-				"tolerations", dataset.Spec.Tolerations)
-		} else {
-			log.Info("Node is filtered out because it's tainted", "node", node.Name)
-			return false
-		}
-	}
-
-	if !AlreadyAssigned(runtimeInfo, node) {
-		if !CanbeAssigned(runtimeInfo, node) {
-			log.Info("Node is filtered out because it is not assigned and also can't be assigned", "node", node.Name)
-			return false
-		}
-	} else {
-		log.Info("Node is filtered out because it's already scheduled for dataset",
-			"dataset", runtimeInfo.GetName(),
-			"node", node.Name)
-		return false
-	}
-
-	//newScheduledNodes = append(newScheduledNodes, node)
-	log.Info("New Node to schedule",
-		"dataset", runtimeInfo.GetName(),
-		"node", node.Name)
-	return true
 }
 
 // sortNodesToBeScheduled sorts nodes to be scheduled when scale up
