@@ -5,6 +5,7 @@
 *.dll
 *.so
 *.dylib
+*.jar
 bin
 
 # Test binary, build with `go test -c`
@@ -29,3 +30,6 @@ bin
 
 # dev in kind container
 cmd/*/start.sh
+
+# sdk tools
+openapi-gen
