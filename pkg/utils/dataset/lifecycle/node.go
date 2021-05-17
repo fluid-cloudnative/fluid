@@ -17,7 +17,12 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -140,14 +145,15 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		exclusiveLabel = utils.GetExclusiveKey()
 	}
 
+	nodeName := nodeToLabel.Name
+	var toUpdate *v1.Node
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		nodeName := nodeToLabel.Name
 		node, err := kubeclient.GetNode(client, nodeName)
 		if err != nil {
 			log.Error(err, "GetNode In labelCacheNode")
 			return err
 		}
-		toUpdate := node.DeepCopy()
+		toUpdate = node.DeepCopy()
 		if toUpdate.Labels == nil {
 			toUpdate.Labels = make(map[string]string)
 		}
@@ -171,6 +177,22 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	if err != nil {
 		log.Error(err, "LabelCacheNode")
 		return err
+	}
+
+	// Wait at most 30s for cache in controller-runtime successfully catching up with api-server
+	// This is to ensure the controller can get up-to-date cluster status during the following scheduling
+	// loop.
+	if err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
+		node := &v1.Node{}
+		namespacedName := types.NamespacedName{
+			Name: nodeName,
+		}
+		if err := client.Get(context.TODO(), namespacedName, node); err != nil {
+			return false, fmt.Errorf("failed to get node: %w", err)
+		}
+		return reflect.DeepEqual(toUpdate, node), nil
+	}); err != nil {
+		log.Error(err, "wait polling in LabelCacheNode")
 	}
 
 	return nil
