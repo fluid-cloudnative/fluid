@@ -127,18 +127,6 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		// e.g. fluid.io/s-default-hbase=true
 		commonLabel = runtimeInfo.GetCommonLabelname()
 
-		// memCapacityLabel indicates in-memory cache capacity assigned on the node
-		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
-		memCapacityLabel = runtimeInfo.GetLabelnameForMemory()
-
-		// diskCapacityLabel indicates on-disk cache capacity assigned on the node
-		// e.g. fluid.io/s-h-alluxio-d-default-hbase=2GiB
-		diskCapacityLabel = runtimeInfo.GetLabelnameForDisk()
-
-		// totalCapacityLabel indicates total cache capacity assigned on the node
-		// e.g. fluid.io/s-h-alluxio-t-default-hbase=3GiB
-		totalCapacityLabel = runtimeInfo.GetLabelnameForTotal()
-
 		// exclusiveLabel is the label key indicates the node is exclusively assigned
 		// e.g. fluid_exclusive=default_hbase
 		exclusiveLabel string
@@ -151,8 +139,6 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	if exclusiveness {
 		exclusiveLabel = utils.GetExclusiveKey()
 	}
-
-	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		nodeName := nodeToLabel.Name
@@ -172,18 +158,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			toUpdate.Labels[exclusiveLabel] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
 		}
 
-		totalRequirement := resource.MustParse("0Gi")
-		for key, requirement := range storageMap {
-			value := utils.TranformQuantityToUnits(requirement)
-			if key == common.MemoryCacheStore {
-				toUpdate.Labels[memCapacityLabel] = value
-			} else {
-				toUpdate.Labels[diskCapacityLabel] = value
-			}
-			totalRequirement.Add(*requirement)
-		}
-		totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-		toUpdate.Labels[totalCapacityLabel] = totalValue
+		labelNodeWithCapacityInfo(toUpdate, runtimeInfo)
 
 		err = client.Update(context.TODO(), toUpdate)
 		if err != nil {
@@ -199,4 +174,35 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	}
 
 	return nil
+}
+
+func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface) {
+	var (
+		// memCapacityLabel indicates in-memory cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
+		memCapacityLabel = runtimeInfo.GetLabelnameForMemory()
+
+		// diskCapacityLabel indicates on-disk cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-d-default-hbase=2GiB
+		diskCapacityLabel = runtimeInfo.GetLabelnameForDisk()
+
+		// totalCapacityLabel indicates total cache capacity assigned on the node
+		// e.g. fluid.io/s-h-alluxio-t-default-hbase=3GiB
+		totalCapacityLabel = runtimeInfo.GetLabelnameForTotal()
+	)
+
+	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
+
+	totalRequirement := resource.MustParse("0Gi")
+	for key, requirement := range storageMap {
+		value := utils.TranformQuantityToUnits(requirement)
+		if key == common.MemoryCacheStore {
+			toUpdate.Labels[memCapacityLabel] = value
+		} else {
+			toUpdate.Labels[diskCapacityLabel] = value
+		}
+		totalRequirement.Add(*requirement)
+	}
+	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
+	toUpdate.Labels[totalCapacityLabel] = totalValue
 }
