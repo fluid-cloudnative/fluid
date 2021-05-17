@@ -78,7 +78,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
-	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 1, "Set max concurrent workers for JindoRuntime controller")
+	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JindoRuntime controller")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
