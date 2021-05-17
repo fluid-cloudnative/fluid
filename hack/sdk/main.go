@@ -1,5 +1,4 @@
 /*
-Copyright 2019 kubeflow.org.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +27,7 @@ import (
 	"k8s.io/kube-openapi/pkg/common"
 )
 
-// Generate OpenAPI spec definitions for PyTorchJob Resource
+// Generate OpenAPI spec definitions for Fluid Resource
 func main() {
 	if len(os.Args) <= 1 {
 		klog.Fatal("Supply a version")
@@ -52,7 +51,7 @@ func main() {
 			Info: &spec.Info{
 				InfoProps: spec.InfoProps{
 					Title:       "fluid",
-					Description: "Python SDK for fluid",
+					Description: "client for fluid",
 					Version:     version,
 				},
 			},

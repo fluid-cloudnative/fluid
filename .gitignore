@@ -31,5 +31,6 @@ bin
 # dev in kind container
 cmd/*/start.sh
 
-# sdk tools
+# client sdk
 openapi-gen
+sdk
