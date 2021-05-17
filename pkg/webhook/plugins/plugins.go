@@ -26,7 +26,7 @@ import (
 type AffinityInterface interface {
 	// InjectAffinity injects affinity info into pod
 	// if a plugin return true, it means that no need to call other plugins
-	InjectAffinity(*corev1.Pod, []base.RuntimeInfoInterface) (finish bool)
+	InjectAffinity(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool)
 	// GetName returns the name of plugin
 	GetName() string
 }

@@ -27,6 +27,7 @@ import (
 
 var setupLog = ctrl.Log.WithName("certificate")
 
+// UpdateCertificate creates the certificate via a shell script
 func UpdateCertificate(service, namespace, certPath, webHookName string) error {
 	setupLog.Info("start to new a certificate")
 	// TODO(LingWei Qiu): store the certificate and share with other replicas
@@ -50,6 +51,7 @@ func UpdateCertificate(service, namespace, certPath, webHookName string) error {
 	return nil
 }
 
+// updateCaBundle update the CA in MutatingWebhookConfigurations
 func updateCaBundle(mutatingWebHookName string, ca []byte) error {
 	config, err := rest.InClusterConfig()
 	if err != nil {
