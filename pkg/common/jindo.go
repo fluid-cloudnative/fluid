@@ -9,4 +9,6 @@ const (
 	JINDO_SMARTDATA_IMAGE_ENV = "JINDO_SMARTDATA_IMAGE_ENV"
 
 	JINDO_FUSE_IMAGE_ENV = "JINDO_FUSE_IMAGE_ENV"
+
+	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.0"
 )
