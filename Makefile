@@ -51,7 +51,7 @@ unit-test: generate fmt vet
 
 # Build binary
 
-build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build csi-build
+build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build csi-build webhook-build
 
 csi-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
