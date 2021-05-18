@@ -109,22 +109,6 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
-                journal:
-                  description: Journal is a journal setting for embedded raft journal
-                  properties:
-                    format:
-                      description: Format enable or disable format journal before
-                        alluxio master start
-                      type: boolean
-                    storageClass:
-                      description: StorageClass for PersistentVolumeClaim needed when
-                        VolumeType is pvc
-                      type: string
-                    volumeType:
-                      description: VolumeType for alluxio ha mode, now support pvc
-                        and memory
-                      type: string
-                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
@@ -350,22 +334,6 @@ spec:
                   description: Environment variables that will be used by Alluxio
                     component. <br>
                   type: object
-                journal:
-                  description: Journal is a journal setting for embedded raft journal
-                  properties:
-                    format:
-                      description: Format enable or disable format journal before
-                        alluxio master start
-                      type: boolean
-                    storageClass:
-                      description: StorageClass for PersistentVolumeClaim needed when
-                        VolumeType is pvc
-                      type: string
-                    volumeType:
-                      description: VolumeType for alluxio ha mode, now support pvc
-                        and memory
-                      type: string
-                  type: object
                 jvmOptions:
                   description: Options for JVM
                   items:
@@ -438,22 +406,6 @@ spec:
                     type: string
                   description: Environment variables that will be used by Alluxio
                     component. <br>
-                  type: object
-                journal:
-                  description: Journal is a journal setting for embedded raft journal
-                  properties:
-                    format:
-                      description: Format enable or disable format journal before
-                        alluxio master start
-                      type: boolean
-                    storageClass:
-                      description: StorageClass for PersistentVolumeClaim needed when
-                        VolumeType is pvc
-                      type: string
-                    volumeType:
-                      description: VolumeType for alluxio ha mode, now support pvc
-                        and memory
-                      type: string
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -532,22 +484,6 @@ spec:
                     type: string
                   description: Environment variables that will be used by Alluxio
                     component. <br>
-                  type: object
-                journal:
-                  description: Journal is a journal setting for embedded raft journal
-                  properties:
-                    format:
-                      description: Format enable or disable format journal before
-                        alluxio master start
-                      type: boolean
-                    storageClass:
-                      description: StorageClass for PersistentVolumeClaim needed when
-                        VolumeType is pvc
-                      type: string
-                    volumeType:
-                      description: VolumeType for alluxio ha mode, now support pvc
-                        and memory
-                      type: string
                   type: object
                 jvmOptions:
                   description: Options for JVM
@@ -712,22 +648,6 @@ spec:
                     type: string
                   description: Environment variables that will be used by Alluxio
                     component. <br>
-                  type: object
-                journal:
-                  description: Journal is a journal setting for embedded raft journal
-                  properties:
-                    format:
-                      description: Format enable or disable format journal before
-                        alluxio master start
-                      type: boolean
-                    storageClass:
-                      description: StorageClass for PersistentVolumeClaim needed when
-                        VolumeType is pvc
-                      type: string
-                    volumeType:
-                      description: VolumeType for alluxio ha mode, now support pvc
-                        and memory
-                      type: string
                   type: object
                 jvmOptions:
                   description: Options for JVM
