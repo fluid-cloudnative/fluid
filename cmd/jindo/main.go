@@ -31,6 +31,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -40,11 +41,12 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
 
-	short                bool
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
-	portRange            string
+	short                   bool
+	metricsAddr             string
+	enableLeaderElection    bool
+	development             bool
+	portRange               string
+	maxConcurrentReconciles int
 )
 
 var cmd = &cobra.Command{
@@ -76,6 +78,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
+	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JindoRuntime controller")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -117,11 +120,15 @@ func handle() {
 		os.Exit(1)
 	}
 
+	controllerOptions := controller.Options{
+		MaxConcurrentReconciles: maxConcurrentReconciles,
+	}
+
 	if err = (jindoctl.NewRuntimeReconciler(mgr.GetClient(),
 		ctrl.Log.WithName("jindoctl").WithName("JindoRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("JindoRuntime"),
-	)).SetupWithManager(mgr); err != nil {
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "JindoRuntime")
 		os.Exit(1)
 	}
