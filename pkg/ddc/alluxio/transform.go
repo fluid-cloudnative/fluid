@@ -211,8 +211,18 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	// 	return err
 	// }
 
-	// transform master journal spec to alluxio engine journal values
-	e.transformJournal(runtime, value)
+	if value.Master.Replicas > 1 {
+		value.Journal = Journal{
+			VolumeType: "emptyDir",
+			Size:       "30Gi",
+		}
+	} else {
+		value.Journal = Journal{
+			VolumeType: "emptyDir",
+			Size:       "30Gi",
+			Format:     Format{RunFormat: true},
+		}
+	}
 
 	value.ShortCircuit = ShortCircuit{
 		VolumeType: "emptyDir",
@@ -419,54 +429,4 @@ func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRun
 		properties = runtime.Spec.Master.NodeSelector
 	}
 	return properties
-}
-
-func (e *AlluxioEngine) transformJournal(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
-	journalType, found := runtime.Spec.Properties["alluxio.master.journal.type"]
-
-	if !found {
-		journalType = JOURNAL_TYPE_UFS
-	}
-	volumeType := runtime.Spec.Master.Journal.VolumeType
-	if volumeType == "" {
-		volumeType = "memory"
-	}
-
-	storageClass := runtime.Spec.Master.Journal.StorageClass
-	if storageClass == "" {
-		storageClass = "standard"
-	}
-	format := runtime.Spec.Master.Journal.Format
-	if runtime.Spec.Master.Replicas > 1 {
-		format = true
-		journalType = JOURNAL_TYPE_EMBEDDED
-	}
-	switch journalType {
-	case JOURNAL_TYPE_EMBEDDED:
-		switch volumeType {
-		case "pvc":
-			value.Journal = Journal{
-				Type:         JOURNAL_TYPE_EMBEDDED,
-				VolumeType:   "persistentVolumeClaim",
-				Format:       Format{RunFormat: format},
-				StorageClass: storageClass,
-			}
-		case "memory":
-			value.Journal = Journal{
-				Type:       JOURNAL_TYPE_EMBEDDED,
-				VolumeType: "emptyDir",
-				Size:       "30Gi",
-				Format:     Format{RunFormat: format},
-			}
-		}
-	case JOURNAL_TYPE_UFS:
-		value.Journal = Journal{
-			Type:       JOURNAL_TYPE_UFS,
-			VolumeType: "emptyDir",
-			Size:       "30Gi",
-			UFSType:    "local",
-			Format:     Format{RunFormat: format},
-		}
-	}
-
 }

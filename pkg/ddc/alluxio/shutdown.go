@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -73,35 +72,6 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 
 // destroyMaster Destroies the master
 func (e *AlluxioEngine) destroyMaster() (err error) {
-	// Get master statefulset binded pvc, and delete it
-	nums := int(e.runtime.Spec.Replicas)
-	for i := 0; i < nums; i++ {
-		name := e.name + "-master-" + strconv.Itoa(i)
-		e.Log.Info("Get master",
-			"master", name)
-		master, err := kubeclient.GetPodByName(e.Client, name, e.namespace)
-		if err != nil {
-			return err
-		}
-		if master == nil {
-			continue
-		}
-
-		pvcs := master.Spec.Volumes
-		for _, pvc := range pvcs {
-			if pvc.Name == ALLUXIO_JOURNAL {
-				if pvc.VolumeSource.EmptyDir != nil {
-					continue
-				}
-				claimName := e.GetJournalPVCClaimName(name)
-				err = kubeclient.DeletePersistentVolumeClaim(e.Client, claimName, e.namespace)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	found := false
 	found, err = helm.CheckRelease(e.name, e.namespace)
 	if err != nil {

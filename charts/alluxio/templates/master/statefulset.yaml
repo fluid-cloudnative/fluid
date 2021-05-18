@@ -110,10 +110,8 @@ spec:
             mountPath: /etc/group
             readOnly: true
           {{- end}}
-          {{- if $needJournalVolume }}
           - name: alluxio-journal
             mountPath: /journal
-          {{- end }}
       {{- end}}
       containers:
         {{- if .Values.apiGateway.enabled }}

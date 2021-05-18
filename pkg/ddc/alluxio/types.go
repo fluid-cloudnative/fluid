@@ -91,12 +91,9 @@ type Metastore struct {
 }
 
 type Journal struct {
-	Type         string `yaml:"type,omitempty"`
-	VolumeType   string `yaml:"volumeType,omitempty"`
-	Size         string `yaml:"size,omitempty"`
-	UFSType      string `yaml:"ufsType,omitempty"`
-	Format       Format `yaml:"format,omitempty"`
-	StorageClass string `yaml:"storageClass,omitempty"`
+	VolumeType string `yaml:"volumeType,omitempty"`
+	Size       string `yaml:"size,omitempty"`
+	Format     Format `yaml:"format,omitempty"`
 }
 
 type Format struct {

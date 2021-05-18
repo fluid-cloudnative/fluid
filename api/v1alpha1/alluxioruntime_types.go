@@ -76,18 +76,6 @@ type AlluxioCompTemplateSpec struct {
 	// NodeSelector is a selector which must be true for the master to fit on a node
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Journal is a journal setting for embedded raft journal
-	Journal Journal `json:"journal,omitempty"`
-}
-
-type Journal struct {
-	// VolumeType for alluxio ha mode, now support pvc and memory
-	VolumeType string `json:"volumeType,omitempty"`
-	// Format enable or disable format journal before alluxio master start
-	Format bool `json:"format,omitempty"`
-	// StorageClass for PersistentVolumeClaim needed when VolumeType is pvc
-	StorageClass string `json:"storageClass,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse

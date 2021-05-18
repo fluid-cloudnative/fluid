@@ -214,10 +214,6 @@ func (e *AlluxioEngine) GetMetadataInfoFileName() string {
 	return e.name + "-" + e.namespace + ".yaml"
 }
 
-func (e *AlluxioEngine) GetJournalPVCClaimName(name string) string {
-	return ALLUXIO_JOURNAL + "-" + name
-}
-
 // GetWorkerUsedCapacity gets cache capacity usage for each worker as a map.
 // It parses result from stdout when executing `alluxio fsadmin report capacity` command
 // and extracts worker name(IP or hostname) along with used capacity for that worker
