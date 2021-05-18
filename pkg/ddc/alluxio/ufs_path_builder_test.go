@@ -55,8 +55,8 @@ func TestGenAlluxioUFSRootPath(t *testing.T) {
 		},
 		"test single mount item with mount path case 3": {
 			mounts:       mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", ""),
-			wantRootPath: "http://fluid.io/spark/spark-3.0.2",
-			wantMount:    &mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "")[0],
+			wantRootPath: "/underFSStorage",
+			wantMount:    nil,
 		},
 	}
 
@@ -80,6 +80,10 @@ func TestGetAlluxioMountPath(t *testing.T) {
 		"test only one mount item case 1": {
 			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "")[0],
 			mounts:   mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", ""),
+			wantPath: "/spark",
+		}, "test only one mount item case 2": {
+			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/")[0],
+			mounts:   mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/"),
 			wantPath: "/",
 		},
 		"test only one mount item with define mount path case 1": {
