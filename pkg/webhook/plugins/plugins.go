@@ -34,18 +34,17 @@ type AffinityInterface interface {
 // Plugins record the active plugins
 // including two kinds: plugins for pod with no dataset mounted and with dataset mounted
 type plugins struct {
-	noDatasetHandle []AffinityInterface
+	noDatasetHandle   []AffinityInterface
 	withDatasetHandle []AffinityInterface
 }
 
-func(p *plugins) GetNoDatasetHandle() []AffinityInterface{
+func (p *plugins) GetNoDatasetHandle() []AffinityInterface {
 	return p.noDatasetHandle
 }
 
-func(p *plugins) GetWithDatasetHandle() []AffinityInterface{
+func (p *plugins) GetWithDatasetHandle() []AffinityInterface {
 	return p.withDatasetHandle
 }
-
 
 // Registry return active plugins in a defined order
 func Registry(client client.Client) plugins {
