@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"path/filepath"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -33,12 +34,8 @@ type UFSPathBuilder struct{}
 func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount, mounts []datav1alpha1.Mount) string {
 
 	// if the user defines mount.path, use it
-	if len(curMount.Path) > 0 {
+	if filepath.IsAbs(curMount.Path) {
 		return curMount.Path
-	}
-	// if dataset only has one mount item
-	if len(mounts) == 1 {
-		return common.RootDirPath
 	}
 
 	return fmt.Sprintf(common.AlluxioMountPathFormat, curMount.Name)
@@ -70,7 +67,7 @@ func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (strin
 	}
 
 	// if user define mount.path : use local storage root path
-	if m.Path != "" && m.Path != common.RootDirPath {
+	if m.Path != common.RootDirPath {
 		return u.GetLocalStorageRootDir(), nil
 	}
 

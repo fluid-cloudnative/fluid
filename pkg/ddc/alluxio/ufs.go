@@ -57,7 +57,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	if err != nil {
 		return
 	}
-	e.Log.V(1).Info("shouldMountUFS", "should", shouldMountUfs)
+	e.Log.Info("shouldMountUFS", "should", shouldMountUfs)
 
 	if shouldMountUfs {
 		err = e.mountUFS()
@@ -65,7 +65,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 			return
 		}
 	}
-	e.Log.V(1).Info("mountUFS")
+	e.Log.Info("mountUFS")
 
 	err = e.SyncMetadata()
 	if err != nil {
