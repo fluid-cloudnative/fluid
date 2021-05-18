@@ -60,7 +60,7 @@ func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 // shouldMountUFS checks if there's any UFS that need to be mounted
 func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	e.Log.Info("get dataset info", "dataset", dataset)
 	if err != nil {
 		return should, err
 	}
