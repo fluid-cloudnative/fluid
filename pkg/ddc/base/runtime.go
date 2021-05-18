@@ -52,6 +52,8 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeLabelname() string
 
+	GetDatasetNumLabelname() string
+
 	GetPersistentVolumeName() string
 
 	IsExclusive() bool
