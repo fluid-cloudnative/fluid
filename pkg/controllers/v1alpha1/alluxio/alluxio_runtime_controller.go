@@ -17,6 +17,8 @@ package alluxio
 
 import (
 	"context"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"time"
 
 	"sync"
 
@@ -66,6 +68,7 @@ func NewRuntimeReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=alluxioruntimes/status,verbs=get;update;patch
 
 func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	defer utils.TimeTrack(time.Now(), "Reconcile", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context.Background(),
 		Log:            r.Log.WithValues("alluxioruntime", req.NamespacedName),
@@ -98,8 +101,9 @@ func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 //SetupWithManager setups the manager with RuntimeReconciler
-func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.AlluxioRuntime{}).
 		Complete(r)
 }

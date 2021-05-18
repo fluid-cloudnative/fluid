@@ -18,6 +18,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -33,10 +34,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+// TODO: move this to some Scheduler-like struct
+// schedulerMutex is a mutex to protect the scheduling process from race condition
+var schedulerMutex = sync.Mutex{}
+
 func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	dataset *datav1alpha1.Dataset,
 	runtimeClient client.Client,
 	desiredNum int32) (currentScheduleNum int32, err error) {
+
+	// Only one worker can enter this area and the reconciling runtime CR can be scheduled
+	schedulerMutex.Lock()
+	defer schedulerMutex.Unlock()
+
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}
 		alreadySchedNodeList  *corev1.NodeList = &corev1.NodeList{}
@@ -46,12 +56,13 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log                   = rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 	)
 
+	// 1. get all nodes in the cluster
 	err = runtimeClient.List(context.TODO(), nodeList, &client.ListOptions{})
 	if err != nil {
 		return
 	}
 
-	// datasetLabels := labels.SelectorFromSet(labels.Set(map[string]string{e.getCommonLabelname(): "true"}))
+	// 2. filters scheduled nodes and build a map for future use
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetCommonLabelname()))
 	if err != nil {
 		return currentScheduleNum, err
@@ -70,6 +81,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		log.Info("Node is already assigned", "node", node.Name, "dataset", dataset.Name)
 	}
 
+	// 3. Sort nodes if in fuse global mode
 	fuseGlobal, nodeSelector := runtimeInfo.GetFuseDeployMode()
 
 	pvcMountNodesMap, err := kubeclient.GetPvcMountNodes(runtimeClient, dataset.Name, dataset.Namespace)
@@ -85,7 +97,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		nodes = nodeList.Items
 	}
 
-	// storageMap := tieredstore.GetLevelStorageMap(runtime)
+	// 4. filter candidate nodes
 	for _, node := range nodes {
 
 		if int32(len(currentScheduledNodes)) == desiredNum {
@@ -97,13 +109,6 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 			continue
 		}
 
-		// if runtime.Spec.Placement.All().NodeAffinity != nil {
-		// 	terms := runtime.Spec.Placement.All().NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
-		// 	if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
-		// 		log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
-		// 		continue
-		// 	}
-		// }
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {
 				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
@@ -163,8 +168,8 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		"dataset", runtimeInfo.GetName(),
 		"currentScheduleNum", currentScheduleNum,
 		"newScheduleNum", newScheduleNum)
-	// 2.Add label to the selected node
 
+	// 5. bind the dataset to selected nodes via adding corresponding labels on them
 	for _, node := range newScheduledNodes {
 		err = LabelCacheNode(node, runtimeInfo, runtimeClient)
 		if err != nil {
