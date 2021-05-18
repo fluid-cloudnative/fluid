@@ -109,7 +109,7 @@ func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 	// get plugins regedit and get the need plugins list from it
 	pluginsRegedit := plugins.Registry(a.Client)
 	var pluginsList []plugins.AffinityInterface
-	if len(runtimeInfos)==0 {
+	if len(runtimeInfos) == 0 {
 		pluginsList = pluginsRegedit.GetNoDatasetHandle()
 	} else {
 		pluginsList = pluginsRegedit.GetWithDatasetHandle()
