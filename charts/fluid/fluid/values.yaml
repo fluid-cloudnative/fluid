@@ -42,6 +42,6 @@ runtime:
       image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-86278b7
 
 webhook:
-  enabled: true
+  enabled: false
   image: registry.aliyuncs.com/fluid/fluid-webhook:v0.6.0-86278b7
 
