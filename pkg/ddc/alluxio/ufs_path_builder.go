@@ -68,7 +68,7 @@ func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (strin
 
 	// if user define mount.path : use local storage root path
 	// if m.Path != common.RootDirPath {
-	if filepath.IsAbs(path) && len(path) == 1 {
+	if filepath.IsAbs(m.Path) && len(m.Path) == 1 {
 		return u.GetLocalStorageRootDir(), nil
 	}
 
