@@ -106,7 +106,17 @@ func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 		}
 	}
 
-	pluginsList := plugins.Registry(a.Client)
+	// get plugins regedit and get the need plugins list from it
+	pluginsRegedit := plugins.Registry(a.Client)
+	var pluginsList []plugins.AffinityInterface
+	if len(runtimeInfos)==0 {
+		pluginsList = pluginsRegedit.GetNoDatasetHandle()
+	} else {
+		pluginsList = pluginsRegedit.GetWithDatasetHandle()
+	}
+
+	// call every plugin in the plugins list in the defined order
+	// if a plugin return shouldStop, stop to call other plugins
 	for _, plugin := range pluginsList {
 		shouldStop := plugin.InjectAffinity(pod, runtimeInfos)
 		if shouldStop {
