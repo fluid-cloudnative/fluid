@@ -37,7 +37,7 @@ func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*d
 	return &runtime, nil
 }
 
-// GetOrCreateEngine gets the dataset
+// GetOrCreateEngine gets or creates engine
 func (r *RuntimeReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 	found := false
