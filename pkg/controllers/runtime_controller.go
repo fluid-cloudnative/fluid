@@ -325,7 +325,7 @@ type RuntimeReconcilerInterface interface {
 	// GetDataset gets the dataset
 	GetDataset(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.Dataset, error)
 
-	// GetOrCreateEngine gets the dataset
+	// GetOrCreateEngine gets or creates engine
 	GetOrCreateEngine(
 		ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error)
 
