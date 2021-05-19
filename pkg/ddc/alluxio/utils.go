@@ -178,28 +178,68 @@ func isPortInUsed(port int, usedPorts []int) bool {
 	return false
 }
 
-func (e *AlluxioEngine) parseRuntimeImage() (image, tag string) {
-	var (
-		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio"
-		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
-	)
+func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = common.DefaultImagePullPolicy
+	}
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV, defaultImage, defaultTag)
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(image) == 0 {
+		image = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(image) == 0 {
+			runtimeImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(runtimeImageInfo) < 1 {
+				panic("invalid default alluxio runtime image!")
+			} else {
+				image = runtimeImageInfo[0]
+			}
+		}
+	}
 
-	return
+	if len(tag) == 0 {
+		tag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(tag) == 0 {
+			runtimeImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(runtimeImageInfo) < 2 {
+				panic("invalid default alluxio runtime image!")
+			} else {
+				tag = runtimeImageInfo[1]
+			}
+		}
+	}
+
+	return image, tag, imagePullPolicy
 }
 
-func (e *AlluxioEngine) parseFuseImage() (image, tag string) {
-	var (
-		defaultImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse"
-		defaultTag   = "2.3.0-SNAPSHOT-2c41226"
-	)
+func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+	if len(imagePullPolicy) == 0 {
+		imagePullPolicy = common.DefaultImagePullPolicy
+	}
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(image) == 0 {
+		image = docker.GetImageRepoFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV)
+		if len(image) == 0 {
+			fuseImageInfo := strings.Split(common.DEFAULT_ALLUXIO_FUSE_IMAGE, ":")
+			if len(fuseImageInfo) < 1 {
+				panic("invalid default alluxio fuse image!")
+			} else {
+				image = fuseImageInfo[0]
+			}
+		}
+	}
 
-	return
+	if len(tag) == 0 {
+		tag = docker.GetImageTagFromEnv(common.ALLUXIO_FUSE_IMAGE_ENV)
+		if len(tag) == 0 {
+			fuseImageInfo := strings.Split(common.DEFAULT_ALLUXIO_FUSE_IMAGE, ":")
+			if len(fuseImageInfo) < 2 {
+				panic("invalid default init image!")
+			} else {
+				tag = fuseImageInfo[1]
+			}
+		}
+	}
+
+	return image, tag, imagePullPolicy
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {

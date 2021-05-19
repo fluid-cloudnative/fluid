@@ -27,19 +27,11 @@ import (
 func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, dataset *datav1alpha1.Dataset, value *Alluxio) (err error) {
 	value.Fuse = Fuse{}
 
-	value.Fuse.Image, value.Fuse.ImageTag = e.parseFuseImage()
-	if runtime.Spec.Fuse.Image != "" {
-		value.Fuse.Image = runtime.Spec.Fuse.Image
-	}
+	image := runtime.Spec.Fuse.Image
+	tag := runtime.Spec.Fuse.ImageTag
+	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
 
-	if runtime.Spec.Fuse.ImageTag != "" {
-		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
-	}
-
-	value.Fuse.ImagePullPolicy = "IfNotPresent"
-	if runtime.Spec.Fuse.ImagePullPolicy != "" {
-		value.Fuse.ImagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
-	}
+	value.Fuse.Image, value.Fuse.ImageTag, value.ImagePullPolicy = e.parseFuseImage(image, tag, imagePullPolicy)
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties

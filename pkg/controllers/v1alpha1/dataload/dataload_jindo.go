@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
@@ -23,6 +24,25 @@ func (r *DataLoadReconcilerImplement) generateJindoDataLoadValueFile(dataload v1
 	_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, boundedRuntime.Type, dataload.Spec.Dataset.Namespace)
+
+	if len(imageName) == 0 {
+		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		if len(defaultImageInfo) < 1 {
+			panic("invalid default dataload image!")
+		} else {
+			imageName = defaultImageInfo[0]
+		}
+	}
+
+	if len(imageTag) == 0 {
+		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		if len(defaultImageInfo) < 2 {
+			panic("invalid default dataload image!")
+		} else {
+			imageTag = defaultImageInfo[1]
+		}
+	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	runtime, err := utils.GetJindoRuntime(r.Client, boundedRuntime.Name, boundedRuntime.Namespace)
