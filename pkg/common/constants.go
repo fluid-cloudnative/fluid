@@ -112,4 +112,5 @@ const (
 
 const (
 	RootDirPath = "/"
+	DefaultImagePullPolicy = "IfNotPresent"
 )

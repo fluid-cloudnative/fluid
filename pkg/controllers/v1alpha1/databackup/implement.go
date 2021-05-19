@@ -306,6 +306,31 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
+
+	if len(imageName) == 0 {
+		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(imageName) == 0 {
+			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(defaultImageInfo) < 1 {
+				panic("invalid default databackup image!")
+			} else {
+				imageName = defaultImageInfo[0]
+			}
+		}
+	}
+
+	if len(imageTag) == 0 {
+		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if len(imageTag) == 0 {
+			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			if len(defaultImageInfo) < 2 {
+				panic("invalid default databackup image!")
+			} else {
+				imageTag = defaultImageInfo[1]
+			}
+		}
+	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	workdir := os.Getenv("FLUID_WORKDIR")
@@ -337,7 +362,6 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 
 	var runtime v1alpha1.AlluxioRuntime
 	var runAs *v1alpha1.User
-	initUsers := common.ImageInfo{}
 
 	// get the runAs and initUsers imageInfo from runtime
 	err = r.Get(ctx, types.NamespacedName{
@@ -346,12 +370,8 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}, &runtime)
 	if err == nil {
 		runAs = runtime.Spec.RunAs
-		initUsers = common.ImageInfo{
-			Image:           runtime.Spec.InitUsers.Image,
-			ImageTag:        runtime.Spec.InitUsers.ImageTag,
-			ImagePullPolicy: runtime.Spec.InitUsers.ImagePullPolicy,
-		}
 	}
+
 	// databackup.Spec.RunAs > runtime.Spec.RunAs > root
 	if databackup.Spec.RunAs != nil {
 		runAs = databackup.Spec.RunAs
@@ -368,7 +388,11 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		}
 	}
 
-	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.GetInitUserImage(initUsers)
+	image = runtime.Spec.InitUsers.Image
+	imageTag = runtime.Spec.InitUsers.ImageTag
+	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
+
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, imageTag, imagePullPolicy, common.DEFAULT_INIT_IMAGE_ENV)
 
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {
