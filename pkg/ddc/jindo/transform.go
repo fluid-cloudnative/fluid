@@ -386,7 +386,14 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 		defaultTag   = "3.5.0"
 	)
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV, defaultImage, defaultTag)
+	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
+	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
+	if len(image) == 0 {
+		image = defaultImage
+	}
+	if len(tag) == 0 {
+		tag = defaultTag
+	}
 	e.Log.Info("Set image", "image", image, "tag", tag)
 
 	return
@@ -398,7 +405,14 @@ func (e *JindoEngine) parseFuseImage() (image, tag string) {
 		defaultTag   = "3.5.0"
 	)
 
-	image, tag = docker.GetImageRepoTagFromEnv(common.JINDO_FUSE_IMAGE_ENV, defaultImage, defaultTag)
+	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+	tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+	if len(image) == 0 {
+		image = defaultImage
+	}
+	if len(tag) == 0 {
+		tag = defaultTag
+	}
 	e.Log.Info("Set image", "image", image, "tag", tag)
 
 	return

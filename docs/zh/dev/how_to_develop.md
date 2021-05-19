@@ -118,7 +118,7 @@ $ make build
      - name: manager
        image: <your-registry>/<your-namespace>/<img-name>:<img-tag>
        env:
-         - name: ALLUXIO_INIT_IMAGE_ENV
+         - name: DEFAULT_INIT_IMAGE_ENV
    	    value: <your-registry>/<your-namespace>/<img-name>:<img-tag>
    ...
    ...
