@@ -163,6 +163,9 @@ type Runtime struct {
 
 	// Runtime object's type (e.g. Alluxio)
 	Type string `json:"type,omitempty"`
+
+	// Runtime master replicas
+	MasterReplicas int32 `json:"masterReplicas,omitempty"`
 }
 
 // DatasetStatus defines the observed state of Dataset

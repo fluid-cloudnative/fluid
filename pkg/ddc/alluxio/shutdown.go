@@ -18,11 +18,12 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
