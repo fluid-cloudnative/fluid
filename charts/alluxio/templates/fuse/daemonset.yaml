@@ -40,6 +40,7 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-fuse
     spec:
+      enableServiceLinks: false
       hostNetwork: {{ .Values.fuse.hostNetwork }}
       hostPID: {{ .Values.fuse.hostPID }}
       dnsPolicy: {{ .Values.fuse.dnsPolicy }}

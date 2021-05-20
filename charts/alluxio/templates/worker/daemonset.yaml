@@ -39,6 +39,7 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-worker
     spec:
+      enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
       hostPID: {{ .Values.worker.hostPID }}
       dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}

@@ -50,6 +50,7 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-master
     spec:
+      enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
       hostPID: {{ .Values.master.hostPID }}
       dnsPolicy: {{ .Values.master.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}

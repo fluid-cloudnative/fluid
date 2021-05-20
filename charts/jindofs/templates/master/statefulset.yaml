@@ -27,6 +27,7 @@ spec:
         heritage: {{ .Release.Service }}
         role: jindofs-master
     spec:
+      enableServiceLinks: false
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}
       dnsPolicy: ClusterFirstWithHostNet
