@@ -13,17 +13,17 @@
   - [问题诊断](userguide/troubleshooting.md)
 + 数据集使用
   + 创建
-    - [数据加速（通过POSIX接口访问）](samples/accelerate_data_accessing.md)
-    - [数据加速（通过HDFS接口访问）](samples/accelerate_data_accessing_by_hdfs.md)
-    - [数据亲和性调度](samples/data_co_locality.md)
-    - [数据容忍污点调度](samples/data_toleration.md)
-    - [Fuse客户端全局部署](samples/fuse_affinity.md)
+   - [数据加速（通过POSIX接口访问）](samples/accelerate_data_accessing.md)
+   - [数据加速（通过HDFS接口访问）](samples/accelerate_data_accessing_by_hdfs.md)
+   - [数据亲和性调度](samples/data_co_locality.md)
+   - [数据容忍污点调度](samples/data_toleration.md)
+   - [Fuse客户端全局部署](samples/fuse_affinity.md)
   + 操作
-    - [数据预加载](samples/data_warmup.md)
-    - [手动扩缩容](samples/dataset_scaling.md)
+   - [数据预加载](samples/data_warmup.md)
+   - [手动扩缩容](samples/dataset_scaling.md)
   + 安全
-    - [使用参数加密](samples/use_encryptoptions.md)
-    - [以non-root用户身份使用AlluxioRuntime](samples/nonroot_access.md)
+   - [使用参数加密](samples/use_encryptoptions.md)
+   - [以non-root用户身份使用AlluxioRuntime](samples/nonroot_access.md)
 + 底层存储
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)
