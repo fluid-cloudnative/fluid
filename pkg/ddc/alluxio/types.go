@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // The value yaml file

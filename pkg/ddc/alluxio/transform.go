@@ -194,6 +194,15 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	value.Tieredstore.Levels = levels
 
+	// value.Metastore = Metastore{
+	// 	VolumeType: "emptyDir",
+	// }
+
+	// quantity, err := resource.ParseQuantity("10Gi")
+	// if err != nil {
+	// 	return err
+	// }
+
 	value.Journal = Journal{
 		VolumeType: "emptyDir",
 		Size:       "30Gi",
@@ -395,77 +404,8 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 		value.JobMaster.Ports.Embedded = allocatedPorts[index]
 	}
 
-	//allocatedPorts, err := e.getAvaliablePort()
-
-	//check the length ports
-	//if len(allocatedPorts) < PORT_NUM {
-	//	e.Log.Info("the number of port check failed",
-	//		"PORT_NUM", PORT_NUM,
-	//		"len(allocatedPorts)", len(allocatedPorts),
-	//		"allocatedPorts", allocatedPorts)
-	//	return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), PORT_NUM)
-	//}
-	//
-	//// if len(allocatedPorts) == PORT_NUM {
-	//value.Master.Ports.Rpc = allocatedPorts[0]
-	//value.Master.Ports.Web = allocatedPorts[1]
-	//value.Worker.Ports.Rpc = allocatedPorts[2]
-	//value.Worker.Ports.Web = allocatedPorts[3]
-	//value.JobMaster.Ports.Rpc = allocatedPorts[4]
-	//value.JobMaster.Ports.Web = allocatedPorts[5]
-	//value.JobWorker.Ports.Rpc = allocatedPorts[6]
-	//value.JobWorker.Ports.Web = allocatedPorts[7]
-	//value.JobWorker.Ports.Data = allocatedPorts[8]
-	//
-	//index := 9
-	//if e.runtime.Spec.APIGateway.Enabled {
-	//	if len(allocatedPorts) <= index {
-	//		e.Log.Info("the number of port check failed, when api gateway is enabled",
-	//			"PORT_NUM", index+1,
-	//			"len(allocatedPorts)", len(allocatedPorts),
-	//			"allocatedPorts", allocatedPorts)
-	//		return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), PORT_NUM)
-	//	}
-	//	value.APIGateway.Ports.Rest = allocatedPorts[index]
-	//}
-	//
-	//if e.runtime.Spec.Master.Replicas > 1 {
-	//	if len(allocatedPorts) <= index+2 {
-	//		e.Log.Info("the number of port check failed, when Embedded is enabled",
-	//			"index", index+2,
-	//			"len(allocatedPorts)", len(allocatedPorts),
-	//			"allocatedPorts", allocatedPorts)
-	//		return fmt.Errorf("The lengh of port list is %v less than expected %v", len(allocatedPorts), PORT_NUM)
-	//	}
-	//	value.Master.Ports.Embedded = allocatedPorts[index+1]
-	//	value.Master.Ports.Embedded = allocatedPorts[index+2]
-	//}
-	//
-	//// } else {
-	//// 	value.Master.Ports.Embedded = allocatedPorts[9]
-	//// 	value.JobMaster.Ports.Embedded = allocatedPorts[10]
-	//// }
-
 	return nil
 }
-
-// // 8.set default port for fluid engine
-// func (e *AlluxioEngine) setDefaultPorts(value *Alluxio) {
-// 	if e.runtime.Spec.Master.Replicas > 1 {
-// 		value.Master.Ports.Rpc = 19998
-// 		value.Master.Ports.Web = 19999
-// 		value.Worker.Ports.Rpc = 29999
-// 		value.Worker.Ports.Web = 30000
-// 		value.JobMaster.Ports.Rpc = 20001
-// 		value.JobMaster.Ports.Web = 20002
-// 		value.JobWorker.Ports.Rpc = 30001
-// 		value.JobWorker.Ports.Web = 30003
-// 		value.JobWorker.Ports.Data = 30002
-// 	} else {
-// 		value.Master.Ports.Embedded = 19200
-// 		value.JobMaster.Ports.Embedded = 20003
-// 	}
-// }
 
 func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRuntime) map[string]string {
 	properties := map[string]string{}

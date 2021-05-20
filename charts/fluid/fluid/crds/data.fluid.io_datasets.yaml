@@ -274,6 +274,10 @@ spec:
                   category:
                     description: Category the runtime object belongs to (e.g. Accelerate)
                     type: string
+                  masterReplicas:
+                    description: Runtime master replicas
+                    format: int32
+                    type: integer
                   name:
                     description: Name of the runtime object
                     type: string
@@ -402,6 +406,10 @@ spec:
                   category:
                     description: Category the runtime object belongs to (e.g. Accelerate)
                     type: string
+                  masterReplicas:
+                    description: Runtime master replicas
+                    format: int32
+                    type: integer
                   name:
                     description: Name of the runtime object
                     type: string
