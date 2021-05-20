@@ -11,7 +11,7 @@
   - [Quick Start](userguide/get_started.md)
   - [Installation](userguide/install.md)
   - [Troubleshooting](userguide/troubleshooting.md)
-+ How To Use
++ Dataset
   + Creation
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
     - [Accelerate Data Accessing(via HDFS interface)](samples/accelerate_data_accessing_by_hdfs.md)
