@@ -211,17 +211,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	// 	return err
 	// }
 
-	if value.Master.Replicas > 1 {
-		value.Journal = Journal{
-			VolumeType: "emptyDir",
-			Size:       "30Gi",
-		}
-	} else {
-		value.Journal = Journal{
-			VolumeType: "emptyDir",
-			Size:       "30Gi",
-			Format:     Format{RunFormat: true},
-		}
+	value.Journal = Journal{
+		VolumeType: "emptyDir",
+		Size:       "30Gi",
 	}
 
 	value.ShortCircuit = ShortCircuit{

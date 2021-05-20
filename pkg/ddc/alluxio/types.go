@@ -93,11 +93,6 @@ type Metastore struct {
 type Journal struct {
 	VolumeType string `yaml:"volumeType,omitempty"`
 	Size       string `yaml:"size,omitempty"`
-	Format     Format `yaml:"format,omitempty"`
-}
-
-type Format struct {
-	RunFormat bool `yaml:"runFormat,omitempty"`
 }
 
 type ShortCircuit struct {
