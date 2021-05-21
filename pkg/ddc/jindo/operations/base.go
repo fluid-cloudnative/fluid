@@ -108,7 +108,7 @@ func (a JindoFileUtils) GetUfsTotalSize(url string, useStsSecret bool) (summary 
 	return stdout, err
 }
 
-// Check if the Alluxio is ready by running `alluxio fsadmin report` command
+// Check if the JIndo is ready by running `jindo jfs -report` command
 func (a JindoFileUtils) Ready() (ready bool) {
 	var (
 		command = []string{"/sdk/bin/jindo", "jfs", "-report"}
@@ -122,7 +122,7 @@ func (a JindoFileUtils) Ready() (ready bool) {
 	return ready
 }
 
-// IsExist checks if the alluxioPath exists
+// IsExist checks if the JindoPath exists
 func (a JindoFileUtils) IsExist(jindoPath string) (found bool, err error) {
 	var (
 		command = []string{"hadoop", "fs", "-ls", "jfs://jindo" + jindoPath}
