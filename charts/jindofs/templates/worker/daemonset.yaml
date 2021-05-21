@@ -1,3 +1,7 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -23,7 +27,6 @@ spec:
         heritage: {{ .Release.Service }}
         role: jindofs-worker
     spec:
-      enableServiceLinks: false
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}
       dnsPolicy: ClusterFirstWithHostNet
@@ -44,10 +47,17 @@ spec:
           command: ["/entrypoint.sh"]
           args: ["worker"]
           env:
+          {{- if $isSingleMaster }}
           - name: STORAGE_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+          {{- else if $isRaftHa }}
+          - name: STORAGE_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+          {{- end }}
           {{- if .Values.fuse.runAs }}
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}

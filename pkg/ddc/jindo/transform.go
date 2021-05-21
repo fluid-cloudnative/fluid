@@ -70,7 +70,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		UseHostPID:      true,
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
-			ReplicaCount: 1,
+			ReplicaCount: e.transformReplicasCount(runtime),
 			NodeSelector: e.transformMasterSelector(runtime),
 		},
 		Worker: Worker{
@@ -127,6 +127,10 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		"namespace.filelet.cache.size":  "100000",
 		"namespace.blocklet.cache.size": "1000000",
 		"namespace.backend.type":        "rocksdb",
+	}
+
+	if value.Master.ReplicaCount == 3 {
+		properties["namespace.backend.type"] = "raft"
 	}
 
 	//"namespace.rpc.port": "8101",
@@ -311,9 +315,13 @@ func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRunti
 		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
 		e.Log.Info("Enable Fuse's global mode")
 	} else {
-		labelName := e.getCommonLabelname()
-		value.Fuse.NodeSelector[labelName] = "true"
-		e.Log.Info("Disable Fuse's global mode")
+		if runtime.Spec.Fuse.NodeSelector == nil {
+			labelName := e.getCommonLabelname()
+			value.Fuse.NodeSelector[labelName] = "true"
+			e.Log.Info("Disable Fuse's global mode")
+		} else {
+			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+		}
 	}
 	return nil
 }
@@ -323,6 +331,13 @@ func (e *JindoEngine) transformNodeSelector() map[string]string {
 	properties := map[string]string{}
 	properties[labelName] = "true"
 	return properties
+}
+
+func (e *JindoEngine) transformReplicasCount(runtime *datav1alpha1.JindoRuntime) int {
+	if runtime.Spec.Master.Replicas == JINDO_HA_MASTERNUM {
+		return JINDO_HA_MASTERNUM
+	}
+	return JINDO_MASTERNUM_DEFAULT
 }
 
 func (e *JindoEngine) transformMasterSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
@@ -385,7 +400,6 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
 		defaultTag   = "3.5.0"
 	)
-
 	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
 	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
 	if len(image) == 0 {
@@ -404,7 +418,6 @@ func (e *JindoEngine) parseFuseImage() (image, tag string) {
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
 		defaultTag   = "3.5.0"
 	)
-
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
 	tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
 	if len(image) == 0 {
@@ -439,6 +452,10 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	// For now, Jindo only needs two ports for master and client rpc respectively
 	expectedPortNum := 2
 
+	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+		expectedPortNum = 3
+	}
+
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
 		e.Log.Error(err, "can't get runtime port allocator")
@@ -455,7 +472,10 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	value.Master.Port.Rpc = allocatedPorts[index]
 	index++
 	value.Worker.Port.Rpc = allocatedPorts[index]
-
+	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+		index++
+		value.Master.Port.Raft = allocatedPorts[index]
+	}
 	return nil
 }
 
