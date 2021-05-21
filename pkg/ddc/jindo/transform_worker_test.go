@@ -60,7 +60,7 @@ func TestTransformWorker(t *testing.T) {
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
 		test.jindoValue.Worker.Port.Rpc = 8001
-		test.jindoValue.Worker.Port.Web = 8002
+		test.jindoValue.Worker.Port.Raft = 8002
 		metaPath := "/var/lib/docker/meta"
 		dataPath := "/var/lib/docker/data"
 		userQuotas := "1G"

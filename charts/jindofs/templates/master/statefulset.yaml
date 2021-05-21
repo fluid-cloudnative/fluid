@@ -1,3 +1,7 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -16,7 +20,7 @@ spec:
       role: jindofs-master
       name: {{ template "jindofs.fullname" . }}-master
   serviceName: "jindofs-master"
-  replicas: {{ .Values.master.replicaCount }}
+  replicas: {{ $masterCount }}
   template:
     metadata:
       labels:
@@ -27,7 +31,6 @@ spec:
         heritage: {{ .Release.Service }}
         role: jindofs-master
     spec:
-      enableServiceLinks: false
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}
       dnsPolicy: ClusterFirstWithHostNet
@@ -48,8 +51,19 @@ spec:
           command: ["/entrypoint.sh"]
           args: ["master"]
           env:
+          {{- if $isSingleMaster }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+          - name: NAMESPACE_BACKEND_RAFT_HOSTNAME
+            value: {{ template "jindofs.fullname" . }}-master-0
+          {{- else if $isRaftHa }}
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+          - name: NAMESPACE_BACKEND_RAFT_INITIAL_CONF
+            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.raft }}:0
+          - name: NAMESPACE_BACKEND_RAFT_HOSTNAME
+            value: {{ template "jindofs.fullname" . }}-master-0,{{ template "jindofs.fullname" . }}-master-1,{{ template "jindofs.fullname" . }}-master-2
+          {{- end }}
           {{- if .Values.fuse.runAs }}
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}
@@ -57,6 +71,10 @@ spec:
           ports:
           - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc
+          {{- if $isRaftHa }}
+          - containerPort: {{ .Values.master.ports.raft }}
+            name: raft
+          {{- end }}
           volumeMounts:
             - name: bigboot-config
               mountPath: /bigboot.cfg
