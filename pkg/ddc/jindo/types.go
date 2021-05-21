@@ -45,8 +45,8 @@ type Worker struct {
 }
 
 type Ports struct {
-	Rpc int `yaml:"rpc,omitempty"`
-	Web int `yaml:"web,omitempty"`
+	Rpc  int `yaml:"rpc,omitempty"`
+	Raft int `yaml:"raft,omitempty"`
 }
 
 type Fuse struct {

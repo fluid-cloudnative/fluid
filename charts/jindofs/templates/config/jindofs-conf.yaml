@@ -16,6 +16,7 @@ data:
     [bigboot]
     logger.dir =  {{ .Values.properties.logDir }}
     logger.cleanner.enable = true
+    logger.jnilogger=true
     {{- range $key, $val := .Values.master.secretProperties }}
     {{ $key }} = {{ $val }}
     {{- end}}
