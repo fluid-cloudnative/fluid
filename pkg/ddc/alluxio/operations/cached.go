@@ -62,10 +62,28 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 	var (
 		// todo(TrafalgarZZZ): adaptively exec timeout command with proper option according to Alluxio image version
-		command = []string{"timeout", "60", "alluxio", "fs", "free", "-f", path}
-		stdout  string
-		stderr  string
+		releaseVersion   = []string{"cat", "/etc/issue"}
+		commandForUbuntu = []string{"timeout", "60", "alluxio", "fs", "free", "-f", path}
+		commandForAlpine = []string{"timeout", "-t", "60", "alluxio", "fs", "free", "-f", path}
+		command          []string
+		stdout           string
+		stderr           string
 	)
+
+	stdout, stderr, err = a.exec(releaseVersion, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", releaseVersion, err, stdout, stderr)
+	}
+
+	if strings.Contains(stdout, "Ubuntu") {
+		fmt.Println("execute the ubuntu")
+		command = commandForUbuntu
+	} else if strings.Contains(stdout, "Alpine") {
+		fmt.Println("execute the alpine")
+		command = commandForAlpine
+	} else {
+		err = fmt.Errorf("unknow release version for linux")
+	}
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
