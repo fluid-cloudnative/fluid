@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -46,6 +47,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	// Only one worker can enter this area and the reconciling runtime CR can be scheduled
 	schedulerMutex.Lock()
 	defer schedulerMutex.Unlock()
+	defer utils.TimeTrack(time.Now(), "AssignDatasetToNodes", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}

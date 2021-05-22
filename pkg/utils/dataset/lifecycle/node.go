@@ -121,6 +121,7 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 // LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	defer utils.TimeTrack(time.Now(), "LabelCacheNode", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace(), "node", nodeToLabel.Name)
 	// Label to be added
 	var (
 		// runtimeLabel indicates the specific runtime pod is on the node
