@@ -2,6 +2,7 @@ package operations
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"time"
 )
 
@@ -16,11 +17,15 @@ func (a JindoFileUtils) CleanCache() (err error) {
 
 	stdout, stderr, err = a.exec(command, false)
 
-	time.Sleep(30 * time.Second)
-
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		if utils.IgnoreNotFound(err) == nil {
+			fmt.Printf("Failed to clean cache due to %v", err)
+			return nil
+		}
 		return
+	} else {
+		time.Sleep(30 * time.Second)
 	}
 
 	return
