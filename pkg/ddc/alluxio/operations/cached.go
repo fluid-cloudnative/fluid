@@ -72,6 +72,7 @@ func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 	stdout, stderr, err = a.exec(releaseVersion, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", releaseVersion, err, stdout, stderr)
+		return
 	}
 
 	if strings.Contains(stdout, "Ubuntu") {
@@ -80,6 +81,7 @@ func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 		command = commandForAlpine
 	} else {
 		err = fmt.Errorf("unknow release version for linux")
+		return
 	}
 
 	stdout, stderr, err = a.exec(command, false)
