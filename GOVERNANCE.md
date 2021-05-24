@@ -84,11 +84,12 @@ In various situations the TOC shall hold a vote. These votes can happen on the p
 
 ### Membership 
 - Initial membership:
-- TOC Members:
-    - Bin Fan (Alluxio)
-    - Rong Gu (Nanjing University)
-    - Kai Zhang （Alibaba Cloud）
-    - Yang Che (Alibaba Cloud)
+   - Community Chair: Rong Gu (Nanjing University) 
+   - TOC Members:
+      - Bin Fan (Alluxio)
+      - Rong Gu (Nanjing University)
+      - Kai Zhang （Alibaba Cloud）
+      - Yang Che (Alibaba Cloud)
 
 **Community Chair**: Community chair is primarily responsible for performing community development work and administrative functions.
 
