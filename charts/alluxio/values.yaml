@@ -142,7 +142,10 @@ jobMaster:
 #   type: "EMBEDDED"
 #   folder: "/journal"
 journal:
-  type: "EMBEDDED" # "UFS" or "EMBEDDED"
+  # Setting journal type, "UFS" or "EMBEDDED"
+  # In commit 2c125dee25f8d4566ae23646a999c16c530ffbc9, in order to support master raft embeeded journal mode, change default value from UFS to EMBEDDED
+  # TODO (@xieydd), will support journalClaimTemplates configure the journal setting   
+  type: "EMBEDDED" 
   ufsType: "local" # Ignored if type is "EMBEDDED". "local" or "HDFS"
   folder: "/journal" # Master journal folder
   # volumeType controls the type of journal volume.
