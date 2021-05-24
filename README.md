@@ -6,10 +6,11 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CircleCI](https://circleci.com/gh/circleci/circleci-docs.svg?style=svg)](https://circleci.com/gh/fluid-cloudnative/fluid)
 [![Build Status](https://travis-ci.org/fluid-cloudnative/fluid.svg?branch=master)](https://travis-ci.org/fluid-cloudnative/fluid)
+[![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid?ref=badge_shield)
- [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
 
 ## What is Fluid?
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
@@ -142,7 +143,6 @@ If you are intrested in Fluid and would like to share your experiences with othe
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details. It is vendor-neutral.
 
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid?ref=badge_large)
 
 ## Code of Conduct
 

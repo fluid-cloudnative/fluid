@@ -4,6 +4,9 @@
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid?ref=badge_shield)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
+
 
 # Fluid
 
