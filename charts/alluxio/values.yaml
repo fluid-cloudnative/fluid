@@ -142,7 +142,7 @@ jobMaster:
 #   type: "EMBEDDED"
 #   folder: "/journal"
 journal:
-  type: "UFS" # "UFS" or "EMBEDDED"
+  type: "EMBEDDED" # "UFS" or "EMBEDDED"
   ufsType: "local" # Ignored if type is "EMBEDDED". "local" or "HDFS"
   folder: "/journal" # Master journal folder
   # volumeType controls the type of journal volume.
