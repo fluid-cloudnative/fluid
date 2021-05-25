@@ -208,7 +208,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			if err != nil {
 				return false, fmt.Errorf("failed to get node: %w", err)
 			}
-			return utils.ContainsAll(node.Labels, updatedLabels[:1]), nil
+			return utils.ContainsAll(node.Labels, updatedLabels), nil
 		}); err == nil {
 			break
 		}

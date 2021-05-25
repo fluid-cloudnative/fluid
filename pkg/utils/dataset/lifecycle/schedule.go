@@ -49,7 +49,6 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	defer schedulerMutex.Unlock()
 	defer utils.TimeTrack(time.Now(), "AssignDatasetToNodes", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
-
 	var (
 		nodeList              *corev1.NodeList = &corev1.NodeList{}
 		alreadySchedNodeList  *corev1.NodeList = &corev1.NodeList{}
