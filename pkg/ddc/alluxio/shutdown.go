@@ -272,7 +272,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				e.Log.Error(err, "Fail to get node with nodeName")
+				e.Log.Error(err, "Fail to get node","nodename",nodeName)
 				return err
 			}
 
@@ -290,10 +290,10 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 			if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
 				currentDataset, err = strconv.Atoi(val)
 				if err != nil {
-					e.Log.Info("The dataset number format error")
+					e.Log.Error(err, "The dataset number format error")
 					return err
 				}
-				if currentDataset == 1 {
+				if currentDataset < 2 {
 					delete(toUpdate.Labels, labelDatasetNum)
 					labelNames = append(labelNames, labelDatasetNum)
 				} else {
