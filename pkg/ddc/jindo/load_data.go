@@ -17,6 +17,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
@@ -25,6 +26,7 @@ import (
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	"os"
+	"strings"
 )
 
 // CreateDataLoadJob creates the job to load data
@@ -44,12 +46,12 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(targetDataload)
+		valueFileName, err := e.generateDataLoadValueFile(ctx, targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -63,24 +65,59 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *JindoEngine) generateDataLoadValueFile(targetDataload datav1alpha1.DataLoad) (valueFileName string, err error) {
-	targetDataset, err := utils.GetDataset(e.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
+func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
 	}
 
-	imageName, imageTag := docker.GetWorkerImage(e.Client, targetDataload.Spec.Dataset.Name, "alluxio", targetDataload.Spec.Dataset.Namespace)
+	_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, boundedRuntime.Type, dataload.Spec.Dataset.Namespace)
+
+	if len(imageName) == 0 {
+		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		if len(defaultImageInfo) < 1 {
+			panic("invalid default dataload image!")
+		} else {
+			imageName = defaultImageInfo[0]
+		}
+	}
+
+	if len(imageTag) == 0 {
+		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		if len(defaultImageInfo) < 2 {
+			panic("invalid default dataload image!")
+		} else {
+			imageTag = defaultImageInfo[1]
+		}
+	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+
+	runtime, err := utils.GetJindoRuntime(r.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+	if err != nil {
+		return
+	}
+	hadoopConfig := runtime.Spec.HadoopConfig
+	loadMemoryData := false
+	if len(runtime.Spec.Tieredstore.Levels) == 0 {
+		err = fmt.Errorf("the Tieredstore is null")
+		return
+	}
+	if runtime.Spec.Tieredstore.Levels[0].MediumType == "MEM" {
+		loadMemoryData = true
+	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:  3,
-		TargetDataset: targetDataload.Spec.Dataset.Name,
-		LoadMetadata:  targetDataload.Spec.LoadMetadata,
+		TargetDataset: dataload.Spec.Dataset.Name,
+		LoadMetadata:  dataload.Spec.LoadMetadata,
 		Image:         image,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
-	for _, target := range targetDataload.Spec.Target {
+	for _, target := range dataload.Spec.Target {
 		fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
 		targetPaths = append(targetPaths, cdataload.TargetPath{
 			Path:        target.Path,
@@ -89,13 +126,24 @@ func (e *JindoEngine) generateDataLoadValueFile(targetDataload datav1alpha1.Data
 		})
 	}
 	dataloadInfo.TargetPaths = targetPaths
+	options := map[string]string{}
+	if loadMemoryData {
+		options["loadMemoryData"] = "true"
+	} else {
+		options["loadMemoryData"] = "false"
+	}
+	if hadoopConfig != "" {
+		options["hdfsConfig"] = hadoopConfig
+	}
+	dataloadInfo.Options = options
+
 	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
 		return
 	}
 
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", targetDataload.Namespace, targetDataload.Name))
+	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
 	if err != nil {
 		return
 	}
@@ -104,4 +152,26 @@ func (e *JindoEngine) generateDataLoadValueFile(targetDataload datav1alpha1.Data
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+func (e *JindoEngine) CheckDataloadReady(targetDataload datav1alpha1.DataLoad) (ready bool) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	ready = fileUtils.Ready()
+	if !ready {
+		e.Log.Info("runtime not ready", "runtime", ready)
+		return false
+	}
+	for _, target := range targetDataload.Spec.Target {
+		isExist, err := fileUtils.IsExist(target.Path)
+		if err != nil {
+			e.Log.Info("path doesn't exist", "targetPath", target.Path)
+			return false
+		}
+		if !isExist {
+			e.Log.Info("path doesn't exist", "targetPath", target.Path)
+			return false
+		}
+	}
+	return true
 }

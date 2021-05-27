@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -90,7 +91,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// 2. Reconcile deletion of the object if necessary
 	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
-		return r.ReconcileDataLoadDeletion(ctx)
+		return r.ReconcileDataLoadDeletion(ctx, targetDataload)
 	}
 
 	// 3. get the dataset
@@ -155,12 +156,18 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
 	}
 
-	return r.ReconcileDataLoad(ctx)
+	engine, err := r.GetOrCreateEngine(ctx)
+	if err != nil {
+		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process DataLoad error %v", err)
+		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
+	}
+
+	return r.ReconcileDataLoad(ctx, targetDataload, engine)
 }
 
 // AddOwnerAndRequeue adds Owner and requeue
 func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataLoad datav1alpha1.DataLoad, targetDataset *datav1alpha1.Dataset) (ctrl.Result, error) {
-	targetDataset.ObjectMeta.OwnerReferences = append(targetDataLoad.GetOwnerReferences(), metav1.OwnerReference{
+	targetDataLoad.ObjectMeta.OwnerReferences = append(targetDataLoad.GetOwnerReferences(), metav1.OwnerReference{
 		APIVersion: targetDataset.APIVersion,
 		Kind:       targetDataset.Kind,
 		Name:       targetDataset.Name,
@@ -190,4 +197,26 @@ func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&datav1alpha1.DataLoad{}).
 		Complete(r)
+}
+
+// GetOrCreateEngine gets the Engine
+func (r *DataLoadReconciler) GetOrCreateEngine(
+	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
+	found := false
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if engine, found = r.engines[id]; !found {
+		engine, err = ddc.CreateEngine(id,
+			ctx)
+		if err != nil {
+			return nil, err
+		}
+		r.engines[id] = engine
+		r.Log.V(1).Info("Put Engine to engine map")
+	} else {
+		r.Log.V(1).Info("Get Engine from engine map")
+	}
+
+	return engine, err
 }

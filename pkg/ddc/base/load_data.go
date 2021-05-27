@@ -25,3 +25,8 @@ func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDa
 	}
 	return err
 }
+
+func (t *TemplateEngine) Ready(targetDataload datav1alpha1.DataLoad) (ready bool) {
+	ready = t.Implement.CheckDataloadReady(targetDataload)
+	return ready
+}
