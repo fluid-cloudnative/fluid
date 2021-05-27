@@ -185,4 +185,6 @@
 
 - Add API Server Proxy to Alluxio master
 
+0.6.20
 
+- Support HA

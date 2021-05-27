@@ -9,7 +9,7 @@
 # See the NOTICE file distributed with this work for information regarding copyright ownership.
 #
 
-{{ $masterCount := int .Values.master.count }}
+{{ $masterCount := int .Values.master.replicaCount }}
 {{- $defaultMasterName := "master-0" }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isHaEmbedded := and (eq .Values.journal.type "EMBEDDED") (gt $masterCount 1) }}
