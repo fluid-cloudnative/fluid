@@ -18,17 +18,18 @@ package alluxio
 import (
 	"context"
 	"fmt"
+
+	"k8s.io/client-go/util/retry"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/pkg/errors"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -196,6 +197,7 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
 func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return currentWorkers, err
@@ -209,6 +211,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		labelMemoryName    = runtimeInfo.GetLabelnameForMemory()
 		labelDiskName      = runtimeInfo.GetLabelnameForDisk()
 		labelTotalname     = runtimeInfo.GetLabelnameForTotal()
+		labelDatasetNum    = runtimeInfo.GetDatasetNumLabelname()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
@@ -259,28 +262,55 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		if expectedWorkers == currentWorkers {
 			break
 		}
-		// nodes = append(nodes, &node)
-		toUpdate := node.DeepCopy()
-		if len(toUpdate.Labels) == 0 {
+
+		if len(node.Labels) == 0 {
 			continue
 		}
 
-		for _, label := range labelNames {
-			delete(toUpdate.Labels, label)
-		}
-
-		exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
-		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-			delete(toUpdate.Labels, labelExclusiveName)
-			labelNames = append(labelNames, labelExclusiveName)
-		}
-
-		if len(toUpdate.Labels) < len(node.Labels) {
-			err := e.Client.Update(context.TODO(), toUpdate)
+		var currentDataset int
+		nodeName := node.Name
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				return expectedWorkers, err
+				e.Log.Error(err, "Fail to get node","nodename",nodeName)
+				return err
+			}
+
+			toUpdate := node.DeepCopy()
+			for _, label := range labelNames {
+				delete(toUpdate.Labels, label)
+			}
+
+			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
+			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+				delete(toUpdate.Labels, labelExclusiveName)
+				labelNames = append(labelNames, labelExclusiveName)
+			}
+
+			if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
+				currentDataset, err = strconv.Atoi(val)
+				if err != nil {
+					e.Log.Error(err, "The dataset number format error")
+					return err
+				}
+				if currentDataset < 2 {
+					delete(toUpdate.Labels, labelDatasetNum)
+					labelNames = append(labelNames, labelDatasetNum)
+				} else {
+					toUpdate.Labels[labelDatasetNum] = strconv.Itoa(currentDataset - 1)
+				}
+			}
+
+			err = e.Client.Update(context.TODO(), toUpdate)
+			if err != nil {
+				return err
 			}
 			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
+			return nil
+		})
+
+		if err != nil {
+			return currentWorkers, err
 		}
 
 		currentWorkers--

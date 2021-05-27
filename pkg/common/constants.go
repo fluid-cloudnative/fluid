@@ -22,6 +22,8 @@ const (
 	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "s-"
 	// The dataset annotation
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
+	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 )
 
 //Reason for Fluid events

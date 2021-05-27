@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"strconv"
 	"strings"
 	"time"
 
@@ -135,6 +136,9 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		// exclusiveLabel is the label key indicates the node is exclusively assigned
 		// e.g. fluid_exclusive=default_hbase
 		exclusiveLabel string
+
+		// datasetLabel indicates the number of the dataset in specific node
+		datasetLabel = runtimeInfo.GetDatasetNumLabelname()
 	)
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
@@ -167,6 +171,17 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			toUpdate.Labels[exclusiveLabel] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
 			updatedLabels = append(updatedLabels, exclusiveLabel)
 		}
+
+		if currentDatasetNum, ok := toUpdate.Labels[datasetLabel]; ok {
+			currentData, err := strconv.Atoi(currentDatasetNum)
+			if err != nil {
+				return err
+			}
+			toUpdate.Labels[datasetLabel] = strconv.Itoa(currentData + 1)
+		} else {
+			toUpdate.Labels[datasetLabel] = "1"
+		}
+		updatedLabels = append(updatedLabels, datasetLabel)
 
 		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &updatedLabels)
 

@@ -82,3 +82,7 @@ func (info *RuntimeInfo) GetRuntimeLabelname() string {
 
 	return prefix + info.runtimeType + "-" + info.namespace + "-" + info.name
 }
+
+func (info *RuntimeInfo) GetDatasetNumLabelname() string {
+	return common.LabelAnnotationDatasetNum
+}
