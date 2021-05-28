@@ -20,7 +20,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,22 +41,6 @@ func NewPlugin(c client.Client) *PreferNodesWithoutCache {
 		client: c,
 		name:   NAME,
 	}
-}
-
-var weightedPodAffinityTerm = corev1.WeightedPodAffinityTerm{
-	Weight: 50,
-	PodAffinityTerm: corev1.PodAffinityTerm{
-		LabelSelector: &metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{
-					Key:      "role",
-					Operator: metav1.LabelSelectorOpIn,
-					Values:   []string{"alluxio-worker", "jindofs-worker"},
-				},
-			},
-		},
-		TopologyKey: "kubernetes.io/hostname",
-	},
 }
 
 func (p *PreferNodesWithoutCache) GetName() string {
