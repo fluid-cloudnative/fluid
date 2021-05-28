@@ -258,6 +258,10 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 
 	// 1. Install the helm chart if not exists and requeue
 	err := engine.LoadData(ctx, targetDataload)
+	if err != nil {
+		log.Error(err, "engine loaddata failed")
+		return utils.RequeueIfError(err)
+	}
 
 	// 2. Check running status of the DataLoad job
 	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
