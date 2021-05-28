@@ -42,11 +42,14 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
-	// LoadData loads the data and returns DataLoad job status
+	// LoadData generate dataload values and install helm chart
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error)
 
-	// Check LoadData Ready
-	Ready(targetDataload datav1alpha1.DataLoad) (ready bool)
+	// Check if runtime is ready
+	CheckRuntimeReady() (ready bool)
+
+	// Check existence of path
+	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 }
 
 // The real engine should implement
@@ -101,8 +104,11 @@ type Implement interface {
 	// CreateDataLoadJob creates the job to load data
 	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
 
-	// Ready checks if the runtime is ready
-	CheckDataloadReady(targetDataload datav1alpha1.DataLoad) (ready bool)
+	// checks if the runtime is ready
+	CheckRuntimeReady() (ready bool)
+
+	// Check existence Of targetDataload path
+	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

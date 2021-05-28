@@ -126,6 +126,28 @@ type MockImplement struct {
 	recorder *MockImplementMockRecorder
 }
 
+func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (m *MockImplement) CheckRuntimeReady() (ready bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckRuntimeReady")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+func (m *MockImplement) CheckExistenceOfPath(targetDataload v1alpha1.DataLoad) (ready bool, err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckExistenceOfPath", targetDataload)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
 // MockImplementMockRecorder is the mock recorder for MockImplement
 type MockImplementMockRecorder struct {
 	mock *MockImplement

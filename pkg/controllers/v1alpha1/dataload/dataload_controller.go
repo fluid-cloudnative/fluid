@@ -125,6 +125,19 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx.RuntimeType = boundedRuntime.Type
 
 	switch ctx.RuntimeType {
+	case common.ALLUXIO_RUNTIME:
+		runtime, err := utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		if err != nil {
+			if utils.IgnoreNotFound(err) == nil {
+				ctx.Log.V(1).Info("The runtime is not found", "runtime", ctx.NamespacedName)
+				return ctrl.Result{}, nil
+			} else {
+				ctx.Log.Error(err, "Failed to get the ddc runtime")
+				return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
+			}
+		}
+		ctx.Runtime = runtime
+		ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
 	case common.JINDO_RUNTIME:
 		runtime, err := utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 		if err != nil {
@@ -146,16 +159,17 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			"Bounded accelerate runtime not supported")
 	}
 
-	// 4. add finalizer and requeue
+	// 5. add finalizer and requeue
 	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
 		return r.addFinalierAndRequeue(ctx, targetDataload)
 	}
 
-	// 5. add owner and requeue
+	// 6. add owner and requeue
 	if !utils.ContainsOwners(targetDataload.GetOwnerReferences(), targetDataset) {
 		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
 	}
 
+	// 7. create or get engine
 	engine, err := r.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process DataLoad error %v", err)

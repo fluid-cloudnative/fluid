@@ -38,12 +38,23 @@ rules:
       - datasets/status
       - alluxioruntimes
       - alluxioruntimes/status
+      - jindoruntimes
+      - jindoruntimes/status
     verbs:
       - '*'
   - apiGroups:
       - ""
     resources:
       - events
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - statefulsets
+      - daemonsets/status
+      - statefulsets/status
     verbs:
       - '*'
 ---

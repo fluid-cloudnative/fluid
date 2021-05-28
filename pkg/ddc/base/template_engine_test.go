@@ -15,7 +15,17 @@ limitations under the License.
 
 package base_test
 
-/*var _ = Describe("TemplateEngine", func() {
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var _ = Describe("TemplateEngine", func() {
 	var fakeCtx = runtime.ReconcileRequestContext{
 		Log:           log.NullLogger{},
 		RuntimeType:   "test-runtime-type",
@@ -113,4 +123,4 @@ package base_test
 			Expect(t.Shutdown()).To(BeNil())
 		})
 	})
-})*/
+})

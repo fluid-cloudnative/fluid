@@ -17,7 +17,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-// Load the data and return DataLoad job status
 func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	if err = t.Implement.CreateDataLoadJob(ctx, targetDataload); err != nil {
 		t.Log.Error(err, "Failed to create the DataLoad job.")
@@ -26,7 +25,12 @@ func (t *TemplateEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDa
 	return err
 }
 
-func (t *TemplateEngine) Ready(targetDataload datav1alpha1.DataLoad) (ready bool) {
-	ready = t.Implement.CheckDataloadReady(targetDataload)
+func (t *TemplateEngine) CheckRuntimeReady() (ready bool) {
+	ready = t.Implement.CheckRuntimeReady()
 	return ready
+}
+
+func (t *TemplateEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
+	notExist, err = t.Implement.CheckExistenceOfPath(targetDataload)
+	return notExist, err
 }

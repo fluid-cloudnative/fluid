@@ -2,24 +2,18 @@ package dataload
 
 import (
 	"context"
-	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"io/ioutil"
-	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -153,7 +147,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 		return utils.NoRequeue()
 	}
 
-	// 3. Check existence of the target dataset
+	// 2. Check existence of the target dataset
 	targetDataset, err := utils.GetDataset(r.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
@@ -170,17 +164,6 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	}
 	log.V(1).Info("get target dataset", "targetDataset", targetDataset)
 
-	// 2. Check if the target dataset has synced metadata
-	//if targetDataset.Status.UfsTotal == "" || targetDataset.Status.UfsTotal == alluxio.METADATA_SYNC_NOT_DONE_MSG {
-	//	log.V(1).Info("Target dataset not ready", "targetDataset", ctx.DataLoad.Spec.Dataset)
-	//	r.Recorder.Eventf(&ctx.DataLoad,
-	//		v1.EventTypeNormal,
-	//		common.TargetDatasetNotReady,
-	//		"Target dataset(namespace: %s, name: %s) metadata sync not done",
-	//		targetDataset.Namespace, targetDataset.Name)
-	//	return utils.RequeueAfterInterval(20 * time.Second)
-	//}
-
 	// 3. Check if there's any Executing DataLoad jobs(conflict DataLoad)
 	conflictDataLoadRef := targetDataset.Status.DataLoadRef
 	myDataLoadRef := utils.GetDataLoadRef(targetDataload.Name, targetDataload.Namespace)
@@ -195,41 +178,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	}
 
 	// 4. Check if the bounded runtime is ready
-
-	//runtimeConditions := targetDataset.Status.Conditions
-	//ready := len(runtimeConditions) != 0 && runtimeConditions[len(runtimeConditions)-1].Status == v1.ConditionTrue
-
-	/*var ready bool
-	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
-	if index == -1 {
-		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
-		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
-			common.RuntimeNotReady,
-			"Bounded accelerate runtime not ready")
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}
-	switch boundedRuntime.Type {
-	case common.ALLUXIO_RUNTIME:
-		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
-		containerName := "alluxio-master"
-		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-		ready = fileUtils.Ready()
-	case common.JINDO_RUNTIME:
-		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
-		containerName := "jindofs-master"
-		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-		ready = fileUtils.Ready()
-	default:
-		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
-		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
-			common.RuntimeNotReady,
-			"Bounded accelerate runtime not supported")
-	}*/
-
-	ready := engine.Ready(targetDataload)
-
+	ready := engine.CheckRuntimeReady()
 	if !ready {
 		log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
 		r.Recorder.Eventf(&targetDataload,
@@ -240,43 +189,11 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	}
 
 	// 5. Check existence of the targetPath in alluxio
-	/*var notExisted bool
-	switch boundedRuntime.Type {
-	case common.ALLUXIO_RUNTIME:
-		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
-		containerName := "alluxio-master"
-		fileUtils := alluxioOperations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-		for _, target := range ctx.DataLoad.Spec.Target {
-			isExist, err := fileUtils.IsExist(target.Path)
-			if err != nil {
-				return utils.RequeueAfterInterval(20 * time.Second)
-			}
-			if !isExist {
-				notExisted = true
-			}
-		}
-	case common.JINDO_RUNTIME:
-		podName := fmt.Sprintf("%s-jindofs-master-0", targetDataset.Name)
-		containerName := "jindofs-master"
-		fileUtils := jindoOperations.NewJindoFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
-		for _, target := range ctx.DataLoad.Spec.Target {
-			isExist, err := fileUtils.IsExist(target.Path)
-			if err != nil {
-				return utils.RequeueAfterInterval(20 * time.Second)
-			}
-			if !isExist {
-				notExisted = true
-			}
-		}
-	default:
-		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
-		r.Recorder.Eventf(&ctx.DataLoad,
-			v1.EventTypeNormal,
-			common.RuntimeNotReady,
-			"Bounded accelerate runtime not supported")
-	}*/
-
-	if !ready {
+	notExisted, err := engine.CheckExistenceOfPath(targetDataload)
+	if err != nil {
+		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+	if notExisted {
 		r.Recorder.Eventf(&targetDataload,
 			v1.EventTypeWarning,
 			common.TargetDatasetPathNotFound,
@@ -339,64 +256,12 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 	engine base.Engine) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecutingDataLoad")
 
-	// load data and get the job status
+	// 1. Install the helm chart if not exists and requeue
 	err := engine.LoadData(ctx, targetDataload)
 
-	// 1. Check if the helm release already exists
-	releaseName := utils.GetDataLoadReleaseName(ctx.Name)
+	// 2. Check running status of the DataLoad job
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
 	jobName := utils.GetDataLoadJobName(releaseName)
-	/*existed, err := helm.CheckRelease(releaseName, ctx.Namespace)
-	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", ctx.Namespace)
-		return utils.RequeueIfError(err)
-	}
-
-	// 2. install the helm chart if not exists and requeue
-	if !existed {
-		log.Info("DataLoad job helm chart not installed yet, will install")
-
-		targetDataset, err := utils.GetDataset(r.Client, ctx.DataLoad.Spec.Dataset.Name, ctx.DataLoad.Spec.Dataset.Namespace)
-		if err != nil {
-			log.Error(err, "targetDataset not exists", "targetDataset", releaseName, "namespace", ctx.DataLoad.Spec.Dataset.Name)
-		}
-
-		_, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
-
-		chartName := ""
-		valueFileName := ""
-		switch boundedRuntime.Type {
-		case common.ALLUXIO_RUNTIME:
-			valueFileName, err = r.generateDataLoadValueFile(ctx.DataLoad)
-			if err != nil {
-				log.Error(err, "failed to generate dataload chart's value file")
-				return utils.RequeueIfError(err)
-			}
-			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.ALLUXIO_RUNTIME
-		case common.JINDO_RUNTIME:
-			valueFileName, err = r.generateJindoDataLoadValueFile(ctx.DataLoad)
-			if err != nil {
-				log.Error(err, "failed to generate dataload chart's value file")
-				return utils.RequeueIfError(err)
-			}
-			chartName = utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
-		default:
-			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
-			r.Recorder.Eventf(&ctx.DataLoad,
-				v1.EventTypeNormal,
-				common.RuntimeNotReady,
-				"Bounded accelerate runtime not supported")
-		}
-		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
-		if err != nil {
-			log.Error(err, "failed to install dataload chart")
-			return utils.RequeueIfError(err)
-		}
-		log.Info("DataLoad job helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
-		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}*/
-
-	// 3. Check running status of the DataLoad job
 	log.V(1).Info("DataLoad chart already existed, check its running status")
 	job, err := utils.GetDataLoadJob(r.Client, jobName, ctx.Namespace)
 	if err != nil {
@@ -419,7 +284,7 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 			job.Status.Conditions[0].Type == batchv1.JobComplete {
 			// job either failed or complete, update DataLoad's phase status
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-				dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+				dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
 				if err != nil {
 					return err
 				}
@@ -493,93 +358,6 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx cruntime.Recon
 	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
 	return utils.NoRequeue()
-}
-
-// generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
-// marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (r *DataLoadReconcilerImplement) generateDataLoadValueFile(dataload v1alpha1.DataLoad) (valueFileName string, err error) {
-	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
-	if err != nil {
-		return "", err
-	}
-
-	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
-
-	if len(imageName) == 0 {
-		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
-		if len(imageName) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
-			if len(defaultImageInfo) < 1 {
-				panic("invalid default dataload image!")
-			} else {
-				imageName = defaultImageInfo[0]
-			}
-		}
-	}
-
-	if len(imageTag) == 0 {
-		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
-		if len(imageTag) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
-			if len(defaultImageInfo) < 2 {
-				panic("invalid default dataload image!")
-			} else {
-				imageTag = defaultImageInfo[1]
-			}
-		}
-	}
-	image := fmt.Sprintf("%s:%s", imageName, imageTag)
-
-	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         image,
-	}
-
-	targetPaths := []cdataload.TargetPath{}
-	for _, target := range dataload.Spec.Target {
-		fluidNative := isTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
-		targetPaths = append(targetPaths, cdataload.TargetPath{
-			Path:        target.Path,
-			Replicas:    target.Replicas,
-			FluidNative: fluidNative,
-		})
-	}
-	dataloadInfo.TargetPaths = targetPaths
-	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
-	data, err := yaml.Marshal(dataLoadValue)
-	if err != nil {
-		return
-	}
-
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
-	if err != nil {
-		return
-	}
-	err = ioutil.WriteFile(valueFile.Name(), data, 0400)
-	if err != nil {
-		return
-	}
-	return valueFile.Name(), nil
-}
-
-// isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
-// We check this for the reason that native mount points need extra metadata sync alluxioOperations.
-func isTargetPathUnderFluidNativeMounts(targetPath string, dataset v1alpha1.Dataset) bool {
-	for _, mount := range dataset.Spec.Mounts {
-		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
-		if mount.Path != "" {
-			mountPointOnDDCEngine = mount.Path
-		}
-
-		//todo(xuzhihao): HasPrefix is not enough.
-		if strings.HasPrefix(targetPath, mountPointOnDDCEngine) &&
-			(strings.HasPrefix(mount.MountPoint, common.PathScheme.String()) || strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String())) {
-			return true
-		}
-	}
-	return false
 }
 
 // releaseLockOnTargetDataset releases lock on target dataset if the lock currently belongs to reconciling DataLoad.

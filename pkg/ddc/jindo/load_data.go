@@ -154,7 +154,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	return valueFile.Name(), nil
 }
 
-func (e *JindoEngine) CheckDataloadReady(targetDataload datav1alpha1.DataLoad) (ready bool) {
+func (e *JindoEngine) CheckRuntimeReady() (ready bool) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	ready = fileUtils.Ready()
@@ -162,16 +162,20 @@ func (e *JindoEngine) CheckDataloadReady(targetDataload datav1alpha1.DataLoad) (
 		e.Log.Info("runtime not ready", "runtime", ready)
 		return false
 	}
+	return true
+}
+
+func (e *JindoEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	for _, target := range targetDataload.Spec.Target {
 		isExist, err := fileUtils.IsExist(target.Path)
 		if err != nil {
-			e.Log.Info("path doesn't exist", "targetPath", target.Path)
-			return false
+			return true, err
 		}
 		if !isExist {
-			e.Log.Info("path doesn't exist", "targetPath", target.Path)
-			return false
+			return true, nil
 		}
 	}
-	return true
+	return false, nil
 }
