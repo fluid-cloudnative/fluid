@@ -39,5 +39,4 @@ func InjectPreferredSchedulingTerms(preferredSchedulingTerms []corev1.PreferredS
 			},
 		}
 	}
-	return
 }
