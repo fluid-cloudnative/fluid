@@ -114,19 +114,12 @@ $ kubectl create -f nginx.yaml
 ```yaml
 spec:
   affinity:
-    nodeAffinity: {}
-    podAffinity: {}
-    podAntiAffinity:
+    nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: role
-                  operator: In
-                  values:
-                    - alluxio-worker
-                    - jindofs-worker
-            topologyKey: kubernetes.io/hostname
+        - preference:
+            matchExpressions:
+              - key: fluid.io/dataset-num
+                operator: DoesNotExist
           weight: 50
 ```
 正如亲和性所影响的，Pod调度到了没有缓存的cn-beijing.192.168.1.147节点。
@@ -166,20 +159,15 @@ $ kubectl create -f nginx.yaml
 ```yaml
 spec:
   affinity:
-    nodeAffinity: {}
-    podAffinity: {}
-    podAntiAffinity:
+    nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
+        - preference:
             matchExpressions:
-            - key: role
-              operator: In
-              values:
-              - alluxio-worker
-              - jindofs-worker
-          topologyKey: kubernetes.io/hostname
-        weight: 50
+              - key: fluid.io/s-default-hbase
+                operator: In
+                values:
+                  - "true"
+          weight: 50
 ```
 正如亲和性所影响的，Pod调度到了有缓存的cn-beijing.192.168.1.146节点。
 ```shell
