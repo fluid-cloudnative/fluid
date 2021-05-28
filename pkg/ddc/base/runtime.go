@@ -42,17 +42,17 @@ type RuntimeInfoInterface interface {
 
 	// GetStoragetLabelname(read common.ReadType, storage common.StorageType) string
 
-	GetLabelnameForMemory() string
+	GetLabelNameForMemory() string
 
-	GetLabelnameForDisk() string
+	GetLabelNameForDisk() string
 
-	GetLabelnameForTotal() string
+	GetLabelNameForTotal() string
 
-	GetCommonLabelname() string
+	GetCommonLabelName() string
 
-	GetRuntimeLabelname() string
+	GetRuntimeLabelName() string
 
-	GetDatasetNumLabelname() string
+	GetDatasetNumLabelName() string
 
 	GetPersistentVolumeName() string
 

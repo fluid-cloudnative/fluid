@@ -49,7 +49,7 @@ func init() {
 func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assigned bool) {
 	// label := e.getCommonLabelname()
 
-	label := runtimeInfo.GetCommonLabelname()
+	label := runtimeInfo.GetCommonLabelName()
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
 	if len(node.Labels) > 0 {
@@ -127,18 +127,18 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	var (
 		// runtimeLabel indicates the specific runtime pod is on the node
 		// e.g. fluid.io/s-alluxio-default-hbase=true
-		runtimeLabel = runtimeInfo.GetRuntimeLabelname()
+		runtimeLabel = runtimeInfo.GetRuntimeLabelName()
 
 		// commonLabel indicates that any of fluid supported runtime is on the node
 		// e.g. fluid.io/s-default-hbase=true
-		commonLabel = runtimeInfo.GetCommonLabelname()
+		commonLabel = runtimeInfo.GetCommonLabelName()
 
 		// exclusiveLabel is the label key indicates the node is exclusively assigned
 		// e.g. fluid_exclusive=default_hbase
 		exclusiveLabel string
 
 		// datasetLabel indicates the number of the dataset in specific node
-		datasetLabel = runtimeInfo.GetDatasetNumLabelname()
+		datasetLabel = runtimeInfo.GetDatasetNumLabelName()
 	)
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
@@ -229,15 +229,15 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 	var (
 		// memCapacityLabel indicates in-memory cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
-		memCapacityLabel = runtimeInfo.GetLabelnameForMemory()
+		memCapacityLabel = runtimeInfo.GetLabelNameForMemory()
 
 		// diskCapacityLabel indicates on-disk cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-d-default-hbase=2GiB
-		diskCapacityLabel = runtimeInfo.GetLabelnameForDisk()
+		diskCapacityLabel = runtimeInfo.GetLabelNameForDisk()
 
 		// totalCapacityLabel indicates total cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-t-default-hbase=3GiB
-		totalCapacityLabel = runtimeInfo.GetLabelnameForTotal()
+		totalCapacityLabel = runtimeInfo.GetLabelNameForTotal()
 	)
 
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)

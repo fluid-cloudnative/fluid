@@ -118,12 +118,12 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 	var (
 		nodeList           = &corev1.NodeList{}
 		labelExclusiveName = utils.GetExclusiveKey()
-		labelName          = runtimeInfo.GetRuntimeLabelname()
-		labelCommonName    = runtimeInfo.GetCommonLabelname()
-		labelMemoryName    = runtimeInfo.GetLabelnameForMemory()
-		labelDiskName      = runtimeInfo.GetLabelnameForDisk()
-		labelTotalname     = runtimeInfo.GetLabelnameForTotal()
-		labelDatasetNum    = runtimeInfo.GetDatasetNumLabelname()
+		labelName          = runtimeInfo.GetRuntimeLabelName()
+		labelCommonName    = runtimeInfo.GetCommonLabelName()
+		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
+		labelTotalname     = runtimeInfo.GetLabelNameForTotal()
+	    labelDatasetNum    = runtimeInfo.GetDatasetNumLabelName()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}

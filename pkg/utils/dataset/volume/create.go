@@ -54,7 +54,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				Name:      pvName,
 				Namespace: runtime.GetNamespace(),
 				Labels: map[string]string{
-					runtime.GetCommonLabelname(): "true",
+					runtime.GetCommonLabelName(): "true",
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},
@@ -80,7 +80,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				// 			{
 				// 				MatchExpressions: []v1.NodeSelectorRequirement{
 				// 					{
-				// 						Key:      runtime.GetCommonLabelname(),
+				// 						Key:      runtime.GetCommonLabelName(),
 				// 						Operator: v1.NodeSelectorOpIn,
 				// 						Values:   []string{"true"},
 				// 					},
@@ -122,7 +122,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 						{
 							MatchExpressions: []v1.NodeSelectorRequirement{
 								{
-									Key:      runtime.GetCommonLabelname(),
+									Key:      runtime.GetCommonLabelName(),
 									Operator: v1.NodeSelectorOpIn,
 									Values:   []string{"true"},
 								},
@@ -164,14 +164,14 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				Name:      runtime.GetName(),
 				Namespace: runtime.GetNamespace(),
 				Labels: map[string]string{
-					runtime.GetCommonLabelname(): "true",
+					runtime.GetCommonLabelName(): "true",
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},
 			Spec: v1.PersistentVolumeClaimSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						runtime.GetCommonLabelname(): "true",
+						runtime.GetCommonLabelName(): "true",
 					},
 				},
 				StorageClassName: &common.FLUID_STORAGECLASS,
