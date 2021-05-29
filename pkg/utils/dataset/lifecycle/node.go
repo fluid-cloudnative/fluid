@@ -258,3 +258,22 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 	toUpdate.Labels[totalCapacityLabel] = totalValue
 	*updatedLabels = append(*updatedLabels, totalCapacityLabel)
 }
+
+// DatasetNumUpdateOrDelete deletes the datasetNum label or updates the number of the dataset in the specific node.
+func DatasetNumUpdateOrDelete(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface) (isDeleted bool, err error) {
+	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelname()
+	if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
+		currentDataset, err := strconv.Atoi(val)
+		if err != nil {
+			rootLog.Error(err, "The dataset number format error")
+			return false, err
+		}
+		if currentDataset < 2 {
+			delete(toUpdate.Labels, labelDatasetNum)
+			isDeleted = true
+		} else {
+			toUpdate.Labels[labelDatasetNum] = strconv.Itoa(currentDataset - 1)
+		}
+	}
+	return isDeleted, err
+}
