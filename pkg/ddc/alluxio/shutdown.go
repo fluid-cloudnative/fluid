@@ -286,7 +286,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 				labelNames = append(labelNames, labelExclusiveName)
 			}
 
-			isDeleted, err := lifecycle.DatasetNumUpdateOrDelete(toUpdate, runtimeInfo)
+			isDeleted, err := lifecycle.UpdateOrDeleteDatasetNum(toUpdate, runtimeInfo)
 			if err != nil {
 				return err
 			}
