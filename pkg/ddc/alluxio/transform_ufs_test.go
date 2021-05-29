@@ -36,7 +36,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	}{
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
@@ -66,7 +66,7 @@ func TestTransformDatasetToPVC(t *testing.T) {
 	}{
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "pvc://test2",
 					Name:       "test2",
 				}},
@@ -97,7 +97,7 @@ func TestTransformDatasetWithAffinity(t *testing.T) {
 	}{
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},

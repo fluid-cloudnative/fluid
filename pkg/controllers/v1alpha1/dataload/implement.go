@@ -381,7 +381,7 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx reconcileRe
 			log.Error(err, "failed to install dataload chart")
 			return utils.RequeueIfError(err)
 		}
-		log.Info("DataLoad job helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
+		log.Info("DataLoad job helm chart successfully installed", "namespace", ctx.Namespace, "releaseName", releaseName)
 		r.Recorder.Eventf(&ctx.DataLoad, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}

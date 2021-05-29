@@ -259,7 +259,7 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 			log.Error(err, "failed to install databackup chart")
 			return utils.RequeueIfError(err)
 		}
-		log.Info("DataBackup helm chart successfullly installed", "namespace", ctx.Namespace, "releaseName", releaseName)
+		log.Info("DataBackup helm chart successfully installed", "namespace", ctx.Namespace, "releaseName", releaseName)
 
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}

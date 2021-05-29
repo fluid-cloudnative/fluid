@@ -42,7 +42,7 @@ func GetImageRepoFromEnv(envName string) (image string) {
 	return
 }
 
-// GetImageTagFromEnv parse the image tag from environment varaibles, if it's not existed, return the default value
+// GetImageTagFromEnv parse the image tag from environment variables, if it's not existed, return the default value
 func GetImageTagFromEnv(envName string) (tag string) {
 	if value, existed := os.LookupEnv(envName); existed {
 		if matched := ImageTagEnvRegex.MatchString(value); matched {
