@@ -1,0 +1,73 @@
+package kubeclient
+
+import (
+	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+func TestIsPersistentVolumeExist(t *testing.T) {
+
+	testPVCInputs := []*v1.PersistentVolume{&v1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid"},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, &v1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       v1.PersistentVolumeSpec{},
+	}}
+
+	testPVCs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		testPVCs = append(testPVCs, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+
+	type args struct {
+		name        string
+		annotations map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "volume doesn't exist",
+			args: args{
+				name:        "notExist",
+				annotations: map[string]string{},
+			},
+			want: false,
+		},
+		{
+			name: "volume is not created by fluid",
+			args: args{
+				name:        "notCreatedByFluid",
+				annotations: map[string]string{},
+			},
+			want: false,
+		},
+		{
+			name: "volume is created by fluid",
+			args: args{
+				name:        "createdByFluid",
+				annotations: common.ExpectedFluidAnnotations,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got, _ := IsPersistentVolumeExist(client, tt.args.name, tt.args.annotations); got != tt.want {
+				t.Errorf("testcase %v IsPersistentVolumeExist() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+
+}
