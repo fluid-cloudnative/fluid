@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// Use fake client because of it will be maintained in the long term
+// due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 func TestIsPersistentVolumeExist(t *testing.T) {
 
 	testPVCInputs := []*v1.PersistentVolume{&v1.PersistentVolume{
