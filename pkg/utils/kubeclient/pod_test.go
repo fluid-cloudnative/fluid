@@ -1,13 +1,24 @@
 package kubeclient
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var (
+	testScheme *runtime.Scheme
+)
+
+func init() {
+	testScheme = runtime.NewScheme()
+	_ = v1.AddToScheme(testScheme)
+}
 
 func TestGetPVCNamesFromPod(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
