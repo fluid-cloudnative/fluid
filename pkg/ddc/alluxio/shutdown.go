@@ -272,7 +272,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				e.Log.Error(err, "Fail to get node","nodename",nodeName)
+				e.Log.Error(err, "Fail to get node", "nodename", nodeName)
 				return err
 			}
 

@@ -11,7 +11,7 @@ matrix:
         - CI_TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic'
       sudo: true
       before_script:
-        - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+        - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
         - arch=$(go env GOARCH)
         - curl -L https://go.kubebuilder.io/dl/2.3.1/linux/${arch} | tar -xz -C /tmp/
         - sudo mv /tmp/kubebuilder_2.3.1_linux_${arch} /usr/local/kubebuilder
