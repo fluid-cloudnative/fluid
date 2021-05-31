@@ -41,7 +41,7 @@ func TestTransformWorker(t *testing.T) {
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Secret: "secret",
 				Tieredstore: datav1alpha1.Tieredstore{
-					Levels: []datav1alpha1.Level{datav1alpha1.Level{
+					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
 						Quota:      &result,
 						High:       "0.8",
@@ -51,7 +51,7 @@ func TestTransformWorker(t *testing.T) {
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},

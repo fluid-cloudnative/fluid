@@ -62,7 +62,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 	return ports, nil
 }
 
-// parsePortsFromConfigMap extracts port usage infomation given a configMap
+// parsePortsFromConfigMap extracts port usage information given a configMap
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	var value Alluxio
 	if v, ok := configMap.Data["data"]; ok {

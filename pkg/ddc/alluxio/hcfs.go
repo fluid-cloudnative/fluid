@@ -33,7 +33,7 @@ func (e *AlluxioEngine) GetHCFSStatus() (status *datav1alpha1.HCFSStatus, err er
 
 	version, err := e.queryCompatibleUFSVersion()
 	if err != nil {
-		e.Log.Error(err, "Failed to get Compatiable Endpoint")
+		e.Log.Error(err, "Failed to get Compatible Endpoint")
 		return status, err
 	}
 

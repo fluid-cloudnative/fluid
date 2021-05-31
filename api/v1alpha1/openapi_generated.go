@@ -527,7 +527,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 					},
 					"disablePrometheus": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Disable monitoring for Alluxio Runtime Promethous is enabled by default",
+							Description: "Disable monitoring for Alluxio Runtime Prometheus is enabled by default",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

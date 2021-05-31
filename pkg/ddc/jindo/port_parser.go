@@ -52,7 +52,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 	return ports, nil
 }
 
-// parsePortsFromConfigMap extracts port usage infomation given a configMap
+// parsePortsFromConfigMap extracts port usage information given a configMap
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	if conf, ok := configMap.Data["bigboot.cfg"]; ok {
 		cfgConfs := strings.Split(conf, "\n")
