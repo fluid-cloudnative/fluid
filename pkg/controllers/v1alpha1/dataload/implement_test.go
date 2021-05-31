@@ -2,6 +2,7 @@ package dataload
 
 import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
 )
 
@@ -81,7 +82,7 @@ func TestIsTargetPathUnderFluidNativeMounts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isTargetPathUnderFluidNativeMounts(tt.args.targetPath, tt.args.dataset); got != tt.want {
+			if got := utils.IsTargetPathUnderFluidNativeMounts(tt.args.targetPath, tt.args.dataset); got != tt.want {
 				t.Errorf("isTargetPathUnderFluidNativeMounts() = %v, want %v", got, tt.want)
 			}
 		})
