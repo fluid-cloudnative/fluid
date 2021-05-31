@@ -115,7 +115,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				}
 			}
 		} else {
-			log.Info("Disbale global mode for fuse in volume")
+			log.Info("Disable global mode for fuse in volume")
 			pv.Spec.NodeAffinity = &v1.VolumeNodeAffinity{
 				Required: &v1.NodeSelector{
 					NodeSelectorTerms: []v1.NodeSelectorTerm{

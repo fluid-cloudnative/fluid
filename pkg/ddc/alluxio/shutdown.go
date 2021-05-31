@@ -21,12 +21,12 @@ import (
 
 	"k8s.io/client-go/util/retry"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
@@ -73,7 +73,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 
 // destroyMaster Destroies the master
 func (e *AlluxioEngine) destroyMaster() (err error) {
-	found := false
+	var found bool
 	found, err = helm.CheckRelease(e.name, e.namespace)
 	if err != nil {
 		return err
@@ -267,12 +267,11 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 			continue
 		}
 
-		var currentDataset int
 		nodeName := node.Name
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				e.Log.Error(err, "Fail to get node","nodename",nodeName)
+				e.Log.Error(err, "Fail to get node", "nodename", nodeName)
 				return err
 			}
 
@@ -287,18 +286,12 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 				labelNames = append(labelNames, labelExclusiveName)
 			}
 
-			if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
-				currentDataset, err = strconv.Atoi(val)
-				if err != nil {
-					e.Log.Error(err, "The dataset number format error")
-					return err
-				}
-				if currentDataset < 2 {
-					delete(toUpdate.Labels, labelDatasetNum)
-					labelNames = append(labelNames, labelDatasetNum)
-				} else {
-					toUpdate.Labels[labelDatasetNum] = strconv.Itoa(currentDataset - 1)
-				}
+			isDeleted, err := lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo)
+			if err != nil {
+				return err
+			}
+			if isDeleted {
+				labelNames = append(labelNames, labelDatasetNum)
 			}
 
 			err = e.Client.Update(context.TODO(), toUpdate)

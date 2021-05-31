@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -43,7 +45,7 @@ func (e *JindoEngine) Shutdown() (err error) {
 
 // destroyMaster Destroies the master
 func (e *JindoEngine) destroyMaster() (err error) {
-	found := false
+	var found bool
 	found, err = helm.CheckRelease(e.name, e.namespace)
 	if err != nil {
 		return err
@@ -121,6 +123,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		labelMemoryName    = runtimeInfo.GetLabelnameForMemory()
 		labelDiskName      = runtimeInfo.GetLabelnameForDisk()
 		labelTotalname     = runtimeInfo.GetLabelnameForTotal()
+		labelDatasetNum    = runtimeInfo.GetDatasetNumLabelname()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
@@ -169,30 +172,50 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		if expectedWorkers == currentWorkers {
 			break
 		}
-		// nodes = append(nodes, &node)
-		toUpdate := node.DeepCopy()
-		if len(toUpdate.Labels) == 0 {
+
+		if len(node.Labels) == 0 {
 			continue
 		}
 
-		for _, label := range labelNames {
-			delete(toUpdate.Labels, label)
-		}
-
-		exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
-		if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-			delete(toUpdate.Labels, labelExclusiveName)
-			labelNames = append(labelNames, labelExclusiveName)
-		}
-
-		if len(toUpdate.Labels) < len(node.Labels) {
-			err := e.Client.Update(context.TODO(), toUpdate)
+		nodeName := node.Name
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				return expectedWorkers, err
+				e.Log.Error(err, "Fail to get node", "nodename", nodeName)
+				return err
+			}
+
+			toUpdate := node.DeepCopy()
+			for _, label := range labelNames {
+				delete(toUpdate.Labels, label)
+			}
+
+			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
+			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+				delete(toUpdate.Labels, labelExclusiveName)
+				labelNames = append(labelNames, labelExclusiveName)
+			}
+
+			isDeleted, err := lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo)
+			if err != nil {
+				return err
+			}
+			if isDeleted {
+				labelNames = append(labelNames, labelDatasetNum)
+			}
+
+			err = e.Client.Update(context.TODO(), toUpdate)
+			if err != nil {
+				return err
 			}
 			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
-		}
+			return nil
 
+		})
+
+		if err != nil {
+			return currentWorkers, err
+		}
 		currentWorkers--
 	}
 

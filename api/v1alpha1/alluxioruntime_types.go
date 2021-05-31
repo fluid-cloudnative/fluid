@@ -228,7 +228,7 @@ type AlluxioRuntimeSpec struct {
 	RunAs *User `json:"runAs,omitempty"`
 
 	// Disable monitoring for Alluxio Runtime
-	// Promethous is enabled by default
+	// Prometheus is enabled by default
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
 

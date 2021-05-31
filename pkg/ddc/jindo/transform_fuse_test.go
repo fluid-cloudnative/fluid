@@ -33,7 +33,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			Spec: datav1alpha1.JindoRuntimeSpec{},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
@@ -64,7 +64,7 @@ func TestTransformRunAsUser(t *testing.T) {
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
