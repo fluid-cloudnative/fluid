@@ -196,7 +196,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 				labelNames = append(labelNames, labelExclusiveName)
 			}
 
-			isDeleted, err := lifecycle.UpdateOrDeleteDatasetNum(toUpdate, runtimeInfo)
+			isDeleted, err := lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo)
 			if err != nil {
 				return err
 			}

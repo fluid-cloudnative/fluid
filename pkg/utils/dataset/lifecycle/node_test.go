@@ -48,7 +48,7 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		if result, _ := UpdateOrDeleteDatasetNum(test.node, &test.runtimeInfo); result != test.expectedResult {
+		if result, _ := DecreaseDatasetNum(test.node, &test.runtimeInfo); result != test.expectedResult {
 			t.Errorf("expected %v, got %v", test.expectedResult, result)
 		}
 	}
