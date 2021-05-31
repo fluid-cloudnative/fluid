@@ -123,7 +123,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
 		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
 		labelTotalname     = runtimeInfo.GetLabelNameForTotal()
-	    labelDatasetNum    = runtimeInfo.GetDatasetNumLabelName()
+		labelDatasetNum    = runtimeInfo.GetDatasetNumLabelName()
 	)
 
 	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}

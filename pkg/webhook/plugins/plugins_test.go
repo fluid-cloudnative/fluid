@@ -124,7 +124,7 @@ func TestPods(t *testing.T) {
 				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
 			}
 		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer + 1 {
+		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+1 {
 			t.Errorf("the plugin %v inject wrong terms when the pod has no mounted datasets", pluginName)
 		}
 
@@ -146,7 +146,7 @@ func TestPods(t *testing.T) {
 				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
 			}
 		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer + 1 {
+		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+1 {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has no mounted datasets", pluginName)
 		}
 
@@ -164,7 +164,7 @@ func TestPods(t *testing.T) {
 				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
 			}
 		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer + 2 {
+		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+2 {
 			t.Errorf("the plugin %v inject wrong terms when the pod has mounted datasets", pluginName)
 		}
 
