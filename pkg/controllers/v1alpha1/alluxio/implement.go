@@ -40,7 +40,7 @@ func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*d
 // GetOrCreateEngine gets or creates engine
 func (r *RuntimeReconciler) GetOrCreateEngine(
 	ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
-	found := false
+	var found bool
 	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

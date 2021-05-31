@@ -73,7 +73,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 
 // destroyMaster Destroies the master
 func (e *AlluxioEngine) destroyMaster() (err error) {
-	found := false
+	var found bool
 	found, err = helm.CheckRelease(e.name, e.namespace)
 	if err != nil {
 		return err
