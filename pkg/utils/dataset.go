@@ -70,7 +70,7 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 
 }
 
-// isTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
+// IsTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.
 // We check this for the reason that native mount points need extra metadata sync alluxioOperations.
 func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
