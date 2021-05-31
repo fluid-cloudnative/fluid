@@ -3,9 +3,11 @@ package dataload
 import (
 	"context"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -40,7 +42,7 @@ func NewDataLoadReconcilerImplement(client client.Client, log logr.Logger, recor
 }
 
 // ReconcileDataLoadDeletion reconciles the deletion of the DataLoad
-func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
+func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad, engines map[string]base.Engine, mutex *sync.Mutex) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDataLoadDeletion")
 
 	// 1. Delete release if exists
@@ -58,7 +60,13 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx cruntime.Rec
 		return utils.RequeueIfError(err)
 	}
 
-	// 3. remove finalizer
+	// 3. delete engine
+	mutex.Lock()
+	defer mutex.Unlock()
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	delete(engines, id)
+
+	// 4. remove finalizer
 	if utils.HasDeletionTimestamp(targetDataload.ObjectMeta) {
 		targetDataload.ObjectMeta.Finalizers = utils.RemoveString(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
 		if err := r.Update(ctx, &targetDataload); err != nil {

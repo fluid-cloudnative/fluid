@@ -89,13 +89,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	targetDataload := *dataload
 	ctx.Log.V(1).Info("DataLoad found", "detail", dataload)
 
-	// 2. Reconcile deletion of the object if necessary
-	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
-		r.RemoveEngine(ctx)
-		return r.ReconcileDataLoadDeletion(ctx, targetDataload)
-	}
-
-	// 3. get the dataset
+	// 2. get the dataset
 	targetDataset, err := utils.GetDataset(r.Client, targetDataload.Spec.Dataset.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
@@ -113,7 +107,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Namespace: targetDataset.Namespace,
 	}
 
-	//4. get the runtime
+	//3. get the runtime
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 	if index == -1 {
 		ctx.Log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
@@ -160,21 +154,26 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			"Bounded accelerate runtime not supported")
 	}
 
-	// 5. add finalizer and requeue
+	// 4. add finalizer and requeue
 	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
 		return r.addFinalierAndRequeue(ctx, targetDataload)
 	}
 
-	// 6. add owner and requeue
+	// 5. add owner and requeue
 	if !utils.ContainsOwners(targetDataload.GetOwnerReferences(), targetDataset) {
 		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
 	}
 
-	// 7. create or get engine
+	// 6. create or get engine
 	engine, err := r.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process DataLoad error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
+	}
+
+	// 7. Reconcile deletion of the object and engine if necessary
+	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
+		return r.ReconcileDataLoadDeletion(ctx, targetDataload, r.engines, r.mutex)
 	}
 
 	return r.ReconcileDataLoad(ctx, targetDataload, engine)
@@ -234,12 +233,4 @@ func (r *DataLoadReconciler) GetOrCreateEngine(
 	}
 
 	return engine, err
-}
-
-// RemoveEngine removes the engine
-func (r *DataLoadReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	id := ddc.GenerateEngineID(ctx.NamespacedName)
-	delete(r.engines, id)
 }
