@@ -29,6 +29,14 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 			runtimeInfo: base.RuntimeInfo{},
 			expectedResult: true,
 		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "test"}},
+				Spec:       v1.NodeSpec{},
+			},
+			runtimeInfo: base.RuntimeInfo{},
+			expectedResult: false,
+		},
 	}
 
 	for _, test := range testCase {
