@@ -18,7 +18,7 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo: base.RuntimeInfo{},
+			runtimeInfo:    base.RuntimeInfo{},
 			expectedResult: false,
 		},
 		{
@@ -26,7 +26,7 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo: base.RuntimeInfo{},
+			runtimeInfo:    base.RuntimeInfo{},
 			expectedResult: true,
 		},
 		{
@@ -34,7 +34,7 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "test"}},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo: base.RuntimeInfo{},
+			runtimeInfo:    base.RuntimeInfo{},
 			expectedResult: false,
 		},
 		{
@@ -42,7 +42,7 @@ func TestUpdateOrDeleteDatasetNum(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo: base.RuntimeInfo{},
+			runtimeInfo:    base.RuntimeInfo{},
 			expectedResult: false,
 		},
 	}
