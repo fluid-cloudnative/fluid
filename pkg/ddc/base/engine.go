@@ -42,6 +42,11 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
+	// Dataloader
+	Dataloader
+}
+
+type Dataloader interface {
 	// LoadData generate dataload values and install helm chart
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error)
 

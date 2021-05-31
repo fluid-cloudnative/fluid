@@ -91,6 +91,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// 2. Reconcile deletion of the object if necessary
 	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
+		r.RemoveEngine(ctx)
 		return r.ReconcileDataLoadDeletion(ctx, targetDataload)
 	}
 
@@ -129,7 +130,7 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		runtime, err := utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
-				ctx.Log.V(1).Info("The runtime is not found", "runtime", ctx.NamespacedName)
+				ctx.Log.Info("The runtime is not found", "runtime", ctx.NamespacedName)
 				return ctrl.Result{}, nil
 			} else {
 				ctx.Log.Error(err, "Failed to get the ddc runtime")
@@ -233,4 +234,12 @@ func (r *DataLoadReconciler) GetOrCreateEngine(
 	}
 
 	return engine, err
+}
+
+// RemoveEngine removes the engine
+func (r *DataLoadReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	delete(r.engines, id)
 }
