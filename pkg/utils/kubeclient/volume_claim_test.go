@@ -30,11 +30,11 @@ import (
 func TestIsPersistentVolumeClaimExist(t *testing.T) {
 
 	namespace := "default"
-	testPVCInputs := []*v1.PersistentVolumeClaim{&v1.PersistentVolumeClaim{
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid",
 			Namespace: namespace},
 		Spec: v1.PersistentVolumeClaimSpec{},
-	}, &v1.PersistentVolumeClaim{
+	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid",
 			Annotations: common.ExpectedFluidAnnotations,
 			Namespace:   namespace},

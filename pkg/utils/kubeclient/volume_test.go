@@ -29,10 +29,10 @@ import (
 // due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 func TestIsPersistentVolumeExist(t *testing.T) {
 
-	testPVInputs := []*v1.PersistentVolume{&v1.PersistentVolume{
+	testPVInputs := []*v1.PersistentVolume{{
 		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid"},
 		Spec:       v1.PersistentVolumeSpec{},
-	}, &v1.PersistentVolume{
+	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid", Annotations: common.ExpectedFluidAnnotations},
 		Spec:       v1.PersistentVolumeSpec{},
 	}}
