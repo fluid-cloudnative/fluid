@@ -74,7 +74,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			NodeSelector: e.transformMasterSelector(runtime),
 		},
 		Worker: Worker{
-			NodeSelector: e.transformNodeSelector(),
+			NodeSelector: e.transformNodeSelector(runtime),
 		},
 		Fuse: Fuse{
 			Args:     e.transformFuseArg(runtime),
@@ -326,10 +326,14 @@ func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRunti
 	return nil
 }
 
-func (e *JindoEngine) transformNodeSelector() map[string]string {
-	labelName := e.getCommonLabelname()
+func (e *JindoEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
 	properties := map[string]string{}
-	properties[labelName] = "true"
+	if runtime.Spec.Worker.NodeSelector != nil {
+		properties = runtime.Spec.Worker.NodeSelector
+	} else {
+		labelName := e.getCommonLabelname()
+		properties[labelName] = "true"
+	}
 	return properties
 }
 

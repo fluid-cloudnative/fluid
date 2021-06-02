@@ -144,3 +144,24 @@ func (a JindoFileUtils) IsExist(jindoPath string) (found bool, err error) {
 
 	return
 }
+
+// Load the metadata without timeout
+func (a JindoFileUtils) LoadMetadataWithoutTimeout(jindoPath string) (err error) {
+	var (
+		command = []string{"jindo", "jfs", "-metaSync", "-R", "jfs://jindo" + jindoPath}
+		stdout  string
+		stderr  string
+	)
+
+	start := time.Now()
+	stdout, stderr, err = a.execWithoutTimeout(command, false)
+	duration := time.Since(start)
+	a.log.Info("Async Load Metadata took times to run", "period", duration)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	} else {
+		a.log.Info("Async Load Metadata finished", "stdout", stdout)
+	}
+	return
+}
