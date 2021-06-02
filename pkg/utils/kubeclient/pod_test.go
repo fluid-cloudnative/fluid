@@ -108,9 +108,8 @@ func TestIsCompletePod(t *testing.T) {
 	}}
 
 	type args struct {
-		name        string
-		namespace   string
-		annotations map[string]string
+		name      string
+		namespace string
 	}
 	tests := []struct {
 		name string
@@ -172,7 +171,7 @@ func TestIsCompletePod(t *testing.T) {
 				Namespace: tt.args.namespace,
 				Name:      tt.args.name,
 			}
-			client.Get(context.TODO(), key, &pod)
+			_ = client.Get(context.TODO(), key, &pod)
 			// if err != nil {
 			// 	t.Errorf("testcase %v IsCompletePod() got err: %v", tt.name, err.Error())
 			// }
@@ -221,9 +220,8 @@ func TestGetPodByName(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testPods...)
 
 	type args struct {
-		name        string
-		namespace   string
-		annotations map[string]string
+		name      string
+		namespace string
 	}
 	tests := []struct {
 		name string
