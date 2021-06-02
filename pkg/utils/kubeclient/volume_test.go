@@ -29,10 +29,10 @@ import (
 // due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 func TestIsPersistentVolumeExist(t *testing.T) {
 
-	testPVInputs := []*v1.PersistentVolume{&v1.PersistentVolume{
+	testPVInputs := []*v1.PersistentVolume{{
 		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid"},
 		Spec:       v1.PersistentVolumeSpec{},
-	}, &v1.PersistentVolume{
+	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid", Annotations: common.ExpectedFluidAnnotations},
 		Spec:       v1.PersistentVolumeSpec{},
 	}}
@@ -87,4 +87,53 @@ func TestIsPersistentVolumeExist(t *testing.T) {
 		})
 	}
 
+}
+
+func TestDeletePersistentVolume(t *testing.T) {
+	testPVInputs := []*v1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       v1.PersistentVolumeSpec{},
+	}}
+
+	testPVs := []runtime.Object{}
+
+	for _, pv := range testPVInputs {
+		testPVs = append(testPVs, pv.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVs...)
+
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		err  error
+	}{
+		{
+			name: "volume doesn't exist",
+			args: args{
+				name: "notfound",
+			},
+			err: nil,
+		},
+		{
+			name: "volume exists",
+			args: args{
+				name: "found",
+			},
+			err: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := DeletePersistentVolume(client, tt.args.name); err != tt.err {
+				t.Errorf("testcase %v DeletePersistentVolume() = %v, want %v", tt.name, err, tt.err)
+			}
+		})
+	}
 }

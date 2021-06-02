@@ -30,11 +30,11 @@ import (
 func TestIsPersistentVolumeClaimExist(t *testing.T) {
 
 	namespace := "default"
-	testPVCInputs := []*v1.PersistentVolumeClaim{&v1.PersistentVolumeClaim{
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid",
 			Namespace: namespace},
 		Spec: v1.PersistentVolumeClaimSpec{},
-	}, &v1.PersistentVolumeClaim{
+	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid",
 			Annotations: common.ExpectedFluidAnnotations,
 			Namespace:   namespace},
@@ -91,6 +91,64 @@ func TestIsPersistentVolumeClaimExist(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got, _ := IsPersistentVolumeClaimExist(client, tt.args.name, tt.args.namespace, tt.args.annotations); got != tt.want {
 				t.Errorf("testcase %v IsPersistentVolumeClaimExist() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+
+}
+
+func TestDeletePersistentVolumeClaim(t *testing.T) {
+	namespace := "default"
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "aaa",
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	testPVCs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		testPVCs = append(testPVCs, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		namespace string
+		args      args
+		err       error
+	}{
+		{
+			name: "volume doesn't exist",
+			args: args{
+				name:      "notfound",
+				namespace: namespace,
+			},
+			err: nil,
+		},
+		{
+			name: "volume exists",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			err: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := DeletePersistentVolumeClaim(client, tt.args.name, tt.args.namespace); err != tt.err {
+				t.Errorf("testcase %v DeletePersistentVolumeClaim() = %v, want %v", tt.name, err, tt.err)
 			}
 		})
 	}
