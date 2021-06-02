@@ -12,18 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-package main
+package utils
 
 import (
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/cmd/webhook/app"
+	"github.com/pkg/errors"
 )
 
-func main() {
-	command := app.NewWebHookCommand()
-	if err := command.Execute(); err != nil {
-		os.Exit(1)
+func GetEnvByKey(k string) (string, error) {
+	if v, ok := os.LookupEnv(k); ok {
+		return v, nil
+	} else {
+		return "", errors.Errorf("can not find the env value, key:%s", k)
 	}
 }

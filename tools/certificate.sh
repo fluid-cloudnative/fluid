@@ -48,8 +48,15 @@ if [ -z "${SERVICE}" ]; then
     exit 1
 fi
 
-[ -z "${NAMESPACE}" ] && NAMESPACE=fluid-system
-[ -z "${CERT_DIR}" ] && CERT_DIR=/opt/certs
+if [ -z "${NAMESPACE}" ]; then
+    echo "'--namespace' must be specified"
+    exit 1
+fi
+
+if [ -z "${CERT_DIR}" ]; then
+    echo "'--certDir' must be specified"
+    exit 1
+fi
 
 if [ ! -x "$(command -v openssl)" ]; then
     echo "openssl not found"
