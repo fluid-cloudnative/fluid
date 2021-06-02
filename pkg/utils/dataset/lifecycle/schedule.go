@@ -65,7 +65,7 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	}
 
 	// 2. filters scheduled nodes and build a map for future use
-	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetCommonLabelname()))
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetCommonLabelName()))
 	if err != nil {
 		return currentScheduleNum, err
 	}

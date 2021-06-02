@@ -16,9 +16,10 @@ limitations under the License.
 package prefernodeswithoutcache
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,53 +43,38 @@ func NewPlugin(c client.Client) *PreferNodesWithoutCache {
 	}
 }
 
-var weightedPodAffinityTerm = corev1.WeightedPodAffinityTerm{
-	Weight: 50,
-	PodAffinityTerm: corev1.PodAffinityTerm{
-		LabelSelector: &metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{
-					Key:      "role",
-					Operator: metav1.LabelSelectorOpIn,
-					Values:   []string{"alluxio-worker", "jindofs-worker"},
-				},
-			},
-		},
-		TopologyKey: "kubernetes.io/hostname",
-	},
-}
-
 func (p *PreferNodesWithoutCache) GetName() string {
 	return p.name
 }
 
 func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
+	// if the pod has mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) != 0 {
 		return
 	}
 
 	// if the pod has no mounted dataset, no need to call other plugins
 	shouldStop = true
-	if pod.Spec.Affinity != nil {
-		if pod.Spec.Affinity.PodAntiAffinity != nil {
-			pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
-				append(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
-					weightedPodAffinityTerm)
-		} else {
-			pod.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-					weightedPodAffinityTerm,
-				},
-			}
-		}
-	} else {
-		pod.Spec.Affinity = &corev1.Affinity{
-			PodAntiAffinity: &corev1.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-					weightedPodAffinityTerm,
+
+	preferredSchedulingTerms := []corev1.PreferredSchedulingTerm{
+		getPreferredSchedulingTerm(),
+	}
+
+	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
+
+	return
+}
+
+func getPreferredSchedulingTerm() corev1.PreferredSchedulingTerm {
+	return corev1.PreferredSchedulingTerm{
+		Weight: 50,
+		Preference: corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      common.GetDatasetNumLabelName(),
+					Operator: corev1.NodeSelectorOpDoesNotExist,
 				},
 			},
-		}
+		},
 	}
-	return
 }

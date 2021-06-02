@@ -26,6 +26,10 @@ const (
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 )
 
+func GetDatasetNumLabelName() string {
+	return LabelAnnotationDatasetNum
+}
+
 //Reason for Fluid events
 const (
 	ErrorProcessDatasetReason = "ErrorProcessDataset"

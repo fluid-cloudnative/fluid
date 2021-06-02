@@ -20,7 +20,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 )
 
-func (info *RuntimeInfo) getStoragetLabelname(read common.ReadType, storage common.StorageType) string {
+func (info *RuntimeInfo) getStoragetLabelName(read common.ReadType, storage common.StorageType) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if info.IsDeprecatedNodeLabel() {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
@@ -35,37 +35,37 @@ func (info *RuntimeInfo) getStoragetLabelname(read common.ReadType, storage comm
 		info.name
 }
 
-func (info *RuntimeInfo) GetLabelnameForMemory() string {
+func (info *RuntimeInfo) GetLabelNameForMemory() string {
 	read := common.HumanReadType
 	storage := common.MemoryStorageType
 	if info.IsDeprecatedNodeLabel() {
 		read = deprecated.HumanReadType
 		storage = deprecated.MemoryStorageType
 	}
-	return info.getStoragetLabelname(read, storage)
+	return info.getStoragetLabelName(read, storage)
 }
 
-func (info *RuntimeInfo) GetLabelnameForDisk() string {
+func (info *RuntimeInfo) GetLabelNameForDisk() string {
 	read := common.HumanReadType
 	storage := common.DiskStorageType
 	if info.IsDeprecatedNodeLabel() {
 		read = deprecated.HumanReadType
 		storage = deprecated.DiskStorageType
 	}
-	return info.getStoragetLabelname(read, storage)
+	return info.getStoragetLabelName(read, storage)
 }
 
-func (info *RuntimeInfo) GetLabelnameForTotal() string {
+func (info *RuntimeInfo) GetLabelNameForTotal() string {
 	read := common.HumanReadType
 	storage := common.TotalStorageType
 	if info.IsDeprecatedNodeLabel() {
 		read = deprecated.HumanReadType
 		storage = deprecated.TotalStorageType
 	}
-	return info.getStoragetLabelname(read, storage)
+	return info.getStoragetLabelName(read, storage)
 }
 
-func (info *RuntimeInfo) GetCommonLabelname() string {
+func (info *RuntimeInfo) GetCommonLabelName() string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if info.IsDeprecatedNodeLabel() {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
@@ -74,7 +74,7 @@ func (info *RuntimeInfo) GetCommonLabelname() string {
 	return prefix + info.namespace + "-" + info.name
 }
 
-func (info *RuntimeInfo) GetRuntimeLabelname() string {
+func (info *RuntimeInfo) GetRuntimeLabelName() string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if info.IsDeprecatedNodeLabel() {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
@@ -83,6 +83,7 @@ func (info *RuntimeInfo) GetRuntimeLabelname() string {
 	return prefix + info.runtimeType + "-" + info.namespace + "-" + info.name
 }
 
-func (info *RuntimeInfo) GetDatasetNumLabelname() string {
-	return common.LabelAnnotationDatasetNum
+// GetDatasetNumLabelname get the label to record how much datasets on a node
+func (info *RuntimeInfo) GetDatasetNumLabelName() string {
+	return common.GetDatasetNumLabelName()
 }
