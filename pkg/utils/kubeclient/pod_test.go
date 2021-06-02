@@ -255,7 +255,6 @@ func TestGetPodByName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pod, _ := GetPodByName(client, tt.args.name, tt.args.namespace)
-
 			if tt.want == nil {
 				if pod != nil {
 					t.Errorf("testcase %v GetPodByName() = %v, want %v", tt.name, pod, tt.want)
