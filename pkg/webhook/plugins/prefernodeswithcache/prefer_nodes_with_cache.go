@@ -17,6 +17,7 @@ package prefernodeswithcache
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,6 +47,7 @@ func (p *PreferNodesWithCache) GetName() string {
 }
 
 func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
+	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
 	}
@@ -58,26 +60,8 @@ func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []ba
 			preferredSchedulingTerms = append(preferredSchedulingTerms, preferredSchedulingTerm)
 		}
 	}
-	if len(preferredSchedulingTerms) == 0 {
-		return
-	}
-	if pod.Spec.Affinity != nil {
-		if pod.Spec.Affinity.NodeAffinity != nil {
-			pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
-				append(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
-					preferredSchedulingTerms...)
-		} else {
-			pod.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerms,
-			}
-		}
-	} else {
-		pod.Spec.Affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerms,
-			},
-		}
-	}
+	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
+
 	return
 }
 
@@ -87,7 +71,7 @@ func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.Pr
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{
-					Key:      runtimeInfo.GetCommonLabelname(),
+					Key:      runtimeInfo.GetCommonLabelName(),
 					Operator: corev1.NodeSelectorOpIn,
 					Values:   []string{"true"},
 				},
