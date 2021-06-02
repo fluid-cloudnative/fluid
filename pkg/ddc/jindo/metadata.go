@@ -3,6 +3,7 @@ package jindo
 import (
 	"context"
 	"errors"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 	"reflect"
@@ -116,7 +117,7 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
-			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+
 			if err != nil {
 				e.Log.Error(err, "Can't get dataset when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
@@ -127,23 +128,30 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 
 			e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
-			if len(dataset.Spec.Mounts) < 1 {
-				e.Log.Info("no dataset find")
-				result.Err = errors.New("Dataset Bind Error")
+			podName, containerName := e.getMasterPodInfo()
+			fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+			// load metadata
+			err = fileUtils.LoadMetadataWithoutTimeout("/")
+			if err != nil {
+				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
+				result.Err = err
+				result.Done = false
+				resultChan <- result
+				return
 			}
+			result.Done = true
+
 			useStsSecret := false
 			if len(e.runtime.Spec.Secret) != 0 {
 				useStsSecret = true
 			}
-			datasetUFSTotalBytes, err := e.TotalJindoStorageBytes(dataset.Spec.Mounts[0].Name, useStsSecret)
+			datasetUFSTotalBytes, err := e.TotalJindoStorageBytes(useStsSecret)
 			if err != nil {
 				e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Done = false
 			} else {
 				result.UfsTotal = utils.BytesSize(float64(datasetUFSTotalBytes))
 			}
-
-			result.Done = true
 
 			if !result.Done {
 				result.Err = errors.New("GetMetadataInfoFailed")
