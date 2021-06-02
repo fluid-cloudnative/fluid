@@ -96,3 +96,61 @@ func TestIsPersistentVolumeClaimExist(t *testing.T) {
 	}
 
 }
+
+func TestDeletePersistentVolumeClaim(t *testing.T) {
+	namespace := "default"
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "aaa",
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	testPVCs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		testPVCs = append(testPVCs, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		namespace string
+		args      args
+		err       error
+	}{
+		{
+			name: "volume doesn't exist",
+			args: args{
+				name:      "notfound",
+				namespace: namespace,
+			},
+			err: nil,
+		},
+		{
+			name: "volume exists",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			err: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := DeletePersistentVolumeClaim(client, tt.args.name, tt.args.namespace); err != tt.err {
+				t.Errorf("testcase %v DeletePersistentVolumeClaim() = %v, want %v", tt.name, err, tt.err)
+			}
+		})
+	}
+
+}
