@@ -70,28 +70,6 @@ func GetPodByName(client client.Client, name, namespace string) (pod *v1.Pod, er
 	return
 }
 
-//DeletePod deletes the given pod if it exists
-func DeletePod(client client.Client, pod *v1.Pod) error {
-	err := client.Delete(context.TODO(), pod)
-	if apierrs.IsNotFound(err) {
-		err = nil
-	}
-	return err
-}
-
-// exclude Inactive pod when compute ports
-func ExcludeInactivePod(pod *v1.Pod) bool {
-	// pod not assigned
-	if len(pod.Spec.NodeName) == 0 {
-		return true
-	}
-	// pod is Successed or failed
-	if pod.Status.Phase == v1.PodSucceeded || pod.Status.Phase == v1.PodFailed {
-		return true
-	}
-	return false
-}
-
 // GetPVCNamesFromPod get names of pvc mounted by Pod
 func GetPVCNamesFromPod(pod *v1.Pod) (pvcNames []string) {
 	for _, volume := range pod.Spec.Volumes {

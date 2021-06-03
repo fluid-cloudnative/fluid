@@ -137,3 +137,33 @@ func TestDeletePersistentVolume(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPVCsFromPod(t *testing.T) {
+
+	volumeName := "pvc"
+	pod := v1.Pod{}
+	pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+		Name: "hostpath",
+		VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/tmp/data",
+			},
+		},
+	})
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+		Name: volumeName,
+		VolumeSource: v1.VolumeSource{
+			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+				ClaimName: volumeName,
+				ReadOnly:  true,
+			},
+		},
+	})
+
+	pvcNames := GetPVCsFromPod(pod)
+
+	if len(pvcNames) != 1 || pvcNames[0].Name != volumeName {
+		t.Errorf("the result of GetPVCsFromPod is not right, %v", pvcNames)
+	}
+}
