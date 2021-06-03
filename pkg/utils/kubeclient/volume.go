@@ -163,10 +163,9 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 	return
 }
 
-// GetPodPvcs get PersistVolumeClaims of pod
-func GetPodPvcs(volumes []v1.Volume) []v1.Volume {
-	var pvcs []v1.Volume
-	for _, volume := range volumes {
+// GetPVCsFromPod get PersistVolumeClaims of pod
+func GetPVCsFromPod(pod v1.Pod) (pvcs []v1.Volume) {
+	for _, volume := range pod.Spec.Volumes {
 		if volume.VolumeSource.PersistentVolumeClaim != nil {
 			pvcs = append(pvcs, volume)
 		}
@@ -186,7 +185,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, erro
 	}
 	var pods []v1.Pod
 	for _, pod := range nsPods.Items {
-		pvcs := GetPodPvcs(pod.Spec.Volumes)
+		pvcs := GetPVCsFromPod(pod)
 		for _, pvc := range pvcs {
 			if pvc.PersistentVolumeClaim.ClaimName == pvcName {
 				pods = append(pods, pod)
