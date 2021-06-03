@@ -167,6 +167,7 @@ func TestIsCompletePod(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var pod v1.Pod
+			var podToTest *v1.Pod
 			key := types.NamespacedName{
 				Namespace: tt.args.namespace,
 				Name:      tt.args.name,
@@ -175,7 +176,13 @@ func TestIsCompletePod(t *testing.T) {
 			// if err != nil {
 			// 	t.Errorf("testcase %v IsCompletePod() got err: %v", tt.name, err.Error())
 			// }
-			if got := IsCompletePod(&pod); got != tt.want {
+			if len(pod.Name) == 0 {
+				podToTest = nil
+			} else {
+				podToTest = &pod
+			}
+
+			if got := IsCompletePod(podToTest); got != tt.want {
 				t.Errorf("testcase %v IsCompletePod() = %v, want %v, pod %v", tt.name, got, tt.want, pod)
 			}
 		})
