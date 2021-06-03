@@ -275,3 +275,115 @@ func TestGetPodByName(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSucceededPod(t *testing.T) {
+	namespace := "default"
+	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
+		Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
+			Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
+			Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodFailed,
+		},
+	}}
+	type args struct {
+		pod *v1.Pod
+	}
+	type testcase struct {
+		name string
+		args args
+		want bool
+	}
+
+	tests := []testcase{}
+
+	for _, pod := range pods {
+		tests = append(tests, testcase{
+			name: pod.Name,
+			args: args{
+				pod: pod,
+			},
+		})
+	}
+
+	tests[0].want = false
+	tests[1].want = true
+	tests[2].want = false
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsSucceededPod(tt.args.pod); got != tt.want {
+				t.Errorf("testcase %v IsSucceededPod() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsFailedPod(t *testing.T) {
+	namespace := "default"
+	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
+		Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
+			Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
+			Namespace: namespace},
+		Spec: v1.PodSpec{},
+		Status: v1.PodStatus{
+			Phase: v1.PodFailed,
+		},
+	}}
+	type args struct {
+		pod *v1.Pod
+	}
+	type testcase struct {
+		name string
+		args args
+		want bool
+	}
+
+	tests := []testcase{}
+
+	for _, pod := range pods {
+		tests = append(tests, testcase{
+			name: pod.Name,
+			args: args{
+				pod: pod,
+			},
+		})
+	}
+
+	tests[0].want = false
+	tests[1].want = false
+	tests[2].want = true
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsFailedPod(tt.args.pod); got != tt.want {
+				t.Errorf("testcase %v IsFailedPod() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
