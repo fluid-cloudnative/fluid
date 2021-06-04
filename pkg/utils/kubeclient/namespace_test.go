@@ -24,8 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// Use fake client because of it will be maintained in the long term
-// due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 func TestIsNamespaceExist(t *testing.T) {
 
 	testNamespaceInputs := []*v1.Namespace{{
@@ -52,13 +50,13 @@ func TestIsNamespaceExist(t *testing.T) {
 		args args
 	}{
 		{
-			name: "volume doesn't exist",
+			name: "namespace doesn't exist",
 			args: args{
 				name: "notExist",
 			},
 		},
 		{
-			name: "volume is not created by fluid",
+			name: "namespace exists",
 			args: args{
 				name: "test1",
 			},
@@ -68,6 +66,48 @@ func TestIsNamespaceExist(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := EnsureNamespace(client, tt.args.name); err != nil {
 				t.Errorf("testcase %v EnsureNamespace()'s err is %v", tt.name, err)
+			}
+		})
+	}
+
+}
+
+func TestCreateNamespace(t *testing.T) {
+
+	testNamespaceInputs := []*v1.Namespace{}
+
+	testNamespaces := []runtime.Object{}
+
+	for _, ns := range testNamespaceInputs {
+		testNamespaces = append(testNamespaces, ns.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testNamespaces...)
+
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "namespace doesn't exist",
+			args: args{
+				name: "notExist",
+			},
+		},
+		{
+			name: "namespace exists",
+			args: args{
+				name: "test1",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := createNamespace(client, tt.args.name); err != nil {
+				t.Errorf("testcase %v createNamespace()'s err is %v", tt.name, err)
 			}
 		})
 	}
