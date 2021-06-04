@@ -81,3 +81,34 @@ func TestTransformRunAsUser(t *testing.T) {
 		}
 	}
 }
+
+func TestTransformFuseArg(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, "secret"},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		err := engine.transformSecret(test.runtime, test.jindoValue)
+		if err != nil {
+			t.Errorf("Got err %v", err)
+		}
+		if test.jindoValue.Secret != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+		}
+	}
+}

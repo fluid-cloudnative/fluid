@@ -19,6 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"strings"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -70,6 +71,36 @@ func TestTransformWorker(t *testing.T) {
 		}
 		if test.jindoValue.Worker.WorkerProperties["storage.data-dirs.capacities"] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Worker.WorkerProperties["storage.data-dirs.capacities"])
+		}
+	}
+}
+
+func TestTransformWorkerMountPath(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, "/mnt/disk2"},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		stroagePath := "/mnt/disk1,/mnt/disk2"
+		originPath := strings.Split(stroagePath, ",")
+		properties := engine.transformWorkerMountPath(originPath)
+		if properties["2"] != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, properties["2"])
 		}
 	}
 }

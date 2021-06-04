@@ -52,3 +52,31 @@ func TestTransformToken(t *testing.T) {
 		}
 	}
 }
+
+func TestTransformMasterMountPath(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, "/mnt/disk1"},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		properties := engine.transformMasterMountPath("/mnt/disk1")
+		if properties["1"] != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, properties["1"])
+		}
+	}
+}
