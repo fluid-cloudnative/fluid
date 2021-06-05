@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package app
 
 import (
@@ -30,10 +31,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
-	webhookName = "setup"
+	webhookName = "webhook"
 )
 
 var (
@@ -118,10 +120,20 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if err := fluidwebhook.Register(mgr); err != nil {
-		setupLog.Error(err, "register fluid webhook handler failed")
-		os.Exit(1)
+	// register admission handlers
+	server := mgr.GetWebhookServer()
+	filterActiveHandlers()
+	for path, handler := range HandlerMap {
+		handler.Setup(client)
+		server.Register(path, &webhook.Admission{Handler: handler})
+		setupLog.Infof("Registered webhook handler %s", path)
 	}
+
+	// if err := fluidwebhook.Register(mgr); err != nil {
+	// 	setupLog.Error(err, "register fluid webhook handler failed")
+	// 	os.Exit(1)
+	// }
+
 	setupLog.Info("starting webhook-manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "start webhook handler failed")
