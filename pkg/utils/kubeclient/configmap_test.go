@@ -77,3 +77,57 @@ func TestIsConfigMapExist(t *testing.T) {
 	}
 
 }
+
+func TestGetConfigmapByName(t *testing.T) {
+
+	namespace := "default"
+	testConfigMapInputs := []*v1.ConfigMap{{
+		ObjectMeta: metav1.ObjectMeta{Name: "test1",
+			Namespace: namespace},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "test2"},
+	}}
+
+	testConfigMaps := []runtime.Object{}
+
+	for _, ns := range testConfigMapInputs {
+		testConfigMaps = append(testConfigMaps, ns.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testConfigMaps...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "ConfigMap doesn't exist",
+			args: args{
+				name:      "notExist",
+				namespace: namespace,
+			},
+			want: false,
+		},
+		{
+			name: "ConfigMap exists",
+			args: args{
+				name:      "test1",
+				namespace: namespace,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := GetConfigmapByName(client, tt.args.name, tt.args.namespace); err != nil {
+				t.Errorf("testcase %v GetConfigmapByName()'s err is %v", tt.name, err)
+			}
+		})
+	}
+
+}
