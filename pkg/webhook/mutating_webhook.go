@@ -20,13 +20,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -56,7 +58,7 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 	}
 
 	// check whether should inject
-	if pod.Labels["Fluid-Injection"] == "disabled" {
+	if !common.HitTarget(pod.Labels, common.LabelFluidSchedulingStrategyFlag) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
@@ -126,4 +128,12 @@ func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 		setupLog.Info("the plugin return false, will call next plugin until last", "plugin", plugin.GetName())
 	}
 
+}
+
+func Register(mgr manager.Manager) error {
+	server := mgr.GetWebhookServer()
+	server.Register(common.WebhookServicePath, &webhook.Admission{
+		Handler: NewMutatingHandler(mgr.GetClient()),
+	})
+	return nil
 }

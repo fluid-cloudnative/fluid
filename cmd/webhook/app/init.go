@@ -12,18 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-package main
+package app
 
 import (
-	"os"
-
-	"github.com/fluid-cloudnative/fluid/cmd/webhook/app"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	command := app.NewWebHookCommand()
-	if err := command.Execute(); err != nil {
-		os.Exit(1)
+func NewWebHookCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fluid-webhook",
+		Short: "fluid admission webhook",
 	}
+	cmd.AddCommand(versionCmd, webhookCmd)
+	return cmd
 }
