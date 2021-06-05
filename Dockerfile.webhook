@@ -20,7 +20,8 @@ COPY --from=builder /go/bin/fluid-webhook /usr/local/bin/fluid-webhook
 COPY tools/certificate.sh /usr/local/bin/certificate.sh
 
 
-RUN mkdir -p /etc/k8s-webhook-server/certs && chmod -R u+w /etc/k8s-webhook-server/certs \ 
+RUN mkdir -p /etc/k8s-webhook-server/certs && \
+	chmod -R u+w /etc/k8s-webhook-server/certs && \ 
 	chmod u+x /usr/local/bin/fluid-webhook
 
 
