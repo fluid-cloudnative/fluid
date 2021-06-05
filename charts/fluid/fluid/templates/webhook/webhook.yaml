@@ -23,6 +23,11 @@ spec:
           command: ["fluid-webhook", "start"]
           args:
             - --development=false
+          env:
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           ports:
             - containerPort: 8080
               name: metrics
