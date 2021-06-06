@@ -183,7 +183,7 @@ spec:
                   type: integer
               type: object
             disablePrometheus:
-              description: Disable monitoring for Alluxio Runtime Promethous is enabled
+              description: Disable monitoring for Alluxio Runtime Prometheus is enabled
                 by default
               type: boolean
             fuse:

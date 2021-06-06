@@ -11,9 +11,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-v1-pod
+      path: /mutate-fluid-io-v1alpha1-schedulepod
   failurePolicy: Fail
-  name: mpod.kb.io
+  name: schedulepod.fluid.io
   rules:
   - apiGroups:
     - ""
