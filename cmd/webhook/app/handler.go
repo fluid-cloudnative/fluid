@@ -17,6 +17,7 @@ package app
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type GateFunc func() (enabled bool)
@@ -34,7 +35,7 @@ func addHandlers(m map[string]common.AdmissionHandler) {
 func addHandlersWithGate(m map[string]common.AdmissionHandler, fn GateFunc) {
 	for path, handler := range m {
 		if len(path) == 0 {
-			setupLog.Warningf("Skip handler with empty path.")
+			setupLog.Info("Skip handler with empty path.", "handler", handler)
 			continue
 		}
 		if path[0] != '/' {
@@ -42,7 +43,7 @@ func addHandlersWithGate(m map[string]common.AdmissionHandler, fn GateFunc) {
 		}
 		_, found := HandlerMap[path]
 		if found {
-			setupLog.Infof("conflicting webhook builder path %v in handler map", path)
+			setupLog.Info("conflicting webhook builder path in handler map", "path", path)
 		}
 		HandlerMap[path] = handler
 		if fn != nil {

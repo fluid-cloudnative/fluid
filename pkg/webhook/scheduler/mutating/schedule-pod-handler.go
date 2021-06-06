@@ -16,6 +16,16 @@ limitations under the License.
 package mutating
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -25,4 +35,91 @@ type CreateUpdatePodForSchedulingHandler struct {
 	Client client.Client
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
+}
+
+func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
+	a.Client = client
+}
+
+// Handle is the mutating logic of pod
+func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+	var setupLog = ctrl.Log.WithName("handle")
+	pod := &corev1.Pod{}
+	err := a.decoder.Decode(req, pod)
+	if err != nil {
+		setupLog.Error(err, "unable to decoder pod from req")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	// check whether should inject
+	if !common.HitTarget(pod.Labels, common.LabelFluidSchedulingStrategyFlag) {
+		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because injection is disabled")
+	}
+	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" {
+		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because it's fluid Pods")
+	}
+
+	// inject affinity info into pod
+	a.InjectAffinityToPod(pod)
+
+	marshaledPod, err := json.Marshal(pod)
+	if err != nil {
+		setupLog.Error(err, "unable to marshal pod")
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+}
+
+// InjectDecoder injects the decoder.
+func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder) error {
+	a.decoder = d
+	return nil
+}
+
+// InjectAffinityToPod will call all plugins to get total prefer info
+func (a *CreateUpdatePodForSchedulingHandler) InjectAffinityToPod(pod *corev1.Pod) {
+	var setupLog = ctrl.Log.WithName("InjectAffinityToPod")
+	setupLog.Info("start to inject", "Pod", pod.Name, "Namespace", pod.Namespace)
+	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
+	var runtimeInfos []base.RuntimeInfoInterface
+	for _, pvcName := range pvcNames {
+		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
+		if err != nil {
+			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
+			continue
+		}
+		if isDatasetPVC {
+			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
+			if err != nil {
+				setupLog.Error(err, "unable to get runtimeInfo, will ignore it", "runtime", pvcName)
+				continue
+			}
+			runtimeInfo.SetDeprecatedNodeLabel(false)
+			runtimeInfos = append(runtimeInfos, runtimeInfo)
+		}
+	}
+
+	// get plugins regedit and get the need plugins list from it
+	pluginsRegedit := plugins.Registry(a.Client)
+	var pluginsList []plugins.AffinityInterface
+	if len(runtimeInfos) == 0 {
+		pluginsList = pluginsRegedit.GetNoDatasetHandle()
+	} else {
+		pluginsList = pluginsRegedit.GetWithDatasetHandle()
+	}
+
+	// call every plugin in the plugins list in the defined order
+	// if a plugin return shouldStop, stop to call other plugins
+	for _, plugin := range pluginsList {
+		shouldStop := plugin.InjectAffinity(pod, runtimeInfos)
+		if shouldStop {
+			setupLog.Info("the plugin return true, no need to call other plugins", "plugin", plugin.GetName())
+			break
+		}
+		setupLog.Info("the plugin return false, will call next plugin until last", "plugin", plugin.GetName())
+	}
+
 }

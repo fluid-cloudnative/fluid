@@ -31,7 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -126,7 +126,7 @@ func handle() {
 	for path, handler := range HandlerMap {
 		handler.Setup(client)
 		server.Register(path, &webhook.Admission{Handler: handler})
-		setupLog.Infof("Registered webhook handler %s", path)
+		setupLog.Info("Registered webhook handler", "path", path)
 	}
 
 	// if err := fluidwebhook.Register(mgr); err != nil {
