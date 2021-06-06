@@ -35,7 +35,7 @@ func NewRuntime(name, namespace string, category common.Category, runtimeType st
 	}
 }
 
-// AddRuntimesIfNotExist
+// AddRuntimesIfNotExist adds newRuntime to runtimes and return the updated runtime slice
 func AddRuntimesIfNotExist(runtimes []data.Runtime, newRuntime data.Runtime) (updatedRuntimes []data.Runtime) {
 	catergoryMap := map[common.Category]bool{}
 	for _, runtime := range runtimes {
