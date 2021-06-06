@@ -12,8 +12,8 @@ webhooks:
       name: webhook-service
       namespace: system
       path: /mutate-v1-pod
-  failurePolicy: Fail
-  name: mpod.kb.io
+  failurePolicy: Ignore
+  name: fluid-pod-admission-webhook
   rules:
   - apiGroups:
     - ""
@@ -21,6 +21,5 @@ webhooks:
     - v1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - pods

@@ -7,6 +7,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"strconv"
 	"strings"
@@ -490,4 +491,37 @@ func (e *JindoEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, val
 		value.Fuse.RunAs = runtime.Spec.User
 	}
 	return nil
+}
+
+func (e *JindoEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+
+	if len(dataset.Spec.Tolerations) > 0 {
+		// value.Tolerations = dataset.Spec.Tolerations
+		value.Tolerations = []corev1.Toleration{}
+		for _, toleration := range dataset.Spec.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Tolerations = append(value.Tolerations, toleration)
+		}
+	}
+
+	if len(runtime.Spec.Master.Tolerations) > 0 {
+		for _, toleration := range runtime.Spec.Master.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Master.Tolerations = append(value.Tolerations, toleration)
+		}
+	}
+
+	if len(runtime.Spec.Worker.Tolerations) > 0 {
+		for _, toleration := range runtime.Spec.Worker.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Worker.Tolerations = append(value.Tolerations, toleration)
+		}
+	}
+
+	if len(runtime.Spec.Fuse.Tolerations) > 0 {
+		for _, toleration := range runtime.Spec.Fuse.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Fuse.Tolerations = append(value.Tolerations, toleration)
+		}
+	}
 }

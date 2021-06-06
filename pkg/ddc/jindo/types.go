@@ -1,5 +1,7 @@
 package jindo
 
+import v1 "k8s.io/api/core/v1"
+
 type Jindo struct {
 	Image           string            `yaml:"image"`
 	ImageTag        string            `yaml:"imageTag"`
@@ -18,6 +20,7 @@ type Jindo struct {
 	Mounts          Mounts            `yaml:"mounts"`
 	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
 	Secret          string            `yaml:"secret,omitempty"`
+	Tolerations     []v1.Toleration   `yaml:"tolerations,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -35,6 +38,7 @@ type Master struct {
 	Port             Ports             `yaml:"ports,omitempty"`
 	OssKey           string            `yaml:"osskey,omitempty"`
 	OssSecret        string            `yaml:"osssecret,omitempty"`
+	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
 }
 
 type Worker struct {
@@ -42,6 +46,7 @@ type Worker struct {
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	WorkerProperties map[string]string `yaml:"properties"`
 	Port             Ports             `yaml:"ports,omitempty"`
+	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
 }
 
 type Ports struct {
@@ -56,6 +61,7 @@ type Fuse struct {
 	FuseProperties map[string]string `yaml:"properties"`
 	Global         bool              `yaml:"global,omitempty"`
 	RunAs          string            `yaml:"runAs,omitempty"`
+	Tolerations    []v1.Toleration   `yaml:"tolerations,omitempty"`
 }
 
 type Mounts struct {

@@ -42,6 +42,10 @@ spec:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
         fsGroup: {{ .Values.fsGroup }}
+     {{- if .Values.fuse.tolerations }}
+      tolerations:
+{{ toYaml .Values.fuse.tolerations | indent 8 }}
+     {{- end }}
       containers:
         - name: jindofs-fuse
           image: {{ .Values.fuseImage }}:{{ .Values.fuseImageTag }}
