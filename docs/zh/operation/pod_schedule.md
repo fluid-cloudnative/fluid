@@ -3,16 +3,17 @@
 通过为Pod自动注入亲和性相关信息，优化Pod的调度结果，提高集群的整体使用效率。
 
 ## 前提条件
-您使用的k8s版本需要支持admissionregistration.k8s.io/v1beta1（v1.9~1.21）
+
+您使用的k8s版本需要支持 admissionregistration.k8s.io/v1beta1（v1.9~1.21)
 
 ## 具体步骤
 **为namespace添加标签**
 
-为namespace添加标签Fluid-Injection=enabled后，可以开启此namespace下Pod的调度优化功能
+为namespace添加标签fluid.io/enable-scheduling-strategy后，可以开启此namespace下Pod的调度优化功能
 ```bash
-$ kubectl label namespace default Fluid-Injection=enabled
+$ kubectl label namespace default fluid.io/enable-scheduling-strategy=true
 ```
-如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签Fluid-Injection=disabled
+如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签fluid.io/enable-scheduling-strategy=false
 
 例如，使用yaml文件方式创建一个nginx Pod时，应对yaml文件做如下修改：
 ```yaml

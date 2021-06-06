@@ -105,5 +105,6 @@ const (
 	RootDirPath            = "/"
 	DefaultImagePullPolicy = "IfNotPresent"
 	MyPodNamespace         = "MY_POD_NAMESPACE"
-	TrueStr                = "true"
+	True                   = "true"
+	False                  = "false"
 )

@@ -52,7 +52,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// check whether should inject
-	if !common.HitTarget(pod.Labels, common.LabelFluidSchedulingStrategyFlag) {
+	if common.CheckExpectValue(pod.Labels, common.LabelFluidSchedulingStrategyFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
