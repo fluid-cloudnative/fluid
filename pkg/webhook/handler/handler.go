@@ -16,6 +16,8 @@ limitations under the License.
 package handler
 
 import (
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,7 +50,8 @@ func addHandlersWithGate(m map[string]common.AdmissionHandler, fn GateFunc) {
 		}
 		_, found := HandlerMap[path]
 		if found {
-			setupLog.Info("conflicting webhook builder path in handler map", "path", path)
+			setupLog.Info("error: conflicting webhook builder path in handler map", "path", path)
+			os.Exit(1)
 		}
 		HandlerMap[path] = handler
 		if fn != nil {
