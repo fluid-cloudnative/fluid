@@ -24,6 +24,6 @@ import (
 var (
 	// HandlerMap contains admission webhook handlers
 	HandlerMap = map[string]common.AdmissionHandler{
-		"mutate-fluid-io-v1alpha1-schedulepod": &CreateUpdatePodForSchedulingHandler{},
+		common.WebhookSchedulePodPath: &CreateUpdatePodForSchedulingHandler{},
 	}
 )

@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	WebhookName        = "fluid-pod-admission-webhook"
-	WebhookServiceName = "fluid-pod-admission-webhook"
-	WebhookServicePath = "/mutate-fluid-io-v1alpha1-schedulepod"
+	WebhookName            = "fluid-pod-admission-webhook"
+	WebhookServiceName     = "fluid-pod-admission-webhook"
+	WebhookSchedulePodPath = "mutate-fluid-io-v1alpha1-schedulepod"
 
 	// this file comes from tools/certificate.sh
 	CertificationGenerateFile = "/usr/local/bin/certificate.sh"
