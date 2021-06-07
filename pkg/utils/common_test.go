@@ -50,3 +50,54 @@ func TestGetEnvByKey(t *testing.T) {
 		}
 	}
 }
+
+func TestIsSubPath(t *testing.T) {
+	testCases := map[string]struct {
+		path      string
+		subPath   string
+		isSubPath bool
+	}{
+		"test is sub path case 1": {
+			path:      "/mnt/spark",
+			subPath:   "/mnt/spark/data/part0",
+			isSubPath: true,
+		},
+		"test is sub path case 2": {
+			path:      "/mnt/spark",
+			subPath:   "/mnt/sparks/data/part0",
+			isSubPath: false,
+		},
+		"test is sub path case 3": {
+			path:      "/mnt/spark",
+			subPath:   "/mnt/spar/kdata/part0",
+			isSubPath: false,
+		},
+		"test is sub path case 4": {
+			path:      "/mnt/spark",
+			subPath:   "/m/ntsparkdata/part0",
+			isSubPath: false,
+		},
+		"test is sub path case 5": {
+			path:      "/mnt/spark",
+			subPath:   "/mnts",
+			isSubPath: false,
+		},
+		"test is sub path case 6": {
+			path:      "/mnt/spark",
+			subPath:   "/mnt/spark",
+			isSubPath: true,
+		},
+		"test is sub path case 7": {
+			path:      "/mnt/spark",
+			subPath:   "/mnt/spark/data",
+			isSubPath: true,
+		},
+	}
+
+	for k, item := range testCases {
+		got := IsSubPath(item.path, item.subPath)
+		if got != item.isSubPath {
+			t.Errorf("%s check failure,want:%t,got:%t", k, item.isSubPath, got)
+		}
+	}
+}
