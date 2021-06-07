@@ -18,24 +18,33 @@ import "testing"
 
 func TestHitTarget(t *testing.T) {
 	testCases := map[string]struct {
-		labels  map[string]string
-		target  string
-		wantHit bool
+		labels      map[string]string
+		target      string
+		targetValue string
+		wantHit     bool
 	}{
 		"test label target hit case 1": {
-			labels:  map[string]string{LabelFluidSchedulingStrategyFlag: "true"},
-			target:  LabelFluidSchedulingStrategyFlag,
-			wantHit: true,
+			labels:      map[string]string{LabelFluidSchedulingStrategyFlag: "true"},
+			target:      LabelFluidSchedulingStrategyFlag,
+			targetValue: "true",
+			wantHit:     true,
 		},
 		"test label target hit case 2": {
-			labels:  map[string]string{LabelFluidSchedulingStrategyFlag: "false"},
-			target:  LabelFluidSchedulingStrategyFlag,
-			wantHit: false,
+			labels:      map[string]string{LabelFluidSchedulingStrategyFlag: "false"},
+			target:      LabelFluidSchedulingStrategyFlag,
+			targetValue: "true",
+			wantHit:     false,
+		},
+		"test label target hit case 3": {
+			labels:      nil,
+			target:      LabelFluidSchedulingStrategyFlag,
+			targetValue: "true",
+			wantHit:     false,
 		},
 	}
 
 	for index, item := range testCases {
-		gotHit := HitTarget(item.labels, item.target)
+		gotHit := CheckExpectValue(item.labels, item.target, item.targetValue)
 		if gotHit != item.wantHit {
 			t.Errorf("%s check failure, want:%t,got:%t", index, item.wantHit, gotHit)
 		}

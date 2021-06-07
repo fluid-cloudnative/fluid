@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook
+package mutating
 
 import (
 	"context"
@@ -27,28 +27,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=ignore,groups="",resources=pods,verbs=create,versions=v1,name=fluid-pod-admission-webhook
-
-// MutatingHandler mutates a pod and has implemented admission.DecoderInjector
-type MutatingHandler struct {
+// CreateUpdatePodForSchedulingHandler mutates a pod and has implemented admission.DecoderInjector
+type CreateUpdatePodForSchedulingHandler struct {
 	Client client.Client
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
 }
 
-func NewMutatingHandler(c client.Client) *MutatingHandler {
-	return &MutatingHandler{
-		Client: c,
-	}
+func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
+	a.Client = client
 }
 
 // Handle is the mutating logic of pod
-func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	var setupLog = ctrl.Log.WithName("handle")
 	pod := &corev1.Pod{}
 	err := a.decoder.Decode(req, pod)
@@ -58,7 +52,7 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 	}
 
 	// check whether should inject
-	if !common.HitTarget(pod.Labels, common.LabelFluidSchedulingStrategyFlag) {
+	if common.CheckExpectValue(pod.Labels, common.LabelFluidSchedulingStrategyFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
@@ -80,13 +74,13 @@ func (a *MutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 }
 
 // InjectDecoder injects the decoder.
-func (a *MutatingHandler) InjectDecoder(d *admission.Decoder) error {
+func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder) error {
 	a.decoder = d
 	return nil
 }
 
 // InjectAffinityToPod will call all plugins to get total prefer info
-func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
+func (a *CreateUpdatePodForSchedulingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 	var setupLog = ctrl.Log.WithName("InjectAffinityToPod")
 	setupLog.Info("start to inject", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
@@ -128,12 +122,4 @@ func (a *MutatingHandler) InjectAffinityToPod(pod *corev1.Pod) {
 		setupLog.Info("the plugin return false, will call next plugin until last", "plugin", plugin.GetName())
 	}
 
-}
-
-func Register(mgr manager.Manager) error {
-	server := mgr.GetWebhookServer()
-	server.Register(common.WebhookServicePath, &webhook.Admission{
-		Handler: NewMutatingHandler(mgr.GetClient()),
-	})
-	return nil
 }
