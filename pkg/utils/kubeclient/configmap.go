@@ -81,7 +81,7 @@ func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 			found = false
 			err = nil
 		} else {
-			return
+			return err
 		}
 	} else {
 		found = true
