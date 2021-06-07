@@ -40,6 +40,10 @@ spec:
 {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
 {{- end }}
+      {{- if .Values.worker.tolerations }}
+      tolerations:
+{{ toYaml .Values.worker.tolerations | indent 8 }}
+      {{- end }}
       containers:
         - name: jindofs-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
