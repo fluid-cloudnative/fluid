@@ -25,7 +25,6 @@ import (
 )
 
 func TestIsConfigMapExist(t *testing.T) {
-
 	namespace := "default"
 	testConfigMapInputs := []*v1.ConfigMap{{
 		ObjectMeta: metav1.ObjectMeta{Name: "test1",
@@ -75,11 +74,9 @@ func TestIsConfigMapExist(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetConfigmapByName(t *testing.T) {
-
 	namespace := "default"
 	testConfigMapInputs := []*v1.ConfigMap{{
 		ObjectMeta: metav1.ObjectMeta{Name: "test1",
@@ -129,11 +126,9 @@ func TestGetConfigmapByName(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestDeleteConfigMap(t *testing.T) {
-
 	namespace := "default"
 	testConfigMapInputs := []*v1.ConfigMap{{
 		ObjectMeta: metav1.ObjectMeta{Name: "test1",
@@ -183,5 +178,4 @@ func TestDeleteConfigMap(t *testing.T) {
 			}
 		})
 	}
-
 }
