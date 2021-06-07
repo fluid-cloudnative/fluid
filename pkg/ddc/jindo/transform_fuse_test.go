@@ -82,7 +82,7 @@ func TestTransformRunAsUser(t *testing.T) {
 	}
 }
 
-func TestTransformFuseArg(t *testing.T) {
+func TestTransformSecret(t *testing.T) {
 	var tests = []struct {
 		runtime    *datav1alpha1.JindoRuntime
 		dataset    *datav1alpha1.Dataset
@@ -108,6 +108,65 @@ func TestTransformFuseArg(t *testing.T) {
 			t.Errorf("Got err %v", err)
 		}
 		if test.jindoValue.Secret != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+		}
+	}
+}
+
+func TestTransformFuseArg(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, &Jindo{}, "-ocredential_provider=secrets:///token/ -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		properties := engine.transformFuseArg(test.runtime, test.dataset)
+		if properties[0] != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+		}
+	}
+}
+
+func TestParseFuseImage(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.1"},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		imageR, tagR := engine.parseFuseImage()
+		registryVersion := imageR + ":" + tagR
+		if registryVersion != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
 		}
 	}
