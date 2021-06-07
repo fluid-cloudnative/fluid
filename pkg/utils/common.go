@@ -16,6 +16,8 @@ package utils
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -26,4 +28,19 @@ func GetEnvByKey(k string) (string, error) {
 	} else {
 		return "", errors.Errorf("can not find the env value, key:%s", k)
 	}
+}
+
+// determine if subPath is a subdirectory of path
+func IsSubPath(path, subPath string) bool {
+	rel, err := filepath.Rel(path, subPath)
+
+	if err != nil {
+		return false
+	}
+
+	if strings.HasPrefix(rel, "..") {
+		return false
+	}
+
+	return true
 }

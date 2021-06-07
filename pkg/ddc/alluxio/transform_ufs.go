@@ -20,6 +20,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // transform dataset which has ufsPaths and ufsVolumes
@@ -35,7 +36,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
-			ufsPath.ContainerPath = UFSPathBuilder{}.GenLocalStoragePath(mount)
+			ufsPath.ContainerPath = utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
 			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme.String())
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
@@ -46,7 +47,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()),
-				ContainerPath: UFSPathBuilder{}.GenLocalStoragePath(mount),
+				ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
 			})
 		}
 	}

@@ -17,12 +17,10 @@ package utils
 
 import (
 	"context"
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,16 +72,20 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 // We check this for the reason that native mount points need extra metadata sync alluxioOperations.
 func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
-		mountPointOnDDCEngine := fmt.Sprintf("/%s", mount.Name)
-		if mount.Path != "" {
-			mountPointOnDDCEngine = mount.Path
+
+		mPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+
+		//TODO(xuzhihao): HasPrefix is not enough.
+
+		// only for native scheme
+		if !common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
 		}
 
-		//todo(xuzhihao): HasPrefix is not enough.
-		if strings.HasPrefix(targetPath, mountPointOnDDCEngine) &&
-			(strings.HasPrefix(mount.MountPoint, common.PathScheme.String()) || strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String())) {
+		if IsSubPath(mPath, targetPath) {
 			return true
 		}
 	}
+
 	return false
 }

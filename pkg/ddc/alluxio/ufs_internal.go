@@ -81,7 +81,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		mounted, err := fileUtils.IsMounted(alluxioPath)
 		if err != nil {
 			should = false
@@ -119,7 +119,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			continue
 		}
 
-		alluxioPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 
 		mounted, err := fileUitls.IsMounted(alluxioPath)
 		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)

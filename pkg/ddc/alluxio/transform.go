@@ -129,7 +129,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	// generate alluxio root ufs by dataset spec mounts
 	e.Log.Info("input", "mounts", dataset.Spec.Mounts, "common.RootDirPath", common.RootDirPath)
-	uRootPath, m := UFSPathBuilder{}.GenAlluxioUFSRootPath(dataset.Spec.Mounts)
+	uRootPath, m := utils.UFSPathBuilder{}.GenAlluxioUFSRootPath(dataset.Spec.Mounts)
 	// attach mount options when direct mount ufs endpoint
 	if m != nil {
 		if mOptions, err := e.genUFSMountOptions(*m); err != nil {
