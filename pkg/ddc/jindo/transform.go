@@ -24,6 +24,11 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return
+	}
+
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
 	stroagePath := runtime.Spec.Tieredstore.Levels[0].Path
 	originPath := strings.Split(stroagePath, ",")
@@ -78,7 +83,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			NodeSelector: e.transformNodeSelector(runtime),
 		},
 		Fuse: Fuse{
-			Args:     e.transformFuseArg(runtime),
+			Args:     e.transformFuseArg(runtime, dataset),
 			HostPath: e.getMountPoint(),
 		},
 		Mounts: Mounts{
@@ -106,7 +111,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
-	err = e.transformMaster(runtime, metaPath, value)
+	err = e.transformMaster(runtime, metaPath, value, dataset)
 	if err != nil {
 		return
 	}
@@ -119,10 +124,11 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 	err = e.transformRunAsUser(runtime, value)
+	e.transformTolerations(dataset, runtime, value)
 	return value, err
 }
 
-func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo) (err error) {
+func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) (err error) {
 	properties := map[string]string{
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
 		"namespace.filelet.cache.size":  "100000",
@@ -139,10 +145,6 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 
 	properties["namespace.meta-dir"] = metaPath + "/server"
 
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		return err
-	}
 	jfsNamespace := "jindo"
 	mode := "oss"
 	for _, mount := range dataset.Spec.Mounts {
@@ -373,8 +375,7 @@ func (e *JindoEngine) transformWorkerMountPath(originPath []string) map[string]s
 	return properties
 }
 
-func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []string {
-	dataset, _ := utils.GetDataset(e.Client, e.name, e.namespace)
+func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset) []string {
 	var baseArg = "-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"
 	var rootArg = ""
 	var secretArg = ""
@@ -387,8 +388,8 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime) []str
 		baseArg = secretArg + " " + baseArg
 	}
 
-	if len(e.runtime.Spec.Fuse.Args) > 0 {
-		properties := e.runtime.Spec.Fuse.Args
+	if len(runtime.Spec.Fuse.Args) > 0 {
+		properties := runtime.Spec.Fuse.Args
 		if rootArg != "" {
 			properties = append(properties, rootArg)
 		}
