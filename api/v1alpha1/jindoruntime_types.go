@@ -49,6 +49,10 @@ type JindoCompTemplateSpec struct {
 	// NodeSelector is a selector which must be true for the master to fit on a node
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -90,6 +94,10 @@ type JindoFuseSpec struct {
 	// this option only effect when global is enabled
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
