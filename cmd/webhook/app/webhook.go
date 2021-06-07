@@ -23,6 +23,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -31,7 +32,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -121,18 +121,8 @@ func handle() {
 	}
 
 	// register admission handlers
-	server := mgr.GetWebhookServer()
-	filterActiveHandlers()
-	for path, handler := range HandlerMap {
-		handler.Setup(client)
-		server.Register(path, &webhook.Admission{Handler: handler})
-		setupLog.Info("Registered webhook handler", "path", path)
-	}
-
-	// if err := fluidwebhook.Register(mgr); err != nil {
-	// 	setupLog.Error(err, "register fluid webhook handler failed")
-	// 	os.Exit(1)
-	// }
+	handler.Register(mgr, client, setupLog)
+	setupLog.Info("Register Handler")
 
 	setupLog.Info("starting webhook-manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

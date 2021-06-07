@@ -13,11 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package app
+package handler
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+	setupLog = ctrl.Log.WithName("handler")
 )
 
 type GateFunc func() (enabled bool)
