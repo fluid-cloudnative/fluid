@@ -33,12 +33,13 @@ func GetDatasetNumLabelName() string {
 	return LabelAnnotationDatasetNum
 }
 
-func HitTarget(m map[string]string, target string) bool {
-	if m == nil {
+// Check if the key has the expected value
+func CheckExpectValue(m map[string]string, key string, targetValue string) bool {
+	if len(m) == 0 {
 		return false
 	}
-	if v, ok := m[target]; ok {
-		return v == TrueStr
+	if v, ok := m[key]; ok {
+		return v == targetValue
 	}
 	return false
 }

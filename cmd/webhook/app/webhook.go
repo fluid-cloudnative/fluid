@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package app
 
 import (
@@ -22,6 +23,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -33,7 +35,7 @@ import (
 )
 
 const (
-	webhookName = "setup"
+	webhookName = "webhook"
 )
 
 var (
@@ -118,10 +120,10 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if err := fluidwebhook.Register(mgr); err != nil {
-		setupLog.Error(err, "register fluid webhook handler failed")
-		os.Exit(1)
-	}
+	// register admission handlers
+	handler.Register(mgr, client, setupLog)
+	setupLog.Info("Register Handler")
+
 	setupLog.Info("starting webhook-manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "start webhook handler failed")

@@ -4,21 +4,21 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: fluid-pod-admission-webhook
 webhooks:
-  - name: fluid.pod.admission.webhook
+  - name: schedulepod.fluid.io
     rules:
       - apiGroups:   [""]
         apiVersions: ["v1"]
-        operations:  ["CREATE"]
+        operations:  ["CREATE","UPDATE"]
         resources:   ["pods"]
     clientConfig:
       service:
         namespace: fluid-system
         name: fluid-pod-admission-webhook
-        path: "/mutate-v1-pod"
+        path: "/mutate-fluid-io-v1alpha1-schedulepod"
         port: 9443
       caBundle: Cg==
     timeoutSeconds: 20
-    failurePolicy: Ignore
+    failurePolicy: Fail
     namespaceSelector:
       matchLabels:
         fluid.io/enable-scheduling-strategy: "true"
