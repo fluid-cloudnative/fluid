@@ -7,18 +7,19 @@ import (
 	"testing"
 )
 
-var uid int64 = 1000
-var gid int64 = 1000
-var name = "test-user-1"
+var testUid int64 = 1000
+var testGid int64 = 1000
+var testUserName = "test-user-1"
+var testGroupName = "test-group-1"
 var exampleUser = &datav1alpha1.User{
-	UID:       &uid,
-	GID:       &gid,
-	UserName:  name,
-	GroupName: name,
+	UID:       &testUid,
+	GID:       &testGid,
+	UserName:  testUserName,
+	GroupName: testGroupName,
 }
 
 func TestGetInitUserEnv(t *testing.T) {
-	var expectedUserEnv = fmt.Sprintf("%d:%s:%d,%d:%s", uid, name, gid, gid, name)
+	var expectedUserEnv = fmt.Sprintf("%d:%s:%d,%d:%s", testUid, testUserName, testGid, testGid, testGroupName)
 
 	tests := []struct {
 		name string
@@ -42,8 +43,8 @@ func TestGetInitUserEnv(t *testing.T) {
 
 func TestGetInitUsersArgs(t *testing.T) {
 	var (
-		expectedUserStr  = fmt.Sprintf("%d:%s:%d", uid, name, gid)
-		expectedGroupStr = fmt.Sprintf("%d:%s", gid, name)
+		expectedUserStr  = fmt.Sprintf("%d:%s:%d", testUid, testUserName, testGid)
+		expectedGroupStr = fmt.Sprintf("%d:%s", testGid, testGroupName)
 	)
 
 	tests := []struct {
