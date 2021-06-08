@@ -5,6 +5,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -292,23 +293,35 @@ func TestDecreaseDatasetNum(t *testing.T) {
 	var testCase = []struct {
 		node           *v1.Node
 		runtimeInfo    base.RuntimeInfo
-		expectedResult bool
+		expectedResult []utils.LabelToModify
 	}{
 		{
 			node: &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			runtimeInfo: base.RuntimeInfo{},
+			expectedResult: []utils.LabelToModify{
+				{
+					LabelKey:      "fluid.io/dataset-num",
+					LabelValue:    "1",
+					OperationType: datav1alpha1.UpdateLabel,
+				},
+			},
 		},
 		{
 			node: &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
 				Spec:       v1.NodeSpec{},
 			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: true,
+			runtimeInfo: base.RuntimeInfo{},
+			expectedResult: []utils.LabelToModify{
+				{
+					LabelKey:      "fluid.io/dataset-num",
+					LabelValue:    "",
+					OperationType: datav1alpha1.DeleteLabel,
+				},
+			},
 		},
 		{
 			node: &v1.Node{
@@ -316,7 +329,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			expectedResult: nil,
 		},
 		{
 			node: &v1.Node{
@@ -324,13 +337,16 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			expectedResult: nil,
 		},
 	}
 
 	for _, test := range testCase {
-		if result, _ := DecreaseDatasetNum(test.node, &test.runtimeInfo); result != test.expectedResult {
-			t.Errorf("expected %v, got %v", test.expectedResult, result)
+		var labelToModify []utils.LabelToModify
+		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labelToModify)
+		if !reflect.DeepEqual(labelToModify, test.expectedResult) {
+			t.Errorf("fail to exec the function with the error ")
 		}
+
 	}
 }

@@ -3,6 +3,7 @@ package jindo
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/pkg/errors"
@@ -110,6 +111,10 @@ func (e *JindoEngine) cleanAll() (err error) {
 
 // destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
 func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+	//  SchedulerMutex only for patch mode
+	lifecycle.SchedulerMutex.Lock()
+	defer lifecycle.SchedulerMutex.Unlock()
+
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return currentWorkers, err
@@ -122,11 +127,10 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		labelCommonName    = runtimeInfo.GetCommonLabelName()
 		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
 		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
-		labelTotalname     = runtimeInfo.GetLabelNameForTotal()
-		labelDatasetNum    = runtimeInfo.GetDatasetNumLabelName()
+		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
 	)
 
-	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
+	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
 	e.Log.Info("check node labels", "labelNames", labelNames)
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
@@ -178,6 +182,7 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 		}
 
 		nodeName := node.Name
+		var labelToModify []utils.LabelToModify
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
@@ -187,28 +192,28 @@ func (e *JindoEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int3
 
 			toUpdate := node.DeepCopy()
 			for _, label := range labelNames {
-				delete(toUpdate.Labels, label)
+				utils.AddLabelToModifyToSlice(label, "", v1alpha1.DeleteLabel, &labelToModify)
 			}
 
 			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				delete(toUpdate.Labels, labelExclusiveName)
-				labelNames = append(labelNames, labelExclusiveName)
+				utils.AddLabelToModifyToSlice(labelExclusiveName, "", v1alpha1.DeleteLabel, &labelToModify)
+
 			}
 
-			isDeleted, err := lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo)
+			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelToModify)
 			if err != nil {
 				return err
 			}
-			if isDeleted {
-				labelNames = append(labelNames, labelDatasetNum)
-			}
 
-			err = e.Client.Update(context.TODO(), toUpdate)
+			// Update the toUpdate in UPDATE mode
+			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateModel(e.Client, toUpdate, labelToModify)
+			// Update the toUpdate in PATCH mode
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchModel(e.Client, toUpdate, labelToModify)
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed labels", labelNames)
+			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
 			return nil
 
 		})
