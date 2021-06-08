@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -54,16 +53,6 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 
 	if len(node.Labels) > 0 {
 		_, assigned = node.Labels[label]
-	}
-
-	exclusiveness := runtimeInfo.IsExclusive()
-	if exclusiveness {
-		log.Info("Placement Mode", "IsExclusive", exclusiveness)
-		for nodeLabel := range node.Labels {
-			if strings.Contains(nodeLabel, common.LabelAnnotationPrefix) {
-				assigned = true
-			}
-		}
 	}
 
 	log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
