@@ -59,7 +59,7 @@ func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assig
 	exclusiveness := runtimeInfo.IsExclusive()
 	if exclusiveness {
 		log.Info("Placement Mode", "IsExclusive", exclusiveness)
-		for nodeLabel, _ := range node.Labels {
+		for nodeLabel := range node.Labels {
 			if strings.Contains(nodeLabel, common.LabelAnnotationPrefix) {
 				assigned = true
 			}
