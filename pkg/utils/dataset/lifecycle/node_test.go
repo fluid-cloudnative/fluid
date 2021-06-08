@@ -11,14 +11,6 @@ import (
 )
 
 func TestAlreadyAssigned(t *testing.T) {
-	runtimeInfoNotExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoNotExclusive.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-
 	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -33,17 +25,9 @@ func TestAlreadyAssigned(t *testing.T) {
 		want        bool
 	}{
 		{
-			runtimeInfo: runtimeInfoNotExclusive,
+			runtimeInfo: runtimeInfoExclusive,
 			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-fluid-hbase": "true"}},
-				Spec:       v1.NodeSpec{},
-			},
-			want: true,
-		},
-		{
-			runtimeInfo: runtimeInfoNotExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-fluid-spark": "true"}},
+				ObjectMeta: metav1.ObjectMeta{},
 				Spec:       v1.NodeSpec{},
 			},
 			want: false,
@@ -62,7 +46,7 @@ func TestAlreadyAssigned(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-fluid-spark": "true"}},
 				Spec:       v1.NodeSpec{},
 			},
-			want: true,
+			want: false,
 		},
 	}
 
