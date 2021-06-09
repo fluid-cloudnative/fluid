@@ -35,9 +35,9 @@ runtime:
     portRange: 18000-19999
     enabled: false
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.1
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.6.0
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.5.1
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.6.0
     controller:
       image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-8725be8
 
