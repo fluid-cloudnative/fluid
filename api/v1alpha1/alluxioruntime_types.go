@@ -238,6 +238,10 @@ type AlluxioRuntimeSpec struct {
 	// of the file as the value.
 	// +optional
 	HadoopConfig string `json:"hadoopConfig,omitempty"`
+
+	// Journal Spec for persistent Journal log
+	// +optional
+	JournalSpec *JournalSpec `json:"journal,omitempty"`
 }
 
 // +kubebuilder:object:root=true

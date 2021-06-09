@@ -98,3 +98,12 @@ type User struct {
 	// The group name to run the alluxio runtime
 	GroupName string `json:"group"`
 }
+
+// Persistent Journal Spec
+type JournalSpec struct {
+	// PersistentVolumeClaim of the Journal
+	PersistentVolumeClaim *corev1.PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+
+	// PersistentVolumeClaim of the volumeMount inside the container
+	VolumeMount *corev1.VolumeMount `json:"volumeMount,omitempty"`
+}
