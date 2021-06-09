@@ -117,7 +117,7 @@ func TestParseSmartDataImage(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.5.1"},
+			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.6.0"},
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
