@@ -106,4 +106,7 @@ type JournalSpec struct {
 
 	// PersistentVolumeClaim of the volumeMount inside the container
 	VolumeMount *corev1.VolumeMount `json:"volumeMount,omitempty"`
+
+	// Enable Subpath Generator for Journal volume mount
+	EnableSubpathGenerator bool `json:"enableSubpathGenerator,omitempty"`
 }
