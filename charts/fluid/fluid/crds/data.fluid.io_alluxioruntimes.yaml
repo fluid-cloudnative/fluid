@@ -470,6 +470,9 @@ spec:
             journal:
               description: Journal Spec for persistent Journal log
               properties:
+                enableSubpathGenerator:
+                  description: Enable Subpath Generator for Journal volume mount
+                  type: boolean
                 persistentVolumeClaim:
                   description: PersistentVolumeClaim of the Journal
                   properties:
