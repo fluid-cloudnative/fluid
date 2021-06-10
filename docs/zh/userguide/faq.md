@@ -134,3 +134,82 @@ Change: 2021-01-19 00:16:21.539559082 +0800
 首先需要使用命令`kubectl get csidriver`查看是否安装了 CSI Driver。
 如果没有安装，使用命令`kubectl apply -f charts/fluid/fluid/templates/csi/driver.yaml`进行安装，然后观察 PVC 是否成功挂载到应用程序中。
 如果仍未能解决，使用`export KUBECONFIG=/etc/kubernetes/kubelet.conf && kubectl get csidriver`来查看 Kubelet 能够具有权限看到 CSI Driver。
+
+
+## 8. 为什么我在创建了Dataset和AlluxioRuntime后，alluxio master Pod进入了CrashLoopBackOff状态？
+
+**回答**:首先需要使用命令`kubectl describe pod <dataset_name>-master-0 `查看Pod错误退出的原因。
+
+alluxio master Pod由两个容器alluxio-master和alluxio-job-master组成，如果是其中某一容器执行失败退出，则查看它异常退出前输出的日志。
+
+例如，某次alluxio-job-master容器异常退出前，输出的日志为：
+
+```
+$ kubectl logs imagenet-master-0  -c alluxio-job-master -p
+2021-06-08 12:03:47,611 INFO  MetricsSystem - Starting sinks with config: {}.
+2021-06-08 12:03:47,616 INFO  MetricsHeartbeatContext - Created metrics heartbeat with ID app-1642528563209467270. This ID will be used for identifying info from the client. It can be set manually through the alluxio.user.app.id property
+2021-06-08 12:03:47,656 INFO  TieredIdentityFactory - Initialized tiered identity TieredIdentity(node=132.252.41.86, rack=null)
+2021-06-08 12:03:47,697 INFO  ExtensionFactoryRegistry - Loading core jars from /opt/alluxio-release-2.5.0-2-SNAPSHOT/lib
+2021-06-08 12:03:47,784 INFO  ExtensionFactoryRegistry - Loading extension jars from /opt/alluxio-release-2.5.0-2-SNAPSHOT/extensions
+2021-06-08 12:03:50,767 ERROR AlluxioJobMasterProcess - java.net.UnknownHostException: jfk8snode43: jfk8snode43: Temporary failure in name resolution
+java.lang.RuntimeException: java.net.UnknownHostException: jfk8snode43: jfk8snode43: Temporary failure in name resolution
+        at alluxio.util.network.NetworkAddressUtils.getLocalIpAddress(NetworkAddressUtils.java:514)
+        at alluxio.util.network.NetworkAddressUtils.getLocalHostName(NetworkAddressUtils.java:436)
+        at alluxio.util.network.NetworkAddressUtils.getConnectHost(NetworkAddressUtils.java:313)
+        at alluxio.underfs.JobUfsManager.connectUfs(JobUfsManager.java:55)
+        at alluxio.underfs.AbstractUfsManager.getOrAdd(AbstractUfsManager.java:150)
+        at alluxio.underfs.AbstractUfsManager.lambda$addMount$0(AbstractUfsManager.java:171)
+        at alluxio.underfs.UfsManager$UfsClient.acquireUfsResource(UfsManager.java:61)
+        at alluxio.master.journal.ufs.UfsJournal.<init>(UfsJournal.java:150)
+        at alluxio.master.journal.ufs.UfsJournalSystem.createJournal(UfsJournalSystem.java:83)
+        at alluxio.master.journal.ufs.UfsJournalSystem.createJournal(UfsJournalSystem.java:53)
+        at alluxio.master.AbstractMaster.<init>(AbstractMaster.java:73)
+        at alluxio.master.job.JobMaster.<init>(JobMaster.java:157)
+        at alluxio.master.AlluxioJobMasterProcess.<init>(AlluxioJobMasterProcess.java:92)
+        at alluxio.master.AlluxioJobMasterProcess$Factory.create(AlluxioJobMasterProcess.java:269)
+        at alluxio.master.AlluxioJobMaster.main(AlluxioJobMaster.java:45)
+Caused by: java.net.UnknownHostException: jfk8snode43: jfk8snode43: Temporary failure in name resolution
+        at java.net.InetAddress.getLocalHost(InetAddress.java:1506)
+        at alluxio.util.network.NetworkAddressUtils.getLocalIpAddress(NetworkAddressUtils.java:472)
+        ... 14 more
+Caused by: java.net.UnknownHostException: jfk8snode43: Temporary failure in name resolution
+        at java.net.Inet4AddressImpl.lookupAllHostAddr(Native Method)
+        at java.net.InetAddress$2.lookupAllHostAddr(InetAddress.java:929)
+        at java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1324)
+        at java.net.InetAddress.getLocalHost(InetAddress.java:1501)
+        ... 15 more
+2021-06-08 12:03:50,773 ERROR AlluxioJobMaster - Failed to create job master process
+java.lang.RuntimeException: java.net.UnknownHostException: jfk8snode43: jfk8snode43: Temporary failure in name resolution
+        at alluxio.util.network.NetworkAddressUtils.getLocalIpAddress(NetworkAddressUtils.java:514)
+        at alluxio.util.network.NetworkAddressUtils.getLocalHostName(NetworkAddressUtils.java:436)
+        at alluxio.util.network.NetworkAddressUtils.getConnectHost(NetworkAddressUtils.java:313)
+        at alluxio.underfs.JobUfsManager.connectUfs(JobUfsManager.java:55)
+        at alluxio.underfs.AbstractUfsManager.getOrAdd(AbstractUfsManager.java:150)
+        at alluxio.underfs.AbstractUfsManager.lambda$addMount$0(AbstractUfsManager.java:171)
+        at alluxio.underfs.UfsManager$UfsClient.acquireUfsResource(UfsManager.java:61)
+        at alluxio.master.journal.ufs.UfsJournal.<init>(UfsJournal.java:150)
+        at alluxio.master.journal.ufs.UfsJournalSystem.createJournal(UfsJournalSystem.java:83)
+        at alluxio.master.journal.ufs.UfsJournalSystem.createJournal(UfsJournalSystem.java:53)
+        at alluxio.master.AbstractMaster.<init>(AbstractMaster.java:73)
+        at alluxio.master.job.JobMaster.<init>(JobMaster.java:157)
+        at alluxio.master.AlluxioJobMasterProcess.<init>(AlluxioJobMasterProcess.java:92)
+        at alluxio.master.AlluxioJobMasterProcess$Factory.create(AlluxioJobMasterProcess.java:269)
+        at alluxio.master.AlluxioJobMaster.main(AlluxioJobMaster.java:45)
+Caused by: java.net.UnknownHostException: jfk8snode43: jfk8snode43: Temporary failure in name resolution
+        at java.net.InetAddress.getLocalHost(InetAddress.java:1506)
+        at alluxio.util.network.NetworkAddressUtils.getLocalIpAddress(NetworkAddressUtils.java:472)
+        ... 14 more
+Caused by: java.net.UnknownHostException: jfk8snode43: Temporary failure in name resolution
+        at java.net.Inet4AddressImpl.lookupAllHostAddr(Native Method)
+        at java.net.InetAddress$2.lookupAllHostAddr(InetAddress.java:929)
+        at java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1324)
+        at java.net.InetAddress.getLocalHost(InetAddress.java:1501)
+        ... 15 more
+2021-06-08 12:03:50,917 INFO  NettyUtils - EPOLL_MODE is available
+2021-06-08 12:03:51,319 WARN  MetricsHeartbeatContext - Failed to heartbeat to the metrics master before exit
+```
+
+此错误一般是由于alluxio master Pod所在主机，未在dns服务器或本地/etc/hosts文件中配置hostname和ip的映射关系，导致alluxio-job-master无法解析hostname。
+此时，你需要登陆alluxio master Pod所在主机，执行命令`hostname`查询主机名，将其与ip的映射关系写入/etc/hosts文件。
+
+你可以搜索在本项目的issue中进行搜索，寻找你遇到的报错信息的解决方案。如果没有找到可以解决你问题的issue，也可以提出新的issue。
