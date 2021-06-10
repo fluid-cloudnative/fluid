@@ -211,25 +211,25 @@ func TestGetWorkerImage(t *testing.T) {
 		wantImageTag  string
 	}{
 		{
-			datasetName: "hbase",
-			runtimeType: "jindoruntime",
-			namespace:   "fluid",
+			datasetName:   "hbase",
+			runtimeType:   "jindoruntime",
+			namespace:     "fluid",
 			wantImageName: "",
-			wantImageTag: "",
+			wantImageTag:  "",
 		},
 		{
-			datasetName: "hbase",
-			runtimeType: "alluxio",
-			namespace: "default",
+			datasetName:   "hbase",
+			runtimeType:   "alluxio",
+			namespace:     "default",
 			wantImageName: "fluid",
-			wantImageTag: "0.6.0",
+			wantImageTag:  "0.6.0",
 		},
 		{
-			datasetName: "spark",
-			runtimeType: "alluxio",
-			namespace: "default",
+			datasetName:   "spark",
+			runtimeType:   "alluxio",
+			namespace:     "default",
 			wantImageName: "",
-			wantImageTag: "",
+			wantImageTag:  "",
 		},
 	}
 
