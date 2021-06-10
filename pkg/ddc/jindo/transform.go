@@ -41,7 +41,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 
 	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
 	if runtime.Spec.Tieredstore.Levels[0].Quota != nil {
-		userSetQuota = append(userSetQuota, utils.TranformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota))
+		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota))
 	}
 
 	if runtime.Spec.Tieredstore.Levels[0].QuotaList != "" {
