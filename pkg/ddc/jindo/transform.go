@@ -503,6 +503,9 @@ func (e *JindoEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtim
 			toleration.TolerationSeconds = nil
 			value.Tolerations = append(value.Tolerations, toleration)
 		}
+		value.Master.Tolerations = value.Tolerations
+		value.Worker.Tolerations = value.Tolerations
+		value.Fuse.Tolerations = value.Tolerations
 	}
 
 	if len(runtime.Spec.Master.Tolerations) > 0 {
