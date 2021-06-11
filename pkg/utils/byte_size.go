@@ -2,24 +2,33 @@ package utils
 
 import (
 	"fmt"
-	"github.com/docker/go-units"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/docker/go-units"
 )
 
 const (
-	KB = 1024
-	MB = 1024 * KB
-	GB = 1024 * MB
-	TB = 1024 * GB
-	PB = 1024 * TB
+	KiB = 1024
+	MiB = 1024 * KiB
+	GiB = 1024 * MiB
+	TiB = 1024 * GiB
+	PiB = 1024 * TiB
+	EiB = 1024 * PiB
 )
 
 type unitMap map[string]int64
 
 var (
-	binaryMap = unitMap{"k": KB, "m": MB, "g": GB, "t": TB, "p": PB}
+	binaryMap = unitMap{
+		"k": KiB,
+		"m": MiB,
+		"g": GiB,
+		"t": TiB,
+		"p": PiB,
+		"e": EiB,
+	}
 	sizeRegex = regexp.MustCompile(`^(\d+(\.\d+)*) ?([kKmMgGtTpP])?[iI]?[bB]?$`)
 )
 
@@ -34,7 +43,9 @@ func BytesSize(size float64) string {
 }
 
 // FromHumanSize returns an integer from a human-readable specification of a
-// size with 1024 as multiplier (eg. "44kB" = "(44 * 1024)B").
+// size with 1024 as multiplier
+// e.g.:
+// 	1. 1 KiB = 1024 byte
 func FromHumanSize(size string) (int64, error) {
 	return parseSize(size, binaryMap)
 }
