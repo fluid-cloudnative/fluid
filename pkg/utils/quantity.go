@@ -21,7 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
+// TransformQuantityToAlluxioUnit transform a given input quantity to another one
+// that can be recognized by Alluxio. This is necessary because Alluxio takes decimal byte units(e.g. KB, MB, GB, etc.)
+// as binary byte units(e.g. Ki, Mi, Gi)
+func TransformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 	value = q.String()
 
 	if strings.HasSuffix(value, "i") {
@@ -32,7 +35,9 @@ func TranformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 
 }
 
-func TranformQuantityToJindoUnit(q *resource.Quantity) (value string) {
+// TransfromQuantityToJindoUnit transform a given input quantity to another one
+// that can be recognized by Jindo.
+func TransformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	value = q.String()
 	if strings.HasSuffix(value, "Gi") {
 		value = strings.ReplaceAll(value, "Gi", "g")
@@ -40,6 +45,8 @@ func TranformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	return
 }
 
+// TransformQuantityToUnits returns a human-readable size in bytes, kibibytes,
+// mebibytes, gibibytes, or tebibytes (eg. "44kiB", "17MiB").
 func TranformQuantityToUnits(q *resource.Quantity) (value string) {
 	// value = q.String()
 
@@ -48,5 +55,4 @@ func TranformQuantityToUnits(q *resource.Quantity) (value string) {
 	// }
 
 	return units.BytesSize(float64(q.Value()))
-
 }

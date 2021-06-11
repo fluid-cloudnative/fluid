@@ -173,7 +173,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		var quotas []string
 		for _, cachePath := range level.CachePaths {
 			paths = append(paths, fmt.Sprintf("%s/%s/%s", cachePath.Path, runtime.Namespace, runtime.Name))
-			quotas = append(quotas, utils.TranformQuantityToAlluxioUnit(cachePath.Quota))
+			quotas = append(quotas, utils.TransformQuantityToAlluxioUnit(cachePath.Quota))
 		}
 
 		pathConfigStr := strings.Join(paths, ",")

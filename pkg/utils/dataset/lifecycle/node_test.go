@@ -62,7 +62,7 @@ func TestCanbeAssigned(t *testing.T) {
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
-				Quota:  resource.NewQuantity(2,resource.BinarySI),
+				Quota:      resource.NewQuantity(2, resource.BinarySI),
 			},
 		},
 	}
@@ -93,10 +93,10 @@ func TestCanbeAssigned(t *testing.T) {
 			runtimeInfo: runtimeInfoNotExclusive,
 			node: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{},
-				Spec: v1.NodeSpec{},
+				Spec:       v1.NodeSpec{},
 				Status: v1.NodeStatus{
 					Allocatable: v1.ResourceList{
-						v1.ResourceMemory: *resource.NewQuantity(3,resource.BinarySI),
+						v1.ResourceMemory: *resource.NewQuantity(3, resource.BinarySI),
 					},
 				},
 			},
@@ -106,10 +106,10 @@ func TestCanbeAssigned(t *testing.T) {
 			runtimeInfo: runtimeInfoNotExclusive,
 			node: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{},
-				Spec: v1.NodeSpec{},
+				Spec:       v1.NodeSpec{},
 				Status: v1.NodeStatus{
 					Allocatable: v1.ResourceList{
-						v1.ResourceMemory: *resource.NewQuantity(1,resource.BinarySI),
+						v1.ResourceMemory: *resource.NewQuantity(1, resource.BinarySI),
 					},
 				},
 			},
