@@ -79,7 +79,7 @@ type AlluxioCompTemplateSpec struct {
 
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the main container's filesystem.
 	// +optional
-	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -128,7 +128,7 @@ type AlluxioFuseSpec struct {
 
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the main container's filesystem.
 	// +optional
-	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 // Level describes configurations a tier needs. <br>
@@ -249,7 +249,7 @@ type AlluxioRuntimeSpec struct {
 
 	// Volumes is the list of Kubernetes volumes that can be mounted by the alluxio master, worker and fuse.
 	// +optional
-	Volumes []apiv1.Volume `json:"volumes,omitempty"`
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 // +kubebuilder:object:root=true
