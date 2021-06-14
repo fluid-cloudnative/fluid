@@ -167,3 +167,68 @@ func TestGetPVCsFromPod(t *testing.T) {
 		t.Errorf("the result of GetPVCsFromPod is not right, %v", pvcNames)
 	}
 }
+
+func TestGetPvcMountPods(t *testing.T) {
+	namespace := "test"
+	volumeName := "found"
+	testPodInputs := []*v1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PodSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeName,
+							ReadOnly:  true,
+						}},
+				},
+			},
+		},
+	}}
+
+	testPods := []runtime.Object{}
+
+	for _, pod := range testPodInputs {
+		testPods = append(testPods, pod.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPods...)
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		length int
+	}{
+		{
+			name: "pod list is null",
+			args: args{
+				name:      "not found",
+				namespace: namespace,
+			},
+			length: 0,
+		},
+		{
+			name: "pod list is not empty",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			length: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if pods, _ := GetPvcMountPods(client, tt.args.name, tt.args.namespace); len(pods) != tt.length {
+				t.Errorf("testcase %v GetPvcMountPods() = %v, want %v", tt.name, pods, tt.length)
+			}
+		})
+	}
+}
