@@ -142,8 +142,7 @@ func TestDestroyWorker(t *testing.T) {
 			wantedNodeNumber: 0,
 			wantedNodeLabels: map[string]map[string]string{
 				"test-node-spark": {},
-				"test-node-share":
-				{
+				"test-node-share": {
 					"fluid.io/dataset-num":               "1",
 					"fluid.io/s-alluxio-fluid-hbase":     "true",
 					"fluid.io/s-fluid-hbase":             "true",
@@ -151,8 +150,7 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-alluxio-m-fluid-hbase": "1B",
 					"fluid.io/s-h-alluxio-t-fluid-hbase": "6B",
 				},
-				"test-node-hadoop":
-				{
+				"test-node-hadoop": {
 					"node-select": "true",
 				},
 			},
