@@ -1,7 +1,6 @@
 package alluxio
 
 import (
-	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -24,6 +23,7 @@ func init() {
 }
 
 func TestDestroyWorker(t *testing.T) {
+	// runtimeInfoSpark tests destroy Worker in exclusive mode.
 	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -32,12 +32,13 @@ func TestDestroyWorker(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
+	// runtimeInfoSpark tests destroy Worker in shareMode mode.
 	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.Tieredstore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 	nodeSelector := map[string]string{
 		"node-select": "true",
@@ -46,7 +47,7 @@ func TestDestroyWorker(t *testing.T) {
 
 	var nodeInputs = []*v1.Node{
 		{
-			ObjectMeta: metav1.ObjectMeta{ // 里面只有fluid的spark
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":               "1",
@@ -142,8 +143,7 @@ func TestDestroyWorker(t *testing.T) {
 			wantedNodeNumber: 0,
 			wantedNodeLabels: map[string]map[string]string{
 				"test-node-spark": {},
-				"test-node-share":
-				{
+				"test-node-share": {
 					"fluid.io/dataset-num":               "1",
 					"fluid.io/s-alluxio-fluid-hbase":     "true",
 					"fluid.io/s-fluid-hbase":             "true",
@@ -151,8 +151,7 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-alluxio-m-fluid-hbase": "1B",
 					"fluid.io/s-h-alluxio-t-fluid-hbase": "6B",
 				},
-				"test-node-hadoop":
-				{
+				"test-node-hadoop": {
 					"node-select": "true",
 				},
 			},
@@ -166,7 +165,6 @@ func TestDestroyWorker(t *testing.T) {
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		fmt.Println(engine.Client)
 		currentWorkers, err := engine.destroyWorkers(test.expectedWorkers)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
