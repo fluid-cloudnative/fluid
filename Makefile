@@ -114,16 +114,16 @@ update-api-doc:
 
 # Build the docker image
 docker-build-dataset-controller: generate fmt vet
-	docker build --no-cache . -f dockerfile/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-alluxioruntime-controller: generate fmt vet
-	docker build --no-cache . -f dockerfile/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-jindoruntime-controller: generate fmt vet
-	docker build --no-cache . -f dockerfile/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi: generate fmt vet
-	docker build --no-cache . -f dockerfile/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
 docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
@@ -132,7 +132,7 @@ docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
 
 docker-build-webhook:
-	docker build --no-cache . -f dockerfile/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+	docker build --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
