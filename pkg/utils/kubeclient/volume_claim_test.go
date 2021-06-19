@@ -234,6 +234,42 @@ func TestGetPvcMountNodes(t *testing.T) {
 		Status: v1.PodStatus{
 			Phase: v1.PodRunning,
 		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "fff", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName2,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeName2,
+							ReadOnly:  true,
+						}},
+				},
+			},
+			NodeName: "",
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "hhh", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName2,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeName1,
+							ReadOnly:  true,
+						}},
+				},
+			},
+			NodeName: "node3",
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
 	}}
 
 	testPods := []runtime.Object{}
