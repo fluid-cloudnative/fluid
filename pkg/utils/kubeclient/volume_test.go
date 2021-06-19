@@ -77,6 +77,15 @@ func TestIsPersistentVolumeExist(t *testing.T) {
 				annotations: common.ExpectedFluidAnnotations,
 			},
 			want: true,
+		}, {
+			name: "volume is not created by fluid 2",
+			args: args{
+				name: "notCreatedByFluid2",
+				annotations: map[string]string{
+					"test1": "test1",
+				},
+			},
+			want: false,
 		},
 	}
 	for _, tt := range tests {
