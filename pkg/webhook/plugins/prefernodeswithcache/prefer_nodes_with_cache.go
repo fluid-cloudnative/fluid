@@ -46,7 +46,7 @@ func (p *PreferNodesWithCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
+func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return

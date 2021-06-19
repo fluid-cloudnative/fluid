@@ -62,7 +62,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// inject affinity info into pod
-	a.InjectAffinityToPod(pod)
+	a.AddScheduleInfoToPod(pod)
 
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
@@ -79,10 +79,10 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 	return nil
 }
 
-// InjectAffinityToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) InjectAffinityToPod(pod *corev1.Pod) {
-	var setupLog = ctrl.Log.WithName("InjectAffinityToPod")
-	setupLog.Info("start to inject", "Pod", pod.Name, "Namespace", pod.Namespace)
+// AddScheduleInfoToPod will call all plugins to get total prefer info
+func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) {
+	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
+	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	var runtimeInfos []base.RuntimeInfoInterface
 	for _, pvcName := range pvcNames {
@@ -102,19 +102,19 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectAffinityToPod(pod *corev1.Po
 		}
 	}
 
-	// get plugins regedit and get the need plugins list from it
-	pluginsRegedit := plugins.Registry(a.Client)
-	var pluginsList []plugins.AffinityInterface
+	// get plugins Registry and get the need plugins list from it
+	pluginsRegistry := plugins.Registry(a.Client)
+	var pluginsList []plugins.MutatingHandler
 	if len(runtimeInfos) == 0 {
-		pluginsList = pluginsRegedit.GetNoDatasetHandle()
+		pluginsList = pluginsRegistry.GetNoDatasetHandler()
 	} else {
-		pluginsList = pluginsRegedit.GetWithDatasetHandle()
+		pluginsList = pluginsRegistry.GetWithDatasetHandler()
 	}
 
 	// call every plugin in the plugins list in the defined order
 	// if a plugin return shouldStop, stop to call other plugins
 	for _, plugin := range pluginsList {
-		shouldStop := plugin.InjectAffinity(pod, runtimeInfos)
+		shouldStop := plugin.Mutate(pod, runtimeInfos)
 		if shouldStop {
 			setupLog.Info("the plugin return true, no need to call other plugins", "plugin", plugin.GetName())
 			break

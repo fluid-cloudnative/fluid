@@ -16,15 +16,16 @@ limitations under the License.
 package plugins
 
 import (
+	"math/rand"
+	"testing"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	corev1 "k8s.io/api/core/v1"
-	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 )
 
 func TestPods(t *testing.T) {
@@ -33,7 +34,7 @@ func TestPods(t *testing.T) {
 	var (
 		pod               corev1.Pod
 		c                 client.Client
-		plugin            AffinityInterface
+		plugin            MutatingHandler
 		pluginName        string
 		lenNodePrefer     int
 		lenNodeRequire    int
@@ -90,7 +91,7 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithoutCache
 		plugin = prefernodeswithoutcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.InjectAffinity(&pod, runtimeInfos)
+		plugin.Mutate(&pod, runtimeInfos)
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -109,7 +110,7 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has mounted datasets", pluginName)
 		}
 
-		plugin.InjectAffinity(&pod, nilRuntimeInfos)
+		plugin.Mutate(&pod, nilRuntimeInfos)
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -131,7 +132,7 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithCache
 		plugin = prefernodeswithcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.InjectAffinity(&pod, nilRuntimeInfos)
+		plugin.Mutate(&pod, nilRuntimeInfos)
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -150,7 +151,7 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has no mounted datasets", pluginName)
 		}
 
-		plugin.InjectAffinity(&pod, runtimeInfos)
+		plugin.Mutate(&pod, runtimeInfos)
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
 			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||

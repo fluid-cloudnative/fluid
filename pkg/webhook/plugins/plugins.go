@@ -23,10 +23,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type AffinityInterface interface {
-	// InjectAffinity injects affinity info into pod
+type MutatingHandler interface {
+	// Mutate injects affinity info into pod
 	// if a plugin return true, it means that no need to call other plugins
-	InjectAffinity(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool)
+	Mutate(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool)
 	// GetName returns the name of plugin
 	GetName() string
 }
@@ -34,25 +34,25 @@ type AffinityInterface interface {
 // Plugins record the active plugins
 // including two kinds: plugins for pod with no dataset mounted and with dataset mounted
 type plugins struct {
-	noDatasetHandle   []AffinityInterface
-	withDatasetHandle []AffinityInterface
+	noDatasetHandler   []MutatingHandler
+	withDatasetHandler []MutatingHandler
 }
 
-func (p *plugins) GetNoDatasetHandle() []AffinityInterface {
-	return p.noDatasetHandle
+func (p *plugins) GetNoDatasetHandler() []MutatingHandler {
+	return p.noDatasetHandler
 }
 
-func (p *plugins) GetWithDatasetHandle() []AffinityInterface {
-	return p.withDatasetHandle
+func (p *plugins) GetWithDatasetHandler() []MutatingHandler {
+	return p.withDatasetHandler
 }
 
 // Registry return active plugins in a defined order
 func Registry(client client.Client) plugins {
 	return plugins{
-		noDatasetHandle: []AffinityInterface{
+		noDatasetHandler: []MutatingHandler{
 			prefernodeswithoutcache.NewPlugin(client),
 		},
-		withDatasetHandle: []AffinityInterface{
+		withDatasetHandler: []MutatingHandler{
 			prefernodeswithcache.NewPlugin(client),
 		},
 	}
