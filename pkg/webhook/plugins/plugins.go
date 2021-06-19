@@ -34,25 +34,25 @@ type MutatingHandler interface {
 // Plugins record the active plugins
 // including two kinds: plugins for pod with no dataset mounted and with dataset mounted
 type plugins struct {
-	noDatasetHandler   []MutatingHandler
-	withDatasetHandler []MutatingHandler
+	podWithoutDatasetHandler []MutatingHandler
+	podWithDatasetHandler    []MutatingHandler
 }
 
-func (p *plugins) GetNoDatasetHandler() []MutatingHandler {
-	return p.noDatasetHandler
+func (p *plugins) GetPodWithoutDatasetHandler() []MutatingHandler {
+	return p.podWithoutDatasetHandler
 }
 
-func (p *plugins) GetWithDatasetHandler() []MutatingHandler {
-	return p.withDatasetHandler
+func (p *plugins) GetPodWithDatasetHandler() []MutatingHandler {
+	return p.podWithDatasetHandler
 }
 
 // Registry return active plugins in a defined order
 func Registry(client client.Client) plugins {
 	return plugins{
-		noDatasetHandler: []MutatingHandler{
+		podWithoutDatasetHandler: []MutatingHandler{
 			prefernodeswithoutcache.NewPlugin(client),
 		},
-		withDatasetHandler: []MutatingHandler{
+		podWithDatasetHandler: []MutatingHandler{
 			prefernodeswithcache.NewPlugin(client),
 		},
 	}

@@ -106,9 +106,9 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	pluginsRegistry := plugins.Registry(a.Client)
 	var pluginsList []plugins.MutatingHandler
 	if len(runtimeInfos) == 0 {
-		pluginsList = pluginsRegistry.GetNoDatasetHandler()
+		pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 	} else {
-		pluginsList = pluginsRegistry.GetWithDatasetHandler()
+		pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
 	}
 
 	// call every plugin in the plugins list in the defined order
