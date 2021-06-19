@@ -16,7 +16,6 @@ limitations under the License.
 package requirenodewithfuse
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -47,32 +46,29 @@ func (p *RequireNodeWithFuse) GetName() string {
 }
 
 func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
-	// if the pod has mounted datasets, should exit and call other plugins
-	if len(runtimeInfos) != 0 {
+	// if the pod has no mounted datasets, should exit and call other plugins
+	if len(runtimeInfos) == 0 {
 		return
 	}
 
-	// if the pod has no mounted dataset, no need to call other plugins
-	shouldStop = false
+	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
 
-	preferredSchedulingTerms := []corev1.PreferredSchedulingTerm{
-		getPreferredSchedulingTerm(),
+	for _, runtime := range runtimeInfos {
+		requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerm(runtime))
 	}
 
-	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
+	utils.InjectNodeSelectorTerms(requiredSchedulingTerms, pod)
 
 	return
 }
 
-func getPreferredSchedulingTerm() corev1.PreferredSchedulingTerm {
-	return corev1.PreferredSchedulingTerm{
-		Weight: 50,
-		Preference: corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      common.GetDatasetNumLabelName(),
-					Operator: corev1.NodeSelectorOpDoesNotExist,
-				},
+func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.NodeSelectorTerm {
+	return corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{
+			{
+				Key:      runtimeInfo.GetCommonLabelName(),
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"true"},
 			},
 		},
 	}
