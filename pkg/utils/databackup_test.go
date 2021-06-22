@@ -165,3 +165,30 @@ func TestParseBackupRestorePath(t *testing.T) {
 	}
 
 }
+
+
+func TestGetBackupUserDir(t *testing.T) {
+	tests := []struct {
+		name string
+		namespace string
+		want string
+	}{
+		{
+			name: "test1",
+			namespace: "ns1",
+			want:"/tmp/backupuser/ns1/test1",
+		},
+		{
+			name: "test2",
+			namespace: "ns2",
+			want:"/tmp/backupuser/ns2/test2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetBackupUserDir(tt.namespace, tt.name); got != tt.want {
+				t.Errorf("GetBackupUserDir = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
