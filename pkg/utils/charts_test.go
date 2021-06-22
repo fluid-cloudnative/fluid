@@ -36,7 +36,7 @@ func TestGetChartsDirectory(t *testing.T) {
 		t.Errorf("ChartsDirectory should be /charts if ~/charts not exist")
 	}
 	homeChartsFolder := os.Getenv("HOME") + "/charts"
-	err := os.Mkdir(homeChartsFolder, 600)
+	err := os.Mkdir(homeChartsFolder, 0600)
 	if err != nil && GetChartsDirectory() != "/charts" {
 		t.Errorf("ChartsDirectory should be ~/charts if ~/charts exist")
 	}
