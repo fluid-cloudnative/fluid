@@ -30,10 +30,8 @@ func PathExists(path string) bool {
 
 var chartFolder = ""
 
-/**
-*
+
 // GetChartsDirectory gets the directory of the charts
-**/
 func GetChartsDirectory() string {
 	if chartFolder != "" {
 		return chartFolder
