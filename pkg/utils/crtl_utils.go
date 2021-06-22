@@ -32,22 +32,26 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
-// NoRequeue returns the result of a reconciler invocation and won't requeue.
+// NoRequeue returns the result of a reconcile invocation and no err
+// The Object will requeue immediately
 func NoRequeue() (ctrl.Result, error) {
 	return RequeueIfError(nil)
 }
 
-// RequeueAfterInterval returns the result of a reconciler invocation with a given requeue interval.
+// RequeueAfterInterval returns the result of a reconcile invocation with a given requeue interval and no err
+// The Object will requeue after the given requeue interval
 func RequeueAfterInterval(interval time.Duration) (ctrl.Result, error) {
 	return ctrl.Result{RequeueAfter: interval}, nil
 }
 
-// RequeueImmediately returns the result of a reconciler invocation and requeue immediately.
+// RequeueImmediately returns the result of a reconciler invocation and no err
+// The Object will requeue immediately whether the err is nil or not
 func RequeueImmediately() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
-// RequeueIfError returns the result of a reconciler invocation and requeue immediately if err is not nil.
+// RequeueIfError returns the result of a reconciler invocation and the err
+// The Object will requeue immediately whether the err is nil or not
 func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
@@ -78,7 +82,8 @@ func Now() *metav1.Time {
 	return &now
 }
 
-// ContainsString Determine whether the string array contains a specific string, return true if contains the string and return false if not.
+// ContainsString Determine whether the string array contains a specific string
+// return true if contains the string and return false if not.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -88,6 +93,8 @@ func ContainsString(slice []string, s string) bool {
 	return false
 }
 
+// ContainsOwners Determine whether the slice of owners contains the owner of a Dataset
+// return true if contains the owner and return false if not.
 func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Dataset) bool {
 	for _, owner := range owners {
 		if owner.UID == dataset.UID {
