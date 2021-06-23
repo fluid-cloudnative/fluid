@@ -18,7 +18,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"k8s.io/client-go/util/retry"
 	"sort"
@@ -271,7 +271,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		}
 
 		nodeName := node.Name
-		var labelToModify []utils.LabelToModify
+		var labelsToModify common.LabelsToModify
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
@@ -281,22 +281,22 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 			toUpdate := node.DeepCopy()
 			for _, label := range labelNames {
-				utils.AddLabelToModifyToSlice(label, "", v1alpha1.DeleteLabel, &labelToModify)
+				labelsToModify.Add(label, "", common.DeleteLabel)
 			}
 
 			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				utils.AddLabelToModifyToSlice(labelExclusiveName, "", v1alpha1.DeleteLabel, &labelToModify)
+				labelsToModify.Add(labelExclusiveName, "", common.DeleteLabel)
 			}
 
-			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelToModify)
+			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
 			if err != nil {
 				return err
 			}
 			// Update the toUpdate in UPDATE mode
 			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateModel(e.Client, toUpdate, labelToModify)
 			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchModel(e.Client, toUpdate, labelToModify)
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchModel(e.Client, toUpdate, labelsToModify)
 			if err != nil {
 				return err
 			}

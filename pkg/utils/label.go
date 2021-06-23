@@ -3,27 +3,21 @@ package utils
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// LabelToModify modifies the labelKey in operationType.
-type LabelToModify struct {
-	LabelKey      string
-	LabelValue    string
-	OperationType v1alpha1.OperationType
-}
-
 // ChangeNodeLabelWithUpdateModel updates the input labels in UPDATE mode.
-func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsToModify []LabelToModify) (modifiedLabels []string, err error) {
-	for _, labelToModify := range labelsToModify {
-		if labelToModify.OperationType == v1alpha1.AddLabel || labelToModify.OperationType == v1alpha1.UpdateLabel {
+func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
+	for _, labelToModify := range labelsToModify.Labels {
+		switch labelToModify.OperationType {
+		case common.AddLabel, common.UpdateLabel:
 			node.Labels[labelToModify.LabelKey] = labelToModify.LabelValue
-		} else if labelToModify.OperationType == v1alpha1.DeleteLabel {
+		case common.DeleteLabel:
 			delete(node.Labels, labelToModify.LabelKey)
-		} else {
-			err = fmt.Errorf("fail to update the label due to the wrong operation")
+		default:
+			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", labelToModify.OperationType)
 			return nil, err
 		}
 		modifiedLabels = append(modifiedLabels, labelToModify.LabelKey)
@@ -37,16 +31,17 @@ func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsT
 }
 
 // ChangeNodeLabelWithPatchModel updates the input labels in PATCH mode.
-func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToModify []LabelToModify) (modifiedLabels []string, err error) {
+func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
 	patchNode := node.DeepCopy()
 
-	for _, labelToModify := range labelsToModify {
-		if labelToModify.OperationType == v1alpha1.AddLabel || labelToModify.OperationType == v1alpha1.UpdateLabel {
+	for _, labelToModify := range labelsToModify.Labels {
+		switch labelToModify.OperationType {
+		case common.AddLabel, common.UpdateLabel:
 			patchNode.Labels[labelToModify.LabelKey] = labelToModify.LabelValue
-		} else if labelToModify.OperationType == v1alpha1.DeleteLabel {
+		case common.DeleteLabel:
 			delete(patchNode.Labels, labelToModify.LabelKey)
-		} else {
-			err = fmt.Errorf("fail to update the label due to the wrong operation")
+		default:
+			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", labelToModify.OperationType)
 			return nil, err
 		}
 		modifiedLabels = append(modifiedLabels, labelToModify.LabelKey)
@@ -57,16 +52,4 @@ func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToMod
 		return nil, err
 	}
 	return modifiedLabels, nil
-}
-
-// AddLabelToModifyToSlice creates new struct LabelToModify with input params and adds it into the slice.
-func AddLabelToModifyToSlice(labelKey string, labelValue string, operationType v1alpha1.OperationType, labelsToModify *[]LabelToModify) {
-	newLabelToModify := LabelToModify{
-		LabelKey:      labelKey,
-		OperationType: operationType,
-	}
-	if operationType != v1alpha1.DeleteLabel {
-		newLabelToModify.LabelValue = labelValue
-	}
-	*labelsToModify = append(*labelsToModify, newLabelToModify)
 }

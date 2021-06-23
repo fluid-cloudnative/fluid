@@ -14,7 +14,10 @@ limitations under the License.
 */
 package common
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestHitTarget(t *testing.T) {
 	testCases := map[string]struct {
@@ -50,4 +53,51 @@ func TestHitTarget(t *testing.T) {
 		}
 	}
 
+}
+
+func TestAdd(t *testing.T) {
+	var testCase = []struct {
+		labelKey             string
+		labelValue           string
+		operationType        OperationType
+		wantedLabelsToModify []LabelToModify
+	}{
+		{
+			labelKey:      "commonLabel",
+			labelValue:    "true",
+			operationType: AddLabel,
+			wantedLabelsToModify: []LabelToModify{
+				{
+					LabelKey:      "commonLabel",
+					LabelValue:    "true",
+					OperationType: AddLabel,
+				},
+			},
+		},
+
+		{
+			labelKey:      "datasetNum",
+			labelValue:    "12",
+			operationType: DeleteLabel,
+			wantedLabelsToModify: []LabelToModify{
+				{
+					LabelKey:      "commonLabel",
+					LabelValue:    "true",
+					OperationType: AddLabel,
+				},
+				{
+					LabelKey:      "datasetNum",
+					OperationType: DeleteLabel,
+				},
+			},
+		},
+	}
+
+	var labelsToModify LabelsToModify
+	for _, test := range testCase {
+		labelsToModify.Add(test.labelKey, test.labelValue, test.operationType)
+		if !reflect.DeepEqual(labelsToModify.Labels, test.wantedLabelsToModify) {
+			t.Errorf("fail to add labe to modify to slice")
+		}
+	}
 }

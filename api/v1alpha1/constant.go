@@ -33,11 +33,3 @@ const (
 	// DefaultMode is exclusive
 	DefaultMode PlacementMode = ""
 )
-
-type OperationType string
-
-const (
-	AddLabel    OperationType = "Add"
-	DeleteLabel OperationType = "Delete"
-	UpdateLabel OperationType = "UpdateValue"
-)

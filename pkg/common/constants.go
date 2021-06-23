@@ -108,3 +108,16 @@ const (
 	True                   = "true"
 	False                  = "false"
 )
+
+type OperationType string
+
+const (
+	// AddLabel means adding a new label on the specific node.
+	AddLabel OperationType = "Add"
+
+	// DeleteLabel means deleting the label of the specific node.
+	DeleteLabel OperationType = "Delete"
+
+	// UpdateLabel means updating the label value of the specific node.
+	UpdateLabel OperationType = "UpdateValue"
+)

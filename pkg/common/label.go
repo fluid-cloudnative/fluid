@@ -29,6 +29,30 @@ const (
 	LabelFluidSchedulingStrategyFlag = LabelAnnotationPrefix + "enable-scheduling-strategy"
 )
 
+// LabelToModify modifies the labelKey in operationType.
+type LabelToModify struct {
+	LabelKey      string
+	LabelValue    string
+	OperationType OperationType
+}
+
+type LabelsToModify struct {
+	Labels []LabelToModify
+}
+
+// Add creates new struct LabelToModify with input params and adds it into the slice.
+func (labels *LabelsToModify) Add(labelKey string, labelValue string, operationType OperationType) {
+
+	newLabelToModify := LabelToModify{
+		LabelKey:      labelKey,
+		OperationType: operationType,
+	}
+	if operationType != DeleteLabel {
+		newLabelToModify.LabelValue = labelValue
+	}
+	labels.Labels = append(labels.Labels, newLabelToModify)
+}
+
 func GetDatasetNumLabelName() string {
 	return LabelAnnotationDatasetNum
 }

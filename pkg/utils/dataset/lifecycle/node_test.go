@@ -5,7 +5,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -293,7 +292,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 	var testCase = []struct {
 		node           *v1.Node
 		runtimeInfo    base.RuntimeInfo
-		expectedResult []utils.LabelToModify
+		expectedResult []common.LabelToModify
 	}{
 		{
 			node: &v1.Node{
@@ -301,11 +300,11 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo: base.RuntimeInfo{},
-			expectedResult: []utils.LabelToModify{
+			expectedResult: []common.LabelToModify{
 				{
 					LabelKey:      "fluid.io/dataset-num",
 					LabelValue:    "1",
-					OperationType: datav1alpha1.UpdateLabel,
+					OperationType: common.UpdateLabel,
 				},
 			},
 		},
@@ -315,11 +314,11 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo: base.RuntimeInfo{},
-			expectedResult: []utils.LabelToModify{
+			expectedResult: []common.LabelToModify{
 				{
 					LabelKey:      "fluid.io/dataset-num",
 					LabelValue:    "",
-					OperationType: datav1alpha1.DeleteLabel,
+					OperationType: common.DeleteLabel,
 				},
 			},
 		},
@@ -342,9 +341,9 @@ func TestDecreaseDatasetNum(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		var labelToModify []utils.LabelToModify
-		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labelToModify)
-		if !reflect.DeepEqual(labelToModify, test.expectedResult) {
+		var labels common.LabelsToModify
+		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labels)
+		if !reflect.DeepEqual(labels.Labels, test.expectedResult) {
 			t.Errorf("fail to exec the function with the error ")
 		}
 
