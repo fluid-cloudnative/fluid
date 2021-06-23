@@ -135,3 +135,52 @@ func TestDeleteFusePersistentVolumeIfExists(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteFusePersistentVolumeClaim(t *testing.T) {
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+			Finalizers: []string{"kubernetes.io/pvc-protection"},
+		},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	testPVCs := []runtime.Object{}
+	for _, pvInput := range testPVCInputs {
+		testPVCs = append(testPVCs, pvInput.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+
+	var testCase = []struct {
+		runtimeInfo    base.RuntimeInfoInterface
+		expectedResult error
+	}{
+		{
+			runtimeInfo: runtimeInfoHadoop,
+			expectedResult: nil,
+		},
+		{
+			runtimeInfo: runtimeInfoHbase,
+			expectedResult: nil,
+		},
+	}
+	for _, test := range testCase {
+		var log = ctrl.Log.WithName("delete")
+		if err := DeleteFusePersistentVolumeClaim(client, test.runtimeInfo, log); err != test.expectedResult {
+			t.Errorf("fail to exec the function with the error %v", err)
+		}
+	}
+
+}
