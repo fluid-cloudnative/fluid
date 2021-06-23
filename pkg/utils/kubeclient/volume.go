@@ -142,7 +142,7 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 	pvc := &v1.PersistentVolumeClaim{}
 	if err = client.Get(context.TODO(), key, pvc); err != nil {
 		if apierrs.IsNotFound(err) {
-			log.V(1).Info("SKip deleteing the PersistentVolumeClaim due to it's not found", "name", name,
+			log.V(1).Info("SKip deleting the PersistentVolumeClaim due to it's not found", "name", name,
 				"namespace", namespace)
 			found = false
 			err = nil
