@@ -126,6 +126,57 @@ type MockImplement struct {
 	recorder *MockImplementMockRecorder
 }
 
+func (m *MockImplement) UFSUpdated() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UFSUpdated")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) UFSUpdated() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UFSUpdated", reflect.TypeOf((*MockImplement)(nil).UFSUpdated))
+}
+
+func (m *MockImplement) ShouldUpdateUFS() (bool, []string, []string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShouldUpdateUFS")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]string)
+	ret2, _ := ret[2].([]string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+func (mr *MockImplementMockRecorder) ShouldUpdateUFS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldUpdateUFS", reflect.TypeOf((*MockImplement)(nil).ShouldUpdateUFS))
+}
+
+func (m *MockImplement) UpdateUFS(added []string, removed []string) (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUFS")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) UpdateUFS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUFS", reflect.TypeOf((*MockImplement)(nil).UpdateUFS))
+}
+
+func (m *MockImplement) CheckUFSChange() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUFSChange")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) CheckUFSChange() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUFSChange", reflect.TypeOf((*MockImplement)(nil).CheckUFSChange))
+}
+
 func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)

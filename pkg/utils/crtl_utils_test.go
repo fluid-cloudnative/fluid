@@ -15,11 +15,10 @@ func TestNoRequeue(t *testing.T) {
 		t.Errorf("err should be nil")
 
 	}
-	if  result.Requeue != false || result.RequeueAfter != 0 {
+	if result.Requeue != false || result.RequeueAfter != 0 {
 		t.Errorf("resuld should be ctrl.Result{}")
 	}
 }
-
 
 func TestRequeueAfterInterval(t *testing.T) {
 	testCases := map[string]string{
@@ -46,7 +45,7 @@ func TestRequeueAfterInterval(t *testing.T) {
 
 func TestRequeueImmediately(t *testing.T) {
 	result, err := RequeueImmediately()
-	if err != nil  {
+	if err != nil {
 		t.Errorf("err should be nil")
 	}
 	if result.Requeue != true || result.RequeueAfter != 0 {
@@ -63,10 +62,10 @@ func TestRequeueIfError(t *testing.T) {
 	}
 	for _, testcase := range testcases {
 		result, err := RequeueIfError(testcase)
-		if err != testcase  {
+		if err != testcase {
 			t.Errorf("should not change the err")
 		}
-		if  result.Requeue != false || result.RequeueAfter != 0 {
+		if result.Requeue != false || result.RequeueAfter != 0 {
 			t.Errorf("resuld should be ctrl.Result{}")
 		}
 	}
@@ -76,21 +75,21 @@ func TestRequeueIfError(t *testing.T) {
 func TestRequeueImmediatelyUnlessGenerationChanged(t *testing.T) {
 	var tests = []struct {
 		prevGeneration int64
-		curGeneration int64
+		curGeneration  int64
 	}{
 		{
 			prevGeneration: 35,
-			curGeneration: 35,
+			curGeneration:  35,
 		},
 		{
 			prevGeneration: 35,
-			curGeneration: 34,
+			curGeneration:  34,
 		},
 	}
 	for _, test := range tests {
 		result, err := RequeueImmediatelyUnlessGenerationChanged(test.prevGeneration, test.curGeneration)
 		if test.prevGeneration == test.curGeneration {
-			if err != nil  {
+			if err != nil {
 				t.Errorf("err should be nil if prevGeneration == test.curGeneration")
 			}
 			if result.Requeue != true || result.RequeueAfter != 0 {
@@ -100,7 +99,7 @@ func TestRequeueImmediatelyUnlessGenerationChanged(t *testing.T) {
 			if err != nil {
 				t.Errorf("err should be nil if prevGeneration != test.curGeneration")
 			}
-			if  result.Requeue != false || result.RequeueAfter != 0 {
+			if result.Requeue != false || result.RequeueAfter != 0 {
 				t.Errorf("resuld should be ctrl.Result{} != if prevGeneration ！= test.curGeneration")
 			}
 		}

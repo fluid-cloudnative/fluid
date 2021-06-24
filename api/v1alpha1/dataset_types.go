@@ -34,6 +34,8 @@ const (
 	FailedDatasetPhase DatasetPhase = "Failed"
 	// Not bound to runtime, can be deleted
 	NotBoundDatasetPhase DatasetPhase = "NotBound"
+	// Updated dataset, can't be released
+	UpdatedDatasetPhase DatasetPhase = "Updated"
 
 	NoneDatasetPhase DatasetPhase = ""
 )
@@ -171,6 +173,9 @@ type Runtime struct {
 // DatasetStatus defines the observed state of Dataset
 // +kubebuilder:subresource:status
 type DatasetStatus struct {
+	// the info of mount points have been mounted
+	Mounts []Mount `json:"mounts,omitempty"`
+
 	// Total in GB of dataset in the cluster
 	UfsTotal string `json:"ufsTotal,omitempty"`
 
@@ -212,6 +217,9 @@ const (
 
 	// DatasetReady means the cache system for the dataset is ready.
 	DatasetReady DatasetConditionType = "Ready"
+
+	// DatasetUpdateReady means the cache system for the dataset is updated.
+	DatasetUpdateReady DatasetConditionType = "UpdateReady"
 
 	// DatasetInitialized means the cache system for the dataset is Initialized.
 	DatasetInitialized DatasetConditionType = "Initialized"

@@ -134,7 +134,7 @@ spec:
               fieldRef:
                 fieldPath: status.hostIP
           - name: ALLUXIO_CLIENT_JAVA_OPTS
-            value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME} "
+            value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME} -Dalluxio.user.metadata.cache.enabled=false "
           {{- range $key, $value := .Values.fuse.env }}
           - name: "{{ $key }}"
             value: "{{ $value }}"

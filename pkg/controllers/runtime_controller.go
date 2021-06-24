@@ -211,18 +211,23 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	log.V(1).Info("process the Runtime", "Runtime", ctx.NamespacedName)
 
 	// 1.Setup the ddc engine, and wait it ready
-	if !utils.IsSetupDone(ctx.Dataset) {
-		ready, err := engine.Setup(ctx)
-		if err != nil {
-			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
-			log.Error(err, "Failed to setup the ddc engine")
-			// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
-		}
-		if !ready {
-			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-		}
-	} else {
-		log.Info("The runtime is already setup.")
+	createready, updateready, err := engine.Setup(ctx)
+	if err != nil {
+		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
+		log.Error(err, "Failed to setup the ddc engine")
+		// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
+	}
+
+	if !createready {
+		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
+		log.V(1).Info("Failed to setup the ddc engine")
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+	}
+
+	if !updateready {
+		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to update the dataset due to error %v", err)
+		log.V(1).Info("Failed to update the dataset")
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
 	// 2.Setup the volume

@@ -102,6 +102,10 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is ready.",
 				corev1.ConditionTrue)
+		case datav1alpha1.UpdatedDatasetPhase:
+			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdateReady, datav1alpha1.DatasetUpdateReadyReason,
+				"The ddc runtime is updated.",
+				corev1.ConditionTrue)
 		case datav1alpha1.FailedDatasetPhase:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is not ready.",
@@ -127,6 +131,12 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		} else {
 			e.Log.Info("No need to update HCFS status")
 		}
+
+		// set Status.Mounts
+		if phase == datav1alpha1.BoundDatasetPhase || phase == datav1alpha1.UpdatedDatasetPhase {
+			datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
+		}
+
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
@@ -155,4 +165,8 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 
 func (e *AlluxioEngine) BindToDataset() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+}
+
+func (e *AlluxioEngine) UFSUpdated() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
 }

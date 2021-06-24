@@ -43,3 +43,11 @@ func (e *JindoEngine) reportSummary() (summary string, err error) {
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUtils.ReportSummary()
 }
+
+func (e *JindoEngine) ShouldUpdateUFS() (should bool, added []string, removed []string, err error) {
+	return
+}
+
+func (e *JindoEngine) UpdateUFS(added []string, removed []string) (err error) {
+	return
+}
