@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,8 +25,7 @@ func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsT
 	}
 	err = client.Update(context.TODO(), node)
 	if err != nil {
-		log.Error(err, "LabelCachedNodes")
-		return nil, err
+		return nil, errors.Wrapf(err, "update node labels failed, node name: %s, labels: %v", node.Name, node.Labels)
 	}
 	return modifiedLabels, nil
 }
@@ -48,8 +48,7 @@ func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToMod
 	}
 	err = cli.Patch(context.TODO(), patchNode, client.MergeFrom(node))
 	if err != nil {
-		log.Error(err, "LabelCachedNodes")
-		return nil, err
+		return nil, errors.Wrapf(err, "patch node labels failed, node name: %s, labels: %v", node.Name, node.Labels)
 	}
 	return modifiedLabels, nil
 }

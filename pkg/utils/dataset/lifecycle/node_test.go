@@ -349,3 +349,48 @@ func TestDecreaseDatasetNum(t *testing.T) {
 
 	}
 }
+
+func TestIncreaseDatasetNum(t *testing.T) {
+	var testCase = []struct {
+		node           *v1.Node
+		runtimeInfo    base.RuntimeInfo
+		expectedResult []common.LabelToModify
+	}{
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
+				Spec:       v1.NodeSpec{},
+			},
+			runtimeInfo: base.RuntimeInfo{},
+			expectedResult: []common.LabelToModify{
+				{
+					LabelKey:      "fluid.io/dataset-num",
+					LabelValue:    "2",
+					OperationType: common.UpdateLabel,
+				},
+			},
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec:       v1.NodeSpec{},
+			},
+			runtimeInfo: base.RuntimeInfo{},
+			expectedResult: []common.LabelToModify{
+				{
+					LabelKey:      "fluid.io/dataset-num",
+					LabelValue:    "1",
+					OperationType: common.AddLabel,
+				},
+			},
+		},
+	}
+
+	for _, test := range testCase {
+		var labels common.LabelsToModify
+		_ = increaseDatasetNum(test.node, &test.runtimeInfo, &labels)
+		if !reflect.DeepEqual(labels.Labels, test.expectedResult) {
+			t.Errorf("fail to exec the function with the error ")
+		}
+	}
+}

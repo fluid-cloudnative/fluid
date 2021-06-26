@@ -124,9 +124,6 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		// exclusiveLabel is the label key indicates the node is exclusively assigned
 		// e.g. fluid_exclusive=default_hbase
 		exclusiveLabel string
-
-		// datasetLabel indicates the number of the dataset in specific node
-		datasetLabel = runtimeInfo.GetDatasetNumLabelName()
 	)
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
@@ -160,15 +157,10 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue, common.AddLabel)
 		}
 
-		if currentDatasetNum, ok := toUpdate.Labels[datasetLabel]; ok {
-			currentData, err := strconv.Atoi(currentDatasetNum)
-			if err != nil {
-				return err
-			}
-			datasetLabelValue := strconv.Itoa(currentData + 1)
-			labelsToModify.Add(datasetLabel, datasetLabelValue, common.UpdateLabel)
-		} else {
-			labelsToModify.Add(datasetLabel, "1", common.AddLabel)
+		err = increaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
+		if err != nil {
+			log.Error(err, "fail to update datasetNum label")
+			return err
 		}
 
 		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &labelsToModify)
@@ -179,14 +171,14 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		modifiedLabels, err = utils.ChangeNodeLabelWithPatchModel(client, toUpdate, labelsToModify)
 
 		if err != nil {
-			log.Error(err, "LabelCachedNodes")
+			log.Error(err, fmt.Sprintf("update node labels failed, node name: %s, labels:%v", node.Name, node.Labels))
 			return err
 		}
 		return nil
 	})
 
 	if err != nil {
-		log.Error(err, "LabelCacheNode")
+		log.Error(err, fmt.Sprintf("fail to update the labels, node name: %s", nodeName))
 		return err
 	}
 
@@ -263,6 +255,22 @@ func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface
 			labelDatasetNumValue := strconv.Itoa(currentDataset - 1)
 			labelsToModify.Add(labelDatasetNum, labelDatasetNumValue, common.UpdateLabel)
 		}
+	}
+	return nil
+}
+
+// increaseDatasetNum adds the datasetNum label or updates the number of the dataset in the specific node.
+func increaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
+	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelName()
+	if currentDatasetNum, ok := toUpdate.Labels[labelDatasetNum]; ok {
+		currentData, err := strconv.Atoi(currentDatasetNum)
+		if err != nil {
+			return err
+		}
+		datasetLabelValue := strconv.Itoa(currentData + 1)
+		labelsToModify.Add(labelDatasetNum, datasetLabelValue, common.UpdateLabel)
+	} else {
+		labelsToModify.Add(labelDatasetNum, "1", common.AddLabel)
 	}
 	return nil
 }
