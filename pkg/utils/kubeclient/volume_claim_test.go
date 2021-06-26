@@ -330,3 +330,88 @@ func TestGetPvcMountNodes(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveProtectionFinalizer(t *testing.T) {
+	namespace := "default"
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "hasNoFinalizer",
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "hasNoFinalizer",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "hasFinalizer",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace,
+			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName}},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "hasFinalizer",
+		},
+	}}
+
+	testPVCs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		testPVCs = append(testPVCs, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantError bool
+	}{
+		{
+			name: "volumeClaim doesn't exist",
+			args: args{
+				name:      "notExist",
+				namespace: namespace,
+			},
+			wantError: true,
+		},
+		{
+			name: "volumeClaim is not created by fluid",
+			args: args{
+				name:      "notCreatedByFluid",
+				namespace: namespace,
+			},
+			wantError: true,
+		},
+		{
+			name: "volumeClaim is created by fluid",
+			args: args{
+				name:      "hasNoFinalizer",
+				namespace: namespace,
+			},
+			wantError: false,
+		}, {
+			name: "volumeClaim is not created by fluid 2",
+			args: args{
+				name:      "hasFinalizer",
+				namespace: namespace,
+			},
+			wantError: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := RemoveProtectionFinalizer(client, tt.args.name, tt.args.namespace)
+			got := err != nil
+
+			if got != tt.wantError {
+				t.Errorf("testcase %v RemoveProtectionFinalizer() for %v in %v = %v, err = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					got,
+					err)
+			}
+
+		})
+	}
+
+}
