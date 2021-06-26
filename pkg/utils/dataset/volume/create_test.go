@@ -169,15 +169,15 @@ func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	var testCase = []struct {
-		runtimeInfo base.RuntimeInfoInterface
+		runtimeInfo    base.RuntimeInfoInterface
 		expectedPVCNum int
 	}{
 		{
-			runtimeInfo: runtimeInfoHbase,
+			runtimeInfo:    runtimeInfoHbase,
 			expectedPVCNum: 1,
 		},
 		{
-			runtimeInfo: runtimeInfoSpark,
+			runtimeInfo:    runtimeInfoSpark,
 			expectedPVCNum: 2,
 		},
 	}
