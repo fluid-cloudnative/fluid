@@ -234,12 +234,12 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 
 	pvc := &v1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
-	if err != nil {
+	if err != nil && !apierrs.IsNotFound(err) {
 		return err
 	}
 
 	// try to remove finalizer "pvc-protection"
-	log.V(1).Info("Remove finalizer pvc-protection")
+	log.Info("Remove finalizer pvc-protection")
 	finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
 	pvc.SetFinalizers(finalizers)
 	if err = client.Update(context.TODO(), pvc); err != nil {

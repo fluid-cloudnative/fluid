@@ -16,6 +16,7 @@ limitations under the License.
 package utils
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -32,13 +33,22 @@ func TestPathExists(t *testing.T) {
 }
 
 func TestGetChartsDirectory(t *testing.T) {
+	f, err := ioutil.TempFile("", "test")
+	if err != nil {
+		t.Errorf("MkdirTemp failed due to %v", err)
+	}
+	testDir := f.Name()
+	defer os.RemoveAll(testDir) // clean up
+
+	os.Setenv("HOME", testDir)
 	if GetChartsDirectory() != "/charts" {
 		t.Errorf("ChartsDirectory should be /charts if ~/charts not exist")
 	}
 	homeChartsFolder := os.Getenv("HOME") + "/charts"
-	err := os.Mkdir(homeChartsFolder, 0600)
-	if err != nil && GetChartsDirectory() != "/charts" {
+	// Make Directory if it doesn't exist.
+	_ = os.Mkdir(homeChartsFolder, 0600)
+	if GetChartsDirectory() != "/charts" {
 		t.Errorf("ChartsDirectory should be ~/charts if ~/charts exist")
 	}
-	_ = os.Remove(homeChartsFolder)
+	_ = os.Remove(testDir)
 }
