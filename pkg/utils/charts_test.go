@@ -38,7 +38,10 @@ func TestGetChartsDirectory(t *testing.T) {
 		t.Errorf("MkdirTemp failed due to %v", err)
 	}
 	testDir := f.Name()
-	defer os.RemoveAll(testDir) // clean up
+	home := os.Getenv("HOME")
+
+	defer os.RemoveAll(testDir)   // clean up
+	defer os.Setenv("HOME", home) // recover
 
 	os.Setenv("HOME", testDir)
 	if GetChartsDirectory() != "/charts" {
@@ -50,5 +53,4 @@ func TestGetChartsDirectory(t *testing.T) {
 	if GetChartsDirectory() != "/charts" {
 		t.Errorf("ChartsDirectory should be ~/charts if ~/charts exist")
 	}
-	_ = os.Remove(testDir)
 }
