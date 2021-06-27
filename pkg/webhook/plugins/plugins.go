@@ -26,7 +26,7 @@ import (
 type MutatingHandler interface {
 	// Mutate injects affinity info into pod
 	// if a plugin return true, it means that no need to call other plugins
-	Mutate(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool)
+	Mutate(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool, err error)
 	// GetName returns the name of plugin
 	GetName() string
 }

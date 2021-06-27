@@ -16,6 +16,8 @@ limitations under the License.
 package requirenodewithfuse
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +47,8 @@ func (p *RequireNodeWithFuse) GetName() string {
 	return p.name
 }
 
-func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
+// Mutate mutates the pod based on runtimeInfo, this action shouldn't stop other handler
+func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
@@ -54,7 +57,15 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.Runtim
 	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
 
 	for _, runtime := range runtimeInfos {
-		requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerm(runtime))
+		term, err := getRequiredSchedulingTerm(runtime)
+		if err != nil {
+			return true, fmt.Errorf("Should stop mutating pod %s in namespace %s due to %v",
+				pod.Name,
+				pod.Namespace,
+				err)
+		}
+
+		requiredSchedulingTerms = append(requiredSchedulingTerms, term)
 	}
 
 	utils.InjectNodeSelectorTerms(requiredSchedulingTerms, pod)
@@ -62,14 +73,36 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.Runtim
 	return
 }
 
-func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.NodeSelectorTerm {
-	return corev1.NodeSelectorTerm{
-		MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      runtimeInfo.GetCommonLabelName(),
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"true"},
-			},
-		},
+func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerms corev1.NodeSelectorTerm, err error) {
+	requiredSchedulingTerms = corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{},
 	}
+
+	if runtimeInfo == nil {
+		err = fmt.Errorf("RuntimeInfo is nil")
+		return
+	}
+
+	isGlobalMode, selectors := runtimeInfo.GetFuseDeployMode()
+	if isGlobalMode {
+		for key, value := range selectors {
+			requiredSchedulingTerms.MatchExpressions = append(requiredSchedulingTerms.MatchExpressions, corev1.NodeSelectorRequirement{
+				Key:      key,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{value},
+			})
+		}
+	} else {
+		requiredSchedulingTerms = corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      runtimeInfo.GetCommonLabelName(),
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"true"},
+				},
+			},
+		}
+	}
+
+	return
 }

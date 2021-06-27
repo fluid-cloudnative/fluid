@@ -114,7 +114,11 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	// call every plugin in the plugins list in the defined order
 	// if a plugin return shouldStop, stop to call other plugins
 	for _, plugin := range pluginsList {
-		shouldStop := plugin.Mutate(pod, runtimeInfos)
+		shouldStop, err := plugin.Mutate(pod, runtimeInfos)
+		if err != nil {
+			setupLog.Error(err, "Failed to mutate pod")
+		}
+
 		if shouldStop {
 			setupLog.Info("the plugin return true, no need to call other plugins", "plugin", plugin.GetName())
 			break
