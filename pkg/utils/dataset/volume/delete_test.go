@@ -149,8 +149,8 @@ func TestDeleteFusePersistentVolumeClaim(t *testing.T) {
 
 	testPVCInputs := []*v1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
+			Name:       "hbase",
+			Namespace:  "fluid",
 			Finalizers: []string{"kubernetes.io/pvc-protection"},
 		},
 		Spec: v1.PersistentVolumeClaimSpec{},
@@ -168,11 +168,11 @@ func TestDeleteFusePersistentVolumeClaim(t *testing.T) {
 		expectedResult error
 	}{
 		{
-			runtimeInfo: runtimeInfoHadoop,
+			runtimeInfo:    runtimeInfoHadoop,
 			expectedResult: nil,
 		},
 		{
-			runtimeInfo: runtimeInfoHbase,
+			runtimeInfo:    runtimeInfoHbase,
 			expectedResult: nil,
 		},
 	}
