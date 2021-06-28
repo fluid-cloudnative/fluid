@@ -48,16 +48,17 @@ func (p *PreferNodesWithoutCache) GetName() string {
 }
 
 func (p *PreferNodesWithoutCache) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
-	// if the pod has mounted datasets, should exit and call other plugins
-	if len(runtimeInfos) != 0 {
-		return
-	}
-
 	// if the pod has no mounted dataset, no need to call other plugins
 	shouldStop = true
 
+	// if the pod has mounted datasets, should exit and call other plugins
+	if len(runtimeInfos) != 0 {
+		// err = fmt.Errorf("runtimeInfos for PreferNodesWithoutCache is not empty, %v", runtimeInfos)
+		return
+	}
+
 	preferredSchedulingTerms := []corev1.PreferredSchedulingTerm{
-		getPreferredSchedulingTerm(),
+		getPreferredSchedulingTermForPodWithoutCache(),
 	}
 
 	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
@@ -65,7 +66,7 @@ func (p *PreferNodesWithoutCache) Mutate(pod *corev1.Pod, runtimeInfos []base.Ru
 	return
 }
 
-func getPreferredSchedulingTerm() corev1.PreferredSchedulingTerm {
+func getPreferredSchedulingTermForPodWithoutCache() corev1.PreferredSchedulingTerm {
 	return corev1.PreferredSchedulingTerm{
 		Weight: 50,
 		Preference: corev1.NodeSelectorTerm{
