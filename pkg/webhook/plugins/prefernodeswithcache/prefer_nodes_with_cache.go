@@ -16,6 +16,8 @@ limitations under the License.
 package prefernodeswithcache
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -53,29 +55,44 @@ func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos []base.Runti
 	}
 	var preferredSchedulingTerms []corev1.PreferredSchedulingTerm
 	for _, runtimeInfo := range runtimeInfos {
-		// if runtime in global mode, inject a new PreferredSchedulingTerm
-		global, _ := runtimeInfo.GetFuseDeployMode()
-		if global {
-			preferredSchedulingTerm := getPreferredSchedulingTerm(runtimeInfo)
-			preferredSchedulingTerms = append(preferredSchedulingTerms, preferredSchedulingTerm)
+
+		preferredSchedulingTerm, err := getPreferredSchedulingTerm(runtimeInfo)
+		if err != nil {
+			return shouldStop, err
 		}
+		if preferredSchedulingTerm != nil {
+			preferredSchedulingTerms = append(preferredSchedulingTerms, *preferredSchedulingTerm)
+		}
+
 	}
 	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
 
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.PreferredSchedulingTerm {
-	return corev1.PreferredSchedulingTerm{
-		Weight: 50,
-		Preference: corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      runtimeInfo.GetCommonLabelName(),
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{"true"},
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (PreferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
+	PreferredSchedulingTerm = nil
+
+	if runtimeInfo == nil {
+		err = fmt.Errorf("RuntimeInfo is nil")
+		return
+	}
+
+	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
+	if isGlobalMode {
+		PreferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
+			Weight: 50,
+			Preference: corev1.NodeSelectorTerm{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      runtimeInfo.GetCommonLabelName(),
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"true"},
+					},
 				},
 			},
-		},
+		}
 	}
+
+	return
 }
