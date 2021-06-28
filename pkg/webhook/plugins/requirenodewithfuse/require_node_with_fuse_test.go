@@ -119,7 +119,17 @@ func TestMutate(t *testing.T) {
 	}
 
 	if shouldStop {
-		t.Errorf("Expect shouldStop as false, but got %v", shouldStop)
+		t.Errorf("expect shouldStop as false, but got %v", shouldStop)
+	}
+
+	_, err = plugin.Mutate(pod, []base.RuntimeInfoInterface{})
+	if err != nil {
+		t.Errorf("fail to mutate pod with error %v", err)
+	}
+
+	_, err = plugin.Mutate(pod, []base.RuntimeInfoInterface{nil})
+	if err == nil {
+		t.Errorf("expect error is not nil")
 	}
 
 }
