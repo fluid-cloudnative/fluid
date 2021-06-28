@@ -184,3 +184,19 @@ func TestPods(t *testing.T) {
 	}
 
 }
+
+func TestRegistry(t *testing.T) {
+	var (
+		client client.Client
+	)
+
+	plugins := Registry(client)
+	if len(plugins.GetPodWithDatasetHandler()) != 2 {
+		t.Errorf("expect GetPodWithDatasetHandler len=2, got %v", plugins.GetPodWithDatasetHandler())
+	}
+
+	if len(plugins.GetPodWithoutDatasetHandler()) != 1 {
+		t.Errorf("expect GetPodWithoutDatasetHandler len=1 got %v", plugins.GetPodWithoutDatasetHandler())
+	}
+
+}
