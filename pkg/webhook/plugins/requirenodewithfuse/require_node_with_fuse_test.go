@@ -58,7 +58,7 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 
 	// Test case 3: runtime Info is nil to handle the error path
-	terms, err = getRequiredSchedulingTerm(nil)
+	_, err = getRequiredSchedulingTerm(nil)
 	if err == nil {
 		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", nil, err)
 	}

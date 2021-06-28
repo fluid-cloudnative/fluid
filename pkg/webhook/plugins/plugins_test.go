@@ -113,7 +113,10 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has mounted datasets", pluginName)
 		}
 
-		plugin.Mutate(&pod, nilRuntimeInfos)
+		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
