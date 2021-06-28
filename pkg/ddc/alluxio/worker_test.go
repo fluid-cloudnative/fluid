@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestAlluxioEngine_SetupWorkers(t *testing.T) {
+func TestSetupWorkers(t *testing.T) {
 
 	// runtimeInfoSpark tests create worker in exclusive mode.
 
@@ -189,7 +189,7 @@ func TestAlluxioEngine_SetupWorkers(t *testing.T) {
 	}
 }
 
-func TestAlluxioEngine_ShouldSetupWorkers(t *testing.T) {
+func TestShouldSetupWorkers(t *testing.T) {
 	type fields struct {
 		name      string
 		namespace string
@@ -309,7 +309,7 @@ func TestAlluxioEngine_ShouldSetupWorkers(t *testing.T) {
 	}
 }
 
-func TestAlluxioEngine_CheckWorkersReady(t *testing.T) {
+func TestCheckWorkersReady(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
 		worker    *appsv1.DaemonSet
@@ -443,7 +443,7 @@ func TestAlluxioEngine_CheckWorkersReady(t *testing.T) {
 	}
 }
 
-func TestAlluxioEngine_getWorkerSelectors(t *testing.T) {
+func TestGetWorkerSelectors(t *testing.T) {
 	type fields struct {
 		name string
 	}
