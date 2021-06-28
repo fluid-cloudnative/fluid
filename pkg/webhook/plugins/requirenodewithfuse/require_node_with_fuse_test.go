@@ -22,6 +22,8 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
@@ -89,5 +91,35 @@ func TestGetRequiredSchedulingTermWithDefaultMode(t *testing.T) {
 }
 
 func TestMutate(t *testing.T) {
+	var (
+		client client.Client
+		pod    *corev1.Pod
+	)
+
+	plugin := NewPlugin(client)
+	if plugin.GetName() != NAME {
+		t.Errorf("GetName expect %v, got %v", NAME, plugin.GetName())
+	}
+
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	pod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	shouldStop, err := plugin.Mutate(pod, []base.RuntimeInfoInterface{runtimeInfo})
+	if err != nil {
+		t.Errorf("fail to mutate pod with error %v", err)
+	}
+
+	if shouldStop {
+		t.Errorf("Expect shouldStop as false, but got %v", shouldStop)
+	}
 
 }
