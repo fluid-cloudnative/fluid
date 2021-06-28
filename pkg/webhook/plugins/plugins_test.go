@@ -91,7 +91,10 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithoutCache
 		plugin = prefernodeswithoutcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.Mutate(&pod, runtimeInfos)
+		_, err = plugin.Mutate(&pod, runtimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -132,7 +135,10 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithCache
 		plugin = prefernodeswithcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.Mutate(&pod, nilRuntimeInfos)
+		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -151,7 +157,10 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has no mounted datasets", pluginName)
 		}
 
-		plugin.Mutate(&pod, runtimeInfos)
+		_, err = plugin.Mutate(&pod, runtimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
 			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
