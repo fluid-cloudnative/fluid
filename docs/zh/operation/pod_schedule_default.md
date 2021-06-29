@@ -168,6 +168,3 @@ $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeNa
 NAME    NODE
 nginx   cn-beijing.192.168.1.146
 ```
-
-## 更多运行示例
-敬请期待
