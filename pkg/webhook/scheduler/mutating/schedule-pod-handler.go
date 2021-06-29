@@ -62,7 +62,10 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// inject affinity info into pod
-	a.AddScheduleInfoToPod(pod)
+	err = a.AddScheduleInfoToPod(pod)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
 
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
