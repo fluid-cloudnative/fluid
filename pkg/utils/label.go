@@ -11,7 +11,9 @@ import (
 
 // ChangeNodeLabelWithUpdateModel updates the input labels in UPDATE mode.
 func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
-	for _, labelToModify := range labelsToModify.Labels {
+	labels := labelsToModify.GetLabels()
+
+	for _, labelToModify := range labels {
 		switch labelToModify.OperationType {
 		case common.AddLabel, common.UpdateLabel:
 			node.Labels[labelToModify.LabelKey] = labelToModify.LabelValue
@@ -33,8 +35,9 @@ func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsT
 // ChangeNodeLabelWithPatchModel updates the input labels in PATCH mode.
 func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
 	patchNode := node.DeepCopy()
+	labels := labelsToModify.GetLabels()
 
-	for _, labelToModify := range labelsToModify.Labels {
+	for _, labelToModify := range labels {
 		switch labelToModify.OperationType {
 		case common.AddLabel, common.UpdateLabel:
 			patchNode.Labels[labelToModify.LabelKey] = labelToModify.LabelValue

@@ -50,7 +50,11 @@ type LabelToModify struct {
 }
 
 type LabelsToModify struct {
-	Labels []LabelToModify
+	labels []LabelToModify
+}
+
+func (labels *LabelsToModify) GetLabels() []LabelToModify {
+	return labels.labels
 }
 
 // Add creates new struct LabelToModify with input params and adds it into the slice.
@@ -63,7 +67,7 @@ func (labels *LabelsToModify) Add(labelKey string, labelValue string, operationT
 	if operationType != DeleteLabel {
 		newLabelToModify.LabelValue = labelValue
 	}
-	labels.Labels = append(labels.Labels, newLabelToModify)
+	labels.labels = append(labels.labels, newLabelToModify)
 }
 
 func GetDatasetNumLabelName() string {

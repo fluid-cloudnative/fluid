@@ -343,7 +343,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 	for _, test := range testCase {
 		var labels common.LabelsToModify
 		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labels)
-		if !reflect.DeepEqual(labels.Labels, test.expectedResult) {
+		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult) {
 			t.Errorf("fail to exec the function with the error ")
 		}
 
@@ -389,7 +389,7 @@ func TestIncreaseDatasetNum(t *testing.T) {
 	for _, test := range testCase {
 		var labels common.LabelsToModify
 		_ = increaseDatasetNum(test.node, &test.runtimeInfo, &labels)
-		if !reflect.DeepEqual(labels.Labels, test.expectedResult) {
+		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult) {
 			t.Errorf("fail to exec the function with the error ")
 		}
 	}

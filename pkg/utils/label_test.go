@@ -56,24 +56,7 @@ func TestChangeNodeLabelWithUpdateModel(t *testing.T) {
 					},
 				},
 			},
-			labelToModify: common.LabelsToModify{
-				Labels: []common.LabelToModify{
-					{
-						LabelKey:      "commonLabel",
-						LabelValue:    "true",
-						OperationType: common.AddLabel,
-					},
-					{
-						LabelKey:      "datasetNum",
-						LabelValue:    "1",
-						OperationType: common.UpdateLabel,
-					},
-					{
-						LabelKey:      "deleteLabel",
-						OperationType: common.DeleteLabel,
-					},
-				},
-			},
+			labelToModify: common.LabelsToModify{},
 			wantedNode: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-node",
@@ -87,6 +70,9 @@ func TestChangeNodeLabelWithUpdateModel(t *testing.T) {
 	}
 
 	for _, test := range testCase {
+		test.labelToModify.Add("commonLabel", "true", common.AddLabel)
+		test.labelToModify.Add("datasetNum", "1", common.UpdateLabel)
+		test.labelToModify.Add("deleteLabel", "", common.DeleteLabel)
 		_, err := ChangeNodeLabelWithUpdateModel(client, &test.node, test.labelToModify)
 		if err != nil {
 			t.Errorf("fail to add label to modify to slice")
@@ -140,24 +126,7 @@ func TestChangeNodeLabelWithPatchModel(t *testing.T) {
 					},
 				},
 			},
-			labelToModify: common.LabelsToModify{
-				Labels: []common.LabelToModify{
-					{
-						LabelKey:      "commonLabel",
-						LabelValue:    "true",
-						OperationType: common.AddLabel,
-					},
-					{
-						LabelKey:      "datasetNum",
-						LabelValue:    "1",
-						OperationType: common.UpdateLabel,
-					},
-					{
-						LabelKey:      "deleteLabel",
-						OperationType: common.DeleteLabel,
-					},
-				},
-			},
+			labelToModify: common.LabelsToModify{},
 
 			wantedNode: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
@@ -172,6 +141,9 @@ func TestChangeNodeLabelWithPatchModel(t *testing.T) {
 	}
 
 	for _, test := range testCase {
+		test.labelToModify.Add("commonLabel", "true", common.AddLabel)
+		test.labelToModify.Add("datasetNum", "1", common.UpdateLabel)
+		test.labelToModify.Add("deleteLabel", "", common.DeleteLabel)
 		_, err := ChangeNodeLabelWithPatchModel(client, &test.node, test.labelToModify)
 		if err != nil {
 			t.Errorf("fail to add label to modify to slice")
