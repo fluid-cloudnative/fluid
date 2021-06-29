@@ -17,9 +17,10 @@ package base
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
