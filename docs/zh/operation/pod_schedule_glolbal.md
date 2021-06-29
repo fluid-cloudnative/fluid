@@ -24,7 +24,6 @@ metadata:
   name: nginx
   labels:
     fluid.io/enable-injection: false
-......
 ```
 
 **查看全部结点**
