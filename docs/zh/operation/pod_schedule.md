@@ -23,7 +23,7 @@ kind: Pod
 metadata:
   name: nginx
   labels:
-    Fluid-Injection: disabled
+    fluid.io/enable-injection: false
 ......
 ```
 
