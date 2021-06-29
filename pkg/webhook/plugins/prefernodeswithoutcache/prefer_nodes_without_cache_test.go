@@ -38,7 +38,7 @@ func TestGetPreferredSchedulingTermForPodWithoutCacheWithGlobalMode(t *testing.T
 	term := getPreferredSchedulingTermForPodWithoutCache()
 
 	expectTerm := corev1.PreferredSchedulingTerm{
-		Weight: 50,
+		Weight: 100,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{
@@ -72,7 +72,7 @@ func TestGetPreferredSchedulingTermForPodWithoutCacheWithDefaultMode(t *testing.
 	term := getPreferredSchedulingTermForPodWithoutCache()
 
 	expectTerm := corev1.PreferredSchedulingTerm{
-		Weight: 50,
+		Weight: 100,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{

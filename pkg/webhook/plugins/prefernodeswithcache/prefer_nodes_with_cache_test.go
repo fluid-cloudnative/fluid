@@ -37,7 +37,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	term, _ := getPreferredSchedulingTerm(runtimeInfo)
 
 	expectTerm := corev1.PreferredSchedulingTerm{
-		Weight: 50,
+		Weight: 100,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{

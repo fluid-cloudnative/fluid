@@ -80,7 +80,7 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 }
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) {
+func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
@@ -89,13 +89,13 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
 		if err != nil {
 			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
-			continue
+			return err
 		}
 		if isDatasetPVC {
 			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
 			if err != nil {
 				setupLog.Error(err, "unable to get runtimeInfo, will ignore it", "runtime", pvcName)
-				continue
+				return err
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
 			runtimeInfos = append(runtimeInfos, runtimeInfo)
@@ -117,6 +117,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		shouldStop, err := plugin.Mutate(pod, runtimeInfos)
 		if err != nil {
 			setupLog.Error(err, "Failed to mutate pod")
+			return err
 		}
 
 		if shouldStop {
@@ -125,5 +126,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		}
 		setupLog.Info("the plugin return false, will call next plugin until last", "plugin", plugin.GetName())
 	}
+
+	return
 
 }

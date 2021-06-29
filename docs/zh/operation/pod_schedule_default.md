@@ -115,11 +115,11 @@ spec:
                 operator: DoesNotExist
           weight: 50
 ```
-正如亲和性所影响的，Pod调度到了没有缓存的cn-beijing.192.168.1.147节点。
+正如亲和性所影响的，Pod调度到了没有缓存的node.172.16.1.84节点。
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx   cn-beijing.192.168.1.147
+nginx   node.172.16.1.84
 ```
 
 
