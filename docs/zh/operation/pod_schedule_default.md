@@ -47,18 +47,7 @@ spec:
   mounts:
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
       name: hbase
-EOF
-```
-
-**创建Dataset资源对象**
-```shell
-$ kubectl create -f dataset.yaml
-dataset.data.fluid.io/hbase created
-```
-
-**检查待创建的AlluxioRuntime资源对象**
-```shell
-$ cat<<EOF >runtime.yaml
+---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -72,14 +61,14 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
-  fuse:
-    global: true
 EOF
 ```
 
-该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。
-上述配置片段中的`spec.replicas`属性被设置为1,这表明Fluid将会启动一个包含1个Alluxio Master和1个Alluxio Worker的Alluxio实例。
-另外一个值得注意的是Fuse包含`global: true`,这样意味着Fuse可以全局部署，而不依赖于数据缓存的位置。
+**创建Dataset资源对象**
+```shell
+$ kubectl create -f dataset.yaml
+dataset.data.fluid.io/hbase created
+```
 
 **创建AlluxioRuntime资源并查看状态**
 
@@ -88,13 +77,12 @@ $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get po -owide
-NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-gfq7z     1/1     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-fuse-lmk5p     1/1     Running   0          3m47s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-master-0       2/2     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-hvbp2   2/2     Running   0          3m1s    192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+NAME                 READY   STATUS    RESTARTS   AGE   IP            NODE                      NOMINATED NODE   READINESS GATES
+hbase-fuse-fdjpg     1/1     Running   0          94m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
+hbase-master-0       2/2     Running   0          97m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
+hbase-worker-ch8k7   2/2     Running   0          94m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
 ```
-在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为2，运行在所有的子节点上。
+在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点172.16.0.16上。Alluixo Fuse的数量为2，运行在所有的子节点上。
 
 
 ## 运行示例1: 创建没有挂载数据集的Pod，它将尽量远离数据集
