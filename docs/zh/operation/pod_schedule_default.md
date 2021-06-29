@@ -10,9 +10,11 @@
 **为namespace添加标签**
 
 为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
+
 ```bash
 $ kubectl label namespace default fluid.io/enable-injection=true
 ```
+
 如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签fluid.io/enable-injection=false
 
 例如，使用yaml文件方式创建一个nginx Pod时，应对yaml文件做如下修改：
