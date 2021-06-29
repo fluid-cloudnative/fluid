@@ -29,10 +29,10 @@ metadata:
 
 **查看全部结点**
 ```shell
-$ kubectl get nodes
-NAME                       STATUS   ROLES    AGE     VERSION
-cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1
-cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
+$ kubectl get no
+NAME                      STATUS   ROLES    AGE   VERSION
+node.172.16.0.16   Ready    <none>   13d   v1.20.4
+node.172.16.1.84   Ready    <none>   13d   v1.20.4
 ```
 
 **检查待创建的Dataset资源对象**
@@ -78,9 +78,9 @@ alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get po -owide
 NAME                 READY   STATUS    RESTARTS   AGE   IP            NODE                      NOMINATED NODE   READINESS GATES
-hbase-fuse-fdjpg     1/1     Running   0          94m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
-hbase-master-0       2/2     Running   0          97m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
-hbase-worker-ch8k7   2/2     Running   0          94m   172.16.0.16   cn-hangzhou.172.16.0.16   <none>           <none>
+hbase-fuse-fdjpg     1/1     Running   0          94m   172.16.0.16   node.172.16.0.16   <none>           <none>
+hbase-master-0       2/2     Running   0          97m   172.16.0.16   node.172.16.0.16   <none>           <none>
+hbase-worker-ch8k7   2/2     Running   0          94m   172.16.0.16   node.172.16.0.16   <none>           <none>
 ```
 在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点172.16.0.16上。Alluixo Fuse的数量为2，运行在所有的子节点上。
 

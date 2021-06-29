@@ -68,7 +68,7 @@ func (p *PreferNodesWithoutCache) Mutate(pod *corev1.Pod, runtimeInfos []base.Ru
 
 func getPreferredSchedulingTermForPodWithoutCache() corev1.PreferredSchedulingTerm {
 	return corev1.PreferredSchedulingTerm{
-		Weight: 50,
+		Weight: 100,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{

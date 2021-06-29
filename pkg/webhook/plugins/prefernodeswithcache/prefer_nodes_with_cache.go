@@ -70,8 +70,8 @@ func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos []base.Runti
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (PreferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
-	PreferredSchedulingTerm = nil
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
+	preferredSchedulingTerm = nil
 
 	if runtimeInfo == nil {
 		err = fmt.Errorf("RuntimeInfo is nil")
@@ -80,8 +80,8 @@ func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (Preferre
 
 	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
 	if isGlobalMode {
-		PreferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
-			Weight: 50,
+		preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
+			Weight: 100,
 			Preference: corev1.NodeSelectorTerm{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
 					{
