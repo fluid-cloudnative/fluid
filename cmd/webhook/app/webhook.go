@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -107,7 +108,11 @@ func handle() {
 	}))
 
 	// get client from mgr
-	client := mgr.GetClient()
+	client, err := client.New(cfg, client.Options{})
+	if err != nil {
+		setupLog.Error(err, "initialize kube client failed")
+		os.Exit(1)
+	}
 
 	// patch adminssion web hook  ca bundle
 	certBuilder := fluidwebhook.NewCertificateBuilder(client, setupLog)
@@ -117,7 +122,7 @@ func handle() {
 	}
 
 	// register admission handlers
-	handler.Register(mgr, client, setupLog)
+	handler.Register(mgr, mgr.GetClient(), setupLog)
 	setupLog.Info("Register Handler")
 
 	setupLog.Info("starting webhook-manager")
