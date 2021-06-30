@@ -124,10 +124,10 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		}
 
 		if shouldStop {
-			setupLog.Info("the plugin return true, no need to call other plugins", "plugin", plugin.GetName())
+			setupLog.Info("the plugin return true, no need to hand over other plugins", "plugin", plugin.GetName())
 			break
 		}
-		setupLog.Info("the plugin return false, will call next plugin until last", "plugin", plugin.GetName())
+		setupLog.Info("the plugin return false, will hand over next plugin", "plugin", plugin.GetName())
 	}
 
 	return

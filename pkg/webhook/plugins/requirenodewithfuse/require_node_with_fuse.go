@@ -65,16 +65,20 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.Runtim
 				err)
 		}
 
-		requiredSchedulingTerms = append(requiredSchedulingTerms, term)
+		if len(term.MatchExpressions) > 0 {
+			requiredSchedulingTerms = append(requiredSchedulingTerms, term)
+		}
 	}
 
-	utils.InjectNodeSelectorTerms(requiredSchedulingTerms, pod)
+	if len(requiredSchedulingTerms) > 0 {
+		utils.InjectNodeSelectorTerms(requiredSchedulingTerms, pod)
+	}
 
 	return
 }
 
-func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerms corev1.NodeSelectorTerm, err error) {
-	requiredSchedulingTerms = corev1.NodeSelectorTerm{
+func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm corev1.NodeSelectorTerm, err error) {
+	requiredSchedulingTerm = corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{},
 	}
 
@@ -86,14 +90,14 @@ func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredS
 	isGlobalMode, selectors := runtimeInfo.GetFuseDeployMode()
 	if isGlobalMode {
 		for key, value := range selectors {
-			requiredSchedulingTerms.MatchExpressions = append(requiredSchedulingTerms.MatchExpressions, corev1.NodeSelectorRequirement{
+			requiredSchedulingTerm.MatchExpressions = append(requiredSchedulingTerm.MatchExpressions, corev1.NodeSelectorRequirement{
 				Key:      key,
 				Operator: corev1.NodeSelectorOpIn,
 				Values:   []string{value},
 			})
 		}
 	} else {
-		requiredSchedulingTerms = corev1.NodeSelectorTerm{
+		requiredSchedulingTerm = corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{
 					Key:      runtimeInfo.GetCommonLabelName(),

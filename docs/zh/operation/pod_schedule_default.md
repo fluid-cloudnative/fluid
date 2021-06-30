@@ -83,10 +83,10 @@ hbase-fuse-fdjpg     1/1     Running   0          94m   172.16.0.16   node.172.1
 hbase-master-0       2/2     Running   0          97m   172.16.0.16   node.172.16.0.16   <none>           <none>
 hbase-worker-ch8k7   2/2     Running   0          94m   172.16.0.16   node.172.16.0.16   <none>           <none>
 ```
-在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点172.16.0.16上。Alluixo Fuse的数量为2，运行在所有的子节点上。
+在此处可以看到，有一个Alluxio Worker成功启动，并且运行在节点172.16.0.16上。Alluixo Fuse的数量为1，也运行在节点172.16.0.16上。
 
 
-## 运行示例1: 创建没有挂载数据集的Pod，它将尽量远离数据集
+## 运行示例1: 创建没有挂载数据集的Pod，它将尽量远离部署有数据集的节点
 
 **创建Pod**
 ```shell
@@ -114,7 +114,7 @@ spec:
             matchExpressions:
               - key: fluid.io/dataset-num
                 operator: DoesNotExist
-          weight: 50
+          weight: 100
 ```
 正如亲和性所影响的，Pod调度到了没有缓存的node.172.16.1.84节点。
 ```shell
@@ -123,8 +123,8 @@ NAME    NODE
 nginx   node.172.16.1.84
 ```
 
+## 运行示例2: 创建挂载数据集的Pod，可以观测到它被调度到有数据集的节点
 
-## 运行示例2: 创建挂载数据集的Pod，它将尽量往有数据集的节点调度
 **创建Pod**
 ```shell
 $ cat<<EOF >nginx.yaml
@@ -150,22 +150,26 @@ $ kubectl create -f nginx.yaml
 **查看Pod**
 
 查看Pod的yaml文件，发现被注入了如下信息：
+
 ```yaml
 spec:
   affinity:
     nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - preference:
-            matchExpressions:
-              - key: fluid.io/s-default-hbase
-                operator: In
-                values:
-                  - "true"
-          weight: 50
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: fluid.io/s-default-hbase
+            operator: In
+            values:
+            - "true"
 ```
-正如亲和性所影响的，Pod调度到了有缓存的cn-beijing.192.168.1.146节点。
+
+正如亲和性所影响的，Pod会强制调度到了有缓存的node.172.16.0.16节点。
+
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx   cn-beijing.192.168.1.146
+nginx   node.172.16.0.16
 ```
+
+> 注释： K8s默认调度器并不需要配置强制亲和性，但是如果使用一些类似Volcano调度器组件并不感知K8s原生数据卷的亲和性，导致应用调度

@@ -39,7 +39,7 @@ cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
 **检查待创建的Dataset资源对象**
 
 ```shell
-$ cat<<EOF >dataset.yaml
+$ cat<<EOF >dataset-global.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -48,18 +48,7 @@ spec:
   mounts:
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
       name: hbase
-EOF
-```
-
-**创建Dataset资源对象**
-```shell
-$ kubectl create -f dataset.yaml
-dataset.data.fluid.io/hbase created
-```
-
-**检查待创建的AlluxioRuntime资源对象**
-```shell
-$ cat<<EOF >runtime.yaml
+---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -76,6 +65,12 @@ spec:
   fuse:
     global: true
 EOF
+```
+
+**创建Dataset资源对象**
+```shell
+$ kubectl create -f dataset-global.yaml
+dataset.data.fluid.io/hbase created
 ```
 
 该配置文件片段中，包含了许多与Alluxio相关的配置信息，这些信息将被Fluid用来启动一个Alluxio实例。
@@ -126,7 +121,7 @@ spec:
             matchExpressions:
               - key: fluid.io/dataset-num
                 operator: DoesNotExist
-          weight: 50
+          weight: 100
 ```
 正如亲和性所影响的，Pod调度到了没有缓存的cn-beijing.192.168.1.147节点。
 ```shell
@@ -135,9 +130,10 @@ NAME    NODE
 nginx   cn-beijing.192.168.1.147
 ```
 
-
 ## 运行示例2: 创建挂载数据集的Pod，它将尽量往有数据集的节点调度
+
 **创建Pod**
+
 ```shell
 $ cat<<EOF >nginx.yaml
 apiVersion: v1
@@ -162,6 +158,7 @@ $ kubectl create -f nginx.yaml
 **查看Pod**
 
 查看Pod的yaml文件，发现被注入了如下信息：
+
 ```yaml
 spec:
   affinity:
@@ -173,9 +170,11 @@ spec:
                 operator: In
                 values:
                   - "true"
-          weight: 50
+          weight: 100
 ```
+
 正如亲和性所影响的，Pod调度到了有缓存的cn-beijing.192.168.1.146节点。
+
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
