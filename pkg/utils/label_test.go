@@ -70,9 +70,9 @@ func TestChangeNodeLabelWithUpdateModel(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		test.labelToModify.Add("commonLabel", "true", common.AddLabel)
-		test.labelToModify.Add("datasetNum", "1", common.UpdateLabel)
-		test.labelToModify.Add("deleteLabel", "", common.DeleteLabel)
+		test.labelToModify.Add("commonLabel", "true")
+		test.labelToModify.Update("datasetNum", "1")
+		test.labelToModify.Delete("deleteLabel")
 		_, err := ChangeNodeLabelWithUpdateModel(client, &test.node, test.labelToModify)
 		if err != nil {
 			t.Errorf("fail to add label to modify to slice")
@@ -141,9 +141,9 @@ func TestChangeNodeLabelWithPatchModel(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		test.labelToModify.Add("commonLabel", "true", common.AddLabel)
-		test.labelToModify.Add("datasetNum", "1", common.UpdateLabel)
-		test.labelToModify.Add("deleteLabel", "", common.DeleteLabel)
+		test.labelToModify.Add("commonLabel", "true")
+		test.labelToModify.Update("datasetNum", "1")
+		test.labelToModify.Delete("deleteLabel")
 		_, err := ChangeNodeLabelWithPatchModel(client, &test.node, test.labelToModify)
 		if err != nil {
 			t.Errorf("fail to add label to modify to slice")

@@ -73,9 +73,9 @@ func TestGetLabels(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		test.labelsToModify.Add("commonLabel", "true", AddLabel)
+		test.labelsToModify.Add("commonLabel", "true")
 		label := test.labelsToModify.GetLabels()
-		if !reflect.DeepEqual(label, test.expectedResult){
+		if !reflect.DeepEqual(label, test.expectedResult) {
 			t.Errorf("fail to get the labels")
 		}
 	}
@@ -86,13 +86,11 @@ func TestAdd(t *testing.T) {
 	var testCase = []struct {
 		labelKey             string
 		labelValue           string
-		operationType        OperationType
 		wantedLabelsToModify []LabelToModify
 	}{
 		{
-			labelKey:      "commonLabel",
-			labelValue:    "true",
-			operationType: AddLabel,
+			labelKey:   "commonLabel",
+			labelValue: "true",
 			wantedLabelsToModify: []LabelToModify{
 				{
 					LabelKey:      "commonLabel",
@@ -101,19 +99,28 @@ func TestAdd(t *testing.T) {
 				},
 			},
 		},
+	}
 
+	var labelsToModify LabelsToModify
+	for _, test := range testCase {
+		labelsToModify.Add(test.labelKey, test.labelValue)
+		if !reflect.DeepEqual(labelsToModify.GetLabels(), test.wantedLabelsToModify) {
+			t.Errorf("fail to add labe to modify to slice")
+		}
+	}
+}
+
+func TestDelete(t *testing.T) {
+	var testCase = []struct {
+		labelKey             string
+		labelValue           string
+		wantedLabelsToModify []LabelToModify
+	}{
 		{
-			labelKey:      "datasetNum",
-			labelValue:    "12",
-			operationType: DeleteLabel,
+			labelKey: "commonLabel",
 			wantedLabelsToModify: []LabelToModify{
 				{
 					LabelKey:      "commonLabel",
-					LabelValue:    "true",
-					OperationType: AddLabel,
-				},
-				{
-					LabelKey:      "datasetNum",
 					OperationType: DeleteLabel,
 				},
 			},
@@ -122,7 +129,33 @@ func TestAdd(t *testing.T) {
 
 	var labelsToModify LabelsToModify
 	for _, test := range testCase {
-		labelsToModify.Add(test.labelKey, test.labelValue, test.operationType)
+		labelsToModify.Delete(test.labelKey)
+		if !reflect.DeepEqual(labelsToModify.GetLabels(), test.wantedLabelsToModify) {
+			t.Errorf("fail to add labe to modify to slice")
+		}
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	var testCase = []struct {
+		labelKey             string
+		labelValue           string
+		wantedLabelsToModify []LabelToModify
+	}{
+		{
+			labelKey: "commonLabel",
+			wantedLabelsToModify: []LabelToModify{
+				{
+					LabelKey:      "commonLabel",
+					OperationType: UpdateLabel,
+				},
+			},
+		},
+	}
+
+	var labelsToModify LabelsToModify
+	for _, test := range testCase {
+		labelsToModify.Update(test.labelKey, test.labelValue)
 		if !reflect.DeepEqual(labelsToModify.GetLabels(), test.wantedLabelsToModify) {
 			t.Errorf("fail to add labe to modify to slice")
 		}
