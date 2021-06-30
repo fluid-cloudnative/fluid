@@ -149,12 +149,12 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			toUpdate.Labels = make(map[string]string)
 		}
 
-		labelsToModify.Add(runtimeLabel, "true", common.AddLabel)
-		labelsToModify.Add(commonLabel, "true", common.AddLabel)
+		labelsToModify.Add(runtimeLabel, "true")
+		labelsToModify.Add(commonLabel, "true")
 
 		if exclusiveness {
 			exclusiveLabelValue := utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
-			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue, common.AddLabel)
+			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue)
 		}
 
 		err = increaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
@@ -230,14 +230,14 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 	for key, requirement := range storageMap {
 		value := utils.TranformQuantityToUnits(requirement)
 		if key == common.MemoryCacheStore {
-			labelsToModify.Add(memCapacityLabel, value, common.AddLabel)
+			labelsToModify.Add(memCapacityLabel, value)
 		} else {
-			labelsToModify.Add(diskCapacityLabel, value, common.AddLabel)
+			labelsToModify.Add(diskCapacityLabel, value)
 		}
 		totalRequirement.Add(*requirement)
 	}
 	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-	labelsToModify.Add(totalCapacityLabel, totalValue, common.AddLabel)
+	labelsToModify.Add(totalCapacityLabel, totalValue)
 }
 
 // DecreaseDatasetNum deletes the datasetNum label or updates the number of the dataset in the specific node.
@@ -250,10 +250,10 @@ func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface
 			return err
 		}
 		if currentDataset < 2 {
-			labelsToModify.Add(labelDatasetNum, "", common.DeleteLabel)
+			labelsToModify.Delete(labelDatasetNum)
 		} else {
 			labelDatasetNumValue := strconv.Itoa(currentDataset - 1)
-			labelsToModify.Add(labelDatasetNum, labelDatasetNumValue, common.UpdateLabel)
+			labelsToModify.Update(labelDatasetNum, labelDatasetNumValue)
 		}
 	}
 	return nil
@@ -268,9 +268,9 @@ func increaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface
 			return err
 		}
 		datasetLabelValue := strconv.Itoa(currentData + 1)
-		labelsToModify.Add(labelDatasetNum, datasetLabelValue, common.UpdateLabel)
+		labelsToModify.Update(labelDatasetNum, datasetLabelValue)
 	} else {
-		labelsToModify.Add(labelDatasetNum, "1", common.AddLabel)
+		labelsToModify.Add(labelDatasetNum, "1")
 	}
 	return nil
 }

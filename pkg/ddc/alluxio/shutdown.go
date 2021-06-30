@@ -281,12 +281,12 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 
 			toUpdate := node.DeepCopy()
 			for _, label := range labelNames {
-				labelsToModify.Add(label, "", common.DeleteLabel)
+				labelsToModify.Delete(label)
 			}
 
 			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				labelsToModify.Add(labelExclusiveName, "", common.DeleteLabel)
+				labelsToModify.Delete(labelExclusiveName)
 			}
 
 			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)

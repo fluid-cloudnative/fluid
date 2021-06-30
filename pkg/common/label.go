@@ -57,9 +57,7 @@ func (labels *LabelsToModify) GetLabels() []LabelToModify {
 	return labels.labels
 }
 
-// Add creates new struct LabelToModify with input params and adds it into the slice.
-func (labels *LabelsToModify) Add(labelKey string, labelValue string, operationType OperationType) {
-
+func (labels *LabelsToModify) operator(labelKey string, labelValue string, operationType OperationType) {
 	newLabelToModify := LabelToModify{
 		LabelKey:      labelKey,
 		OperationType: operationType,
@@ -68,6 +66,18 @@ func (labels *LabelsToModify) Add(labelKey string, labelValue string, operationT
 		newLabelToModify.LabelValue = labelValue
 	}
 	labels.labels = append(labels.labels, newLabelToModify)
+}
+
+func (labels *LabelsToModify) Add(labelKey string, labelValue string) {
+	labels.operator(labelKey, labelValue, AddLabel)
+}
+
+func (labels *LabelsToModify) Update(labelKey string, labelValue string) {
+	labels.operator(labelKey, labelValue, UpdateLabel)
+}
+
+func (labels *LabelsToModify) Delete(labelKey string) {
+	labels.operator(labelKey, "", DeleteLabel)
 }
 
 func GetDatasetNumLabelName() string {
