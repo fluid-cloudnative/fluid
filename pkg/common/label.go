@@ -26,7 +26,7 @@ const (
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 
 	// fluid adminssion webhook inject flag
-	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-scheduling-strategy"
+	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
 )
 
 func GetDatasetNumLabelName() string {
