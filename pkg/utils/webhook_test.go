@@ -1,10 +1,11 @@
 package utils
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"math/rand"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestInjectPreferredSchedulingTerms(t *testing.T) {
@@ -64,6 +65,54 @@ func TestInjectPreferredSchedulingTerms(t *testing.T) {
 		}
 		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+lenPreferredSchedulingTerms {
 			t.Errorf("the inject is not success")
+		}
+	}
+}
+
+func TestInjectNodeSelectorTerms(t *testing.T) {
+	testCases := map[string]struct {
+		nodeSelectorTermList []corev1.NodeSelectorTerm
+		pod                  *corev1.Pod
+		expectLen            int
+	}{
+		"test empty nodeSelectorTermList ": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+							},
+						},
+					},
+				},
+			},
+			expectLen: 0,
+		},
+		"test no empty nodeSelectorTermList ": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"test-label-value"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{},
+			},
+			expectLen: 1,
+		},
+	}
+
+	for k, item := range testCases {
+		InjectNodeSelectorTerms(item.nodeSelectorTermList, item.pod)
+		if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) !=
+			item.expectLen {
+			t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
 		}
 	}
 }

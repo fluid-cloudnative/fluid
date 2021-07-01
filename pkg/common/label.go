@@ -25,8 +25,8 @@ const (
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 
-	// fluid adminssion webhook inject pod affinity strategy flag
-	LabelFluidSchedulingStrategyFlag = LabelAnnotationPrefix + "enable-scheduling-strategy"
+	// fluid adminssion webhook inject flag
+	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
 )
 
 func GetDatasetNumLabelName() string {
