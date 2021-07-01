@@ -24,20 +24,20 @@ func TestHitTarget(t *testing.T) {
 		wantHit     bool
 	}{
 		"test label target hit case 1": {
-			labels:      map[string]string{LabelFluidSchedulingStrategyFlag: "true"},
-			target:      LabelFluidSchedulingStrategyFlag,
+			labels:      map[string]string{EnableFluidInjectionFlag: "true"},
+			target:      EnableFluidInjectionFlag,
 			targetValue: "true",
 			wantHit:     true,
 		},
 		"test label target hit case 2": {
-			labels:      map[string]string{LabelFluidSchedulingStrategyFlag: "false"},
-			target:      LabelFluidSchedulingStrategyFlag,
+			labels:      map[string]string{EnableFluidInjectionFlag: "false"},
+			target:      EnableFluidInjectionFlag,
 			targetValue: "true",
 			wantHit:     false,
 		},
 		"test label target hit case 3": {
 			labels:      nil,
-			target:      LabelFluidSchedulingStrategyFlag,
+			target:      EnableFluidInjectionFlag,
 			targetValue: "true",
 			wantHit:     false,
 		},

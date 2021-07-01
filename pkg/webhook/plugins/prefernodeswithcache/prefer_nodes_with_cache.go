@@ -16,6 +16,8 @@ limitations under the License.
 package prefernodeswithcache
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -46,36 +48,51 @@ func (p *PreferNodesWithCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
+func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
 	}
 	var preferredSchedulingTerms []corev1.PreferredSchedulingTerm
 	for _, runtimeInfo := range runtimeInfos {
-		// if runtime in global mode, inject a new PreferredSchedulingTerm
-		global, _ := runtimeInfo.GetFuseDeployMode()
-		if global {
-			preferredSchedulingTerm := getPreferredSchedulingTerm(runtimeInfo)
-			preferredSchedulingTerms = append(preferredSchedulingTerms, preferredSchedulingTerm)
+
+		preferredSchedulingTerm, err := getPreferredSchedulingTerm(runtimeInfo)
+		if err != nil {
+			return shouldStop, err
 		}
+		if preferredSchedulingTerm != nil {
+			preferredSchedulingTerms = append(preferredSchedulingTerms, *preferredSchedulingTerm)
+		}
+
 	}
 	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
 
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) corev1.PreferredSchedulingTerm {
-	return corev1.PreferredSchedulingTerm{
-		Weight: 50,
-		Preference: corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      runtimeInfo.GetCommonLabelName(),
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{"true"},
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
+	preferredSchedulingTerm = nil
+
+	if runtimeInfo == nil {
+		err = fmt.Errorf("RuntimeInfo is nil")
+		return
+	}
+
+	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
+	if isGlobalMode {
+		preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
+			Weight: 100,
+			Preference: corev1.NodeSelectorTerm{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      runtimeInfo.GetCommonLabelName(),
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"true"},
+					},
 				},
 			},
-		},
+		}
 	}
+
+	return
 }

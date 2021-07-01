@@ -107,6 +107,7 @@ func handle() {
 		}
 	}))
 
+	// get client from mgr
 	client, err := client.New(cfg, client.Options{})
 	if err != nil {
 		setupLog.Error(err, "initialize kube client failed")
@@ -121,7 +122,7 @@ func handle() {
 	}
 
 	// register admission handlers
-	handler.Register(mgr, client, setupLog)
+	handler.Register(mgr, mgr.GetClient(), setupLog)
 	setupLog.Info("Register Handler")
 
 	setupLog.Info("starting webhook-manager")
