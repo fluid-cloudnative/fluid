@@ -93,7 +93,7 @@ hbase-worker-hvbp2   2/2     Running   0          3m1s    192.168.1.146   cn-bei
 在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为2，运行在所有的子节点上。
 
 
-## 运行示例1: 创建没有挂载数据集的Pod，它将尽量远离数据集
+## 运行示例1: 创建没有挂载数据集的Pod，它将尽量被调度到远离数据集的节点
 
 **创建Pod**
 ```shell
@@ -112,6 +112,7 @@ $ kubectl create -f nginx.yaml
 **查看Pod**
 
 查看Pod的yaml文件，发现被注入了如下信息：
+
 ```yaml
 spec:
   affinity:
@@ -123,7 +124,9 @@ spec:
                 operator: DoesNotExist
           weight: 100
 ```
+
 正如亲和性所影响的，Pod调度到了没有缓存的cn-beijing.192.168.1.147节点。
+
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
