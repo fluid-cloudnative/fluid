@@ -4,7 +4,6 @@ import (
 	"context"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,6 +11,7 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
 
@@ -21,34 +21,7 @@ type TestCase struct {
 	isErr 			bool
 }
 
-type NullLogger struct{}
 
-func (log NullLogger) Enabled() bool {
-	// do nothing
-	return false
-}
-
-func (log NullLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	// do nothing
-}
-
-func (log NullLogger) V(level int) logr.InfoLogger {
-	return log
-}
-
-func (log NullLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
-	// Do nothing.
-	return log
-}
-
-func (log NullLogger) WithName(name string) logr.Logger {
-	// Do nothing.
-	return log
-}
-
-func (log NullLogger) Info(_ string, _ ...interface{}) {
-	// Do nothing.
-}
 
 func newTestAlluxioEngine(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
@@ -63,7 +36,7 @@ func newTestAlluxioEngine(client client.Client, name string, namespace string, w
 		namespace:              namespace,
 		Client:                 client,
 		runtimeInfo:            runTimeInfo,
-		Log:                    NullLogger{},
+		Log:                    log.NullLogger{},
 	}
 	return engine
 }
