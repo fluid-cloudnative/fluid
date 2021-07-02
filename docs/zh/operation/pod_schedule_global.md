@@ -32,8 +32,8 @@ metadata:
 ```shell
 $ kubectl get nodes
 NAME                      STATUS   ROLES    AGE   VERSION
-cn-hangzhou.172.16.0.16   Ready    <none>   16d   v1.20.4-aliyun.1
-cn-hangzhou.172.16.1.84   Ready    <none>   16d   v1.20.4-aliyun.1
+node.172.16.0.16   Ready    <none>   16d   v1.20.4-aliyun.1
+node.172.16.1.84   Ready    <none>   16d   v1.20.4-aliyun.1
 ```
 
 **检查待创建的Dataset资源对象**
@@ -65,7 +65,7 @@ spec:
   fuse:
     global: true
     nodeSelector:
-      kubernetes.io/hostname: cn-hangzhou.172.16.1.84
+      kubernetes.io/hostname: node.172.16.1.84
 EOF
 ```
 
@@ -89,11 +89,11 @@ alluxioruntime.data.fluid.io/hbase created
 
 $  kubectl get po -owide
 NAME                 READY   STATUS    RESTARTS   AGE   IP             NODE                      NOMINATED NODE   READINESS GATES
-hbase-fuse-sc9b8     1/1     Running   0          10m   172.16.1.84    cn-hangzhou.172.16.1.84   <none>           <none>
-hbase-master-0       2/2     Running   0          11m   172.16.0.16    cn-hangzhou.172.16.0.16   <none>           <none>
-hbase-worker-dpn5b   2/2     Running   0          10m   172.16.1.84    cn-hangzhou.172.16.1.84   <none>           <none>
+hbase-fuse-sc9b8     1/1     Running   0          10m   172.16.1.84    node.172.16.1.84   <none>           <none>
+hbase-master-0       2/2     Running   0          11m   172.16.0.16    node.172.16.0.16   <none>           <none>
+hbase-worker-dpn5b   2/2     Running   0          10m   172.16.1.84    node.172.16.1.84   <none>           <none>
 ```
-在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为1，运行在子节点cn-hangzhou.172.16.1.84上。
+在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为1，运行在子节点node.172.16.1.84上。
 
 ## 运行示例1: 创建没有挂载数据集的Pod，它将尽量被调度到远离数据集的节点
 
@@ -127,12 +127,12 @@ spec:
           weight: 100
 ```
 
-正如亲和性所影响的，Pod调度到了没有缓存的cn-hangzhou.172.16.0.16节点。
+正如亲和性所影响的，Pod调度到了没有缓存的node.172.16.0.16节点。
 
 ```shell
 $ kubectl get pods nginx-1 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx-1   cn-hangzhou.172.16.0.16
+nginx-1   node.172.16.0.16
 ```
 
 ## 运行示例2: 创建挂载数据集的Pod，它将尽量往有数据集的节点调度
@@ -182,7 +182,7 @@ spec:
           - key: kubernetes.io/hostname
             operator: In
             values:
-            - cn-hangzhou.172.16.1.84
+            - node.172.16.1.84
 ```
 
 通过亲和性配置，应用被注入了两个信息，一个fuse所配置nodeSelector，另一个是和缓存worker的弱亲和性配置。
@@ -191,7 +191,7 @@ spec:
 ```shell
 $ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx-1   cn-hangzhou.172.16.1.84
+nginx-1   node.172.16.1.84
 ```
 
 从结果上看, 可以看到pod被调度到了可以缓存的节点。
