@@ -3,6 +3,7 @@ module github.com/fluid-cloudnative/fluid
 go 1.13
 
 require (
+	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.2.0
 	github.com/docker/go-units v0.4.0
@@ -15,6 +16,7 @@ require (
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.8.1
+	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
