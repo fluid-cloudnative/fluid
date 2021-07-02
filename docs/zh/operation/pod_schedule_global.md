@@ -17,13 +17,13 @@ $ kubectl label namespace default fluid.io/enable-injection=true
 
 如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签fluid.io/enable-injection=false
 
-例如，使用yaml文件方式创建一个nginx Pod时，应对yaml文件做如下修改：
+例如，使用yaml文件方式创建一个nginx-1 Pod时，应对yaml文件做如下修改：
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: nginx-1
   labels:
     fluid.io/enable-injection: false
 ```
@@ -99,17 +99,17 @@ hbase-worker-dpn5b   2/2     Running   0          10m   172.16.1.84    cn-hangzh
 
 **创建Pod**
 ```shell
-$ cat<<EOF >nginx.yaml
+$ cat<<EOF >nginx-1.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: nginx-1
 spec:
   containers:
-    - name: nginx
-      image: nginx
+    - name: nginx-1
+      image: nginx-1
 EOF
-$ kubectl create -f nginx.yaml
+$ kubectl create -f nginx-1.yaml
 ```
 **查看Pod**
 
@@ -130,9 +130,9 @@ spec:
 正如亲和性所影响的，Pod调度到了没有缓存的cn-hangzhou.172.16.0.16节点。
 
 ```shell
-$ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
+$ kubectl get pods nginx-1 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx   cn-hangzhou.172.16.0.16
+nginx-1   cn-hangzhou.172.16.0.16
 ```
 
 ## 运行示例2: 创建挂载数据集的Pod，它将尽量往有数据集的节点调度
@@ -140,15 +140,15 @@ nginx   cn-hangzhou.172.16.0.16
 **创建Pod**
 
 ```shell
-$ cat<<EOF >nginx.yaml
+$ cat<<EOF >nginx-2.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: nginx-2
 spec:
   containers:
-    - name: nginx
-      image: nginx
+    - name: nginx-2
+      image: nginx-2
       volumeMounts:
         - mountPath: /data
           name: hbase-vol
@@ -157,7 +157,7 @@ spec:
       persistentVolumeClaim:
         claimName: hbase
 EOF
-$ kubectl create -f nginx.yaml
+$ kubectl create -f nginx-2.yaml
 ```
 
 **查看Pod**
@@ -185,11 +185,13 @@ spec:
             - cn-hangzhou.172.16.1.84
 ```
 
-通过亲和性配置，应用被注入了两个信息，一个fuse所配置nodeSelector，另一个是和缓存worker的亲和性信息。
+通过亲和性配置，应用被注入了两个信息，一个fuse所配置nodeSelector，另一个是和缓存worker的弱亲和性配置。
 
 
 ```shell
-$ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
+$ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx   cn-beijing.192.168.1.146
+nginx-1   cn-hangzhou.172.16.1.84
 ```
+
+从结果上看, 可以看到pod被调度到了可以缓存的节点。
