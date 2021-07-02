@@ -31,9 +31,9 @@ metadata:
 **查看全部结点**
 ```shell
 $ kubectl get nodes
-NAME                       STATUS   ROLES    AGE     VERSION
-cn-beijing.192.168.1.146   Ready    <none>   7d14h   v1.16.9-aliyun.1
-cn-beijing.192.168.1.147   Ready    <none>   7d14h   v1.16.9-aliyun.1
+NAME                      STATUS   ROLES    AGE   VERSION
+cn-hangzhou.172.16.0.16   Ready    <none>   16d   v1.20.4-aliyun.1
+cn-hangzhou.172.16.1.84   Ready    <none>   16d   v1.20.4-aliyun.1
 ```
 
 **检查待创建的Dataset资源对象**
@@ -64,8 +64,12 @@ spec:
         low: "0.7"
   fuse:
     global: true
+    nodeSelector:
+      kubernetes.io/hostname: cn-hangzhou.172.16.1.84
 EOF
 ```
+
+> 这里通过nodeselector指定了
 
 **创建Dataset资源对象**
 ```shell
@@ -83,15 +87,13 @@ dataset.data.fluid.io/hbase created
 $ kubectl create -f runtime.yaml
 alluxioruntime.data.fluid.io/hbase created
 
-$ kubectl get po -owide
-NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-gfq7z     1/1     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-fuse-lmk5p     1/1     Running   0          3m47s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-master-0       2/2     Running   0          3m47s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-hvbp2   2/2     Running   0          3m1s    192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+$  kubectl get po -owide
+NAME                 READY   STATUS    RESTARTS   AGE   IP             NODE                      NOMINATED NODE   READINESS GATES
+hbase-fuse-sc9b8     1/1     Running   0          10m   172.16.1.84    cn-hangzhou.172.16.1.84   <none>           <none>
+hbase-master-0       2/2     Running   0          11m   172.16.0.16    cn-hangzhou.172.16.0.16   <none>           <none>
+hbase-worker-dpn5b   2/2     Running   0          10m   172.16.1.84    cn-hangzhou.172.16.1.84   <none>           <none>
 ```
-在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为2，运行在所有的子节点上。
-
+在此处可以看到，有一个Alluxio Worker成功启动，并且运行在结点192.168.1.146上。Alluixo Fuse的数量为1，运行在子节点cn-hangzhou.172.16.1.84上。
 
 ## 运行示例1: 创建没有挂载数据集的Pod，它将尽量被调度到远离数据集的节点
 
@@ -125,12 +127,12 @@ spec:
           weight: 100
 ```
 
-正如亲和性所影响的，Pod调度到了没有缓存的cn-beijing.192.168.1.147节点。
+正如亲和性所影响的，Pod调度到了没有缓存的cn-hangzhou.172.16.0.16节点。
 
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx   cn-beijing.192.168.1.147
+nginx   cn-hangzhou.172.16.0.16
 ```
 
 ## 运行示例2: 创建挂载数据集的Pod，它将尽量往有数据集的节点调度
@@ -167,16 +169,24 @@ spec:
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - preference:
-            matchExpressions:
-              - key: fluid.io/s-default-hbase
-                operator: In
-                values:
-                  - "true"
-          weight: 100
+      - preference:
+          matchExpressions:
+          - key: fluid.io/s-default-hbase
+            operator: In
+            values:
+            - "true"
+        weight: 100
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - cn-hangzhou.172.16.1.84
 ```
 
-正如亲和性所影响的，Pod调度到了有缓存的cn-beijing.192.168.1.146节点。
+通过亲和性配置，应用被注入了两个信息，一个fuse所配置nodeSelector，另一个是和缓存worker的亲和性信息。
+
 
 ```shell
 $ kubectl get pods nginx -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
