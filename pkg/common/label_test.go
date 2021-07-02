@@ -64,9 +64,9 @@ func TestGetLabels(t *testing.T) {
 			labelsToModify: LabelsToModify{},
 			expectedResult: []LabelToModify{
 				{
-					LabelKey:      "commonLabel",
-					LabelValue:    "true",
-					OperationType: AddLabel,
+					labelKey:      "commonLabel",
+					labelValue:    "true",
+					operationType: AddLabel,
 				},
 			},
 		},
@@ -93,9 +93,9 @@ func TestAdd(t *testing.T) {
 			labelValue: "true",
 			wantedLabelsToModify: []LabelToModify{
 				{
-					LabelKey:      "commonLabel",
-					LabelValue:    "true",
-					OperationType: AddLabel,
+					labelKey:      "commonLabel",
+					labelValue:    "true",
+					operationType: AddLabel,
 				},
 			},
 		},
@@ -120,8 +120,8 @@ func TestDelete(t *testing.T) {
 			labelKey: "commonLabel",
 			wantedLabelsToModify: []LabelToModify{
 				{
-					LabelKey:      "commonLabel",
-					OperationType: DeleteLabel,
+					labelKey:      "commonLabel",
+					operationType: DeleteLabel,
 				},
 			},
 		},
@@ -146,8 +146,8 @@ func TestUpdate(t *testing.T) {
 			labelKey: "commonLabel",
 			wantedLabelsToModify: []LabelToModify{
 				{
-					LabelKey:      "commonLabel",
-					OperationType: UpdateLabel,
+					labelKey:      "commonLabel",
+					operationType: UpdateLabel,
 				},
 			},
 		},

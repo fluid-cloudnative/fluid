@@ -44,9 +44,21 @@ const (
 
 // LabelToModify modifies the labelKey in operationType.
 type LabelToModify struct {
-	LabelKey      string
-	LabelValue    string
-	OperationType OperationType
+	labelKey      string
+	labelValue    string
+	operationType OperationType
+}
+
+func (labelToModify *LabelToModify) GetLabelKey() string {
+	return labelToModify.labelKey
+}
+
+func (labelToModify *LabelToModify) GetLabelValue() string {
+	return labelToModify.labelValue
+}
+
+func (labelToModify *LabelToModify) GetOperationType() OperationType {
+	return labelToModify.operationType
 }
 
 type LabelsToModify struct {
@@ -59,11 +71,11 @@ func (labels *LabelsToModify) GetLabels() []LabelToModify {
 
 func (labels *LabelsToModify) operator(labelKey string, labelValue string, operationType OperationType) {
 	newLabelToModify := LabelToModify{
-		LabelKey:      labelKey,
-		OperationType: operationType,
+		labelKey:      labelKey,
+		operationType: operationType,
 	}
 	if operationType != DeleteLabel {
-		newLabelToModify.LabelValue = labelValue
+		newLabelToModify.labelValue = labelValue
 	}
 	labels.labels = append(labels.labels, newLabelToModify)
 }

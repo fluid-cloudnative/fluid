@@ -14,16 +14,35 @@ func ChangeNodeLabelWithUpdateModel(client client.Client, node *v1.Node, labelsT
 	labels := labelsToModify.GetLabels()
 
 	for _, labelToModify := range labels {
-		switch labelToModify.OperationType {
-		case common.AddLabel, common.UpdateLabel:
-			node.Labels[labelToModify.LabelKey] = labelToModify.LabelValue
+		oldLabels := node.Labels
+		operationType := labelToModify.GetOperationType()
+		labelToModifyKey := labelToModify.GetLabelKey()
+		labelToModifyValue := labelToModify.GetLabelValue()
+
+		switch operationType {
+		case common.AddLabel:
+			if ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s already exist", labelToModifyKey)
+				return nil, err
+			}
+			node.Labels[labelToModifyKey] = labelToModifyValue
+		case common.UpdateLabel:
+			if !ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+				return nil, err
+			}
+			node.Labels[labelToModifyKey] = labelToModifyValue
 		case common.DeleteLabel:
-			delete(node.Labels, labelToModify.LabelKey)
+			if !ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+				return nil, err
+			}
+			delete(node.Labels, labelToModifyKey)
 		default:
-			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", labelToModify.OperationType)
+			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", operationType)
 			return nil, err
 		}
-		modifiedLabels = append(modifiedLabels, labelToModify.LabelKey)
+		modifiedLabels = append(modifiedLabels, labelToModifyKey)
 	}
 	err = client.Update(context.TODO(), node)
 	if err != nil {
@@ -38,16 +57,35 @@ func ChangeNodeLabelWithPatchModel(cli client.Client, node *v1.Node, labelsToMod
 	labels := labelsToModify.GetLabels()
 
 	for _, labelToModify := range labels {
-		switch labelToModify.OperationType {
-		case common.AddLabel, common.UpdateLabel:
-			patchNode.Labels[labelToModify.LabelKey] = labelToModify.LabelValue
+		oldLabels := patchNode.Labels
+		operationType := labelToModify.GetOperationType()
+		labelToModifyKey := labelToModify.GetLabelKey()
+		labelToModifyValue := labelToModify.GetLabelValue()
+
+		switch operationType {
+		case common.AddLabel:
+			if ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s already exist", labelToModifyKey)
+				return nil, err
+			}
+			patchNode.Labels[labelToModifyKey] = labelToModifyValue
+		case common.UpdateLabel:
+			if !ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+				return nil, err
+			}
+			patchNode.Labels[labelToModifyKey] = labelToModifyValue
 		case common.DeleteLabel:
-			delete(patchNode.Labels, labelToModify.LabelKey)
+			if !ContainsKey(oldLabels, labelToModifyKey) {
+				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+				return nil, err
+			}
+			delete(patchNode.Labels, labelToModifyKey)
 		default:
-			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", labelToModify.OperationType)
+			err = fmt.Errorf("fail to update the label due to the wrong operation: %s", operationType)
 			return nil, err
 		}
-		modifiedLabels = append(modifiedLabels, labelToModify.LabelKey)
+		modifiedLabels = append(modifiedLabels, labelToModifyKey)
 	}
 	err = cli.Patch(context.TODO(), patchNode, client.MergeFrom(node))
 	if err != nil {

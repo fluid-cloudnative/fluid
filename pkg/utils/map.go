@@ -15,3 +15,13 @@ func ContainsAll(m map[string]string, slice []string) bool {
 	}
 	return true
 }
+
+// ContainsKey judges whether the arr contains the elem.
+func ContainsKey(elems map[string]string, target string) bool {
+	for elem := range elems {
+		if elem == target {
+			return true
+		}
+	}
+	return false
+}
