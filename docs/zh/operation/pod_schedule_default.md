@@ -7,28 +7,9 @@
 您使用的k8s版本需要支持 admissionregistration.k8s.io/v1beta1（ Kubernetes version > 1.14 )
 
 ## 使用方法
-**为namespace添加标签**
 
-为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
+**查看全部节点**
 
-```bash
-$ kubectl label namespace default fluid.io/enable-injection=true
-```
-
-如果该命名空间下的某些Pod，您不希望开启调度优化功能，只需为Pod打上标签fluid.io/enable-injection=false
-
-例如，使用yaml文件方式创建一个nginx Pod时，应对yaml文件做如下修改：
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-  labels:
-    fluid.io/enable-injection: false
-```
-
-**查看全部结点**
 ```shell
 $ kubectl get no
 NAME                      STATUS   ROLES    AGE   VERSION
@@ -172,4 +153,4 @@ NAME    NODE
 nginx   node.172.16.0.16
 ```
 
-> 注释： K8s默认调度器并不需要配置强制亲和性，但是如果使用一些类似Volcano调度器组件并不感知K8s原生数据卷的亲和性，导致应用调度
+> 注释： K8s默认调度器并不需要配置强制亲和性，但是如果使用一些类似Volcano，Yunikorn等调度器组件并不感知K8s原生数据卷的亲和性，导致应用调度
