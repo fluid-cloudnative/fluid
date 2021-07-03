@@ -166,9 +166,9 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &labelsToModify)
 
 		// Update the toUpdate in UPDATE mode
-		// modifiedLabels, err = utils.ChangeNodeLabelWithUpdateModel(client, toUpdate, labelToModify)
+		// modifiedLabels, err = utils.ChangeNodeLabelWithUpdateMode(client, toUpdate, labelToModify)
 		// Update the toUpdate in PATCH mode
-		modifiedLabels, err = utils.ChangeNodeLabelWithPatchModel(client, toUpdate, labelsToModify)
+		modifiedLabels, err = utils.ChangeNodeLabelWithPatchMode(client, toUpdate, labelsToModify)
 
 		if err != nil {
 			log.Error(err, fmt.Sprintf("update node labels failed, node name: %s, labels:%v", node.Name, node.Labels))

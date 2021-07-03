@@ -294,9 +294,9 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 				return err
 			}
 			// Update the toUpdate in UPDATE mode
-			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateModel(e.Client, toUpdate, labelToModify)
+			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
 			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchModel(e.Client, toUpdate, labelsToModify)
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(e.Client, toUpdate, labelsToModify)
 			if err != nil {
 				return err
 			}
