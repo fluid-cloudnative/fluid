@@ -1,8 +1,8 @@
 # 示例 - 通过Webhook 机制优化Pod 调度
 
-Fluid结合根据数据集排布的Pod调度机制，通过webhook机制将调度信息注入到Pod可以实现以下功能：
+Fluid结合根据数据集排布的Pod调度策略，通过webhook机制将调度信息注入到Pod可以实现以下功能：
 
-1.不仅支持默认调度器，也支持Volcano，Yunikorn等非K8s原生调度器实现Pod的数据亲和性调度
+1.支持K8s原生调度器,以及Volcano, Yunikorn等实现 Pod 数据亲和性调度
 2.在全局Fuse的模式下，将Pod优先调度到有数据缓存能力的节点
 3.当Pod不使用数据集时，可以尽量避免调度到有缓存的节点
 
