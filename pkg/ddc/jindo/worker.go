@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -152,12 +153,21 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		}
 	}
 
+	e.Log.Info("Fuse deploy mode", "global", runtime.Spec.Fuse.Global)
 	fuses, err := e.getDaemonset(fuseName, namespace)
 	if fuses.Status.NumberAvailable > 0 {
-		if runtime.Spec.Replicas == fuses.Status.NumberReady {
-			fuseReady = true
-		} else if fuses.Status.NumberReady >= 1 {
-			fusePartialReady = true
+		if runtime.Spec.Fuse.Global {
+			if fuses.Status.DesiredNumberScheduled == fuses.Status.CurrentNumberScheduled {
+				fuseReady = true
+			} else {
+				fusePartialReady = true
+			}
+		} else {
+			if runtime.Spec.Replicas == fuses.Status.NumberReady {
+				fuseReady = true
+			} else if fuses.Status.NumberReady >= 1 {
+				fusePartialReady = true
+			}
 		}
 	}
 
@@ -213,4 +223,25 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 	})
 
 	return
+}
+
+// getWorkerSelectors gets the selector of the worker
+func (e *JindoEngine) getWorkerSelectors() string {
+	labels := map[string]string{
+		"release":     e.name,
+		POD_ROLE_TYPE: WOKRER_POD_ROLE,
+		"app":         common.JINDO_RUNTIME,
+	}
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: labels,
+	}
+
+	selectorValue := ""
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		e.Log.Error(err, "Failed to parse the labelSelector of the runtime", "labels", labels)
+	} else {
+		selectorValue = selector.String()
+	}
+	return selectorValue
 }
