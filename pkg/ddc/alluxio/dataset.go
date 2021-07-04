@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-//
+// UpdateCacheOfDataset updates the CacheStates and Runtimes of the dataset.
 func (e *AlluxioEngine) UpdateCacheOfDataset() (err error) {
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
@@ -80,7 +80,7 @@ func (e *AlluxioEngine) UpdateCacheOfDataset() (err error) {
 
 }
 
-// Bind to the dataset
+// UpdateDatasetStatus updates the status of the dataset
 func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
