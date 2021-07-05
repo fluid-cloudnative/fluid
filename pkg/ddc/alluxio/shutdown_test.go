@@ -21,6 +21,7 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
+	_ = datav1alpha1.AddToScheme(testScheme)
 }
 
 func TestDestroyWorker(t *testing.T) {
