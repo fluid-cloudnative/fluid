@@ -74,12 +74,14 @@ const (
 	HDD MediumType = "HDD"
 )
 
-var tieredStoreOrderMap map[MediumType]int = map[MediumType]int{
+var tieredStoreOrderMap = map[MediumType]int{
 	Memory: 0,
 	SSD:    1,
 	HDD:    2,
 }
 
+// GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map
+// if the MediumType is unknown, it's default order is 0
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
 	order = tieredStoreOrderMap[MediumType]
 	return order
