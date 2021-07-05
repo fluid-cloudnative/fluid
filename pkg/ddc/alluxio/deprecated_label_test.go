@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
 
@@ -23,7 +24,7 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 		namespace:              namespace,
 		Client:                 client,
 		runtimeInfo:            runTimeInfo,
-		Log:                    NullLogger{},
+		Log:                    log.NullLogger{},
 	}
 	return engine
 }
@@ -31,13 +32,42 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 
 
 func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T){
+	testCases:=[]struct{
+		name 		string
+		namespace 	string
+		out 	string
+	}{
+		{
+			name: 		"hbase",
+			namespace: 	"fluid",
+			out:		"data.fluid.io/storage-fluid-hbase",
+		},
+		{
+			name: 		"hadoop",
+			namespace: 	"fluid",
+			out:		"data.fluid.io/storage-fluid-hadoop",
+		},
+		{
+			name: 		"fluid",
+			namespace: 	"test",
+			out:		"data.fluid.io/storage-test-fluid",
+		},
+	}
+	fakeClient := fake.NewFakeClientWithScheme(testScheme)
+	for _, test := range testCases {
+		engine := getTestAlluxioEngine(fakeClient,test.name,test.namespace)
+		out := engine.getDeprecatedCommonLabelname()
+		if out!=test.out{
+			t.Errorf("input parameter is %s-%s,expected %s, got %s", test.namespace,test.name,test.out,out)
+		}
+	}
 
 }
 
 func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T){
 
 	// worker-name = e.name+"-worker"
-	daemonset := &v1.DaemonSet{
+	daemonSetWithSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 		Name: "hbase-worker",
 		Namespace: "fluid",
@@ -47,15 +77,64 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T){
 				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase":"selector"}},
 			},
 		},
+	}
+	daemonSetWithoutSelector := &v1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hadoop-worker",
+			Namespace: "fluid",
+		},
+		Spec: v1.DaemonSetSpec{
+			Template:corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase":"selector"}},
+			},
+		},
 
 	}
 	runtimeObjs  := []runtime.Object{}
-	runtimeObjs  = append(runtimeObjs, daemonset)
+	runtimeObjs  = append(runtimeObjs, daemonSetWithSelector)
+	runtimeObjs  = append(runtimeObjs, daemonSetWithoutSelector)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion,daemonset)
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
 	alluxioEngine := getTestAlluxioEngine(fakeClient,"hbase","fluid")
 	alluxioEngine.HasDeprecatedCommonLabelname()
 
+	testCases := []struct{
+		name 		string
+		namespace   string
+		out 		bool
+		isErr 		bool
+	}{
+		{
+			name:		"hbase",
+			namespace: 	"fluid",
+			out:		true,
+			isErr: 		false,
+		},
+		{
+			name:		"none",
+			namespace: 	"fluid",
+			out:		false,
+			isErr: 		false,
+		},
+		{
+			name:		"hadoop",
+			namespace: 	"fluid",
+			out:		false,
+			isErr: 		false,
+		},
+	}
+
+	for _, test := range testCases {
+		engine := getTestAlluxioEngine(fakeClient,test.name,test.namespace)
+		out,err := engine.HasDeprecatedCommonLabelname()
+		if out!=test.out{
+			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace,test.name,test.out,out)
+		}
+		isErr := err != nil
+		if isErr!=test.isErr{
+			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace,test.name,test.isErr,isErr)
+		}
+	}
 }
 
