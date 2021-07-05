@@ -26,6 +26,9 @@ const (
 	JINDO_MASTER_PORT_MAX   = 11000
 	DEFAULT_WORKER_RPC_PORT = 6101
 	JINDO_WORKER_PORT_MAX   = 8100
+	PORT_NUM                = 2
 
-	PORT_NUM = 2
+	POD_ROLE_TYPE = "role"
+
+	WOKRER_POD_ROLE = "jindo-worker"
 )
