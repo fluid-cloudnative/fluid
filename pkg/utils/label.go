@@ -53,6 +53,8 @@ func ChangeNodeLabelWithUpdateMode(client client.Client, node *v1.Node, labelsTo
 	return modifiedLabels, nil
 }
 
+//TODO(chenguowang) support multiple types of runtime.
+
 // ChangeNodeLabelWithPatchMode updates the input labels in PATCH mode.
 func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
 	labels := labelsToModify.GetLabels()
