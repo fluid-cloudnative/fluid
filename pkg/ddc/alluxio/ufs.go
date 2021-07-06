@@ -15,10 +15,6 @@ limitations under the License.
 
 package alluxio
 
-import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
-)
-
 // UsedStorageBytes returns used storage size of Alluxio in bytes
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
@@ -75,27 +71,6 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	return
-}
-
-// reportSummary reports alluxio summary
-func (e *AlluxioEngine) reportSummary() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportSummary()
-}
-
-// reportMetrics reports alluxio metrics
-func (e *AlluxioEngine) reportMetrics() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportMetrics()
-}
-
-// reportCapacity reports alluxio capacity
-func (e *AlluxioEngine) reportCapacity() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportCapacity()
 }
 
 ////du the ufs
