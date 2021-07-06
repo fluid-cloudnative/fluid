@@ -16,7 +16,6 @@ limitations under the License.
 package lifecycle
 
 import (
-	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
@@ -125,9 +124,6 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 		// exclusiveLabel is the label key indicates the node is exclusively assigned
 		// e.g. fluid_exclusive=default_hbase
 		exclusiveLabel string
-
-		// datasetLabel indicates the number of the dataset in specific node
-		datasetLabel = runtimeInfo.GetDatasetNumLabelName()
 	)
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
@@ -140,7 +136,8 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 
 	nodeName := nodeToLabel.Name
 	var toUpdate *v1.Node
-	var updatedLabels []string
+	var modifiedLabels []string
+	var labelsToModify common.LabelsToModify
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		node, err := kubeclient.GetNode(client, nodeName)
 		if err != nil {
@@ -152,38 +149,36 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			toUpdate.Labels = make(map[string]string)
 		}
 
-		toUpdate.Labels[runtimeLabel] = "true"
-		updatedLabels = append(updatedLabels, runtimeLabel)
-		toUpdate.Labels[commonLabel] = "true"
-		updatedLabels = append(updatedLabels, commonLabel)
+		labelsToModify.Add(runtimeLabel, "true")
+		labelsToModify.Add(commonLabel, "true")
+
 		if exclusiveness {
-			toUpdate.Labels[exclusiveLabel] = utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
-			updatedLabels = append(updatedLabels, exclusiveLabel)
+			exclusiveLabelValue := utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue)
 		}
 
-		if currentDatasetNum, ok := toUpdate.Labels[datasetLabel]; ok {
-			currentData, err := strconv.Atoi(currentDatasetNum)
-			if err != nil {
-				return err
-			}
-			toUpdate.Labels[datasetLabel] = strconv.Itoa(currentData + 1)
-		} else {
-			toUpdate.Labels[datasetLabel] = "1"
-		}
-		updatedLabels = append(updatedLabels, datasetLabel)
-
-		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &updatedLabels)
-
-		err = client.Update(context.TODO(), toUpdate)
+		err = increaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
 		if err != nil {
-			log.Error(err, "LabelCachedNodes")
+			log.Error(err, "fail to update datasetNum label")
+			return err
+		}
+
+		labelNodeWithCapacityInfo(toUpdate, runtimeInfo, &labelsToModify)
+
+		// Update the toUpdate in UPDATE mode
+		// modifiedLabels, err = utils.ChangeNodeLabelWithUpdateMode(client, toUpdate, labelToModify)
+		// Update the toUpdate in PATCH mode
+		modifiedLabels, err = utils.ChangeNodeLabelWithPatchMode(client, toUpdate, labelsToModify)
+
+		if err != nil {
+			log.Error(err, fmt.Sprintf("update node labels failed, node name: %s, labels:%v", node.Name, node.Labels))
 			return err
 		}
 		return nil
 	})
 
 	if err != nil {
-		log.Error(err, "LabelCacheNode")
+		log.Error(err, fmt.Sprintf("fail to update the labels, node name: %s", nodeName))
 		return err
 	}
 
@@ -197,7 +192,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			if err != nil {
 				return false, fmt.Errorf("failed to get node: %w", err)
 			}
-			return utils.ContainsAll(node.Labels, updatedLabels), nil
+			return utils.ContainsAll(node.Labels, modifiedLabels), nil
 		}); err == nil {
 			break
 		}
@@ -214,7 +209,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	return nil
 }
 
-func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, updatedLabels *[]string) {
+func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) {
 	var (
 		// memCapacityLabel indicates in-memory cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
@@ -235,34 +230,47 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 	for key, requirement := range storageMap {
 		value := utils.TranformQuantityToUnits(requirement)
 		if key == common.MemoryCacheStore {
-			toUpdate.Labels[memCapacityLabel] = value
-			*updatedLabels = append(*updatedLabels, memCapacityLabel)
+			labelsToModify.Add(memCapacityLabel, value)
 		} else {
-			toUpdate.Labels[diskCapacityLabel] = value
-			*updatedLabels = append(*updatedLabels, diskCapacityLabel)
+			labelsToModify.Add(diskCapacityLabel, value)
 		}
 		totalRequirement.Add(*requirement)
 	}
 	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
-	toUpdate.Labels[totalCapacityLabel] = totalValue
-	*updatedLabels = append(*updatedLabels, totalCapacityLabel)
+	labelsToModify.Add(totalCapacityLabel, totalValue)
 }
 
 // DecreaseDatasetNum deletes the datasetNum label or updates the number of the dataset in the specific node.
-func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface) (isDeleted bool, err error) {
+func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
 	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelName()
 	if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
 		currentDataset, err := strconv.Atoi(val)
 		if err != nil {
 			rootLog.Error(err, "The dataset number format error")
-			return false, err
+			return err
 		}
 		if currentDataset < 2 {
-			delete(toUpdate.Labels, labelDatasetNum)
-			isDeleted = true
+			labelsToModify.Delete(labelDatasetNum)
 		} else {
-			toUpdate.Labels[labelDatasetNum] = strconv.Itoa(currentDataset - 1)
+			labelDatasetNumValue := strconv.Itoa(currentDataset - 1)
+			labelsToModify.Update(labelDatasetNum, labelDatasetNumValue)
 		}
 	}
-	return isDeleted, err
+	return nil
+}
+
+// increaseDatasetNum adds the datasetNum label or updates the number of the dataset in the specific node.
+func increaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
+	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelName()
+	if currentDatasetNum, ok := toUpdate.Labels[labelDatasetNum]; ok {
+		currentData, err := strconv.Atoi(currentDatasetNum)
+		if err != nil {
+			return err
+		}
+		datasetLabelValue := strconv.Itoa(currentData + 1)
+		labelsToModify.Update(labelDatasetNum, datasetLabelValue)
+	} else {
+		labelsToModify.Add(labelDatasetNum, "1")
+	}
+	return nil
 }
