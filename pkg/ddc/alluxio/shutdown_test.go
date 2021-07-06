@@ -1,6 +1,7 @@
 package alluxio
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	"reflect"
 	"testing"
 
@@ -22,6 +23,7 @@ func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
+	_ = appsv1.AddToScheme(testScheme)
 }
 
 func TestDestroyWorker(t *testing.T) {
