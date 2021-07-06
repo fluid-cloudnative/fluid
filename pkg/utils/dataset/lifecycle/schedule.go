@@ -36,8 +36,8 @@ import (
 )
 
 // TODO: move this to some Scheduler-like struct
-// schedulerMutex is a mutex to protect the scheduling process from race condition
-var schedulerMutex = sync.Mutex{}
+// SchedulerMutex is a mutex to protect the scheduling process from race condition
+var SchedulerMutex = sync.Mutex{}
 
 func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	dataset *datav1alpha1.Dataset,
@@ -45,8 +45,8 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 	desiredNum int32) (currentScheduleNum int32, err error) {
 
 	// Only one worker can enter this area and the reconciling runtime CR can be scheduled
-	schedulerMutex.Lock()
-	defer schedulerMutex.Unlock()
+	SchedulerMutex.Lock()
+	defer SchedulerMutex.Unlock()
 	defer utils.TimeTrack(time.Now(), "AssignDatasetToNodes", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
 	var (
