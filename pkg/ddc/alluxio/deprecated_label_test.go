@@ -96,8 +96,6 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T){
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
-	alluxioEngine := getTestAlluxioEngine(fakeClient,"hbase","fluid")
-	alluxioEngine.HasDeprecatedCommonLabelname()
 
 	testCases := []struct{
 		name 		string
