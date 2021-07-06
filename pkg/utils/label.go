@@ -23,20 +23,20 @@ func ChangeNodeLabelWithUpdateMode(client client.Client, node *v1.Node, labelsTo
 
 		switch operationType {
 		case common.AddLabel:
-			if ContainsKey(oldLabels, labelToModifyKey) {
+			if _, exists := oldLabels[labelToModifyKey]; exists {
 				err = fmt.Errorf("fail to add the label due to the label %s already exist", labelToModifyKey)
 				return nil, err
 			}
 			node.Labels[labelToModifyKey] = labelToModifyValue
 		case common.UpdateLabel:
-			if !ContainsKey(oldLabels, labelToModifyKey) {
-				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+			if _, exists := oldLabels[labelToModifyKey]; !exists {
+				err = fmt.Errorf("fail to update the label due to the label %s does not exist", labelToModifyKey)
 				return nil, err
 			}
 			node.Labels[labelToModifyKey] = labelToModifyValue
 		case common.DeleteLabel:
-			if !ContainsKey(oldLabels, labelToModifyKey) {
-				err = fmt.Errorf("fail to add the label due to the label %s does not exist", labelToModifyKey)
+			if _, exists := oldLabels[labelToModifyKey]; !exists {
+				err = fmt.Errorf("fail to delete the label due to the label %s does not exist", labelToModifyKey)
 				return nil, err
 			}
 			delete(node.Labels, labelToModifyKey)

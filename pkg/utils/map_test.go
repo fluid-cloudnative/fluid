@@ -75,34 +75,3 @@ func TestContainsAll(t *testing.T) {
 		})
 	}
 }
-
-func TestContainsKey(t *testing.T) {
-	var testCase = []struct {
-		elems        map[string]string
-		target       string
-		expectResult bool
-	}{
-		{
-			elems: map[string]string{
-				"testKey1": "testValue1",
-				"testKey2": "testValue2",
-			},
-			target:       "testKey1",
-			expectResult: true,
-		},
-		{
-			elems: map[string]string{
-				"testKey1": "testValue1",
-				"testKey2": "testValue2",
-			},
-			target:       "testKey3",
-			expectResult: false,
-		},
-	}
-
-	for _, test := range testCase {
-		if result := ContainsKey(test.elems, test.target); result != test.expectResult {
-			t.Errorf("fail the exec the func Contains")
-		}
-	}
-}
