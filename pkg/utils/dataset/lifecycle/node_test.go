@@ -25,7 +25,7 @@ func init() {
 }
 
 func TestAlreadyAssigned(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -72,7 +72,7 @@ func TestAlreadyAssigned(t *testing.T) {
 }
 
 func TestCanbeAssigned(t *testing.T) {
-	tireStore := datav1alpha1.Tieredstore{
+	tireStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -139,7 +139,7 @@ func TestCanbeAssigned(t *testing.T) {
 }
 
 func TestLabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -147,7 +147,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
-	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -155,7 +155,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -163,7 +163,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	tireStore := datav1alpha1.Tieredstore{
+	tireStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,

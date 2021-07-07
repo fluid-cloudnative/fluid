@@ -14,21 +14,21 @@ import (
 
 func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 	// runtimeInfoExclusive is a runtimeInfo with ExclusiveMode with a PV already in use.
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 	runtimeInfoHbase.SetupFuseDeployMode(true, nil)
 
 	// runtimeInfoExclusive is a runtimeInfo in global mode with no correspond PV.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 	runtimeInfoSpark.SetupFuseDeployMode(true, map[string]string{"test-node": "true"})
 
 	// runtimeInfoShare is a runtimeInfo in non global mode with no correspond PV.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -122,12 +122,12 @@ func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 }
 
 func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

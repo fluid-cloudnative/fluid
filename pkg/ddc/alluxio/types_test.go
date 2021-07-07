@@ -28,7 +28,7 @@ func TestGetTiredStoreLevel0Path(t *testing.T) {
 			name:      "alluxio-01",
 			namespace: "default",
 			alluxio: &Alluxio{
-				Tieredstore: Tieredstore{
+				TieredStore: TieredStore{
 					Levels: []Level{
 						{
 							Level: 0,
@@ -43,7 +43,7 @@ func TestGetTiredStoreLevel0Path(t *testing.T) {
 			name:      "alluxio-01",
 			namespace: "default",
 			alluxio: &Alluxio{
-				Tieredstore: Tieredstore{
+				TieredStore: TieredStore{
 					Levels: []Level{
 						{
 							Level: 1,

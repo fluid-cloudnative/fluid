@@ -28,7 +28,7 @@ func init() {
 
 func TestDestroyWorker(t *testing.T) {
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -37,7 +37,7 @@ func TestDestroyWorker(t *testing.T) {
 	})
 
 	// runtimeInfoSpark tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

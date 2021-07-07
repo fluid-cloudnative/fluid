@@ -68,7 +68,7 @@ func makeMediumTypeSorted(mediumTypes []common.MediumType) []common.MediumType {
 func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[common.CacheStoreType]*resource.Quantity) {
 	storage = map[common.CacheStoreType]*resource.Quantity{}
 
-	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 		storageType := common.MemoryCacheStore
 		if level.MediumType == common.SSD || level.MediumType == common.HDD {
 			storageType = common.DiskCacheStore
@@ -93,7 +93,7 @@ func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[comm
 // GetTieredLevel returns index of the given mediumType
 func GetTieredLevel(runtimeInfo base.RuntimeInfoInterface, mediumType common.MediumType) int {
 	var levels []common.MediumType
-	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 		levels = append(levels, level.MediumType)
 	}
 

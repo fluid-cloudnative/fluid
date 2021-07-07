@@ -58,8 +58,6 @@ const (
 	DiskCacheStore CacheStoreType = "Disk"
 
 	MemoryCacheStore CacheStoreType = "Memory"
-
-	NoneCacheStore CacheStoreType = ""
 )
 
 const RecommendedKubeConfigPathEnv = "KUBECONFIG"
@@ -81,7 +79,7 @@ var tieredStoreOrderMap = map[MediumType]int{
 }
 
 // GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map
-// if the MediumType is unknown, it's default order is 0
+// because the crd has validated the value, It's not possible to meet unknown MediumType
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
 	order = tieredStoreOrderMap[MediumType]
 	return order

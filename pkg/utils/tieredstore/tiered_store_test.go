@@ -228,15 +228,15 @@ func TestMakeMediumTypeSorted(t *testing.T) {
 
 func TestGetLevelStorageMap(t *testing.T) {
 	testCases := map[string]struct {
-		tieredStore datav1alpha1.Tieredstore
+		tieredStore datav1alpha1.TieredStore
 		want        map[common.CacheStoreType]int64
 	}{
 		"test case 1": {
-			tieredStore: datav1alpha1.Tieredstore{},
+			tieredStore: datav1alpha1.TieredStore{},
 			want:        map[common.CacheStoreType]int64{},
 		},
 		"test case 2": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,
@@ -250,7 +250,7 @@ func TestGetLevelStorageMap(t *testing.T) {
 			},
 		},
 		"test case 3": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,
@@ -268,7 +268,7 @@ func TestGetLevelStorageMap(t *testing.T) {
 			},
 		},
 		"test case 4": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,
@@ -320,17 +320,17 @@ func TestGetLevelStorageMap(t *testing.T) {
 func TestGetTieredLevel(t *testing.T) {
 	var mockQuota = resource.NewQuantity(124, resource.BinarySI)
 	testCases := map[string]struct {
-		tieredStore datav1alpha1.Tieredstore
+		tieredStore datav1alpha1.TieredStore
 		search      common.MediumType
 		want        int
 	}{
 		"test case 1": {
-			tieredStore: datav1alpha1.Tieredstore{},
+			tieredStore: datav1alpha1.TieredStore{},
 			search:      common.Memory,
 			want:        -1,
 		},
 		"test case 2": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,
@@ -343,7 +343,7 @@ func TestGetTieredLevel(t *testing.T) {
 			want:   0,
 		},
 		"test case 3": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,
@@ -361,7 +361,7 @@ func TestGetTieredLevel(t *testing.T) {
 			want:   1,
 		},
 		"test case 4": {
-			tieredStore: datav1alpha1.Tieredstore{
+			tieredStore: datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{
 					{
 						MediumType: common.Memory,

@@ -118,7 +118,7 @@ type JindoRuntimeSpec struct {
 	Properties map[string]string `json:"properties,omitempty"`
 
 	// Tiered storage used by Jindo
-	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
+	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`

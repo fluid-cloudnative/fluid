@@ -9,7 +9,7 @@ import (
 
 func Test_convertToTieredstoreInfo(t *testing.T) {
 	type args struct {
-		tieredstore v1alpha1.Tieredstore
+		tieredstore v1alpha1.TieredStore
 	}
 
 	quota20Gi := resource.MustParse("20Gi")
@@ -18,40 +18,40 @@ func Test_convertToTieredstoreInfo(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    TieredstoreInfo
+		want    TieredStoreInfo
 		wantErr bool
 	}{
 		{
 			name: "Test: No quota config set err",
-			args: args{tieredstore: v1alpha1.Tieredstore{Levels: []v1alpha1.Level{
+			args: args{tieredstore: v1alpha1.TieredStore{Levels: []v1alpha1.Level{
 				{
 					Quota:     nil,
 					QuotaList: "",
 				},
 			}}},
-			want:    TieredstoreInfo{},
+			want:    TieredStoreInfo{},
 			wantErr: true,
 		},
 		{
 			name: "Test: Inconsistent length of quotas and paths",
-			args: args{tieredstore: v1alpha1.Tieredstore{Levels: []v1alpha1.Level{
+			args: args{tieredstore: v1alpha1.TieredStore{Levels: []v1alpha1.Level{
 				{
 					Path:      "/path/to/cache1/,/path/to/cache2",
 					QuotaList: "10Gi,20Gi,30Gi",
 				},
 			}}},
-			want:    TieredstoreInfo{},
+			want:    TieredStoreInfo{},
 			wantErr: true,
 		},
 		{
 			name: "Test: Only quota is set, divide quota equally",
-			args: args{tieredstore: v1alpha1.Tieredstore{Levels: []v1alpha1.Level{
+			args: args{tieredstore: v1alpha1.TieredStore{Levels: []v1alpha1.Level{
 				{
 					Path:  "/path/to/cache1/,/path/to/cache2",
 					Quota: resource.NewQuantity(1024, resource.BinarySI),
 				},
 			}}},
-			want: TieredstoreInfo{Levels: []Level{
+			want: TieredStoreInfo{Levels: []Level{
 				{
 					CachePaths: []CachePath{
 						{
@@ -69,7 +69,7 @@ func Test_convertToTieredstoreInfo(t *testing.T) {
 		},
 		{
 			name: "Test: quotaList for configs",
-			args: args{tieredstore: v1alpha1.Tieredstore{Levels: []v1alpha1.Level{
+			args: args{tieredstore: v1alpha1.TieredStore{Levels: []v1alpha1.Level{
 				{
 					Path: "/path/to/cache1/,/path/to/cache2/",
 					// QuotaList Overwrites Quota
@@ -77,7 +77,7 @@ func Test_convertToTieredstoreInfo(t *testing.T) {
 					QuotaList: "10Gi,20Gi",
 				},
 			}}},
-			want: TieredstoreInfo{Levels: []Level{
+			want: TieredStoreInfo{Levels: []Level{
 				{
 					CachePaths: []CachePath{
 						{
@@ -114,10 +114,10 @@ func TestBuildRuntimeInfo(t *testing.T) {
 		name        string
 		namespace   string
 		runtimeType string
-		tieredstore v1alpha1.Tieredstore
+		tieredstore v1alpha1.TieredStore
 	}
 
-	tieredstore := v1alpha1.Tieredstore{
+	tieredstore := v1alpha1.TieredStore{
 		Levels: []v1alpha1.Level{
 			{
 				MediumType: "MEM",
@@ -179,7 +179,7 @@ func TestBuildRuntimeInfo(t *testing.T) {
 			if gotRuntime.GetName() != tt.wantRuntime.GetName() ||
 				gotRuntime.GetNamespace() != tt.wantRuntime.GetNamespace() ||
 				gotRuntime.GetRuntimeType() != tt.wantRuntime.GetRuntimeType() ||
-				!reflect.DeepEqual(gotRuntime.GetTieredstoreInfo(), tieredstoreInfo) {
+				!reflect.DeepEqual(gotRuntime.GetTieredStoreInfo(), tieredstoreInfo) {
 				t.Errorf("BuildRuntimeInfo() gotRuntime = %v, want %v", gotRuntime, tt.wantRuntime)
 			}
 
