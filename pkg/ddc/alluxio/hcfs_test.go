@@ -85,7 +85,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	engine := newAlluxioEngineHCFS(fakeClient,"hbase","fluid")
-	out,err := engine.GetHCFSStatus()
+	out,_ := engine.GetHCFSStatus()
 	wrappedUnhook()
 	status := &datav1alpha1.HCFSStatus{
 		Endpoint:                    "alluxio://hbase-master-0.fluid:2333",
@@ -97,7 +97,7 @@ func TestGetHCFSStatus(t *testing.T) {
 
 	// test when not register case
 	engine = newAlluxioEngineHCFS(fakeClientWithErr,"hbase","fluid")
-	out,err = engine.GetHCFSStatus()
+	_,err = engine.GetHCFSStatus()
 	if err == nil{
 		t.Errorf("expect No Register Err, but not got.")
 	}
@@ -108,7 +108,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	engine = newAlluxioEngineHCFS(fakeClient,"hbase","fluid")
-	out,err = engine.GetHCFSStatus()
+	_,err = engine.GetHCFSStatus()
 	wrappedUnhook()
 	if err == nil{
 		t.Errorf("expect get Conf Err, but not got.")
