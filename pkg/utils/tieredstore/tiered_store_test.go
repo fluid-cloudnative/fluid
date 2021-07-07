@@ -82,24 +82,20 @@ func TestSwap(t *testing.T) {
 				common.SSD,
 				common.HDD,
 			},
-			i: 5,
+			i: 4,
 			j: 2,
 		},
 	}
 	for k, item := range testCases {
 		var temp = make([]common.MediumType, len(item.sortMedium))
 		_ = copy(temp, item.sortMedium)
-		item.sortMedium.Swap(item.i, item.j)
 		if item.i < item.sortMedium.Len() && item.j < item.sortMedium.Len() {
+			item.sortMedium.Swap(item.i, item.j)
 			if temp[item.i] != item.sortMedium[item.j] || temp[item.j] != item.sortMedium[item.i] {
 				t.Errorf("%s check failure", k)
 			}
 		} else {
-			for index := 0; index < len(temp); index++ {
-				if temp[index] != item.sortMedium[index] {
-					t.Errorf("%s should not change sortMedium because %v or %v out of bound", k, item.i, item.j)
-				}
-			}
+			t.Errorf("%s is not suitable", k)
 		}
 	}
 }
@@ -151,16 +147,21 @@ func TestLess(t *testing.T) {
 				common.SSD,
 				common.Memory,
 			},
-			i:    4,
+			i:    3,
 			j:    2,
-			want: false,
+			want: true,
 		},
 	}
 	for k, item := range testCases {
-		result := item.sortMedium.Less(item.i, item.j)
-		if result != item.want {
-			t.Errorf("%s check failure,want:%t,got:%t", k, item.want, result)
+		if item.i < item.sortMedium.Len() && item.j < item.sortMedium.Len() {
+			result := item.sortMedium.Less(item.i, item.j)
+			if result != item.want {
+				t.Errorf("%s check failure,want:%t,got:%t", k, item.want, result)
+			}
+		} else {
+			t.Errorf("%s is not suitable", k)
 		}
+
 	}
 }
 
