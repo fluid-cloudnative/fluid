@@ -33,20 +33,11 @@ func (s sortMediumType) Len() int {
 }
 
 func (s sortMediumType) Swap(i, j int) {
-	if i < s.Len() && j < s.Len() {
-		s[i], s[j] = s[j], s[i]
-	} else {
-		log.Info("index out of bound, will not swap", "i", i, "j", j)
-	}
+	s[i], s[j] = s[j], s[i]
 }
 
 func (s sortMediumType) Less(i, j int) bool {
-	if i < s.Len() && j < s.Len() {
-		return common.GetDefaultTieredStoreOrder(s[i]) < common.GetDefaultTieredStoreOrder(s[j])
-	} else {
-		log.Info("index out of bound, will not compare", "i", i, "j", j)
-		return false
-	}
+	return common.GetDefaultTieredStoreOrder(s[i]) < common.GetDefaultTieredStoreOrder(s[j])
 }
 
 // makeMediumTypeSorted get a newly sorted MediumTypes without repeating MediumType
