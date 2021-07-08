@@ -16,46 +16,44 @@ import (
 )
 
 type TestCase struct {
-	engine 			*AlluxioEngine
-	isDeleted 		bool
-	isErr 			bool
+	engine    *AlluxioEngine
+	isDeleted bool
+	isErr     bool
 }
-
-
 
 func newTestAlluxioEngine(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
-	runTimeInfo,_ := base.BuildRuntimeInfo(name,namespace,"alluxio",datav1alpha1.Tieredstore{})
-	if !withRunTime{
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.TieredStore{})
+	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil
 	}
 	engine := &AlluxioEngine{
-		runtime:                runTime,
-		name:                   name,
-		namespace:              namespace,
-		Client:                 client,
-		runtimeInfo:            runTimeInfo,
-		Log:                    log.NullLogger{},
+		runtime:     runTime,
+		name:        name,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: runTimeInfo,
+		Log:         log.NullLogger{},
 	}
 	return engine
 }
 
-func doTestCases(testCases []TestCase, t *testing.T){
+func doTestCases(testCases []TestCase, t *testing.T) {
 	for _, test := range testCases {
 		err := test.engine.DeleteVolume()
 		pv := &v1.PersistentVolume{}
 		nullPV := v1.PersistentVolume{}
 		key := types.NamespacedName{
 			Namespace: test.engine.namespace,
-			Name: test.engine.name,
+			Name:      test.engine.name,
 		}
 		_ = test.engine.Client.Get(context.TODO(), key, pv)
-		if test.isDeleted != reflect.DeepEqual(nullPV, *pv){
+		if test.isDeleted != reflect.DeepEqual(nullPV, *pv) {
 			t.Errorf("PV/PVC still exist after delete.")
 		}
 		isErr := err != nil
-		if isErr != test.isErr{
+		if isErr != test.isErr {
 			t.Errorf("expected %t, got %t.", test.isErr, isErr)
 		}
 	}
@@ -100,7 +98,6 @@ func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 			},
 			Spec: v1.PersistentVolumeClaimSpec{},
 		},
-
 	}
 
 	for _, pvcInput := range testPVCInputs {
@@ -108,27 +105,27 @@ func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 	}
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngineCommon := newTestAlluxioEngine(fakeClient,"hbase","fluid",true)
-	alluxioEngineErr := newTestAlluxioEngine(fakeClient,"error","fluid",true)
-	alluxioEngineNoRunTime := newTestAlluxioEngine(fakeClient,"hbase","fluid",false)
-	var testCases = []TestCase {
+	alluxioEngineCommon := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
+	alluxioEngineErr := newTestAlluxioEngine(fakeClient, "error", "fluid", true)
+	alluxioEngineNoRunTime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
+	var testCases = []TestCase{
 		{
-			engine:    				alluxioEngineCommon,
-			isDeleted: 				true,
-			isErr: 					false,
+			engine:    alluxioEngineCommon,
+			isDeleted: true,
+			isErr:     false,
 		},
 		{
-			engine:    				alluxioEngineErr,
-			isDeleted: 				true,
-			isErr: 					true,
+			engine:    alluxioEngineErr,
+			isDeleted: true,
+			isErr:     true,
 		},
 		{
-			engine:					alluxioEngineNoRunTime,
-			isDeleted: 				true,
-			isErr: 					true,
+			engine:    alluxioEngineNoRunTime,
+			isDeleted: true,
+			isErr:     true,
 		},
 	}
-	doTestCases(testCases,t)
+	doTestCases(testCases, t)
 }
 
 func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
@@ -151,21 +148,21 @@ func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
 	}
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid",true)
-	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid",false)
+	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
+	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
 	testCases := []TestCase{
 		{
-			engine: 			alluxioEngine,
-			isDeleted: 			true,
-			isErr: 				false,
+			engine:    alluxioEngine,
+			isDeleted: true,
+			isErr:     false,
 		},
 		{
-			engine:   			alluxioEngineNoRuntime,
-			isDeleted: 			true,
-			isErr: 				true,
+			engine:    alluxioEngineNoRuntime,
+			isDeleted: true,
+			isErr:     true,
 		},
 	}
-	doTestCases(testCases,t)
+	doTestCases(testCases, t)
 }
 
 func TestAlluxioEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
@@ -187,22 +184,19 @@ func TestAlluxioEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
 	}
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid",true)
-	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid",false)
+	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
+	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
 	testCases := []TestCase{
 		{
-			engine: 			alluxioEngine,
-			isDeleted: 			true,
-			isErr: 				false,
+			engine:    alluxioEngine,
+			isDeleted: true,
+			isErr:     false,
 		},
 		{
-			engine:   			alluxioEngineNoRuntime,
-			isDeleted: 			true,
-			isErr: 				true,
+			engine:    alluxioEngineNoRuntime,
+			isDeleted: true,
+			isErr:     true,
 		},
 	}
-	doTestCases(testCases,t)
+	doTestCases(testCases, t)
 }
-
-
-

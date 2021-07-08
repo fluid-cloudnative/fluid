@@ -20,7 +20,7 @@ func TestSetupWorkers(t *testing.T) {
 
 	// runtimeInfoSpark tests create worker in exclusive mode.
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", "jindo", datav1alpha1.Tieredstore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", "jindo", datav1alpha1.TieredStore{})
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -30,7 +30,7 @@ func TestSetupWorkers(t *testing.T) {
 	})
 
 	// runtimeInfoSpark tests create worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", "jindo", datav1alpha1.Tieredstore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", "jindo", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

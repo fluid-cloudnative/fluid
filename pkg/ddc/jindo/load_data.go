@@ -101,11 +101,11 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 	hadoopConfig := runtime.Spec.HadoopConfig
 	loadMemoryData := false
-	if len(runtime.Spec.Tieredstore.Levels) == 0 {
-		err = fmt.Errorf("the Tieredstore is null")
+	if len(runtime.Spec.TieredStore.Levels) == 0 {
+		err = fmt.Errorf("the TieredStore is null")
 		return
 	}
-	if runtime.Spec.Tieredstore.Levels[0].MediumType == "MEM" {
+	if runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
 		loadMemoryData = true
 	}
 

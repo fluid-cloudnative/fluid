@@ -165,8 +165,8 @@ type Level struct {
 	Low string `json:"low,omitempty"`
 }
 
-// Tieredstore is a description of the tiered store
-type Tieredstore struct {
+// TieredStore is a description of the tiered store
+type TieredStore struct {
 	// configurations for multiple tiers
 	Levels []Level `json:"levels,omitempty"`
 }
@@ -216,7 +216,7 @@ type AlluxioRuntimeSpec struct {
 	JvmOptions []string `json:"jvmOptions,omitempty"`
 
 	// Tiered storage used by Alluxio
-	Tieredstore Tieredstore `json:"tieredstore,omitempty"`
+	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
 	// Management strategies for the dataset to which the runtime is bound
 	Data Data `json:"data,omitempty"`

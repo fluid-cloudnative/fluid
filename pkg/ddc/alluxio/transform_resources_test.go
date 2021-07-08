@@ -63,7 +63,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 				Worker: datav1alpha1.AlluxioCompTemplateSpec{
 					Resources: resources,
 				},
-				Tieredstore: datav1alpha1.Tieredstore{
+				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
 						Quota:      &result,
@@ -77,7 +77,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
@@ -123,7 +123,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 				Fuse: datav1alpha1.AlluxioFuseSpec{
 					Resources: resources,
 				},
-				Tieredstore: datav1alpha1.Tieredstore{
+				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
 						Quota:      &result,
@@ -137,7 +137,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: log.NullLogger{}}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.Tieredstore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {

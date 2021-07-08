@@ -13,7 +13,7 @@ import (
 )
 
 func TestCreateVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -41,9 +41,9 @@ func TestCreateVolume(t *testing.T) {
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
-		runtime:     &datav1alpha1.AlluxioRuntime{
+		runtime: &datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "hbase",
+				Name:      "hbase",
 				Namespace: "fluid",
 			},
 		},
@@ -76,7 +76,7 @@ func TestCreateVolume(t *testing.T) {
 }
 
 func TestCreateFusePersistentVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -123,7 +123,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 }
 
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

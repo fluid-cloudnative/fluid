@@ -20,26 +20,27 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var log logr.Logger
-
-func init() {
-	log = ctrl.Log.WithName("tieredstore")
-}
+var log = ctrl.Log.WithName("tieredStore")
 
 type sortMediumType []common.MediumType
 
-func (s sortMediumType) Len() int      { return len(s) }
-func (s sortMediumType) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s sortMediumType) Less(i, j int) bool {
-	return common.GetDefaultTieredStoreOrder(s[i]) < common.GetDefaultTieredStoreOrder(s[j])
-
+func (s sortMediumType) Len() int {
+	return len(s)
 }
 
+func (s sortMediumType) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sortMediumType) Less(i, j int) bool {
+	return common.GetDefaultTieredStoreOrder(s[i]) < common.GetDefaultTieredStoreOrder(s[j])
+}
+
+// makeMediumTypeSorted get a newly sorted MediumTypes without repeating MediumType
 func makeMediumTypeSorted(mediumTypes []common.MediumType) []common.MediumType {
 	newMediumTypes := make(sortMediumType, 0, len(mediumTypes))
 	knownMediumTypes := map[common.MediumType]bool{}
@@ -51,14 +52,14 @@ func makeMediumTypeSorted(mediumTypes []common.MediumType) []common.MediumType {
 		knownMediumTypes[c] = true
 	}
 	sort.Sort(newMediumTypes)
-	return []common.MediumType(newMediumTypes)
+	return newMediumTypes
 }
 
 // GetLevelStorageMap gets the level storage map
 func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[common.CacheStoreType]*resource.Quantity) {
 	storage = map[common.CacheStoreType]*resource.Quantity{}
 
-	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 		storageType := common.MemoryCacheStore
 		if level.MediumType == common.SSD || level.MediumType == common.HDD {
 			storageType = common.DiskCacheStore
@@ -80,10 +81,10 @@ func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[comm
 
 }
 
-// GetTieredLevel returns index
+// GetTieredLevel returns index of the given mediumType
 func GetTieredLevel(runtimeInfo base.RuntimeInfoInterface, mediumType common.MediumType) int {
-	levels := []common.MediumType{}
-	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
+	var levels []common.MediumType
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 		levels = append(levels, level.MediumType)
 	}
 

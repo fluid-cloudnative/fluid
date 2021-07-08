@@ -68,7 +68,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":       schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":           schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":              schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Tieredstore":             schema_fluid_cloudnative_fluid_api_v1alpha1_Tieredstore(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":             schema_fluid_cloudnative_fluid_api_v1alpha1_Tieredstore(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                    schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
 	}
@@ -503,7 +503,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 					"tieredstore": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Tiered storage used by Alluxio",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Tieredstore"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
 						},
 					},
 					"data": {
@@ -543,7 +543,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Tieredstore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -1859,7 +1859,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 					"tieredstore": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Tiered storage used by Jindo",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Tieredstore"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
 						},
 					},
 					"replicas": {
@@ -1898,7 +1898,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Tieredstore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -2430,7 +2430,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Tieredstore(ref common.Referenc
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Tieredstore is a description of the tiered store",
+				Description: "TieredStore is a description of the tiered store",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"levels": {

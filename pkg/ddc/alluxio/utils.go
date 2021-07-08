@@ -149,7 +149,7 @@ func (e *AlluxioEngine) getInitUserDir() string {
 // Example: "/dev/shm:/var/lib/docker/alluxio:/dev/ssd"
 func (e *AlluxioEngine) getInitTierPathsEnv(runtime *datav1alpha1.AlluxioRuntime) string {
 	var tierPaths []string
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+	for _, level := range runtime.Spec.TieredStore.Levels {
 		paths := strings.Split(level.Path, ",")
 		tierPaths = append(tierPaths, paths...)
 	}
