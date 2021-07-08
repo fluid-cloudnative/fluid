@@ -47,7 +47,7 @@ type Alluxio struct {
 
 	APIGateway APIGateway `yaml:"apiGateway,omitempty"`
 
-	Tieredstore Tieredstore `yaml:"tieredstore,omitempty"`
+	TieredStore TieredStore `yaml:"tieredstore,omitempty"`
 
 	Metastore Metastore `yaml:"metastore,omitempty"`
 
@@ -169,14 +169,14 @@ type Fuse struct {
 	Global             bool              `yaml:"global,omitempty"`
 }
 
-type Tieredstore struct {
+type TieredStore struct {
 	Levels []Level `yaml:"levels,omitempty"`
 }
 
 type Level struct {
 	Alias      string `yaml:"alias,omitempty"`
 	Level      int    `yaml:"level"`
-	Mediumtype string `yaml:"mediumtype,omitempty"`
+	MediumType string `yaml:"mediumtype,omitempty"`
 	Type       string `yaml:"type,omitempty"`
 	Path       string `yaml:"path,omitempty"`
 	Quota      string `yaml:"quota,omitempty"`
@@ -217,7 +217,7 @@ type cacheStates struct {
 
 func (value *Alluxio) getTiredStoreLevel0Path(name, namespace string) (path string) {
 	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, name)
-	for _, level := range value.Tieredstore.Levels {
+	for _, level := range value.TieredStore.Levels {
 		if level.Level == 0 {
 			path = level.Path
 			break

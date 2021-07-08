@@ -58,8 +58,6 @@ const (
 	DiskCacheStore CacheStoreType = "Disk"
 
 	MemoryCacheStore CacheStoreType = "Memory"
-
-	NoneCacheStore CacheStoreType = ""
 )
 
 const RecommendedKubeConfigPathEnv = "KUBECONFIG"
@@ -74,12 +72,14 @@ const (
 	HDD MediumType = "HDD"
 )
 
-var tieredStoreOrderMap map[MediumType]int = map[MediumType]int{
+var tieredStoreOrderMap = map[MediumType]int{
 	Memory: 0,
 	SSD:    1,
 	HDD:    2,
 }
 
+// GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map
+// because the crd has validated the value, It's not possible to meet unknown MediumType
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
 	order = tieredStoreOrderMap[MediumType]
 	return order

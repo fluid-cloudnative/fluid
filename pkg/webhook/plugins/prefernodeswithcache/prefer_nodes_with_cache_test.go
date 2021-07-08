@@ -27,7 +27,7 @@ import (
 )
 
 func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -69,7 +69,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 }
 
 func TestGetPreferredSchedulingTermWithDefaultMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -93,7 +93,7 @@ func TestMutate(t *testing.T) {
 		t.Errorf("GetName expect %v, got %v", NAME, plugin.GetName())
 	}
 
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

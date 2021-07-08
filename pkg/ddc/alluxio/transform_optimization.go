@@ -106,7 +106,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 				}
 			}
 		}
-		tieredstoreInfo := runtimeInfo.GetTieredstoreInfo()
+		tieredstoreInfo := runtimeInfo.GetTieredStoreInfo()
 		if readOnly && len(tieredstoreInfo.Levels) == 1 && len(tieredstoreInfo.Levels[0].CachePaths) == 1 {
 			setDefaultProperties(runtime, value, "alluxio.user.direct.memory.io.enabled", "true")
 		}

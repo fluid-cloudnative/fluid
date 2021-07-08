@@ -19,8 +19,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
-	if len(runtime.Spec.Tieredstore.Levels) == 0 {
-		err = fmt.Errorf("the Tieredstore is null")
+	if len(runtime.Spec.TieredStore.Levels) == 0 {
+		err = fmt.Errorf("the TieredStore is null")
 		return
 	}
 
@@ -30,7 +30,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	stroagePath := runtime.Spec.Tieredstore.Levels[0].Path
+	stroagePath := runtime.Spec.TieredStore.Levels[0].Path
 	originPath := strings.Split(stroagePath, ",")
 	for _, value := range originPath {
 		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
@@ -40,12 +40,12 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	dataPath := strings.Join(cachePaths, ",")
 
 	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
-	if runtime.Spec.Tieredstore.Levels[0].Quota != nil {
-		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.Tieredstore.Levels[0].Quota))
+	if runtime.Spec.TieredStore.Levels[0].Quota != nil {
+		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
 	}
 
-	if runtime.Spec.Tieredstore.Levels[0].QuotaList != "" {
-		quotaList := runtime.Spec.Tieredstore.Levels[0].QuotaList
+	if runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
+		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
 		quotas := strings.Split(quotaList, ",")
 		if len(quotas) != len(originPath) {
 			err = fmt.Errorf("the num of cache path and quota must be equal")
@@ -256,10 +256,10 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 	properties["storage.temp-data-dirs"] = metaPath + "/tmp"
 	//properties["storage.temp-data-dirs"] = "/mnt/disk1/bigboot/tmp"
 
-	properties["storage.watermark.high.ratio"] = runtime.Spec.Tieredstore.Levels[0].High
+	properties["storage.watermark.high.ratio"] = runtime.Spec.TieredStore.Levels[0].High
 	//properties["storage.watermark.high.ratio"] = "0.4"
 
-	properties["storage.watermark.low.ratio"] = runtime.Spec.Tieredstore.Levels[0].Low
+	properties["storage.watermark.low.ratio"] = runtime.Spec.TieredStore.Levels[0].Low
 	//properties["storage.watermark.low.ratio"] = "0.2"
 
 	properties["storage.data-dirs.capacities"] = userQuotas
