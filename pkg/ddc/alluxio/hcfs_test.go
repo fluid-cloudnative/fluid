@@ -3,7 +3,7 @@ package alluxio
 import (
 	"errors"
 	"github.com/brahma-adshonor/gohook"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -20,8 +20,9 @@ import (
 
 
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {
-	runTime := &datav1alpha1.AlluxioRuntime{}
-	runTimeInfo,_ := base.BuildRuntimeInfo(name,namespace,"alluxio",datav1alpha1.Tieredstore{})
+	runTime := &v1alpha1.AlluxioRuntime{}
+	tieredStore := v1alpha1.TieredStore{}
+	runTimeInfo,_ := base.BuildRuntimeInfo(name,namespace,"alluxio", tieredStore)
 	engine := &AlluxioEngine{
 		runtime:                runTime,
 		name:                   name,
@@ -87,7 +88,7 @@ func TestGetHCFSStatus(t *testing.T) {
 	engine := newAlluxioEngineHCFS(fakeClient,"hbase","fluid")
 	out,_ := engine.GetHCFSStatus()
 	wrappedUnhook()
-	status := &datav1alpha1.HCFSStatus{
+	status := &v1alpha1.HCFSStatus{
 		Endpoint:                    "alluxio://hbase-master-0.fluid:2333",
 		UnderlayerFileSystemVersion: "conf",
 	}
