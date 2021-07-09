@@ -211,23 +211,39 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	log.V(1).Info("process the Runtime", "Runtime", ctx.NamespacedName)
 
 	// 1.Setup the ddc engine, and wait it ready
-	createready, updateready, err := engine.Setup(ctx)
-	if err != nil {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
-		log.Error(err, "Failed to setup the ddc engine")
-		// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
-	}
+	if !utils.IsSetupDone(ctx.Dataset) {
+		ready, err := engine.Setup(ctx)
+		if err != nil {
+			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
+			log.Error(err, "Failed to setup the ddc engine")
+			// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
+		}
+		if !ready {
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		}
+	} else {
+		log.Info("The runtime is already setup.")
+		engine, ok := engine.(*base.TemplateEngine)
+		if ok {
+			ctx.Log.V(1).Info("engine set up, check if we need to update mount points ")
+			shouldUpdate, added, removed, err := engine.ShouldUpdateUFS()
 
-	if !createready {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
-		log.V(1).Info("Failed to setup the ddc engine")
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-	}
-
-	if !updateready {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to update the dataset due to error %v", err)
-		log.V(1).Info("Failed to update the dataset")
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+			if err != nil {
+				log.Error(err, "Failed to check mount points changes")
+			}
+			if shouldUpdate {
+				updateReady, err := engine.UpdateUFS(added, removed)
+				if err != nil {
+					r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to add or remove mount points %v", err)
+					log.Error(err, "Failed to add or remove mount points")
+				}
+				if !updateReady {
+					//engine.UFSUpdating()
+					return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+				}
+				err = engine.UFSUpdated()
+			}
+		}
 	}
 
 	// 2.Setup the volume

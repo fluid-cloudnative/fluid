@@ -36,6 +36,8 @@ const (
 	NotBoundDatasetPhase DatasetPhase = "NotBound"
 	// Updated dataset, can't be released
 	UpdatedDatasetPhase DatasetPhase = "Updated"
+	// updating dataset, can't be released
+	UpdatingDatasetPhase DatasetPhase = "Updating"
 
 	NoneDatasetPhase DatasetPhase = ""
 )
@@ -220,6 +222,9 @@ const (
 
 	// DatasetUpdateReady means the cache system for the dataset is updated.
 	DatasetUpdateReady DatasetConditionType = "UpdateReady"
+
+	// DatasetUpdating means the cache system for the dataset is updating.
+	DatasetUpdating DatasetConditionType = "Updating"
 
 	// DatasetInitialized means the cache system for the dataset is Initialized.
 	DatasetInitialized DatasetConditionType = "Initialized"

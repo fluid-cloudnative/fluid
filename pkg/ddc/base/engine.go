@@ -31,7 +31,7 @@ type Engine interface {
 	Shutdown() error
 
 	// Setup the engine
-	Setup(ctx cruntime.ReconcileRequestContext) (createready bool, updateready bool, err error)
+	Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error)
 
 	// Setup the Volume
 	CreateVolume() (err error)
@@ -83,7 +83,7 @@ type Implement interface {
 	// Prepare the mounts and metadata if it's not ready
 	PrepareUFS() (err error)
 	// Update the mounts and metadata if there are some changes
-	UpdateUFS(added []string, removed []string) (err error)
+	UpdateUFS(added []string, removed []string) (ready bool, err error)
 	// Shutdown and clean up the engine
 	Shutdown() error
 
@@ -120,6 +120,8 @@ type Implement interface {
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 
 	UFSUpdated() (err error)
+
+	UFSUpdating() (err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

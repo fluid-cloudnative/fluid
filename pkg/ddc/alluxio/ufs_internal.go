@@ -97,11 +97,13 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-func (e *AlluxioEngine) getMounts() (result_dataset []string, result_mountted []string, err error) {
+func (e *AlluxioEngine) getMounts() (resultInCtx []string, resultHaveMounted []string, err error) {
+	fmt.Println("get dataset info", "Client", e.Client)
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	fmt.Println("get dataset info", "dataset", dataset)
 	e.Log.V(1).Info("get dataset info", "dataset", dataset)
 	if err != nil {
-		return result_dataset, result_mountted, err
+		return resultInCtx, resultHaveMounted, err
 	}
 
 	podName, containerName := e.getMasterPodInfo()
@@ -110,7 +112,7 @@ func (e *AlluxioEngine) getMounts() (result_dataset []string, result_mountted []
 	ready := fileUitls.Ready()
 	if !ready {
 		err = fmt.Errorf("the UFS is not ready")
-		return result_dataset, result_mountted, err
+		return resultInCtx, resultHaveMounted, err
 	}
 
 	// Check if any of the Mounts has not been mounted in Alluxio
@@ -119,9 +121,8 @@ func (e *AlluxioEngine) getMounts() (result_dataset []string, result_mountted []
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath_ctx := fmt.Sprintf("/%s", mount.Name)
-		result_dataset = append(result_dataset, alluxioPath_ctx)
-
+		alluxioPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		resultInCtx = append(resultInCtx, alluxioPathInCtx)
 	}
 
 	// get the mount points have been mountted
@@ -130,25 +131,25 @@ func (e *AlluxioEngine) getMounts() (result_dataset []string, result_mountted []
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath_mountted := fmt.Sprintf("/%s", mount.Name)
-		result_mountted = append(result_mountted, alluxioPath_mountted)
+		alluxioPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
+		resultHaveMounted = append(resultHaveMounted, alluxioPathHaveMountted)
 	}
 
-	return result_dataset, result_mountted, err
+	return resultInCtx, resultHaveMounted, err
 
 }
 
-func (e *AlluxioEngine) calculateMountPointsChanges(mounts_mountted []string, mounts_context []string) ([]string, []string) {
+func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string, mountsInContext []string) ([]string, []string) {
 	msrc := make(map[string]byte) //build index by source(exists)  getMountted
 	mall := make(map[string]byte) //build index by source and target(ctx) mounts_context
 	var set []string              //the intersection
 	//1.build map by source
-	for _, v := range mounts_mountted {
+	for _, v := range mountsHaveMountted {
 		msrc[v] = 0
 		mall[v] = 0
 	}
 	//2.if length does not changed, then intersected, mall will be the union (contain all elements) in the end
-	for _, v := range mounts_context { //mounts_context  alluxioPath from dataset
+	for _, v := range mountsInContext { //mounts_context  alluxioPath from dataset
 		l := len(mall)
 		mall[v] = 1
 		if l != len(mall) { //add new
@@ -195,7 +196,7 @@ func (e *AlluxioEngine) processUFS(added []string, removed []string) (err error)
 			continue
 		}
 
-		alluxioPath := fmt.Sprintf("/%s", mount.Name)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		if len(added) > 0 && utils.ContainsString(added, alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range mount.Options {

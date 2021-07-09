@@ -102,6 +102,10 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is ready.",
 				corev1.ConditionTrue)
+		case datav1alpha1.UpdatingDatasetPhase:
+			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdating, datav1alpha1.DatasetUpdatingReason,
+				"The ddc runtime is updating.",
+				corev1.ConditionTrue)
 		case datav1alpha1.UpdatedDatasetPhase:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdateReady, datav1alpha1.DatasetUpdateReadyReason,
 				"The ddc runtime is updated.",
@@ -169,4 +173,8 @@ func (e *AlluxioEngine) BindToDataset() (err error) {
 
 func (e *AlluxioEngine) UFSUpdated() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
+}
+
+func (e *AlluxioEngine) UFSUpdating() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
 }

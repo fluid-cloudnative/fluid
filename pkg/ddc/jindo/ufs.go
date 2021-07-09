@@ -48,6 +48,6 @@ func (e *JindoEngine) ShouldUpdateUFS() (should bool, added []string, removed []
 	return
 }
 
-func (e *JindoEngine) UpdateUFS(added []string, removed []string) (err error) {
+func (e *JindoEngine) UpdateUFS(added []string, removed []string) (ready bool, err error) {
 	return
 }

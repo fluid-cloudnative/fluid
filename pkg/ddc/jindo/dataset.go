@@ -128,3 +128,7 @@ func (e *JindoEngine) BindToDataset() (err error) {
 func (e *JindoEngine) UFSUpdated() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
 }
+
+func (e *JindoEngine) UFSUpdating() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
+}

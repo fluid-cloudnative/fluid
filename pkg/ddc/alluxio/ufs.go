@@ -46,6 +46,24 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
+// ShouldCheckUFS checks if it requires checking UFS
+func (e *AlluxioEngine) ShouldUpdateUFS() (bool, []string, []string, error) {
+
+	var should = false
+	// For Alluxio Engine, always attempt to prepare UFS
+	resultInCtx, resultHaveMounted, err := e.getMounts()
+
+	// 2. get mount point need to be added and removed
+	//var added, removed []string
+	added, removed := e.calculateMountPointsChanges(resultHaveMounted, resultInCtx)
+
+	if len(added) > 0 || len(removed) > 0 {
+		should = true
+	}
+
+	return should, added, removed, err
+}
+
 // PrepareUFS does all the UFS preparations
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	// 1. Mount UFS (Synchronous Operation)
@@ -71,6 +89,23 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	return
+}
+
+func (e *AlluxioEngine) UpdateUFS(added []string, removed []string) (ready bool, err error) {
+	// set update status to updating
+	errUpdating := e.UFSUpdating()
+	if errUpdating != nil {
+		e.Log.Error(err, "Failed to update dataset status to updating")
+		return ready, err
+	}
+	// process added and removed
+	err = e.processUFS(added, removed)
+	if err != nil {
+		e.Log.Error(err, "Failed to add or remove mount points")
+		return ready, err
+	}
+	ready = true
+	return ready, err
 }
 
 ////du the ufs
