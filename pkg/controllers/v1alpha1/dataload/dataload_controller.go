@@ -18,6 +18,9 @@ package dataload
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc"
@@ -29,8 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -119,33 +120,14 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	ctx.RuntimeType = boundedRuntime.Type
 
+	var runtime runtime.Object
 	switch ctx.RuntimeType {
 	case common.ALLUXIO_RUNTIME:
-		runtime, err := utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
-		if err != nil {
-			if utils.IgnoreNotFound(err) == nil {
-				ctx.Log.Info("The runtime is not found", "runtime", ctx.NamespacedName)
-				return ctrl.Result{}, nil
-			} else {
-				ctx.Log.Error(err, "Failed to get the ddc runtime")
-				return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
-			}
-		}
-		ctx.Runtime = runtime
-		ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
+		runtime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JINDO_RUNTIME:
-		runtime, err := utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
-		if err != nil {
-			if utils.IgnoreNotFound(err) == nil {
-				ctx.Log.V(1).Info("The runtime is not found", "runtime", ctx.NamespacedName)
-				return ctrl.Result{}, nil
-			} else {
-				ctx.Log.Error(err, "Failed to get the ddc runtime")
-				return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
-			}
-		}
-		ctx.Runtime = runtime
-		ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
+		runtime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+	case common.GOOSEFS_RUNTIME:
+		runtime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	default:
 		ctx.Log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&targetDataload,
@@ -153,6 +135,18 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			common.RuntimeNotReady,
 			"Bounded accelerate runtime not supported")
 	}
+
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.V(1).Info("The runtime is not found", "runtime", ctx.NamespacedName)
+			return ctrl.Result{}, nil
+		} else {
+			ctx.Log.Error(err, "Failed to get the ddc runtime")
+			return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
+		}
+	}
+	ctx.Runtime = runtime
+	ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
 
 	// 4. add finalizer and requeue
 	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {

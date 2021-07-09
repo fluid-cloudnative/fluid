@@ -8,6 +8,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 DATASET_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/dataset-controller
 ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controller
+GOOSEFSRUNTIME_CONTROLLER_IMG ?= ccr.ccs.tencentyun.com/fluid/goosefsruntime-controller
 CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
 LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
 INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
@@ -64,6 +65,9 @@ alluxioruntime-controller-build: generate fmt vet
 
 jindoruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+
+goosefsruntime-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
 
 webhook-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
@@ -122,6 +126,9 @@ docker-build-alluxioruntime-controller: generate fmt vet
 docker-build-jindoruntime-controller: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-build-goosefsruntime-controller: generate fmt vet
+	docker build --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
@@ -144,6 +151,9 @@ docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 docker-push-jindoruntime-controller: docker-build-jindoruntime-controller
 	docker push ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-push-goosefsruntime-controller: docker-build-goosefsruntime-controller
+	docker push ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
@@ -156,8 +166,8 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook
 
 # find or download controller-gen
 # download controller-gen if necessary

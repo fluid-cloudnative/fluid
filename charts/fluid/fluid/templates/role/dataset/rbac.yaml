@@ -40,6 +40,8 @@ rules:
       - alluxioruntimes/status
       - jindoruntimes
       - jindoruntimes/status
+      - goosefsruntimes
+      - goosefsruntimes/status
     verbs:
       - '*'
   - apiGroups:

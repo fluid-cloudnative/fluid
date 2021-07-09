@@ -1,13 +1,14 @@
 package utils
 
 import (
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestGetAlluxioRuntime(t *testing.T) {
@@ -123,6 +124,65 @@ func TestGetJindoRuntime(t *testing.T) {
 		} else {
 			if gotRuntime.Name != item.wantName {
 				t.Errorf("%d check failure, got AlluxioRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+			}
+		}
+	}
+}
+
+func TestGetGooseFSRuntime(t *testing.T) {
+	runtimeNamespace := "default"
+	runtimeName := "goosefs-runtime-1"
+	goosefs := &datav1alpha1.GooseFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: runtimeNamespace,
+		},
+	}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, goosefs)
+
+	fakeClient := fake.NewFakeClientWithScheme(s, goosefs)
+
+	tests := []struct {
+		name      string
+		namespace string
+		wantName  string
+		notFound  bool
+	}{
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace,
+			wantName:  runtimeName,
+			notFound:  false,
+		},
+		{
+			name:      runtimeName + "not-exist",
+			namespace: runtimeNamespace,
+			wantName:  "",
+			notFound:  true,
+		},
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace + "not-exist",
+			wantName:  "",
+			notFound:  true,
+		},
+	}
+
+	for k, item := range tests {
+		gotRuntime, err := GetGooseFSRuntime(fakeClient, item.name, item.namespace)
+		if item.notFound {
+			if err == nil || gotRuntime != nil {
+				t.Errorf("%d check failure, want to got nil", k)
+			} else {
+				if !apierrs.IsNotFound(err) {
+					t.Errorf("%d check failure, want notFound err but got %s", k, err)
+				}
+			}
+		} else {
+			if gotRuntime.Name != item.wantName {
+				t.Errorf("%d check failure, got GooseFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
 			}
 		}
 	}
