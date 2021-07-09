@@ -36,7 +36,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
-			ufsPath.ContainerPath = utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
+			ufsPath.ContainerPath = utils.UFSPathBuilder{}.GenAlluxioLocalStoragePath(mount)
 			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme.String())
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
@@ -47,7 +47,7 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()),
-				ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+				ContainerPath: utils.UFSPathBuilder{}.GenAlluxioLocalStoragePath(mount),
 			})
 		}
 	}

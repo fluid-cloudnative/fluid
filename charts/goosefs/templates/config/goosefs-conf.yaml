@@ -1,0 +1,181 @@
+{{ $masterCount := int .Values.master.replicaCount }}
+{{- $defaultMasterName := "master-0" }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isHaEmbedded := and (eq .Values.journal.type "EMBEDDED") (gt $masterCount 1) }}
+{{- $release := .Release }}
+{{- $name := include "goosefs.name" . }}
+{{- $fullName := include "goosefs.fullname" . }}
+{{- $chart := include "goosefs.chart" . }}
+
+{{- /* ===================================== */}}
+{{- /*         GOOSEFS_JAVA_OPTS             */}}
+{{- /* ===================================== */}}
+{{- $goosefsJavaOpts := list }}
+{{- /* Specify master hostname if single master */}}
+{{- if $isSingleMaster }}
+  {{- $goosefsJavaOpts = printf "-Dgoosefs.master.hostname=%v-%v" $fullName $defaultMasterName | append $goosefsJavaOpts }}
+{{- end }}
+{{ if .Values.fuse.enabled -}}
+  {{- $goosefsJavaOpts = print "-Dgoosefs.user.hostname=${GOOSEFS_CLIENT_HOSTNAME}" | append $goosefsJavaOpts }}
+{{- end }}
+{{- $goosefsJavaOpts = printf "-Dgoosefs.master.journal.type=%v" .Values.journal.type | append $goosefsJavaOpts }}
+{{- $goosefsJavaOpts = printf "-Dgoosefs.master.journal.folder=%v" .Values.journal.folder | append $goosefsJavaOpts }}
+
+{{- /* Tiered store configuration */}}
+{{- if .Values.tieredstore }}
+  {{- $goosefsJavaOpts = printf "-Dgoosefs.worker.tieredstore.levels=%v" (len .Values.tieredstore.levels) | append $goosefsJavaOpts }}
+  {{- range .Values.tieredstore.levels }}
+    {{- $tierName := printf "-Dgoosefs.worker.tieredstore.level%v" .level }}
+    {{- if .alias }}
+    {{- $goosefsJavaOpts = printf "%v.alias=%v" $tierName .alias | append $goosefsJavaOpts }}
+    {{- end}}
+    {{- $goosefsJavaOpts = printf "%v.dirs.mediumtype=%v" $tierName .mediumtype | append $goosefsJavaOpts }}
+    {{- if .path }}
+      {{- $goosefsJavaOpts = printf "%v.dirs.path=%v" $tierName .path | append $goosefsJavaOpts }}
+    {{- end}}
+    {{- if .quota }}
+      {{- $goosefsJavaOpts = printf "%v.dirs.quota=%v" $tierName .quota | append $goosefsJavaOpts }}
+    {{- end}}
+    {{- if .high }}
+      {{- $goosefsJavaOpts = printf "%v.watermark.high.ratio=%v" $tierName .high | append $goosefsJavaOpts }}
+    {{- end}}
+    {{- if .low }}
+      {{- $goosefsJavaOpts = printf "%v.watermark.low.ratio=%v" $tierName .low | append $goosefsJavaOpts }}
+    {{- end}}
+  {{- end}}
+{{- end }}
+
+{{- /* Generate HA embedded journal address for masters */}}
+{{- if $isHaEmbedded }}
+  {{- $embeddedJournalAddresses := "-Dgoosefs.master.embedded.journal.addresses=" }}
+  {{- range $i := until $masterCount }}
+  {{- $embeddedJournalAddresses = printf "%v,%v-master-%v:19200" $embeddedJournalAddresses $fullName $i }}
+  {{- end }}
+  {{- $goosefsJavaOpts = append $goosefsJavaOpts $embeddedJournalAddresses }}
+{{- end }}
+{{- range $key, $val := .Values.properties }}
+  {{- $goosefsJavaOpts = printf "-D%v=%v" $key $val | append $goosefsJavaOpts }}
+{{- end }}
+{{- if .Values.jvmOptions }}
+  {{- $goosefsJavaOpts = concat $goosefsJavaOpts .Values.jvmOptions }}
+{{- end }}
+
+{{- /* ===================================== */}}
+{{- /*       GOOSEFS_MASTER_JAVA_OPTS        */}}
+{{- /* ===================================== */}}
+{{- $masterJavaOpts := list }}
+{{- $masterJavaOpts = print "-Dgoosefs.master.hostname=${GOOSEFS_MASTER_HOSTNAME}" | append $masterJavaOpts }}
+{{- range $key, $val := .Values.master.properties }}
+  {{- $masterJavaOpts = printf "-D%v=%v" $key $val | append $masterJavaOpts }}
+{{- end }}
+{{- if .Values.master.jvmOptions }}
+  {{- $masterJavaOpts = concat $masterJavaOpts .Values.master.jvmOptions }}
+{{- end }}
+
+{{- /* ===================================== */}}
+{{- /*     GOOSEFS_JOB_MASTER_JAVA_OPTS      */}}
+{{- /* ===================================== */}}
+{{- $jobMasterJavaOpts := list }}
+{{- $jobMasterJavaOpts = print "-Dgoosefs.master.hostname=${GOOSEFS_MASTER_HOSTNAME}" | append $jobMasterJavaOpts }}
+{{- range $key, $val := .Values.jobMaster.properties }}
+  {{- $jobMasterJavaOpts = printf "-D%v=%v" $key $val | append $jobMasterJavaOpts }}
+{{- end }}
+{{- if .Values.jobMaster.jvmOptions }}
+  {{- $jobMasterJavaOpts = concat $jobMasterJavaOpts .Values.jobMaster.jvmOptions }}
+{{- end }}
+
+{{- /* ===================================== */}}
+{{- /*       GOOSEFS_WORKER_JAVA_OPTS        */}}
+{{- /* ===================================== */}}
+{{- $workerJavaOpts := list }}
+{{- $workerJavaOpts = print "-Dgoosefs.worker.hostname=${GOOSEFS_WORKER_HOSTNAME}" | append $workerJavaOpts }}
+{{- $workerJavaOpts = printf "-Dgoosefs.worker.rpc.port=%v" .Values.worker.ports.rpc | append $workerJavaOpts }}
+{{- $workerJavaOpts = printf "-Dgoosefs.worker.web.port=%v" .Values.worker.ports.web | append $workerJavaOpts }}
+
+{{- /* Short circuit configuration */}}
+{{- if eq .Values.shortCircuit.enabled false}}
+  {{- $workerJavaOpts = print "-Dgoosefs.user.short.circuit.enabled=false" | append $workerJavaOpts }}
+{{- end }}
+{{- if and .Values.shortCircuit.enabled (eq .Values.shortCircuit.policy "uuid") }}
+  {{- $workerJavaOpts = print "-Dgoosefs.worker.data.server.domain.socket.address=/opt/domain" | append $workerJavaOpts }}
+  {{- $workerJavaOpts = print "-Dgoosefs.worker.data.server.domain.socket.as.uuid=true" | append $workerJavaOpts }}
+{{- end}}
+{{- /* Record container hostname if not using host network */}}
+{{- if not .Values.worker.hostNetwork }}
+  {{- $workerJavaOpts = print "-Dgoosefs.worker.container.hostname=${GOOSEFS_WORKER_CONTAINER_HOSTNAME}" | append $workerJavaOpts }}
+{{- end}}
+
+{{- /* Resource configuration */}}
+{{- if .Values.worker.resources  }}
+  {{- if .Values.worker.resources.requests }}
+    {{- if .Values.worker.resources.requests.memory }}
+          {{- $workerJavaOpts = printf "-Dgoosefs.worker.memory.size=%v" .Values.worker.resources.requests.memory | append $workerJavaOpts }}
+    {{- end}}
+  {{- end}}
+{{- end}}
+
+{{- range $key, $val := .Values.worker.properties }}
+  {{- $workerJavaOpts = printf "-D%v=%v" $key $val | append $workerJavaOpts }}
+{{- end }}
+{{- if .Values.worker.jvmOptions }}
+  {{- $workerJavaOpts = concat $workerJavaOpts .Values.worker.jvmOptions }}
+{{- end }}
+
+{{- /* ===================================== */}}
+{{- /*     GOOSEFS_JOB_WORKER_JAVA_OPTS      */}}
+{{- /* ===================================== */}}
+{{- $jobWorkerJavaOpts := list }}
+{{- $jobWorkerJavaOpts = print "-Dgoosefs.worker.hostname=${GOOSEFS_WORKER_HOSTNAME}" | append $jobWorkerJavaOpts }}
+{{- $jobWorkerJavaOpts = printf "-Dgoosefs.job.worker.rpc.port=%v" .Values.jobWorker.ports.rpc | append $jobWorkerJavaOpts }}
+{{- $jobWorkerJavaOpts = printf "-Dgoosefs.job.worker.data.port=%v" .Values.jobWorker.ports.data | append $jobWorkerJavaOpts }}
+{{- $jobWorkerJavaOpts = printf "-Dgoosefs.job.worker.web.port=%v" .Values.jobWorker.ports.web | append $jobWorkerJavaOpts }}
+{{- range $key, $val := .Values.jobWorker.properties }}
+  {{- $jobWorkerJavaOpts = printf "-D%v=%v" $key $val | append $jobWorkerJavaOpts }}
+{{- end }}
+{{- if .Values.jobWorker.jvmOptions }}
+  {{- $jobWorkerJavaOpts = concat $jobWorkerJavaOpts .Values.jobWorker.jvmOptions }}
+{{- end }}
+
+{{- /* ===================================== */}}
+{{- /*        GOOSEFS_FUSE_JAVA_OPTS         */}}
+{{- /* ===================================== */}}
+{{- $fuseJavaOpts := list }}
+{{- range $key, $val := .Values.fuse.properties }}
+  {{- $fuseJavaOpts = printf "-D%v=%v" $key $val | append $fuseJavaOpts }}
+{{- end }}
+{{- if .Values.fuse.jvmOptions }}
+  {{- $fuseJavaOpts = concat $fuseJavaOpts .Values.fuse.jvmOptions }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ $fullName }}-config
+  labels:
+    name: {{ $fullName }}-config
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  GOOSEFS_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_JAVA_OPTS list to one line */}}
+    {{ range $key := $goosefsJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_MASTER_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_MASTER_JAVA_OPTS list to one line */}}
+    {{ range $key := $masterJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_JOB_MASTER_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_JOB_MASTER_JAVA_OPTS list to one line */}}
+    {{ range $key := $jobMasterJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_WORKER_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_WORKER_JAVA_OPTS list to one line */}}
+    {{ range $key := $workerJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_JOB_WORKER_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_JOB_WORKER_JAVA_OPTS list to one line */}}
+    {{ range $key := $jobWorkerJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_FUSE_JAVA_OPTS: |-
+    {{- /* Format GOOSEFS_FUSE_JAVA_OPTS list to one line */}}
+    {{ range $key := $fuseJavaOpts }}{{ printf "%v " $key }}{{ end }}
+  GOOSEFS_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH: "${GOOSEFS_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH}"

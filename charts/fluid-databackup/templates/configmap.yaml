@@ -1,8 +1,10 @@
+{{- $isAlluxio := (eq .Values.dataBackup.runtimeType "alluxio") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.dataBackup.name }}-script
 data:
+{{- if $isAlluxio }}
   databackuper.alluxio: |
     #!/bin/bash
     dataset=$DATASET_NAME
@@ -43,10 +45,45 @@ data:
        echo "${metainfofile} backup failed"
        exit 1
     fi
+{{- else }}
+  databackuper.goosefs: |
+    #!/bin/bash
+    dataset=$DATASET_NAME
+    namespace=$DATASET_NAMESPACE
+    path=$BACKUP_PATH
 
+    if   [   $BACKUP_PVC   ];
+    then
+    targetPath="/pvc${path}"
+    mkdir -p ${targetPath}
+    else
+    targetPath="/host/"
+    fi
 
+    result=$(goosefs fsadmin backup | sed -n '2p')
 
+    metadatafile=${targetPath}metadata-backup-${dataset}-${namespace}.gz
+    metainfofile=${targetPath}${dataset}-${namespace}.yaml
 
+    mv ${result##*Backup URI         : }  ${metadatafile}
 
+    result=$(goosefs fs count / | sed -n '2p')
+    arr=($result)
+    if [ ${#arr[@]} -ne "3" ]; then
+      exit 1
+    else
+      ufstotal=${arr[2]}
+      filenum=${arr[0]}
+    fi
 
+    echo -e "dataset: ${dataset}\nnamespace: ${namespace}\nufstotal: ${ufstotal}\nfilenum: ${filenum}" > ${metainfofile}
 
+    if [ ! -f "${metadatafile}" ]; then
+       echo "${metadatafile} backup failed"
+       exit 1
+    fi
+    if [ ! -f "${metainfofile}" ]; then
+       echo "${metainfofile} backup failed"
+       exit 1
+    fi
+{{- end }}

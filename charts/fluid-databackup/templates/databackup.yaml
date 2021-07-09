@@ -1,3 +1,4 @@
+{{- $isAlluxio := (eq .Values.dataBackup.runtimeType "alluxio") }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -36,7 +37,7 @@ spec:
     - name: tool
       command: ["/bin/sh", "-c"]
       args:
-        - "/scripts/alluxio_databackup.sh"
+        - "/scripts/databackup.sh"
       image: {{ .Values.dataBackup.image }}
       imagePullPolicy: IfNotPresent
       securityContext:
@@ -44,7 +45,11 @@ spec:
         runAsGroup: {{ .Values.group }}
       env:
         {{- if .Values.dataBackup.javaEnv }}
+        {{- if $isAlluxio }}
         - name: ALLUXIO_JAVA_OPTS
+        {{- else }}
+        - name: GOOSEFS_JAVA_OPTS
+        {{- end }}
           value: {{ .Values.dataBackup.javaEnv | quote }}
         {{- end }}
         {{- if .Values.dataBackup.namespace }}
@@ -66,7 +71,11 @@ spec:
       volumeMounts:
         {{- if .Values.dataBackup.workdir }}
         - name: backup
+        {{- if $isAlluxio }}
           mountPath: /alluxio_backups
+        {{- else }}
+          mountPath: /goosefs_backups
+        {{- end }}
         {{- end }}
         - mountPath: /scripts
           name: script
@@ -91,9 +100,17 @@ spec:
     - name: backup
       hostPath:
         {{- if .Values.dataBackup.namespace }}
+        {{- if $isAlluxio}}
         path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/{{ .Values.dataBackup.namespace }}/{{  .Values.dataBackup.dataset }}
         {{- else }}
+        path: {{ .Values.dataBackup.workdir  }}/goosefs-backup/{{ .Values.dataBackup.namespace }}/{{  .Values.dataBackup.dataset }}
+        {{- end }}
+        {{- else }}
+        {{- if $isAlluxio }}
         path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/default/{{ .Values.dataBackup.dataset }}
+        {{- else }}
+        path: {{ .Values.dataBackup.workdir  }}/goosefs-backup/default/{{ .Values.dataBackup.dataset }}
+        {{- end }}
         {{- end }}
         type: DirectoryOrCreate
     {{- end }}
@@ -110,8 +127,12 @@ spec:
       configMap:
         name: {{ .Values.dataBackup.name }}-script
         items:
+            {{- if $isAlluxio }}
             - key: databackuper.alluxio
-              path: alluxio_databackup.sh
+            {{- else }}
+            - key: databackuper.goosefs
+            {{- end }}
+              path: databackup.sh
               mode: 365
     {{- if .Values.initUsers.enabled }}
     - name: dir

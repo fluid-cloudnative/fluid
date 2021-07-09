@@ -17,6 +17,7 @@ package databackup
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	goosefs "github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -134,6 +136,11 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 		containerName := "alluxio-master"
 		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		ready = fileUtils.Ready()
+	case common.GOOSEFS_RUNTIME:
+		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+		containerName := "goosefs-master"
+		fileUtils := goosefs.NewGooseFSFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
+		ready = fileUtils.Ready()
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataBackup,
@@ -200,7 +207,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 // reconcileExecutingDataBackup reconciles DataBackups that are in `Executing` phase
 func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecutingDataBackup")
-	// 1. get the alluxio-master Pod
+	// 1. get the master Pod
 	// For HA Mode, need find the leading master pod name
 	targetDataset := ctx.Dataset
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
@@ -219,6 +226,11 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 			containerName := "alluxio-master"
 			fileUtils := operations.NewAlluxioFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
 			podName, err = fileUtils.MasterPodName()
+		case common.GOOSEFS_RUNTIME:
+			execPodName := fmt.Sprintf("%s-master-0", targetDataset.Name)
+			containerName := "goosefs-master"
+			fileUtils := goosefs.NewGooseFSFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
+			podName, err = fileUtils.MasterPodName()
 		default:
 			log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 			r.Recorder.Eventf(&ctx.DataBackup,
@@ -234,7 +246,7 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 
 	masterPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
 	if err != nil {
-		log.Error(err, "Failed to get alluxio-master")
+		log.Error(err, "Failed to get master")
 		return utils.RequeueIfError(err)
 	}
 
@@ -332,15 +344,49 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 // generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
 // marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
 func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcileRequestContext, masterPod *v1.Pod) (valueFileName string, err error) {
+	log := ctx.Log.WithName("generateDataBackupValueFile")
 	databackup := ctx.DataBackup
 	nodeName, ip, rpcPort := utils.GetAddressOfMaster(masterPod)
 
-	imageName, imageTag := docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
+	targetDataset, err := utils.GetDataset(r.Client, databackup.Spec.Dataset, databackup.Namespace)
+	if err != nil {
+		return "", err
+	}
+
+	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
+	if index == -1 {
+		return "", errors.New("bounded runtime with Accelerate Category is not found on the target dataset")
+	}
+
+	var imageName, imageTag, javaEnv, runtimeType, imageEnv, defaultImage string
+	switch boundedRuntime.Type {
+	case common.ALLUXIO_RUNTIME:
+		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
+		javaEnv = "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort))
+		runtimeType = "alluxio"
+	case common.GOOSEFS_RUNTIME:
+		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "goosefs", databackup.Namespace)
+		javaEnv = "-Dgoosefs.master.hostname=" + ip + " -Dgoosefs.master.rpc.port=" + strconv.Itoa(int(rpcPort))
+		runtimeType = "goosefs"
+	default:
+		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
+		r.Recorder.Eventf(&ctx.DataBackup,
+			v1.EventTypeNormal,
+			common.RuntimeNotReady,
+			"Bounded accelerate runtime not supported")
+	}
 
 	if len(imageName) == 0 {
-		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if runtimeType == "alluxio" {
+			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
+			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
+		} else if runtimeType == "goosefs" {
+			imageEnv = common.GOOSEFS_RUNTIME_IMAGE_ENV
+			defaultImage = common.DEFAULT_GOOSEFS_RUNTIME_IMAGE
+		}
+		imageName = docker.GetImageRepoFromEnv(imageEnv)
 		if len(imageName) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			defaultImageInfo := strings.Split(defaultImage, ":")
 			if len(defaultImageInfo) < 1 {
 				panic("invalid default databackup image!")
 			} else {
@@ -350,10 +396,17 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	if len(imageTag) == 0 {
-		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		if runtimeType == "alluxio" {
+			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
+			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
+		} else if runtimeType == "goosefs" {
+			imageEnv = common.GOOSEFS_RUNTIME_IMAGE_ENV
+			defaultImage = common.DEFAULT_GOOSEFS_RUNTIME_IMAGE
+		}
+		imageTag = docker.GetImageTagFromEnv(imageEnv)
 		if len(imageTag) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
-			if len(defaultImageInfo) < 2 {
+			defaultImageInfo := strings.Split(defaultImage, ":")
+			if len(defaultImageInfo) < 1 {
 				panic("invalid default databackup image!")
 			} else {
 				imageTag = defaultImageInfo[1]
@@ -369,13 +422,14 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	dataBackup := cdatabackup.DataBackup{
-		Namespace: databackup.Namespace,
-		Dataset:   databackup.Spec.Dataset,
-		Name:      databackup.Name,
-		NodeName:  nodeName,
-		Image:     image,
-		JavaEnv:   "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort)),
-		Workdir:   workdir,
+		Namespace:   databackup.Namespace,
+		Dataset:     databackup.Spec.Dataset,
+		Name:        databackup.Name,
+		NodeName:    nodeName,
+		Image:       image,
+		JavaEnv:     javaEnv,
+		Workdir:     workdir,
+		RuntimeType: runtimeType,
 	}
 	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
 	if err != nil {
