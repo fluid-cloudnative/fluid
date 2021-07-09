@@ -25,7 +25,7 @@ func init() {
 }
 
 func TestAlreadyAssigned(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -72,7 +72,7 @@ func TestAlreadyAssigned(t *testing.T) {
 }
 
 func TestCanbeAssigned(t *testing.T) {
-	tireStore := datav1alpha1.Tieredstore{
+	tireStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -139,7 +139,7 @@ func TestCanbeAssigned(t *testing.T) {
 }
 
 func TestLabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -147,15 +147,23 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
-	runtimeInfoShare, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfoShare.SetupWithDataset(&datav1alpha1.Dataset{
+	runtimeInfoShareSpark.SetupWithDataset(&datav1alpha1.Dataset{
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	tireStore := datav1alpha1.Tieredstore{
+	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoShareHbase.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	})
+
+	tireStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -227,16 +235,15 @@ func TestLabelCacheNode(t *testing.T) {
 		{
 			node: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-exclusive",
+					Name: "test-node-share",
 				},
 			},
-			runtimeInfo: runtimeInfoExclusive,
+			runtimeInfo: runtimeInfoShareSpark,
 			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "2",
-				"fluid.io/s-alluxio-fluid-hbase":     "true",
-				"fluid.io/s-fluid-hbase":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
-				"fluid_exclusive":                    "fluid_hbase",
+				"fluid.io/dataset-num":               "1",
+				"fluid.io/s-alluxio-fluid-spark":     "true",
+				"fluid.io/s-fluid-spark":             "true",
+				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
 			},
 		},
 		{
@@ -245,15 +252,17 @@ func TestLabelCacheNode(t *testing.T) {
 					Name: "test-node-share",
 				},
 			},
-			runtimeInfo: runtimeInfoShare,
+			runtimeInfo: runtimeInfoShareHbase,
 			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "1",
+				"fluid.io/dataset-num":               "2",
 				"fluid.io/s-alluxio-fluid-spark":     "true",
 				"fluid.io/s-fluid-spark":             "true",
 				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+				"fluid.io/s-alluxio-fluid-hbase":     "true",
+				"fluid.io/s-fluid-hbase":             "true",
+				"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
 			},
 		},
-
 		{
 			node: v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
@@ -292,7 +301,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 	var testCase = []struct {
 		node           *v1.Node
 		runtimeInfo    base.RuntimeInfo
-		expectedResult bool
+		expectedResult common.LabelsToModify
 	}{
 		{
 			node: &v1.Node{
@@ -300,7 +309,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			expectedResult: common.LabelsToModify{},
 		},
 		{
 			node: &v1.Node{
@@ -308,7 +317,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: true,
+			expectedResult: common.LabelsToModify{},
 		},
 		{
 			node: &v1.Node{
@@ -316,7 +325,7 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			expectedResult: common.LabelsToModify{},
 		},
 		{
 			node: &v1.Node{
@@ -324,13 +333,55 @@ func TestDecreaseDatasetNum(t *testing.T) {
 				Spec:       v1.NodeSpec{},
 			},
 			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: false,
+			expectedResult: common.LabelsToModify{},
 		},
 	}
 
+	testCase[0].expectedResult.Update("fluid.io/dataset-num", "1")
+	testCase[1].expectedResult.Delete("fluid.io/dataset-num")
+
 	for _, test := range testCase {
-		if result, _ := DecreaseDatasetNum(test.node, &test.runtimeInfo); result != test.expectedResult {
-			t.Errorf("expected %v, got %v", test.expectedResult, result)
+		var labels common.LabelsToModify
+		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labels)
+		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult.GetLabels()) {
+			t.Errorf("fail to exec the function with the error ")
+		}
+
+	}
+}
+
+func TestIncreaseDatasetNum(t *testing.T) {
+	var testCase = []struct {
+		node           *v1.Node
+		runtimeInfo    base.RuntimeInfo
+		expectedResult common.LabelsToModify
+	}{
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
+				Spec:       v1.NodeSpec{},
+			},
+			runtimeInfo:    base.RuntimeInfo{},
+			expectedResult: common.LabelsToModify{},
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec:       v1.NodeSpec{},
+			},
+			runtimeInfo:    base.RuntimeInfo{},
+			expectedResult: common.LabelsToModify{},
+		},
+	}
+
+	testCase[0].expectedResult.Update("fluid.io/dataset-num", "2")
+	testCase[1].expectedResult.Add("fluid.io/dataset-num", "1")
+
+	for _, test := range testCase {
+		var labels common.LabelsToModify
+		_ = increaseDatasetNum(test.node, &test.runtimeInfo, &labels)
+		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult.GetLabels()) {
+			t.Errorf("fail to exec the function with the error ")
 		}
 	}
 }

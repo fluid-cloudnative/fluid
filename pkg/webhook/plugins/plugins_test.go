@@ -16,15 +16,16 @@ limitations under the License.
 package plugins
 
 import (
+	"math/rand"
+	"testing"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	corev1 "k8s.io/api/core/v1"
-	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 )
 
 func TestPods(t *testing.T) {
@@ -33,7 +34,7 @@ func TestPods(t *testing.T) {
 	var (
 		pod               corev1.Pod
 		c                 client.Client
-		plugin            AffinityInterface
+		plugin            MutatingHandler
 		pluginName        string
 		lenNodePrefer     int
 		lenNodeRequire    int
@@ -45,14 +46,14 @@ func TestPods(t *testing.T) {
 
 	// build slice of RuntimeInfos
 	var nilRuntimeInfos []base.RuntimeInfoInterface
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo", datav1alpha1.Tieredstore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Error("fail to build runtimeInfo because of err", err)
 	}
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 	runtimeInfo.SetDeprecatedNodeLabel(false)
 	runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
-	runtimeInfo, err = base.BuildRuntimeInfo("spark", "default", "alluxio", datav1alpha1.Tieredstore{})
+	runtimeInfo, err = base.BuildRuntimeInfo("spark", "default", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Error("fail to build runtimeInfo because of err", err)
 	}
@@ -90,7 +91,10 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithoutCache
 		plugin = prefernodeswithoutcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.InjectAffinity(&pod, runtimeInfos)
+		_, err = plugin.Mutate(&pod, runtimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -109,7 +113,10 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has mounted datasets", pluginName)
 		}
 
-		plugin.InjectAffinity(&pod, nilRuntimeInfos)
+		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -131,7 +138,10 @@ func TestPods(t *testing.T) {
 		// test of plugin preferNodesWithCache
 		plugin = prefernodeswithcache.NewPlugin(c)
 		pluginName = plugin.GetName()
-		plugin.InjectAffinity(&pod, nilRuntimeInfos)
+		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
@@ -150,7 +160,10 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v should exit and call other plugins if the pod has no mounted datasets", pluginName)
 		}
 
-		plugin.InjectAffinity(&pod, runtimeInfos)
+		_, err = plugin.Mutate(&pod, runtimeInfos)
+		if err != nil {
+			t.Error("failed to mutate because of err", err)
+		}
 		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
 			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
 			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
@@ -168,6 +181,22 @@ func TestPods(t *testing.T) {
 			t.Errorf("the plugin %v inject wrong terms when the pod has mounted datasets", pluginName)
 		}
 
+	}
+
+}
+
+func TestRegistry(t *testing.T) {
+	var (
+		client client.Client
+	)
+
+	plugins := Registry(client)
+	if len(plugins.GetPodWithDatasetHandler()) != 2 {
+		t.Errorf("expect GetPodWithDatasetHandler len=2, got %v", plugins.GetPodWithDatasetHandler())
+	}
+
+	if len(plugins.GetPodWithoutDatasetHandler()) != 1 {
+		t.Errorf("expect GetPodWithoutDatasetHandler len=1 got %v", plugins.GetPodWithoutDatasetHandler())
 	}
 
 }

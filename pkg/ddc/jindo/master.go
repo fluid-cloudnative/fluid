@@ -129,6 +129,9 @@ func (e *JindoEngine) SetupMaster() (err error) {
 			replicas = 1
 		}
 
+		// Init selector for worker
+		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
+
 		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
 		runtimeToUpdate.Status.ValueFileConfigmap = e.getConfigmapName()
 

@@ -15,7 +15,7 @@ import (
 
 func (e *JindoEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
 	var mediumType int
-	for _, level := range runtime.Spec.Tieredstore.Levels {
+	for _, level := range runtime.Spec.TieredStore.Levels {
 		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
 	}
 	return mediumType

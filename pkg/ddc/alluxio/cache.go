@@ -17,94 +17,74 @@ package alluxio
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/pkg/errors"
+)
+
+var (
+	cachedPercentageFormat = "%.1f%%"
 )
 
 // queryCacheStatus checks the cache status
 func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
-	summary, err := e.reportSummary()
+	// get alluxio fsadmin report summary
+	summary, err := e.GetReportSummary()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Alluxio summary when query cache status")
 		return states, err
 	}
-	strs := strings.Split(summary, "\n")
-	for _, str := range strs {
-		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
-			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
-			// Convert Alluxio's binary byte units to Fluid's binary byte units
-			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
-			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
-		}
-		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
-			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
-			// Convert Alluxio's binary byte units to Fluid's binary byte units
-			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
-			states.cached = utils.BytesSize(float64(usedCacheCapacityAlluxio))
-		}
+
+	if len(summary) == 0 {
+		return states, errors.New("Alluxio summary is empty")
 	}
+
+	// parse alluxio fsadmin report summary
+	states = e.ParseReportSummary(summary)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		e.Log.Info("Failed to get dataset when query cache status")
+		e.Log.Error(err, "Failed to get dataset when query cache status")
 		return states, err
 	}
 
-	// `dataset.Status.UfsTotal` probably haven't summed, in which case we won't compute cache percentage
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
-		usedInBytes, _ := utils.FromHumanSize(states.cached)
-		ufsTotalInBytes, _ := utils.FromHumanSize(dataset.Status.UfsTotal)
-		states.cachedPercentage = fmt.Sprintf("%.1f%%", float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
-	}
+	e.patchDatasetStatus(dataset, &states)
 
-	states.cacheHitStates = e.getCacheHitStates()
+	states.cacheHitStates = e.GetCacheHitStates()
 
 	return states, nil
 
-	// dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	// if err != nil {
-	// 	e.Log.Error(err, "Failed to sync the cache")
-	// 	return states, err
-	// }
+}
 
-	// totalToCache, err := units.RAMInBytes(totalToCacheStr)
-	// if err != nil {
-	// 	return states, err
-	// }
+func (e AlluxioEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cacheStates) {
+	// skip when `dataset.Status.UfsTotal` is empty
+	if dataset.Status.UfsTotal == "" {
+		return
+	}
+	// skip when `dataset.Status.UfsTotal` is "[Calculating]"
+	if dataset.Status.UfsTotal == METADATA_SYNC_NOT_DONE_MSG {
+		return
+	}
 
-	// check the cached
-	// cached, err := e.cachedState()
-	// if err != nil {
-	// 	return states, err
-	// }
+	usedInBytes, _ := utils.FromHumanSize(states.cached)
+	ufsTotalInBytes, _ := utils.FromHumanSize(dataset.Status.UfsTotal)
 
-	//_, cached, cachedPercentage, err := e.du()
-	//if err != nil {
-	//	return states, err
-	//}
-	//
-	//return cacheStates{
-	//	cacheCapacity:    units.BytesSize(float64(cacheCapacity)),
-	//	cached:           units.BytesSize(float64(cached)),
-	//	cachedPercentage: cachedPercentage,
-	//}, nil
+	states.cachedPercentage = fmt.Sprintf(cachedPercentageFormat, float64(usedInBytes)/float64(ufsTotalInBytes)*100.0)
 
 }
 
 // getCacheHitStates gets cache hit related info by parsing Alluxio metrics
-func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
+func (e *AlluxioEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 	// get cache hit states every 1 minute(CACHE_HIT_QUERY_INTERVAL_MIN * 20s)
 	cacheHitStates.timestamp = time.Now()
 	if e.lastCacheHitStates != nil && cacheHitStates.timestamp.Sub(e.lastCacheHitStates.timestamp).Minutes() < CACHE_HIT_QUERY_INTERVAL_MIN {
 		return *e.lastCacheHitStates
 	}
 
-	metrics, err := e.reportMetrics()
+	metrics, err := e.GetReportMetrics()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Alluxio metrics when get cache hit states")
 		if e.lastCacheHitStates != nil {
@@ -113,76 +93,9 @@ func (e *AlluxioEngine) getCacheHitStates() (cacheHitStates cacheHitStates) {
 		return
 	}
 
-	var localThroughput, remoteThroughput, ufsThroughput int64
-	strs := strings.Split(metrics, "\n")
-	for _, str := range strs {
-		str = strings.TrimSpace(str)
-		counterPattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
-		gaugePattern := regexp.MustCompile(`\(Type:\sGAUGE,\sValue:\s(.*)/MIN\)`)
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
-			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
-			continue
-		}
+	e.ParseReportMetric(metrics, &cacheHitStates, e.lastCacheHitStates)
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
-			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
-			continue
-		}
-
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
-			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
-			continue
-		}
-
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT) {
-			localThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
-			continue
-		}
-
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT) {
-			remoteThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
-			continue
-		}
-
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT) {
-			ufsThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
-		}
-	}
-
-	if e.lastCacheHitStates == nil {
-		e.lastCacheHitStates = &cacheHitStates
-		return
-	}
-
-	// Summarize local/remote cache hit ratio
-	deltaReadLocal := cacheHitStates.bytesReadLocal - e.lastCacheHitStates.bytesReadLocal
-	deltaReadRemote := cacheHitStates.bytesReadRemote - e.lastCacheHitStates.bytesReadRemote
-	deltaReadUfsAll := cacheHitStates.bytesReadUfsAll - e.lastCacheHitStates.bytesReadUfsAll
-	deltaReadTotal := deltaReadLocal + deltaReadRemote + deltaReadUfsAll
-
-	if deltaReadTotal != 0 {
-		cacheHitStates.localHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadLocal)*100.0/float64(deltaReadTotal))
-		cacheHitStates.remoteHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadRemote)*100.0/float64(deltaReadTotal))
-		cacheHitStates.cacheHitRatio = fmt.Sprintf("%.1f%%", float64(deltaReadLocal+deltaReadRemote)*100.0/float64(deltaReadTotal))
-	} else {
-		// No data is requested in last minute
-		cacheHitStates.localHitRatio = "0.0%"
-		cacheHitStates.remoteHitRatio = "0.0%"
-		cacheHitStates.cacheHitRatio = "0.0%"
-	}
-
-	// Summarize local/remote throughput ratio
-	totalThroughput := localThroughput + remoteThroughput + ufsThroughput
-	if totalThroughput != 0 {
-		cacheHitStates.localThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput)*100.0/float64(totalThroughput))
-		cacheHitStates.remoteThroughputRatio = fmt.Sprintf("%.1f%%", float64(remoteThroughput)*100.0/float64(totalThroughput))
-		cacheHitStates.cacheThroughputRatio = fmt.Sprintf("%.1f%%", float64(localThroughput+remoteThroughput)*100.0/float64(totalThroughput))
-	} else {
-		cacheHitStates.localThroughputRatio = "0.0%"
-		cacheHitStates.remoteThroughputRatio = "0.0%"
-		cacheHitStates.cacheThroughputRatio = "0.0%"
-	}
-
+	// refresh last cache hit states
 	e.lastCacheHitStates = &cacheHitStates
 	return
 }

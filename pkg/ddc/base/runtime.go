@@ -17,9 +17,10 @@ package base
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -30,9 +31,7 @@ import (
 // by Alluxio Runtime or other implementation .
 // Thread safety is required from implementations of this interface.
 type RuntimeInfoInterface interface {
-	//GetTieredstore() datav1alpha1.Tieredstore
-
-	GetTieredstoreInfo() TieredstoreInfo
+	GetTieredStoreInfo() TieredStoreInfo
 
 	GetName() string
 
@@ -79,8 +78,8 @@ type RuntimeInfo struct {
 	namespace   string
 	runtimeType string
 
-	//tieredstore datav1alpha1.Tieredstore
-	tieredstoreInfo TieredstoreInfo
+	//tieredstore datav1alpha1.TieredStore
+	tieredstoreInfo TieredStoreInfo
 
 	exclusive bool
 	// Check if the runtime info is already setup by the dataset
@@ -103,7 +102,7 @@ type Fuse struct {
 	NodeSelector map[string]string
 }
 
-type TieredstoreInfo struct {
+type TieredStoreInfo struct {
 	Levels []Level
 }
 
@@ -126,7 +125,7 @@ type CachePath struct {
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
-	tieredstore datav1alpha1.Tieredstore) (runtime RuntimeInfoInterface, err error) {
+	tieredstore datav1alpha1.TieredStore) (runtime RuntimeInfoInterface, err error) {
 
 	tieredstoreInfo, err := convertToTieredstoreInfo(tieredstore)
 	if err != nil {
@@ -142,12 +141,12 @@ func BuildRuntimeInfo(name string,
 	return
 }
 
-func (info *RuntimeInfo) GetTieredstoreInfo() TieredstoreInfo {
+func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
 	return info.tieredstoreInfo
 }
 
-// GetTieredstore gets Tieredstore
-//func (info *RuntimeInfo) GetTieredstore() datav1alpha1.Tieredstore {
+// GetTieredstore gets TieredStore
+//func (info *RuntimeInfo) GetTieredstore() datav1alpha1.TieredStore {
 //	return info.tieredstore
 //}
 
@@ -207,8 +206,8 @@ func (info *RuntimeInfo) IsDeprecatedPVName() bool {
 	return info.deprecatedPVName
 }
 
-func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (TieredstoreInfo, error) {
-	tieredstoreInfo := TieredstoreInfo{
+func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
+	tieredstoreInfo := TieredStoreInfo{
 		Levels: []Level{},
 	}
 
@@ -220,7 +219,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (Tieredstore
 
 		if len(level.QuotaList) == 0 {
 			if level.Quota == nil {
-				return TieredstoreInfo{}, fmt.Errorf("either quota or quotaList must be set")
+				return TieredStoreInfo{}, fmt.Errorf("either quota or quotaList must be set")
 			}
 			// Only quota is set, divide quota equally to multiple paths
 			avgQuota := resource.NewQuantity(level.Quota.Value()/int64(numPaths), resource.BinarySI)
@@ -236,13 +235,13 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.Tieredstore) (Tieredstore
 			quotaStrs := strings.Split(level.QuotaList, ",")
 			numQuotas := len(quotaStrs)
 			if numQuotas != numPaths {
-				return TieredstoreInfo{}, fmt.Errorf("length of quotaList must be consistent with length of paths")
+				return TieredStoreInfo{}, fmt.Errorf("length of quotaList must be consistent with length of paths")
 			}
 
 			for i, quotaStr := range quotaStrs {
 				quotaQuantity, err := resource.ParseQuantity(quotaStr)
 				if err != nil {
-					return TieredstoreInfo{}, fmt.Errorf("can't correctly parse quota \"%s\" to a quantity type", quotaStr)
+					return TieredStoreInfo{}, fmt.Errorf("can't correctly parse quota \"%s\" to a quantity type", quotaStr)
 				}
 				cachePaths = append(cachePaths, CachePath{
 					Path:  strings.TrimRight(paths[i], "/"),
@@ -277,7 +276,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		err = fmt.Errorf("fail to get runtime type")
 		return &RuntimeInfo{}, err
 	case "alluxio":
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.Tieredstore{})
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -288,7 +287,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
 	case "jindo":
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "jindo", datav1alpha1.Tieredstore{})
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "jindo", datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -299,7 +298,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
 	default:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.Tieredstore{})
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
 		return runtimeInfo, err
 	}
 }

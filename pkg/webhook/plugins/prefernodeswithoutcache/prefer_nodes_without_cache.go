@@ -47,17 +47,18 @@ func (p *PreferNodesWithoutCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool) {
-	// if the pod has mounted datasets, should exit and call other plugins
-	if len(runtimeInfos) != 0 {
-		return
-	}
-
+func (p *PreferNodesWithoutCache) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted dataset, no need to call other plugins
 	shouldStop = true
 
+	// if the pod has mounted datasets, should exit and call other plugins
+	if len(runtimeInfos) != 0 {
+		// err = fmt.Errorf("runtimeInfos for PreferNodesWithoutCache is not empty, %v", runtimeInfos)
+		return
+	}
+
 	preferredSchedulingTerms := []corev1.PreferredSchedulingTerm{
-		getPreferredSchedulingTerm(),
+		getPreferredSchedulingTermForPodWithoutCache(),
 	}
 
 	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
@@ -65,9 +66,9 @@ func (p *PreferNodesWithoutCache) InjectAffinity(pod *corev1.Pod, runtimeInfos [
 	return
 }
 
-func getPreferredSchedulingTerm() corev1.PreferredSchedulingTerm {
+func getPreferredSchedulingTermForPodWithoutCache() corev1.PreferredSchedulingTerm {
 	return corev1.PreferredSchedulingTerm{
-		Weight: 50,
+		Weight: 100,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
 				{

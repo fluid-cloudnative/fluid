@@ -15,10 +15,6 @@ limitations under the License.
 
 package alluxio
 
-import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
-)
-
 // UsedStorageBytes returns used storage size of Alluxio in bytes
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
@@ -50,24 +46,6 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
-// ShouldCheckUFS checks if it requires checking UFS
-func (e *AlluxioEngine) ShouldUpdateUFS() (bool, []string, []string, error) {
-
-	var should = false
-	// For Alluxio Engine, always attempt to prepare UFS
-	result_dataset, result_mountted, err := e.getMounts()
-
-	// 2. get mount point need to be added and removed
-	//var added, removed []string
-	added, removed := e.calculateMountPointsChanges(result_mountted, result_dataset)
-
-	if len(added) > 0 || len(removed) > 0 {
-		should = true
-	}
-
-	return should, added, removed, err
-}
-
 // PrepareUFS does all the UFS preparations
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	// 1. Mount UFS (Synchronous Operation)
@@ -93,33 +71,6 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	return
-}
-
-func (e *AlluxioEngine) UpdateUFS(added []string, removed []string) (err error) {
-	// process added and removed
-	err = e.processUFS(added, removed)
-	return
-}
-
-// reportSummary reports alluxio summary
-func (e *AlluxioEngine) reportSummary() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportSummary()
-}
-
-// reportMetrics reports alluxio metrics
-func (e *AlluxioEngine) reportMetrics() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportMetrics()
-}
-
-// reportCapacity reports alluxio capacity
-func (e *AlluxioEngine) reportCapacity() (summary string, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUtils.ReportCapacity()
 }
 
 ////du the ufs

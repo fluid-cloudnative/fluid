@@ -25,9 +25,72 @@ const (
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 
-	// fluid adminssion webhook inject pod affinity strategy flag
-	LabelFluidSchedulingStrategyFlag = LabelAnnotationPrefix + "enable-scheduling-strategy"
+	// fluid adminssion webhook inject flag
+	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
 )
+
+type OperationType string
+
+const (
+	// AddLabel means adding a new label on the specific node.
+	AddLabel OperationType = "Add"
+
+	// DeleteLabel means deleting the label of the specific node.
+	DeleteLabel OperationType = "Delete"
+
+	// UpdateLabel means updating the label value of the specific node.
+	UpdateLabel OperationType = "UpdateValue"
+)
+
+// LabelToModify modifies the labelKey in operationType.
+type LabelToModify struct {
+	labelKey      string
+	labelValue    string
+	operationType OperationType
+}
+
+func (labelToModify *LabelToModify) GetLabelKey() string {
+	return labelToModify.labelKey
+}
+
+func (labelToModify *LabelToModify) GetLabelValue() string {
+	return labelToModify.labelValue
+}
+
+func (labelToModify *LabelToModify) GetOperationType() OperationType {
+	return labelToModify.operationType
+}
+
+type LabelsToModify struct {
+	labels []LabelToModify
+}
+
+func (labels *LabelsToModify) GetLabels() []LabelToModify {
+	return labels.labels
+}
+
+func (labels *LabelsToModify) operator(labelKey string, labelValue string, operationType OperationType) {
+	newLabelToModify := LabelToModify{
+		labelKey:      labelKey,
+		operationType: operationType,
+	}
+	if operationType != DeleteLabel {
+		newLabelToModify.labelValue = labelValue
+	}
+	labels.labels = append(labels.labels, newLabelToModify)
+}
+
+func (labels *LabelsToModify) Add(labelKey string, labelValue string) {
+	labels.operator(labelKey, labelValue, AddLabel)
+}
+
+func (labels *LabelsToModify) Update(labelKey string, labelValue string) {
+	labels.operator(labelKey, labelValue, UpdateLabel)
+}
+
+func (labels *LabelsToModify) Delete(labelKey string) {
+	labels.operator(labelKey, "", DeleteLabel)
+}
 
 func GetDatasetNumLabelName() string {
 	return LabelAnnotationDatasetNum

@@ -157,15 +157,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	value.Fuse.ShortCircuitPolicy = "local"
 
-	// value.Enablefluid = true
-	levels := []Level{}
+	var levels []Level
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	for _, level := range runtimeInfo.GetTieredstoreInfo().Levels {
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
@@ -185,14 +184,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 			Level:      l,
 			Type:       "hostPath",
 			Path:       pathConfigStr,
-			Mediumtype: mediumTypeConfigStr,
+			MediumType: mediumTypeConfigStr,
 			Low:        level.Low,
 			High:       level.High,
 			Quota:      quotaConfigStr,
 		})
 	}
 
-	value.Tieredstore.Levels = levels
+	value.TieredStore.Levels = levels
 
 	// value.Metastore = Metastore{
 	// 	VolumeType: "emptyDir",
