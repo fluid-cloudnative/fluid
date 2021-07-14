@@ -14,9 +14,9 @@ const (
 
 	GOOSEFS_FUSE_IMAGE_ENV = "GOOSEFS_FUSE_IMAGE_ENV"
 
-	DEFAULT_GOOSEFS_RUNTIME_IMAGE = "ccr.ccs.tencentyun.com/fluid/goosefs:v1.0.1"
+	DEFAULT_GOOSEFS_RUNTIME_IMAGE = "registry.aliyuncs.com/fluid/goosefs:v1.0.1"
 
-	DEFAULT_GOOSEFS_FUSE_IMAGE = "ccr.ccs.tencentyun.com/fluid/goosefs-fuse:v1.0.1"
+	DEFAULT_GOOSEFS_FUSE_IMAGE = "registry.aliyuncs.com/fluid/goosefs-fuse:v1.0.1"
 )
 
 var (

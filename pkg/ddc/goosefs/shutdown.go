@@ -96,7 +96,7 @@ func (e *GooseFSEngine) destroyMaster() (err error) {
 
 // cleanupCache cleans up the cache
 func (e *GooseFSEngine) cleanupCache() (err error) {
-	// TODO(cheyang): clean up the cache
+	// TODO(chrisydxie): clean up the cache
 	cacheStates, err := e.queryCacheStatus()
 	if cacheStates.cached == "" {
 		return

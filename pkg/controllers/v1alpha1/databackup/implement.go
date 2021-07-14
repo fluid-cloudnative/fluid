@@ -265,7 +265,11 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 			log.Error(err, "failed to generate databackup chart's value file")
 			return utils.RequeueIfError(err)
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DATABACKUP_CHART
+
+		// index of runtimeType in value filename is 2
+		runtimeType := strings.Split(valueFileName, "-")[2]
+
+		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DATABACKUP_CHART + "/" + runtimeType
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install databackup chart")
@@ -483,7 +487,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		return
 	}
 
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-backuper-values.yaml", databackup.Namespace, databackup.Name))
+	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-%s-backuper-values.yaml", databackup.Namespace, databackup.Name, dataBackup.RuntimeType))
 	if err != nil {
 		return
 	}

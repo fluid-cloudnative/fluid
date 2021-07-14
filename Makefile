@@ -8,7 +8,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 DATASET_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/dataset-controller
 ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controller
-GOOSEFSRUNTIME_CONTROLLER_IMG ?= ccr.ccs.tencentyun.com/fluid/goosefsruntime-controller
+GOOSEFSRUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/goosefsruntime-controller
 CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
 LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
 INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
