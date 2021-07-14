@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-
-
 func TestShouldSyncMetadata(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
@@ -73,5 +71,4 @@ func TestShouldSyncMetadata(t *testing.T) {
 			t.Errorf("fail to exec the function")
 		}
 	}
-
 }
