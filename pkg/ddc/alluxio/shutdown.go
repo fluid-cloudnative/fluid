@@ -18,12 +18,14 @@ package alluxio
 import (
 	"context"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
-	"k8s.io/client-go/util/retry"
 	"sort"
 	"strings"
 	"time"
+
+	"k8s.io/client-go/util/retry"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"

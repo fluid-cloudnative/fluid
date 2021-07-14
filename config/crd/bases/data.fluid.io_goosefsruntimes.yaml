@@ -113,8 +113,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the GooseFS component.
-                    <br> TODO(chrisydxie@tencent.com) Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -213,8 +214,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for GooseFS System. <br> TODO(chrisydxie@tencent.com)
-                    Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 resources:
                   description: Resources that will be requested by GooseFS Fuse. <br>
@@ -351,8 +353,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the GooseFS component.
-                    <br> TODO(chrisydxie@tencent.com) Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -423,8 +426,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the GooseFS component.
-                    <br> TODO(chrisydxie@tencent.com) Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -500,8 +504,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the GooseFS component.
-                    <br> TODO(chrisydxie@tencent.com) Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given
@@ -543,8 +548,9 @@ spec:
             properties:
               additionalProperties:
                 type: string
-              description: Configurable properties for GooseFS system. <br> TODO(chrisydxie@tencent.com)
-                Add Properties List link here.
+              description: Configurable properties for the GOOSEFS component. <br>
+                Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                Configuration Properties</a> for more info
               type: object
             replicas:
               description: The replicas of the worker, need to be specified
@@ -664,8 +670,9 @@ spec:
                 properties:
                   additionalProperties:
                     type: string
-                  description: Configurable properties for the GooseFS component.
-                    <br> TODO(chrisydxie@tencent.com) Add Properties List link here.
+                  description: Configurable properties for the GOOSEFS component.
+                    <br> Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
+                    Configuration Properties</a> for more info
                   type: object
                 replicas:
                   description: Replicas is the desired number of replicas of the given

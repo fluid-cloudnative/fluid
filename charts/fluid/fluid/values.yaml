@@ -47,11 +47,11 @@ runtime:
     init:
       image: registry.aliyuncs.com/fluid/init-users:v0.6.0-6a86b3f
     controller:
-      image: ccr.ccs.tencentyun.com/fluid/goosefsruntime-controller:v0.6.0-1c81860 
+      image: registry.aliyuncs.com/fluid/goosefsruntime-controller:v0.6.0-1c81860 
     runtime:
-      image: ccr.ccs.tencentyun.com/fluid/goosefs:v1.0.1
+      image: registry.aliyuncs.com/fluid/goosefs:v1.0.1
     fuse:
-      image: ccr.ccs.tencentyun.com/fluid/goosefs-fuse:v1.0.1
+      image: registry.aliyuncs.com/fluid/goosefs-fuse:v1.0.1
 
 webhook:
   enabled: false

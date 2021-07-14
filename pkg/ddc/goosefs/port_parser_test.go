@@ -23,7 +23,7 @@ import (
 
 var valuesConfigMapData = `
 fullnameOverride: hbase
-image: ccr.ccs.tencentyun.com/fluid/goosefs
+image: registry.aliyuncs.com/fluid/goosefs
 imageTag: v1.0.1
 imagePullPolicy: IfNotPresent
 user: 0
@@ -93,7 +93,7 @@ properties:
   goosefs.worker.rpc.port: "20002"
   goosefs.worker.web.port: "20003"
 fuse:
-  image: ccr.ccs.tencentyun.com/fluid/goosefs-fuse
+  image: registry.aliyuncs.com/fluid/goosefs-fuse
   nodeSelector:
     fluid.io/s-default-hbase: "true"
   imageTag: v1.0.1
