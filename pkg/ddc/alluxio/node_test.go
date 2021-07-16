@@ -14,29 +14,29 @@ import (
 
 func getTestAlluxioEngineNode(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	engine := &AlluxioEngine{
-		runtime:                nil,
-		name:                   name,
-		namespace:              namespace,
-		Client:                 client,
-		runtimeInfo:            nil,
-		Log:                    log.NullLogger{},
+		runtime:     nil,
+		name:        name,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: nil,
+		Log:         log.NullLogger{},
 	}
-	if withRunTime{
+	if withRunTime {
 		engine.runtime = &v1alpha1.AlluxioRuntime{}
-		engine.runtimeInfo,_ = base.BuildRuntimeInfo(name,namespace,"alluxio",v1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "alluxio", v1alpha1.TieredStore{})
 	}
 	return engine
 }
 
 func TestAssignNodesToCache(t *testing.T) {
 	dataSet := &v1alpha1.Dataset{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "hbase",
+			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Spec:       v1alpha1.DatasetSpec{},
-		Status:     v1alpha1.DatasetStatus{},
+		Spec:   v1alpha1.DatasetSpec{},
+		Status: v1alpha1.DatasetStatus{},
 	}
 	nodeInputs := []*v1.Node{
 		{
@@ -86,52 +86,50 @@ func TestAssignNodesToCache(t *testing.T) {
 			},
 		},
 	}
-	runtimeObjs  := []runtime.Object{}
-	runtimeObjs  = append(runtimeObjs, dataSet)
+	runtimeObjs := []runtime.Object{}
+	runtimeObjs = append(runtimeObjs, dataSet)
 	for _, nodeInput := range nodeInputs {
 		runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
 	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme,runtimeObjs...)
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
-
-	testCases := []struct{
+	testCases := []struct {
 		withRunTime bool
-		name 		string
-		namespace 	string
-		out 		int32
-		isErr 		bool
+		name        string
+		namespace   string
+		out         int32
+		isErr       bool
 	}{
 		{
-			withRunTime: 	true,
-			name: 			"hbase",
-			namespace: 		"fluid",
-			out: 			2,
-			isErr:          false,
+			withRunTime: true,
+			name:        "hbase",
+			namespace:   "fluid",
+			out:         2,
+			isErr:       false,
 		},
 		{
-			withRunTime: 	false,
-			name: 			"hbase",
-			namespace: 		"fluid",
-			out: 			0,
-			isErr:          true,
+			withRunTime: false,
+			name:        "hbase",
+			namespace:   "fluid",
+			out:         0,
+			isErr:       true,
 		},
 		{
-			withRunTime: 	true,
-			name: 			"not-found",
-			namespace: 		"fluid",
-			out: 			0,
-			isErr:          true,
+			withRunTime: true,
+			name:        "not-found",
+			namespace:   "fluid",
+			out:         0,
+			isErr:       true,
 		},
-
 	}
-	for _,testCase := range testCases{
-		engine := getTestAlluxioEngineNode(fakeClient,testCase.name,testCase.namespace,testCase.withRunTime)
-		out,err := engine.AssignNodesToCache(3)  // num: 2 err: nil
-		if out!=testCase.out{
+	for _, testCase := range testCases {
+		engine := getTestAlluxioEngineNode(fakeClient, testCase.name, testCase.namespace, testCase.withRunTime)
+		out, err := engine.AssignNodesToCache(3) // num: 2 err: nil
+		if out != testCase.out {
 			t.Errorf("expected %d, got %d.", testCase.out, out)
 		}
 		isErr := err != nil
-		if isErr != testCase.isErr{
+		if isErr != testCase.isErr {
 			t.Errorf("expected %t, got %t.", testCase.isErr, isErr)
 		}
 	}
