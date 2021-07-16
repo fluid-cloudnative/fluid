@@ -244,6 +244,24 @@ func (a AlluxioFileUtils) Mount(alluxioPath string,
 	return
 }
 
+func (a AlluxioFileUtils) UnMount(alluxioPath string) (err error) {
+	var (
+		command = []string{"alluxio", "fs", "unmount"}
+		stderr  string
+		stdout  string
+	)
+
+	command = append(command, alluxioPath)
+
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	return
+}
+
 func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}

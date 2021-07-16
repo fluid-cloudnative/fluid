@@ -19,6 +19,12 @@ const (
 	// The cache system are ready
 	DatasetReadyReason = "DatasetReady"
 
+	// The cache system are update ready
+	DatasetUpdateReadyReason = "DatasetUpdateReady"
+
+	// The cache system are updating
+	DatasetUpdatingReason = "DatasetUpdating"
+
 	// Resynced means updating with the underlayer filesystem.
 	DatasetDataSetFailedReason = "DatasetFailed"
 )
