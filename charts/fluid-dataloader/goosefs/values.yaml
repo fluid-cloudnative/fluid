@@ -1,0 +1,30 @@
+# Default values for fluid-dataloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dataloader:
+  # Optional
+  # Default: 3
+  # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
+  backoffLimit: 3
+
+  # Required
+  # Description: the dataset that this DataLoad targets
+  targetDataset: #imagenet
+
+  # Optional
+  # Default: false
+  # Description: should load metadata from UFS when doing data load
+  loadMetadata: false
+
+  # Optional
+  # Default: (path: "/", replicas: 1, fluidNative: false)
+  # Description: which paths should the DataLoad load
+  targetPaths:
+    - path: "/"
+      replicas: 1
+      fluidNative: false
+
+  # Required
+  # Description: the image that the DataLoad job uses
+  image: <goosefs-image>

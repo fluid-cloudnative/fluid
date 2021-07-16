@@ -1,0 +1,50 @@
+{{ if .Values.fuse.clientEnabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "goosefs.fullname" . }}-fuse-client
+  labels:
+    app: {{ template "goosefs.name" . }}
+    chart: {{ template "goosefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: goosefs-fuse-client
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "goosefs.name" . }}
+      chart: {{ template "goosefs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: goosefs-fuse-client
+  template:
+    metadata:
+      labels:
+        app: {{ template "goosefs.name" . }}
+        chart: {{ template "goosefs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: goosefs-fuse-client
+    spec:
+      containers:
+        - name: goosefs-fuse-client
+          image: alpine:latest
+          resources:
+            requests:
+              cpu: "0.5"
+              memory: "500M"
+            limits:
+              cpu: "1"
+              memory: "500M"
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30 && echo .; done;"]
+          volumeMounts:
+            - name: goosefs-fuse-mount
+              mountPath: {{ .Values.fuse.mountPath | dir }}
+      restartPolicy: Always
+      volumes:
+        - name: goosefs-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.mountPath | dir }}
+            type: Directory
+{{- end }}

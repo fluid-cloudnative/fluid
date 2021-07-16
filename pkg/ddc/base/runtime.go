@@ -297,6 +297,17 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
+	case "goosefs":
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "goosefs", datav1alpha1.TieredStore{})
+		if err != nil {
+			return runtimeInfo, err
+		}
+		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
+		return runtimeInfo, nil
 	default:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
 		return runtimeInfo, err
