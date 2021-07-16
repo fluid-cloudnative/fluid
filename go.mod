@@ -30,6 +30,7 @@ require (
 	k8s.io/kubernetes v1.18.5
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 	sigs.k8s.io/controller-runtime v0.3.0
+	sigs.k8s.io/yaml v1.2.0
 )
 
 replace k8s.io/api => k8s.io/api v0.18.5
