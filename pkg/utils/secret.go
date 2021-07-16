@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubeclient
+//TODO(TrafalgarZZZ): Move secret.go to pkg/utils/kubeclient
+
+package utils
 
 import (
 	"context"

@@ -1,7 +1,7 @@
-package kubeclient
+package utils
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -20,7 +20,7 @@ func TestGetSecret(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, mockSecret1)
+	fakeClient := fake.NewFakeClientWithScheme(kubeclient.testScheme, mockSecret1)
 
 	testCases := map[string]struct {
 		name          string
@@ -48,7 +48,7 @@ func TestGetSecret(t *testing.T) {
 	for caseName, item := range testCases {
 		gotSecret, err := GetSecret(fakeClient, item.name, item.namespace)
 		if item.notFound {
-			if err == nil || utils.IgnoreNotFound(err) != nil {
+			if err == nil || IgnoreNotFound(err) != nil {
 				t.Errorf("%s check failure, want not found error, but got %v", caseName, err)
 			}
 		} else {

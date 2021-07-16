@@ -7,7 +7,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"strconv"
@@ -185,7 +184,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 			if err != nil {
 				e.Log.Info("can't get the secret")
 				break
