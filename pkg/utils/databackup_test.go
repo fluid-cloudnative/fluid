@@ -192,3 +192,25 @@ func TestGetBackupUserDir(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRpcPortFromMasterContainer(t *testing.T) {
+	var mockRpcPort int32 = 34
+	container := corev1.Container{
+		Name: "alluxio-master",
+		Ports: []corev1.ContainerPort{
+			{
+				Name:     "rpc",
+				HostPort: mockRpcPort,
+			},
+			{
+				Name:     "rpc-test",
+				HostPort: 5201,
+			},
+		},
+	}
+	rpcPort := GetRpcPortFromMasterContainer(&container)
+
+	if rpcPort != mockRpcPort {
+		t.Errorf("rpcPort get failure, should be %v, but get %v", mockRpcPort, rpcPort)
+	}
+}

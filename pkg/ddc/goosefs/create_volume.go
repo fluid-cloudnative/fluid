@@ -58,7 +58,7 @@ func (e *GooseFSEngine) createFusePersistentVolume() (err error) {
 	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
 		runtimeInfo,
 		e.getMountPoint(),
-		common.GOOSEFS_MOUNT_TYPE,
+		common.GooseFSMountType,
 		e.Log)
 
 }

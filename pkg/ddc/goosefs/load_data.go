@@ -52,7 +52,7 @@ func (e *GooseFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.GOOSEFS_RUNTIME
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.GooseFSRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -75,9 +75,9 @@ func (e *GooseFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "goosefs", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
-		imageName = docker.GetImageRepoFromEnv(common.GOOSEFS_RUNTIME_IMAGE_ENV)
+		imageName = docker.GetImageRepoFromEnv(common.GooseFSRuntimeImageEnv)
 		if len(imageName) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_GOOSEFS_RUNTIME_IMAGE, ":")
+			defaultImageInfo := strings.Split(common.DefaultGooseFSRuntimeImage, ":")
 			if len(defaultImageInfo) < 1 {
 				panic("invalid default dataload image!")
 			} else {
@@ -87,9 +87,9 @@ func (e *GooseFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	}
 
 	if len(imageTag) == 0 {
-		imageTag = docker.GetImageTagFromEnv(common.GOOSEFS_RUNTIME_IMAGE_ENV)
+		imageTag = docker.GetImageTagFromEnv(common.GooseFSRuntimeImageEnv)
 		if len(imageTag) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_GOOSEFS_RUNTIME_IMAGE, ":")
+			defaultImageInfo := strings.Split(common.DefaultGooseFSRuntimeImage, ":")
 			if len(defaultImageInfo) < 2 {
 				panic("invalid default dataload image!")
 			} else {

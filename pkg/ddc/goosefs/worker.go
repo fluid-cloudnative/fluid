@@ -46,7 +46,7 @@ func (e *GooseFSEngine) SetupWorkers() (err error) {
 	}
 
 	e.Log.Info("check the desired and current replicas",
-		"desriedReplicas", replicas,
+		"desiredReplicas", replicas,
 		"currentReplicas", currentReplicas)
 
 	if currentReplicas == 0 {
@@ -242,7 +242,7 @@ func (e *GooseFSEngine) getWorkerSelectors() string {
 	labels := map[string]string{
 		"release":     e.name,
 		POD_ROLE_TYPE: WOKRER_POD_ROLE,
-		"app":         common.GOOSEFS_RUNTIME,
+		"app":         common.GooseFSRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

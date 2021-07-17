@@ -275,8 +275,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 	case "":
 		err = fmt.Errorf("fail to get runtime type")
 		return &RuntimeInfo{}, err
-	case "alluxio":
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.TieredStore{})
+	case common.ALLUXIO_RUNTIME:
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.ALLUXIO_RUNTIME, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -286,8 +286,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
-	case "jindo":
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "jindo", datav1alpha1.TieredStore{})
+	case common.JINDO_RUNTIME:
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JINDO_RUNTIME, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -297,8 +297,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
-	case "goosefs":
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, "goosefs", datav1alpha1.TieredStore{})
+	case common.GooseFSRuntime:
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}

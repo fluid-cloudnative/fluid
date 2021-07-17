@@ -73,8 +73,8 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 
-		mAlluxioPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
-		mGooseFSPath := UFSPathBuilder{}.GenGooseFSMountPath(mount, dataset.Spec.Mounts)
+		mAlluxioPath := UFSPathBuilder{}.GenMountPathForAlluxio(mount, dataset.Spec.Mounts)
+		mGooseFSPath := UFSPathBuilder{}.GenMountPathForGooseFS(mount, dataset.Spec.Mounts)
 
 		//TODO(xuzhihao): HasPrefix is not enough.
 

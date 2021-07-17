@@ -6,7 +6,7 @@ metadata:
     release: {{ .Release.Name }}
     role: dataload-job
 data:
-  dataloader.init: |
+  dataloader.goosefs.init: |
     #!/usr/bin/env bash
     set -xe
     goosefs_env_vars=(
@@ -38,7 +38,7 @@ data:
       public::goosefs::init_conf
     }
     main
-  dataloader.distributedLoad: |
+  dataloader.goosefs.distributedLoad: |
     #!/usr/bin/env bash
     set -xe
 
@@ -74,8 +74,3 @@ data:
     }
     
     main "$@"
-
-
-
-
-

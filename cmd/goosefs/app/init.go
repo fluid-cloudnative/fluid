@@ -13,17 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package app
 
-import (
-	"os"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid/cmd/goosefs/app"
-)
-
-func main() {
-	command := app.NewGooseFSCommand()
-	if err := command.Execute(); err != nil {
-		os.Exit(0)
+func NewGooseFSCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "goosefsruntime-controller",
+		Short: "Controller for goosefsruntime",
 	}
+
+	cmd.AddCommand(versionCmd, startCmd)
+	return cmd
 }

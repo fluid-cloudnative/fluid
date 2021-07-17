@@ -260,7 +260,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			// sync local dir if necessary
 			for _, mount := range dataset.Spec.Mounts {
 				if common.IsFluidNativeScheme(mount.MountPoint) {
-					localDirPath := utils.UFSPathBuilder{}.GenAlluxioLocalStoragePath(mount)
+					localDirPath := utils.UFSPathBuilder{}.GenLocalStoragePathForAlluxio(mount)
 					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
 					err = fileUtils.SyncLocalDir(localDirPath)
 					if err != nil {

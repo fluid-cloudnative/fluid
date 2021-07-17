@@ -161,9 +161,9 @@ func (e *GooseFSEngine) getInitTierPathsEnv(runtime *datav1alpha1.GooseFSRuntime
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
 	if err != nil {
-		path = "/" + common.GOOSEFS_RUNTIME
+		path = "/" + common.GooseFSRuntime
 	} else {
-		path = path + "/" + common.GOOSEFS_RUNTIME
+		path = path + "/" + common.GooseFSRuntime
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return
@@ -185,9 +185,9 @@ func (e *GooseFSEngine) parseRuntimeImage(image string, tag string, imagePullPol
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.GOOSEFS_RUNTIME_IMAGE_ENV)
+		image = docker.GetImageRepoFromEnv(common.GooseFSRuntimeImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DEFAULT_GOOSEFS_RUNTIME_IMAGE, ":")
+			runtimeImageInfo := strings.Split(common.DefaultGooseFSRuntimeImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default goosefs runtime image!")
 			} else {
@@ -197,9 +197,9 @@ func (e *GooseFSEngine) parseRuntimeImage(image string, tag string, imagePullPol
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.GOOSEFS_RUNTIME_IMAGE_ENV)
+		tag = docker.GetImageTagFromEnv(common.GooseFSRuntimeImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DEFAULT_GOOSEFS_RUNTIME_IMAGE, ":")
+			runtimeImageInfo := strings.Split(common.DefaultGooseFSRuntimeImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default goosefs runtime image!")
 			} else {
@@ -217,9 +217,9 @@ func (e *GooseFSEngine) parseFuseImage(image string, tag string, imagePullPolicy
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.GOOSEFS_FUSE_IMAGE_ENV)
+		image = docker.GetImageRepoFromEnv(common.GooseFSFuseImageEnv)
 		if len(image) == 0 {
-			fuseImageInfo := strings.Split(common.DEFAULT_GOOSEFS_FUSE_IMAGE, ":")
+			fuseImageInfo := strings.Split(common.DefaultGooseFSFuseImage, ":")
 			if len(fuseImageInfo) < 1 {
 				panic("invalid default goosefs fuse image!")
 			} else {
@@ -229,9 +229,9 @@ func (e *GooseFSEngine) parseFuseImage(image string, tag string, imagePullPolicy
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.GOOSEFS_FUSE_IMAGE_ENV)
+		tag = docker.GetImageTagFromEnv(common.GooseFSFuseImageEnv)
 		if len(tag) == 0 {
-			fuseImageInfo := strings.Split(common.DEFAULT_GOOSEFS_FUSE_IMAGE, ":")
+			fuseImageInfo := strings.Split(common.DefaultGooseFSFuseImage, ":")
 			if len(fuseImageInfo) < 2 {
 				panic("invalid default init image!")
 			} else {
@@ -244,7 +244,7 @@ func (e *GooseFSEngine) parseFuseImage(image string, tag string, imagePullPolicy
 }
 
 func (e *GooseFSEngine) GetMetadataInfoFile() string {
-	return cdatabackup.GOOSEFS_BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
+	return cdatabackup.GooseFSBackupPathPod + "/" + e.GetMetadataInfoFileName()
 }
 func (e *GooseFSEngine) GetMetadataFileName() string {
 	return "metadata-backup-" + e.name + "-" + e.namespace + ".gz"

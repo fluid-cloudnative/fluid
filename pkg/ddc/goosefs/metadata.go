@@ -259,7 +259,7 @@ func (e *GooseFSEngine) syncMetadataInternal() (err error) {
 			// sync local dir if necessary
 			for _, mount := range dataset.Spec.Mounts {
 				if common.IsFluidNativeScheme(mount.MountPoint) {
-					localDirPath := utils.UFSPathBuilder{}.GenGooseFSLocalStoragePath(mount)
+					localDirPath := utils.UFSPathBuilder{}.GenLocalStoragePathForGooseFS(mount)
 					e.Log.Info(fmt.Sprintf("Syncing local dir, path: %s", localDirPath))
 					err = fileUtils.SyncLocalDir(localDirPath)
 					if err != nil {

@@ -75,10 +75,10 @@ spec:
           configMap:
             name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
-              - key: dataloader.init
+              - key: dataloader.goosefs.init
                 path: env_init.sh
                 mode: 365
-              - key: dataloader.distributedLoad
+              - key: dataloader.goosefs.distributedLoad
                 path: dataload.sh
                 mode: 365
           {{- range .Values.dataloader.targetPaths }}

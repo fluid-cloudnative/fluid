@@ -12,18 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-package main
+package app
 
 import (
-	"os"
-
-	"github.com/fluid-cloudnative/fluid/cmd/goosefs/app"
+	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	command := app.NewGooseFSCommand()
-	if err := command.Execute(); err != nil {
-		os.Exit(0)
-	}
+var (
+	short bool
+)
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fluid.PrintVersion(short)
+	},
+}
+
+func init() {
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 }

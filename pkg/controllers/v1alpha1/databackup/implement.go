@@ -85,7 +85,7 @@ func (r *DataBackupReconcilerImplement) ReconcileDataBackupDeletion(ctx reconcil
 
 	// 3. remove finalizer
 	if utils.HasDeletionTimestamp(ctx.DataBackup.ObjectMeta) {
-		ctx.DataBackup.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataBackup.ObjectMeta.Finalizers, cdatabackup.FINALIZER)
+		ctx.DataBackup.ObjectMeta.Finalizers = utils.RemoveString(ctx.DataBackup.ObjectMeta.Finalizers, cdatabackup.Finalizer)
 		if err := r.Update(ctx, &ctx.DataBackup); err != nil {
 			log.Error(err, "failed to remove finalizer")
 			return utils.RequeueIfError(err)
@@ -136,7 +136,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 		containerName := "alluxio-master"
 		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
 		ready = fileUtils.Ready()
-	case common.GOOSEFS_RUNTIME:
+	case common.GooseFSRuntime:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "goosefs-master"
 		fileUtils := goosefs.NewGooseFSFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
@@ -226,7 +226,7 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 			containerName := "alluxio-master"
 			fileUtils := operations.NewAlluxioFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
 			podName, err = fileUtils.MasterPodName()
-		case common.GOOSEFS_RUNTIME:
+		case common.GooseFSRuntime:
 			execPodName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 			containerName := "goosefs-master"
 			fileUtils := goosefs.NewGooseFSFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
@@ -269,7 +269,7 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 		// index of runtimeType in value filename is 2
 		runtimeType := strings.Split(valueFileName, "-")[2]
 
-		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DATABACKUP_CHART + "/" + runtimeType
+		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart + "/" + runtimeType
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install databackup chart")
@@ -365,13 +365,13 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	var imageName, imageTag, javaEnv, runtimeType, imageEnv, defaultImage string
 	switch boundedRuntime.Type {
 	case common.ALLUXIO_RUNTIME:
-		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "alluxio", databackup.Namespace)
+		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, common.ALLUXIO_RUNTIME, databackup.Namespace)
 		javaEnv = "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort))
-		runtimeType = "alluxio"
-	case common.GOOSEFS_RUNTIME:
-		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, "goosefs", databackup.Namespace)
+		runtimeType = common.ALLUXIO_RUNTIME
+	case common.GooseFSRuntime:
+		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, common.GooseFSRuntime, databackup.Namespace)
 		javaEnv = "-Dgoosefs.master.hostname=" + ip + " -Dgoosefs.master.rpc.port=" + strconv.Itoa(int(rpcPort))
-		runtimeType = "goosefs"
+		runtimeType = common.GooseFSRuntime
 	default:
 		log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&ctx.DataBackup,
@@ -381,18 +381,19 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	if len(imageName) == 0 {
-		if runtimeType == "alluxio" {
+		if runtimeType == common.ALLUXIO_RUNTIME {
 			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
 			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
-		} else if runtimeType == "goosefs" {
-			imageEnv = common.GOOSEFS_RUNTIME_IMAGE_ENV
-			defaultImage = common.DEFAULT_GOOSEFS_RUNTIME_IMAGE
+		} else if runtimeType == common.GooseFSRuntime {
+			imageEnv = common.GooseFSRuntimeImageEnv
+			defaultImage = common.DefaultGooseFSRuntimeImage
 		}
 		imageName = docker.GetImageRepoFromEnv(imageEnv)
 		if len(imageName) == 0 {
 			defaultImageInfo := strings.Split(defaultImage, ":")
 			if len(defaultImageInfo) < 1 {
-				panic("invalid default databackup image!")
+				log.Error(fmt.Errorf("ImageInfo"), "invalid default databackup image!")
+				return
 			} else {
 				imageName = defaultImageInfo[0]
 			}
@@ -400,18 +401,19 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	if len(imageTag) == 0 {
-		if runtimeType == "alluxio" {
+		if runtimeType == common.ALLUXIO_RUNTIME {
 			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
 			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
-		} else if runtimeType == "goosefs" {
-			imageEnv = common.GOOSEFS_RUNTIME_IMAGE_ENV
-			defaultImage = common.DEFAULT_GOOSEFS_RUNTIME_IMAGE
+		} else if runtimeType == common.GooseFSRuntime {
+			imageEnv = common.GooseFSRuntimeImageEnv
+			defaultImage = common.DefaultGooseFSRuntimeImage
 		}
 		imageTag = docker.GetImageTagFromEnv(imageEnv)
 		if len(imageTag) == 0 {
 			defaultImageInfo := strings.Split(defaultImage, ":")
 			if len(defaultImageInfo) < 1 {
-				panic("invalid default databackup image!")
+				log.Error(fmt.Errorf("ImageInfo"), "invalid default databackup image!")
+				return
 			} else {
 				imageTag = defaultImageInfo[1]
 			}

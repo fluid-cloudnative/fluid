@@ -151,7 +151,7 @@ type GooseFSRuntimeSpec struct {
 	RunAs *User `json:"runAs,omitempty"`
 
 	// Disable monitoring for GooseFS Runtime
-	// Promethous is enabled by default
+	// Prometheus is enabled by default
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
 

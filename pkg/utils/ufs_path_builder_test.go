@@ -22,7 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-func TestGenAlluxioUFSRootPath(t *testing.T) {
+func TestGenUFSRootPathForAlluxio(t *testing.T) {
 	testCases := map[string]struct {
 		mounts       []datav1alpha1.Mount
 		wantMount    *datav1alpha1.Mount
@@ -61,7 +61,7 @@ func TestGenAlluxioUFSRootPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotRootPath, m := UFSPathBuilder{}.GenAlluxioUFSRootPath(item.mounts)
+		gotRootPath, m := UFSPathBuilder{}.GenUFSRootPathForAlluxio(item.mounts)
 		if gotRootPath != item.wantRootPath {
 			t.Errorf("%s check failure, want:%s, got:%s", k, item.wantRootPath, gotRootPath)
 		}
@@ -104,14 +104,14 @@ func TestGetAlluxioMountPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotPath := UFSPathBuilder{}.GenAlluxioMountPath(item.curMount, item.mounts)
+		gotPath := UFSPathBuilder{}.GenMountPathForAlluxio(item.curMount, item.mounts)
 		if gotPath != item.wantPath {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, gotPath)
 		}
 	}
 }
 
-func TestGenGooseFSUFSRootPath(t *testing.T) {
+func TestGenUFSRootPathForGooseFS(t *testing.T) {
 	testCases := map[string]struct {
 		mounts       []datav1alpha1.Mount
 		wantMount    *datav1alpha1.Mount
@@ -150,7 +150,7 @@ func TestGenGooseFSUFSRootPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotRootPath, m := UFSPathBuilder{}.GenGooseFSUFSRootPath(item.mounts)
+		gotRootPath, m := UFSPathBuilder{}.GenUFSRootPathForGooseFS(item.mounts)
 		if gotRootPath != item.wantRootPath {
 			t.Errorf("%s check failure, want:%s, got:%s", k, item.wantRootPath, gotRootPath)
 		}
@@ -193,7 +193,7 @@ func TestGetGooseFSMountPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotPath := UFSPathBuilder{}.GenGooseFSMountPath(item.curMount, item.mounts)
+		gotPath := UFSPathBuilder{}.GenMountPathForGooseFS(item.curMount, item.mounts)
 		if gotPath != item.wantPath {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, gotPath)
 		}

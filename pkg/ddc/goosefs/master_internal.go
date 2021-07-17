@@ -32,7 +32,7 @@ import (
 // setup the cache master
 func (e *GooseFSEngine) setupMasterInternal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/" + common.GOOSEFS_CHART
+		chartName = utils.GetChartsDirectory() + "/" + common.GooseFSChart
 	)
 
 	runtime, err := e.getRuntime()

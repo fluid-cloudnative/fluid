@@ -79,7 +79,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 					Name:           "hbase",
 					Namespace:      "fluid",
 					Category:       common.AccelerateCategory,
-					Type:           common.GOOSEFS_RUNTIME,
+					Type:           common.GooseFSRuntime,
 					MasterReplicas: 1,
 				},
 			},
