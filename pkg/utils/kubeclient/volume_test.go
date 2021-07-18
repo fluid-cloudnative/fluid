@@ -262,6 +262,20 @@ func TestShouldDeleteDataset(t *testing.T) {
 				},
 			},
 		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "runningDataset",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		},
 	}}
 
 	testObjects := []runtime.Object{}
@@ -275,6 +289,9 @@ func TestShouldDeleteDataset(t *testing.T) {
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset", Annotations: common.ExpectedFluidAnnotations},
 		Spec:       v1.PersistentVolumeSpec{},
 	}}
 
@@ -306,7 +323,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 				name:      "found",
 				namespace: namespace,
 			},
-			errReturn: true,
+			errReturn: false,
 		}, {
 			name: "pvc exists and complete pod on it",
 			args: args{
@@ -315,12 +332,12 @@ func TestShouldDeleteDataset(t *testing.T) {
 			},
 			errReturn: false,
 		}, {
-			name: "pvc exists and no pod on it",
+			name: "pvc exists and running pod on it",
 			args: args{
 				name:      "runningDataset",
 				namespace: namespace,
 			},
-			errReturn: false,
+			errReturn: true,
 		},
 	}
 
