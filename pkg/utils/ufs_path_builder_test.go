@@ -61,7 +61,7 @@ func TestGenUFSRootPathForAlluxio(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotRootPath, m := UFSPathBuilder{}.GenUFSRootPathForAlluxio(item.mounts)
+		gotRootPath, m := UFSPathBuilder{}.GenAlluxioUFSRootPath(item.mounts)
 		if gotRootPath != item.wantRootPath {
 			t.Errorf("%s check failure, want:%s, got:%s", k, item.wantRootPath, gotRootPath)
 		}
@@ -104,96 +104,7 @@ func TestGetAlluxioMountPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotPath := UFSPathBuilder{}.GenMountPathForAlluxio(item.curMount, item.mounts)
-		if gotPath != item.wantPath {
-			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, gotPath)
-		}
-	}
-}
-
-func TestGenUFSRootPathForGooseFS(t *testing.T) {
-	testCases := map[string]struct {
-		mounts       []datav1alpha1.Mount
-		wantMount    *datav1alpha1.Mount
-		wantRootPath string
-	}{
-		"test multi mount item case 1": {
-			mounts:       mockMountMultiItems(mockMountSingleItem("spark", "local://mnt/local/path", "")),
-			wantRootPath: "/underFSStorage",
-			wantMount:    nil,
-		},
-		"test single mount item with fluid native scheme case 1": {
-			mounts:       mockMountSingleItem("spark", "local://mnt/local/path", ""),
-			wantRootPath: "/underFSStorage",
-			wantMount:    nil,
-		},
-		"test single mount item with fluid native scheme case 2": {
-			mounts:       mockMountSingleItem("spark", "pvc://mnt/local/path", ""),
-			wantRootPath: "/underFSStorage",
-			wantMount:    nil,
-		},
-		"test single mount item with mount path case 1": {
-			mounts:       mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/mnt"),
-			wantRootPath: "/underFSStorage",
-			wantMount:    nil,
-		},
-		"test single mount item with mount path case 2": {
-			mounts:       mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/"),
-			wantRootPath: "http://fluid.io/spark/spark-3.0.2",
-			wantMount:    &mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/")[0],
-		},
-		"test single mount item with mount path case 3": {
-			mounts:       mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", ""),
-			wantRootPath: "/underFSStorage",
-			wantMount:    nil,
-		},
-	}
-
-	for k, item := range testCases {
-		gotRootPath, m := UFSPathBuilder{}.GenUFSRootPathForGooseFS(item.mounts)
-		if gotRootPath != item.wantRootPath {
-			t.Errorf("%s check failure, want:%s, got:%s", k, item.wantRootPath, gotRootPath)
-		}
-		if !reflect.DeepEqual(m, item.wantMount) {
-			t.Errorf("%s check mount failure, want:%v, got:%v", k, item.wantMount, m)
-		}
-	}
-}
-
-func TestGetGooseFSMountPath(t *testing.T) {
-	testCases := map[string]struct {
-		curMount datav1alpha1.Mount
-		wantPath string
-		mounts   []datav1alpha1.Mount
-	}{
-		"test only one mount item case 1": {
-			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "")[0],
-			mounts:   mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", ""),
-			wantPath: "/spark",
-		}, "test only one mount item case 2": {
-			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/")[0],
-			mounts:   mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/"),
-			wantPath: "/",
-		},
-		"test only one mount item with define mount path case 1": {
-			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/mnt/user/define/path")[0],
-			mounts:   mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/mnt/user/define/path"),
-			wantPath: "/mnt/user/define/path",
-		},
-		"test multi mount items case 1": {
-			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "")[0],
-			mounts:   mockMountMultiItems(mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "")),
-			wantPath: "/spark",
-		},
-		"test multi mount items with define mount path case 1": {
-			curMount: mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/mnt/user/define/path")[0],
-			mounts:   mockMountMultiItems(mockMountSingleItem("spark", "http://fluid.io/spark/spark-3.0.2", "/mnt/user/define/path")),
-			wantPath: "/mnt/user/define/path",
-		},
-	}
-
-	for k, item := range testCases {
-		gotPath := UFSPathBuilder{}.GenMountPathForGooseFS(item.curMount, item.mounts)
+		gotPath := UFSPathBuilder{}.GenAlluxioMountPath(item.curMount, item.mounts)
 		if gotPath != item.wantPath {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, gotPath)
 		}

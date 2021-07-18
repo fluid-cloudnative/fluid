@@ -36,7 +36,7 @@ func (e *GooseFSEngine) transformDatasetToVolume(runtime *datav1alpha1.GooseFSRu
 
 			ufsPath := UFSPath{}
 			ufsPath.Name = mount.Name
-			ufsPath.ContainerPath = utils.UFSPathBuilder{}.GenLocalStoragePathForGooseFS(mount)
+			ufsPath.ContainerPath = utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
 			ufsPath.HostPath = strings.TrimPrefix(mount.MountPoint, common.PathScheme.String())
 			value.UFSPaths = append(value.UFSPaths, ufsPath)
 
@@ -47,7 +47,7 @@ func (e *GooseFSEngine) transformDatasetToVolume(runtime *datav1alpha1.GooseFSRu
 
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()),
-				ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePathForGooseFS(mount),
+				ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
 			})
 		}
 	}

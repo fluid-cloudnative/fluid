@@ -81,7 +81,7 @@ func (e *GooseFSEngine) shouldMountUFS() (should bool, err error) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		goosefsPath := utils.UFSPathBuilder{}.GenMountPathForGooseFS(mount, dataset.Spec.Mounts)
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		mounted, err := fileUtils.IsMounted(goosefsPath)
 		if err != nil {
 			should = false
@@ -120,7 +120,7 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 			continue
 		}
 
-		goosefsPath := utils.UFSPathBuilder{}.GenMountPathForGooseFS(mount, dataset.Spec.Mounts)
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		mounted, err := fileUitls.IsMounted(goosefsPath)
 		e.Log.Info("Check if the goosefs path is mounted.", "goosefsPath", goosefsPath, "mounted", mounted)
 		if err != nil {

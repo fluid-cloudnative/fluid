@@ -1,11 +1,8 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +28,7 @@ type UFSPathBuilder struct{}
 // 1. if set dataset.spec.mounts[x].path
 // 2. if only one item use default root path "/"
 // 3. "/" + dataset.spec.mounts[x].name
-func (u UFSPathBuilder) GenMountPathForAlluxio(curMount datav1alpha1.Mount, mounts []datav1alpha1.Mount) string {
+func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount, mounts []datav1alpha1.Mount) string {
 
 	// if the user defines mount.path, use it
 	if filepath.IsAbs(curMount.Path) {
@@ -39,22 +36,6 @@ func (u UFSPathBuilder) GenMountPathForAlluxio(curMount datav1alpha1.Mount, moun
 	}
 
 	return fmt.Sprintf(common.AlluxioMountPathFormat, curMount.Name)
-}
-
-// dataset.spec.mounts mount to goosefs instance strategy:
-//
-// strategy && priority:
-// 1. if set dataset.spec.mounts[x].path
-// 2. if only one item use default root path "/"
-// 3. "/" + dataset.spec.mounts[x].name
-func (u UFSPathBuilder) GenMountPathForGooseFS(curMount datav1alpha1.Mount, mounts []datav1alpha1.Mount) string {
-
-	// if the user defines mount.path, use it
-	if filepath.IsAbs(curMount.Path) {
-		return curMount.Path
-	}
-
-	return fmt.Sprintf(common.GooseFSMountPathFormat, curMount.Name)
 }
 
 // value for alluxio instance configuration :
@@ -68,18 +49,18 @@ func (u UFSPathBuilder) GenMountPathForGooseFS(curMount datav1alpha1.Mount, moun
 // 	2. direct mount ufs endpoint as alluxio root path
 //     e.g. : alluxio fs mount
 //            http://fluid.io/apache/spark/spark-3.0.2 /
-func (u UFSPathBuilder) GenUFSRootPathForAlluxio(items []datav1alpha1.Mount) (string, *datav1alpha1.Mount) {
+func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (string, *datav1alpha1.Mount) {
 	// if have multi ufs mount point or empty
 	// use local storage root path by default
 	if len(items) > 1 || len(items) == 0 {
-		return u.GetAlluxioLocalStorageRootDir(), nil
+		return u.GetLocalStorageRootDir(), nil
 	}
 
 	m := items[0]
 
 	// if fluid native scheme : use local storage root path
 	if common.IsFluidNativeScheme(m.MountPoint) {
-		return u.GetAlluxioLocalStorageRootDir(), nil
+		return u.GetLocalStorageRootDir(), nil
 	}
 
 	// only if user define mount.path as "/", work as alluxio.master.mount.table.root.ufs
@@ -87,41 +68,7 @@ func (u UFSPathBuilder) GenUFSRootPathForAlluxio(items []datav1alpha1.Mount) (st
 		return m.MountPoint, &m
 	}
 
-	return u.GetAlluxioLocalStorageRootDir(), nil
-
-}
-
-// value for goosefs instance configuration :
-//
-//  goosefs.master.mount.table.root.ufs
-//
-// two situations
-//	1. mount local storage root path as goosefs root path
-//     e.g. : goosefs fs mount
-//            /underFSStorage /
-// 	2. direct mount ufs endpoint as goosefs root path
-//     e.g. : goosefs fs mount
-//            https://mirrors.tuna.tsinghua.edu.cn/apache/spark/spark-3.0.3/ /
-func (u UFSPathBuilder) GenUFSRootPathForGooseFS(items []datav1alpha1.Mount) (string, *datav1alpha1.Mount) {
-	// if have multi ufs mount point or empty
-	// use local storage root path by default
-	if len(items) > 1 || len(items) == 0 {
-		return u.GetGooseFSLocalStorageRootDir(), nil
-	}
-
-	m := items[0]
-
-	// if fluid native scheme : use local storage root path
-	if common.IsFluidNativeScheme(m.MountPoint) {
-		return u.GetGooseFSLocalStorageRootDir(), nil
-	}
-
-	// only if user define mount.path as "/", work as goosefs.master.mount.table.root.ufs
-	if filepath.IsAbs(m.Path) && len(m.Path) == 1 {
-		return m.MountPoint, &m
-	}
-
-	return u.GetGooseFSLocalStorageRootDir(), nil
+	return u.GetLocalStorageRootDir(), nil
 
 }
 
@@ -131,26 +78,11 @@ func (u UFSPathBuilder) GenUFSRootPathForGooseFS(items []datav1alpha1.Mount) (st
 // e.g. :
 //   $ alluxio fs mount
 //   /underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
-func (u UFSPathBuilder) GetAlluxioLocalStorageRootDir() string {
+func (u UFSPathBuilder) GetLocalStorageRootDir() string {
 	return common.AlluxioLocalStorageRootPath
 }
 
 // generate local storage path by mount info
-func (u UFSPathBuilder) GenLocalStoragePathForAlluxio(curMount datav1alpha1.Mount) string {
+func (u UFSPathBuilder) GenLocalStoragePath(curMount datav1alpha1.Mount) string {
 	return fmt.Sprintf(common.AlluxioLocalStoragePathFormat, curMount.Name)
-}
-
-// this value will be the default value for the goosefs configuration:
-//   goosefs.master.mount.table.root.ufs
-//
-// e.g. :
-//   $ goosefs fs mount
-//   /underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
-func (u UFSPathBuilder) GetGooseFSLocalStorageRootDir() string {
-	return common.GooseFSLocalStorageRootPath
-}
-
-// generate local storage path by mount info
-func (u UFSPathBuilder) GenLocalStoragePathForGooseFS(curMount datav1alpha1.Mount) string {
-	return fmt.Sprintf(common.GooseFSLocalStoragePathFormat, curMount.Name)
 }
