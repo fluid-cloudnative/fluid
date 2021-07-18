@@ -288,11 +288,15 @@ func TestShouldDeleteDataset(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.ExpectedFluidAnnotations},
-		Spec:       v1.PersistentVolumeSpec{},
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+			Namespace:   namespace,
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset", Annotations: common.ExpectedFluidAnnotations},
-		Spec:       v1.PersistentVolumeSpec{},
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Namespace:   namespace,
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
 	}}
 
 	for _, pv := range testPVInputs {
