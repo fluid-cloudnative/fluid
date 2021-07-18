@@ -306,7 +306,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 				name:      "found",
 				namespace: namespace,
 			},
-			errReturn: false,
+			errReturn: true,
 		}, {
 			name: "pvc exists and complete pod on it",
 			args: args{
