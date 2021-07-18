@@ -267,7 +267,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 		Spec: v1.PodSpec{
 			Volumes: []v1.Volume{
 				{
-					Name: volumeName,
+					Name: "runningDataset",
 					VolumeSource: v1.VolumeSource{
 						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
 							ClaimName: "runningDataset",
@@ -275,6 +275,8 @@ func TestShouldDeleteDataset(t *testing.T) {
 						}},
 				},
 			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodRunning,
 		},
 	}}
 
@@ -289,18 +291,31 @@ func TestShouldDeleteDataset(t *testing.T) {
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
-			Namespace:   namespace,
 			Annotations: common.ExpectedFluidAnnotations},
 		Spec: v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Namespace:   namespace,
 			Annotations: common.ExpectedFluidAnnotations},
 		Spec: v1.PersistentVolumeSpec{},
 	}}
 
 	for _, pv := range testPVInputs {
 		testObjects = append(testObjects, pv.DeepCopy())
+	}
+
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: volumeName,
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	for _, pvc := range testPVCInputs {
+		testObjects = append(testObjects, pvc.DeepCopy())
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjects...)
