@@ -257,6 +257,7 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 	// 1. Check if the pvc exists
 	fmt.Printf("Found namespace %v, name %v\n", namespace, name)
 	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
+	fmt.Printf("exist %v, err %v\n", exist, err)
 	if err != nil {
 		return
 	}
