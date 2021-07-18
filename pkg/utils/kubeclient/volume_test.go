@@ -261,6 +261,8 @@ func TestShouldDeleteDataset(t *testing.T) {
 						}},
 				},
 			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
