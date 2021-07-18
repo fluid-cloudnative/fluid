@@ -265,6 +265,7 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 
 	// 2. check if the pod on it is running
 	pods, err := GetPvcMountPods(client, name, namespace)
+	fmt.Printf("Found Pod %v %v", namespace, name)
 	if err != nil {
 		return
 	}
