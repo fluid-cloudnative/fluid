@@ -255,9 +255,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 // If cannot get PVC, cannot get PvcMountPods, or running pod is using the volume, return corresponding error
 func ShouldDeleteDataset(client client.Client, name, namespace string) (err error) {
 	// 1. Check if the pvc exists
-	fmt.Printf("Found namespace %v, name %v\n", namespace, name)
 	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
-	fmt.Printf("exist %v, err %v\n", exist, err)
 	if err != nil {
 		return
 	}
@@ -267,7 +265,6 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 
 	// 2. check if the pod on it is running
 	pods, err := GetPvcMountPods(client, name, namespace)
-	fmt.Printf("Found Pod %v\n", pods)
 	if err != nil {
 		return
 	}
