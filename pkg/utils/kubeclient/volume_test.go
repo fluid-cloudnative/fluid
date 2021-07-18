@@ -241,3 +241,94 @@ func TestGetPvcMountPods(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldDeleteDataset(t *testing.T) {
+	namespace := "test"
+	volumeName := "found"
+	testPodInputs := []*v1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PodSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeName,
+							ReadOnly:  true,
+						}},
+				},
+			},
+		},
+	}}
+
+	testObjects := []runtime.Object{}
+
+	for _, pod := range testPodInputs {
+		testObjects = append(testObjects, pod.DeepCopy())
+	}
+
+	testPVInputs := []*v1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       v1.PersistentVolumeSpec{},
+	}}
+
+	for _, pv := range testPVInputs {
+		testObjects = append(testObjects, pv.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjects...)
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		errReturn bool
+	}{
+		{
+			name: "pvc doesn't exist",
+			args: args{
+				name:      "notfound",
+				namespace: namespace,
+			},
+			errReturn: false,
+		},
+		{
+			name: "pvc exists and no pod on it",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			errReturn: false,
+		}, {
+			name: "pvc exists and complete pod on it",
+			args: args{
+				name:      "completeDataset",
+				namespace: namespace,
+			},
+			errReturn: false,
+		}, {
+			name: "pvc exists and no pod on it",
+			args: args{
+				name:      "runningDataset",
+				namespace: namespace,
+			},
+			errReturn: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ShouldDeleteDataset(client, tt.args.name, tt.args.namespace); (err != nil) != tt.errReturn {
+				t.Errorf("testcase %v ShouldDeleteDataset() = %v, want err=%v", tt.name, err, tt.errReturn)
+			}
+		})
+	}
+}
