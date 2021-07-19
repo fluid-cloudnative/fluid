@@ -18,16 +18,21 @@ package goosefs
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
+	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -261,6 +266,755 @@ func Test_lookUpUsedCapacity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := lookUpUsedCapacity(tt.args.node, tt.args.usedCapacityMap); got != tt.want {
 				t.Errorf("lookUpUsedCapacity() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func mockExecCommandInContainerForGetFileCount() (stdout string, stderr string, err error) {
+	r := `Master.FilesCompleted  (Type: COUNTER, Value: 1,000)`
+	return r, "", nil
+}
+
+func mockExecCommandInContainerForWorkerUsedCapacity() (stdout string, stderr string, err error) {
+	r := `Capacity information for all workers:
+	Total Capacity: 4096.00MB
+		Tier: MEM  Size: 4096.00MB
+	Used Capacity: 443.89MB
+		Tier: MEM  Size: 443.89MB
+	Used Percentage: 10%
+	Free Percentage: 90%
+ 
+Worker Name      Last Heartbeat   Storage       MEM
+192.168.1.147    0                capacity      2048.00MB
+								  used          443.89MB (21%)
+192.168.1.146    0                capacity      2048.00MB
+								  used          0B (0%)`
+	return r, "", nil
+}
+
+func TestGetDataSetFileNum(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test0",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			want:    "1000",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+				stdout, stderr, err := mockExecCommandInContainerForGetFileCount()
+				return stdout, stderr, err
+			})
+			defer patch1.Reset()
+
+			got, err := e.getDataSetFileNum()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.getDataSetFileNum() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GooseFSEngine.getDataSetFileNum() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetRuntime(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    *datav1alpha1.GooseFSRuntime
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+			},
+			want: &datav1alpha1.GooseFSRuntime{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "GooseFSRuntime",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "spark",
+					Namespace: "default",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.want)
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    mockClient,
+			}
+			got, err := e.getRuntime()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.getRuntime() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GooseFSEngine.getRuntime() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMasterStatefulset(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    *appsv1.StatefulSet
+		wantErr bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark-master",
+						Namespace: "default",
+					},
+				},
+				name:      "spark-master",
+				namespace: "default",
+			},
+			want: &appsv1.StatefulSet{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "spark-master",
+					Namespace: "default",
+				},
+				TypeMeta: v1.TypeMeta{
+					Kind:       "StatefulSet",
+					APIVersion: "apps/v1",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.StatefulSet{})
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.want)
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    mockClient,
+			}
+			gotMaster, err := e.getMasterStatefulset(tt.fields.name, tt.fields.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.getMasterStatefulset() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotMaster, tt.want) {
+				t.Errorf("GooseFSEngine.getMasterStatefulset() = %#v, want %#v", gotMaster, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetDaemonset(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		name      string
+		namespace string
+		Client    client.Client
+	}
+	tests := []struct {
+		name          string
+		fields        fields
+		wantDaemonset *appsv1.DaemonSet
+		wantErr       bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark-master",
+						Namespace: "default",
+					},
+				},
+				name:      "spark-master",
+				namespace: "default",
+			},
+			wantDaemonset: &appsv1.DaemonSet{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "spark-master",
+					Namespace: "default",
+				},
+				TypeMeta: v1.TypeMeta{
+					Kind:       "DaemonSet",
+					APIVersion: "apps/v1",
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.DaemonSet{})
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.wantDaemonset)
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    mockClient,
+			}
+			gotDaemonset, err := e.getDaemonset(tt.fields.name, tt.fields.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.getDaemonset() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotDaemonset, tt.wantDaemonset) {
+				t.Errorf("GooseFSEngine.getDaemonset() = %#v, want %#v", gotDaemonset, tt.wantDaemonset)
+			}
+		})
+	}
+}
+
+func TestGetMasterPodInfo(t *testing.T) {
+	type fields struct {
+		name string
+	}
+	tests := []struct {
+		name              string
+		fields            fields
+		wantPodName       string
+		wantContainerName string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name: "spark",
+			},
+			wantPodName:       "spark-master-0",
+			wantContainerName: "goosefs-master",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name: tt.fields.name,
+			}
+			gotPodName, gotContainerName := e.getMasterPodInfo()
+			if gotPodName != tt.wantPodName {
+				t.Errorf("GooseFSEngine.getMasterPodInfo() gotPodName = %v, want %v", gotPodName, tt.wantPodName)
+			}
+			if gotContainerName != tt.wantContainerName {
+				t.Errorf("GooseFSEngine.getMasterPodInfo() gotContainerName = %v, want %v", gotContainerName, tt.wantContainerName)
+			}
+		})
+	}
+}
+
+func TestGetMasterStatefulsetName(t *testing.T) {
+	type fields struct {
+		name string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantDsName string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name: "spark",
+			},
+			wantDsName: "spark-master",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name: tt.fields.name,
+			}
+			if gotDsName := e.getMasterStatefulsetName(); gotDsName != tt.wantDsName {
+				t.Errorf("GooseFSEngine.getMasterStatefulsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			}
+		})
+	}
+}
+
+func TestGetWorkerDaemonsetName(t *testing.T) {
+	type fields struct {
+		name string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantDsName string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name: "spark",
+			},
+			wantDsName: "spark-worker",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name: tt.fields.name,
+			}
+			if gotDsName := e.getWorkerDaemonsetName(); gotDsName != tt.wantDsName {
+				t.Errorf("GooseFSEngine.getWorkerDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			}
+		})
+	}
+}
+
+func TestGetFuseDaemonsetName(t *testing.T) {
+	type fields struct {
+		name string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantDsName string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name: "spark",
+			},
+			wantDsName: "spark-fuse",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name: tt.fields.name,
+			}
+			if gotDsName := e.getFuseDaemonsetName(); gotDsName != tt.wantDsName {
+				t.Errorf("GooseFSEngine.getFuseDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			}
+		})
+	}
+}
+
+func TestGetMountPoint(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+		MountRoot string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+				MountRoot: "/tmp",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				Log:       tt.fields.Log,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			wantMountPath := fmt.Sprintf("%s/%s/%s/goosefs-fuse", tt.fields.MountRoot+"/goosefs", tt.fields.namespace, e.name)
+			if gotMountPath := e.getMountPoint(); gotMountPath != wantMountPath {
+				t.Errorf("GooseFSEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
+			}
+		})
+	}
+}
+
+func TestGetInitTierPathsEnv(t *testing.T) {
+	type fields struct {
+		runtime *datav1alpha1.GooseFSRuntime
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		// TODO: Add test cases.
+		{
+			name: "test",
+			fields: fields{
+				&datav1alpha1.GooseFSRuntime{
+					Spec: datav1alpha1.GooseFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								datav1alpha1.Level{
+									Path: "/mnt/goosefs0",
+								},
+								datav1alpha1.Level{
+									Path: "/mnt/goosefs1",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: "/mnt/goosefs0:/mnt/goosefs1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				runtime: tt.fields.runtime,
+			}
+			if got := e.getInitTierPathsEnv(tt.fields.runtime); got != tt.want {
+				t.Errorf("GooseFSEngine.getInitTierPathsEnv() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMountRoot(t *testing.T) {
+	tests := []struct {
+		name     string
+		wantPath string
+	}{
+		{
+			name:     "test",
+			wantPath: "/tmp/goosefs",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("MOUNT_ROOT", "/tmp")
+			if gotPath := getMountRoot(); gotPath != tt.wantPath {
+				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
+			}
+		})
+	}
+}
+
+func TestParseRuntimeImage(t *testing.T) {
+	type args struct {
+		image           string
+		tag             string
+		imagePullPolicy string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 string
+		want2 string
+	}{
+		{
+			name: "test0",
+			args: args{
+				image:           "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+				tag:             "v1.0.1",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+			want1: "v1.0.1",
+			want2: "IfNotPresent",
+		},
+		{
+			name: "test0",
+			args: args{
+				image:           "",
+				tag:             "",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+			want1: "v1.0.1",
+			want2: "IfNotPresent",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{}
+			os.Setenv(common.GooseFSRuntimeImageEnv, "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs:v1.0.1")
+			got, got1, got2 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			if got != tt.want {
+				t.Errorf("GooseFSEngine.parseRuntimeImage() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("GooseFSEngine.parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("GooseFSEngine.parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func TestParseFuseImage(t *testing.T) {
+	type args struct {
+		image           string
+		tag             string
+		imagePullPolicy string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 string
+		want2 string
+	}{
+		{
+			name: "test0",
+			args: args{
+				image:           "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+				tag:             "v1.0.1",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+			want1: "v1.0.1",
+			want2: "IfNotPresent",
+		},
+		{
+			name: "test0",
+			args: args{
+				image:           "",
+				tag:             "",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+			want1: "v1.0.1",
+			want2: "IfNotPresent",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{}
+			os.Setenv(common.GooseFSFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse:v1.0.1")
+			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			if got != tt.want {
+				t.Errorf("GooseFSEngine.parseFuseImage() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("GooseFSEngine.parseFuseImage() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("GooseFSEngine.parseFuseImage() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func TestGetMetadataInfoFile(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+			},
+			want: fmt.Sprintf("/goosefs_backups/%s-%s.yaml", "spark", "default"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			if got := e.GetMetadataInfoFile(); got != tt.want {
+				t.Errorf("GooseFSEngine.GetMetadataInfoFile() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMetadataFileName(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+			},
+			want: fmt.Sprintf("metadata-backup-%s-%s.gz", "spark", "default"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			if got := e.GetMetadataFileName(); got != tt.want {
+				t.Errorf("GooseFSEngine.GetMetadataFileName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMetadataInfoFileName(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+			},
+			want: fmt.Sprintf("%s-%s.yaml", "spark", "default"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			if got := e.GetMetadataInfoFileName(); got != tt.want {
+				t.Errorf("GooseFSEngine.GetMetadataInfoFileName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetWorkerUsedCapacity(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    map[string]int64
+		wantErr bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			want:    map[string]int64{"192.168.1.146": 0, "192.168.1.147": 465452400},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+				stdout, stderr, err := mockExecCommandInContainerForWorkerUsedCapacity()
+				return stdout, stderr, err
+			})
+			defer patch1.Reset()
+			got, err := e.GetWorkerUsedCapacity()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.GetWorkerUsedCapacity() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GooseFSEngine.GetWorkerUsedCapacity() = %v, want %v", got, tt.want)
 			}
 		})
 	}
