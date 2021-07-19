@@ -207,6 +207,10 @@ func (info *RuntimeInfo) IsDeprecatedPVName() bool {
 }
 
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
+	if len(tieredstore.Levels) == 0 {
+		return TieredStoreInfo{}, nil
+	}
+
 	tieredstoreInfo := TieredStoreInfo{
 		Levels: []Level{},
 	}
