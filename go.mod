@@ -6,6 +6,8 @@ require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.2.0
+	github.com/docker/docker v17.12.0-ce-rc1.0.20200916142827-bd33bbf0497b+incompatible
+	//github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.3
@@ -15,7 +17,7 @@ require (
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0

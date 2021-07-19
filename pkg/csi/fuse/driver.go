@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -48,11 +49,12 @@ const (
 )
 
 type driver struct {
+	client           client.Client
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
 
-func NewDriver(nodeID, endpoint string) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
@@ -70,13 +72,18 @@ func NewDriver(nodeID, endpoint string) *driver {
 	}
 
 	csiDriver := csicommon.NewCSIDriver(driverName, version, nodeID)
-	csiDriver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
+	csiDriver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		//csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
+	})
+
 	csiDriver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER})
 
 	return &driver{
 		nodeId:    nodeID,
 		endpoint:  endpoint,
 		csiDriver: csiDriver,
+		client:    client,
 	}
 }
 
@@ -89,6 +96,7 @@ func (d *driver) newNodeServer() *nodeServer {
 	return &nodeServer{
 		nodeId:            d.nodeId,
 		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.csiDriver),
+		client:            d.client,
 	}
 }
 

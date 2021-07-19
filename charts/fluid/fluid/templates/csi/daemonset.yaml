@@ -14,11 +14,12 @@ spec:
       labels:
         app: csi-nodeplugin-fluid
     spec:
+      serviceAccount: fluid-csi-admin
       tolerations:
       - operator: Exists
       #priorityClassName: system-node-critical
-      hostNetwork: true
-      hostPID: true
+#      hostNetwork: true
+#      hostPID: true
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -29,6 +30,15 @@ spec:
                 values:
                 - virtual-kubelet
       containers:
+#        - name: external-attacher
+#          image: "{{ .Values.csi.attacher.image }}"
+#          args:
+#            - --v=5
+#            - --csi-address={{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
+##            - --leader-election
+#          volumeMounts:
+#            - name: kubelet-dir
+#              mountPath: {{ .Values.csi.kubelet.rootDir }}
         - name: node-driver-registrar
           image: "{{ .Values.csi.registrar.image }}"
           lifecycle:
@@ -44,6 +54,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
           volumeMounts:
             - name: kubelet-dir
               mountPath: {{ .Values.csi.kubelet.rootDir }}
@@ -81,7 +95,13 @@ spec:
             - name: fluid-src-dir
               mountPath: {{ .Values.runtime.mountRoot | quote }}
               mountPropagation: "Bidirectional"
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
       volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
         - name: kubelet-dir
           hostPath:
             path: {{ .Values.csi.kubelet.rootDir }}
