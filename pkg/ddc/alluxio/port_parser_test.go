@@ -1,8 +1,12 @@
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
 
@@ -116,6 +120,83 @@ shortCircuit:
   volumeType: emptyDir
 monitoring: alluxio_runtime_metrics
 `
+
+func TestGetReservedPorts(t *testing.T) {
+	configMap :=  &v1.ConfigMap{
+		ObjectMeta:	metav1.ObjectMeta{
+			Name: "hbase-alluxio-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": valuesConfigMapData,
+		},
+	}
+	dataSets := []*v1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hbase",
+				Namespace: "fluid",
+			},
+			Status: v1alpha1.DatasetStatus{
+				Runtimes:      []v1alpha1.Runtime{
+					{
+						Name: "hbase",
+						Namespace: "fluid",
+						Type: "alluxio",
+					},
+				},
+
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "no-runtime",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "runtime-type",
+				Namespace: "fluid",
+			},
+			Status: v1alpha1.DatasetStatus{
+				Runtimes:      []v1alpha1.Runtime{
+					{
+						Type: "not-alluxio",
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "no-map",
+				Namespace: "fluid",
+			},
+			Status: v1alpha1.DatasetStatus{
+				Runtimes:      []v1alpha1.Runtime{
+					{
+						Type: "alluxio",
+					},
+				},
+			},
+		},
+	}
+	runtimeObjs  := []runtime.Object{}
+	runtimeObjs  = append(runtimeObjs, configMap)
+	for _, dataSet := range dataSets {
+		runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
+	}
+	fakeClient := fake.NewFakeClientWithScheme(testScheme,runtimeObjs...)
+	wantPorts := []int{20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008}
+	ports,err := GetReservedPorts(fakeClient)
+	if err!=nil{
+		t.Errorf("GetReservedPorts failed.")
+	}
+	if !reflect.DeepEqual(ports, wantPorts) {
+		t.Errorf("gotPorts = %v, want %v", ports, wantPorts)
+	}
+
+}
 
 func Test_parsePortsFromConfigMap(t *testing.T) {
 	type args struct {
