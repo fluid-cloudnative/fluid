@@ -5,14 +5,16 @@ IMG ?= registry.aliyuncs.com/fluid/runtime-controller
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # The Image URL to use in docker build and push
-DATASET_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/dataset-controller
-ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/alluxioruntime-controller
-JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controller
-GOOSEFSRUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/goosefsruntime-controller
-CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
-LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
-INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
-WEBHOOK_IMG ?= registry.aliyuncs.com/fluid/fluid-webhook
+# IMG_REPO ?= registry.aliyuncs.com/fluid
+IMG_REPO ?= fluidcloudnative
+DATASET_CONTROLLER_IMG ?= ${IMG_REPO}/dataset-controller
+ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
+JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
+GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
+CSI_IMG ?= ${IMG_REPO}/fluid-csi
+LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
+INIT_USERS_IMG ?= ${IMG_REPO}/init-users
+WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -166,8 +168,8 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook docker-build-goosefsruntime-controller
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook docker-push-goosefsruntime-controller
 
 # find or download controller-gen
 # download controller-gen if necessary

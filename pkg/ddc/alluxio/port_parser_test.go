@@ -122,9 +122,9 @@ monitoring: alluxio_runtime_metrics
 `
 
 func TestGetReservedPorts(t *testing.T) {
-	configMap :=  &v1.ConfigMap{
-		ObjectMeta:	metav1.ObjectMeta{
-			Name: "hbase-alluxio-values",
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase-alluxio-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -134,33 +134,32 @@ func TestGetReservedPorts(t *testing.T) {
 	dataSets := []*v1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "hbase",
+				Name:      "hbase",
 				Namespace: "fluid",
 			},
 			Status: v1alpha1.DatasetStatus{
-				Runtimes:      []v1alpha1.Runtime{
+				Runtimes: []v1alpha1.Runtime{
 					{
-						Name: "hbase",
+						Name:      "hbase",
 						Namespace: "fluid",
-						Type: "alluxio",
+						Type:      "alluxio",
 					},
 				},
-
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-runtime",
+				Name:      "no-runtime",
 				Namespace: "fluid",
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "runtime-type",
+				Name:      "runtime-type",
 				Namespace: "fluid",
 			},
 			Status: v1alpha1.DatasetStatus{
-				Runtimes:      []v1alpha1.Runtime{
+				Runtimes: []v1alpha1.Runtime{
 					{
 						Type: "not-alluxio",
 					},
@@ -169,11 +168,11 @@ func TestGetReservedPorts(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-map",
+				Name:      "no-map",
 				Namespace: "fluid",
 			},
 			Status: v1alpha1.DatasetStatus{
-				Runtimes:      []v1alpha1.Runtime{
+				Runtimes: []v1alpha1.Runtime{
 					{
 						Type: "alluxio",
 					},
@@ -181,15 +180,15 @@ func TestGetReservedPorts(t *testing.T) {
 			},
 		},
 	}
-	runtimeObjs  := []runtime.Object{}
-	runtimeObjs  = append(runtimeObjs, configMap)
+	runtimeObjs := []runtime.Object{}
+	runtimeObjs = append(runtimeObjs, configMap)
 	for _, dataSet := range dataSets {
 		runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme,runtimeObjs...)
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 	wantPorts := []int{20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008}
-	ports,err := GetReservedPorts(fakeClient)
-	if err!=nil{
+	ports, err := GetReservedPorts(fakeClient)
+	if err != nil {
 		t.Errorf("GetReservedPorts failed.")
 	}
 	if !reflect.DeepEqual(ports, wantPorts) {
