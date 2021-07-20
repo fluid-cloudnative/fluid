@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.dataBackup.name }}-script
 data:
-  databackuper.alluxio: |
+  databackuper.goosefs: |
     #!/bin/bash
     dataset=$DATASET_NAME
     namespace=$DATASET_NAMESPACE
@@ -17,14 +17,14 @@ data:
     targetPath="/host/"
     fi
 
-    result=$(alluxio fsadmin backup | sed -n '2p')
+    result=$(goosefs fsadmin backup | sed -n '2p')
 
     metadatafile=${targetPath}metadata-backup-${dataset}-${namespace}.gz
     metainfofile=${targetPath}${dataset}-${namespace}.yaml
 
     mv ${result##*Backup URI         : }  ${metadatafile}
 
-    result=$(alluxio fs count / | sed -n '2p')
+    result=$(goosefs fs count / | sed -n '2p')
     arr=($result)
     if [ ${#arr[@]} -ne "3" ]; then
       exit 1
@@ -43,10 +43,3 @@ data:
        echo "${metainfofile} backup failed"
        exit 1
     fi
-
-
-
-
-
-
-

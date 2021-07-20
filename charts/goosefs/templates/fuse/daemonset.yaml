@@ -1,0 +1,196 @@
+{{ if .Values.fuse.enabled -}}
+{{- $shortCircuitEnabled := .Values.shortCircuit.enabled -}}
+{{- $needDomainSocketVolume := and $shortCircuitEnabled (eq .Values.shortCircuit.policy "uuid") }}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "goosefs.fullname" . }}-fuse
+  labels:
+    app: {{ template "goosefs.name" . }}
+    chart: {{ template "goosefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: goosefs-fuse
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "goosefs.name" . }}
+      chart: {{ template "goosefs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: goosefs-fuse
+  template:
+    metadata:
+      labels:
+        app: {{ template "goosefs.name" . }}
+        chart: {{ template "goosefs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: goosefs-fuse
+    spec:
+      enableServiceLinks: false
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      hostPID: {{ .Values.fuse.hostPID }}
+      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: {{ .Values.fuse.fsGroup }}
+      affinity:
+      {{- if .Values.fuse.global }}
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - {{ template "goosefs.name" . }}
+                  - key: role
+                    operator: In
+                    values:
+                    - goosefs-worker
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- else }}
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ template "goosefs.name" . }}
+              - key: role
+                operator: In
+                values:
+                - goosefs-worker
+            topologyKey: kubernetes.io/hostname
+      {{- end }}
+      initContainers:
+        {{ if .Values.initUsers.enabled -}}
+        - name: init-fuse
+          image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
+          imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+          command: ["/entrypoint.sh"]
+          args:
+            - "chmod_fuse_mountpoint"
+          env:
+            - name: FLUID_FUSE_MOUNTPOINT
+              value: {{ .Values.fuse.mountPath | dir | quote }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: goosefs-fuse-mount
+              mountPath: {{ .Values.fuse.mountPath | dir }}
+        {{- end }}
+      containers:
+        - name: goosefs-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          {{- if .Values.fuse.resources  }}
+          resources:
+            {{- if .Values.fuse.resources.limits }}
+            limits:
+              cpu: {{ .Values.fuse.resources.limits.cpu }}
+              memory: {{ .Values.fuse.resources.limits.memory }}
+            {{- end }}
+            {{- if .Values.fuse.resources.requests }}
+            requests:
+              cpu: {{ .Values.fuse.resources.requests.cpu }}
+              memory: {{ .Values.fuse.resources.requests.memory }}
+            {{- end }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.fuse.args }}
+          args:
+{{ toYaml .Values.fuse.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          - name: GOOSEFS_CLIENT_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: GOOSEFS_CLIENT_JAVA_OPTS
+            value: " -Dgoosefs.user.hostname=${GOOSEFS_CLIENT_HOSTNAME} "
+          {{- range $key, $value := .Values.fuse.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          securityContext:
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/opt/goosefs/integration/fuse/bin/goosefs-fuse", "unmount", "{{ .Values.fuse.mountPath }}"]
+          envFrom:
+          - configMapRef:
+              name: {{ template "goosefs.fullname" . }}-config
+          volumeMounts:
+            {{ if .Values.initUsers.enabled -}}
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true
+            {{- end }}
+            - name: goosefs-fuse-device
+              mountPath: /dev/fuse
+            - name: goosefs-fuse-mount
+              mountPath: {{ .Values.fuse.mountPath | dir }}
+              mountPropagation: Bidirectional
+            {{- if $shortCircuitEnabled}}
+              {{- if eq .Values.shortCircuit.policy "uuid" }}
+            - name: goosefs-domain
+              mountPath: /opt/domain
+              {{- end }}
+              {{- if eq .Values.shortCircuit.policy "local" }}
+{{- include "goosefs.worker.tieredstoreVolumeMounts" . }}
+              {{- end }}
+            {{- end }}
+      restartPolicy: Always
+      volumes:
+        {{ if .Values.initUsers.enabled -}}
+        - name: user         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/passwd
+            type: FileOrCreate
+        - name: group         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/group
+            type: FileOrCreate
+        {{- end }}
+        - name: goosefs-fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: CharDevice
+        - name: goosefs-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.mountPath | dir }}
+            type: DirectoryOrCreate
+        {{- if $shortCircuitEnabled}}
+          {{- if eq .Values.shortCircuit.policy "uuid" }}
+{{- include "goosefs.worker.shortCircuit.volume" . }}
+          {{- end }}
+          {{- if eq .Values.shortCircuit.policy "local" }}
+{{- include "goosefs.worker.tieredstoreVolumes" . }}
+          {{- end }}
+        {{- end }}
+{{- end }}

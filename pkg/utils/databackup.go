@@ -32,18 +32,15 @@ func GetDataBackup(client client.Client, name, namespace string) (*datav1alpha1.
 	return &databackup, nil
 }
 
-// GetAddressOfMaster return the ip and port of alluxio-master
+// GetAddressOfMaster return the ip and port of engine master
 func GetAddressOfMaster(pod *v1.Pod) (nodeName string, ip string, rpcPort int32) {
 	// TODO: Get address of master by calling runtime controller interface instead of reading pod object
 	nodeName = pod.Spec.NodeName
 	ip = pod.Status.HostIP
 	for _, container := range pod.Spec.Containers {
-		if container.Name == "alluxio-master" {
-			for _, port := range container.Ports {
-				if port.Name == "rpc" {
-					rpcPort = port.HostPort
-				}
-			}
+		rpcPort = GetRpcPortFromMasterContainer(&container)
+		if rpcPort != 0 {
+			return
 		}
 	}
 	return
@@ -88,4 +85,19 @@ func ParseBackupRestorePath(backupRestorePath string) (pvcName string, path stri
 // GetBackupUserDir generate the temp dir of backup user
 func GetBackupUserDir(namespace string, name string) string {
 	return fmt.Sprintf("/tmp/backupuser/%s/%s", namespace, name)
+}
+
+func GetRpcPortFromMasterContainer(container *v1.Container) (rpcPort int32) {
+	if container == nil {
+		return
+	}
+	if container.Name == "alluxio-master" || container.Name == "goosefs-master" {
+		for _, port := range container.Ports {
+			if port.Name == "rpc" {
+				rpcPort = port.HostPort
+				return
+			}
+		}
+	}
+	return
 }

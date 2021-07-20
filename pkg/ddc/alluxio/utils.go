@@ -243,7 +243,7 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {
-	return cdatabackup.BACPUP_PATH_POD + "/" + e.GetMetadataInfoFileName()
+	return cdatabackup.AlluxioBackupPathPod + "/" + e.GetMetadataInfoFileName()
 }
 
 func (e *AlluxioEngine) GetMetadataFileName() string {

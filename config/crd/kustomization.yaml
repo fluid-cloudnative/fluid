@@ -6,6 +6,7 @@ resources:
 - bases/data.fluid.io_alluxioruntimes.yaml
 - bases/data.fluid.io_dataloads.yaml
 - bases/data.fluid.io_jindoruntimes.yaml
+- bases/data.fluid.io_goosefsruntimes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

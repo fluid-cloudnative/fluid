@@ -1,0 +1,8 @@
+name: goosefs
+apiVersion: v1
+description: FileSystem on the cloud based on TencentCloud Object Storage aimed for data acceleration. 
+version: 1.0.1
+home: https://cloud.tencent.com/document/product/436/56412
+maintainers:
+- name: Yuandong Xie 
+  email: chrisydxie@tencent.com

@@ -1,7 +1,8 @@
 package databackup
 
 const (
-	FINALIZER        = "fluid-databackup-controller-finalizer"
-	BACPUP_PATH_POD  = "/alluxio_backups"
-	DATABACKUP_CHART = "fluid-databackup"
+	Finalizer            = "fluid-databackup-controller-finalizer"
+	AlluxioBackupPathPod = "/alluxio_backups"
+	GooseFSBackupPathPod = "/goosefs_backups"
+	DatabackupChart      = "fluid-databackup"
 )

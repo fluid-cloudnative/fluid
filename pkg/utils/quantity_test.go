@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestTranformQuantityToUnits(t *testing.T) {
@@ -87,6 +88,35 @@ func TestTransformQuantityToJindoUnit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotValue := TransformQuantityToJindoUnit(tt.quantity); gotValue != tt.wantValue {
 				t.Errorf("TransformQuantityToJindoUnit() = %v, want %v", gotValue, tt.wantValue)
+			}
+		})
+	}
+}
+
+func TestTransformQuantityToGooseFSUnit(t *testing.T) {
+	testQuantity1 := resource.MustParse("10Gi")
+	testQuantity2 := resource.MustParse("10M")
+
+	tests := []struct {
+		name      string
+		quantity  *resource.Quantity
+		wantValue string
+	}{
+		{
+			name:      "test1 for TransformQuantityToGooseFSUnit",
+			quantity:  &testQuantity1,
+			wantValue: "10GB",
+		},
+		{
+			name:      "test2 for TransformQuantityToGooseFSUnit",
+			quantity:  &testQuantity2,
+			wantValue: "10M",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotValue := TransformQuantityToGooseFSUnit(tt.quantity); gotValue != tt.wantValue {
+				t.Errorf("TransformQuantityToGooseFSUnit() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}

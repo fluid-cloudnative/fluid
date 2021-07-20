@@ -36,7 +36,7 @@ spec:
     - name: tool
       command: ["/bin/sh", "-c"]
       args:
-        - "/scripts/alluxio_databackup.sh"
+        - "/scripts/databackup.sh"
       image: {{ .Values.dataBackup.image }}
       imagePullPolicy: IfNotPresent
       securityContext:
@@ -44,7 +44,7 @@ spec:
         runAsGroup: {{ .Values.group }}
       env:
         {{- if .Values.dataBackup.javaEnv }}
-        - name: ALLUXIO_JAVA_OPTS
+        - name: GOOSEFS_JAVA_OPTS
           value: {{ .Values.dataBackup.javaEnv | quote }}
         {{- end }}
         {{- if .Values.dataBackup.namespace }}
@@ -66,7 +66,7 @@ spec:
       volumeMounts:
         {{- if .Values.dataBackup.workdir }}
         - name: backup
-          mountPath: /alluxio_backups
+          mountPath: /goosefs_backups
         {{- end }}
         - mountPath: /scripts
           name: script
@@ -91,9 +91,9 @@ spec:
     - name: backup
       hostPath:
         {{- if .Values.dataBackup.namespace }}
-        path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/{{ .Values.dataBackup.namespace }}/{{  .Values.dataBackup.dataset }}
+        path: {{ .Values.dataBackup.workdir  }}/goosefs-backup/{{ .Values.dataBackup.namespace }}/{{  .Values.dataBackup.dataset }}
         {{- else }}
-        path: {{ .Values.dataBackup.workdir  }}/alluxio-backup/default/{{ .Values.dataBackup.dataset }}
+        path: {{ .Values.dataBackup.workdir  }}/goosefs-backup/default/{{ .Values.dataBackup.dataset }}
         {{- end }}
         type: DirectoryOrCreate
     {{- end }}
@@ -110,8 +110,8 @@ spec:
       configMap:
         name: {{ .Values.dataBackup.name }}-script
         items:
-            - key: databackuper.alluxio
-              path: alluxio_databackup.sh
+            - key: databackuper.goosefs
+              path: databackup.sh
               mode: 365
     {{- if .Values.initUsers.enabled }}
     - name: dir
