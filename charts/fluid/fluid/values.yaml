@@ -6,13 +6,13 @@ workdir: /tmp
 
 dataset:
   controller:
-    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-4ded84e
+    image: registry.aliyuncs.com/fluid/dataset-controller:v0.6.0-df1c234
 
 csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-4ded84e
+    image: registry.aliyuncs.com/fluid/fluid-csi:v0.6.0-df1c234
   kubelet:
     rootDir: /var/lib/kubelet
 
@@ -23,9 +23,9 @@ runtime:
     portRange: 20000-26000
     enabled: true
     init:
-      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-4ded84e
+      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-df1c234
     controller:
-      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-4ded84e
+      image: registry.aliyuncs.com/fluid/alluxioruntime-controller:v0.6.0-df1c234
     runtime:
       image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-2-SNAPSHOT-52ad95c
     fuse:
@@ -39,15 +39,15 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.6.0
     controller:
-      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-4ded84e
+      image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-df1c234
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000
     enabled: true
     init:
-      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-6a86b3f
+      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-df1c234
     controller:
-      image: registry.aliyuncs.com/fluid/goosefsruntime-controller:v0.6.0-1c81860 
+      image: registry.aliyuncs.com/fluid/goosefsruntime-controller:v0.6.0-df1c234
     runtime:
       image: registry.aliyuncs.com/fluid/goosefs:v1.0.1
     fuse:
@@ -55,5 +55,5 @@ runtime:
 
 webhook:
   enabled: false
-  image: registry.aliyuncs.com/fluid/fluid-webhook:v0.6.0-4ded84e
+  image: registry.aliyuncs.com/fluid/fluid-webhook:v0.6.0-df1c234
 
