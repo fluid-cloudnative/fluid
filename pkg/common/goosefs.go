@@ -14,9 +14,9 @@ const (
 
 	GooseFSFuseImageEnv = "GOOSEFS_FUSE_IMAGE_ENV"
 
-	DefaultGooseFSRuntimeImage = "registry.aliyuncs.com/fluid/goosefs:v1.0.1"
+	DefaultGooseFSRuntimeImage = "ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1"
 
-	DefaultGooseFSFuseImage = "registry.aliyuncs.com/fluid/goosefs-fuse:v1.0.1"
+	DefaultGooseFSFuseImage = "ccr.ccs.tencentyun.com/goosefs/goosefs-fuse:v1.0.1"
 )
 
 var (

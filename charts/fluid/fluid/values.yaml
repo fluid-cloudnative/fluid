@@ -49,9 +49,9 @@ runtime:
     controller:
       image: fluidcloudnative/goosefsruntime-controller:v0.6.0-4ca123f
     runtime:
-      image: fluidcloudnative/goosefs:v1.0.1
+      image: ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1
     fuse:
-      image: fluidcloudnative/goosefs-fuse:v1.0.1
+      image: ccr.ccs.tencentyun.com/goosefs/goosefs-fuse:v1.0.1
 
 webhook:
   enabled: false
