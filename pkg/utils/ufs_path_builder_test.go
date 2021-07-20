@@ -22,7 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-func TestGenAlluxioUFSRootPath(t *testing.T) {
+func TestGenUFSRootPathForAlluxio(t *testing.T) {
 	testCases := map[string]struct {
 		mounts       []datav1alpha1.Mount
 		wantMount    *datav1alpha1.Mount

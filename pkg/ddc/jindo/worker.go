@@ -3,9 +3,10 @@ package jindo
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -31,7 +32,7 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 	}
 
 	e.Log.Info("check the desired and current replicas",
-		"desriedReplicas", replicas,
+		"desiredReplicas", replicas,
 		"currentReplicas", currentReplicas)
 
 	if currentReplicas == 0 {

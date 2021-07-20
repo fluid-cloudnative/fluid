@@ -17,6 +17,10 @@ package databackup
 
 import (
 	"context"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -31,11 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
 
 // reconcileRequestContext wraps up necessary info for reconciliation
@@ -106,7 +107,7 @@ func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 	}
 	// 4. add finalizer and requeue
-	if !utils.ContainsString(ctx.DataBackup.ObjectMeta.GetFinalizers(), cdatabackup.FINALIZER) {
+	if !utils.ContainsString(ctx.DataBackup.ObjectMeta.GetFinalizers(), cdatabackup.Finalizer) {
 		return r.addFinalierAndRequeue(ctx)
 	}
 
@@ -153,8 +154,8 @@ func (r *DataBackupReconciler) AddOwnerAndRequeue(ctx reconcileRequestContext, d
 }
 
 func (r *DataBackupReconciler) addFinalierAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
-	ctx.DataBackup.ObjectMeta.Finalizers = append(ctx.DataBackup.ObjectMeta.Finalizers, cdatabackup.FINALIZER)
-	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdatabackup.FINALIZER)
+	ctx.DataBackup.ObjectMeta.Finalizers = append(ctx.DataBackup.ObjectMeta.Finalizers, cdatabackup.Finalizer)
+	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdatabackup.Finalizer)
 	prevGeneration := ctx.DataBackup.ObjectMeta.GetGeneration()
 	if err := r.Update(ctx, &ctx.DataBackup); err != nil {
 		ctx.Log.Error(err, "failed to add finalizer to databackup", "StatusUpdateError", err)

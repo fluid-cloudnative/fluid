@@ -40,6 +40,18 @@ runtime:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.6.0
     controller:
       image: registry.aliyuncs.com/fluid/jindoruntime-controller:v0.6.0-4ded84e
+  goosefs:
+    runtimeWorkers: 3
+    portRange: 26000-32000
+    enabled: true
+    init:
+      image: registry.aliyuncs.com/fluid/init-users:v0.6.0-6a86b3f
+    controller:
+      image: registry.aliyuncs.com/fluid/goosefsruntime-controller:v0.6.0-1c81860 
+    runtime:
+      image: registry.aliyuncs.com/fluid/goosefs:v1.0.1
+    fuse:
+      image: registry.aliyuncs.com/fluid/goosefs-fuse:v1.0.1
 
 webhook:
   enabled: false

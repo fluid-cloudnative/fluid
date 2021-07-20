@@ -1,0 +1,56 @@
+# Default values for fluid-dataloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dataBackup:
+  # Optional
+  # Default: default
+  # Description: the namespace of the dataset and dataBackup
+  namespace: #<dataset-namespace>
+
+  # Required
+  # Description: the dataset that this DataBackup targets
+  dataset: #<dataset-name>
+
+  # Required
+  # Description: the name of DataBackup
+  name: #<dataBackup-name>
+
+  # Optional
+  # Description: the node to run the backup pod
+  nodeName: #<goosefs-master-nodeName>
+
+  # Required
+  # Description: the backup pod image
+  image: registry.aliyuncs.com/fluid/goosefs:v1.0.1
+
+  # Required
+  # Description: the java Env to find the master
+  javaEnv:
+
+  # Required
+  # Description: the work path in node
+  workdir: /tmp
+
+  # Required
+  # Description: the path to save data
+  path: /
+
+  # Optional
+  # Description: the pvc to save data
+  # if it is null, will backup in local
+  # pvcName: test
+
+initUsers:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  args: "1000"
+  envUsers: ""
+  dir: ""
+
+# Security Context
+user: 1000
+group: 1000
+fsGroup: 1000
