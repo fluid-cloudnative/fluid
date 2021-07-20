@@ -776,11 +776,11 @@ func TestParseRuntimeImage(t *testing.T) {
 		{
 			name: "test0",
 			args: args{
-				image:           "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+				image:           "ccr.ccs.tencentyun.com/goosefs/goosefs",
 				tag:             "v1.0.1",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+			want:  "ccr.ccs.tencentyun.com/goosefs/goosefs",
 			want1: "v1.0.1",
 			want2: "IfNotPresent",
 		},
@@ -791,7 +791,7 @@ func TestParseRuntimeImage(t *testing.T) {
 				tag:             "",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs",
+			want:  "ccr.ccs.tencentyun.com/goosefs/goosefs",
 			want1: "v1.0.1",
 			want2: "IfNotPresent",
 		},
@@ -799,7 +799,7 @@ func TestParseRuntimeImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &GooseFSEngine{}
-			os.Setenv(common.GooseFSRuntimeImageEnv, "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs:v1.0.1")
+			os.Setenv(common.GooseFSRuntimeImageEnv, "ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1")
 			got, got1, got2 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("GooseFSEngine.parseRuntimeImage() got = %v, want %v", got, tt.want)
@@ -830,11 +830,11 @@ func TestParseFuseImage(t *testing.T) {
 		{
 			name: "test0",
 			args: args{
-				image:           "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+				image:           "ccr.ccs.tencentyun.com/goosefs/goosefs-fuse",
 				tag:             "v1.0.1",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+			want:  "ccr.ccs.tencentyun.com/goosefs/goosefs-fuse",
 			want1: "v1.0.1",
 			want2: "IfNotPresent",
 		},
@@ -845,7 +845,7 @@ func TestParseFuseImage(t *testing.T) {
 				tag:             "",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse",
+			want:  "ccr.ccs.tencentyun.com/goosefs/goosefs-fuse",
 			want1: "v1.0.1",
 			want2: "IfNotPresent",
 		},
@@ -853,7 +853,7 @@ func TestParseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &GooseFSEngine{}
-			os.Setenv(common.GooseFSFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/fluid/goosefs-fuse:v1.0.1")
+			os.Setenv(common.GooseFSFuseImageEnv, "ccr.ccs.tencentyun.com/goosefs/goosefs-fuse:v1.0.1")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("GooseFSEngine.parseFuseImage() got = %v, want %v", got, tt.want)

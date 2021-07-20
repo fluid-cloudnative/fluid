@@ -22,7 +22,7 @@ dataBackup:
 
   # Required
   # Description: the backup pod image
-  image: registry.aliyuncs.com/fluid/goosefs:v1.0.1
+  image: ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1
 
   # Required
   # Description: the java Env to find the master
