@@ -43,7 +43,7 @@ runtime:
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000
-    enabled: true
+    enabled: false 
     init:
       image: fluidcloudnative/init-users:v0.6.0-4ca123f
     controller:
