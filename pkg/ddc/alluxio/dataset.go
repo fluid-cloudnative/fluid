@@ -236,5 +236,3 @@ func (e *AlluxioEngine) SetUFSUpdated() (err error) {
 func (e *AlluxioEngine) SetUFSUpdating() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
 }
-
-

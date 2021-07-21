@@ -120,7 +120,7 @@ func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error)
 func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
 	// 1.get the updated ufs map
 	// updatedUFSMap, err
-	updatedUFSMap, err  := e.GetUpdateUFSMap()
+	updatedUFSMap, err := e.GetUpdateUFSMap()
 
 	if err != nil {
 		e.Log.Error(err, "Failed to check mount points changes")

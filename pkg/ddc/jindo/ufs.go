@@ -44,7 +44,6 @@ func (e *JindoEngine) reportSummary() (summary string, err error) {
 	return fileUtils.ReportSummary()
 }
 
-
 func (e *JindoEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
 	return
 }

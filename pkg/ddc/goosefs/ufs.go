@@ -73,6 +73,18 @@ func (e *GooseFSEngine) PrepareUFS() (err error) {
 	return
 }
 
+func (e *GooseFSEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
+	return
+}
+
+func (e *GooseFSEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+	return
+}
+
+func (e *GooseFSEngine) GetUpdateUFSMap() (updatedUFSMap map[string][]string, err error) {
+	return
+}
+
 ////du the ufs
 //func (e *GooseFSEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
 //	podName, containerName := e.getMasterPodInfo()
