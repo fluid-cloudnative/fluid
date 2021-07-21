@@ -223,27 +223,6 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 		}
 	} else {
 		log.Info("The runtime is already setup.")
-		engine, ok := engine.(*base.TemplateEngine)
-		if ok {
-			ctx.Log.V(1).Info("engine set up, check if we need to update mount points ")
-			shouldUpdate, added, removed, err := engine.ShouldUpdateUFS()
-
-			if err != nil {
-				log.Error(err, "Failed to check mount points changes")
-			}
-			if shouldUpdate {
-				updateReady, err := engine.UpdateUFS(added, removed)
-				if err != nil {
-					r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to add or remove mount points %v", err)
-					log.Error(err, "Failed to add or remove mount points")
-				}
-				if !updateReady {
-					//engine.UFSUpdating()
-					return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-				}
-				err = engine.UFSUpdated()
-			}
-		}
 	}
 
 	// 2.Setup the volume

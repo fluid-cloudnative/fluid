@@ -44,10 +44,15 @@ func (e *JindoEngine) reportSummary() (summary string, err error) {
 	return fileUtils.ReportSummary()
 }
 
-func (e *JindoEngine) ShouldUpdateUFS() (should bool, added []string, removed []string, err error) {
+
+func (e *JindoEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
 	return
 }
 
-func (e *JindoEngine) UpdateUFS(added []string, removed []string) (ready bool, err error) {
+func (e *JindoEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+	return
+}
+
+func (e *JindoEngine) GetUpdateUFSMap() (updatedUFSMap map[string][]string, err error) {
 	return
 }

@@ -97,9 +97,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 }
 
 func (e *AlluxioEngine) getMounts() (resultInCtx []string, resultHaveMounted []string, err error) {
-	fmt.Println("get dataset info", "Client", e.Client)
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	fmt.Println("get dataset info", "dataset", dataset)
 	e.Log.V(1).Info("get dataset info", "dataset", dataset)
 	if err != nil {
 		return resultInCtx, resultHaveMounted, err
@@ -175,7 +173,7 @@ func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string,
 	return added, removed
 }
 
-func (e *AlluxioEngine) processUFS(added []string, removed []string) (err error) {
+func (e *AlluxioEngine) processUFS(updatedUFSMap map[string][]string) (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return err
@@ -196,6 +194,7 @@ func (e *AlluxioEngine) processUFS(added []string, removed []string) (err error)
 		}
 
 		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		added := updatedUFSMap["added"]
 		if len(added) > 0 && utils.ContainsString(added, alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range mount.Options {
@@ -227,6 +226,7 @@ func (e *AlluxioEngine) processUFS(added []string, removed []string) (err error)
 	}
 
 	// unmount the mount point in the removed array
+	removed := updatedUFSMap["removed"]
 	if len(removed) > 0 {
 		for _, mount_remove := range removed {
 			fileUitls.UnMount(mount_remove)

@@ -102,6 +102,72 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is ready.",
 				corev1.ConditionTrue)
+		case datav1alpha1.FailedDatasetPhase:
+			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+				"The ddc runtime is not ready.",
+				corev1.ConditionFalse)
+		default:
+			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+				"The ddc runtime is unknown.",
+				corev1.ConditionFalse)
+		}
+
+		datasetToUpdate.Status.Phase = phase
+		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
+			cond)
+
+		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
+		// datasetToUpdate.Status.CacheStates =
+
+		if datasetToUpdate.Status.HCFSStatus == nil {
+			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
+			if err != nil {
+				return err
+			}
+		} else {
+			e.Log.Info("No need to update HCFS status")
+		}
+
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+			if err != nil {
+				e.Log.Error(err, "Update dataset")
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		e.Log.Error(err, "Update dataset")
+		return err
+	}
+
+	return
+}
+
+// // Check if it's bound to the dataset
+// func (e *AlluxioEngine) IsBoundToDataset() (bound bool, err error) {
+// 	return
+// }
+func (e *AlluxioEngine) UpdateMountStatus(phase datav1alpha1.DatasetPhase) (err error) {
+	// 1. update the runtime status
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return err
+	}
+
+	// 2.update the dataset status
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		var cond datav1alpha1.DatasetCondition
+
+		switch phase {
 		case datav1alpha1.UpdatingDatasetPhase:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdating, datav1alpha1.DatasetUpdatingReason,
 				"The ddc runtime is updating.",
@@ -110,10 +176,6 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdateReady, datav1alpha1.DatasetUpdateReadyReason,
 				"The ddc runtime is updated.",
 				corev1.ConditionTrue)
-		case datav1alpha1.FailedDatasetPhase:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is not ready.",
-				corev1.ConditionFalse)
 		default:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is unknown.",
@@ -146,7 +208,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
-				e.Log.Error(err, "Update dataset")
+				e.Log.Error(err, "Update mount status")
 				return err
 			}
 		}
@@ -155,26 +217,24 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 	})
 
 	if err != nil {
-		e.Log.Error(err, "Update dataset")
+		e.Log.Error(err, "Update mount status")
 		return err
 	}
 
 	return
 }
 
-// // Check if it's bound to the dataset
-// func (e *AlluxioEngine) IsBoundToDataset() (bound bool, err error) {
-// 	return
-// }
-
 func (e *AlluxioEngine) BindToDataset() (err error) {
-	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	return e.UpdateMountStatus(datav1alpha1.BoundDatasetPhase)
 }
 
-func (e *AlluxioEngine) UFSUpdated() (err error) {
-	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
+func (e *AlluxioEngine) SetUFSUpdated() (err error) {
+	return e.UpdateMountStatus(datav1alpha1.UpdatedDatasetPhase)
 }
 
-func (e *AlluxioEngine) UFSUpdating() (err error) {
+func (e *AlluxioEngine) SetUFSUpdating() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
 }
+
+

@@ -46,10 +46,8 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
-// ShouldCheckUFS checks if it requires checking UFS
-func (e *AlluxioEngine) ShouldUpdateUFS() (bool, []string, []string, error) {
-
-	var should = false
+func (e *AlluxioEngine) GetUpdateUFSMap() (map[string][]string, error) {
+	updateUFSMap := make(map[string][]string)
 	// For Alluxio Engine, always attempt to prepare UFS
 	resultInCtx, resultHaveMounted, err := e.getMounts()
 
@@ -57,11 +55,15 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (bool, []string, []string, error) {
 	//var added, removed []string
 	added, removed := e.calculateMountPointsChanges(resultHaveMounted, resultInCtx)
 
-	if len(added) > 0 || len(removed) > 0 {
-		should = true
+	if len(added) > 0 {
+		updateUFSMap["added"] = added
 	}
 
-	return should, added, removed, err
+	if len(removed) > 0 {
+		updateUFSMap["removed"] = removed
+	}
+
+	return updateUFSMap, err
 }
 
 // PrepareUFS does all the UFS preparations
@@ -91,21 +93,50 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
-func (e *AlluxioEngine) UpdateUFS(added []string, removed []string) (ready bool, err error) {
-	// set update status to updating
-	errUpdating := e.UFSUpdating()
+func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
+	//1. set update status to updating
+	errUpdating := e.SetUFSUpdating()
 	if errUpdating != nil {
 		e.Log.Error(err, "Failed to update dataset status to updating")
-		return ready, err
+		return err
 	}
-	// process added and removed
-	err = e.processUFS(added, removed)
+	//2. process added and removed
+	err = e.processUFS(updatedUFSMap)
 	if err != nil {
 		e.Log.Error(err, "Failed to add or remove mount points")
-		return ready, err
+		return err
 	}
-	ready = true
-	return ready, err
+
+	//3. update dataset status to updated
+	err = e.SetUFSUpdated()
+	if err != nil {
+		e.Log.Error(err, "Failed to update dataset status to updated")
+		return err
+	}
+
+	return err
+}
+
+func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+	// 1.get the updated ufs map
+	// updatedUFSMap, err
+	updatedUFSMap, err  := e.GetUpdateUFSMap()
+
+	if err != nil {
+		e.Log.Error(err, "Failed to check mount points changes")
+	}
+
+	if len(updatedUFSMap) > 0 {
+		//2. update the ufs
+		err := e.UpdateUFS(updatedUFSMap)
+		if err != nil {
+			e.Log.Error(err, "Failed to add or remove mount points")
+		}
+	}
+
+	updateReady = true
+
+	return updateReady, err
 }
 
 ////du the ufs
