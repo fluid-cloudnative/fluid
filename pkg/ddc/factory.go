@@ -15,6 +15,7 @@ package ddc
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,6 +31,7 @@ func init() {
 	buildFuncMap = map[string]buildFunc{
 		"alluxio": alluxio.Build,
 		"jindo":   jindo.Build,
+		"goosefs": goosefs.Build,
 	}
 }
 

@@ -5,13 +5,16 @@ IMG ?= registry.aliyuncs.com/fluid/runtime-controller
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # The Image URL to use in docker build and push
-DATASET_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/dataset-controller
-ALLUXIORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/alluxioruntime-controller
-JINDORUNTIME_CONTROLLER_IMG ?= registry.aliyuncs.com/fluid/jindoruntime-controller
-CSI_IMG ?= registry.aliyuncs.com/fluid/fluid-csi
-LOADER_IMG ?= registry.aliyuncs.com/fluid/fluid-dataloader
-INIT_USERS_IMG ?= registry.aliyuncs.com/fluid/init-users
-WEBHOOK_IMG ?= registry.aliyuncs.com/fluid/fluid-webhook
+# IMG_REPO ?= registry.aliyuncs.com/fluid
+IMG_REPO ?= fluidcloudnative
+DATASET_CONTROLLER_IMG ?= ${IMG_REPO}/dataset-controller
+ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
+JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
+GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
+CSI_IMG ?= ${IMG_REPO}/fluid-csi
+LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
+INIT_USERS_IMG ?= ${IMG_REPO}/init-users
+WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -42,12 +45,12 @@ all: build
 
 # Run tests
 test: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
 unit-test: generate fmt vet
-	GO111MODULE=off go list ./... | grep -v controller | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
+	GO111MODULE=off go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build binary
 
@@ -64,6 +67,9 @@ alluxioruntime-controller-build: generate fmt vet
 
 jindoruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+
+goosefsruntime-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
 
 webhook-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
@@ -122,6 +128,9 @@ docker-build-alluxioruntime-controller: generate fmt vet
 docker-build-jindoruntime-controller: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-build-goosefsruntime-controller: generate fmt vet
+	docker build --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
@@ -144,6 +153,9 @@ docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 docker-push-jindoruntime-controller: docker-build-jindoruntime-controller
 	docker push ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-push-goosefsruntime-controller: docker-build-goosefsruntime-controller
+	docker push ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
@@ -156,8 +168,8 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook
+docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users fluid-build-webhook docker-build-goosefsruntime-controller
+docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook docker-push-goosefsruntime-controller
 
 # find or download controller-gen
 # download controller-gen if necessary

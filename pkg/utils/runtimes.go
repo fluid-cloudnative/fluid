@@ -17,6 +17,7 @@ package utils
 
 import (
 	"context"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,6 +75,20 @@ func GetJindoRuntime(client client.Client, name, namespace string) (*data.JindoR
 		Name:      name,
 	}
 	var runtime data.JindoRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+	return &runtime, nil
+}
+
+// GetGooseFSRuntime gets GooseFS Runtime object with the given name and namespace
+func GetGooseFSRuntime(client client.Client, name, namespace string) (*data.GooseFSRuntime, error) {
+
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.GooseFSRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}

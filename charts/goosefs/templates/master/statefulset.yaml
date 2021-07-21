@@ -1,0 +1,436 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isEmbedded := (eq .Values.journal.type "EMBEDDED") }}
+{{- $isHaEmbedded := and $isEmbedded (gt $masterCount 1) }}
+{{- $isUfsLocal := and (eq .Values.journal.type "UFS") (eq .Values.journal.ufsType "local") }}
+{{- $needJournalVolume := or $isEmbedded $isUfsLocal }}
+{{- $hostNetwork := .Values.master.hostNetwork }}
+{{- $hostPID := .Values.master.hostPID }}
+{{- $name := include "goosefs.name" . }}
+{{- $fullName := include "goosefs.fullname" . }}
+{{- $chart := include "goosefs.chart" . }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullName }}-master
+  labels:
+    name: {{ $fullName }}-master
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: goosefs-master
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      role: goosefs-master
+      name: {{ $fullName }}-master
+  serviceName: {{ $fullName }}-master
+  replicas: {{ $masterCount }}
+  template:
+    metadata:
+      labels:
+        name: {{ $fullName }}-master
+        app: {{ $name }}
+        chart: {{ $chart }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: goosefs-master
+    spec:
+      enableServiceLinks: false
+      hostNetwork: {{ $hostNetwork }}
+      hostPID: {{ .Values.master.hostPID }}
+      dnsPolicy: {{ .Values.master.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
+      nodeSelector:
+      {{- if .Values.master.nodeSelector }}
+{{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      securityContext:
+        fsGroup: {{ .Values.fsGroup }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      affinity:
+      {{- if .Values.master.affinity }}
+{{ toYaml .Values.master.affinity | indent 8  }}
+      {{- end }}
+      initContainers:
+      {{ if .Values.initUsers.enabled -}}
+      - name: init-users
+        image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
+        imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+        command: ["/entrypoint.sh"]
+        args:
+          - "init_users"
+        env:
+          {{- if .Values.initUsers.envUsers }}
+          - name: FLUID_INIT_USERS
+            value: {{.Values.initUsers.envUsers | quote }}
+          {{- end }}
+          {{- if .Values.initUsers.envTieredPaths }}
+          - name: FLUID_TIERSTORE_PATHS
+            value: {{ .Values.initUsers.envTieredPaths | quote }}
+          {{- end }}
+        volumeMounts:
+          - name: dir
+            mountPath: /tmp
+          - name: user
+            mountPath: /tmp/passwd
+          - name: group
+            mountPath: /tmp/group
+      {{- end }}
+      {{- if .Values.journal.format.runFormat }}
+      - name: journal-format
+        image: {{ .Values.image }}:{{ .Values.imageTag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        securityContext:
+          runAsUser: {{ .Values.user }}
+        command: ["goosefs","formatJournal"]
+        volumeMounts:
+          {{ if .Values.initUsers.enabled -}}
+          - name: user
+            mountPath: /etc/passwd
+            readOnly: true
+          - name: group
+            mountPath: /etc/group
+            readOnly: true
+          {{- end}}
+          - name: goosefs-journal
+            mountPath: /journal
+      {{- end}}
+      containers:
+        {{- if .Values.apiGateway.enabled }}
+        - name: api-gateway
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.apiGateway.resources  }}
+{{ include "goosefs.apiGateway.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.apiGateway.args }}
+          args:
+{{ toYaml .Values.apiGateway.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          - name: GOOSEFS_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          envFrom:
+          - configMapRef:
+              name: {{ $fullName }}-config
+          ports:
+          - containerPort: {{ .Values.apiGateway.ports.rest }}
+            name: rest
+        {{- end }}
+        - name: goosefs-master
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
+          {{- if .Values.master.resources  }}
+{{ include "goosefs.master.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.master.args }}
+          args:
+{{ toYaml .Values.master.args | trim | indent 12 }}
+          {{- end }}
+          {{- if $isHaEmbedded }}
+          env:
+          - name: GOOSEFS_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{- else if $isSingleMaster }}
+          env:
+          - name: GOOSEFS_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          {{- end }}
+          {{- range $key, $value := .Values.master.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ $fullName }}-config
+          ports:
+          - containerPort: {{ .Values.master.ports.rpc }}
+            name: rpc
+          - containerPort: {{ .Values.master.ports.web }}
+            name: web
+          {{- if $isHaEmbedded }}
+          - containerPort: {{ .Values.master.ports.embedded }}
+            name: embedded
+          {{- end }}
+          volumeMounts:
+          {{ if .Values.master.restore.enabled -}}
+          {{- if .Values.master.restore.pvcName }}
+          - name: pvc
+            mountPath: /pvc
+          {{- else }}
+          - name: host
+            mountPath: /host
+        {{- end }}
+        {{- end }}
+          {{- if .Values.master.backupPath }}
+          - name: backup
+            mountPath: /goosefs_backups
+          {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+          - name: hdfs-confs
+            mountPath: /hdfs-config
+            readOnly: true
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initUsers.enabled }}
+          - name: user
+            mountPath: /etc/passwd
+            readOnly: true
+          - name: group
+            mountPath: /etc/group
+            readOnly: true
+          {{- end }}
+          {{- if $needJournalVolume }}
+          - name: goosefs-journal
+            mountPath: /journal
+          {{- end }}
+          {{- if .Values.ufsPaths }}   
+            {{- range .Values.ufsPaths }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}   
+            {{- range .Values.ufsVolumes }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.metastore }}
+          - name: goosefs-metastore
+            mountPath: {{ .Values.metastore.mountPath }}
+          {{- end }}
+          {{- if .Values.secrets }}
+            {{- if .Values.secrets.master }}
+- include "goosefs.master.secretVolumeMounts" . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.mounts }}
+            {{- range .Values.mounts }}
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
+            {{- end }}
+          {{- end }}
+        - name: goosefs-job-master
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
+          {{- if .Values.jobMaster.resources  }}
+{{ include "goosefs.jobMaster.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.jobMaster.args }}
+          args:
+{{ toYaml .Values.jobMaster.args | trim | indent 12 }}
+          {{- end }}
+          {{- if $isHaEmbedded }}
+          env:
+          - name: GOOSEFS_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{- else if $isSingleMaster }}
+          env:
+          - name: GOOSEFS_MASTER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          {{- end }}
+          {{- range $key, $value := .Values.jobMaster.env }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ $fullName }}-config
+          ports:
+          - containerPort: {{ .Values.jobMaster.ports.rpc }}
+            name: job-rpc
+          - containerPort: {{ .Values.jobMaster.ports.web }}
+            name: job-web
+          {{- if $isHaEmbedded }}
+          - containerPort: {{ .Values.jobMaster.ports.embedded }}
+            name: job-embedded
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+          - name: hdfs-confs
+            mountPath: /hdfs-config
+            readOnly: true
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initUsers.enabled }}
+          - name: user
+            mountPath: /etc/passwd
+            readOnly: true
+          - name: group
+            mountPath: /etc/group
+            readOnly: true
+          {{- end }}
+          {{- if .Values.secrets }}
+            {{- if .Values.secrets.master }}
+{{- include "goosefs.master.secretVolumeMounts" . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsPaths }}   
+            {{- range .Values.ufsPaths }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}   
+            {{- range .Values.ufsVolumes }}
+          - mountPath: {{ .containerPath }}
+            name: {{ .name }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.mounts }}
+            {{- range .Values.mounts }}
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
+            {{- end }}
+          {{- end }}
+      restartPolicy: Always
+      volumes:
+        {{ if .Values.master.restore.enabled -}}
+        {{- if .Values.master.restore.pvcName }}
+        - name: pvc
+          persistentVolumeClaim:
+            claimName: {{ .Values.master.restore.pvcName }}
+        {{- else }}
+        - name: host
+          hostPath:
+            path: {{ .Values.master.restore.path }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- end }}
+        {{- if .Values.master.backupPath }}
+        - name: backup
+          hostPath:
+            path: {{ .Values.master.backupPath }}
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+            items:
+            {{ if .Values.hadoopConfig.includeHdfsSite -}}
+            - key: hdfs-site.xml
+              path: hdfs-site.xml
+            {{- end }}
+            {{- if .Values.hadoopConfig.includeCoreSite }}
+            - key: core-site.xml
+              path: core-site.xml
+            {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.initUsers.enabled }}
+        - name: dir
+          hostPath:
+            path: {{ .Values.initUsers.dir }}
+            type: DirectoryOrCreate 
+        - name: user         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/passwd
+            type: FileOrCreate
+        - name: group         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/group
+            type: FileOrCreate
+        {{- end }}
+        {{- if .Values.secrets }}
+          {{- if .Values.secrets.master }}
+            {{- range $key, $val := .Values.secrets.master }}
+        - name: secret-{{ $key }}-volume
+          secret:
+            secretName: {{ $key }}
+            defaultMode: 256
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.mounts }}
+          {{- range .Values.mounts }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+        {{- if .Values.metastore }}
+          {{- if eq .Values.metastore.volumeType "emptyDir" }}
+        - name: goosefs-metastore
+          emptyDir:
+            medium: {{ .Values.metastore.medium }}
+            sizeLimit: {{ .Values.metastore.size | quote }}
+          {{- end }}
+        {{- end}}
+        {{- if and $needJournalVolume (eq .Values.journal.volumeType "emptyDir") }}
+        - name: goosefs-journal
+          emptyDir:
+            medium: {{ .Values.journal.medium }}
+            sizeLimit: {{ .Values.journal.size | quote }}
+        {{- end }}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+            type: ""
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+  volumeClaimTemplates:
+  {{- if and $needJournalVolume (eq .Values.journal.volumeType "persistentVolumeClaim") }}
+    - metadata:
+        name: goosefs-journal
+      spec:
+        storageClassName: {{ .Values.journal.storageClass }}
+        accessModes:
+{{ toYaml .Values.journal.accessModes | indent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.journal.size }}
+  {{- end }}
+  {{- if .Values.metastore }}
+    {{- if eq .Values.metastore.volumeType "persistentVolumeClaim" }}
+    - metadata:
+        name: goosefs-metastore
+      spec:
+        storageClassName: {{ .Values.metastore.storageClass }}
+        accessModes:
+{{ toYaml .Values.metastore.accessModes | indent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.metastore.size }}
+    {{- end }}
+  {{- end }}

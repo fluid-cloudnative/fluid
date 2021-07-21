@@ -15,12 +15,13 @@ limitations under the License.
 package utils
 
 import (
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestGetDataBackup(t *testing.T) {
@@ -187,6 +188,143 @@ func TestGetBackupUserDir(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetBackupUserDir(tt.namespace, tt.name); got != tt.want {
 				t.Errorf("GetBackupUserDir = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetRpcPortFromMasterContainer(t *testing.T) {
+	type args struct {
+		container *corev1.Container
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantRpcPort int32
+	}{
+		{
+			name: "alluxio-test",
+			args: args{
+				container: &corev1.Container{
+					Name: "alluxio-master",
+					Ports: []corev1.ContainerPort{
+						{
+							Name:     "rpc",
+							HostPort: 34,
+						},
+						{
+							Name:     "rpc-test",
+							HostPort: 5201,
+						},
+					},
+				},
+			},
+			wantRpcPort: 34,
+		},
+		{
+			name: "goosefs-test",
+			args: args{
+				container: &corev1.Container{
+					Name: "goosefs-master",
+					Ports: []corev1.ContainerPort{
+						{
+							Name:     "rpc",
+							HostPort: 44,
+						},
+						{
+							Name:     "rpc-test",
+							HostPort: 5202,
+						},
+					},
+				},
+			},
+			wantRpcPort: 44,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotRpcPort := GetRpcPortFromMasterContainer(tt.args.container); gotRpcPort != tt.wantRpcPort {
+				t.Errorf("GetRpcPortFromMasterContainer() = %v, want %v", gotRpcPort, tt.wantRpcPort)
+			}
+		})
+	}
+}
+
+func TestGetDataBackupRef(t *testing.T) {
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test",
+			args: args{
+				name:      "test",
+				namespace: "default",
+			},
+			want: "default-test",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetDataBackupRef(tt.args.name, tt.args.namespace); got != tt.want {
+				t.Errorf("GetDataBackupRef() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetDataBackupReleaseName(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test",
+			args: args{
+				name: "test",
+			},
+			want: "test-charts",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetDataBackupReleaseName(tt.args.name); got != tt.want {
+				t.Errorf("GetDataBackupReleaseName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetDataBackupPodName(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test",
+			args: args{
+				name: "test",
+			},
+			want: "test-pod",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetDataBackupPodName(tt.args.name); got != tt.want {
+				t.Errorf("GetDataBackupPodName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -1,0 +1,91 @@
+  {{/*  {{  $datasetName := "" -}}*/}}
+  {{/*  {{- $randomSuffix := "" -}}*/}}
+  {{/*  {{- if regexMatch "^[A-Za-z0-9._-]+-load-[A-Za-z0-9]{5}$" .Release.Name -}}*/}}
+  {{/*    {{- $arr := regexSplit "-load-" .Release.Name -1 -}}*/}}
+  {{/*    {{- $datasetName = first $arr -}}*/}}
+  {{/*    {{- $randomSuffix = last $arr -}}*/}}
+  {{/*  {{- else -}}*/}}
+  {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
+  {{/*  {{- end }}*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+    targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+spec:
+  backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ printf "%s-loader" .Release.Name }}
+      labels:
+        release: {{ .Release.Name }}
+        role: dataload-pod
+        targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: dataloader
+          image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+          imagePullPolicy: IfNotPresent 
+          command: ["/bin/sh", "-c"]
+          args: ["/scripts/env_init.sh && /scripts/dataload.sh"]
+          {{- $targetPaths := "" }}
+          {{- range .Values.dataloader.targetPaths }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+          {{- end }}
+          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+
+          {{- $pathReplicas := ""}}
+          {{- range .Values.dataloader.targetPaths }}
+          {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+          {{- end }}
+          {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+          env:
+            - name: GOOSEFS_CLIENT_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: GOOSEFS_CLIENT_JAVA_OPTS
+              value: " -Dgoosefs.user.hostname=${GOOSEFS_CLIENT_HOSTNAME}"
+            - name: NEED_LOAD_METADATA
+              value: {{ default false .Values.dataloader.loadMetadata | quote }}
+            - name: DATA_PATH
+              value: {{ $targetPaths | quote }}
+            - name: PATH_REPLICAS
+              value: {{ $pathReplicas | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
+          volumeMounts:
+            - mountPath: /scripts
+              name: data-load-script
+              {{- range .Values.dataloader.targetPaths }}
+            {{- if .fluidNative }}
+            - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
+              name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+              {{- end }}
+      {{- end }}
+      volumes:
+        - name: data-load-script
+          configMap:
+            name: {{ printf "%s-data-load-script" .Release.Name }}
+            items:
+              - key: dataloader.goosefs.init
+                path: env_init.sh
+                mode: 365
+              - key: dataloader.goosefs.distributedLoad
+                path: dataload.sh
+                mode: 365
+          {{- range .Values.dataloader.targetPaths }}
+        {{- if .fluidNative }}
+        - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+          hostPath:
+            path: {{ .path }}
+          {{- end }}
+  {{- end }}
+
