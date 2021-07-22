@@ -70,10 +70,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for GooseFS")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for GooseFSRuntime controller")
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
-
 	cmd.AddCommand(startCmd)
-	cmd.AddCommand(versionCmd)
 }
 
 func handle() {
