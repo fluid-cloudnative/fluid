@@ -240,7 +240,7 @@ func TestSyncReplicas(t *testing.T) {
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil{
-			t.Errorf("sync replicas failed.")
+			t.Errorf("sync replicas failed,err:%s",err.Error())
 		}
 		rt,_ := engine.getRuntime()
 		if len(rt.Status.Conditions)==4{
