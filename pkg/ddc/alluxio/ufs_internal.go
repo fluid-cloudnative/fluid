@@ -150,7 +150,7 @@ func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string,
 		l := len(mall)
 		mall[v] = 1
 		if l != len(mall) { //add new
-			l = len(mall)
+			l += 1
 		} else { // intersected
 			set = append(set, v)
 		}
@@ -229,7 +229,10 @@ func (e *AlluxioEngine) processUFS(updatedUFSMap map[string][]string) (err error
 	removed := updatedUFSMap["removed"]
 	if len(removed) > 0 {
 		for _, mount_remove := range removed {
-			fileUitls.UnMount(mount_remove)
+			err = fileUitls.UnMount(mount_remove)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

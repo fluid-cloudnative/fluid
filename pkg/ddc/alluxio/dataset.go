@@ -225,7 +225,11 @@ func (e *AlluxioEngine) UpdateMountStatus(phase datav1alpha1.DatasetPhase) (err 
 }
 
 func (e *AlluxioEngine) BindToDataset() (err error) {
-	e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	err = e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	if err != nil {
+		e.Log.Error(err, "UpdateDatasetStatus to Bound")
+		return err
+	}
 	return e.UpdateMountStatus(datav1alpha1.BoundDatasetPhase)
 }
 
