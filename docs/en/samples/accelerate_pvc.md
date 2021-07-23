@@ -112,10 +112,6 @@ persistentvolumeclaim/nfs-imagenet   Bound    nfs-imagenet   150Gi      ROX     
 
 ### Dawnbench
 
-> NOTES:
->
-> `1x8` means `1` machine with `8` GPU cards.
-
 #### 1x8
 
 ```bash
