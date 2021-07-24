@@ -370,3 +370,132 @@ func TestShouldDeleteDataset(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldRemoveProtectionFinalizer(t *testing.T) {
+	namespace := "test"
+	volumeName := "found"
+	testPodInputs := []*v1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PodSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeName,
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: "runningDataset",
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "runningDataset",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}}
+
+	testObjects := []runtime.Object{}
+
+	for _, pod := range testPodInputs {
+		testObjects = append(testObjects, pod.DeepCopy())
+	}
+
+	testPVInputs := []*v1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
+	}}
+
+	for _, pv := range testPVInputs {
+		testObjects = append(testObjects, pv.DeepCopy())
+	}
+
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: volumeName,
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	for _, pvc := range testPVCInputs {
+		testObjects = append(testObjects, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjects...)
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		shouldRemove bool
+	}{
+		{
+			name: "pvc doesn't exist",
+			args: args{
+				name:      "notfound",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		},
+		{
+			name: "pvc exists and no pod on it",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			shouldRemove: true,
+		}, {
+			name: "pvc exists and complete pod on it",
+			args: args{
+				name:      "completeDataset",
+				namespace: namespace,
+			},
+			shouldRemove: true,
+		}, {
+			name: "pvc exists and running pod on it",
+			args: args{
+				name:      "runningDataset",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if shouldRemove, err := ShouldRemoveProtectionFinalizer(client, tt.args.name, tt.args.namespace); shouldRemove != tt.shouldRemove {
+				t.Errorf("testcase %v ShouldRemoveProtectionFinalizer() wants shouldRemove=%v but real shouldRemove=%v, err=%v", tt.name, tt.shouldRemove, shouldRemove, err)
+			}
+		})
+	}
+}
