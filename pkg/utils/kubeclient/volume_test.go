@@ -17,6 +17,7 @@ package kubeclient
 
 import (
 	"testing"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
@@ -366,6 +367,206 @@ func TestShouldDeleteDataset(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := ShouldDeleteDataset(client, tt.args.name, tt.args.namespace); (err != nil) != tt.errReturn {
 				t.Errorf("testcase %v ShouldDeleteDataset() = %v, want err=%v", tt.name, err, tt.errReturn)
+			}
+		})
+	}
+}
+
+func TestShouldRemoveProtectionFinalizer(t *testing.T) {
+	namespace := "test"
+	volumeName := "found"
+	now := metav1.Now()
+	validateTime := now.Add(time.Duration(-1) * time.Minute)
+	testPodInputs := []*v1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PodSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "completeDataset",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDatasetNoTimeout", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "completeDatasetNoTimeout",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: "runningDataset",
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "runningDataset",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}}
+
+	testObjects := []runtime.Object{}
+
+	for _, pod := range testPodInputs {
+		testObjects = append(testObjects, pod.DeepCopy())
+	}
+
+	testPVInputs := []*v1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found"},
+		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations: common.ExpectedFluidAnnotations},
+		Spec: v1.PersistentVolumeSpec{},
+	}}
+
+	for _, pv := range testPVInputs {
+		testObjects = append(testObjects, pv.DeepCopy())
+	}
+
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "found",
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDatasetNoTimeout",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &now},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "noDeletionTimestamp",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace,
+			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName},
+		},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "noFinalizer",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+		},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}}
+
+	for _, pvc := range testPVCInputs {
+		testObjects = append(testObjects, pvc.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjects...)
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		shouldRemove bool
+	}{
+		{
+			name: "pvc doesn't exist",
+			args: args{
+				name:      "notfound",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		},
+		{
+			name: "pvc exists and no pod on it",
+			args: args{
+				name:      "found",
+				namespace: namespace,
+			},
+			shouldRemove: true,
+		}, {
+			name: "pvc exists and complete pod on it",
+			args: args{
+				name:      "completeDataset",
+				namespace: namespace,
+			},
+			shouldRemove: true,
+		}, {
+			name: "pvc exists and running pod on it",
+			args: args{
+				name:      "runningDataset",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists and complete pod on it, but timeout doesn't match",
+			args: args{
+				name:      "runningDataset",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists but no finalizer",
+			args: args{
+				name:      "noFinalizer",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists but no DeletionTimestamp",
+			args: args{
+				name:      "noDeletionTimestamp",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if shouldRemove, err := ShouldRemoveProtectionFinalizer(client, tt.args.name, tt.args.namespace); shouldRemove != tt.shouldRemove {
+				t.Errorf("testcase %v ShouldRemoveProtectionFinalizer() wants shouldRemove=%v but real shouldRemove=%v, err=%v", tt.name, tt.shouldRemove, shouldRemove, err)
 			}
 		})
 	}

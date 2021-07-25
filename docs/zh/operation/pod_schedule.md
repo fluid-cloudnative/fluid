@@ -9,7 +9,11 @@ Fluid结合根据数据集排布的Pod调度策略，通过webhook机制将调�
 ## 前提条件
 
 您使用的k8s版本需要支持 admissionregistration.k8s.io/v1beta1（ Kubernetes version > 1.14 )
-
+启用允许控制器集需要通过向 Kubernetes API 服务器传递一个标志来配置，确保你的集群进行了正常的配置
+```yaml
+--enable-admission-plugins=MutatingAdmissionWebhook
+```
+注意如果您的集群之前已经配置了其他的准入控制器，只需要增加 MutatingAdmissionWebhook 这个参数
 ## 安装
 
 1.创建命名空间
