@@ -376,7 +376,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 	namespace := "test"
 	volumeName := "found"
 	now := metav1.Now()
-	validateTime := metav1.Now().Sub(1 * time.Minute)
+	validateTime := now.Add(time.Duration(-1) * time.Minute)
 	testPodInputs := []*v1.Pod{{
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PodSpec{},
@@ -441,21 +441,21 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "found",
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
-			DeletionTimestamp: &validateTime},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
 			Annotations:       common.ExpectedFluidAnnotations,
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
-			DeletionTimestamp: &validateTime},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
 			Annotations:       common.ExpectedFluidAnnotations,
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
-			DeletionTimestamp: &validateTime},
+			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
 
