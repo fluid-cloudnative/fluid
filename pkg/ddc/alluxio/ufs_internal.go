@@ -137,40 +137,32 @@ func (e *AlluxioEngine) getMounts() (resultInCtx []string, resultHaveMounted []s
 }
 
 func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string, mountsInContext []string) ([]string, []string) {
-	msrc := make(map[string]byte) //build index by source(exists)  getMountted
-	mall := make(map[string]byte) //build index by source and target(ctx) mounts_context
-	var set []string              //the intersection
-	//1.build map by source
+	removed := []string{}
+	added := []string{}
+
 	for _, v := range mountsHaveMountted {
-		msrc[v] = 0
-		mall[v] = 0
-	}
-	//2.if length does not changed, then intersected, mall will be the union (contain all elements) in the end
-	for _, v := range mountsInContext { //mounts_context  alluxioPath from dataset
-		l := len(mall)
-		mall[v] = 1
-		if l != len(mall) { //add new
-			l += 1
-		} else { // intersected
-			set = append(set, v)
+		if ContainsString(mountsInContext, v) == false {
+			removed = append(removed, v)
 		}
 	}
-	//3.loop the intersection，find it in the union, if found, then delete it from the union, mall will be the complement(union - intersection)
-	for _, v := range set {
-		delete(mall, v)
-	}
-	//4.find all the element in mall(the complement) in the source, if found, then add it to delete array, else, add it to add array
-	var added, removed []string
-	for v := range mall {
-		_, exist := msrc[v]
-		if exist {
-			removed = append(removed, v)
-		} else {
+
+	for _, v := range mountsInContext {
+		if ContainsString(mountsHaveMountted, v) == false {
 			added = append(added, v)
 		}
 	}
 
 	return added, removed
+}
+
+// ContainsString returns true if a string is present in a iteratee.
+func ContainsString(s []string, v string) bool {
+	for _, vv := range s {
+		if vv == v {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *AlluxioEngine) processUFS(updatedUFSMap map[string][]string) (err error) {

@@ -172,10 +172,6 @@ func (e *AlluxioEngine) UpdateMountStatus(phase datav1alpha1.DatasetPhase) (err 
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdating, datav1alpha1.DatasetUpdatingReason,
 				"The ddc runtime is updating.",
 				corev1.ConditionTrue)
-		case datav1alpha1.UpdatedDatasetPhase:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdateReady, datav1alpha1.DatasetUpdateReadyReason,
-				"The ddc runtime is updated.",
-				corev1.ConditionTrue)
 		default:
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is unknown.",
@@ -185,18 +181,6 @@ func (e *AlluxioEngine) UpdateMountStatus(phase datav1alpha1.DatasetPhase) (err 
 		datasetToUpdate.Status.Phase = phase
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 			cond)
-
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-		// datasetToUpdate.Status.CacheStates =
-
-		if datasetToUpdate.Status.HCFSStatus == nil {
-			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
-			if err != nil {
-				return err
-			}
-		} else {
-			e.Log.Info("No need to update HCFS status")
-		}
 
 		// set Status.Mounts
 		if phase == datav1alpha1.BoundDatasetPhase || phase == datav1alpha1.UpdatedDatasetPhase {
