@@ -436,11 +436,20 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 	}
 
 	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{Name: volumeName,
-			Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: "found",
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &now},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &now},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
 			Annotations:       common.ExpectedFluidAnnotations,
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
