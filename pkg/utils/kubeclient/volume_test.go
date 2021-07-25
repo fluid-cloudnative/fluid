@@ -386,7 +386,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 					Name: volumeName,
 					VolumeSource: v1.VolumeSource{
 						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName,
+							ClaimName: "completeDataset",
 							ReadOnly:  true,
 						}},
 				},
@@ -422,7 +422,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
 			Annotations: common.ExpectedFluidAnnotations},
 		Spec: v1.PersistentVolumeSpec{},
 	}, {
