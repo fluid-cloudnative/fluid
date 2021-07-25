@@ -374,6 +374,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 	namespace := "test"
 	volumeName := "found"
+	now = metav1.Now()
 	testPodInputs := []*v1.Pod{{
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PodSpec{},
@@ -440,8 +441,10 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Annotations: common.ExpectedFluidAnnotations,
-			Namespace:   namespace},
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &now},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
 
