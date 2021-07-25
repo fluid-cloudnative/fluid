@@ -288,13 +288,11 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	pvc := &v1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
 	if err != nil {
-		fmt.Printf("found err %v\n", err)
 		return
 	}
 
 	if pvc.DeletionTimestamp.IsZero() ||
 		!utils.ContainsString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName) {
-		fmt.Printf("PVC %s in ns %v DeletionTimestamp.IsZero", name, namespace)
 		return
 	}
 
@@ -302,7 +300,6 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	then := pvc.DeletionTimestamp.Add(30 * time.Second)
 	now := time.Now()
 	if now.Before(then) {
-		fmt.Printf("can not remove pvc-protection finalizer before reached expected timeout %v", then.Sub(now).Seconds())
 		log.V(1).Info("can not remove pvc-protection finalizer before reached expected timeout",
 			"Remaining seconds:", then.Sub(now).Seconds())
 		return
