@@ -288,7 +288,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	pvc := &v1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
 	if err != nil {
-		fmt.printf("found err %v\n", err)
+		fmt.Printf("found err %v\n", err)
 		return
 	}
 
