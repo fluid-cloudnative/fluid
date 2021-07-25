@@ -381,7 +381,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PodSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset", Namespace: namespace},
 		Spec: v1.PodSpec{
 			Volumes: []v1.Volume{
 				{
@@ -389,6 +389,22 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 					VolumeSource: v1.VolumeSource{
 						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
 							ClaimName: "completeDataset",
+							ReadOnly:  true,
+						}},
+				},
+			},
+		}, Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDatasetNoTimeout", Namespace: namespace},
+		Spec: v1.PodSpec{
+			Volumes: []v1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "completeDatasetNoTimeout",
 							ReadOnly:  true,
 						}},
 				},
@@ -457,6 +473,13 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
 			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "completeDatasetNoTimeout",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
+			DeletionTimestamp: &now},
+		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
 
 	for _, pvc := range testPVCInputs {
@@ -497,6 +520,13 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 			shouldRemove: true,
 		}, {
 			name: "pvc exists and running pod on it",
+			args: args{
+				name:      "runningDataset",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists and complete pod on it, but timeout doesn't match",
 			args: args{
 				name:      "runningDataset",
 				namespace: namespace,
