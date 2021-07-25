@@ -480,6 +480,20 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
 			DeletionTimestamp: &now},
 		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "noDeletionTimestamp",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace,
+			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName},
+		},
+		Spec: v1.PersistentVolumeClaimSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "noFinalizer",
+			Annotations:       common.ExpectedFluidAnnotations,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+		},
+		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
 
 	for _, pvc := range testPVCInputs {
@@ -529,6 +543,20 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 			name: "pvc exists and complete pod on it, but timeout doesn't match",
 			args: args{
 				name:      "runningDataset",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists but no finalizer",
+			args: args{
+				name:      "noFinalizer",
+				namespace: namespace,
+			},
+			shouldRemove: false,
+		}, {
+			name: "pvc exists but no DeletionTimestamp",
+			args: args{
+				name:      "noDeletionTimestamp",
 				namespace: namespace,
 			},
 			shouldRemove: false,
