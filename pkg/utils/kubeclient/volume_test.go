@@ -376,7 +376,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 	namespace := "test"
 	volumeName := "found"
 	now := metav1.Now()
-	validateTime := metav1.Now().Sub(time.Minute)
+	validateTime := metav1.Now().Sub(1 * time.Minute)
 	testPodInputs := []*v1.Pod{{
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PodSpec{},
