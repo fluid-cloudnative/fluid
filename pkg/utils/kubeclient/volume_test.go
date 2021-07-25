@@ -374,7 +374,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 	namespace := "test"
 	volumeName := "found"
-	now = metav1.Now()
+	now := metav1.Now()
 	testPodInputs := []*v1.Pod{{
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PodSpec{},
