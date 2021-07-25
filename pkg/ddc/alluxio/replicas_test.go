@@ -19,18 +19,17 @@ import (
 
 func newAlluxioEngineREP(client client.Client, name string, namespace string) *AlluxioEngine {
 
-	runTimeInfo,_ := base.BuildRuntimeInfo(name,namespace,"alluxio", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio", v1alpha1.TieredStore{})
 	engine := &AlluxioEngine{
-		runtime:                &v1alpha1.AlluxioRuntime{},
-		name:                   name,
-		namespace:              namespace,
-		Client:                 client,
-		runtimeInfo:            runTimeInfo,
-		Log:                    log.NullLogger{},
+		runtime:     &v1alpha1.AlluxioRuntime{},
+		name:        name,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: runTimeInfo,
+		Log:         log.NullLogger{},
 	}
 	return engine
 }
-
 
 func TestSyncReplicas(t *testing.T) {
 	nodeInputs := []*v1.Node{
@@ -83,97 +82,97 @@ func TestSyncReplicas(t *testing.T) {
 	}
 	runtimeInputs := []*v1alpha1.AlluxioRuntime{
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hbase",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec:v1alpha1.AlluxioRuntimeSpec{
+			Spec: v1alpha1.AlluxioRuntimeSpec{
 				Replicas: 3, // 2
 			},
 			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,
 				CurrentMasterNumberScheduled: 2, // 0
-				CurrentFuseNumberScheduled: 2,
+				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 3,
 				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled: 3,
+				DesiredFuseNumberScheduled:   3,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
-				FusePhase: "NotReady",
+				FusePhase:   "NotReady",
 			},
 		},
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hadoop",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop",
 				Namespace: "fluid",
 			},
-			Spec:v1alpha1.AlluxioRuntimeSpec{
+			Spec: v1alpha1.AlluxioRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 3,
 				CurrentMasterNumberScheduled: 3,
-				CurrentFuseNumberScheduled: 3,
+				CurrentFuseNumberScheduled:   3,
 				DesiredMasterNumberScheduled: 2,
 				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled: 2,
+				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
-				FusePhase: "NotReady",
+				FusePhase:   "NotReady",
 			},
 		},
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "obj",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj",
 				Namespace: "fluid",
 			},
-			Spec:v1alpha1.AlluxioRuntimeSpec{
+			Spec: v1alpha1.AlluxioRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,
 				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled: 2,
+				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 2,
 				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled: 2,
+				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
-				FusePhase: "NotReady",
+				FusePhase:   "NotReady",
 			},
 		},
 	}
 	daemonSetInputs := []*appsv1.DaemonSet{
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hbase-worker",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
 		},
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hbase-fuse",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
 				Namespace: "fluid",
 			},
 		},
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hadoop-worker",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-worker",
 				Namespace: "fluid",
 			},
 		},
 		{
-			ObjectMeta:metav1.ObjectMeta{
-				Name: "hadoop-fuse",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-fuse",
 				Namespace: "fluid",
 			},
 		},
@@ -181,13 +180,13 @@ func TestSyncReplicas(t *testing.T) {
 	dataSetInputs := []*v1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "hbase",
+				Name:      "hbase",
 				Namespace: "fluid",
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "hadoop",
+				Name:      "hadoop",
 				Namespace: "fluid",
 			},
 		},
@@ -200,53 +199,53 @@ func TestSyncReplicas(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-	for _, daemonSetInput := range daemonSetInputs{
+	for _, daemonSetInput := range daemonSetInputs {
 		objs = append(objs, daemonSetInput.DeepCopy())
 	}
-	for _, dataSetInput := range dataSetInputs{
+	for _, dataSetInput := range dataSetInputs {
 		objs = append(objs, dataSetInput.DeepCopy())
 	}
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
-	testCases := []struct{
-		name string
+	testCases := []struct {
+		name      string
 		namespace string
-		Type v1alpha1.RuntimeConditionType
-		isErr bool
+		Type      v1alpha1.RuntimeConditionType
+		isErr     bool
 	}{
 		{
-			name: "hbase",
+			name:      "hbase",
 			namespace: "fluid",
-			Type: "FusesScaledOut",
-			isErr: false,
+			Type:      "FusesScaledOut",
+			isErr:     false,
 		},
 		{
-			name: "hadoop",
+			name:      "hadoop",
 			namespace: "fluid",
-			Type: "FusesScaledIn",
-			isErr: false,
+			Type:      "FusesScaledIn",
+			isErr:     false,
 		},
 		{
-			name: "obj",
+			name:      "obj",
 			namespace: "fluid",
-			Type: "",
-			isErr: false,
+			Type:      "",
+			isErr:     false,
 		},
 	}
-	for _,testCase := range testCases{
-		engine := newAlluxioEngineREP(fakeClient,testCase.name,testCase.namespace)
+	for _, testCase := range testCases {
+		engine := newAlluxioEngineREP(fakeClient, testCase.name, testCase.namespace)
 		err := engine.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:log.NullLogger{},
+			Log:      log.NullLogger{},
 			Recorder: record.NewFakeRecorder(300),
 		})
-		if err != nil{
-			t.Errorf("sync replicas failed,err:%s",err.Error())
+		if err != nil {
+			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
-		rt,_ := engine.getRuntime()
-		if len(rt.Status.Conditions)==4{
+		rt, _ := engine.getRuntime()
+		if len(rt.Status.Conditions) == 4 {
 			Type := rt.Status.Conditions[3].Type
-			if Type != testCase.Type{
-				t.Errorf("runtime condition want %s, got %s",testCase.Type,Type)
+			if Type != testCase.Type {
+				t.Errorf("runtime condition want %s, got %s", testCase.Type, Type)
 			}
 		}
 	}
