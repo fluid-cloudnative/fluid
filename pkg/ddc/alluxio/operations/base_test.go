@@ -869,7 +869,7 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	address, err := a.MasterPodName()
-	if err != nil || address != "192.168.0.193" {
+	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	if address != "192.168.0.193" {
