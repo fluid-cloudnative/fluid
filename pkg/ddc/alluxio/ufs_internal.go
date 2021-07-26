@@ -141,13 +141,13 @@ func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string,
 	added := []string{}
 
 	for _, v := range mountsHaveMountted {
-		if ContainsString(mountsInContext, v) == false {
+		if !ContainsString(mountsInContext, v) {
 			removed = append(removed, v)
 		}
 	}
 
 	for _, v := range mountsInContext {
-		if ContainsString(mountsHaveMountted, v) == false {
+		if !ContainsString(mountsHaveMountted, v) {
 			added = append(added, v)
 		}
 	}
