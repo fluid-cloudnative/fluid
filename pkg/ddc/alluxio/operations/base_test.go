@@ -822,57 +822,38 @@ func TestAlluxioFileUtils_execWithoutTimeout(t *testing.T) {
 }
 
 func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
-	type fields struct {
-		podName   string
-		namespace string
-		container string
-		log       logr.Logger
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009\n    Web Port: 20010", "", nil
 	}
-	tests := []struct {
-		name              string
-		fields            fields
-		wantMasterPodName string
-		wantErr           bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				podName:   "test-master-0",
-				namespace: "default",
-				container: "alluxio-master",
-				log:       ctrl.Log,
-			},
-			wantMasterPodName: "test-master-0",
-			wantErr:           true,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				podName:   "test-master-1",
-				namespace: "default",
-				container: "alluxio-master",
-				log:       ctrl.Log,
-			},
-			wantMasterPodName: "test-master-1",
-			wantErr:           true,
-		},
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := AlluxioFileUtils{
-				podName:   tt.fields.podName,
-				namespace: tt.fields.namespace,
-				container: tt.fields.container,
-				log:       tt.fields.log,
-			}
-			gotMasterPodName, err := a.MasterPodName()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AlluxioFileUtils.MasterPodName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotMasterPodName != tt.wantMasterPodName {
-				t.Errorf("AlluxioFileUtils.MasterPodName() = %v, want %v", gotMasterPodName, tt.wantMasterPodName)
-			}
-		})
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, err = a.MasterPodName()
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	address, err := a.MasterPodName()
+	if err != nil || address != "192.168.0.193" {
+		t.Errorf("fail to exec the function")
+	}
+	wrappedUnhookExec()
 }
