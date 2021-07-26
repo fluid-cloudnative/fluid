@@ -55,7 +55,7 @@ func TestNewAlluxioFileUtils(t *testing.T) {
 	}
 	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", NullLogger{})
 	if !reflect.DeepEqual(expectedResult, result) {
-		t.Errorf("fail to create the AlluxioFileUtils, want:%v,got:%v", expectedResult,result)
+		t.Errorf("fail to create the AlluxioFileUtils, want: %v, got: %v", expectedResult, result)
 	}
 }
 
@@ -226,7 +226,7 @@ func TestAlluxioFileUtils_ReportSummary(t *testing.T) {
 	a := AlluxioFileUtils{}
 	_, err = a.ReportSummary()
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -236,7 +236,7 @@ func TestAlluxioFileUtils_ReportSummary(t *testing.T) {
 	}
 	_, err = a.ReportSummary()
 	if err != nil {
-		t.Errorf("fail to catch the error")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -262,7 +262,7 @@ func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	a := AlluxioFileUtils{log: NullLogger{}}
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExecWithoutTimeout()
 
@@ -272,7 +272,7 @@ func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	}
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExecWithoutTimeout()
 }
@@ -298,7 +298,7 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	a := AlluxioFileUtils{log: NullLogger{}}
 	err = a.LoadMetaData("/", true)
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -308,7 +308,7 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	}
 	err = a.LoadMetaData("/", false)
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -334,10 +334,10 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	a := AlluxioFileUtils{log: NullLogger{}}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
-	for _, keySet := range keySets {
+	for index, keySet := range keySets {
 		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err == nil {
-			t.Errorf("fail to catch the error")
+			t.Errorf("%d check failure, want err, got nil", index)
 			return
 		}
 	}
@@ -347,10 +347,10 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	for _, keySet := range keySets {
+	for index, keySet := range keySets {
 		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err != nil {
-			t.Errorf("fail to exec the function")
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
 	}
@@ -378,7 +378,7 @@ func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	a := AlluxioFileUtils{}
 	err = a.Mkdir("/")
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -388,7 +388,7 @@ func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	}
 	err = a.Mkdir("/")
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -438,10 +438,10 @@ func TestAlluxioFIleUtils_Mount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	for _, test := range testCases {
+	for index, test := range testCases {
 		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
 		if err == nil {
-			t.Errorf("fail to catch the error")
+			t.Errorf("%d check failure, want err, got nil", index)
 			return
 		}
 	}
@@ -451,10 +451,10 @@ func TestAlluxioFIleUtils_Mount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	for _, test := range testCases {
+	for index, test := range testCases {
 		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
 		if err != nil {
-			t.Errorf("fail to exec the function")
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
 	}
@@ -482,7 +482,7 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, err = a.IsMounted("/hbase")
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 		return
 	}
 	wrappedUnhookExec()
@@ -504,10 +504,15 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 			expectedResult: true,
 		},
 	}
-	for _, test := range testCases {
+	for index, test := range testCases {
 		mounted, err := a.IsMounted(test.alluxioPath)
-		if err != nil || mounted != test.expectedResult {
-			t.Errorf("fail to exec the function")
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+
+		if mounted != test.expectedResult {
+			t.Errorf("%d check failure, want: %t, got: %t ", index, mounted, test.expectedResult)
 			return
 		}
 	}
@@ -534,7 +539,7 @@ func TestAlluxioFileUtils_Ready(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	ready := a.Ready()
 	if ready != false {
-		t.Errorf("fail to catch the error")
+		t.Errorf("check failure, want false, got %t", ready)
 	}
 	wrappedUnhookExec()
 
@@ -544,7 +549,7 @@ func TestAlluxioFileUtils_Ready(t *testing.T) {
 	}
 	ready = a.Ready()
 	if ready != true {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want true, got %t", ready)
 	}
 	wrappedUnhookExec()
 }
@@ -570,7 +575,7 @@ func TestAlluxioFIleUtils_Du(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, _, _, err = a.Du("/hbase")
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -579,8 +584,17 @@ func TestAlluxioFIleUtils_Du(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	ufs, cached, cachedPercentage, err := a.Du("/hbase")
-	if err != nil || ufs != 577575561 || cached != 0 || cachedPercentage != "0%" {
-		t.Errorf("fail to exec the function")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if ufs != 577575561 {
+		t.Errorf("check failure, want 577575561, got %d", ufs)
+	}
+	if cached != 0 {
+		t.Errorf("check failure, want 0, got %d", cached)
+	}
+	if cachedPercentage != "0%" {
+		t.Errorf("check failure, want 0, got %s", cachedPercentage)
 	}
 	wrappedUnhookExec()
 }
@@ -659,7 +673,7 @@ func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, err = a.GetFileCount()
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -668,8 +682,11 @@ func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	fileCount, err := a.GetFileCount()
-	if err != nil || fileCount != 6367897 {
-		t.Errorf("fail to exec the function")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
 	wrappedUnhookExec()
 }
@@ -697,7 +714,7 @@ func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
 
 	_, err = a.ReportMetrics()
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -707,7 +724,7 @@ func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
 	}
 	_, err = a.ReportMetrics()
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -734,7 +751,7 @@ func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, err = a.ReportCapacity()
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -744,7 +761,7 @@ func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	}
 	_, err = a.ReportCapacity()
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -771,7 +788,7 @@ func TestAlluxioFileUtils_exec(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, _, err = a.exec([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -781,7 +798,7 @@ func TestAlluxioFileUtils_exec(t *testing.T) {
 	}
 	_, _, err = a.exec([]string{"alluxio", "fsadmin", "report", "capacity"}, true)
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
 }
@@ -807,7 +824,7 @@ func TestAlluxioFileUtils_execWithoutTimeout(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, _, err = a.execWithoutTimeout([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhook()
 
@@ -817,7 +834,7 @@ func TestAlluxioFileUtils_execWithoutTimeout(t *testing.T) {
 	}
 	_, _, err = a.execWithoutTimeout([]string{"alluxio", "fsadmin", "report", "capacity"}, true)
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 }
 
@@ -843,7 +860,7 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	a := &AlluxioFileUtils{log: NullLogger{}}
 	_, err = a.MasterPodName()
 	if err == nil {
-		t.Errorf("fail to catch the error")
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 
@@ -853,7 +870,10 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	}
 	address, err := a.MasterPodName()
 	if err != nil || address != "192.168.0.193" {
-		t.Errorf("fail to exec the function")
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if address != "192.168.0.193" {
+		t.Errorf("check failure, want: %s, got: %s", "192.168.0.193", address)
 	}
 	wrappedUnhookExec()
 }
