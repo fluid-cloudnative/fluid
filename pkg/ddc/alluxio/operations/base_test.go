@@ -55,7 +55,7 @@ func TestNewAlluxioFileUtils(t *testing.T) {
 	}
 	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", NullLogger{})
 	if !reflect.DeepEqual(expectedResult, result) {
-		t.Errorf("fail to create the AlluxioFileUtils")
+		t.Errorf("fail to create the AlluxioFileUtils, want:%v,got:%v", expectedResult,result)
 	}
 }
 
