@@ -152,13 +152,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 // 	return
 // }
 func (e *AlluxioEngine) UpdateMountStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	// 1. update the runtime status
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return err
-	}
-
-	// 2.update the dataset status
+	// update the dataset status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {

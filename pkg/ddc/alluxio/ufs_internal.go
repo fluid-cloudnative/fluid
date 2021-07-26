@@ -165,7 +165,7 @@ func ContainsString(s []string, v string) bool {
 	return false
 }
 
-func (e *AlluxioEngine) processUFS(updatedUFSMap map[string][]string) (err error) {
+func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return err

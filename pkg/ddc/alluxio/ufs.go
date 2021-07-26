@@ -101,7 +101,7 @@ func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error)
 		return err
 	}
 	//2. process added and removed
-	err = e.processUFS(updatedUFSMap)
+	err = e.processUpdatingUFS(updatedUFSMap)
 	if err != nil {
 		e.Log.Error(err, "Failed to add or remove mount points")
 		return err
