@@ -18,6 +18,7 @@ package operations
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -43,6 +44,19 @@ type NullLogger struct{}
 
 func (log NullLogger) Info(_ string, _ ...interface{}) {
 	// Do nothing.
+}
+
+func TestNewAlluxioFileUtils(t *testing.T) {
+	var expectedResult = AlluxioFileUtils{
+		podName:   "hbase",
+		namespace: "default",
+		container: "hbase-container",
+		log:       NullLogger{},
+	}
+	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", NullLogger{})
+	if !reflect.DeepEqual(expectedResult, result) {
+		t.Errorf("fail to create the AlluxioFileUtils, want: %v, got: %v", expectedResult, result)
+	}
 }
 
 func TestLoadMetaData(t *testing.T) {
@@ -191,6 +205,400 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 	}
 }
 
+func TestAlluxioFileUtils_ReportSummary(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := AlluxioFileUtils{}
+	_, err = a.ReportSummary()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, err = a.ReportSummary()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExecWithoutTimeout := func() {
+		err := gohook.UnHook(AlluxioFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := AlluxioFileUtils{log: NullLogger{}}
+	err = a.LoadMetadataWithoutTimeout("/")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExecWithoutTimeout()
+
+	err = gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.LoadMetadataWithoutTimeout("/")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExecWithoutTimeout()
+}
+
+func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := AlluxioFileUtils{log: NullLogger{}}
+	err = a.LoadMetaData("/", true)
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.LoadMetaData("/", false)
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := AlluxioFileUtils{log: NullLogger{}}
+
+	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err == nil {
+			t.Errorf("%d check failure, want err, got nil", index)
+			return
+		}
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFIleUtils_MKdir(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "alluxio mkdir success", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := AlluxioFileUtils{}
+	err = a.Mkdir("/")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.Mkdir("/")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFIleUtils_Mount(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "alluxio mkdir success", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	a := AlluxioFileUtils{}
+	var testCases = []struct {
+		readOnly bool
+		shared   bool
+		options  map[string]string
+	}{
+		{
+			readOnly: true,
+			shared:   true,
+			options: map[string]string{
+				"testKey": "testValue",
+			},
+		},
+		{
+			readOnly: true,
+			shared:   false,
+		},
+		{
+			readOnly: false,
+			shared:   true,
+		},
+		{
+			readOnly: false,
+			shared:   false,
+		},
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	for index, test := range testCases {
+		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
+		if err == nil {
+			t.Errorf("%d check failure, want err, got nil", index)
+			return
+		}
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	for index, test := range testCases {
+		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_IsMounted(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "https://mirrors.bit.edu.cn/apache/hbase/stable  on  /hbase (web, capacity=-1B, used=-1B, read-only, not shared, properties={}) \n /underFSStorage  on  /  (local, capacity=0B, used=0B, not read-only, not shared, properties={})", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, err = a.IsMounted("/hbase")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+		return
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	var testCases = []struct {
+		alluxioPath    string
+		expectedResult bool
+	}{
+		{
+			alluxioPath:    "/spark",
+			expectedResult: false,
+		},
+		{
+			alluxioPath:    "/hbase",
+			expectedResult: true,
+		},
+	}
+	for index, test := range testCases {
+		mounted, err := a.IsMounted(test.alluxioPath)
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+
+		if mounted != test.expectedResult {
+			t.Errorf("%d check failure, want: %t, got: %t ", index, mounted, test.expectedResult)
+			return
+		}
+	}
+}
+
+func TestAlluxioFileUtils_Ready(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary: ", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	ready := a.Ready()
+	if ready != false {
+		t.Errorf("check failure, want false, got %t", ready)
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	ready = a.Ready()
+	if ready != true {
+		t.Errorf("check failure, want true, got %t", ready)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFIleUtils_Du(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "File Size     In Alluxio       Path\n577575561     0 (0%)           /hbase", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, _, _, err = a.Du("/hbase")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	ufs, cached, cachedPercentage, err := a.Du("/hbase")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if ufs != 577575561 {
+		t.Errorf("check failure, want 577575561, got %d", ufs)
+	}
+	if cached != 0 {
+		t.Errorf("check failure, want 0, got %d", cached)
+	}
+	if cachedPercentage != "0%" {
+		t.Errorf("check failure, want 0, got %s", cachedPercentage)
+	}
+	wrappedUnhookExec()
+}
+
 func TestAlluxioFileUtils_Count(t *testing.T) {
 	out1, out2, out3 := 111, 222, 333
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
@@ -244,58 +652,228 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 	}
 }
 
+func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Type: COUNTER, Value: 6,367,897", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, err = a.GetFileCount()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.GetFileCount()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "report [category] [category args]\nReport Alluxio running cluster information.\n", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+
+	_, err = a.ReportMetrics()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, err = a.ReportMetrics()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "report [category] [category args]\nReport Alluxio running cluster information.\n", "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, err = a.ReportCapacity()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, err = a.ReportCapacity()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_exec(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Type: COUNTER, Value: 6,367,897", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, _, err = a.exec([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, _, err = a.exec([]string{"alluxio", "fsadmin", "report", "capacity"}, true)
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_execWithoutTimeout(t *testing.T) {
+	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+		return "conf", "", nil
+	}
+	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+		return "err", "", errors.New("other error")
+	}
+	wrappedUnhook := func() {
+		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, _, err = a.execWithoutTimeout([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhook()
+
+	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, _, err = a.execWithoutTimeout([]string{"alluxio", "fsadmin", "report", "capacity"}, true)
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+}
+
 func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
-	type fields struct {
-		podName   string
-		namespace string
-		container string
-		log       logr.Logger
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009\n    Web Port: 20010", "", nil
 	}
-	tests := []struct {
-		name              string
-		fields            fields
-		wantMasterPodName string
-		wantErr           bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				podName:   "test-master-0",
-				namespace: "default",
-				container: "alluxio-master",
-				log:       ctrl.Log,
-			},
-			wantMasterPodName: "test-master-0",
-			wantErr:           true,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				podName:   "test-master-1",
-				namespace: "default",
-				container: "alluxio-master",
-				log:       ctrl.Log,
-			},
-			wantMasterPodName: "test-master-1",
-			wantErr:           true,
-		},
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := AlluxioFileUtils{
-				podName:   tt.fields.podName,
-				namespace: tt.fields.namespace,
-				container: tt.fields.container,
-				log:       tt.fields.log,
-			}
-			gotMasterPodName, err := a.MasterPodName()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AlluxioFileUtils.MasterPodName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotMasterPodName != tt.wantMasterPodName {
-				t.Errorf("AlluxioFileUtils.MasterPodName() = %v, want %v", gotMasterPodName, tt.wantMasterPodName)
-			}
-		})
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: NullLogger{}}
+	_, err = a.MasterPodName()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	address, err := a.MasterPodName()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if address != "192.168.0.193" {
+		t.Errorf("check failure, want: %s, got: %s", "192.168.0.193", address)
+	}
+	wrappedUnhookExec()
 }
