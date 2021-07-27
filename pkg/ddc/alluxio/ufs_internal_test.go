@@ -29,12 +29,12 @@ func TestAlluxioEngine_calculateMountPointsChanges(t *testing.T) {
 		"calculate mount point changes test case 1": {
 			mounted: []string{"hadoop3.3.0"},
 			current: []string{"hadoopcurrent", "hadoop3.3.0"},
-			expect:  map[string][]string{"added": {"hadoopcurrent"}},
+			expect:  map[string][]string{"added": {"hadoopcurrent"}, "removed": {}},
 		},
 		"calculate mount point changes test case 2": {
 			mounted: []string{"hadoopcurrent", "hadoop3.3.0"},
 			current: []string{"hadoop3.3.0"},
-			expect:  map[string][]string{"removed": {"hadoopcurrent"}},
+			expect:  map[string][]string{"added": {}, "removed": {"hadoopcurrent"}},
 		},
 		"calculate mount point changes test case 3": {
 			mounted: []string{"hadoopcurrent", "hadoop3.2.2"},
@@ -44,7 +44,7 @@ func TestAlluxioEngine_calculateMountPointsChanges(t *testing.T) {
 		"calculate mount point changes test case 4": {
 			mounted: []string{"hadoop3.3.0"},
 			current: []string{"hadoop3.3.0"},
-			expect:  map[string][]string{},
+			expect:  map[string][]string{"added": {}, "removed": {}},
 		},
 		"calculate mount point changes test case 5": {
 			mounted: []string{"hadoopcurrent", "hadoop3.2.2"},
