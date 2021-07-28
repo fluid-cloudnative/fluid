@@ -63,7 +63,7 @@ func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdo
 	return
 }
 
-// Get summary info of the Alluxio Engine
+// Get summary info of the jindo Engine
 func (a JindoFileUtils) ReportSummary() (summary string, err error) {
 	var (
 		command = []string{"/sdk/bin/jindo", "jfs", "-report"}

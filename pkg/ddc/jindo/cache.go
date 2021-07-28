@@ -9,7 +9,7 @@ import (
 
 // queryCacheStatus checks the cache status
 func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
-	summary, err := e.reportSummary()
+	summary, err := e.GetReportSummary()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Jindo summary when query cache status")
 		return states, err

@@ -45,7 +45,7 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 
 		if curReplicas > replicas {
 			ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeScaleInFailed,
-				"Alluxio workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
+				"Jindo workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
 				replicas, curReplicas)
 		}
 
