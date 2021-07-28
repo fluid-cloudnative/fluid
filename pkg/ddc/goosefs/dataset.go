@@ -151,3 +151,11 @@ func (e *GooseFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 func (e *GooseFSEngine) BindToDataset() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
 }
+
+func (e *GooseFSEngine) SetUFSUpdated() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
+}
+
+func (e *GooseFSEngine) SetUFSUpdating() (err error) {
+	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
+}

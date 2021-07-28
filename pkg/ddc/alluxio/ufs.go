@@ -46,6 +46,26 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
+func (e *AlluxioEngine) GetUpdateUFSMap() (map[string][]string, error) {
+	updateUFSMap := make(map[string][]string)
+	// For Alluxio Engine, always attempt to prepare UFS
+	resultInCtx, resultHaveMounted, err := e.getMounts()
+
+	// 2. get mount point need to be added and removed
+	//var added, removed []string
+	added, removed := e.calculateMountPointsChanges(resultHaveMounted, resultInCtx)
+
+	if len(added) > 0 {
+		updateUFSMap["added"] = added
+	}
+
+	if len(removed) > 0 {
+		updateUFSMap["removed"] = removed
+	}
+
+	return updateUFSMap, err
+}
+
 // PrepareUFS does all the UFS preparations
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	// 1. Mount UFS (Synchronous Operation)
@@ -71,6 +91,52 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	}
 
 	return
+}
+
+func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
+	//1. set update status to updating
+	errUpdating := e.SetUFSUpdating()
+	if errUpdating != nil {
+		e.Log.Error(err, "Failed to update dataset status to updating")
+		return err
+	}
+	//2. process added and removed
+	err = e.processUpdatingUFS(updatedUFSMap)
+	if err != nil {
+		e.Log.Error(err, "Failed to add or remove mount points")
+		return err
+	}
+
+	//3. update dataset status to updated
+	err = e.SetUFSUpdated()
+	if err != nil {
+		e.Log.Error(err, "Failed to update dataset status to updated")
+		return err
+	}
+
+	return err
+}
+
+func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+	// 1.get the updated ufs map
+	// updatedUFSMap, err
+	updatedUFSMap, err := e.GetUpdateUFSMap()
+
+	if err != nil {
+		e.Log.Error(err, "Failed to check mount points changes")
+	}
+
+	if len(updatedUFSMap) > 0 {
+		//2. update the ufs
+		err := e.UpdateUFS(updatedUFSMap)
+		if err != nil {
+			e.Log.Error(err, "Failed to add or remove mount points")
+		}
+	}
+
+	updateReady = true
+
+	return updateReady, err
 }
 
 ////du the ufs

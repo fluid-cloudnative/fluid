@@ -126,6 +126,80 @@ type MockImplement struct {
 	recorder *MockImplementMockRecorder
 }
 
+func (m *MockImplement) UpdateOnUFSChange() (ready bool, err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateOnUFSChange")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockImplementMockRecorder) UpdateOnUFSChange() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOnUFSChange", reflect.TypeOf((*MockImplement)(nil).UpdateOnUFSChange))
+}
+
+func (m *MockImplement) SetUFSUpdating() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetUFSUpdating")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) SetUFSUpdating() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUFSUpdating", reflect.TypeOf((*MockImplement)(nil).SetUFSUpdating))
+}
+
+func (m *MockImplement) SetUFSUpdated() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetUFSUpdated")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) SetUFSUpdated() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUFSUpdated", reflect.TypeOf((*MockImplement)(nil).SetUFSUpdated))
+}
+
+func (m *MockImplement) GetUpdateUFSMap() (updatedUFSMap map[string][]string, err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUpdateUFSMap")
+	ret0, _ := ret[0].(map[string][]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockImplementMockRecorder) GetUpdateUFSMap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateUFSMap", reflect.TypeOf((*MockImplement)(nil).GetUpdateUFSMap))
+}
+
+func (m *MockImplement) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUFS")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) UpdateUFS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUFS", reflect.TypeOf((*MockImplement)(nil).UpdateUFS))
+}
+
+func (m *MockImplement) CheckUFSChange() (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUFSChange")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockImplementMockRecorder) CheckUFSChange() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUFSChange", reflect.TypeOf((*MockImplement)(nil).CheckUFSChange))
+}
+
 func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)
@@ -355,6 +429,19 @@ func (m *MockImplement) UpdateDatasetStatus(phase v1alpha1.DatasetPhase) error {
 func (mr *MockImplementMockRecorder) UpdateDatasetStatus(phase interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDatasetStatus", reflect.TypeOf((*MockImplement)(nil).UpdateDatasetStatus), phase)
+}
+
+func (m *MockImplement) UpdateMountStatus(phase v1alpha1.DatasetPhase) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMountStatus", phase)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDatasetStatus indicates an expected call of UpdateDatasetStatus
+func (mr *MockImplementMockRecorder) UpdateMountStatus(phase interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMountStatus", reflect.TypeOf((*MockImplement)(nil).UpdateMountStatus), phase)
 }
 
 // BindToDataset mocks base method

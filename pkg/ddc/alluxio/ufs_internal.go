@@ -96,6 +96,148 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
+func (e *AlluxioEngine) getMounts() (resultInCtx []string, resultHaveMounted []string, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	if err != nil {
+		return resultInCtx, resultHaveMounted, err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUitls.Ready()
+	if !ready {
+		err = fmt.Errorf("the UFS is not ready")
+		return resultInCtx, resultHaveMounted, err
+	}
+
+	// Check if any of the Mounts has not been mounted in Alluxio
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+			continue
+		}
+		alluxioPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		resultInCtx = append(resultInCtx, alluxioPathInCtx)
+	}
+
+	// get the mount points have been mountted
+	for _, mount := range dataset.Status.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+			continue
+		}
+		alluxioPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
+		resultHaveMounted = append(resultHaveMounted, alluxioPathHaveMountted)
+	}
+
+	return resultInCtx, resultHaveMounted, err
+
+}
+
+func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string, mountsInContext []string) ([]string, []string) {
+	removed := []string{}
+	added := []string{}
+
+	for _, v := range mountsHaveMountted {
+		if !ContainsString(mountsInContext, v) {
+			removed = append(removed, v)
+		}
+	}
+
+	for _, v := range mountsInContext {
+		if !ContainsString(mountsHaveMountted, v) {
+			added = append(added, v)
+		}
+	}
+
+	return added, removed
+}
+
+// ContainsString returns true if a string is present in a iteratee.
+func ContainsString(s []string, v string) bool {
+	for _, vv := range s {
+		if vv == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUitls.Ready()
+	if !ready {
+		return fmt.Errorf("the UFS is not ready")
+	}
+
+	// Iterate all the mount points, do mount if the mount point is in added array
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		added := updatedUFSMap["added"]
+		if len(added) > 0 && utils.ContainsString(added, alluxioPath) {
+			mountOptions := map[string]string{}
+			for key, value := range mount.Options {
+				mountOptions[key] = value
+			}
+
+			// Configure mountOptions using encryptOptions
+			// If encryptOptions have the same key with options, it will overwrite the corresponding value
+			for _, encryptOption := range mount.EncryptOptions {
+				key := encryptOption.Name
+				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+
+				secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+				if err != nil {
+					e.Log.Info("can't get the secret")
+					return err
+				}
+
+				value := secret.Data[secretKeyRef.Key]
+				e.Log.Info("get value from secret")
+
+				mountOptions[key] = string(value)
+			}
+			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// unmount the mount point in the removed array
+	removed := updatedUFSMap["removed"]
+	if len(removed) > 0 {
+		for _, mount_remove := range removed {
+			err = fileUitls.UnMount(mount_remove)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	err = e.SyncMetadata()
+	if err != nil {
+		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
+		e.Log.Error(err, "SyncMetadata")
+		return nil
+	}
+
+	return nil
+}
+
 // mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
 func (e *AlluxioEngine) mountUFS() (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
