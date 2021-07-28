@@ -252,21 +252,6 @@ func TestCheckExistenceOfPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	targetDataload = datav1alpha1.DataLoad{
-		Spec: datav1alpha1.DataLoadSpec{
-			Target: []datav1alpha1.TargetPath{
-				{
-					Path:     "/tmp",
-					Replicas: 1,
-				},
-			},
-			LoadMetadata: true,
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-	}
 
 	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
 	if err != nil {
