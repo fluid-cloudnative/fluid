@@ -15,7 +15,9 @@ limitations under the License.
 
 package base
 
-import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+import (
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+)
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
@@ -53,6 +55,10 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 4. Update dataset
+	_, err = t.Implement.UpdateOnUFSChange()
+	if err != nil {
+		return
+	}
 
 	return
 }

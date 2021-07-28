@@ -93,6 +93,7 @@ var _ = Describe("TemplateEngine", func() {
 			impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1)
 			impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1)
 			impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
+			impl.EXPECT().UpdateOnUFSChange().Return(true, nil).Times(1)
 			Expect(t.Sync(fakeCtx)).To(BeNil())
 		})
 	})
