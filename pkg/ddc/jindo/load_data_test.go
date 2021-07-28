@@ -260,6 +260,11 @@ func TestCheckExistenceOfPath(t *testing.T) {
 					Replicas: 1,
 				},
 			},
+			LoadMetadata: true,
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
 		},
 	}
 
