@@ -45,7 +45,6 @@ func (e *JindoEngine) transformHadoopConfig(runtime *datav1alpha1.JindoRuntime, 
 	}
 
 	value.HadoopConfig.ConfigMap = runtime.Spec.HadoopConfig
-	//value.Properties["alluxio.underfs.hdfs.configuration"] = strings.Join(confFiles, ":")
 
 	return nil
 }

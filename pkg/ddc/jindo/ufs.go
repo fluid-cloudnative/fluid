@@ -37,8 +37,8 @@ func (e *JindoEngine) TotalFileNums() (value int64, err error) {
 	return
 }
 
-// report alluxio summary
-func (e *JindoEngine) reportSummary() (summary string, err error) {
+// report jindo summary
+func (e *JindoEngine) GetReportSummary() (summary string, err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUtils.ReportSummary()
