@@ -106,13 +106,54 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 			},
 			expectLen: 1,
 		},
+		"test add no empty nodeSelectorTermList to pod which alredy have matchExpression": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"test-label-value"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											corev1.NodeSelectorRequirement{
+												Key:      "test",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"test-label-value2"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectLen: 2,
+		},
 	}
 
 	for k, item := range testCases {
 		InjectNodeSelectorTerms(item.nodeSelectorTermList, item.pod)
-		if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) !=
-			item.expectLen {
-			t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
+		if k == "test empty nodeSelectorTermList " {
+			if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) !=
+				item.expectLen {
+				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
+			}
+		} else {
+			if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions) !=
+				item.expectLen {
+				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
+			}
 		}
 	}
 }
