@@ -331,9 +331,11 @@ func IsDatasetPVC(client client.Client, name string, namespace string) (find boo
 		Namespace: namespace,
 		Name:      name,
 	}, pvc)
+	fmt.Printf("pvc %s %s err=%v\n", namespace, name, err)
 	if err != nil {
 		return
 	}
 	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+	fmt.Printf("pvc %s %s find=%v\n", namespace, name, pvc.Labels)
 	return
 }
