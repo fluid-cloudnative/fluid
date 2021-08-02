@@ -13,6 +13,8 @@ Resource Types:
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
 </li><li>
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>
+</li><li>
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
 </li></ul>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime
@@ -203,8 +205,8 @@ Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties
 <td>
 <code>tieredstore</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
 </a>
 </em>
 </td>
@@ -259,7 +261,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Disable monitoring for Alluxio Runtime
-Promethous is enabled by default</p>
+Prometheus is enabled by default</p>
 </td>
 </tr>
 <tr>
@@ -700,6 +702,287 @@ DatasetStatus
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime
+</h3>
+<p>
+<p>GooseFSRuntime is the Schema for the goosefsruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>GooseFSRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">
+GooseFSRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>goosefsVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of GooseFS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobMaster</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS job master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobWorker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS job Worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>apiGateway</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS API Gateway</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initUsers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
+InitUsersSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init users</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">
+GooseFSFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Configurable properties for the GOOSEFS component. <br>
+Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jvmOptions</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Options for JVM</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by GooseFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>data</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Data">
+Data
+</a>
+</em>
+</td>
+<td>
+<p>Management strategies for the dataset to which the runtime is bound</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run GooseFS Runtime
+GooseFS support POSIX-ACL and Apache Ranger to manager authorization
+TODO(chrisydxie@tencent.com) Support Apache Ranger.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for GooseFS Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as GooseFS&rsquo;s UFS. The configMap
+must be in the same namespace with the GooseFSRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime
 </h3>
 <p>
@@ -824,8 +1107,8 @@ map[string]string
 <td>
 <code>tieredstore</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
 </a>
 </em>
 </td>
@@ -1044,6 +1327,18 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the master to fit on a node</p>
 </td>
 </tr>
 </tbody>
@@ -1340,8 +1635,8 @@ Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties
 <td>
 <code>tieredstore</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
 </a>
 </em>
 </td>
@@ -1396,7 +1691,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Disable monitoring for Alluxio Runtime
-Promethous is enabled by default</p>
+Prometheus is enabled by default</p>
 </td>
 </tr>
 <tr>
@@ -1585,7 +1880,8 @@ Kubernetes meta/v1.Time
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>)
 </p>
 <p>
 <p>Data management strategies</p>
@@ -2141,6 +2437,19 @@ DataRestoreLocation
 <tbody>
 <tr>
 <td>
+<code>mounts</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Mount">
+[]Mount
+</a>
+</em>
+</td>
+<td>
+<p>the info of mount points have been mounted</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>ufsTotal</code></br>
 <em>
 string
@@ -2325,6 +2634,493 @@ SecretKeySelector
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">GooseFSCompTemplateSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>)
+</p>
+<p>
+<p>GooseFSCompTemplateSpec is a description of the GooseFS commponents</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the given template.
+If unspecified, defaults to 1.
+replicas is the min replicas of dataset in the cluster</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jvmOptions</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Options for JVM</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configurable properties for the GOOSEFS component. <br>
+Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ports</code></br>
+<em>
+map[string]int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports used by GooseFS(e.g. rpc: 19998 for master)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by the GooseFS component. <br>
+<br>
+Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+already allocated to the pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by GooseFS component. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the master to fit on a node</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>)
+</p>
+<p>
+<p>GooseFSFuseSpec is a description of the GooseFS Fuse</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imageTag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image Tag for GooseFS Fuse(e.g. v1.0.1)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullPolicy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jvmOptions</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Options for JVM</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Configurable properties for the GOOSEFS component. <br>
+Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by GooseFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by GooseFS Fuse. <br>
+<br>
+Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+already allocated to the pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>args</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Arguments that will be passed to GooseFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>global</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the fuse client should be deployed in global mode,
+otherwise the affinity should be considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>)
+</p>
+<p>
+<p>GooseFSRuntimeSpec defines the desired state of GooseFSRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>goosefsVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of GooseFS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobMaster</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS job master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobWorker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS job Worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>apiGateway</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">
+GooseFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS API Gateway</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initUsers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
+InitUsersSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init users</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">
+GooseFSFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for GooseFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Configurable properties for the GOOSEFS component. <br>
+Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jvmOptions</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Options for JVM</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by GooseFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>data</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Data">
+Data
+</a>
+</em>
+</td>
+<td>
+<p>Management strategies for the dataset to which the runtime is bound</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run GooseFS Runtime
+GooseFS support POSIX-ACL and Apache Ranger to manager authorization
+TODO(chrisydxie@tencent.com) Support Apache Ranger.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for GooseFS Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hadoopConfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the configMap used to support HDFS configurations when using HDFS as GooseFS&rsquo;s UFS. The configMap
+must be in the same namespace with the GooseFSRuntime. The configMap should contain user-specific HDFS conf files in it.
+For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
+of the file as the value.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.HCFSStatus">HCFSStatus
 </h3>
 <p>
@@ -2370,7 +3166,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>)
 </p>
 <p>
 <p>InitUsersSpec is a description of the initialize the users for runtime</p>
@@ -2540,6 +3337,20 @@ map[string]string
 <p>NodeSelector is a selector which must be true for the master to fit on a node</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec
@@ -2668,6 +3479,20 @@ map[string]string
 this option only effect when global is enabled</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec
@@ -2754,8 +3579,8 @@ map[string]string
 <td>
 <code>tieredstore</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">
-Tieredstore
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
 </a>
 </em>
 </td>
@@ -2828,7 +3653,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.Tieredstore">Tieredstore</a>)
+<a href="#data.fluid.io/v1alpha1.TieredStore">TieredStore</a>)
 </p>
 <p>
 <p>Level describes configurations a tier needs. <br>
@@ -2926,7 +3751,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>)
+<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DatasetStatus">DatasetStatus</a>)
 </p>
 <p>
 <p>Mount describes a mounting. <br>
@@ -3099,6 +3925,17 @@ string
 <p>Runtime object&rsquo;s type (e.g. Alluxio)</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>masterReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Runtime master replicas</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.RuntimeCondition">RuntimeCondition
@@ -3199,6 +4036,7 @@ Kubernetes meta/v1.Time
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>)
 </p>
 <p>
@@ -3643,15 +4481,16 @@ int32
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.Tieredstore">Tieredstore
+<h3 id="data.fluid.io/v1alpha1.TieredStore">TieredStore
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
 </p>
 <p>
-<p>Tieredstore is a description of the tiered store</p>
+<p>TieredStore is a description of the tiered store</p>
 </p>
 <table>
 <thead>
@@ -3683,6 +4522,7 @@ int32
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
 </p>
 <p>
@@ -3747,6 +4587,7 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
 </p>
 <p>
@@ -3798,5 +4639,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>01c0b49</code>.
+on git commit <code>2025b33</code>.
 </em></p>
