@@ -13,7 +13,7 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
 
-RUN curl -o helm-v3.0.3-linux-amd64.tar.gz http://aliacs-k8s-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/public/pkg/helm/helm-v3.0.3-linux-amd64.tar.gz && \
+RUN curl -o helm-v3.0.3-linux-amd64.tar.gz http://aliacs-k8s-cn-hongkong.oss-cn-hongkong.aliyuncs.com/public/pkg/helm/helm-v3.0.3-linux-amd64.tar.gz && \
     tar -xvf helm-v3.0.3-linux-amd64.tar.gz && \
     mv linux-amd64/helm /usr/local/bin/ddc-helm && \
     chmod u+x /usr/local/bin/ddc-helm && \
