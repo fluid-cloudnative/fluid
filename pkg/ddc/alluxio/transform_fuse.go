@@ -17,10 +17,10 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // 4. Transform the fuse
@@ -80,19 +80,20 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	}
 
 	value.Fuse.NodeSelector = map[string]string{}
+	value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
 
-	if runtime.Spec.Fuse.Global {
-		value.Fuse.Global = true
-		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-		}
-		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
-		e.Log.Info("Enable Fuse's global mode")
-	} else {
-		labelName := e.getCommonLabelname()
-		value.Fuse.NodeSelector[labelName] = "true"
-		e.Log.Info("Disable Fuse's global mode")
-	}
+	//if runtime.Spec.Fuse.Global {
+	//	value.Fuse.Global = true
+	//	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+	//		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+	//	}
+	//	value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
+	//	e.Log.Info("Enable Fuse's global mode")
+	//} else {
+	//	labelName := e.getCommonLabelname()
+	//	value.Fuse.NodeSelector[labelName] = "true"
+	//	e.Log.Info("Disable Fuse's global mode")
+	//}
 
 	value.Fuse.HostNetwork = true
 	value.Fuse.Enabled = true

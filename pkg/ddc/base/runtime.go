@@ -51,6 +51,8 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeLabelName() string
 
+	GetFuseLabelName() string
+
 	GetDatasetNumLabelName() string
 
 	GetPersistentVolumeName() string

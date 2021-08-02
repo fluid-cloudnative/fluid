@@ -26,8 +26,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/klog"
 	"os"
 	"os/exec"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
@@ -199,6 +202,35 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, err
 	}
 
+	// TODO: Extract a func here
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		var node v1.Node
+		key := types.NamespacedName{
+			Namespace: "",
+			Name:      ns.nodeId,
+		}
+		if err := ns.client.Get(context.TODO(), key, &node); err != nil {
+			return err
+		}
+
+		nodeToUpdate := node.DeepCopy()
+		fuseLabelName := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+		delete(nodeToUpdate.Labels, fuseLabelName)
+
+		if !reflect.DeepEqual(node, nodeToUpdate) {
+			return ns.client.Update(context.TODO(), nodeToUpdate)
+		} else {
+			klog.Infof("Do nothing because no label needs to be removed on node %s (label: %s)", ns.nodeId, fuseLabelName)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		klog.Errorf("got err %v when labeling the node %s", err, ns.nodeId)
+		return nil, errors.Wrap(err, "can't label the node")
+	}
+
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
@@ -264,6 +296,38 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		if err := cli.ContainerStart(ctx, containerName, dockerapi.ContainerStartOptions{}); err != nil {
 			return nil, errors.Wrap(err, "Can't start container")
 		}
+	}
+
+	// TODO: Extract a func
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		var node v1.Node
+		key := types.NamespacedName{
+			Namespace: "",
+			Name:      ns.nodeId,
+		}
+		if err := ns.client.Get(context.TODO(), key, &node); err != nil {
+			return err
+		}
+
+		nodeToUpdate := node.DeepCopy()
+		fuseLabelName := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+		nodeToUpdate.Labels[fuseLabelName] = "true"
+
+		if !reflect.DeepEqual(node, nodeToUpdate) {
+			err = ns.client.Update(context.TODO(), nodeToUpdate)
+			if err != nil {
+				return err
+			}
+		} else {
+			klog.V(3).Infof("Do nothing because the node is already labeled (label: %s)", fuseLabelName)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		klog.Errorf("got err %v when labeling the node %s", err, ns.nodeId)
+		return nil, errors.Wrap(err, "can't label the node")
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil

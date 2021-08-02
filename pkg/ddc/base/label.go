@@ -83,6 +83,12 @@ func (info *RuntimeInfo) GetRuntimeLabelName() string {
 	return prefix + info.runtimeType + "-" + info.namespace + "-" + info.name
 }
 
+func (info *RuntimeInfo) GetFuseLabelName() string {
+	prefix := common.LabelAnnotationFusePrefix
+
+	return prefix + info.namespace + "-" + info.name
+}
+
 // GetDatasetNumLabelname get the label to record how much datasets on a node
 func (info *RuntimeInfo) GetDatasetNumLabelName() string {
 	return common.GetDatasetNumLabelName()

@@ -60,13 +60,14 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 					cond)
-			if !runtimeToUpdate.Spec.Fuse.Global {
-				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledOut, datav1alpha1.RuntimeFusesScaledOutReason,
-					"The fuses are scale out.", corev1.ConditionTrue)
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						fuseCond)
-			}
+			// TODO: Clean up
+			//if !runtimeToUpdate.Spec.Fuse.Global {
+			//	fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledOut, datav1alpha1.RuntimeFusesScaledOutReason,
+			//		"The fuses are scale out.", corev1.ConditionTrue)
+			//	runtimeToUpdate.Status.Conditions =
+			//		utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+			//			fuseCond)
+			//}
 
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
@@ -129,14 +130,15 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
-			if !runtimeToUpdate.Spec.Fuse.Global {
-				runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
-				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
-					"The fuses scaled in.", corev1.ConditionTrue)
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, fuseCond)
-			}
+			// TODO: Clean up
+			//if !runtimeToUpdate.Spec.Fuse.Global {
+			//	runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
+			//	runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
+			//	fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
+			//		"The fuses scaled in.", corev1.ConditionTrue)
+			//	runtimeToUpdate.Status.Conditions =
+			//		utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, fuseCond)
+			//}
 
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)

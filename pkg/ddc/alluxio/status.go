@@ -17,24 +17,26 @@ package alluxio
 
 import (
 	"context"
+	"fmt"
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
-
 	var (
-		masterReady, workerReady, fuseReady bool
-		// workerPartialReady, fusePartialReady bool
-		masterName string = e.getMasterStatefulsetName()
-		workerName string = e.getWorkerDaemonsetName()
-		fuseName   string = e.getFuseDaemonsetName()
-		namespace  string = e.namespace
+		masterReady, workerReady bool
+		masterName               string = e.getMasterStatefulsetName()
+		workerName               string = e.getWorkerDaemonsetName()
+		namespace                string = e.namespace
 	)
 
 	// 1. Master should be ready
@@ -45,13 +47,6 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	// 2. Worker should be ready
 	workers, err := e.getDaemonset(workerName, namespace)
-	if err != nil {
-		return ready, err
-	}
-
-	// 3. fuse shoulde be ready
-	// runtimeToUpdate.Status.DesiredFuseNumberScheduled = int32(fuses.Status.DesiredNumberScheduled)
-	fuses, err := e.getDaemonset(fuseName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -93,6 +88,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
 		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)
 
+		// Master
 		if *master.Spec.Replicas == master.Status.ReadyReplicas {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 			masterReady = true
@@ -100,6 +96,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
+		// Worker
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Status.NumberUnavailable)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
@@ -114,24 +111,30 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.FuseNumberReady = int32(fuses.Status.NumberReady)
-		runtimeToUpdate.Status.FuseNumberUnavailable = int32(fuses.Status.NumberUnavailable)
-		runtimeToUpdate.Status.FuseNumberAvailable = int32(fuses.Status.NumberAvailable)
-		if runtimeToUpdate.Spec.Fuse.Global {
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
-		}
-		if fuses.Status.DesiredNumberScheduled == fuses.Status.NumberReady {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
-			fuseReady = true
-		} else if fuses.Status.NumberAvailable == fuses.Status.NumberReady {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhasePartialReady
-			fuseReady = true
-		} else {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
+		runtimeInfo, err := e.getRuntimeInfo()
+		if err != nil {
+			return err
 		}
 
-		if masterReady && workerReady && fuseReady {
+		fuseLabel, err := labels.Parse(fmt.Sprintf("%s=true", runtimeInfo.GetFuseLabelName()))
+		if err != nil {
+			return err
+		}
+
+		var nodeList = &corev1.NodeList{}
+		err = e.Client.List(context.TODO(), nodeList, &client.ListOptions{
+			LabelSelector: fuseLabel,
+		})
+
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+		}
+
+		runtimeToUpdate.Status.FuseNumberReady = int32(len(nodeList.Items))
+
+		if masterReady && workerReady {
 			ready = true
 		}
 

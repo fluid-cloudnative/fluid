@@ -463,130 +463,131 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	}
 }
 
-func TestCheckFuseHealthy(t *testing.T) {
-	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-	}
-
-	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
-	}
-
-	var alluxioruntimeInputs = []datav1alpha1.AlluxioRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-	}
-	for _, alluxioruntimeInput := range alluxioruntimeInputs {
-		testObjs = append(testObjs, alluxioruntimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engines := []AlluxioEngine{
-		{
-			Client:    client,
-			Log:       log.NullLogger{},
-			namespace: "fluid",
-			name:      "hbase",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-			},
-		},
-		{
-			Client:    client,
-			Log:       log.NullLogger{},
-			namespace: "fluid",
-			name:      "spark",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "spark",
-					Namespace: "fluid",
-				},
-			},
-		},
-	}
-
-	var testCase = []struct {
-		engine                             AlluxioEngine
-		expectedWorkerPhase                datav1alpha1.RuntimePhase
-		expectedErrorNil                   bool
-		expectedRuntimeFuseNumberReady     int32
-		expectedRuntimeFuseNumberAvailable int32
-	}{
-		{
-			engine:                             engines[0],
-			expectedWorkerPhase:                datav1alpha1.RuntimePhaseNotReady,
-			expectedErrorNil:                   false,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
-		},
-		{
-			engine:                             engines[1],
-			expectedWorkerPhase:                "",
-			expectedErrorNil:                   true,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
-		},
-	}
-
-	for _, test := range testCase {
-		err := test.engine.checkFuseHealthy()
-		if err != nil && test.expectedErrorNil == true ||
-			err == nil && test.expectedErrorNil == false {
-			t.Errorf("fail to exec the checkMasterHealthy function with err %v", err)
-			return
-		}
-
-		alluxioruntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime with the error %v", err)
-			return
-		}
-
-		if alluxioruntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			alluxioruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
-			t.Errorf("fail to update the runtime")
-			return
-		}
-
-		_, cond := utils.GetRuntimeCondition(alluxioruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		if cond == nil {
-			t.Errorf("fail to update the condition")
-			return
-		}
-	}
-}
+// TODO: Clean up
+//func TestCheckFuseHealthy(t *testing.T) {
+//	var daemonSetInputs = []appsv1.DaemonSet{
+//		{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      "hbase-fuse",
+//				Namespace: "fluid",
+//			},
+//			Status: appsv1.DaemonSetStatus{
+//				NumberUnavailable: 1,
+//				NumberReady:       1,
+//				NumberAvailable:   1,
+//			},
+//		},
+//		{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      "spark-fuse",
+//				Namespace: "fluid",
+//			},
+//			Status: appsv1.DaemonSetStatus{
+//				NumberUnavailable: 0,
+//				NumberReady:       1,
+//				NumberAvailable:   1,
+//			},
+//		},
+//	}
+//
+//	testObjs := []runtime.Object{}
+//	for _, daemonSet := range daemonSetInputs {
+//		testObjs = append(testObjs, daemonSet.DeepCopy())
+//	}
+//
+//	var alluxioruntimeInputs = []datav1alpha1.AlluxioRuntime{
+//		{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      "hbase",
+//				Namespace: "fluid",
+//			},
+//		},
+//		{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      "spark",
+//				Namespace: "fluid",
+//			},
+//		},
+//	}
+//	for _, alluxioruntimeInput := range alluxioruntimeInputs {
+//		testObjs = append(testObjs, alluxioruntimeInput.DeepCopy())
+//	}
+//	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+//
+//	engines := []AlluxioEngine{
+//		{
+//			Client:    client,
+//			Log:       log.NullLogger{},
+//			namespace: "fluid",
+//			name:      "hbase",
+//			runtime: &datav1alpha1.AlluxioRuntime{
+//				ObjectMeta: metav1.ObjectMeta{
+//					Name:      "hbase",
+//					Namespace: "fluid",
+//				},
+//			},
+//		},
+//		{
+//			Client:    client,
+//			Log:       log.NullLogger{},
+//			namespace: "fluid",
+//			name:      "spark",
+//			runtime: &datav1alpha1.AlluxioRuntime{
+//				ObjectMeta: metav1.ObjectMeta{
+//					Name:      "spark",
+//					Namespace: "fluid",
+//				},
+//			},
+//		},
+//	}
+//
+//	var testCase = []struct {
+//		engine                             AlluxioEngine
+//		expectedWorkerPhase                datav1alpha1.RuntimePhase
+//		expectedErrorNil                   bool
+//		expectedRuntimeFuseNumberReady     int32
+//		expectedRuntimeFuseNumberAvailable int32
+//	}{
+//		{
+//			engine:                             engines[0],
+//			expectedWorkerPhase:                datav1alpha1.RuntimePhaseNotReady,
+//			expectedErrorNil:                   false,
+//			expectedRuntimeFuseNumberReady:     1,
+//			expectedRuntimeFuseNumberAvailable: 1,
+//		},
+//		{
+//			engine:                             engines[1],
+//			expectedWorkerPhase:                "",
+//			expectedErrorNil:                   true,
+//			expectedRuntimeFuseNumberReady:     1,
+//			expectedRuntimeFuseNumberAvailable: 1,
+//		},
+//	}
+//
+//	for _, test := range testCase {
+//		err := test.engine.checkFuseHealthy()
+//		if err != nil && test.expectedErrorNil == true ||
+//			err == nil && test.expectedErrorNil == false {
+//			t.Errorf("fail to exec the checkMasterHealthy function with err %v", err)
+//			return
+//		}
+//
+//		alluxioruntime, err := test.engine.getRuntime()
+//		if err != nil {
+//			t.Errorf("fail to get the runtime with the error %v", err)
+//			return
+//		}
+//
+//		if alluxioruntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
+//			alluxioruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
+//			t.Errorf("fail to update the runtime")
+//			return
+//		}
+//
+//		_, cond := utils.GetRuntimeCondition(alluxioruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+//		if cond == nil {
+//			t.Errorf("fail to update the condition")
+//			return
+//		}
+//	}
+//}
