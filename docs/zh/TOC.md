@@ -36,6 +36,8 @@
 + 运维指南
   - [运行时监控](operation/monitoring.md)
   - [JVM性能分析](dev/profiling.md)
+  - [自动弹性伸缩](operation/dataset_auto_scaling.md)
+  - [定时弹性伸缩](operation/dataset_cron_scaling.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
