@@ -16,12 +16,14 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -96,75 +98,6 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-func (e *AlluxioEngine) getMounts() (resultInCtx []string, resultHaveMounted []string, err error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.V(1).Info("get dataset info", "dataset", dataset)
-	if err != nil {
-		return resultInCtx, resultHaveMounted, err
-	}
-
-	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-
-	ready := fileUitls.Ready()
-	if !ready {
-		err = fmt.Errorf("the UFS is not ready")
-		return resultInCtx, resultHaveMounted, err
-	}
-
-	// Check if any of the Mounts has not been mounted in Alluxio
-	for _, mount := range dataset.Spec.Mounts {
-		if common.IsFluidNativeScheme(mount.MountPoint) {
-			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
-			continue
-		}
-		alluxioPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
-		resultInCtx = append(resultInCtx, alluxioPathInCtx)
-	}
-
-	// get the mount points have been mountted
-	for _, mount := range dataset.Status.Mounts {
-		if common.IsFluidNativeScheme(mount.MountPoint) {
-			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
-			continue
-		}
-		alluxioPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
-		resultHaveMounted = append(resultHaveMounted, alluxioPathHaveMountted)
-	}
-
-	return resultInCtx, resultHaveMounted, err
-
-}
-
-func (e *AlluxioEngine) calculateMountPointsChanges(mountsHaveMountted []string, mountsInContext []string) ([]string, []string) {
-	removed := []string{}
-	added := []string{}
-
-	for _, v := range mountsHaveMountted {
-		if !ContainsString(mountsInContext, v) {
-			removed = append(removed, v)
-		}
-	}
-
-	for _, v := range mountsInContext {
-		if !ContainsString(mountsHaveMountted, v) {
-			added = append(added, v)
-		}
-	}
-
-	return added, removed
-}
-
-// ContainsString returns true if a string is present in a iteratee.
-func ContainsString(s []string, v string) bool {
-	for _, vv := range s {
-		if vv == v {
-			return true
-		}
-	}
-	return false
-}
-
 func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -172,9 +105,9 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUitls.Ready()
+	ready := fileUtils.Ready()
 	if !ready {
 		return fmt.Errorf("the UFS is not ready")
 	}
@@ -210,7 +143,7 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 
 				mountOptions[key] = string(value)
 			}
-			err = fileUitls.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
+			err = fileUtils.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
 				return err
 			}
@@ -220,11 +153,20 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 	// unmount the mount point in the removed array
 	removed := updatedUFSMap["removed"]
 	if len(removed) > 0 {
-		for _, mount_remove := range removed {
-			err = fileUitls.UnMount(mount_remove)
+		for _, mountRemove := range removed {
+			err = fileUtils.UnMount(mountRemove)
 			if err != nil {
 				return err
 			}
+		}
+	}
+	// need to reset ufsTotal to Calculating so that SyncMetadata will work
+	datasetToUpdate := dataset.DeepCopy()
+	datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
+	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+		if err != nil {
+			e.Log.Error(err, "fail to reset ufsTotal to Calculating")
 		}
 	}
 

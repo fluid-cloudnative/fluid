@@ -26,19 +26,15 @@ import (
 type DatasetPhase string
 
 const (
-	// Bound to runtime, can't be deleted
-	PendingDatasetPhase DatasetPhase = "Pending"
 	// Bound to dataset, can't be released
 	BoundDatasetPhase DatasetPhase = "Bound"
 	// Failed, can't be deleted
 	FailedDatasetPhase DatasetPhase = "Failed"
 	// Not bound to runtime, can be deleted
 	NotBoundDatasetPhase DatasetPhase = "NotBound"
-	// Updated dataset, can't be released
-	UpdatedDatasetPhase DatasetPhase = "Updated"
 	// updating dataset, can't be released
 	UpdatingDatasetPhase DatasetPhase = "Updating"
-
+	// the dataset have no phase and need to be judged
 	NoneDatasetPhase DatasetPhase = ""
 )
 

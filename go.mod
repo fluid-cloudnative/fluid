@@ -18,6 +18,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
+	github.com/thoas/go-funk v0.9.0
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 	google.golang.org/grpc v1.26.0

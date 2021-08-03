@@ -44,14 +44,7 @@ func (e *JindoEngine) GetReportSummary() (summary string, err error) {
 	return fileUtils.ReportSummary()
 }
 
-func (e *JindoEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
-	return
-}
-
+// JindoEngine hasn't support UpdateOnUFSChange
 func (e *JindoEngine) UpdateOnUFSChange() (updateReady bool, err error) {
-	return
-}
-
-func (e *JindoEngine) GetUpdateUFSMap() (updatedUFSMap map[string][]string, err error) {
 	return
 }

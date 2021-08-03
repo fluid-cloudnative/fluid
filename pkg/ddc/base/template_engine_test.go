@@ -16,17 +16,42 @@ limitations under the License.
 package base_test
 
 import (
+	"context"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var _ = Describe("TemplateEngine", func() {
+	mockDatasetName := "fluid-data-set"
+	mockDatasetNamespace := "default"
+
+	fakeDataset := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mockDatasetName,
+			Namespace: mockDatasetNamespace,
+		},
+	}
+	s := apimachineryRuntime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, fakeDataset)
+	fakeClient := fake.NewFakeClientWithScheme(s, fakeDataset)
+
 	var fakeCtx = runtime.ReconcileRequestContext{
+		Context: context.Background(),
+		NamespacedName: types.NamespacedName{
+			Namespace: mockDatasetNamespace,
+			Name:      mockDatasetName,
+		},
+		Client:        fakeClient,
 		Log:           log.NullLogger{},
 		RuntimeType:   "test-runtime-type",
 		FinalizerName: "test-finalizer-name",
@@ -36,6 +61,7 @@ var _ = Describe("TemplateEngine", func() {
 		Id:      "test-id",
 		Log:     fakeCtx.Log,
 		Context: fakeCtx,
+		Client:  fakeClient,
 	}
 	var impl *enginemock.MockImplement
 

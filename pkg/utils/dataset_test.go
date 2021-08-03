@@ -325,3 +325,348 @@ func mockDatasetWithCondition(name, ns string, conditions []datav1alpha1.Dataset
 	}
 	return dataset
 }
+
+func TestGetUpdateUFSMap(t *testing.T) {
+	testCases := map[string]struct {
+		dataset    *datav1alpha1.Dataset
+		specAdd    []string
+		specRemove []string
+	}{
+		"get UpdateUFSMap test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{},
+				},
+			},
+			specAdd:    []string{"/hbase", "/spark"},
+			specRemove: []string{},
+		},
+		"get UpdateUFSMap test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+					},
+				},
+			},
+			specAdd:    []string{"/hbase"},
+			specRemove: []string{"/spark"},
+		},
+		"get UpdateUFSMap test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hadoop",
+						},
+						{
+							Name: "test",
+						},
+					},
+				},
+			},
+			specAdd:    []string{},
+			specRemove: []string{"/hadoop", "/test"},
+		},
+	}
+	for k, item := range testCases {
+		updateUFSMap, err := GetUpdateUFSMap(item.dataset)
+		if err != nil {
+			t.Errorf("%s check failure", k)
+		}
+		if !(len(updateUFSMap["added"]) == 0 && len(item.specAdd) == 0) {
+			if !reflect.DeepEqual(updateUFSMap["added"], item.specAdd) {
+				t.Errorf("%s check failure, got ToBeAdded mountPaths %s,want %s", k, updateUFSMap["added"], item.specAdd)
+			}
+		}
+		if !(len(updateUFSMap["removed"]) == 0 && len(item.specRemove) == 0) {
+			if !reflect.DeepEqual(updateUFSMap["removed"], item.specRemove) {
+				t.Errorf("%s check failure, got ToBeRemoved mountPaths %s,want %s", k, updateUFSMap["removed"], item.specRemove)
+			}
+		}
+	}
+}
+
+func TestGetMounts(t *testing.T) {
+	testCases := map[string]struct {
+		dataset          *datav1alpha1.Dataset
+		specMountsWant   []string
+		statusMountsWant []string
+	}{
+		"get Mounts test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{},
+				},
+			},
+			specMountsWant: []string{
+				"/hbase",
+				"/spark",
+			},
+			statusMountsWant: []string{},
+		},
+		"get Mounts test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+					},
+				},
+			},
+			specMountsWant: []string{
+				"/hbase",
+				"/spark",
+			},
+			statusMountsWant: []string{
+				"/spark",
+			},
+		},
+		"get Mounts test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+			},
+			specMountsWant: []string{
+				"/hbase",
+			},
+			statusMountsWant: []string{
+				"/spark",
+				"/hbase",
+				"/hadoop",
+			},
+		},
+	}
+
+	for k, item := range testCases {
+		specMountPaths, mountedMountPaths, err := getMounts(item.dataset)
+		if err != nil {
+			t.Errorf("%s check failure", k)
+		}
+		if !(len(specMountPaths) == 0 && len(item.specMountsWant) == 0) {
+			if !reflect.DeepEqual(specMountPaths, item.specMountsWant) {
+				t.Errorf("%s check failure, got spec mountPaths %s,want %s", k, specMountPaths, item.specMountsWant)
+			}
+		}
+		if !(len(mountedMountPaths) == 0 && len(item.statusMountsWant) == 0) {
+			if !reflect.DeepEqual(mountedMountPaths, item.statusMountsWant) {
+				t.Errorf("%s check failure, got mounted mountPaths %s,want %s", k, mountedMountPaths, item.statusMountsWant)
+			}
+		}
+
+	}
+}
+
+func TestCalculateMountPointsChanges(t *testing.T) {
+	testCases := map[string]struct {
+		specMountPaths    []string
+		mountedMountPaths []string
+		expect            map[string][]string
+	}{
+		"calculate mount point changes test case 1": {
+			specMountPaths:    []string{"hadoop3.3.0"},
+			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.3.0"},
+			expect:            map[string][]string{"added": {}, "removed": {"hadoopCurrent"}},
+		},
+		"calculate mount point changes test case 2": {
+			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.3.0"},
+			mountedMountPaths: []string{"hadoopCurrent"},
+			expect:            map[string][]string{"added": {"hadoop3.3.0", "hadoop3.3.0"}, "removed": {"hadoopCurrent"}},
+		},
+		"calculate mount point changes test case 3": {
+			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2"},
+			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
+			expect:            map[string][]string{"added": {"hadoop3.3.0"}, "removed": {"hadoopCurrent"}},
+		},
+		"calculate mount point changes test case 4": {
+			specMountPaths:    []string{"hadoop3.3.0"},
+			mountedMountPaths: []string{"hadoop3.3.0"},
+			expect:            map[string][]string{"added": {}, "removed": {}},
+		},
+		"calculate mount point changes test case 5": {
+			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2", "hadoop3.3.1"},
+			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
+			expect:            map[string][]string{"added": {"hadoop3.3.0", "hadoop3.3.1"}, "removed": {"hadoopCurrent"}},
+		},
+	}
+
+	for k, item := range testCases {
+		toBeAdded, toBeRemoved := calculateMountPointsChanges(item.specMountPaths, item.mountedMountPaths)
+
+		if !reflect.DeepEqual(toBeAdded, item.expect["added"]) {
+			t.Errorf("%s check failure, expected added %v, got %v", k, item.expect["added"], toBeAdded)
+		}
+		if !reflect.DeepEqual(toBeRemoved, item.expect["removed"]) {
+			t.Errorf("%s check failure, expected removed %v, got %v", k, item.expect["removed"], toBeRemoved)
+		}
+	}
+
+}
+
+func TestUpdateMountStatus(t *testing.T) {
+	mockDatasetName := "fluid-data-set"
+	mockDatasetNamespace := "default"
+
+	testCases := map[string]struct {
+		dataset         *datav1alpha1.Dataset
+		phase           datav1alpha1.DatasetPhase
+		shouldReturnErr bool
+	}{
+		"Update MountStatus test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.UpdatingDatasetPhase,
+			shouldReturnErr: false,
+		},
+		"Update MountStatus test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.BoundDatasetPhase,
+			shouldReturnErr: false,
+		},
+		"Update MountStatus test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.NotBoundDatasetPhase,
+			shouldReturnErr: true,
+		},
+		"Update MountStatus test case 4": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.FailedDatasetPhase,
+			shouldReturnErr: true,
+		},
+		"Update MountStatus test case 5": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.NoneDatasetPhase,
+			shouldReturnErr: true,
+		},
+	}
+	for k, item := range testCases {
+		s := runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, item.dataset)
+		fakeClient := fake.NewFakeClientWithScheme(s, item.dataset)
+		err := UpdateMountStatus(fakeClient, mockDatasetName, mockDatasetNamespace, item.phase)
+		if item.phase != datav1alpha1.BoundDatasetPhase && item.phase != datav1alpha1.UpdatingDatasetPhase {
+			if err == nil {
+				t.Errorf("%s check failure, should not change dataset phase to %s", k, item.phase)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%s check failure", k)
+			}
+			dataset, err := GetDataset(fakeClient, mockDatasetName, mockDatasetNamespace)
+			if err != nil || dataset == nil {
+				t.Errorf("%s check failure because cannot get dataset", k)
+			} else {
+				if dataset.Status.Phase != item.phase {
+					t.Errorf("%s check failure, expected %v, got %v", k, item.phase, dataset.Status.Phase)
+				}
+				if item.phase == datav1alpha1.BoundDatasetPhase && dataset.Status.Conditions[0].Message != "The ddc runtime has updated completely." {
+					t.Errorf("%s check failure, expected \"The ddc runtime has updated completely.\", got %v", k, dataset.Status.Conditions[0].Message)
+				}
+				if item.phase == datav1alpha1.UpdatingDatasetPhase && dataset.Status.Conditions[0].Message != "The ddc runtime is updating." {
+					t.Errorf("%s check failure, expected \"The ddc runtime is updating.\", got %v", k, dataset.Status.Conditions[0].Message)
+				}
+			}
+
+		}
+
+	}
+
+}
