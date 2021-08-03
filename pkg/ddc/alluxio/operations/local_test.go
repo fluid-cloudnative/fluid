@@ -18,9 +18,18 @@ package operations
 import (
 	"testing"
 
+	. "github.com/agiledragon/gomonkey"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+func mockExecCommandInContainerForSyncLocalDir() (stdout string, stderr string, err error) {
+	r := `File Size     In Alluxio       Path
+	592.06MB      0B (0%)          /`
+	return r, "", nil
+}
 
 func TestSyncLocalDir(t *testing.T) {
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
@@ -35,10 +44,15 @@ func TestSyncLocalDir(t *testing.T) {
 
 	for _, test := range tests {
 		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
+		patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			stdout, stderr, err := mockExecCommandInContainerForSyncLocalDir()
+			return stdout, stderr, err
+		})
+		defer patch1.Reset()
 		err := tools.SyncLocalDir(test.path)
 		// fmt.Println(expectedErr)
-		if err == nil {
-			t.Errorf("expected %v, got %v", test.path, tools)
+		if err != nil {
+			t.Errorf("expected %v, got %v %s", test.path, tools, err)
 		}
 	}
 }
