@@ -15,13 +15,14 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0 // indirect
 	github.com/kubernetes-csi/drivers v1.0.2
+	github.com/miekg/dns v1.1.42
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.18.5

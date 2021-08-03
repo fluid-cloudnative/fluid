@@ -40,6 +40,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
+	"github.com/miekg/dns"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +48,21 @@ import (
 )
 
 const AlluxioFuseImage = "registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c"
+const DefaultDNSConfig = "/etc/resolv.conf"
+const DNSNdotsDefault = 1
+const DNSTimeoutDefault = 5
+const DNSAttemptsDefault = 2
+
+var clusterDns *dns.ClientConfig
+
+func init() {
+	var err error
+	clusterDns, err = dns.ClientConfigFromFile(DefaultDNSConfig)
+	if err != nil {
+		klog.Errorf("got err %v when getting dns config", err)
+		os.Exit(1)
+	}
+}
 
 type nodeServer struct {
 	nodeId string
@@ -338,32 +354,36 @@ func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 }
 
 func (ns *nodeServer) makeContainerRunConfig(namespace, name string) (*dockercontainer.Config, *dockercontainer.HostConfig, error) {
-	fuseDaemonsetName := name + "-fuse"
-
-	daemonset := &appsv1.DaemonSet{}
+	// 1. Get Fuse DaemonSet
+	fuseDaemonSetName := name + "-fuse"
+	daemonSet := &appsv1.DaemonSet{}
 	err := ns.client.Get(context.TODO(), types.NamespacedName{
-		Name:      fuseDaemonsetName,
+		Name:      fuseDaemonSetName,
 		Namespace: namespace,
-	}, daemonset)
+	}, daemonSet)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	containerToStart := daemonset.Spec.Template.Spec.Containers[0]
+	// 2. make envs
+	containerToStart := daemonSet.Spec.Template.Spec.Containers[0]
 	envs, err := ns.makeEnvironmentVariables(namespace, &containerToStart)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	binds, err := ns.makeMounts(&daemonset.Spec.Template.Spec, &containerToStart)
+	// 3. make mounts
+	binds, err := ns.makeMounts(&daemonSet.Spec.Template.Spec, &containerToStart)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	//dns, dnsOpts, dnsSearch, err := ns.
+	// 4. make dns configs
+	dnsServers, dnsSearch, dnsOpts := ns.makeDNS(namespace)
 
-	glog.Infof("Got environments like %v", envs)
+	// 5. make capabilities
+	privilege, capAdd, capDrop := ns.makeCapabilities(&daemonSet.Spec.Template.Spec, &containerToStart)
 
 	return &dockercontainer.Config{
 			Env:        envs,
@@ -381,13 +401,14 @@ func (ns *nodeServer) makeContainerRunConfig(namespace, name string) (*dockercon
 		}, &dockercontainer.HostConfig{
 			Binds: binds,
 			RestartPolicy: dockercontainer.RestartPolicy{
-				Name: "no",
+				Name: "always",
 			},
-			DNS:        []string{"172.16.0.10"},
-			DNSSearch:  []string{"default.svc.cluster.local", "svc.cluster.local", "cluster.local"},
-			DNSOptions: []string{"ndots:5"},
-			Privileged: true,
-			CapAdd:     []string{"SYS_ADMIN"},
+			DNS:        dnsServers,
+			DNSSearch:  dnsSearch,
+			DNSOptions: dnsOpts,
+			Privileged: privilege,
+			CapAdd:     capAdd,
+			CapDrop:    capDrop,
 		}, nil
 }
 
@@ -495,3 +516,49 @@ func (ns *nodeServer) makeMounts(podSpec *v1.PodSpec, container *v1.Container) (
 	}
 	return result, nil
 }
+
+func (ns *nodeServer) makeDNS(namespace string) (dnsServer, dnsSearch, dnsOptions []string) {
+	dnsServer = clusterDns.Servers
+
+	dnsSearch = clusterDns.Search
+	// Transform service discovery according to the namespace of the pod
+	for idx := range dnsSearch {
+		if "fluid-system.svc.cluster.local" == dnsSearch[idx] {
+			dnsSearch[idx] = strings.ReplaceAll(dnsSearch[idx], "fluid-system", namespace)
+		}
+	}
+
+	// We ignore all the default values in dns options
+	if clusterDns.Ndots != DNSNdotsDefault {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("ndots:%d", clusterDns.Ndots))
+	}
+
+	if clusterDns.Attempts != DNSAttemptsDefault {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("attempts:%d", clusterDns.Attempts))
+	}
+
+	if clusterDns.Timeout != DNSTimeoutDefault {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("timeout:%d", clusterDns.Timeout))
+	}
+
+	return
+}
+
+func (ns *nodeServer) makeCapabilities(podSpec *v1.PodSpec, container *v1.Container) (privileged bool, capAdd, capDrop []string) {
+	privileged = *container.SecurityContext.Privileged
+
+	for _, capability := range container.SecurityContext.Capabilities.Add {
+		capAdd = append(capAdd, string(capability))
+	}
+
+	for _, capability := range container.SecurityContext.Capabilities.Drop {
+		capDrop = append(capDrop, string(capability))
+	}
+
+	return
+}
+
+// TODO: Change users
+//func (ns *nodeServer) makeUsers(container *v1.Container) (user string) {
+//
+//}
