@@ -120,7 +120,8 @@ func handle() {
 
 	// startReaper()
 	fluid.LogVersion()
-	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
+	eventSource := fmt.Sprintf("Fluid CSI Plugin, %s", nodeID)
+	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient(), mgr.GetEventRecorderFor(eventSource))
 	d.Run()
 }
 

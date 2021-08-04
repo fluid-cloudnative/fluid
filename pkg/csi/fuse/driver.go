@@ -32,6 +32,7 @@ package csi
 
 import (
 	"fmt"
+	"k8s.io/client-go/tools/record"
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,11 +51,12 @@ const (
 
 type driver struct {
 	client           client.Client
+	recorder         record.EventRecorder
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
 
-func NewDriver(nodeID, endpoint string, client client.Client) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client, recorder record.EventRecorder) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
@@ -84,6 +86,7 @@ func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 		endpoint:  endpoint,
 		csiDriver: csiDriver,
 		client:    client,
+		recorder:  recorder,
 	}
 }
 
@@ -97,6 +100,7 @@ func (d *driver) newNodeServer() *nodeServer {
 		nodeId:            d.nodeId,
 		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.csiDriver),
 		client:            d.client,
+		recorder:          d.recorder,
 	}
 }
 

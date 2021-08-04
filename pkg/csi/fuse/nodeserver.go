@@ -21,11 +21,13 @@ import (
 	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerstrslice "github.com/docker/docker/api/types/strslice"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"os"
@@ -67,7 +69,8 @@ func init() {
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
-	client client.Client
+	client   client.Client
+	recorder record.EventRecorder
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -194,7 +197,6 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	namespacedName := strings.Split(req.GetVolumeId(), "-")
-	glog.Infof("Making container run config with namespace: %s and name: %s", namespacedName[0], namespacedName[1])
 	containerName := fmt.Sprintf("%s-%s-fuse", namespacedName[0], namespacedName[1])
 
 	containerJson, err := cli.ContainerInspect(ctx, containerName)
@@ -243,9 +245,16 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	})
 
 	if err != nil {
-		klog.Errorf("got err %v when labeling the node %s", err, ns.nodeId)
-		return nil, errors.Wrap(err, "can't label the node")
+		klog.Errorf("NodeUnstageVolume: can't remove label on node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove label on node %s", ns.nodeId))
 	}
+
+	runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
+	if err != nil {
+		klog.Errorf("NodeUnstageVolume: can't get alluxio runtime: %v", err)
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get alluxio runtime")
+	}
+	ns.recorder.Eventf(runtime, v1.EventTypeNormal, "Terminated", "Terminated fuse container %s", containerName)
 
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
@@ -342,9 +351,16 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	})
 
 	if err != nil {
-		klog.Errorf("got err %v when labeling the node %s", err, ns.nodeId)
-		return nil, errors.Wrap(err, "can't label the node")
+		klog.Errorf("NodeStageVolume: can't label the node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't label the node %s", ns.nodeId))
 	}
+
+	runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
+	if err != nil {
+		klog.Errorf("NodeStageVolume: can't get alluxio runtime %s/%s: %v", namespacedName[0], namespacedName[1], err)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get alluxio runtime %s/%s", namespacedName[0], namespacedName[1]))
+	}
+	ns.recorder.Eventf(runtime, v1.EventTypeNormal, "Started", "Started fuse container %s", containerName)
 
 	return &csi.NodeStageVolumeResponse{}, nil
 }
