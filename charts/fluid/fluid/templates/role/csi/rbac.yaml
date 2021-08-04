@@ -11,6 +11,17 @@ metadata:
   name: fluid-csi-plugin
 rules:
   - apiGroups:
+      - data.fluid.io
+    resources:
+      - alluxiodataloads
+      - alluxioruntimes
+      - datasets
+      - alluxiodataloads/status
+      - alluxioruntimes/status
+      - datasets/status
+    verbs:
+      - '*'
+  - apiGroups:
       - apps
     resources:
       - daemonsets

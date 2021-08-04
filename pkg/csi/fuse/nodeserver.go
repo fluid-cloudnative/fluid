@@ -193,7 +193,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
 	if err != nil {
-		return nil, errors.Wrap(err, "Can't new docker client")
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't new docker client")
 	}
 
 	namespacedName := strings.Split(req.GetVolumeId(), "-")
@@ -204,7 +204,8 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		if dockerclient.IsErrNotFound(err) {
 			return &csi.NodeUnstageVolumeResponse{}, nil
 		}
-		return nil, err
+		klog.Errorf("NodeUnstageVolume: can't inspect container %s: %v", containerName, err)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't inspect container %s", containerName))
 	}
 
 	running := containerJson.State.Running
@@ -212,12 +213,14 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	if running {
 		err = cli.ContainerStop(ctx, containerName, &timeout)
 		if err != nil {
-			return nil, err
+			klog.Errorf("NodeUnstageVolume: can't stop container %s: %v", containerName, err)
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't stop container %s", containerName))
 		}
 	}
 
 	if err = cli.ContainerRemove(ctx, containerName, dockerapi.ContainerRemoveOptions{}); err != nil {
-		return nil, err
+		klog.Errorf("NodeUnstageVolume: can't remove container %s: %v", containerName, err)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove container %s: %v", containerName, err))
 	}
 
 	// TODO: Extract a func here
@@ -291,27 +294,25 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	var running bool
 	if err != nil {
 		if !dockerclient.IsErrNotFound(err) {
-			return nil, errors.Wrap(err, fmt.Sprintf("Can't check existence of the container"))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't check existence of the container"))
 		}
 
 		_, err = cli.ImagePull(ctx, AlluxioFuseImage, dockerapi.ImagePullOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Can't pull image(%s)", AlluxioFuseImage))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't pull image(%s)", AlluxioFuseImage))
 		}
-
-		//_, err = cli.ContainerInspect()
 
 		containerConfig, hostConfig, err := ns.makeContainerRunConfig(namespacedName[0], namespacedName[1])
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Can't make container run config"))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't make container run config"))
 		}
 
-		glog.V(1).Infof(">>>>>> container config, %v", containerConfig)
+		glog.V(1).Infof("config for container %s: %v", containerName, containerConfig)
 
 		// We don't need the response because we identify the container with unique container name
 		_, err = cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, containerName)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Can't create container, runConfig: %v", containerConfig))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't create container, runConfig: %v", containerConfig))
 		}
 	} else {
 		running = containerJson.State.Running
@@ -319,48 +320,46 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	if !running {
 		if err := cli.ContainerStart(ctx, containerName, dockerapi.ContainerStartOptions{}); err != nil {
-			return nil, errors.Wrap(err, "Can't start container")
+			return nil, errors.Wrap(err, "NodeStageVolume: can't start container")
 		}
-	}
-
-	// TODO: Extract a func
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		var node v1.Node
-		key := types.NamespacedName{
-			Namespace: "",
-			Name:      ns.nodeId,
-		}
-		if err := ns.client.Get(context.TODO(), key, &node); err != nil {
-			return err
-		}
-
-		nodeToUpdate := node.DeepCopy()
-		fuseLabelName := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
-		nodeToUpdate.Labels[fuseLabelName] = "true"
-
-		if !reflect.DeepEqual(node, nodeToUpdate) {
-			err = ns.client.Update(context.TODO(), nodeToUpdate)
-			if err != nil {
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			var node v1.Node
+			key := types.NamespacedName{
+				Namespace: "",
+				Name:      ns.nodeId,
+			}
+			if err := ns.client.Get(context.TODO(), key, &node); err != nil {
 				return err
 			}
-		} else {
-			klog.V(3).Infof("Do nothing because the node is already labeled (label: %s)", fuseLabelName)
+
+			nodeToUpdate := node.DeepCopy()
+			fuseLabelName := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+			nodeToUpdate.Labels[fuseLabelName] = "true"
+
+			if !reflect.DeepEqual(node, nodeToUpdate) {
+				err = ns.client.Update(context.TODO(), nodeToUpdate)
+				if err != nil {
+					return err
+				}
+			} else {
+				klog.V(3).Infof("Do nothing because the node is already labeled (label: %s)", fuseLabelName)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			klog.Errorf("NodeStageVolume: can't label the node %s: %v", ns.nodeId, err)
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't label the node %s", ns.nodeId))
 		}
 
-		return nil
-	})
-
-	if err != nil {
-		klog.Errorf("NodeStageVolume: can't label the node %s: %v", ns.nodeId, err)
-		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't label the node %s", ns.nodeId))
+		runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
+		if err != nil {
+			klog.Errorf("NodeStageVolume: can't get alluxio runtime %s/%s: %v", namespacedName[0], namespacedName[1], err)
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get alluxio runtime %s/%s", namespacedName[0], namespacedName[1]))
+		}
+		ns.recorder.Eventf(runtime, v1.EventTypeNormal, "Started", "Started fuse container %s", containerName)
 	}
-
-	runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
-	if err != nil {
-		klog.Errorf("NodeStageVolume: can't get alluxio runtime %s/%s: %v", namespacedName[0], namespacedName[1], err)
-		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get alluxio runtime %s/%s", namespacedName[0], namespacedName[1]))
-	}
-	ns.recorder.Eventf(runtime, v1.EventTypeNormal, "Started", "Started fuse container %s", containerName)
 
 	return &csi.NodeStageVolumeResponse{}, nil
 }
