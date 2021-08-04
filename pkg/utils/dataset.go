@@ -20,13 +20,18 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/thoas/go-funk"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// UFSToUpdate records the ufs to be added/removed in dataset
+type UFSToUpdate struct {
+	ToAdd    []string
+	ToRemove []string
+}
 
 //GetDataset gets the dataset.
 //It returns a pointer to the dataset if successful.
@@ -93,31 +98,19 @@ func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 	return false
 }
 
-// GetUpdateUFSMap get a map of mount points to be added and removed
-func GetUpdateUFSMap(dataset *datav1alpha1.Dataset) (map[string][]string, error) {
-	updateUFSMap := make(map[string][]string)
-	// 1. get spec MountPaths and mounted MountPaths from dataset
-	specMountPaths, mountedMountPaths, err := getMounts(dataset)
-	if err != nil {
-		return updateUFSMap, err
-	}
+// GetUFSToUpdate get a UFSToUpdate of mount points to be added and removed
+func GetUFSToUpdate(dataset *datav1alpha1.Dataset) (ufsToUpdate UFSToUpdate) {
+	// get spec MountPaths and mounted MountPaths from dataset
+	specMountPaths, mountedMountPaths := getMounts(dataset)
+	// get mount points which are needed to be added/removed
+	ufsToUpdate.ToAdd, ufsToUpdate.ToRemove = calculateMountPointsChanges(specMountPaths, mountedMountPaths)
 
-	// 2. get mount points which are needed to be added/removed
-	added, removed := calculateMountPointsChanges(specMountPaths, mountedMountPaths)
-	if len(added) > 0 {
-		updateUFSMap["added"] = added
-	}
-
-	if len(removed) > 0 {
-		updateUFSMap["removed"] = removed
-	}
-
-	return updateUFSMap, err
+	return
 }
 
 // getMounts get the spec and current mounted mountPaths of dataset
 // No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
-func getMounts(dataset *datav1alpha1.Dataset) (specMountPaths, mountedMountPaths []string, err error) {
+func getMounts(dataset *datav1alpha1.Dataset) (specMountPaths, mountedMountPaths []string) {
 	for _, mount := range dataset.Spec.Mounts {
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
@@ -133,13 +126,13 @@ func getMounts(dataset *datav1alpha1.Dataset) (specMountPaths, mountedMountPaths
 		mountedMountPaths = append(mountedMountPaths, alluxioPathHaveMounted)
 	}
 
-	return specMountPaths, mountedMountPaths, err
+	return specMountPaths, mountedMountPaths
 }
 
 // calculateMountPointsChanges compare the spec and status of a dataset to calculate MountPoints Changes
-func calculateMountPointsChanges(specMountPaths, mountedMountPaths []string) (add, remove []string) {
-	add = funk.SubtractString(specMountPaths, mountedMountPaths)
-	remove = funk.SubtractString(mountedMountPaths, specMountPaths)
+func calculateMountPointsChanges(specMountPaths, mountedMountPaths []string) (toAdd, toRemove []string) {
+	toAdd = SubtractString(specMountPaths, mountedMountPaths)
+	toRemove = SubtractString(mountedMountPaths, specMountPaths)
 
 	return
 }

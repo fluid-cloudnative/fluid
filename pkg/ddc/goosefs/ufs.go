@@ -15,6 +15,8 @@ limitations under the License.
 
 package goosefs
 
+import "github.com/fluid-cloudnative/fluid/pkg/utils"
+
 // UsedStorageBytes returns used storage size of GooseFS in bytes
 func (e *GooseFSEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
@@ -74,6 +76,10 @@ func (e *GooseFSEngine) PrepareUFS() (err error) {
 }
 
 // GooseFSEngine hasn't support UpdateOnUFSChange
-func (e *GooseFSEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+func (e *GooseFSEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+	return
+}
+
+func (e *GooseFSEngine) UpdateOnUFSChange(utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }

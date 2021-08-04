@@ -18,6 +18,7 @@ package base
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // Engine interface defines the interfaces that should be implemented
@@ -88,9 +89,14 @@ type Implement interface {
 	// PrepareUFS prepare the mounts and metadata if it's not ready
 	PrepareUFS() (err error)
 
+	// ShouldUpdateUFS check if we need to update the ufs and return all ufs to update
+	// If the ufs have changed and the engine supports add/remove mount points dynamically,
+	// then we need to UpdateOnUFSChange
+	ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate)
+
 	// UpdateOnUFSChange update the mount point of Dataset if ufs change
 	// if an engine doesn't support UpdateOnUFSChange, it need to return false
-	UpdateOnUFSChange() (ready bool, err error)
+	UpdateOnUFSChange(ufsToUpdate utils.UFSToUpdate) (ready bool, err error)
 
 	// Shutdown and clean up the engine
 	Shutdown() error

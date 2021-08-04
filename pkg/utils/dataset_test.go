@@ -326,7 +326,7 @@ func mockDatasetWithCondition(name, ns string, conditions []datav1alpha1.Dataset
 	return dataset
 }
 
-func TestGetUpdateUFSMap(t *testing.T) {
+func TestGetUFSToUpdate(t *testing.T) {
 	testCases := map[string]struct {
 		dataset    *datav1alpha1.Dataset
 		specAdd    []string
@@ -405,18 +405,16 @@ func TestGetUpdateUFSMap(t *testing.T) {
 		},
 	}
 	for k, item := range testCases {
-		updateUFSMap, err := GetUpdateUFSMap(item.dataset)
-		if err != nil {
-			t.Errorf("%s check failure", k)
-		}
-		if !(len(updateUFSMap["added"]) == 0 && len(item.specAdd) == 0) {
-			if !reflect.DeepEqual(updateUFSMap["added"], item.specAdd) {
-				t.Errorf("%s check failure, got ToBeAdded mountPaths %s,want %s", k, updateUFSMap["added"], item.specAdd)
+		ufsToUpdate := GetUFSToUpdate(item.dataset)
+
+		if !(len(ufsToUpdate.ToAdd) == 0 && len(item.specAdd) == 0) {
+			if !reflect.DeepEqual(ufsToUpdate.ToAdd, item.specAdd) {
+				t.Errorf("%s check failure, got ToBeAdded mountPaths %s,want %s", k, ufsToUpdate.ToAdd, item.specAdd)
 			}
 		}
-		if !(len(updateUFSMap["removed"]) == 0 && len(item.specRemove) == 0) {
-			if !reflect.DeepEqual(updateUFSMap["removed"], item.specRemove) {
-				t.Errorf("%s check failure, got ToBeRemoved mountPaths %s,want %s", k, updateUFSMap["removed"], item.specRemove)
+		if !(len(ufsToUpdate.ToRemove) == 0 && len(item.specRemove) == 0) {
+			if !reflect.DeepEqual(ufsToUpdate.ToRemove, item.specRemove) {
+				t.Errorf("%s check failure, got ToBeRemoved mountPaths %s,want %s", k, ufsToUpdate.ToRemove, item.specRemove)
 			}
 		}
 	}
@@ -513,10 +511,7 @@ func TestGetMounts(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		specMountPaths, mountedMountPaths, err := getMounts(item.dataset)
-		if err != nil {
-			t.Errorf("%s check failure", k)
-		}
+		specMountPaths, mountedMountPaths := getMounts(item.dataset)
 		if !(len(specMountPaths) == 0 && len(item.specMountsWant) == 0) {
 			if !reflect.DeepEqual(specMountPaths, item.specMountsWant) {
 				t.Errorf("%s check failure, got spec mountPaths %s,want %s", k, specMountPaths, item.specMountsWant)
@@ -535,44 +530,55 @@ func TestCalculateMountPointsChanges(t *testing.T) {
 	testCases := map[string]struct {
 		specMountPaths    []string
 		mountedMountPaths []string
-		expect            map[string][]string
+		expectAdd         []string
+		expectRemove      []string
 	}{
 		"calculate mount point changes test case 1": {
 			specMountPaths:    []string{"hadoop3.3.0"},
 			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.3.0"},
-			expect:            map[string][]string{"added": {}, "removed": {"hadoopCurrent"}},
+			expectAdd:         []string{},
+			expectRemove:      []string{"hadoopCurrent"},
 		},
 		"calculate mount point changes test case 2": {
 			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.3.0"},
 			mountedMountPaths: []string{"hadoopCurrent"},
-			expect:            map[string][]string{"added": {"hadoop3.3.0", "hadoop3.3.0"}, "removed": {"hadoopCurrent"}},
+			expectAdd:         []string{"hadoop3.3.0", "hadoop3.3.0"},
+			expectRemove:      []string{"hadoopCurrent"},
 		},
 		"calculate mount point changes test case 3": {
 			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2"},
 			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
-			expect:            map[string][]string{"added": {"hadoop3.3.0"}, "removed": {"hadoopCurrent"}},
+			expectAdd:         []string{"hadoop3.3.0"},
+			expectRemove:      []string{"hadoopCurrent"},
 		},
 		"calculate mount point changes test case 4": {
 			specMountPaths:    []string{"hadoop3.3.0"},
 			mountedMountPaths: []string{"hadoop3.3.0"},
-			expect:            map[string][]string{"added": {}, "removed": {}},
+			expectAdd:         []string{},
+			expectRemove:      []string{},
 		},
 		"calculate mount point changes test case 5": {
 			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2", "hadoop3.3.1"},
 			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
-			expect:            map[string][]string{"added": {"hadoop3.3.0", "hadoop3.3.1"}, "removed": {"hadoopCurrent"}},
+			expectAdd:         []string{"hadoop3.3.0", "hadoop3.3.1"},
+			expectRemove:      []string{"hadoopCurrent"},
 		},
 	}
 
 	for k, item := range testCases {
-		toBeAdded, toBeRemoved := calculateMountPointsChanges(item.specMountPaths, item.mountedMountPaths)
+		toAdd, toRemove := calculateMountPointsChanges(item.specMountPaths, item.mountedMountPaths)
 
-		if !reflect.DeepEqual(toBeAdded, item.expect["added"]) {
-			t.Errorf("%s check failure, expected added %v, got %v", k, item.expect["added"], toBeAdded)
+		if !(len(toAdd) == 0 && len(item.expectAdd) == 0) {
+			if !reflect.DeepEqual(toAdd, item.expectAdd) {
+				t.Errorf("%s check failure, expected added %v, got %v", k, item.expectAdd, toAdd)
+			}
 		}
-		if !reflect.DeepEqual(toBeRemoved, item.expect["removed"]) {
-			t.Errorf("%s check failure, expected removed %v, got %v", k, item.expect["removed"], toBeRemoved)
+		if !(len(toRemove) == 0 && len(item.expectRemove) == 0) {
+			if !reflect.DeepEqual(toRemove, item.expectRemove) {
+				t.Errorf("%s check failure, expected removed %v, got %v", k, item.expectRemove, toRemove)
+			}
 		}
+
 	}
 
 }

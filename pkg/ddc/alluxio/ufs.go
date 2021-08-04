@@ -78,23 +78,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
-func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
-	//1. set update status to updating
-	err = utils.UpdateMountStatus(e.Client, e.name, e.namespace, datav1alpha1.UpdatingDatasetPhase)
-	if err != nil {
-		e.Log.Error(err, "Failed to update dataset status to updating")
-		return err
-	}
-	//2. process added and removed
-	err = e.processUpdatingUFS(updatedUFSMap)
-	if err != nil {
-		e.Log.Error(err, "Failed to add or remove mount points")
-		return err
-	}
-	return nil
-}
-
-func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
 	// 1. get the dataset
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -102,27 +86,34 @@ func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
 		return
 	}
 
-	// 2. if no need to add/remove mount points, return false immediately
-	if len(dataset.Spec.Mounts) == len(dataset.Status.Mounts) {
+	// 2.get the ufs to update
+	ufsToUpdate = utils.GetUFSToUpdate(dataset)
+
+	return
+}
+
+func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate utils.UFSToUpdate) (updateReady bool, err error) {
+	// 1. check if need to update ufs
+	if len(ufsToUpdate.ToAdd) == 0 && len(ufsToUpdate.ToRemove) == 0 {
+		e.Log.Info("no need to update ufs",
+			"namespace", e.namespace,
+			"name", e.name)
 		return
 	}
 
-	// 3.get the update ufs map
-	updateUFSMap, err := utils.GetUpdateUFSMap(dataset)
+	// 2. set update status to updating
+	err = utils.UpdateMountStatus(e.Client, e.name, e.namespace, datav1alpha1.UpdatingDatasetPhase)
 	if err != nil {
-		e.Log.Error(err, "Failed to check mount points changes")
+		e.Log.Error(err, "Failed to update dataset status to updating")
 		return
 	}
 
-	if len(updateUFSMap) > 0 {
-		//4. update the ufs
-		err = e.UpdateUFS(updateUFSMap)
-		if err != nil {
-			e.Log.Error(err, "Failed to add or remove mount points")
-			return
-		}
-		updateReady = true
+	// 3. process added and removed
+	err = e.processUpdatingUFS(ufsToUpdate)
+	if err != nil {
+		e.Log.Error(err, "Failed to add or remove mount points")
+		return
 	}
-
+	updateReady = true
 	return
 }

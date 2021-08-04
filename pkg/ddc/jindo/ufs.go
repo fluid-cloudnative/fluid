@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // ShouldCheckUFS checks if it requires checking UFS
@@ -45,6 +46,10 @@ func (e *JindoEngine) GetReportSummary() (summary string, err error) {
 }
 
 // JindoEngine hasn't support UpdateOnUFSChange
-func (e *JindoEngine) UpdateOnUFSChange() (updateReady bool, err error) {
+func (e *JindoEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+	return
+}
+
+func (e *JindoEngine) UpdateOnUFSChange(utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }

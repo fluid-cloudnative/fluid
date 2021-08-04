@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -119,7 +120,8 @@ var _ = Describe("TemplateEngine", func() {
 			impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1)
 			impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1)
 			impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
-			impl.EXPECT().UpdateOnUFSChange().Return(true, nil).Times(1)
+			impl.EXPECT().ShouldUpdateUFS().Return(utils.UFSToUpdate{}).Times(1)
+			impl.EXPECT().UpdateOnUFSChange(utils.UFSToUpdate{}).Return(true, nil).Times(1)
 			Expect(t.Sync(fakeCtx)).To(BeNil())
 		})
 	})

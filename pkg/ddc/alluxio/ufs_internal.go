@@ -98,7 +98,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (err error) {
+func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate utils.UFSToUpdate) (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return err
@@ -109,18 +109,18 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 
 	ready := fileUtils.Ready()
 	if !ready {
-		return fmt.Errorf("the UFS is not ready")
+		return fmt.Errorf("the UFS is not ready, namespace:%s,name:%s", e.namespace, e.name)
 	}
 
 	// Iterate all the mount points, do mount if the mount point is in added array
+	// TODO: not allow to edit FluidNativeScheme MountPoint
 	for _, mount := range dataset.Spec.Mounts {
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
 
 		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
-		added := updatedUFSMap["added"]
-		if len(added) > 0 && utils.ContainsString(added, alluxioPath) {
+		if len(ufsToUpdate.ToAdd) > 0 && utils.ContainsString(ufsToUpdate.ToAdd, alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range mount.Options {
 				mountOptions[key] = value
@@ -134,12 +134,18 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 
 				secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 				if err != nil {
-					e.Log.Info("can't get the secret")
+					e.Log.Info("can't get the secret",
+						"namespace", e.namespace,
+						"name", e.name,
+						"secretName", secretKeyRef.Name)
 					return err
 				}
 
 				value := secret.Data[secretKeyRef.Key]
-				e.Log.Info("get value from secret")
+				e.Log.Info("get value from secret",
+					"namespace", e.namespace,
+					"name", e.name,
+					"secretName", secretKeyRef.Name)
 
 				mountOptions[key] = string(value)
 			}
@@ -151,9 +157,8 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 	}
 
 	// unmount the mount point in the removed array
-	removed := updatedUFSMap["removed"]
-	if len(removed) > 0 {
-		for _, mountRemove := range removed {
+	if len(ufsToUpdate.ToRemove) > 0 {
+		for _, mountRemove := range ufsToUpdate.ToRemove {
 			err = fileUtils.UnMount(mountRemove)
 			if err != nil {
 				return err
@@ -166,14 +171,14 @@ func (e *AlluxioEngine) processUpdatingUFS(updatedUFSMap map[string][]string) (e
 	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 		if err != nil {
-			e.Log.Error(err, "fail to reset ufsTotal to Calculating")
+			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
 		}
 	}
 
 	err = e.SyncMetadata()
 	if err != nil {
 		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
-		e.Log.Error(err, "SyncMetadata")
+		e.Log.Error(err, "SyncMetadata", "dataset", e.name)
 		return nil
 	}
 

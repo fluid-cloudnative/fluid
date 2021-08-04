@@ -26,6 +26,8 @@ import (
 type DatasetPhase string
 
 const (
+	// TODO: add the Pending phase to Dataset
+	PendingDatasetPhase DatasetPhase = "Pending"
 	// Bound to dataset, can't be released
 	BoundDatasetPhase DatasetPhase = "Bound"
 	// Failed, can't be deleted
