@@ -244,6 +244,25 @@ func (a GooseFSFileUtils) Mount(goosefsPath string,
 	return
 }
 
+// UnMount execute command `goosefs fs umount $path` to unmount mountpoint
+func (a GooseFSFileUtils) UnMount(goosefsPath string) (err error) {
+	var (
+		command = []string{"goosefs", "fs", "unmount"}
+		stderr  string
+		stdout  string
+	)
+
+	command = append(command, goosefsPath)
+
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	return
+}
+
 func (a GooseFSFileUtils) IsMounted(goosefsPath string) (mounted bool, err error) {
 	var (
 		command = []string{"goosefs", "fs", "mount"}
