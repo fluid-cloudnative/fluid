@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
@@ -110,14 +109,12 @@ func handle() {
 	})
 
 	if err != nil {
-		glog.Errorf("unable to create csi controller manager due to error: %v", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
 	}
 
 	go func() {
 		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-			glog.Errorf("unable to start csi controller manager due to error: %v", err)
-			os.Exit(1)
+			panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
 		}
 	}()
 
