@@ -208,6 +208,11 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't inspect container %s", containerName))
 	}
 
+	inUse, err := checkMountInUse(req.GetVolumeId())
+	if inUse {
+		return nil, fmt.Errorf("NodeUnStageVolume: can't stop container cause it's in use")
+	}
+
 	running := containerJson.State.Running
 	timeout := 30 * time.Second
 	if running {

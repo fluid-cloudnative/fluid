@@ -2,12 +2,13 @@ package csi
 
 import (
 	"errors"
+	"fmt"
+	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/golang/glog"
+	"syscall"
 )
 
 // func isMounted(target string) (bool, error) {
@@ -42,6 +43,41 @@ func checkMountReady(fluidPath string, mountType string) error {
 	stdoutStderr, err := command.CombinedOutput()
 	glog.Infoln(string(stdoutStderr))
 	return err
+}
+
+func checkMountInUse(volumeName string) (bool, error) {
+	var inUse bool
+	glog.Infof("Try to check if the volume %s is being used", volumeName)
+	if volumeName == "" {
+		return inUse, errors.New("volumeName is not specified")
+	}
+
+	command := exec.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+
+	if err := command.Start(); err != nil {
+		return inUse, err
+	}
+
+	err := command.Wait()
+	if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				exitStatus := status.ExitStatus()
+				if exitStatus == 1 {
+					err = nil
+					inUse = false
+				}
+			}
+		}
+	} else {
+		waitStatus := command.ProcessState.Sys().(syscall.WaitStatus)
+		if waitStatus.ExitStatus() == 0 {
+			inUse = true
+		}
+		return inUse, fmt.Errorf("unexpcted return code happen when checking mount in use")
+	}
+
+	return inUse, err
 }
 
 func isMounted(absPath string) (bool, error) {
