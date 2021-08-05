@@ -1,12 +1,26 @@
 package common
 
 const (
-	FLUID_PATH = "fluid_path"
+	FluidPath = "fluid_path"
 
-	Mount_TYPE = "mount_type"
+	MountType = "mount_type"
 
-	CSI_DRIVER = "fuse.csi.fluid.io"
+	CSIDriver = "fuse.csi.fluid.io"
+
+	FuseModeKey = "fuse_mode"
 )
+
+type FuseMode string
+
+const (
+	PodMode FuseMode = "pod"
+
+	ContainerMode FuseMode = "container"
+)
+
+func (mode FuseMode) String() string {
+	return string(mode)
+}
 
 var (
 	FLUID_STORAGECLASS = "fluid"

@@ -284,6 +284,10 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+	if mode, ok := req.GetVolumeContext()[common.FuseModeKey]; !ok && mode != common.ContainerMode.String() {
+		glog.Infof("NodeStageVolume: can't find fuse mode or fuse mode is not equal to %v, no need to start fuse container", common.ContainerMode.String())
+		return &csi.NodeStageVolumeResponse{}, nil
+	}
 	glog.Infof("NodeStageVolume: try to start a FUSE container: %v", req)
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
 	if err != nil {

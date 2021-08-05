@@ -66,11 +66,12 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				StorageClassName: common.FLUID_STORAGECLASS,
 				PersistentVolumeSource: v1.PersistentVolumeSource{
 					CSI: &v1.CSIPersistentVolumeSource{
-						Driver:       common.CSI_DRIVER,
+						Driver:       common.CSIDriver,
 						VolumeHandle: pvName,
 						VolumeAttributes: map[string]string{
-							common.FLUID_PATH: mountPath,
-							common.Mount_TYPE: mountType,
+							common.FluidPath:   mountPath,
+							common.MountType:   mountType,
+							common.FuseModeKey: common.ContainerMode.String(),
 						},
 					},
 				},
