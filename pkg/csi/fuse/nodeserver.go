@@ -22,6 +22,7 @@ import (
 	dockerstrslice "github.com/docker/docker/api/types/strslice"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -49,28 +50,43 @@ import (
 	"k8s.io/utils/mount"
 )
 
-const AlluxioFuseImage = "registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c"
 const DefaultDNSConfig = "/etc/resolv.conf"
-const DNSNdotsDefault = 1
-const DNSTimeoutDefault = 5
-const DNSAttemptsDefault = 2
-
-var clusterDns *dns.ClientConfig
-
-func init() {
-	var err error
-	clusterDns, err = dns.ClientConfigFromFile(DefaultDNSConfig)
-	if err != nil {
-		klog.Errorf("got err %v when getting dns config", err)
-		os.Exit(1)
-	}
-}
+const DefaultDNSDots = 1
+const DefaultDNSTimeout = 5
+const DefaultDNSAttempt = 2
 
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
-	client   client.Client
-	recorder record.EventRecorder
+	kubeclient   client.Client
+	recorder     record.EventRecorder
+	clusterDns   *dns.ClientConfig
+	dockerclient *dockerclient.Client
+}
+
+func newNodeServer(nodeId string,
+	csiDriver *csicommon.CSIDriver,
+	client client.Client,
+	recorder record.EventRecorder) *nodeServer {
+
+	clusterDns, err := dns.ClientConfigFromFile(DefaultDNSConfig)
+	if err != nil {
+		panic(fmt.Sprintf("newNodeServer: can't initialize dns config due to: %v", err))
+	}
+
+	dockerCli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
+	if err != nil {
+		panic(fmt.Sprintf("newNodeServer: can't initalize docker client due to: %v", err))
+	}
+
+	return &nodeServer{
+		nodeId:            nodeId,
+		DefaultNodeServer: csicommon.NewDefaultNodeServer(csiDriver),
+		kubeclient:        client,
+		recorder:          recorder,
+		clusterDns:        clusterDns,
+		dockerclient:      dockerCli,
+	}
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -191,15 +207,10 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
-	if err != nil {
-		return nil, errors.Wrap(err, "NodeUnstageVolume: can't new docker client")
-	}
-
 	namespacedName := strings.Split(req.GetVolumeId(), "-")
 	containerName := fmt.Sprintf("%s-%s-fuse", namespacedName[0], namespacedName[1])
 
-	containerJson, err := cli.ContainerInspect(ctx, containerName)
+	containerJson, err := ns.dockerclient.ContainerInspect(ctx, containerName)
 	if err != nil {
 		if dockerclient.IsErrNotFound(err) {
 			return &csi.NodeUnstageVolumeResponse{}, nil
@@ -216,14 +227,14 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	running := containerJson.State.Running
 	timeout := 30 * time.Second
 	if running {
-		err = cli.ContainerStop(ctx, containerName, &timeout)
+		err = ns.dockerclient.ContainerStop(ctx, containerName, &timeout)
 		if err != nil {
 			klog.Errorf("NodeUnstageVolume: can't stop container %s: %v", containerName, err)
 			return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't stop container %s", containerName))
 		}
 	}
 
-	if err = cli.ContainerRemove(ctx, containerName, dockerapi.ContainerRemoveOptions{}); err != nil {
+	if err = ns.dockerclient.ContainerRemove(ctx, containerName, dockerapi.ContainerRemoveOptions{}); err != nil {
 		klog.Errorf("NodeUnstageVolume: can't remove container %s: %v", containerName, err)
 		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove container %s: %v", containerName, err))
 	}
@@ -235,7 +246,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 			Namespace: "",
 			Name:      ns.nodeId,
 		}
-		if err := ns.client.Get(context.TODO(), key, &node); err != nil {
+		if err := ns.kubeclient.Get(context.TODO(), key, &node); err != nil {
 			return err
 		}
 
@@ -244,7 +255,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		delete(nodeToUpdate.Labels, fuseLabelName)
 
 		if !reflect.DeepEqual(node, nodeToUpdate) {
-			return ns.client.Update(context.TODO(), nodeToUpdate)
+			return ns.kubeclient.Update(context.TODO(), nodeToUpdate)
 		} else {
 			klog.Infof("Do nothing because no label needs to be removed on node %s (label: %s)", ns.nodeId, fuseLabelName)
 		}
@@ -257,7 +268,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove label on node %s", ns.nodeId))
 	}
 
-	runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
+	runtime, err := utils.GetAlluxioRuntime(ns.kubeclient, namespacedName[1], namespacedName[0])
 	if err != nil {
 		klog.Errorf("NodeUnstageVolume: can't get alluxio runtime: %v", err)
 		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get alluxio runtime")
@@ -289,37 +300,41 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 	glog.Infof("NodeStageVolume: try to start a FUSE container: %v", req)
-	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't new docker client")
-	}
 
+	// Fluid uses convention naming style for volumes like "<namespace>-<dataset name>"
 	namespacedName := strings.Split(req.GetVolumeId(), "-")
-	glog.Infof("Making container run config with namespace: %s and name: %s", namespacedName[0], namespacedName[1])
-	containerName := fmt.Sprintf("%s-%s-fuse", namespacedName[0], namespacedName[1])
+	namespace, name := namespacedName[0], namespacedName[1]
+	glog.Infof("Making container run config with namespace: %s and name: %s", namespace, name)
+	containerName := fmt.Sprintf("%s-%s-fuse", namespace, name)
 
-	// TODO check existence
-	containerJson, err := cli.ContainerInspect(ctx, containerName)
+	containerJson, err := ns.dockerclient.ContainerInspect(ctx, containerName)
 	var running bool
 	if err != nil {
 		if !dockerclient.IsErrNotFound(err) {
 			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't check existence of the container"))
 		}
 
-		_, err = cli.ImagePull(ctx, AlluxioFuseImage, dockerapi.ImagePullOptions{})
+		daemonSetName := fmt.Sprintf("%s-fuse", name)
+		fuseDaemonSet, err := kubeclient.GetDaemonSet(ns.kubeclient, daemonSetName, namespace)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't pull image(%s)", AlluxioFuseImage))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get daemonset %s/%s", namespace, name))
 		}
 
-		containerConfig, hostConfig, err := ns.makeContainerRunConfig(namespacedName[0], namespacedName[1])
+		// TODO(trafalgarzzz): asynchronously pull the images
+		err = ns.imagePull(fuseDaemonSet.Spec.Template.Spec.Containers)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't pull images"))
+		}
+
+		containerConfig, hostConfig, err := ns.makeContainerRunConfig(namespace, name, fuseDaemonSet)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't make container run config"))
 		}
 
 		glog.V(1).Infof("config for container %s: %v", containerName, containerConfig)
 
-		// We don't need the response because we identify the container with unique container name
-		_, err = cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, containerName)
+		// We don't need the response because we identify the container with convention container name "<namespace>-<dataset name>-fuse"
+		_, err = ns.dockerclient.ContainerCreate(ctx, containerConfig, hostConfig, nil, containerName)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't create container, runConfig: %v", containerConfig))
 		}
@@ -328,7 +343,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	if !running {
-		if err := cli.ContainerStart(ctx, containerName, dockerapi.ContainerStartOptions{}); err != nil {
+		if err := ns.dockerclient.ContainerStart(ctx, containerName, dockerapi.ContainerStartOptions{}); err != nil {
 			return nil, errors.Wrap(err, "NodeStageVolume: can't start container")
 		}
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -337,16 +352,16 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 				Namespace: "",
 				Name:      ns.nodeId,
 			}
-			if err := ns.client.Get(context.TODO(), key, &node); err != nil {
+			if err := ns.kubeclient.Get(context.TODO(), key, &node); err != nil {
 				return err
 			}
 
 			nodeToUpdate := node.DeepCopy()
-			fuseLabelName := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+			fuseLabelName := common.LabelAnnotationFusePrefix + namespace + "-" + name
 			nodeToUpdate.Labels[fuseLabelName] = "true"
 
 			if !reflect.DeepEqual(node, nodeToUpdate) {
-				err = ns.client.Update(context.TODO(), nodeToUpdate)
+				err = ns.kubeclient.Update(context.TODO(), nodeToUpdate)
 				if err != nil {
 					return err
 				}
@@ -362,10 +377,10 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't label the node %s", ns.nodeId))
 		}
 
-		runtime, err := utils.GetAlluxioRuntime(ns.client, namespacedName[1], namespacedName[0])
+		runtime, err := utils.GetAlluxioRuntime(ns.kubeclient, name, namespace)
 		if err != nil {
-			klog.Errorf("NodeStageVolume: can't get alluxio runtime %s/%s: %v", namespacedName[0], namespacedName[1], err)
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get alluxio runtime %s/%s", namespacedName[0], namespacedName[1]))
+			klog.Errorf("NodeStageVolume: can't get alluxio runtime %s/%s: %v", namespace, name, err)
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't get alluxio runtime %s/%s", namespace, name))
 		}
 		ns.recorder.Eventf(runtime, v1.EventTypeNormal, "Started", "Started fuse container %s", containerName)
 	}
@@ -377,36 +392,25 @@ func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (ns *nodeServer) makeContainerRunConfig(namespace, name string) (*dockercontainer.Config, *dockercontainer.HostConfig, error) {
-	// 1. Get Fuse DaemonSet
-	fuseDaemonSetName := name + "-fuse"
-	daemonSet := &appsv1.DaemonSet{}
-	err := ns.client.Get(context.TODO(), types.NamespacedName{
-		Name:      fuseDaemonSetName,
-		Namespace: namespace,
-	}, daemonSet)
+func (ns *nodeServer) makeContainerRunConfig(namespace, name string, daemonSet *appsv1.DaemonSet) (*dockercontainer.Config, *dockercontainer.HostConfig, error) {
 
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// 2. make envs
+	// 1. make envs
 	containerToStart := daemonSet.Spec.Template.Spec.Containers[0]
 	envs, err := ns.makeEnvironmentVariables(namespace, &containerToStart)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// 3. make mounts
+	// 2. make mounts
 	binds, err := ns.makeMounts(&daemonSet.Spec.Template.Spec, &containerToStart)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// 4. make dns configs
+	// 3. make dns configs
 	dnsServers, dnsSearch, dnsOpts := ns.makeDNS(namespace)
 
-	// 5. make capabilities
+	// 4. make capabilities
 	privilege, capAdd, capDrop := ns.makeCapabilities(&daemonSet.Spec.Template.Spec, &containerToStart)
 
 	return &dockercontainer.Config{
@@ -452,12 +456,12 @@ func (ns *nodeServer) makeEnvironmentVariables(namespace string, container *v1.C
 			name := cm.Name
 			configMap, ok := configMaps[name]
 			if !ok {
-				if ns.client == nil {
-					return result, fmt.Errorf("couldn't get configMap %v/%v, no kubeClient defined", namespace, name)
+				if ns.kubeclient == nil {
+					return result, fmt.Errorf("couldn't get configMap %v/%v, no kubeclient defined", namespace, name)
 				}
 				optional := cm.Optional != nil && *cm.Optional
 				configMap = &v1.ConfigMap{}
-				err = ns.client.Get(context.TODO(), types.NamespacedName{
+				err = ns.kubeclient.Get(context.TODO(), types.NamespacedName{
 					Namespace: namespace,
 					Name:      name,
 				}, configMap)
@@ -542,9 +546,9 @@ func (ns *nodeServer) makeMounts(podSpec *v1.PodSpec, container *v1.Container) (
 }
 
 func (ns *nodeServer) makeDNS(namespace string) (dnsServer, dnsSearch, dnsOptions []string) {
-	dnsServer = clusterDns.Servers
+	dnsServer = ns.clusterDns.Servers
 
-	dnsSearch = clusterDns.Search
+	dnsSearch = ns.clusterDns.Search
 	// Transform service discovery according to the namespace of the pod
 	for idx := range dnsSearch {
 		if "fluid-system.svc.cluster.local" == dnsSearch[idx] {
@@ -553,16 +557,16 @@ func (ns *nodeServer) makeDNS(namespace string) (dnsServer, dnsSearch, dnsOption
 	}
 
 	// We ignore all the default values in dns options
-	if clusterDns.Ndots != DNSNdotsDefault {
-		dnsOptions = append(dnsOptions, fmt.Sprintf("ndots:%d", clusterDns.Ndots))
+	if ns.clusterDns.Ndots != DefaultDNSDots {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("ndots:%d", ns.clusterDns.Ndots))
 	}
 
-	if clusterDns.Attempts != DNSAttemptsDefault {
-		dnsOptions = append(dnsOptions, fmt.Sprintf("attempts:%d", clusterDns.Attempts))
+	if ns.clusterDns.Attempts != DefaultDNSAttempt {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("attempts:%d", ns.clusterDns.Attempts))
 	}
 
-	if clusterDns.Timeout != DNSTimeoutDefault {
-		dnsOptions = append(dnsOptions, fmt.Sprintf("timeout:%d", clusterDns.Timeout))
+	if ns.clusterDns.Timeout != DefaultDNSTimeout {
+		dnsOptions = append(dnsOptions, fmt.Sprintf("timeout:%d", ns.clusterDns.Timeout))
 	}
 
 	return
@@ -580,6 +584,17 @@ func (ns *nodeServer) makeCapabilities(podSpec *v1.PodSpec, container *v1.Contai
 	}
 
 	return
+}
+
+func (ns *nodeServer) imagePull(containers []v1.Container) error {
+	for _, container := range containers {
+		_, err := ns.dockerclient.ImagePull(context.TODO(), container.Image, dockerapi.ImagePullOptions{})
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("pulling image %s", container.Image))
+		}
+	}
+
+	return nil
 }
 
 // TODO: Change users
