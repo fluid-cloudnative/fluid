@@ -78,7 +78,7 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
-func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 1. get the dataset
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -87,14 +87,15 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
 	}
 
 	// 2.get the ufs to update
-	ufsToUpdate = utils.GetUFSToUpdate(dataset)
+	ufsToUpdate = utils.NewUFSToUpdate(dataset)
+	ufsToUpdate.AnalyzePathsDelta()
 
 	return
 }
 
-func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate utils.UFSToUpdate) (updateReady bool, err error) {
+func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 	// 1. check if need to update ufs
-	if len(ufsToUpdate.ToAdd) == 0 && len(ufsToUpdate.ToRemove) == 0 {
+	if !ufsToUpdate.ShouldUpdate() {
 		e.Log.Info("no need to update ufs",
 			"namespace", e.namespace,
 			"name", e.name)

@@ -27,12 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UFSToUpdate records the ufs to be added/removed in dataset
-type UFSToUpdate struct {
-	ToAdd    []string
-	ToRemove []string
-}
-
 //GetDataset gets the dataset.
 //It returns a pointer to the dataset if successful.
 func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dataset, error) {
@@ -98,45 +92,6 @@ func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 	return false
 }
 
-// GetUFSToUpdate get a UFSToUpdate of mount points to be added and removed
-func GetUFSToUpdate(dataset *datav1alpha1.Dataset) (ufsToUpdate UFSToUpdate) {
-	// get spec MountPaths and mounted MountPaths from dataset
-	specMountPaths, mountedMountPaths := getMounts(dataset)
-	// get mount points which are needed to be added/removed
-	ufsToUpdate.ToAdd, ufsToUpdate.ToRemove = calculateMountPointsChanges(specMountPaths, mountedMountPaths)
-
-	return
-}
-
-// getMounts get the spec and current mounted mountPaths of dataset
-// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
-func getMounts(dataset *datav1alpha1.Dataset) (specMountPaths, mountedMountPaths []string) {
-	for _, mount := range dataset.Spec.Mounts {
-		if common.IsFluidNativeScheme(mount.MountPoint) {
-			continue
-		}
-		alluxioPathInCtx := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
-		specMountPaths = append(specMountPaths, alluxioPathInCtx)
-	}
-	for _, mount := range dataset.Status.Mounts {
-		if common.IsFluidNativeScheme(mount.MountPoint) {
-			continue
-		}
-		alluxioPathHaveMounted := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
-		mountedMountPaths = append(mountedMountPaths, alluxioPathHaveMounted)
-	}
-
-	return specMountPaths, mountedMountPaths
-}
-
-// calculateMountPointsChanges compare the spec and status of a dataset to calculate MountPoints Changes
-func calculateMountPointsChanges(specMountPaths, mountedMountPaths []string) (toAdd, toRemove []string) {
-	toAdd = SubtractString(specMountPaths, mountedMountPaths)
-	toRemove = SubtractString(mountedMountPaths, specMountPaths)
-
-	return
-}
-
 // UpdateMountStatus updates the mount status of the dataset according to the given phase
 func UpdateMountStatus(client client.Client, name string, namespace string, phase datav1alpha1.DatasetPhase) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -175,4 +130,56 @@ func UpdateMountStatus(client client.Client, name string, namespace string, phas
 	})
 
 	return err
+}
+
+// UFSToUpdate records the mountPath to change in virtual file system of dataset
+type UFSToUpdate struct {
+	toAdd    []string
+	toRemove []string
+	dataset  *datav1alpha1.Dataset
+}
+
+// NewUFSToUpdate get UFSToUpdate according the given dataset
+func NewUFSToUpdate(ds *datav1alpha1.Dataset) *UFSToUpdate {
+	return &UFSToUpdate{
+		dataset: ds,
+	}
+}
+
+// AnalyzePathsDelta analyze the ToAdd and ToRemove from the spec and mounted mountPaths of dataset
+// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+func (u *UFSToUpdate) AnalyzePathsDelta() (specMountPaths, mountedMountPaths []string) {
+	for _, mount := range u.dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Spec.Mounts)
+		specMountPaths = append(specMountPaths, m)
+	}
+	for _, mount := range u.dataset.Status.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Status.Mounts)
+		mountedMountPaths = append(mountedMountPaths, m)
+	}
+
+	u.toAdd = SubtractString(specMountPaths, mountedMountPaths)
+	u.toRemove = SubtractString(mountedMountPaths, specMountPaths)
+	return
+}
+
+// ShouldUpdate check if needs to update the mount points according to ToAdd and ToRemove
+func (u UFSToUpdate) ShouldUpdate() bool {
+	return len(u.toAdd) > 0 || len(u.toRemove) > 0
+}
+
+// ToAdd get the mountPaths to add into virtual file system of dataset
+func (u UFSToUpdate) ToAdd() []string {
+	return u.toAdd
+}
+
+// ToRemove get the mountPaths to remove from virtual file system of dataset
+func (u UFSToUpdate) ToRemove() []string {
+	return u.toRemove
 }

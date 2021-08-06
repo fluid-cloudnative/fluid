@@ -58,16 +58,18 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 
 	// 4. Update dataset mount point
 	ufsToUpdate := t.Implement.ShouldUpdateUFS()
-	if len(ufsToUpdate.ToAdd) != 0 || len(ufsToUpdate.ToRemove) != 0 {
-		var updateReady bool
-		updateReady, err = t.Implement.UpdateOnUFSChange(ufsToUpdate)
-		if err != nil {
-			return
-		}
-		if updateReady {
-			err = utils.UpdateMountStatus(t.Client, t.Context.Name, t.Context.Namespace, datav1alpha1.BoundDatasetPhase)
+	if ufsToUpdate != nil {
+		if ufsToUpdate.ShouldUpdate() {
+			var updateReady bool
+			updateReady, err = t.Implement.UpdateOnUFSChange(ufsToUpdate)
 			if err != nil {
 				return
+			}
+			if updateReady {
+				err = utils.UpdateMountStatus(t.Client, t.Context.Name, t.Context.Namespace, datav1alpha1.BoundDatasetPhase)
+				if err != nil {
+					return
+				}
 			}
 		}
 	}

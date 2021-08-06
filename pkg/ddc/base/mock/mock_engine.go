@@ -127,10 +127,10 @@ type MockImplement struct {
 	recorder *MockImplementMockRecorder
 }
 
-func (m *MockImplement) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+func (m *MockImplement) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ShouldUpdateUFS")
-	ret0, _ := ret[0].(utils.UFSToUpdate)
+	ret0, _ := ret[0].(*utils.UFSToUpdate)
 	return ret0
 }
 
@@ -139,7 +139,7 @@ func (mr *MockImplementMockRecorder) ShouldUpdateUFS() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldUpdateUFS", reflect.TypeOf((*MockImplement)(nil).ShouldUpdateUFS))
 }
 
-func (m *MockImplement) UpdateOnUFSChange(utils.UFSToUpdate) (ready bool, err error) {
+func (m *MockImplement) UpdateOnUFSChange(*utils.UFSToUpdate) (ready bool, err error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOnUFSChange")
 	ret0, _ := ret[0].(bool)
@@ -147,7 +147,7 @@ func (m *MockImplement) UpdateOnUFSChange(utils.UFSToUpdate) (ready bool, err er
 	return ret0, ret1
 }
 
-func (mr *MockImplementMockRecorder) UpdateOnUFSChange(utils.UFSToUpdate) *gomock.Call {
+func (mr *MockImplementMockRecorder) UpdateOnUFSChange(*utils.UFSToUpdate) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOnUFSChange", reflect.TypeOf((*MockImplement)(nil).UpdateOnUFSChange))
 }

@@ -326,263 +326,6 @@ func mockDatasetWithCondition(name, ns string, conditions []datav1alpha1.Dataset
 	return dataset
 }
 
-func TestGetUFSToUpdate(t *testing.T) {
-	testCases := map[string]struct {
-		dataset    *datav1alpha1.Dataset
-		specAdd    []string
-		specRemove []string
-	}{
-		"get UpdateUFSMap test case 1": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "spark",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{},
-				},
-			},
-			specAdd:    []string{"/hbase", "/spark"},
-			specRemove: []string{},
-		},
-		"get UpdateUFSMap test case 2": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "spark",
-						},
-					},
-				},
-			},
-			specAdd:    []string{"/hbase"},
-			specRemove: []string{"/spark"},
-		},
-		"get UpdateUFSMap test case 3": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "spark",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "spark",
-						},
-						{
-							Name: "hadoop",
-						},
-						{
-							Name: "test",
-						},
-					},
-				},
-			},
-			specAdd:    []string{},
-			specRemove: []string{"/hadoop", "/test"},
-		},
-	}
-	for k, item := range testCases {
-		ufsToUpdate := GetUFSToUpdate(item.dataset)
-
-		if !(len(ufsToUpdate.ToAdd) == 0 && len(item.specAdd) == 0) {
-			if !reflect.DeepEqual(ufsToUpdate.ToAdd, item.specAdd) {
-				t.Errorf("%s check failure, got ToBeAdded mountPaths %s,want %s", k, ufsToUpdate.ToAdd, item.specAdd)
-			}
-		}
-		if !(len(ufsToUpdate.ToRemove) == 0 && len(item.specRemove) == 0) {
-			if !reflect.DeepEqual(ufsToUpdate.ToRemove, item.specRemove) {
-				t.Errorf("%s check failure, got ToBeRemoved mountPaths %s,want %s", k, ufsToUpdate.ToRemove, item.specRemove)
-			}
-		}
-	}
-}
-
-func TestGetMounts(t *testing.T) {
-	testCases := map[string]struct {
-		dataset          *datav1alpha1.Dataset
-		specMountsWant   []string
-		statusMountsWant []string
-	}{
-		"get Mounts test case 1": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "spark",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{},
-				},
-			},
-			specMountsWant: []string{
-				"/hbase",
-				"/spark",
-			},
-			statusMountsWant: []string{},
-		},
-		"get Mounts test case 2": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "spark",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "spark",
-						},
-					},
-				},
-			},
-			specMountsWant: []string{
-				"/hbase",
-				"/spark",
-			},
-			statusMountsWant: []string{
-				"/spark",
-			},
-		},
-		"get Mounts test case 3": {
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "hbase",
-						},
-					},
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Mounts: []datav1alpha1.Mount{
-						{
-							Name: "spark",
-						},
-						{
-							Name: "hbase",
-						},
-						{
-							Name: "hadoop",
-						},
-					},
-				},
-			},
-			specMountsWant: []string{
-				"/hbase",
-			},
-			statusMountsWant: []string{
-				"/spark",
-				"/hbase",
-				"/hadoop",
-			},
-		},
-	}
-
-	for k, item := range testCases {
-		specMountPaths, mountedMountPaths := getMounts(item.dataset)
-		if !(len(specMountPaths) == 0 && len(item.specMountsWant) == 0) {
-			if !reflect.DeepEqual(specMountPaths, item.specMountsWant) {
-				t.Errorf("%s check failure, got spec mountPaths %s,want %s", k, specMountPaths, item.specMountsWant)
-			}
-		}
-		if !(len(mountedMountPaths) == 0 && len(item.statusMountsWant) == 0) {
-			if !reflect.DeepEqual(mountedMountPaths, item.statusMountsWant) {
-				t.Errorf("%s check failure, got mounted mountPaths %s,want %s", k, mountedMountPaths, item.statusMountsWant)
-			}
-		}
-
-	}
-}
-
-func TestCalculateMountPointsChanges(t *testing.T) {
-	testCases := map[string]struct {
-		specMountPaths    []string
-		mountedMountPaths []string
-		expectAdd         []string
-		expectRemove      []string
-	}{
-		"calculate mount point changes test case 1": {
-			specMountPaths:    []string{"hadoop3.3.0"},
-			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.3.0"},
-			expectAdd:         []string{},
-			expectRemove:      []string{"hadoopCurrent"},
-		},
-		"calculate mount point changes test case 2": {
-			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.3.0"},
-			mountedMountPaths: []string{"hadoopCurrent"},
-			expectAdd:         []string{"hadoop3.3.0", "hadoop3.3.0"},
-			expectRemove:      []string{"hadoopCurrent"},
-		},
-		"calculate mount point changes test case 3": {
-			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2"},
-			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
-			expectAdd:         []string{"hadoop3.3.0"},
-			expectRemove:      []string{"hadoopCurrent"},
-		},
-		"calculate mount point changes test case 4": {
-			specMountPaths:    []string{"hadoop3.3.0"},
-			mountedMountPaths: []string{"hadoop3.3.0"},
-			expectAdd:         []string{},
-			expectRemove:      []string{},
-		},
-		"calculate mount point changes test case 5": {
-			specMountPaths:    []string{"hadoop3.3.0", "hadoop3.2.2", "hadoop3.3.1"},
-			mountedMountPaths: []string{"hadoopCurrent", "hadoop3.2.2"},
-			expectAdd:         []string{"hadoop3.3.0", "hadoop3.3.1"},
-			expectRemove:      []string{"hadoopCurrent"},
-		},
-	}
-
-	for k, item := range testCases {
-		toAdd, toRemove := calculateMountPointsChanges(item.specMountPaths, item.mountedMountPaths)
-
-		if !(len(toAdd) == 0 && len(item.expectAdd) == 0) {
-			if !reflect.DeepEqual(toAdd, item.expectAdd) {
-				t.Errorf("%s check failure, expected added %v, got %v", k, item.expectAdd, toAdd)
-			}
-		}
-		if !(len(toRemove) == 0 && len(item.expectRemove) == 0) {
-			if !reflect.DeepEqual(toRemove, item.expectRemove) {
-				t.Errorf("%s check failure, expected removed %v, got %v", k, item.expectRemove, toRemove)
-			}
-		}
-
-	}
-
-}
-
 func TestUpdateMountStatus(t *testing.T) {
 	mockDatasetName := "fluid-data-set"
 	mockDatasetNamespace := "default"
@@ -675,4 +418,133 @@ func TestUpdateMountStatus(t *testing.T) {
 
 	}
 
+}
+
+func TestUfsToUpdate(t *testing.T) {
+	testCases := map[string]struct {
+		dataset      *datav1alpha1.Dataset
+		wantToAdd    []string
+		wantToRemove []string
+		wantUpdate   bool
+	}{
+		"ufsToUpdate test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{},
+				},
+			},
+			wantToAdd:    []string{"/hbase", "/spark"},
+			wantToRemove: []string{},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{"/hbase"},
+			wantToRemove: []string{"/spark"},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{},
+			wantToRemove: []string{"/spark", "/hadoop"},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 4": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{},
+			wantToRemove: []string{},
+			wantUpdate:   false,
+		},
+	}
+	for k, item := range testCases {
+		ufsToUpdate := NewUFSToUpdate(item.dataset)
+		ufsToUpdate.AnalyzePathsDelta()
+		if len(item.wantToAdd) != 0 || len(ufsToUpdate.ToAdd()) != 0 {
+			if !reflect.DeepEqual(item.wantToAdd, ufsToUpdate.ToAdd()) {
+				t.Errorf("%s check fail, wantToAdd is %s, get %s", k, item.wantToAdd, ufsToUpdate.ToAdd())
+			}
+		}
+		if len(item.wantToRemove) != 0 || len(ufsToUpdate.ToRemove()) != 0 {
+			if !reflect.DeepEqual(item.wantToRemove, ufsToUpdate.ToRemove()) {
+				t.Errorf("%s check fail, wantToRemove is %s, get %s", k, item.wantToRemove, ufsToUpdate.ToRemove())
+			}
+		}
+		if item.wantUpdate != ufsToUpdate.ShouldUpdate() {
+			t.Errorf("%s check fail, shouldUpdate is %v, get %v", k, item.wantUpdate, ufsToUpdate.ShouldUpdate())
+		}
+
+	}
 }

@@ -98,7 +98,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate utils.UFSToUpdate) (err error) {
+func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate utils.UFSToUpdate) (err e
 		}
 
 		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
-		if len(ufsToUpdate.ToAdd) > 0 && utils.ContainsString(ufsToUpdate.ToAdd, alluxioPath) {
+		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range mount.Options {
 				mountOptions[key] = value
@@ -157,8 +157,8 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate utils.UFSToUpdate) (err e
 	}
 
 	// unmount the mount point in the removed array
-	if len(ufsToUpdate.ToRemove) > 0 {
-		for _, mountRemove := range ufsToUpdate.ToRemove {
+	if len(ufsToUpdate.ToRemove()) > 0 {
+		for _, mountRemove := range ufsToUpdate.ToRemove() {
 			err = fileUtils.UnMount(mountRemove)
 			if err != nil {
 				return err

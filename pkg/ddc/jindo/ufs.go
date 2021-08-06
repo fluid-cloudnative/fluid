@@ -46,10 +46,10 @@ func (e *JindoEngine) GetReportSummary() (summary string, err error) {
 }
 
 // JindoEngine hasn't support UpdateOnUFSChange
-func (e *JindoEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+func (e *JindoEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	return
 }
 
-func (e *JindoEngine) UpdateOnUFSChange(utils.UFSToUpdate) (updateReady bool, err error) {
+func (e *JindoEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }

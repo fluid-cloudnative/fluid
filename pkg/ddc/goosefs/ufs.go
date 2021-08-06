@@ -76,10 +76,10 @@ func (e *GooseFSEngine) PrepareUFS() (err error) {
 }
 
 // GooseFSEngine hasn't support UpdateOnUFSChange
-func (e *GooseFSEngine) ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate) {
+func (e *GooseFSEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	return
 }
 
-func (e *GooseFSEngine) UpdateOnUFSChange(utils.UFSToUpdate) (updateReady bool, err error) {
+func (e *GooseFSEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }

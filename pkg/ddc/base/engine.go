@@ -92,11 +92,11 @@ type Implement interface {
 	// ShouldUpdateUFS check if we need to update the ufs and return all ufs to update
 	// If the ufs have changed and the engine supports add/remove mount points dynamically,
 	// then we need to UpdateOnUFSChange
-	ShouldUpdateUFS() (ufsToUpdate utils.UFSToUpdate)
+	ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate)
 
 	// UpdateOnUFSChange update the mount point of Dataset if ufs change
 	// if an engine doesn't support UpdateOnUFSChange, it need to return false
-	UpdateOnUFSChange(ufsToUpdate utils.UFSToUpdate) (ready bool, err error)
+	UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error)
 
 	// Shutdown and clean up the engine
 	Shutdown() error
