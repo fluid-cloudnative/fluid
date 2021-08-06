@@ -125,6 +125,9 @@ Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只�
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
+Slack 讨论群
+- 加入 [`CNCF Slack`](https://slack.cncf.io/) 通过搜索频道 ``#fluid`` 和我们进行讨论.
+
 ## 开源协议
 
 Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文件。
