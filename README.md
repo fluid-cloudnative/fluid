@@ -130,6 +130,9 @@ DingTalk:
   <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
+Slack:
+- Join in the [`CNCF Slack`](https://slack.cncf.io/) and navigate to the ``#fluid`` channel for discussion.
+
 
 ## Contributing
 
