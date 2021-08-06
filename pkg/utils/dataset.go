@@ -17,11 +17,13 @@ package utils
 
 import (
 	"context"
-
+	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,7 +53,7 @@ func IsSetupDone(dataset *datav1alpha1.Dataset) (done bool) {
 	return
 }
 
-func GetAccessModesOfDataset(client client.Client, name, namespace string) (accessModes []v1.PersistentVolumeAccessMode, err error) {
+func GetAccessModesOfDataset(client client.Client, name, namespace string) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
 	dataset, err := GetDataset(client, name, namespace)
 	if err != nil {
 		return accessModes, err
@@ -59,8 +61,8 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 
 	accessModes = dataset.Spec.AccessModes
 	if len(accessModes) == 0 {
-		accessModes = []v1.PersistentVolumeAccessMode{
-			v1.ReadOnlyMany,
+		accessModes = []corev1.PersistentVolumeAccessMode{
+			corev1.ReadOnlyMany,
 		}
 	}
 
@@ -88,4 +90,96 @@ func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 	}
 
 	return false
+}
+
+// UpdateMountStatus updates the mount status of the dataset according to the given phase
+func UpdateMountStatus(client client.Client, name string, namespace string, phase datav1alpha1.DatasetPhase) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := GetDataset(client, name, namespace)
+		if err != nil {
+			return err
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		var cond datav1alpha1.DatasetCondition
+
+		switch phase {
+		case datav1alpha1.UpdatingDatasetPhase:
+			cond = NewDatasetCondition(datav1alpha1.DatasetUpdating, datav1alpha1.DatasetUpdatingReason,
+				"The ddc runtime is updating.",
+				corev1.ConditionTrue)
+		case datav1alpha1.BoundDatasetPhase:
+			datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
+			cond = NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+				"The ddc runtime has updated completely.",
+				corev1.ConditionFalse)
+		default:
+			return fmt.Errorf("cannot change dataset phase to %s", phase)
+		}
+
+		datasetToUpdate.Status.Phase = phase
+		datasetToUpdate.Status.Conditions = UpdateDatasetCondition(datasetToUpdate.Status.Conditions, cond)
+
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			err = client.Status().Update(context.TODO(), datasetToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+// UFSToUpdate records the mountPath to change in virtual file system of dataset
+type UFSToUpdate struct {
+	toAdd    []string
+	toRemove []string
+	dataset  *datav1alpha1.Dataset
+}
+
+// NewUFSToUpdate get UFSToUpdate according the given dataset
+func NewUFSToUpdate(ds *datav1alpha1.Dataset) *UFSToUpdate {
+	return &UFSToUpdate{
+		dataset: ds,
+	}
+}
+
+// AnalyzePathsDelta analyze the ToAdd and ToRemove from the spec and mounted mountPaths of dataset
+// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+func (u *UFSToUpdate) AnalyzePathsDelta() (specMountPaths, mountedMountPaths []string) {
+	for _, mount := range u.dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Spec.Mounts)
+		specMountPaths = append(specMountPaths, m)
+	}
+	for _, mount := range u.dataset.Status.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Status.Mounts)
+		mountedMountPaths = append(mountedMountPaths, m)
+	}
+
+	u.toAdd = SubtractString(specMountPaths, mountedMountPaths)
+	u.toRemove = SubtractString(mountedMountPaths, specMountPaths)
+	return
+}
+
+// ShouldUpdate check if needs to update the mount points according to ToAdd and ToRemove
+func (u UFSToUpdate) ShouldUpdate() bool {
+	return len(u.toAdd) > 0 || len(u.toRemove) > 0
+}
+
+// ToAdd get the mountPaths to add into virtual file system of dataset
+func (u UFSToUpdate) ToAdd() []string {
+	return u.toAdd
+}
+
+// ToRemove get the mountPaths to remove from virtual file system of dataset
+func (u UFSToUpdate) ToRemove() []string {
+	return u.toRemove
 }

@@ -16,7 +16,9 @@ limitations under the License.
 package base
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // SyncReplicas syncs the replicas
@@ -54,10 +56,22 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		return
 	}
 
-	// 4. Update dataset
-	_, err = t.Implement.UpdateOnUFSChange()
-	if err != nil {
-		return
+	// 4. Update dataset mount point
+	ufsToUpdate := t.Implement.ShouldUpdateUFS()
+	if ufsToUpdate != nil {
+		if ufsToUpdate.ShouldUpdate() {
+			var updateReady bool
+			updateReady, err = t.Implement.UpdateOnUFSChange(ufsToUpdate)
+			if err != nil {
+				return
+			}
+			if updateReady {
+				err = utils.UpdateMountStatus(t.Client, t.Context.Name, t.Context.Namespace, datav1alpha1.BoundDatasetPhase)
+				if err != nil {
+					return
+				}
+			}
+		}
 	}
 
 	return
