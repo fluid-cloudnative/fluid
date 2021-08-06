@@ -325,3 +325,226 @@ func mockDatasetWithCondition(name, ns string, conditions []datav1alpha1.Dataset
 	}
 	return dataset
 }
+
+func TestUpdateMountStatus(t *testing.T) {
+	mockDatasetName := "fluid-data-set"
+	mockDatasetNamespace := "default"
+
+	testCases := map[string]struct {
+		dataset         *datav1alpha1.Dataset
+		phase           datav1alpha1.DatasetPhase
+		shouldReturnErr bool
+	}{
+		"Update MountStatus test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.UpdatingDatasetPhase,
+			shouldReturnErr: false,
+		},
+		"Update MountStatus test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.BoundDatasetPhase,
+			shouldReturnErr: false,
+		},
+		"Update MountStatus test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.NotBoundDatasetPhase,
+			shouldReturnErr: true,
+		},
+		"Update MountStatus test case 4": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.FailedDatasetPhase,
+			shouldReturnErr: true,
+		},
+		"Update MountStatus test case 5": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      mockDatasetName,
+					Namespace: mockDatasetNamespace,
+				},
+			},
+			phase:           datav1alpha1.NoneDatasetPhase,
+			shouldReturnErr: true,
+		},
+	}
+	for k, item := range testCases {
+		s := runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, item.dataset)
+		fakeClient := fake.NewFakeClientWithScheme(s, item.dataset)
+		err := UpdateMountStatus(fakeClient, mockDatasetName, mockDatasetNamespace, item.phase)
+		if item.phase != datav1alpha1.BoundDatasetPhase && item.phase != datav1alpha1.UpdatingDatasetPhase {
+			if err == nil {
+				t.Errorf("%s check failure, should not change dataset phase to %s", k, item.phase)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%s check failure", k)
+			}
+			dataset, err := GetDataset(fakeClient, mockDatasetName, mockDatasetNamespace)
+			if err != nil || dataset == nil {
+				t.Errorf("%s check failure because cannot get dataset", k)
+			} else {
+				if dataset.Status.Phase != item.phase {
+					t.Errorf("%s check failure, expected %v, got %v", k, item.phase, dataset.Status.Phase)
+				}
+				if item.phase == datav1alpha1.BoundDatasetPhase && dataset.Status.Conditions[0].Message != "The ddc runtime has updated completely." {
+					t.Errorf("%s check failure, expected \"The ddc runtime has updated completely.\", got %v", k, dataset.Status.Conditions[0].Message)
+				}
+				if item.phase == datav1alpha1.UpdatingDatasetPhase && dataset.Status.Conditions[0].Message != "The ddc runtime is updating." {
+					t.Errorf("%s check failure, expected \"The ddc runtime is updating.\", got %v", k, dataset.Status.Conditions[0].Message)
+				}
+			}
+
+		}
+
+	}
+
+}
+
+func TestUfsToUpdate(t *testing.T) {
+	testCases := map[string]struct {
+		dataset      *datav1alpha1.Dataset
+		wantToAdd    []string
+		wantToRemove []string
+		wantUpdate   bool
+	}{
+		"ufsToUpdate test case 1": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "spark",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{},
+				},
+			},
+			wantToAdd:    []string{"/hbase", "/spark"},
+			wantToRemove: []string{},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 2": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{"/hbase"},
+			wantToRemove: []string{"/spark"},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 3": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "hbase",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{},
+			wantToRemove: []string{"/spark", "/hadoop"},
+			wantUpdate:   true,
+		},
+		"ufsToUpdate test case 4": {
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name: "spark",
+						},
+						{
+							Name: "hbase",
+						},
+						{
+							Name: "hadoop",
+						},
+					},
+				},
+			},
+			wantToAdd:    []string{},
+			wantToRemove: []string{},
+			wantUpdate:   false,
+		},
+	}
+	for k, item := range testCases {
+		ufsToUpdate := NewUFSToUpdate(item.dataset)
+		ufsToUpdate.AnalyzePathsDelta()
+		if len(item.wantToAdd) != 0 || len(ufsToUpdate.ToAdd()) != 0 {
+			if !reflect.DeepEqual(item.wantToAdd, ufsToUpdate.ToAdd()) {
+				t.Errorf("%s check fail, wantToAdd is %s, get %s", k, item.wantToAdd, ufsToUpdate.ToAdd())
+			}
+		}
+		if len(item.wantToRemove) != 0 || len(ufsToUpdate.ToRemove()) != 0 {
+			if !reflect.DeepEqual(item.wantToRemove, ufsToUpdate.ToRemove()) {
+				t.Errorf("%s check fail, wantToRemove is %s, get %s", k, item.wantToRemove, ufsToUpdate.ToRemove())
+			}
+		}
+		if item.wantUpdate != ufsToUpdate.ShouldUpdate() {
+			t.Errorf("%s check fail, shouldUpdate is %v, get %v", k, item.wantUpdate, ufsToUpdate.ShouldUpdate())
+		}
+
+	}
+}

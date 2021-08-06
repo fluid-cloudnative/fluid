@@ -15,6 +15,11 @@ limitations under the License.
 
 package alluxio
 
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+)
+
 // UsedStorageBytes returns used storage size of Alluxio in bytes
 func (e *AlluxioEngine) UsedStorageBytes() (value int64, err error) {
 	// return e.usedStorageBytesInternal()
@@ -46,26 +51,6 @@ func (e *AlluxioEngine) ShouldCheckUFS() (should bool, err error) {
 	return
 }
 
-func (e *AlluxioEngine) GetUpdateUFSMap() (map[string][]string, error) {
-	updateUFSMap := make(map[string][]string)
-	// For Alluxio Engine, always attempt to prepare UFS
-	resultInCtx, resultHaveMounted, err := e.getMounts()
-
-	// 2. get mount point need to be added and removed
-	//var added, removed []string
-	added, removed := e.calculateMountPointsChanges(resultHaveMounted, resultInCtx)
-
-	if len(added) > 0 {
-		updateUFSMap["added"] = added
-	}
-
-	if len(removed) > 0 {
-		updateUFSMap["removed"] = removed
-	}
-
-	return updateUFSMap, err
-}
-
 // PrepareUFS does all the UFS preparations
 func (e *AlluxioEngine) PrepareUFS() (err error) {
 	// 1. Mount UFS (Synchronous Operation)
@@ -93,55 +78,43 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
-func (e *AlluxioEngine) UpdateUFS(updatedUFSMap map[string][]string) (err error) {
-	//1. set update status to updating
-	errUpdating := e.SetUFSUpdating()
-	if errUpdating != nil {
-		e.Log.Error(err, "Failed to update dataset status to updating")
-		return err
+func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
+	// 1. get the dataset
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "Failed to get the dataset")
+		return
 	}
-	//2. process added and removed
-	err = e.processUpdatingUFS(updatedUFSMap)
+
+	// 2.get the ufs to update
+	ufsToUpdate = utils.NewUFSToUpdate(dataset)
+	ufsToUpdate.AnalyzePathsDelta()
+
+	return
+}
+
+func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
+	// 1. check if need to update ufs
+	if !ufsToUpdate.ShouldUpdate() {
+		e.Log.Info("no need to update ufs",
+			"namespace", e.namespace,
+			"name", e.name)
+		return
+	}
+
+	// 2. set update status to updating
+	err = utils.UpdateMountStatus(e.Client, e.name, e.namespace, datav1alpha1.UpdatingDatasetPhase)
+	if err != nil {
+		e.Log.Error(err, "Failed to update dataset status to updating")
+		return
+	}
+
+	// 3. process added and removed
+	err = e.processUpdatingUFS(ufsToUpdate)
 	if err != nil {
 		e.Log.Error(err, "Failed to add or remove mount points")
-		return err
+		return
 	}
-
-	//3. update dataset status to updated
-	err = e.SetUFSUpdated()
-	if err != nil {
-		e.Log.Error(err, "Failed to update dataset status to updated")
-		return err
-	}
-
-	return err
-}
-
-func (e *AlluxioEngine) UpdateOnUFSChange() (updateReady bool, err error) {
-	// 1.get the updated ufs map
-	// updatedUFSMap, err
-	updatedUFSMap, err := e.GetUpdateUFSMap()
-
-	if err != nil {
-		e.Log.Error(err, "Failed to check mount points changes")
-	}
-
-	if len(updatedUFSMap) > 0 {
-		//2. update the ufs
-		err := e.UpdateUFS(updatedUFSMap)
-		if err != nil {
-			e.Log.Error(err, "Failed to add or remove mount points")
-		}
-	}
-
 	updateReady = true
-
-	return updateReady, err
+	return
 }
-
-////du the ufs
-//func (e *AlluxioEngine) du() (ufs int64, cached int64, cachedPercentage string, err error) {
-//	podName, containerName := e.getMasterPodInfo()
-//	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-//	return fileUitls.Du("/")
-//}

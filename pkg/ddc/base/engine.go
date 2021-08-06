@@ -18,6 +18,7 @@ package base
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // Engine interface defines the interfaces that should be implemented
@@ -57,43 +58,62 @@ type Dataloader interface {
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 }
 
-// The real engine should implement
+// Implement is what the real engine should implement if it use the TemplateEngine
 type Implement interface {
 	UnderFileSystemService
-	// Is the master ready
+
+	// ShouldSetupMaster checks if the master ready
 	CheckMasterReady() (ready bool, err error)
-	// are the workers ready
+
+	// CheckWorkersReady checks if the workers ready
 	CheckWorkersReady() (ready bool, err error)
-	// ShouldSetupMaster checks if we need setup the master
+
+	// ShouldSetupMaster checks if we need to setup the master
 	ShouldSetupMaster() (should bool, err error)
-	// ShouldSetupWorkers checks if we need setup the workers
+
+	// ShouldSetupWorkers checks if we need to setup the workers
 	ShouldSetupWorkers() (should bool, err error)
 
+	// ShouldCheckUFS checks if we should check the ufs
 	ShouldCheckUFS() (should bool, err error)
-	// setup the cache master
+
+	// SetupMaster setup the cache master
 	SetupMaster() (err error)
-	// setup the cache worker
+
+	// SetupWorkers setup the cache worker
 	SetupWorkers() (err error)
-	// check if it's Bound to the dataset
-	// IsBoundToDataset() (bound bool, err error)
-	// Bind to the dataset
+
+	// UpdateDatasetStatus update the status of Dataset according to the given phase
 	UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error)
-	// Prepare the mounts and metadata if it's not ready
+
+	// PrepareUFS prepare the mounts and metadata if it's not ready
 	PrepareUFS() (err error)
-	// Update the mounts and metadata if there are some changes
-	UpdateUFS(updatedUFSMap map[string][]string) (err error)
+
+	// ShouldUpdateUFS check if we need to update the ufs and return all ufs to update
+	// If the ufs have changed and the engine supports add/remove mount points dynamically,
+	// then we need to UpdateOnUFSChange
+	ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate)
+
+	// UpdateOnUFSChange update the mount point of Dataset if ufs change
+	// if an engine doesn't support UpdateOnUFSChange, it need to return false
+	UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error)
+
 	// Shutdown and clean up the engine
 	Shutdown() error
 
 	// AssignNodesToCache picks up the nodes for replicas
 	AssignNodesToCache(desiredNum int32) (currentNum int32, err error)
+
 	// CheckRuntimeHealthy checks runtime healthy
 	CheckRuntimeHealthy() (err error)
+
 	// UpdateCacheOfDataset updates cache of the dataset
 	UpdateCacheOfDataset() (err error)
+
 	// CheckAndUpdateRuntimeStatus checks and updates the status
 	CheckAndUpdateRuntimeStatus() (ready bool, err error)
 
+	// CreateVolume create the pv and pvc for the Dataset
 	CreateVolume() error
 
 	// SyncReplicas syncs the replicas
@@ -102,7 +122,7 @@ type Implement interface {
 	// SyncMetadata syncs all metadata from UFS
 	SyncMetadata() (err error)
 
-	// Destroy the Volume
+	// DeleteVolume Destroy the Volume
 	DeleteVolume() (err error)
 
 	// BindToDataset binds the engine to dataset
@@ -116,14 +136,6 @@ type Implement interface {
 
 	// Check existence Of targetDataload path
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
-
-	SetUFSUpdated() (err error)
-
-	SetUFSUpdating() (err error)
-
-	UpdateOnUFSChange() (ready bool, err error)
-
-	GetUpdateUFSMap() (updatedUFSMap map[string][]string, err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

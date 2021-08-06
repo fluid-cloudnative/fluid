@@ -124,11 +124,3 @@ func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 func (e *JindoEngine) BindToDataset() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
 }
-
-func (e *JindoEngine) SetUFSUpdated() (err error) {
-	return e.UpdateDatasetStatus(datav1alpha1.UpdatedDatasetPhase)
-}
-
-func (e *JindoEngine) SetUFSUpdating() (err error) {
-	return e.UpdateDatasetStatus(datav1alpha1.UpdatingDatasetPhase)
-}
