@@ -30,3 +30,8 @@
 * Avoid running in virtual kubelet node
 
 ### 0.6.0
+
+* Add data affinity scheduling
+* Auto Scaling
+* High Availability
+* Update mountPoint dynamically in runtime
