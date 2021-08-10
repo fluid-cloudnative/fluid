@@ -311,7 +311,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	var running bool
 	if err != nil {
 		if !dockerclient.IsErrNotFound(err) {
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't check existence of the container"))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't check existence of the container %s", containerName))
 		}
 
 		daemonSetName := fmt.Sprintf("%s-fuse", name)
@@ -323,12 +323,12 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		// TODO(trafalgarzzz): asynchronously pull the images
 		err = ns.imagePull(fuseDaemonSet.Spec.Template.Spec.Containers)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't pull images"))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't pull images for daemonset %s/%s", namespace, fuseDaemonSet.Name))
 		}
 
 		containerConfig, hostConfig, err := ns.makeContainerRunConfig(namespace, name, fuseDaemonSet)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't make container run config"))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't make container run config for %s/%s", namespace, name))
 		}
 
 		glog.V(1).Infof("config for container %s: %v", containerName, containerConfig)
