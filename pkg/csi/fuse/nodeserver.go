@@ -220,6 +220,9 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	inUse, err := checkMountInUse(req.GetVolumeId())
+	if err != nil {
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
+	}
 	if inUse {
 		return nil, fmt.Errorf("NodeUnStageVolume: can't stop container cause it's in use")
 	}
