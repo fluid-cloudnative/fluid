@@ -35,3 +35,4 @@
 * Auto Scaling
 * High Availability
 * Update mountPoint dynamically in runtime
+* Add GooseFSRuntime
