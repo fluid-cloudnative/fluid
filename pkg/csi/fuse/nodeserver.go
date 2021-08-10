@@ -336,7 +336,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		// We don't need the response because we identify the container with convention container name "<namespace>-<dataset name>-fuse"
 		_, err = ns.dockerclient.ContainerCreate(ctx, containerConfig, hostConfig, nil, containerName)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't create container, runConfig: %v", containerConfig))
+			return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't create container, containerName: %s", containerName))
 		}
 	} else {
 		running = containerJson.State.Running
