@@ -267,7 +267,8 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 		}
 
 		// index of runtimeType in value filename is 2
-		runtimeType := strings.Split(valueFileName, "-")[2]
+		valueFileNameSplit := strings.Split(valueFileName, "-")
+		runtimeType := valueFileNameSplit[len(valueFileNameSplit)-3]
 
 		chartName := utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart + "/" + runtimeType
 		err = helm.InstallRelease(releaseName, ctx.Namespace, valueFileName, chartName)
