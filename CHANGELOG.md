@@ -5,7 +5,7 @@
 ### Features
 
 - Support dataset cache autoscaling and cronscaling
-- Add dataset mounting point dynamically update feature
+- Add dataset mount point dynamically update feature
 - Enhance dataset cache aware Pod scheduling 
 - Enhance HA support for cache Runtime
 - Support new cache Runtime：GooseFS
