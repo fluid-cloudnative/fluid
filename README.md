@@ -127,7 +127,13 @@ Feel free to reach out if you have any questions. The maintainers of this projec
 DingTalk:
 
 <div>
-  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
+  <img src="https://fluid-imgs.oss-cn-shanghai.aliyuncs.com/public/imgs/dingding_code.png" width="280" title="dingtalk">
+</div>
+
+WeChat Official Account:
+
+<div>
+  <img src="https://fluid-imgs.oss-cn-shanghai.aliyuncs.com/public/imgs/wxgzh_code.png" width="280" title="dingtalk">
 </div>
 
 Slack:
