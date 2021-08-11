@@ -1,5 +1,21 @@
 # Fluid Release Notes
 
+## v0.6.0
+
+### Features
+
+- Support dataset cache autoscaling and cronscaling
+- Add dataset mounting point dynamically update feature
+- Enhance dataset cache aware Pod scheduling 
+- Enhance HA support for cache Runtime
+- Support new cache Runtime：GooseFS
+
+### Bugs
+
+- Fix [if alluxioruntime is nonroot, databackup will fail](https://github.com/fluid-cloudnative/fluid/issues/745)
+- Fix [Node labels exceeds maximum length limit for long namespace and name](https://github.com/fluid-cloudnative/fluid/issues/704)
+
+
 ## v0.5.0
 
 ### Features
