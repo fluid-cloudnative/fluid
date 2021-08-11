@@ -20,10 +20,9 @@ English | [简体中文](./README-zh_CN.md)
 
 |![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
 |------------------|
-|April. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
+|Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details.|
+|Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
 |Mar. 16th, 2021. Fluid v0.5.0 is **RELEASED**! It provides various new features, such as on-the-fly dataset scale out/in, metadata backup, support Fuse global mode and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Nov. 6th, 2020. Fluid v0.4.0 is **RELEASED**! It provides various features and bugfix, such as Prefetch Dataset automatically before using it. Please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Oct. 1st, 2020. Fluid v0.3.0 is **RELEASED**! It provides various features and bugfix, such as Data Access Acceleration For Persistent Volume and Hostpath mode in K8s. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 
 <div align="center">
     <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" height="60%" width="60%" alt="">
