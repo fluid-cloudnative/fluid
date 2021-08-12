@@ -18,6 +18,7 @@ package csi
 import (
 	"os"
 	"os/exec"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -34,6 +35,7 @@ import (
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
+	client client.Client
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
