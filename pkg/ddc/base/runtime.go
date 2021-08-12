@@ -137,6 +137,9 @@ func BuildRuntimeInfo(name string,
 		namespace:       namespace,
 		runtimeType:     runtimeType,
 		tieredstoreInfo: tieredstoreInfo,
+		fuse: Fuse{
+			Global: true,
+		},
 	}
 	return
 }

@@ -69,14 +69,14 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
-			if !runtimeToUpdate.Spec.Fuse.Global {
-				runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
-				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
-					"The fuses scaled in.", corev1.ConditionTrue)
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, fuseCond)
-			}
+			//if !runtimeToUpdate.Spec.Fuse.Global {
+			//	runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
+			//	runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
+			//	fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
+			//		"The fuses scaled in.", corev1.ConditionTrue)
+			//	runtimeToUpdate.Status.Conditions =
+			//		utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, fuseCond)
+			//}
 
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
