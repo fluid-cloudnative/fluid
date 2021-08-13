@@ -16,12 +16,17 @@ limitations under the License.
 package csi
 
 import (
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/klog"
 	"os"
 	"os/exec"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
@@ -157,13 +162,90 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+	// 1. get fuse label according to pv namespace and name
+	namespacedName := strings.Split(req.GetVolumeId(), "-")
+	fuseLabelKey := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+
+	// 2. remove label on node
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+		if err != nil {
+			return err
+		}
+
+		nodeToUpdate := node.DeepCopy()
+		delete(nodeToUpdate.Labels, fuseLabelKey)
+		if !reflect.DeepEqual(node, nodeToUpdate) {
+			return ns.client.Update(context.TODO(), nodeToUpdate)
+		} else {
+			klog.Infof("Do nothing because no label %s on node %s", fuseLabelKey, ns.nodeId)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove label %s on node %s", fuseLabelKey, ns.nodeId))
+	}
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+	// 1. get fuse label according to pv namespace and name
+	namespacedName := strings.Split(req.GetVolumeId(), "-")
+	fuseLabelKey := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+
+	// 2. Label node
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+		if err != nil {
+			return err
+		}
+
+		nodeToLabel := node.DeepCopy()
+		nodeToLabel.Labels[fuseLabelKey] = "true"
+		if !reflect.DeepEqual(node, nodeToLabel) {
+			return ns.client.Update(context.TODO(), nodeToLabel)
+		} else {
+			klog.Infof("Do nothing because label %s already added on node %s", fuseLabelKey, ns.nodeId)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		klog.Infof("NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId)
+		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId))
+	}
+
+	fluidPath := req.GetVolumeContext()["fluid_path"]
+	mountType := req.GetVolumeContext()["mount_type"]
+
+	// checkMountReady checks the fuse mount path every 3 second for 30 seconds in total.
+	err = checkMountReady(fluidPath, mountType)
+	if err != nil {
+		return nil, errors.Errorf("fuse pod on node %s is not ready", ns.nodeId)
+	}
+
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
 func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+	glog.V(5).Infof("Using default NodeGetCapabilities")
+
+	return &csi.NodeGetCapabilitiesResponse{
+		Capabilities: []*csi.NodeServiceCapability{
+			{
+				Type: &csi.NodeServiceCapability_Rpc{
+					Rpc: &csi.NodeServiceCapability_RPC{
+						Type: csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
+					},
+				},
+			},
+		},
+	}, nil
 }
