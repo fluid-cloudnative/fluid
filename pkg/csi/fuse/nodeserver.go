@@ -27,6 +27,7 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
@@ -166,8 +167,19 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	namespacedName := strings.Split(req.GetVolumeId(), "-")
 	fuseLabelKey := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
 
-	// 2. remove label on node
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// 2. check if the path is mounted
+	inUse, err := checkMountInUse(req.GetVolumeId())
+	if err != nil {
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
+	}
+	if inUse {
+		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
+	}
+
+	// 3. remove label on node.
+	// Once the label is removed, fuse pod on corresponding node will be terminated
+	// since node selector in the fuse daemonSet no longer matches.
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 		if err != nil {
 			return err
@@ -248,4 +260,41 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 			},
 		},
 	}, nil
+}
+
+func checkMountInUse(volumeName string) (bool, error) {
+	var inUse bool
+	glog.Infof("Try to check if the volume %s is being used", volumeName)
+	if volumeName == "" {
+		return inUse, errors.New("volumeName is not specified")
+	}
+
+	// TODO: refer to https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver/blob/4fcb743220371de82d556ab0b67b08440b04a218/pkg/oss/utils.go#L72
+	// for a better implementation
+	command := exec.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+
+	if err := command.Start(); err != nil {
+		return inUse, err
+	}
+
+	err := command.Wait()
+	if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				exitStatus := status.ExitStatus()
+				if exitStatus == 1 {
+					err = nil
+					inUse = false
+				}
+			}
+		}
+	} else {
+		waitStatus := command.ProcessState.Sys().(syscall.WaitStatus)
+		if waitStatus.ExitStatus() == 0 {
+			inUse = true
+		}
+		return inUse, fmt.Errorf("unexpcted return code happen when checking mount in use")
+	}
+
+	return inUse, err
 }
