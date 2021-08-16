@@ -14,7 +14,7 @@ spec:
       labels:
         app: csi-nodeplugin-fluid
     spec:
-      serviceAccount: fluid-csi-admin
+      serviceAccount: fluid-csi
       tolerations:
       - operator: Exists
       #priorityClassName: system-node-critical
