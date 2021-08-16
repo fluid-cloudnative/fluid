@@ -309,8 +309,15 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 }
 
 func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
-	value.Fuse.NodeSelector = map[string]string{}
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+	} else {
+		value.Fuse.NodeSelector = map[string]string{}
+	}
+
+	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
+
 	//if runtime.Spec.Fuse.Global {
 	//	value.Fuse.Global = true
 	//	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
