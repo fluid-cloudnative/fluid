@@ -163,9 +163,17 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	// 1. get fuse label according to pv namespace and name
-	namespacedName := strings.Split(req.GetVolumeId(), "-")
-	fuseLabelKey := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+	// NodeUnstageVolumeRequest contains VolumeId info only. We cannot extract namespace and name of a dataset
+	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
+	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
+	// can be used to indicate a specific dataset.
+	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	if err != nil {
+		klog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
+	}
+
+	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
 
 	// 2. check if the path is mounted
 	inUse, err := checkMountInUse(req.GetVolumeId())
@@ -203,12 +211,16 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-	// 1. get fuse label according to pv namespace and name
-	namespacedName := strings.Split(req.GetVolumeId(), "-")
-	fuseLabelKey := common.LabelAnnotationFusePrefix + namespacedName[0] + "-" + namespacedName[1]
+	// 1. get dataset namespace and name by volume id
+	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	if err != nil {
+		klog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
+	}
 
 	// 2. Label node
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 		if err != nil {
 			return err
@@ -226,8 +238,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	})
 
 	if err != nil {
-		klog.Infof("NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId)
-		return nil, errors.Wrap(err, fmt.Sprintf("NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId))
+		klog.Error(err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId)
 	}
 
 	fluidPath := req.GetVolumeContext()["fluid_path"]
@@ -297,4 +309,29 @@ func checkMountInUse(volumeName string) (bool, error) {
 	}
 
 	return inUse, err
+}
+
+func getNamespacedNameByVolumeId(client client.Client, volumeId string) (namespace, name string, err error) {
+	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
+	if err != nil {
+		return "", "", err
+	}
+
+	if pv.Spec.ClaimRef == nil {
+		return "", "", errors.Errorf("pv %s has unexpected nil claimRef", volumeId)
+	}
+
+	namespace = pv.Spec.ClaimRef.Namespace
+	name = pv.Spec.ClaimRef.Name
+
+	ok, err := kubeclient.IsDatasetPVC(client, name, namespace)
+	if err != nil {
+		return "", "", err
+	}
+
+	if !ok {
+		return "", "", errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
+	}
+
+	return
 }
