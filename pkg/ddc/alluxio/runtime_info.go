@@ -35,12 +35,13 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		if runtime.Spec.Fuse.Global {
-			e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
-			e.Log.Info("Enable global mode for fuse")
-		} else {
-			e.Log.Info("Disable global mode for fuse")
-		}
+		e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
+		//if runtime.Spec.Fuse.Global {
+		//	e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
+		//	e.Log.Info("Enable global mode for fuse")
+		//} else {
+		//	e.Log.Info("Disable global mode for fuse")
+		//}
 
 		if !e.UnitTest {
 			// Check if the runtime is using deprecated labels
