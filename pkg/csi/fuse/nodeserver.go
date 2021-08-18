@@ -18,13 +18,12 @@ package csi
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"os"
 	"os/exec"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"syscall"
@@ -173,8 +172,6 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
-	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
-
 	// 2. check if the path is mounted
 	inUse, err := checkMountInUse(req.GetVolumeId())
 	if err != nil {
@@ -187,26 +184,23 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// 3. remove label on node.
 	// Once the label is removed, fuse pod on corresponding node will be terminated
 	// since node selector in the fuse daemonSet no longer matches.
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
-		if err != nil {
-			return err
-		}
+	// TODO: move all the label keys into a util func
+	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
+	var labelsToModify common.LabelsToModify
+	labelsToModify.Delete(fuseLabelKey)
 
-		nodeToUpdate := node.DeepCopy()
-		delete(nodeToUpdate.Labels, fuseLabelKey)
-		if !reflect.DeepEqual(node, nodeToUpdate) {
-			return ns.client.Update(context.TODO(), nodeToUpdate)
-		} else {
-			klog.Infof("Do nothing because no label %s on node %s", fuseLabelKey, ns.nodeId)
-		}
-
-		return nil
-	})
-
+	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("NodeUnstageVolume: can't remove label %s on node %s", fuseLabelKey, ns.nodeId))
+		klog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
 	}
+
+	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	if err != nil {
+		klog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: error when patching labels on node %s", ns.nodeId)
+	}
+
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
@@ -220,26 +214,19 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	// 2. Label node
 	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		node, err := kubeclient.GetNode(ns.client, ns.nodeId)
-		if err != nil {
-			return err
-		}
+	var labelsToModify common.LabelsToModify
+	labelsToModify.Add(fuseLabelKey, "true")
 
-		nodeToLabel := node.DeepCopy()
-		nodeToLabel.Labels[fuseLabelKey] = "true"
-		if !reflect.DeepEqual(node, nodeToLabel) {
-			return ns.client.Update(context.TODO(), nodeToLabel)
-		} else {
-			klog.Infof("Do nothing because label %s already added on node %s", fuseLabelKey, ns.nodeId)
-		}
-
-		return nil
-	})
-
+	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 	if err != nil {
-		klog.Error(err)
-		return nil, errors.Wrapf(err, "NodeStageVolume: can't add label %s on node %s", fuseLabelKey, ns.nodeId)
+		klog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
+	}
+
+	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	if err != nil {
+		klog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
 	fluidPath := req.GetVolumeContext()["fluid_path"]
