@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -41,6 +42,7 @@ type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
 	client client.Client
+	mutex  sync.Mutex
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -162,6 +164,11 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+	// The lock is to ensure CSI plugin labels the node in correct order
+	ns.mutex.Lock()
+	defer ns.mutex.Unlock()
+
+	// 1. get dataset namespace and name by volume id
 	// NodeUnstageVolumeRequest contains VolumeId info only. We cannot extract namespace and name of a dataset
 	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
 	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
@@ -205,6 +212,10 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+	// The lock is to ensure CSI plugin labels the node in correct order
+	ns.mutex.Lock()
+	defer ns.mutex.Unlock()
+
 	// 1. get dataset namespace and name by volume id
 	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
