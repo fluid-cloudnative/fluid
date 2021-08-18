@@ -68,19 +68,21 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 }
 
-func TestGetPreferredSchedulingTermWithDefaultMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-
-	runtimeInfo.SetupFuseDeployMode(false, map[string]string{})
-	term, _ := getPreferredSchedulingTerm(runtimeInfo)
-
-	if term != nil {
-		t.Errorf("getPreferredSchedulingTerm failure, want:nil, got:%v", term)
-	}
-}
+// Deprecated: fuse deploy mode is set to true since v0.7.0
+//
+//func TestGetPreferredSchedulingTermWithDefaultMode(t *testing.T) {
+//	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
+//	if err != nil {
+//		t.Errorf("fail to create the runtimeInfo with error %v", err)
+//	}
+//
+//	runtimeInfo.SetupFuseDeployMode(false, map[string]string{})
+//	term, _ := getPreferredSchedulingTerm(runtimeInfo)
+//
+//	if term != nil {
+//		t.Errorf("getPreferredSchedulingTerm failure, want:nil, got:%v", term)
+//	}
+//}
 
 func TestMutate(t *testing.T) {
 	var (

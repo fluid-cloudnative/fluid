@@ -299,6 +299,10 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "alluxio",
 				namespace:   "default",
 				runtimeType: common.ALLUXIO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
 			},
 			wantErr: false,
 		},
@@ -313,6 +317,10 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "goosefs",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
 			},
 			wantErr: false,
 		},
@@ -327,6 +335,10 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "jindo",
 				namespace:   "default",
 				runtimeType: common.JINDO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
 			},
 			wantErr: false,
 		},

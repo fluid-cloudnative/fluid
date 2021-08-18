@@ -53,13 +53,15 @@ func TestPods(t *testing.T) {
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 	runtimeInfo.SetDeprecatedNodeLabel(false)
 	runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
-	runtimeInfo, err = base.BuildRuntimeInfo("spark", "default", "alluxio", datav1alpha1.TieredStore{})
-	if err != nil {
-		t.Error("fail to build runtimeInfo because of err", err)
-	}
-	runtimeInfo.SetupFuseDeployMode(false, map[string]string{})
-	runtimeInfo.SetDeprecatedNodeLabel(false)
-	runtimeInfos = append(runtimeInfos, runtimeInfo)
+	// Deprecated: fuse deploy mode is set to true since v0.7.0
+	//
+	//runtimeInfo, err = base.BuildRuntimeInfo("spark", "default", "alluxio", datav1alpha1.TieredStore{})
+	//if err != nil {
+	//	t.Error("fail to build runtimeInfo because of err", err)
+	//}
+	//runtimeInfo.SetupFuseDeployMode(false, map[string]string{})
+	//runtimeInfo.SetDeprecatedNodeLabel(false)
+	//runtimeInfos = append(runtimeInfos, runtimeInfo)
 
 	// test all plugins for 3 turns
 	for i := 0; i < 3; i++ {
