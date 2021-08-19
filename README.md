@@ -56,7 +56,7 @@ English | [简体中文](./README-zh_CN.md)
 
 **Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to mangage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
 
-**AlluxioRuntime**: Based on open-source [Alluixo](https://www.alluxio.io/), 
+**AlluxioRuntime**: Based on open-source [Alluxio](https://www.alluxio.io/), 
 Fluid can manage and schedule Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. This is one engine which supports data management and caching of Datasets.
 
 ## Prerequisites
