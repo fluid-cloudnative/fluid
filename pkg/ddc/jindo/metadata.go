@@ -137,8 +137,8 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				result.Done = false
 				resultChan <- result
 				return
-			}
-			result.Done = true*/
+			}*/
+			result.Done = true
 
 			useStsSecret := false
 			if len(e.runtime.Spec.Secret) != 0 {
