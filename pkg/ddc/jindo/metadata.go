@@ -3,7 +3,6 @@ package jindo
 import (
 	"context"
 	"errors"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 	"reflect"
@@ -126,7 +125,7 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				return
 			}
 
-			e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
+			/*e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
 
 			podName, containerName := e.getMasterPodInfo()
 			fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
@@ -139,7 +138,7 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				resultChan <- result
 				return
 			}
-			result.Done = true
+			result.Done = true*/
 
 			useStsSecret := false
 			if len(e.runtime.Spec.Secret) != 0 {

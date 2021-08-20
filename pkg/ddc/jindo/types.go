@@ -39,6 +39,8 @@ type Master struct {
 	OssKey           string            `yaml:"osskey,omitempty"`
 	OssSecret        string            `yaml:"osssecret,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
+	DnsServer        string            `yaml:"dnsServer,omitempty"`
+	NameSpace        string            `yaml:"namespace,omitempty"`
 }
 
 type Worker struct {

@@ -8,6 +8,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,7 +61,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
-	jindoSmartdataImage, smartdataTag := e.parseSmartDataImage()
+	jindoSmartdataImage, smartdataTag, dnsServer := e.parseSmartDataImage()
 	jindoFuseImage, fuseTag := e.parseFuseImage()
 
 	value = &Jindo{
@@ -125,6 +126,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
+	value.Master.DnsServer = dnsServer
+	value.Master.NameSpace = e.namespace
 	return value, err
 }
 
@@ -409,21 +412,26 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, datas
 	return []string{baseArg}
 }
 
-func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
+func (e *JindoEngine) parseSmartDataImage() (image, tag, dnsServer string) {
 	var (
-		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.6.0"
+		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		defaultTag       = "3.7.0"
+		defaultDnsServer = "1.1.1.1"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
 	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
+	dnsServer = os.Getenv(common.JINDO_DNS_SERVER)
 	if len(image) == 0 {
 		image = defaultImage
 	}
 	if len(tag) == 0 {
 		tag = defaultTag
 	}
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(dnsServer) == 0 {
+		dnsServer = defaultDnsServer
+	}
+	e.Log.Info("Set image", "image", image, "tag", tag, "dnsServer", dnsServer)
 
 	return
 }
@@ -431,7 +439,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.6.0"
+		defaultTag   = "3.7.0"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)

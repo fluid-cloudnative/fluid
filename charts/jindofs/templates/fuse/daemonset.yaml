@@ -1,6 +1,7 @@
 {{- $masterCount := int .Values.master.replicaCount }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isRaftHa := eq $masterCount 3 }}
+{{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -31,7 +32,6 @@ spec:
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}
-      dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
 {{- if .Values.fuse.nodeSelector }}
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
@@ -107,6 +107,24 @@ spec:
               readOnly: true
           {{- end }}
       restartPolicy: Always
+      {{- if $notEnableDnsConfig }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- else }}
+      dnsConfig:
+        nameservers:
+        - {{ .Values.master.dnsServer }}
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - {{ .Values.master.namespace }}.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        - tbsite.net
+        - aliyun.com
+      dnsPolicy: None
+      enableServiceLinks: true
+      {{- end }}
       volumes:
         - name: jindofs-fuse-device
           hostPath:
