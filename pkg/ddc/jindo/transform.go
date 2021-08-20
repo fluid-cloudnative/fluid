@@ -309,7 +309,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 }
 
 func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
-	if runtime.Spec.Fuse.Global && len(runtime.Spec.Fuse.NodeSelector) > 0 {
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	} else {
 		value.Fuse.NodeSelector = map[string]string{}
