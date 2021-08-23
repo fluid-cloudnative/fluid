@@ -17,12 +17,15 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/arl/statsviz"
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/net"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"go.uber.org/zap/zapcore"
@@ -47,12 +50,14 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	short                   bool
-	metricsAddr             string
-	enableLeaderElection    bool
-	development             bool
-	portRange               string
-	maxConcurrentReconciles int
+	short                     bool
+	metricsAddr               string
+	statisticsAddr            string
+	enablePerformanceAnalysis bool
+	enableLeaderElection      bool
+	development               bool
+	portRange                 string
+	maxConcurrentReconciles   int
 )
 
 var cmd = &cobra.Command{
@@ -81,6 +86,8 @@ func init() {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
+	startCmd.Flags().StringVarP(&statisticsAddr, "statistics-addr", "", ":6060", "The address the application runtime statistics endpoint binds to.")
+	startCmd.Flags().BoolVarP(&enablePerformanceAnalysis, "enable-performance-analysis", "", false, "Enable performance analysis by instant live visualization of application runtime statistics")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
@@ -147,6 +154,14 @@ func handle() {
 	setupLog.Info("port range parsed", "port range", pr.String())
 
 	portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, alluxio.GetReservedPorts)
+
+	if enablePerformanceAnalysis {
+		go func() {
+			statsviz.RegisterDefault()
+			setupLog.Info("starting instant live visualization of statistics")
+			setupLog.Error(http.ListenAndServe(statisticsAddr, nil), "unable to start instant live visualization of statistics")
+		}()
+	}
 
 	setupLog.Info("starting alluxioruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

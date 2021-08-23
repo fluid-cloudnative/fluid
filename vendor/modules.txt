@@ -6,6 +6,8 @@ github.com/PuerkitoBio/purell
 github.com/PuerkitoBio/urlesc
 # github.com/agiledragon/gomonkey v2.0.2+incompatible
 github.com/agiledragon/gomonkey
+# github.com/arl/statsviz v0.4.0
+github.com/arl/statsviz
 # github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile
 # github.com/brahma-adshonor/gohook v1.1.9
@@ -70,6 +72,8 @@ github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
 # github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1
 github.com/gopherjs/gopherjs/js
+# github.com/gorilla/websocket v1.4.2
+github.com/gorilla/websocket
 # github.com/hashicorp/golang-lru v0.5.1
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru

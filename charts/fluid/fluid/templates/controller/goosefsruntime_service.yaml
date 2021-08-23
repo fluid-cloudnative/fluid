@@ -1,0 +1,16 @@
+{{ if .Values.runtime.goosefs.statistics.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluid-pod-goosefsruntime-controller
+  namespace: fluid-system
+spec:
+  type: NodePort
+  ports:
+    - name: stats
+      port: 6060
+      targetPort: 6060
+      nodePort: {{ .Values.runtime.goosefs.statistics.nodePort }}
+  selector:
+    control-plane: goosefsruntime-controller
+{{- end }}

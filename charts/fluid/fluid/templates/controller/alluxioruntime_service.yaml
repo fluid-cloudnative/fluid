@@ -1,0 +1,16 @@
+{{ if .Values.runtime.alluxio.statistics.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluid-pod-alluxioruntime-controller
+  namespace: fluid-system
+spec:
+  type: NodePort
+  ports:
+    - name: stats
+      port: 6060
+      targetPort: 6060
+      nodePort: {{ .Values.runtime.alluxio.statistics.nodePort }}
+  selector:
+    control-plane: alluxioruntime-controller
+{{- end }}

@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
+	github.com/arl/statsviz v0.4.0
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.2.0
 	github.com/docker/go-units v0.4.0

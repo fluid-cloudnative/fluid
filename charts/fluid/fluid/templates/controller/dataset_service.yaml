@@ -1,0 +1,16 @@
+{{ if .Values.dataset.controller.statistics.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluid-pod-dataset-controller
+  namespace: fluid-system
+spec:
+  type: NodePort
+  ports:
+    - name: stats
+      port: 6060
+      targetPort: 6060
+      nodePort: {{ .Values.dataset.controller.statistics.nodePort }}
+  selector:
+    control-plane: dataset-controller
+{{- end }}

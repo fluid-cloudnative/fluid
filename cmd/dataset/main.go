@@ -17,12 +17,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap/zapcore"
+	"net/http"
 	"os"
 
+	"github.com/arl/statsviz"
+	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -43,10 +45,12 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	short                bool
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
+	short                     bool
+	metricsAddr               string
+	statisticsAddr            string
+	enablePerformanceAnalysis bool
+	enableLeaderElection      bool
+	development               bool
 )
 
 var cmd = &cobra.Command{
@@ -75,6 +79,8 @@ func init() {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
+	startCmd.Flags().StringVarP(&statisticsAddr, "statistics-addr", "", ":6060", "The address the application runtime statistics endpoint binds to.")
+	startCmd.Flags().BoolVarP(&enablePerformanceAnalysis, "enable-performance-analysis", "", false, "Enable performance analysis by instant live visualization of application runtime statistics")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
@@ -145,6 +151,14 @@ func handle() {
 	)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
 		os.Exit(1)
+	}
+
+	if enablePerformanceAnalysis {
+		go func() {
+			statsviz.RegisterDefault()
+			setupLog.Info("starting instant live visualization of statistics")
+			setupLog.Error(http.ListenAndServe(statisticsAddr, nil), "unable to start instant live visualization of statistics")
+		}()
 	}
 
 	setupLog.Info("starting dataset-controller")

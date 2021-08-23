@@ -17,8 +17,10 @@ package app
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
+	"github.com/arl/statsviz"
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -44,10 +46,12 @@ var (
 )
 
 var (
-	development bool
-	metricsAddr string
-	webhookPort int
-	certDir     string
+	development               bool
+	metricsAddr               string
+	statisticsAddr            string
+	enablePerformanceAnalysis bool
+	webhookPort               int
+	certDir                   string
 )
 
 var webhookCmd = &cobra.Command{
@@ -64,6 +68,8 @@ func init() {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	webhookCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
+	webhookCmd.Flags().StringVarP(&statisticsAddr, "statistics-addr", "", ":6060", "The address the application runtime statistics endpoint binds to.")
+	webhookCmd.Flags().BoolVarP(&enablePerformanceAnalysis, "enable-performance-analysis", "", false, "Enable performance analysis by instant live visualization of application runtime statistics")
 	webhookCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	webhookCmd.Flags().IntVar(&webhookPort, "webhook-port", 9443, "Admission webhook listen address.")
 	webhookCmd.Flags().StringVar(&certDir, "webhook-cert-dir", "/etc/k8s-webhook-server/certs", "Admission webhook cert/key dir.")
@@ -124,6 +130,14 @@ func handle() {
 	// register admission handlers
 	handler.Register(mgr, mgr.GetClient(), setupLog)
 	setupLog.Info("Register Handler")
+
+	if enablePerformanceAnalysis {
+		go func() {
+			statsviz.RegisterDefault()
+			setupLog.Info("starting instant live visualization of statistics")
+			setupLog.Error(http.ListenAndServe(statisticsAddr, nil), "unable to start instant live visualization of statistics")
+		}()
+	}
 
 	setupLog.Info("starting webhook-manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

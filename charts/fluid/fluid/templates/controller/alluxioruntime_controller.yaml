@@ -38,6 +38,7 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.alluxio.portRange }}
           - --runtime-workers={{ .Values.runtime.alluxio.runtimeWorkers }}
+          - --enable-performance-analysis={{ .Values.runtime.alluxio.statistics.enabled }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

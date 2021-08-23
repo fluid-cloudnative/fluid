@@ -1,0 +1,16 @@
+{{ if .Values.runtime.jindo.statistics.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluid-pod-jindoruntime-controller
+  namespace: fluid-system
+spec:
+  type: NodePort
+  ports:
+    - name: stats
+      port: 6060
+      targetPort: 6060
+      nodePort: {{ .Values.runtime.jindo.statistics.nodePort }}
+  selector:
+    control-plane: jindoruntime-controller
+{{- end }}

@@ -5,10 +5,19 @@ metadata:
   name: fluid-pod-admission-webhook
   namespace: fluid-system
 spec:
+  {{ if .Values.webhook.statistics.enabled -}}
+  type: NodePort
+  {{- end}}
   ports:
     - name: https-rest
       port: 9443
       targetPort: 9443
+    {{ if .Values.webhook.statistics.enabled -}}
+    - name: stats
+      port: 6060
+      targetPort: 6060
+      nodePort: "{{ .Values.webhook.statistics.nodePort }}"
+    {{- end}}
   selector:
     control-plane: fluid-webhook
 {{- end }}
