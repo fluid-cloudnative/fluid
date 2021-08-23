@@ -168,7 +168,7 @@ spec:
                   type: integer
               type: object
             disablePrometheus:
-              description: Disable monitoring for GooseFS Runtime Promethous is enabled
+              description: Disable monitoring for GooseFS Runtime Prometheus is enabled
                 by default
               type: boolean
             fuse:
