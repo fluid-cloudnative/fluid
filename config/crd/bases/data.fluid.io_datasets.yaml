@@ -394,6 +394,62 @@ spec:
                   description: Underlayer HCFS Compatible Version
                   type: string
               type: object
+            mounts:
+              description: the info of mount points have been mounted
+              items:
+                description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
+                  Storage Integrations</a> for more info
+                properties:
+                  encryptOptions:
+                    description: The secret information
+                    items:
+                      properties:
+                        name:
+                          description: The name of encryptOption
+                          type: string
+                        valueFrom:
+                          description: The valueFrom of encryptOption
+                          properties:
+                            secretKeyRef:
+                              description: The encryptInfo obtained from secret
+                              properties:
+                                key:
+                                  description: The required key in the secret
+                                  type: string
+                                name:
+                                  description: The name of required secret
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
+                    type: array
+                  mountPoint:
+                    description: MountPoint is the mount point of source.
+                    minLength: 10
+                    type: string
+                  name:
+                    description: The name of mount
+                    minLength: 0
+                    type: string
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
+                      Options</a>.  <br> The option has Prefix 'fs.' And you can Learn
+                      more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
+                      Storage Integrations</a>
+                    type: object
+                  path:
+                    description: The path of mount, if not set will be /{Name}
+                    type: string
+                  readOnly:
+                    description: 'Optional: Defaults to false (read-write).'
+                    type: boolean
+                  shared:
+                    description: 'Optional: Defaults to false (shared).'
+                    type: boolean
+                type: object
+              type: array
             phase:
               description: 'Dataset Phase. One of the four phases: `Pending`, `Bound`,
                 `NotBound` and `Failed`'
