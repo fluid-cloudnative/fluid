@@ -49,6 +49,8 @@ type RuntimeInfoInterface interface {
 
 	GetCommonLabelName() string
 
+	GetFuseLabelName() string
+
 	GetRuntimeLabelName() string
 
 	GetDatasetNumLabelName() string

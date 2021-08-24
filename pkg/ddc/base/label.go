@@ -87,3 +87,10 @@ func (info *RuntimeInfo) GetRuntimeLabelName() string {
 func (info *RuntimeInfo) GetDatasetNumLabelName() string {
 	return common.GetDatasetNumLabelName()
 }
+
+// GetFuseLabelName gets the label indicating a fuse running on some node.
+func (info *RuntimeInfo) GetFuseLabelName() string {
+	prefix := common.LabelAnnotationFusePrefix
+
+	return prefix + info.namespace + "-" + info.name
+}
