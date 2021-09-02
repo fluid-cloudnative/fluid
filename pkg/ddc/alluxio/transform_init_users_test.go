@@ -63,14 +63,14 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 	for _, test := range tests {
 		engine := &AlluxioEngine{
 			Log:       log.NullLogger{},
-			initImage: common.DEFAULT_INIT_IMAGE,
+			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if !test.alluxioValue.InitUsers.Enabled {
 			t.Errorf("expected init users are enabled, but got %v", test.alluxioValue.InitUsers.Enabled)
 		}
 
-		imageInfo := strings.Split(common.DEFAULT_INIT_IMAGE, ":")
+		imageInfo := strings.Split(common.DefaultInitImage, ":")
 		if test.alluxioValue.InitUsers.Image != imageInfo[0] || test.alluxioValue.InitUsers.ImageTag != imageInfo[1] {
 			t.Errorf("expected image info are set properly, but got image: %v, imageTag: %v", test.alluxioValue.InitUsers.Image, test.alluxioValue.InitUsers.ImageTag)
 		}
@@ -103,7 +103,7 @@ func TestTransformInitUsersImageOverwrite(t *testing.T) {
 	for _, test := range tests {
 		engine := &AlluxioEngine{
 			Log:       log.NullLogger{},
-			initImage: common.DEFAULT_INIT_IMAGE,
+			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if !test.alluxioValue.InitUsers.Enabled {

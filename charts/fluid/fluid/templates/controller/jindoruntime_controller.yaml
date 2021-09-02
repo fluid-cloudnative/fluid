@@ -58,6 +58,10 @@ spec:
           - name: DEFAULT_INIT_IMAGE_ENV
             value: {{ .Values.runtime.jindo.init.image | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.init.portCheck }}
+          - name: INIT_PORT_CHECK_ENABLED
+            value: {{ .Values.runtime.jindo.init.portCheck.enabled | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics

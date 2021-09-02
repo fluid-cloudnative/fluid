@@ -49,21 +49,18 @@ spec:
         runAsGroup: {{ .Values.group }}
         fsGroup: {{ .Values.fsGroup }}
       initContainers:
-        {{ if .Values.initUsers.enabled -}}
-        - name: init
-          image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
-          imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+        {{ if .Values.initPortCheck.enabled -}}
+        - name: init-port-check
+          image: {{ .Values.initPortCheck.image }}:{{ .Values.initPortCheck.imageTag }}
+          imagePullPolicy: {{ .Values.initPortCheck.imagePullPolicy }}
           securityContext:
-            # get full permission to check process info
             privileged: true
           command: ["/entrypoint.sh"]
           args:
             - "check_port"
           env:
-            {{- if .Values.initUsers.portsToCheck }}
             - name: PORTS_TO_CHECK
-              value: {{ .Values.initUsers.portsToCheck | quote }}
-          {{- end }}
+              value: {{ .Values.initPortCheck.portsToCheck | quote }}
       {{- end }}
       containers:
         - name: jindofs-master

@@ -124,7 +124,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
-	err = e.transformInitUsers(runtime, value)
+	err = e.transformInitPortCheck(value)
 	if err != nil {
 		return
 	}
@@ -507,25 +507,18 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	return nil
 }
 
-func (e *JindoEngine) transformInitUsers(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
-	image := runtime.Spec.InitUsers.Image
-	tag := runtime.Spec.InitUsers.ImageTag
-	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
+func (e *JindoEngine) transformInitPortCheck(value *Jindo) error {
+	// This function should be called after port allocation
 
-	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, tag, imagePullPolicy, common.DEFAULT_INIT_IMAGE_ENV)
-
-	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
-
-	err := e.transformMasterPortCheck(value)
-	if err != nil {
-		return err
+	if !common.PortCheckEnabled() {
+		return nil
 	}
 
-	return nil
-}
+	e.Log.Info("Enabled port check")
+	value.InitPortCheck.Enabled = true
 
-func (e *JindoEngine) transformMasterPortCheck(value *Jindo) error {
-	// This function should be called after port allocation
+	// Always use the default init image defined in env
+	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DEFAULT_INIT_IMAGE_ENV)
 
 	// Inject ports to be checked to a init container which reports the usage status of the ports for easier debugging.
 	// The jindo master container will always start even when some of the ports is in use.
@@ -537,8 +530,7 @@ func (e *JindoEngine) transformMasterPortCheck(value *Jindo) error {
 	}
 
 	// init container takes "PORT1:PORT2:PORT3..." as input
-	value.InitUsers.Enabled = true
-	value.InitUsers.PortsToCheck = strings.Join(ports, ":")
+	value.InitPortCheck.PortsToCheck = strings.Join(ports, ":")
 
 	return nil
 }

@@ -6,25 +6,25 @@ import (
 )
 
 type Jindo struct {
-	Image           string            `yaml:"image"`
-	ImageTag        string            `yaml:"imageTag"`
-	ImagePullPolicy string            `yaml:"imagePullPolicy"`
-	FuseImage       string            `yaml:"fuseImage"`
-	FuseImageTag    string            `yaml:"fuseImageTag"`
-	User            int               `yaml:"user"`
-	Group           int               `yaml:"group"`
-	FsGroup         int               `yaml:"fsGroup"`
-	UseHostNetwork  bool              `yaml:"useHostNetwork"`
-	UseHostPID      bool              `yaml:"useHostPID"`
-	Properties      map[string]string `yaml:"properties"`
-	Master          Master            `yaml:"master"`
-	Worker          Worker            `yaml:"worker"`
-	Fuse            Fuse              `yaml:"fuse"`
-	Mounts          Mounts            `yaml:"mounts"`
-	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
-	Secret          string            `yaml:"secret,omitempty"`
-	Tolerations     []v1.Toleration   `yaml:"tolerations,omitempty"`
-	InitUsers       common.InitUsers  `yaml:"initUsers,omitempty"`
+	Image           string               `yaml:"image"`
+	ImageTag        string               `yaml:"imageTag"`
+	ImagePullPolicy string               `yaml:"imagePullPolicy"`
+	FuseImage       string               `yaml:"fuseImage"`
+	FuseImageTag    string               `yaml:"fuseImageTag"`
+	User            int                  `yaml:"user"`
+	Group           int                  `yaml:"group"`
+	FsGroup         int                  `yaml:"fsGroup"`
+	UseHostNetwork  bool                 `yaml:"useHostNetwork"`
+	UseHostPID      bool                 `yaml:"useHostPID"`
+	Properties      map[string]string    `yaml:"properties"`
+	Master          Master               `yaml:"master"`
+	Worker          Worker               `yaml:"worker"`
+	Fuse            Fuse                 `yaml:"fuse"`
+	Mounts          Mounts               `yaml:"mounts"`
+	HadoopConfig    HadoopConfig         `yaml:"hadoopConfig,omitempty"`
+	Secret          string               `yaml:"secret,omitempty"`
+	Tolerations     []v1.Toleration      `yaml:"tolerations,omitempty"`
+	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
 }
 
 type HadoopConfig struct {

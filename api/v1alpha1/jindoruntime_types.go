@@ -136,8 +136,6 @@ type JindoRuntimeSpec struct {
 	HadoopConfig string `json:"hadoopConfig,omitempty"`
 
 	Secret string `json:"secret,omitempty"`
-
-	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 }
 
 // +kubebuilder:object:root=true
