@@ -54,6 +54,10 @@ spec:
           - name: JINDO_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.jindo.fuse.image | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.init.image }}
+          - name: DEFAULT_INIT_IMAGE_ENV
+            value: {{ .Values.runtime.jindo.init.image | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics

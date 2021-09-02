@@ -94,6 +94,7 @@ type InitUsers struct {
 	Dir            string `yaml:"dir"`
 	Enabled        bool   `yaml:"enabled,omitempty"`
 	EnvTieredPaths string `yaml:"envTieredPaths"`
+	PortsToCheck   string `yaml:"portsToCheck"`
 }
 
 // ImageInfo to run a Container

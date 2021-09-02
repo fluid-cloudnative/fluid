@@ -1,6 +1,9 @@
 package jindo
 
-import v1 "k8s.io/api/core/v1"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
+)
 
 type Jindo struct {
 	Image           string            `yaml:"image"`
@@ -21,6 +24,7 @@ type Jindo struct {
 	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
 	Secret          string            `yaml:"secret,omitempty"`
 	Tolerations     []v1.Toleration   `yaml:"tolerations,omitempty"`
+	InitUsers       common.InitUsers  `yaml:"initUsers,omitempty"`
 }
 
 type HadoopConfig struct {

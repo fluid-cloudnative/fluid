@@ -192,6 +192,58 @@ spec:
                 are supported. It must take the filename of the conf file as the key
                 and content of the file as the value.
               type: string
+            initUsers:
+              description: InitUsersSpec is a description of the initialize the users
+                for runtime
+              properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Environment variables that will be used by initialize
+                    the users for runtime
+                  type: object
+                image:
+                  description: Image for initialize the users for runtime(e.g. alluxio/alluxio-User
+                    init)
+                  type: string
+                imagePullPolicy:
+                  description: 'One of the three policies: `Always`, `IfNotPresent`,
+                    `Never`'
+                  type: string
+                imageTag:
+                  description: Image Tag for initialize the users for runtime(e.g.
+                    2.3.0-SNAPSHOT)
+                  type: string
+                resources:
+                  description: Resources that will be requested by initialize the
+                    users for runtime. <br> <br> Resources are not allowed for ephemeral
+                    containers. Ephemeral containers use spare resources already allocated
+                    to the pod.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+              type: object
             jindoVersion:
               description: The version information that instructs fluid to orchestrate
                 a particular version of Jindo.

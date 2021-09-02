@@ -124,6 +124,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	err = e.transformInitUsers(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -500,6 +504,42 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 		index++
 		value.Master.Port.Raft = allocatedPorts[index]
 	}
+	return nil
+}
+
+func (e *JindoEngine) transformInitUsers(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
+	image := runtime.Spec.InitUsers.Image
+	tag := runtime.Spec.InitUsers.ImageTag
+	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
+
+	value.InitUsers.Image, value.InitUsers.ImageTag, value.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, tag, imagePullPolicy, common.DEFAULT_INIT_IMAGE_ENV)
+
+	e.Log.Info("Check InitUsers", "InitUsers", value.InitUsers)
+
+	err := e.transformMasterPortCheck(value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *JindoEngine) transformMasterPortCheck(value *Jindo) error {
+	// This function should be called after port allocation
+
+	// Inject ports to be checked to a init container which reports the usage status of the ports for easier debugging.
+	// The jindo master container will always start even when some of the ports is in use.
+	var ports []string
+
+	ports = append(ports, strconv.Itoa(value.Master.Port.Rpc))
+	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+		ports = append(ports, strconv.Itoa(value.Master.Port.Raft))
+	}
+
+	// init container takes "PORT1:PORT2:PORT3..." as input
+	value.InitUsers.Enabled = true
+	value.InitUsers.PortsToCheck = strings.Join(ports, ":")
+
 	return nil
 }
 

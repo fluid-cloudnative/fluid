@@ -7,6 +7,17 @@ image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
 imageTag: "3.7.0"
 imagePullPolicy: Always
 
+initUsers:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  args: "1000"
+  envUsers: ""
+  envTieredPaths: ""
+  portsToCheck: ""
+  dir: ""
+
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
 fuseImageTag: "3.7.0"
 
