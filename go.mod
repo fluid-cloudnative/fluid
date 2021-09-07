@@ -19,7 +19,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.18.5
@@ -27,7 +27,7 @@ require (
 	k8s.io/client-go v0.18.5
 	k8s.io/klog v1.0.0
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
-	k8s.io/kubernetes v1.18.5
+	k8s.io/kubernetes v1.18.19
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 	sigs.k8s.io/controller-runtime v0.3.0
 	sigs.k8s.io/yaml v1.2.0
