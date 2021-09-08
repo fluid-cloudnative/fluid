@@ -19,3 +19,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](chrisydxie@tencent.com) | Testing | Tencent Kubernetes Engine |
 | [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
 | [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Production | weibo deep learning platform |
+| [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Staging | bilibili AI platform |
