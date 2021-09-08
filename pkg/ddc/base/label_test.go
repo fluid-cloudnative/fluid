@@ -81,7 +81,7 @@ func TestGetLabelNameForDisk(t *testing.T) {
 				namespace:   "default",
 				runtimeType: common.ALLUXIO_RUNTIME,
 			},
-			expectResult: "fluid.io/s-h-alluxio-m-default-spark",
+			expectResult: "fluid.io/s-h-alluxio-d-default-spark",
 		},
 		{
 			info: RuntimeInfo{
@@ -90,7 +90,7 @@ func TestGetLabelNameForDisk(t *testing.T) {
 				runtimeType:         common.ALLUXIO_RUNTIME,
 				deprecatedNodeLabel: true,
 			},
-			expectResult: "data.fluid.io/storage-human-alluxio-mem-default-hadoop",
+			expectResult: "data.fluid.io/storage-human-alluxio-disk-default-hadoop",
 		},
 	}
 
