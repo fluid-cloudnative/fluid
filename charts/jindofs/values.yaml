@@ -24,10 +24,13 @@ fsGroup: 0
 useHostNetwork: true
 useHostPID: true
 
+labels: {}
+
 properties:
   logDir: /mnt/disk1/bigboot/log
 
 master:
+  labels: {}
   replicaCount: 1
   properties:
     namespace.rpc.port: 8101
@@ -36,11 +39,13 @@ master:
     namespace.backend.type: rocksdb
 
 worker:
+  labels: {}
   nodeSelector: {}
   properties:
     storage.rpc.port: 6101
 
 fuse:
+  labels: {}
   properties:
     client.storage.rpc.port: 6101
     client.oss.retry: 5

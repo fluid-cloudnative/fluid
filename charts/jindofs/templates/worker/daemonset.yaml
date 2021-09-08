@@ -27,6 +27,12 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-worker
+{{- if .Values.labels }}
+{{ toYaml .Values.labels | trim | indent 8 }}
+{{- end }}
+{{- if .Values.worker.labels }}
+{{ toYaml .Values.worker.labels | trim | indent 8 }}
+{{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}

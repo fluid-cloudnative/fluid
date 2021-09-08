@@ -128,6 +128,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	err = e.transformLabels(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -576,4 +580,16 @@ func (e *JindoEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtim
 			value.Fuse.Tolerations = append(value.Tolerations, toleration)
 		}
 	}
+}
+
+func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	// the labels will not be merged here because they will be sequentially added into yaml templates
+	// If two labels share the same label key, the last one in yaml templates overrides the former ones
+	// and takes effect.
+	value.Labels = runtime.Spec.Labels
+	value.Master.Labels = runtime.Spec.Master.Labels
+	value.Worker.Labels = runtime.Spec.Worker.Labels
+	value.Fuse.Labels = runtime.Spec.Fuse.Labels
+
+	return nil
 }

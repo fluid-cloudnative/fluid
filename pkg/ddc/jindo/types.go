@@ -25,6 +25,7 @@ type Jindo struct {
 	Secret          string               `yaml:"secret,omitempty"`
 	Tolerations     []v1.Toleration      `yaml:"tolerations,omitempty"`
 	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
+	Labels          map[string]string    `yaml:"labels,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -45,6 +46,7 @@ type Master struct {
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
 	DnsServer        string            `yaml:"dnsServer,omitempty"`
 	NameSpace        string            `yaml:"namespace,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
 }
 
 type Worker struct {
@@ -53,6 +55,7 @@ type Worker struct {
 	WorkerProperties map[string]string `yaml:"properties"`
 	Port             Ports             `yaml:"ports,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
 }
 
 type Ports struct {
@@ -68,6 +71,7 @@ type Fuse struct {
 	Global         bool              `yaml:"global,omitempty"`
 	RunAs          string            `yaml:"runAs,omitempty"`
 	Tolerations    []v1.Toleration   `yaml:"tolerations,omitempty"`
+	Labels         map[string]string `yaml:"labels,omitempty"`
 }
 
 type Mounts struct {
