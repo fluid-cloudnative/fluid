@@ -77,7 +77,7 @@ spec:
           description: JindoRuntimeSpec defines the desired state of JindoRuntime
           properties:
             fuse:
-              description: Desired state for Jindo Fuse
+              description: The component spec of Jindo Fuse
               properties:
                 args:
                   description: Arguments that will be passed to Jindo Fuse
@@ -208,7 +208,7 @@ spec:
                   type: string
               type: object
             master:
-              description: Desired state for Jindo master
+              description: The component spec of Jindo master
               properties:
                 env:
                   additionalProperties:
@@ -402,7 +402,7 @@ spec:
             user:
               type: string
             worker:
-              description: Desired state for Jindo worker
+              description: The component spec of Jindo worker
               properties:
                 env:
                   additionalProperties:

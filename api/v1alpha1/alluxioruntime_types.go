@@ -187,25 +187,25 @@ type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
 	AlluxioVersion VersionSpec `json:"alluxioVersion,omitempty"`
 
-	// Desired state for Alluxio master
+	// The component spec of Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`
 
-	// Desired state for Alluxio job master
+	// The component spec ofAlluxio job master
 	JobMaster AlluxioCompTemplateSpec `json:"jobMaster,omitempty"`
 
-	// Desired state for Alluxio worker
+	// The component spec of Alluxio worker
 	Worker AlluxioCompTemplateSpec `json:"worker,omitempty"`
 
-	// Desired state for Alluxio job Worker
+	// The component spec of Alluxio job Worker
 	JobWorker AlluxioCompTemplateSpec `json:"jobWorker,omitempty"`
 
-	// Desired state for Alluxio API Gateway
+	// The component spec of Alluxio API Gateway
 	APIGateway AlluxioCompTemplateSpec `json:"apiGateway,omitempty"`
 
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
-	// Desired state for Alluxio Fuse
+	// The component spec of Alluxio Fuse
 	Fuse AlluxioFuseSpec `json:"fuse,omitempty"`
 
 	// Configurable properties for Alluxio system. <br>
