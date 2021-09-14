@@ -282,17 +282,17 @@ func checkMountInUse(volumeName string) (bool, error) {
 	// TODO: refer to https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver/blob/4fcb743220371de82d556ab0b67b08440b04a218/pkg/oss/utils.go#L72
 	// for a better implementation
 	command := exec.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+	glog.Infoln(command)
 
-	if err := command.Start(); err != nil {
-		return inUse, err
-	}
+	stdoutStderr, err := command.CombinedOutput()
+	glog.Infoln(string(stdoutStderr))
 
-	err := command.Wait()
 	if err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				exitStatus := status.ExitStatus()
 				if exitStatus == 1 {
+					// grep not found any mount entry
 					err = nil
 					inUse = false
 				}
@@ -303,7 +303,6 @@ func checkMountInUse(volumeName string) (bool, error) {
 		if waitStatus.ExitStatus() == 0 {
 			inUse = true
 		}
-		return inUse, fmt.Errorf("unexpcted return code happen when checking mount in use")
 	}
 
 	return inUse, err
