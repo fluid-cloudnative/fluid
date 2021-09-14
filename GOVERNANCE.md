@@ -49,6 +49,7 @@ Maintainers’ responsibilities:
 &emsp;Fulfill all responsibilities of Committers, and also:
 * Curate github issues and review pull requests / designs for other maintainers and the community.
 * Maintainers are expected to respond to assigned Pull Requests in a reasonable time frame.
+* A large Pull Request(More than 20 files+ and 2000 lines+ changes) should have at least 3 Maintainers' +1 vote
 * Participate when called upon in the security release process. Note that although this should be a rare occurrence, if a serious vulnerability is found, the process may take up to several full days of work to implement.
 * In general continue to be willing to spend at least 20% of your time working on Fluid (1 day per week).
 * Answer the questions put forward by the community users in maillist, slack, DingTalk, WechatGroup, etc.

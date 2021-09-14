@@ -105,13 +105,13 @@ type JindoRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Jindo.
 	JindoVersion VersionSpec `json:"jindoVersion,omitempty"`
 
-	// Desired state for Jindo master
+	// The component spec of Jindo master
 	Master JindoCompTemplateSpec `json:"master,omitempty"`
 
-	// Desired state for Jindo worker
+	// The component spec of Jindo worker
 	Worker JindoCompTemplateSpec `json:"worker,omitempty"`
 
-	// Desired state for Jindo Fuse
+	// The component spec of Jindo Fuse
 	Fuse JindoFuseSpec `json:"fuse,omitempty"`
 
 	// Configurable properties for Jindo system. <br>

@@ -97,7 +97,7 @@ spec:
                   type: string
               type: object
             apiGateway:
-              description: Desired state for Alluxio API Gateway
+              description: The component spec of Alluxio API Gateway
               properties:
                 enabled:
                   description: Enabled or Disabled for the components. For now, only  API
@@ -187,7 +187,7 @@ spec:
                 by default
               type: boolean
             fuse:
-              description: Desired state for Alluxio Fuse
+              description: The component spec of Alluxio Fuse
               properties:
                 args:
                   description: Arguments that will be passed to Alluxio Fuse
@@ -322,7 +322,7 @@ spec:
                   type: object
               type: object
             jobMaster:
-              description: Desired state for Alluxio job master
+              description: The component spec ofAlluxio job master
               properties:
                 enabled:
                   description: Enabled or Disabled for the components. For now, only  API
@@ -395,7 +395,7 @@ spec:
                   type: object
               type: object
             jobWorker:
-              description: Desired state for Alluxio job Worker
+              description: The component spec of Alluxio job Worker
               properties:
                 enabled:
                   description: Enabled or Disabled for the components. For now, only  API
@@ -473,7 +473,7 @@ spec:
                 type: string
               type: array
             master:
-              description: Desired state for Alluxio master
+              description: The component spec of Alluxio master
               properties:
                 enabled:
                   description: Enabled or Disabled for the components. For now, only  API
@@ -637,7 +637,7 @@ spec:
                   type: array
               type: object
             worker:
-              description: Desired state for Alluxio worker
+              description: The component spec of Alluxio worker
               properties:
                 enabled:
                   description: Enabled or Disabled for the components. For now, only  API

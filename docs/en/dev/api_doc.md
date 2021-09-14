@@ -97,7 +97,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio master</p>
+<p>The component spec of Alluxio master</p>
 </td>
 </tr>
 <tr>
@@ -110,7 +110,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio job master</p>
+<p>The component spec ofAlluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -123,7 +123,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio worker</p>
+<p>The component spec of Alluxio worker</p>
 </td>
 </tr>
 <tr>
@@ -136,7 +136,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio job Worker</p>
+<p>The component spec of Alluxio job Worker</p>
 </td>
 </tr>
 <tr>
@@ -149,7 +149,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio API Gateway</p>
+<p>The component spec of Alluxio API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -175,7 +175,7 @@ AlluxioFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio Fuse</p>
+<p>The component spec of Alluxio Fuse</p>
 </td>
 </tr>
 <tr>
@@ -1063,7 +1063,7 @@ JindoCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo master</p>
+<p>The component spec of Jindo master</p>
 </td>
 </tr>
 <tr>
@@ -1076,7 +1076,7 @@ JindoCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo worker</p>
+<p>The component spec of Jindo worker</p>
 </td>
 </tr>
 <tr>
@@ -1089,7 +1089,7 @@ JindoFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo Fuse</p>
+<p>The component spec of Jindo Fuse</p>
 </td>
 </tr>
 <tr>
@@ -1527,7 +1527,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio master</p>
+<p>The component spec of Alluxio master</p>
 </td>
 </tr>
 <tr>
@@ -1540,7 +1540,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio job master</p>
+<p>The component spec ofAlluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -1553,7 +1553,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio worker</p>
+<p>The component spec of Alluxio worker</p>
 </td>
 </tr>
 <tr>
@@ -1566,7 +1566,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio job Worker</p>
+<p>The component spec of Alluxio job Worker</p>
 </td>
 </tr>
 <tr>
@@ -1579,7 +1579,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio API Gateway</p>
+<p>The component spec of Alluxio API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -1605,7 +1605,7 @@ AlluxioFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for Alluxio Fuse</p>
+<p>The component spec of Alluxio Fuse</p>
 </td>
 </tr>
 <tr>
@@ -3535,7 +3535,7 @@ JindoCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo master</p>
+<p>The component spec of Jindo master</p>
 </td>
 </tr>
 <tr>
@@ -3548,7 +3548,7 @@ JindoCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo worker</p>
+<p>The component spec of Jindo worker</p>
 </td>
 </tr>
 <tr>
@@ -3561,7 +3561,7 @@ JindoFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for Jindo Fuse</p>
+<p>The component spec of Jindo Fuse</p>
 </td>
 </tr>
 <tr>
@@ -4639,5 +4639,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>2025b33</code>.
+on git commit <code>9b6e487</code>.
 </em></p>
