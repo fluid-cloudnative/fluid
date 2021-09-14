@@ -188,3 +188,7 @@
 0.6.20
 
 - Support HA
+
+0.7.0
+
+- Support fuse lazy start
