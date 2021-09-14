@@ -329,22 +329,6 @@ func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRunti
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
 
-	//if runtime.Spec.Fuse.Global {
-	//	value.Fuse.Global = true
-	//	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-	//		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-	//	}
-	//	value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
-	//	e.Log.Info("Enable Fuse's global mode")
-	//} else {
-	//	if runtime.Spec.Fuse.NodeSelector == nil {
-	//		labelName := e.getCommonLabelname()
-	//		value.Fuse.NodeSelector[labelName] = "true"
-	//		e.Log.Info("Disable Fuse's global mode")
-	//	} else {
-	//		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-	//	}
-	//}
 	return nil
 }
 

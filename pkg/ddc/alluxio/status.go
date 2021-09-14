@@ -30,10 +30,9 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (
 		masterReady, workerReady bool
-		// workerPartialReady, fusePartialReady bool
-		masterName string = e.getMasterStatefulsetName()
-		workerName string = e.getWorkerDaemonsetName()
-		namespace  string = e.namespace
+		masterName               string = e.getMasterStatefulsetName()
+		workerName               string = e.getWorkerDaemonsetName()
+		namespace                string = e.namespace
 	)
 
 	// 1. Master should be ready
