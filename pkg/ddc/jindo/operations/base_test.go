@@ -11,10 +11,10 @@ import (
 
 func TestNewJindoFileUtils(t *testing.T) {
 	expectedResult := JindoFileUtils{
-		podName: "hadoop",
+		podName:   "hadoop",
 		namespace: "default",
 		container: "hadoop",
-		log: log.NullLogger{},
+		log:       log.NullLogger{},
 	}
 
 	result := NewJindoFileUtils("hadoop", "default", "hadoop", log.NullLogger{})
