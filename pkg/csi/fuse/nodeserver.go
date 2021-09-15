@@ -21,7 +21,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	"k8s.io/klog"
 	"os"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -175,7 +174,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// can be used to indicate a specific dataset.
 	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
-		klog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		glog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
@@ -198,13 +197,13 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 
 	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 	if err != nil {
-		klog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
+		glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
 	}
 
 	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
 	if err != nil {
-		klog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		glog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
@@ -219,7 +218,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	// 1. get dataset namespace and name by volume id
 	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
-		klog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		glog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
@@ -230,13 +229,13 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
 	if err != nil {
-		klog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
+		glog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
 	}
 
 	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
 	if err != nil {
-		klog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
