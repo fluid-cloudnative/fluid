@@ -21,8 +21,6 @@ spec:
       {{- if .Values.csi.config.hostNetwork }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      {{- else }}
-      hostNetwork: false
       {{- end }}
       hostPID: true
       affinity:
