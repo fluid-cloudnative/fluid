@@ -121,7 +121,7 @@ func TestParseSmartDataImage(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
-		imageR, tagR, _ := engine.parseSmartDataImage()
+		imageR, tagR, _ := engine.getSmartDataConfigs()
 		registryVersion := imageR + ":" + tagR
 		if registryVersion != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)

@@ -61,7 +61,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
-	jindoSmartdataImage, smartdataTag, dnsServer := e.parseSmartDataImage()
+	jindoSmartdataImage, smartdataTag, dnsServer := e.getSmartDataConfigs()
 	jindoFuseImage, fuseTag := e.parseFuseImage()
 
 	value = &Jindo{
@@ -404,7 +404,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, datas
 	return []string{baseArg}
 }
 
-func (e *JindoEngine) parseSmartDataImage() (image, tag, dnsServer string) {
+func (e *JindoEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
 		defaultTag       = "3.7.0"
