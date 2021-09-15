@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#set -x
+set -x
 
 function printUsage() {
     echo -e "Usage: Run command with related environment variable set"
@@ -11,8 +11,6 @@ function printUsage() {
 function check_port() {
   ports=$1
   for port in "${ports[@]}"; do
-    echo "Checking if port $port is in use:"
-    echo "> netstat -ntp | grep $port"
     # ignore grep not found
     netstat -ntp | awk '{print $4,"\t",$6,"\t",$7}' | grep "$port"
     if [[ $? -eq 0 ]]; then
