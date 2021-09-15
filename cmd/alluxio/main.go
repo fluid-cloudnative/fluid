@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +18,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/net"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"go.uber.org/zap/zapcore"
