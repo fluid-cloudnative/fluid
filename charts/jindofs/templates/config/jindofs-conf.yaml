@@ -44,9 +44,21 @@ data:
       <property>
           <name>jindo.common.accessKeyId</name>
           <value>{{ .Values.master.osskey }}</value>
-        </property>
-        <property>
+      </property>
+      <property>
           <name>jindo.common.accessKeySecret</name>
           <value>{{ .Values.master.osssecret }}</value>
-        </property>
+      </property>
+      <property>
+          <name>fs.jfs.credentials.provider</name>
+          <value>com.aliyun.emr.fs.auth.SimpleAliyunCredentialsProvider,com.aliyun.emr.fs.auth.EnvironmentVariableCredentialsProvider,com.aliyun.emr.fs.auth.JindoCommonCredentialsProvider,com.aliyun.emr.fs.auth.CustomCredentialsProvider</value>
+      </property>
+      <property>
+          <name>fs.jfs.cache.oss.credentials.provider</name>
+          <value>com.aliyun.emr.fs.auth.SimpleAliyunCredentialsProvider,com.aliyun.emr.fs.auth.EnvironmentVariableCredentialsProvider,com.aliyun.emr.fs.auth.JindoCommonCredentialsProvider,com.aliyun.emr.fs.auth.CustomCredentialsProvider</value>
+      </property>
+      <property>
+          <name>aliyun.oss.provider.url</name>
+          <value>secrets:///token/</value>
+      </property>
     </configuration>

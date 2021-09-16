@@ -20,3 +20,7 @@ import "github.com/fluid-cloudnative/fluid/pkg/common"
 func (e *AlluxioEngine) getCommonLabelname() string {
 	return common.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 }
+
+func (e *AlluxioEngine) getFuseLabelname() string {
+	return common.LabelAnnotationFusePrefix + e.namespace + "-" + e.name
+}

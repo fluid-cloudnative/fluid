@@ -3,6 +3,8 @@ package goosefs
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -170,11 +172,11 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}{
 		{
 			dataLoad:       dataLoadNoTarget,
-			expectFileName: "/tmp/fluid-test-dataload-loader-values.yaml",
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
 			dataLoad:       dataLoadWithTarget,
-			expectFileName: "/tmp/fluid-test-dataload-loader-values.yaml",
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
 	for _, test := range testCases {

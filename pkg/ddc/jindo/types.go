@@ -1,26 +1,31 @@
 package jindo
 
-import v1 "k8s.io/api/core/v1"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
+)
 
 type Jindo struct {
-	Image           string            `yaml:"image"`
-	ImageTag        string            `yaml:"imageTag"`
-	ImagePullPolicy string            `yaml:"imagePullPolicy"`
-	FuseImage       string            `yaml:"fuseImage"`
-	FuseImageTag    string            `yaml:"fuseImageTag"`
-	User            int               `yaml:"user"`
-	Group           int               `yaml:"group"`
-	FsGroup         int               `yaml:"fsGroup"`
-	UseHostNetwork  bool              `yaml:"useHostNetwork"`
-	UseHostPID      bool              `yaml:"useHostPID"`
-	Properties      map[string]string `yaml:"properties"`
-	Master          Master            `yaml:"master"`
-	Worker          Worker            `yaml:"worker"`
-	Fuse            Fuse              `yaml:"fuse"`
-	Mounts          Mounts            `yaml:"mounts"`
-	HadoopConfig    HadoopConfig      `yaml:"hadoopConfig,omitempty"`
-	Secret          string            `yaml:"secret,omitempty"`
-	Tolerations     []v1.Toleration   `yaml:"tolerations,omitempty"`
+	Image           string               `yaml:"image"`
+	ImageTag        string               `yaml:"imageTag"`
+	ImagePullPolicy string               `yaml:"imagePullPolicy"`
+	FuseImage       string               `yaml:"fuseImage"`
+	FuseImageTag    string               `yaml:"fuseImageTag"`
+	User            int                  `yaml:"user"`
+	Group           int                  `yaml:"group"`
+	FsGroup         int                  `yaml:"fsGroup"`
+	UseHostNetwork  bool                 `yaml:"useHostNetwork"`
+	UseHostPID      bool                 `yaml:"useHostPID"`
+	Properties      map[string]string    `yaml:"properties"`
+	Master          Master               `yaml:"master"`
+	Worker          Worker               `yaml:"worker"`
+	Fuse            Fuse                 `yaml:"fuse"`
+	Mounts          Mounts               `yaml:"mounts"`
+	HadoopConfig    HadoopConfig         `yaml:"hadoopConfig,omitempty"`
+	Secret          string               `yaml:"secret,omitempty"`
+	Tolerations     []v1.Toleration      `yaml:"tolerations,omitempty"`
+	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
+	Labels          map[string]string    `yaml:"labels,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -39,6 +44,9 @@ type Master struct {
 	OssKey           string            `yaml:"osskey,omitempty"`
 	OssSecret        string            `yaml:"osssecret,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
+	DnsServer        string            `yaml:"dnsServer,omitempty"`
+	NameSpace        string            `yaml:"namespace,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
 }
 
 type Worker struct {
@@ -47,6 +55,7 @@ type Worker struct {
 	WorkerProperties map[string]string `yaml:"properties"`
 	Port             Ports             `yaml:"ports,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
 }
 
 type Ports struct {
@@ -62,6 +71,8 @@ type Fuse struct {
 	Global         bool              `yaml:"global,omitempty"`
 	RunAs          string            `yaml:"runAs,omitempty"`
 	Tolerations    []v1.Toleration   `yaml:"tolerations,omitempty"`
+	Labels         map[string]string `yaml:"labels,omitempty"`
+	CriticalPod    bool              `yaml:"criticalPod,omitempty"`
 }
 
 type Mounts struct {

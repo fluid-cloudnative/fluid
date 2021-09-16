@@ -12,7 +12,7 @@ while ! mount | grep $ConditionPathIsMountPoint | grep $MountType
 do
     sleep 3
     count=`expr $count + 1`
-    if test $count -eq 6000
+    if test $count -eq 10
     then
         echo "timed out!"
         exit 1

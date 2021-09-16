@@ -64,7 +64,7 @@ func ParseInitImage(image, tag, imagePullPolicy, envName string) (string, string
 	if len(image) == 0 {
 		image = GetImageRepoFromEnv(envName)
 		if len(image) == 0 {
-			initImageInfo := strings.Split(common.DEFAULT_INIT_IMAGE, ":")
+			initImageInfo := strings.Split(common.DefaultInitImage, ":")
 			if len(initImageInfo) < 1 {
 				panic("invalid default init image!")
 			} else {
@@ -76,7 +76,7 @@ func ParseInitImage(image, tag, imagePullPolicy, envName string) (string, string
 	if len(tag) == 0 {
 		tag = GetImageTagFromEnv(envName)
 		if len(tag) == 0 {
-			initImageInfo := strings.Split(common.DEFAULT_INIT_IMAGE, ":")
+			initImageInfo := strings.Split(common.DefaultInitImage, ":")
 			if len(initImageInfo) < 2 {
 				panic("invalid default init image!")
 			} else {

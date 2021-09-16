@@ -9,6 +9,8 @@ dataset:
     image: fluidcloudnative/dataset-controller:v0.7.0-109a578
 
 csi:
+  config:
+    hostNetwork: false
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
@@ -17,6 +19,7 @@ csi:
     rootDir: /var/lib/kubelet
 
 runtime:
+  criticalFusePod: true
   mountRoot: /runtime-mnt
   alluxio:
     runtimeWorkers: 3
@@ -35,11 +38,15 @@ runtime:
     portRange: 18000-19999
     enabled: false
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.6.0
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.7.0
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.6.0
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.7.0
     controller:
       image: fluidcloudnative/jindoruntime-controller:v0.7.0-109a578
+    init:
+      portCheck:
+        enabled: false
+      image: fluidcloudnative/init-users:v0.6.0-48de610
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000

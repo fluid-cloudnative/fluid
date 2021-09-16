@@ -54,6 +54,18 @@ spec:
           - name: JINDO_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.jindo.fuse.image | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.init.image }}
+          - name: DEFAULT_INIT_IMAGE_ENV
+            value: {{ .Values.runtime.jindo.init.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.jindo.init.portCheck }}
+          - name: INIT_PORT_CHECK_ENABLED
+            value: {{ .Values.runtime.jindo.init.portCheck.enabled | quote }}
+          {{- end }}
+          {{- if .Values.runtime.criticalFusePod }}
+          - name: CRITICAL_FUSE_POD
+            value: {{ .Values.runtime.criticalFusePod | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics

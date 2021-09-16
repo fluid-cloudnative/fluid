@@ -103,6 +103,12 @@ spec:
                 imageTag:
                   description: Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
                   type: string
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels will be added on all the JindoFS Fuse pods.
+                    Any label already existed will be overriden
+                  type: object
                 nodeSelector:
                   additionalProperties:
                     type: string
@@ -207,6 +213,11 @@ spec:
                   description: Image tag (e.g. 2.3.0-SNAPSHOT)
                   type: string
               type: object
+            labels:
+              additionalProperties:
+                type: string
+              description: Labels will be added on all the JindoFS pods.
+              type: object
             master:
               description: The component spec of Jindo master
               properties:
@@ -215,6 +226,12 @@ spec:
                     type: string
                   description: Environment variables that will be used by Jindo component.
                     <br>
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels will be added on all the JindoFS Master or Worker
+                    pods. Any label already existed will be overriden
                   type: object
                 nodeSelector:
                   additionalProperties:
@@ -409,6 +426,12 @@ spec:
                     type: string
                   description: Environment variables that will be used by Jindo component.
                     <br>
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels will be added on all the JindoFS Master or Worker
+                    pods. Any label already existed will be overriden
                   type: object
                 nodeSelector:
                   additionalProperties:

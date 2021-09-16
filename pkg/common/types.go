@@ -87,15 +87,6 @@ type UserInfo struct {
 	FSGroup int `yaml:"fsGroup"`
 }
 
-// The InitContainer to init the users for other Containers
-type InitUsers struct {
-	ImageInfo      `yaml:",inline"`
-	EnvUsers       string `yaml:"envUsers"`
-	Dir            string `yaml:"dir"`
-	Enabled        bool   `yaml:"enabled,omitempty"`
-	EnvTieredPaths string `yaml:"envTieredPaths"`
-}
-
 // ImageInfo to run a Container
 type ImageInfo struct {
 	// Image of a Container
