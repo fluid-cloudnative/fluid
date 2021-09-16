@@ -120,14 +120,14 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	ctx.RuntimeType = boundedRuntime.Type
 
-	var runtime runtime.Object
+	var fluidRuntime runtime.Object
 	switch ctx.RuntimeType {
 	case common.ALLUXIO_RUNTIME:
-		runtime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		fluidRuntime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JINDO_RUNTIME:
-		runtime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		fluidRuntime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.GooseFSRuntime:
-		runtime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		fluidRuntime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	default:
 		ctx.Log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&targetDataload,
@@ -145,12 +145,12 @@ func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
 		}
 	}
-	ctx.Runtime = runtime
+	ctx.Runtime = fluidRuntime
 	ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
 
 	// 4. add finalizer and requeue
 	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
-		return r.addFinalierAndRequeue(ctx, targetDataload)
+		return r.addFinalizerAndRequeue(ctx, targetDataload)
 	}
 
 	// 5. add owner and requeue
@@ -189,7 +189,7 @@ func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestCon
 	return utils.RequeueImmediately()
 }
 
-func (r *DataLoadReconciler) addFinalierAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
+func (r *DataLoadReconciler) addFinalizerAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
 	targetDataload.ObjectMeta.Finalizers = append(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
 	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DATALOAD_FINALIZER)
 	prevGeneration := targetDataload.ObjectMeta.GetGeneration()
