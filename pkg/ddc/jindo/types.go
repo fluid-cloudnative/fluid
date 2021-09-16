@@ -72,6 +72,7 @@ type Fuse struct {
 	RunAs          string            `yaml:"runAs,omitempty"`
 	Tolerations    []v1.Toleration   `yaml:"tolerations,omitempty"`
 	Labels         map[string]string `yaml:"labels,omitempty"`
+	CriticalPod    bool              `yaml:"criticalPod,omitempty"`
 }
 
 type Mounts struct {

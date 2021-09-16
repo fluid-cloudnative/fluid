@@ -45,6 +45,7 @@ worker:
     storage.rpc.port: 6101
 
 fuse:
+  criticalPod: true
   labels: {}
   properties:
     client.storage.rpc.port: 6101

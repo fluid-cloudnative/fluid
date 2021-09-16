@@ -19,6 +19,7 @@ csi:
     rootDir: /var/lib/kubelet
 
 runtime:
+  criticalFusePod: true
   mountRoot: /runtime-mnt
   alluxio:
     runtimeWorkers: 3
@@ -31,7 +32,6 @@ runtime:
     runtime:
       image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-2-SNAPSHOT-52ad95c
     fuse:
-      criticalPod: true
       image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.5.0-2-SNAPSHOT-52ad95c
   jindo:
     runtimeWorkers: 3

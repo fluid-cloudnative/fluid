@@ -167,6 +167,7 @@ type Fuse struct {
 	Enabled            bool              `yaml:"enabled,omitempty"`
 	Resources          common.Resources  `yaml:"resources,omitempty"`
 	Global             bool              `yaml:"global,omitempty"`
+	CriticalPod        bool              `yaml:"criticalPod,omitempty"`
 }
 
 type Tieredstore struct {

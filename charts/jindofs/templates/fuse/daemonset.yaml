@@ -36,6 +36,9 @@ spec:
 {{ toYaml .Values.fuse.labels | trim | indent 8 }}
 {{- end }}
     spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
       hostNetwork: {{ .Values.useHostNetwork }}
       hostPID: {{ .Values.useHostPID }}
       nodeSelector:

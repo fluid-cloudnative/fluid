@@ -316,6 +316,10 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		}
 	}
 	value.Fuse.FuseProperties = properties
+
+	// set critical fuse pod to avoid eviction
+	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
+
 	return nil
 }
 
