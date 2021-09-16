@@ -304,7 +304,7 @@ shortCircuit:
 ## FUSE ##
 
 fuse:
-  criticalPod: true
+  criticalPod: false
   env:
     # Extra environment variables for the fuse pod
     # Example:
