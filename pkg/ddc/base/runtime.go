@@ -49,6 +49,8 @@ type RuntimeInfoInterface interface {
 
 	GetCommonLabelName() string
 
+	GetFuseLabelName() string
+
 	GetRuntimeLabelName() string
 
 	GetDatasetNumLabelName() string
@@ -177,7 +179,8 @@ func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 
 // SetupFuseDeployMode setups the fuse deploy mode
 func (info *RuntimeInfo) SetupFuseDeployMode(global bool, nodeSelector map[string]string) {
-	info.fuse.Global = global
+	// Since Fluid v0.7.0, global is deprecated.
+	info.fuse.Global = true
 	info.fuse.NodeSelector = nodeSelector
 }
 

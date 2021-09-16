@@ -20,6 +20,9 @@ const (
 	LabelAnnotationPrefix = "fluid.io/"
 	// The format is fluid.io/s-{runtime_type}-{data_set_name}, s means storage
 	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "s-"
+	// LabelAnnotationFusePrefix is the prefix for the fuse annotation. The annotation follows
+	// fluid.io/f-{runtime type}-{dataset name}, in which f means fuse
+	LabelAnnotationFusePrefix = LabelAnnotationPrefix + "f-"
 	// The dataset annotation
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node

@@ -99,6 +99,9 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 
 	e.transformResourcesForFuse(runtime, value)
 
+	// set critical fuse pod to avoid eviction
+	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
+
 	return
 
 }

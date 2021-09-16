@@ -1175,6 +1175,18 @@ string
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels will be added on all the JindoFS pods.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -3351,6 +3363,19 @@ map[string]string
 <p>If specified, the pod&rsquo;s tolerations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels will be added on all the JindoFS Master or Worker pods.
+Any label already existed will be overriden</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec
@@ -3491,6 +3516,19 @@ this option only effect when global is enabled</p>
 <td>
 <em>(Optional)</em>
 <p>If specified, the pod&rsquo;s tolerations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels will be added on all the JindoFS Fuse pods.
+Any label already existed will be overriden</p>
 </td>
 </tr>
 </tbody>
@@ -3645,6 +3683,18 @@ string
 </em>
 </td>
 <td>
+</td>
+</tr>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels will be added on all the JindoFS pods.</p>
 </td>
 </tr>
 </tbody>
@@ -4639,5 +4689,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9b6e487</code>.
+on git commit <code>026c51d</code>.
 </em></p>

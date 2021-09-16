@@ -32,6 +32,16 @@ const (
 	persistentVolumeClaimProtectionFinalizerName = "kubernetes.io/pvc-protection"
 )
 
+func GetPersistentVolume(client client.Client, name string) (pv *v1.PersistentVolume, err error) {
+	pv = &v1.PersistentVolume{}
+	err = client.Get(context.TODO(), types.NamespacedName{Name: name}, pv)
+	if err != nil {
+		return nil, err
+	}
+
+	return pv, nil
+}
+
 // IsPersistentVolumeExist checks if the persistent volume exists given name and annotations of the PV.
 func IsPersistentVolumeExist(client client.Client, name string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{

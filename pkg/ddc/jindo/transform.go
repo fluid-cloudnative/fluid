@@ -8,6 +8,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,7 +61,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
-	jindoSmartdataImage, smartdataTag := e.parseSmartDataImage()
+	jindoSmartdataImage, smartdataTag, dnsServer := e.getSmartDataConfigs()
 	jindoFuseImage, fuseTag := e.parseFuseImage()
 
 	value = &Jindo{
@@ -123,8 +124,18 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	err = e.transformInitPortCheck(value)
+	if err != nil {
+		return
+	}
+	err = e.transformLabels(runtime, value)
+	if err != nil {
+		return
+	}
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
+	value.Master.DnsServer = dnsServer
+	value.Master.NameSpace = e.namespace
 	return value, err
 }
 
@@ -305,27 +316,23 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		}
 	}
 	value.Fuse.FuseProperties = properties
+
+	// set critical fuse pod to avoid eviction
+	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
+
 	return nil
 }
 
 func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
-	value.Fuse.NodeSelector = map[string]string{}
-	if runtime.Spec.Fuse.Global {
-		value.Fuse.Global = true
-		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-		}
-		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
-		e.Log.Info("Enable Fuse's global mode")
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	} else {
-		if runtime.Spec.Fuse.NodeSelector == nil {
-			labelName := e.getCommonLabelname()
-			value.Fuse.NodeSelector[labelName] = "true"
-			e.Log.Info("Disable Fuse's global mode")
-		} else {
-			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-		}
+		value.Fuse.NodeSelector = map[string]string{}
 	}
+
+	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
+
 	return nil
 }
 
@@ -401,21 +408,26 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, datas
 	return []string{baseArg}
 }
 
-func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
+func (e *JindoEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
-		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag   = "3.6.0"
+		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
+		defaultTag       = "3.7.0"
+		defaultDnsServer = "1.1.1.1"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
 	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
+	dnsServer = os.Getenv(common.JINDO_DNS_SERVER)
 	if len(image) == 0 {
 		image = defaultImage
 	}
 	if len(tag) == 0 {
 		tag = defaultTag
 	}
-	e.Log.Info("Set image", "image", image, "tag", tag)
+	if len(dnsServer) == 0 {
+		dnsServer = defaultDnsServer
+	}
+	e.Log.Info("Set image", "image", image, "tag", tag, "dnsServer", dnsServer)
 
 	return
 }
@@ -423,7 +435,7 @@ func (e *JindoEngine) parseSmartDataImage() (image, tag string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.6.0"
+		defaultTag   = "3.7.0"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
@@ -487,6 +499,34 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	return nil
 }
 
+func (e *JindoEngine) transformInitPortCheck(value *Jindo) error {
+	// This function should be called after port allocation
+
+	if !common.PortCheckEnabled() {
+		return nil
+	}
+
+	e.Log.Info("Enabled port check")
+	value.InitPortCheck.Enabled = true
+
+	// Always use the default init image defined in env
+	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DEFAULT_INIT_IMAGE_ENV)
+
+	// Inject ports to be checked to a init container which reports the usage status of the ports for easier debugging.
+	// The jindo master container will always start even when some of the ports is in use.
+	var ports []string
+
+	ports = append(ports, strconv.Itoa(value.Master.Port.Rpc))
+	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+		ports = append(ports, strconv.Itoa(value.Master.Port.Raft))
+	}
+
+	// init container takes "PORT1:PORT2:PORT3..." as input
+	value.InitPortCheck.PortsToCheck = strings.Join(ports, ":")
+
+	return nil
+}
+
 func (e *JindoEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
 	if len(runtime.Spec.User) != 0 {
 		value.Fuse.RunAs = runtime.Spec.User
@@ -528,4 +568,16 @@ func (e *JindoEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtim
 			value.Fuse.Tolerations = append(value.Tolerations, toleration)
 		}
 	}
+}
+
+func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	// the labels will not be merged here because they will be sequentially added into yaml templates
+	// If two labels share the same label key, the last one in yaml templates overrides the former ones
+	// and takes effect.
+	value.Labels = runtime.Spec.Labels
+	value.Master.Labels = runtime.Spec.Master.Labels
+	value.Worker.Labels = runtime.Spec.Worker.Labels
+	value.Fuse.Labels = runtime.Spec.Fuse.Labels
+
+	return nil
 }

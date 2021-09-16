@@ -66,30 +66,6 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 }
 
-func TestGetRequiredSchedulingTermWithDefaultMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-
-	runtimeInfo.SetupFuseDeployMode(false, map[string]string{})
-	terms, _ := getRequiredSchedulingTerm(runtimeInfo)
-
-	expectTerms := corev1.NodeSelectorTerm{
-		MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      "fluid.io/s-fluid-test",
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"true"},
-			},
-		},
-	}
-
-	if !reflect.DeepEqual(terms, expectTerms) {
-		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", expectTerms, terms)
-	}
-}
-
 func TestMutate(t *testing.T) {
 	var (
 		client client.Client

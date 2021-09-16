@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -48,11 +49,12 @@ const (
 )
 
 type driver struct {
+	client           client.Client
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
 
-func NewDriver(nodeID, endpoint string) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
@@ -77,6 +79,7 @@ func NewDriver(nodeID, endpoint string) *driver {
 		nodeId:    nodeID,
 		endpoint:  endpoint,
 		csiDriver: csiDriver,
+		client:    client,
 	}
 }
 
@@ -89,6 +92,7 @@ func (d *driver) newNodeServer() *nodeServer {
 	return &nodeServer{
 		nodeId:            d.nodeId,
 		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.csiDriver),
+		client:            d.client,
 	}
 }
 

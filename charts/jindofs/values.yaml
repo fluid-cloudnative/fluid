@@ -4,11 +4,18 @@
 
 
 image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
-imageTag: "3.6.0"
+imageTag: "3.7.0"
 imagePullPolicy: Always
 
+initPortCheck:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  portsToCheck: ""
+
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
-fuseImageTag: "3.6.0"
+fuseImageTag: "3.7.0"
 
 user: 0
 group: 0
@@ -17,10 +24,13 @@ fsGroup: 0
 useHostNetwork: true
 useHostPID: true
 
+labels: {}
+
 properties:
   logDir: /mnt/disk1/bigboot/log
 
 master:
+  labels: {}
   replicaCount: 1
   properties:
     namespace.rpc.port: 8101
@@ -29,11 +39,14 @@ master:
     namespace.backend.type: rocksdb
 
 worker:
+  labels: {}
   nodeSelector: {}
   properties:
     storage.rpc.port: 6101
 
 fuse:
+  criticalPod: false
+  labels: {}
   properties:
     client.storage.rpc.port: 6101
     client.oss.retry: 5

@@ -52,32 +52,6 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
 		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
 		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = currentReplicas
-		runtimeToUpdate.Status.FusePhase = datav1alpha1.RuntimePhaseNotReady
-
-		if runtimeToUpdate.Spec.Fuse.Global {
-			fuseName := e.getFuseDaemonsetName()
-			fuses, err := e.getDaemonset(fuseName, e.namespace)
-			if err != nil {
-				e.Log.Error(err, "setupWorker")
-				return err
-			}
-
-			// Clean the label to start the daemonset deployment
-			fusesToUpdate := fuses.DeepCopy()
-			e.Log.Info("check node labels of fuse before cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
-			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FLUID_FUSE_BALLOON_KEY)
-			e.Log.Info("check node labels of fuse after cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
-			err = e.Client.Update(context.TODO(), fusesToUpdate)
-			if err != nil {
-				e.Log.Error(err, "setupWorker")
-				return err
-			}
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = fuses.Status.DesiredNumberScheduled
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = fuses.Status.CurrentNumberScheduled
-		} else {
-			runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-			runtimeToUpdate.Status.CurrentFuseNumberScheduled = currentReplicas
-		}
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
@@ -87,11 +61,6 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		runtimeToUpdate.Status.Conditions =
 			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 				cond)
-		fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason,
-			"The fuses are initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				fuseCond)
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
@@ -123,10 +92,9 @@ func (e *JindoEngine) ShouldSetupWorkers() (should bool, err error) {
 // are the workers ready
 func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 	var (
-		workerReady, fuseReady, workerPartialReady, fusePartialReady bool
-		workerName                                                   string = e.getWorkerDaemonsetName()
-		fuseName                                                     string = e.getFuseDaemonsetName()
-		namespace                                                    string = e.namespace
+		workerReady, workerPartialReady bool
+		workerName                      string = e.getWorkerDaemonsetName()
+		namespace                       string = e.namespace
 	)
 
 	runtime, err := e.getRuntime()
@@ -134,17 +102,10 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		return ready, err
 	}
 
-	// runtime, err := e.getRuntime()
-	// if err != nil {
-	// 	return
-	// }
-
 	workers, err := e.getDaemonset(workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
-
-	// replicas := runtime.Replicas()
 
 	if workers.Status.NumberReady > 0 {
 		if runtime.Replicas() == workers.Status.NumberReady {
@@ -154,31 +115,11 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		}
 	}
 
-	e.Log.Info("Fuse deploy mode", "global", runtime.Spec.Fuse.Global)
-	fuses, err := e.getDaemonset(fuseName, namespace)
-	if fuses.Status.NumberAvailable > 0 {
-		if runtime.Spec.Fuse.Global {
-			if fuses.Status.DesiredNumberScheduled == fuses.Status.CurrentNumberScheduled {
-				fuseReady = true
-			} else {
-				fusePartialReady = true
-			}
-		} else {
-			if runtime.Spec.Replicas == fuses.Status.NumberReady {
-				fuseReady = true
-			} else if fuses.Status.NumberReady >= 1 {
-				fusePartialReady = true
-			}
-		}
-	}
-
-	if (workerReady || workerPartialReady) && (fuseReady || fusePartialReady) {
+	if workerReady || workerPartialReady {
 		ready = true
 	} else {
 		e.Log.Info("workers are not ready", "workerReady", workerReady,
-			"workerPartialReady", workerPartialReady,
-			"fuseReady", fuseReady,
-			"fusePartialReady", fusePartialReady)
+			"workerPartialReady", workerPartialReady)
 		return
 	}
 
@@ -203,18 +144,6 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		runtimeToUpdate.Status.Conditions =
 			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 				cond)
-		fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, datav1alpha1.RuntimeFusesReadyReason,
-			"The fuses are ready.", corev1.ConditionTrue)
-
-		if fusePartialReady {
-			fuseCond = utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, datav1alpha1.RuntimeFusesReadyReason,
-				"The fuses are partially ready.", corev1.ConditionTrue)
-
-			runtimeToUpdate.Status.FusePhase = datav1alpha1.RuntimePhasePartialReady
-		}
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				fuseCond)
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)

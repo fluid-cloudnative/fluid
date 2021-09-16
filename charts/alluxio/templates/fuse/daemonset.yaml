@@ -40,6 +40,9 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-fuse
     spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
       enableServiceLinks: false
       hostNetwork: {{ .Values.fuse.hostNetwork }}
       hostPID: {{ .Values.fuse.hostPID }}
@@ -56,38 +59,6 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: {{ .Values.fuse.fsGroup }}
-      affinity:
-      {{- if .Values.fuse.global }}
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                    - {{ template "alluxio.name" . }}
-                  - key: role
-                    operator: In
-                    values:
-                    - alluxio-worker
-                topologyKey: kubernetes.io/hostname
-              weight: 100
-      {{- else }}
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - {{ template "alluxio.name" . }}
-              - key: role
-                operator: In
-                values:
-                - alluxio-worker
-            topologyKey: kubernetes.io/hostname
-      {{- end }}
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-fuse

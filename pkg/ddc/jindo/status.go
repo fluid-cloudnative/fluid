@@ -13,12 +13,10 @@ import (
 func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (
-		masterReady, workerReady, fuseReady bool
-		// workerPartialReady, fusePartialReady bool
-		masterName string = e.getMasterStatefulsetName()
-		workerName string = e.getWorkerDaemonsetName()
-		fuseName   string = e.getFuseDaemonsetName()
-		namespace  string = e.namespace
+		masterReady, workerReady bool
+		masterName               string = e.getMasterStatefulsetName()
+		workerName               string = e.getWorkerDaemonsetName()
+		namespace                string = e.namespace
 	)
 
 	// 1. Master should be ready
@@ -29,13 +27,6 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	// 2. Worker should be ready
 	workers, err := e.getDaemonset(workerName, namespace)
-	if err != nil {
-		return ready, err
-	}
-
-	// 3. fuse should be ready
-	// runtimeToUpdate.Status.DesiredFuseNumberScheduled = int32(fuses.Status.DesiredNumberScheduled)
-	fuses, err := e.getDaemonset(fuseName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -90,20 +81,7 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.FuseNumberReady = int32(fuses.Status.NumberReady)
-		runtimeToUpdate.Status.FuseNumberUnavailable = int32(fuses.Status.NumberUnavailable)
-		runtimeToUpdate.Status.FuseNumberAvailable = int32(fuses.Status.NumberAvailable)
-		if fuses.Status.DesiredNumberScheduled == fuses.Status.NumberReady {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
-			fuseReady = true
-		} else if fuses.Status.NumberAvailable == fuses.Status.NumberReady {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhasePartialReady
-			fuseReady = true
-		} else {
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
-		}
-
-		if masterReady && workerReady && fuseReady {
+		if masterReady && workerReady {
 			ready = true
 		}
 
