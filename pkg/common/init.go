@@ -1,8 +1,8 @@
 package common
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
+	"log"
 	"os"
 	"strconv"
 )
@@ -37,8 +37,8 @@ func init() {
 		} else {
 			initPortCheckEnabled = boolVal
 		}
-		fmt.Printf("Using %s = %v\n", EnvPortCheckEnabled, initPortCheckEnabled)
 	}
+	log.Printf("Using %s = %v\n", EnvPortCheckEnabled, initPortCheckEnabled)
 }
 
 func PortCheckEnabled() bool {
