@@ -40,6 +40,9 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-fuse
     spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
       enableServiceLinks: false
       hostNetwork: {{ .Values.fuse.hostNetwork }}
       hostPID: {{ .Values.fuse.hostPID }}

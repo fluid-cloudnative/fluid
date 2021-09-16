@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -88,6 +89,9 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	value.Fuse.Enabled = true
 
 	e.transformResourcesForFuse(runtime, value)
+
+	// set critical fuse pod to avoid eviction
+	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
 	return
 

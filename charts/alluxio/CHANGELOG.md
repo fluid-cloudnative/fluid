@@ -192,3 +192,4 @@
 0.7.0
 
 - Support fuse lazy start
+- Support fuse critical pod

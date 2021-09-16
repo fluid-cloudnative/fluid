@@ -59,6 +59,8 @@ spec:
           - name: MOUNT_ROOT
             value: {{ .Values.runtime.mountRoot | quote }}
           {{- end }}
+          - name: CRITICAL_FUSE_POD
+            value: {{ .Values.runtime.alluxio.fuse.criticalPod | quote }}
         ports:
         - containerPort: 8080
           name: metrics
