@@ -366,18 +366,18 @@ func TestSyncMetadataInternal(t *testing.T) {
 
 	engines := []AlluxioEngine{
 		{
-			name:               "spark",
-			namespace:          "fluid",
-			Client:             client,
-			Log:                log.NullLogger{},
-			MetadataSyncDoneCh: nil,
-		},
-		{
 			name:               "hbase",
 			namespace:          "fluid",
 			Client:             client,
 			Log:                log.NullLogger{},
 			MetadataSyncDoneCh: make(chan MetadataSyncResult),
+		},
+		{
+			name:               "spark",
+			namespace:          "fluid",
+			Client:             client,
+			Log:                log.NullLogger{},
+			MetadataSyncDoneCh: nil,
 		},
 	}
 
@@ -396,18 +396,13 @@ func TestSyncMetadataInternal(t *testing.T) {
 	}{
 		{
 			engine:           engines[0],
-			expectedUfsTotal: METADATA_SYNC_NOT_DONE_MSG,
-			expectedFileNum:  METADATA_SYNC_NOT_DONE_MSG,
-		},
-		{
-			engine:           engines[1],
 			expectedUfsTotal: "2GB",
 			expectedFileNum:  "5",
 		},
 	}
 
 	for index, test := range testCase {
-		if index == 1 {
+		if index == 0 {
 			go func() {
 				test.engine.MetadataSyncDoneCh <- result
 			}()
