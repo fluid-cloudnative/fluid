@@ -26,11 +26,21 @@ gomonkey is a library to make monkey patching in unit tests easy.
 - MAC OS X amd64
 - Linux amd64
 - Windows amd64
+- MAC OS X arm64
+- Linux arm64
+- Windows arm64
 
 ## Installation
 ```go
 $ go get github.com/agiledragon/gomonkey
 ```
+
+## Test Method
+```go
+$ cd test 
+$ go test -gcflags=all=-l
+```
+
 ## Using gomonkey
 
 Please refer to the test cases as idioms, very complete and detailed.

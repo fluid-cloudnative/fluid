@@ -4,8 +4,8 @@ cloud.google.com/go/compute/metadata
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/agiledragon/gomonkey v2.0.2+incompatible
-github.com/agiledragon/gomonkey
+# github.com/agiledragon/gomonkey/v2 v2.2.0
+github.com/agiledragon/gomonkey/v2
 # github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile
 # github.com/brahma-adshonor/gohook v1.1.9
