@@ -19,40 +19,36 @@ import (
 	"testing"
 )
 
-func TestHitTarget(t *testing.T) {
-	testCases := map[string]struct {
-		labels      map[string]string
-		target      string
-		targetValue string
-		wantHit     bool
+func TestLabelToModify(t *testing.T) {
+	var testCase = []struct {
+		labelToModify              LabelToModify
+		expectedLabelKey           string
+		expectedLabelValue         string
+		expectedLabelOperationType OperationType
 	}{
-		"test label target hit case 1": {
-			labels:      map[string]string{EnableFluidInjectionFlag: "true"},
-			target:      EnableFluidInjectionFlag,
-			targetValue: "true",
-			wantHit:     true,
-		},
-		"test label target hit case 2": {
-			labels:      map[string]string{EnableFluidInjectionFlag: "false"},
-			target:      EnableFluidInjectionFlag,
-			targetValue: "true",
-			wantHit:     false,
-		},
-		"test label target hit case 3": {
-			labels:      nil,
-			target:      EnableFluidInjectionFlag,
-			targetValue: "true",
-			wantHit:     false,
+		{
+			labelToModify: LabelToModify{
+				labelKey:      "commonLabel",
+				labelValue:    "true",
+				operationType: AddLabel,
+			},
+			expectedLabelKey:           "commonLabel",
+			expectedLabelValue:         "true",
+			expectedLabelOperationType: AddLabel,
 		},
 	}
 
-	for index, item := range testCases {
-		gotHit := CheckExpectValue(item.labels, item.target, item.targetValue)
-		if gotHit != item.wantHit {
-			t.Errorf("%s check failure, want:%t,got:%t", index, item.wantHit, gotHit)
+	for _, test := range testCase {
+		labelKey := test.labelToModify.GetLabelKey()
+		labelValue := test.labelToModify.GetLabelValue()
+		operationType := test.labelToModify.GetOperationType()
+
+		if labelKey != test.expectedLabelKey || labelValue != test.expectedLabelValue || operationType != test.expectedLabelOperationType {
+			t.Errorf("expected labelKey %s, get labelKey %s; expected labelValue %s, get labelValue %s; expected labelOperationType %s, get labelOperationType %s",
+				test.expectedLabelKey, labelKey, test.expectedLabelValue, labelValue, test.expectedLabelOperationType, operationType)
 		}
-	}
 
+	}
 }
 
 func TestGetLabels(t *testing.T) {
@@ -80,6 +76,44 @@ func TestGetLabels(t *testing.T) {
 		}
 	}
 
+}
+
+func TestOperator(t *testing.T) {
+	var labelsToModify LabelsToModify
+
+	var testCase = []struct {
+		labelKey      string
+		labelValue    string
+		operationType OperationType
+		expectedLabel LabelToModify
+	}{
+		{
+			labelKey:      "commonLabel",
+			labelValue:    "true",
+			operationType: AddLabel,
+			expectedLabel: LabelToModify{
+				labelKey:      "commonLabel",
+				labelValue:    "true",
+				operationType: AddLabel,
+			},
+		},
+		{
+			labelKey:      "commonLabel",
+			labelValue:    "true",
+			operationType: DeleteLabel,
+			expectedLabel: LabelToModify{
+				labelKey:      "commonLabel",
+				operationType: DeleteLabel,
+			},
+		},
+	}
+
+	for index, test := range testCase {
+		labelsToModify.operator(test.labelKey, test.labelValue, test.operationType)
+		if !reflect.DeepEqual(labelsToModify.labels[index], test.expectedLabel) {
+			t.Errorf("fail to add the label")
+		}
+	}
 }
 
 func TestAdd(t *testing.T) {
@@ -160,4 +194,40 @@ func TestUpdate(t *testing.T) {
 			t.Errorf("fail to add labe to modify to slice")
 		}
 	}
+}
+
+func TestHitTarget(t *testing.T) {
+	testCases := map[string]struct {
+		labels      map[string]string
+		target      string
+		targetValue string
+		wantHit     bool
+	}{
+		"test label target hit case 1": {
+			labels:      map[string]string{EnableFluidInjectionFlag: "true"},
+			target:      EnableFluidInjectionFlag,
+			targetValue: "true",
+			wantHit:     true,
+		},
+		"test label target hit case 2": {
+			labels:      map[string]string{EnableFluidInjectionFlag: "false"},
+			target:      EnableFluidInjectionFlag,
+			targetValue: "true",
+			wantHit:     false,
+		},
+		"test label target hit case 3": {
+			labels:      nil,
+			target:      EnableFluidInjectionFlag,
+			targetValue: "true",
+			wantHit:     false,
+		},
+	}
+
+	for index, item := range testCases {
+		gotHit := CheckExpectValue(item.labels, item.target, item.targetValue)
+		if gotHit != item.wantHit {
+			t.Errorf("%s check failure, want:%t,got:%t", index, item.wantHit, gotHit)
+		}
+	}
+
 }

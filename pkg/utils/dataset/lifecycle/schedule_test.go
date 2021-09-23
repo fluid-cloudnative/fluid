@@ -16,7 +16,9 @@ limitations under the License.
 package lifecycle
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -68,5 +70,103 @@ func TestAssignDatasetToNodes(t *testing.T) {
 			t.Errorf("the result of sort is not right")
 		}
 
+	}
+}
+
+func TestSortNodesToBeScheduled(t *testing.T) {
+	var nodes = []corev1.Node{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "node1",
+			},
+			Status: corev1.NodeStatus{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "node2",
+			},
+			Status: corev1.NodeStatus{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "node3",
+			},
+			Status: corev1.NodeStatus{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "node4",
+				Labels: map[string]string{"test_label_key": "test_label_value"},
+			},
+			Status: corev1.NodeStatus{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "node5",
+			},
+			Status: corev1.NodeStatus{},
+		},
+	}
+
+	var pvcMountNodesMap = map[string]int64{
+		"node3": 3,
+		"node2": 2,
+		"node1": 1,
+	}
+
+	var nodeSelector = map[string]string{
+		"test_label_key": "test_label_value",
+	}
+
+	var tests = []struct {
+		testNodes            []corev1.Node
+		testPvcMountNodesMap map[string]int64
+		testNodeSelector     map[string]string
+		testExpectedResult   []corev1.Node
+	}{
+		{
+			testNodes:            nodes,
+			testPvcMountNodesMap: pvcMountNodesMap,
+			testNodeSelector:     nodeSelector,
+			testExpectedResult: []corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node3",
+					},
+					Status: corev1.NodeStatus{},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node2",
+					},
+					Status: corev1.NodeStatus{},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node1",
+					},
+					Status: corev1.NodeStatus{},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "node4",
+						Labels: map[string]string{"test_label_key": "test_label_value"},
+					},
+					Status: corev1.NodeStatus{},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node5",
+					},
+					Status: corev1.NodeStatus{},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if result := sortNodesToBeScheduled(test.testNodes, test.testPvcMountNodesMap, test.testNodeSelector); !reflect.DeepEqual(result, test.testExpectedResult) {
+			t.Errorf("expeced %v, get %v", test.testExpectedResult, result)
+		}
 	}
 }
