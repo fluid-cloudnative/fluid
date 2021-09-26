@@ -349,10 +349,10 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 }
 
 func (e *JindoEngine) transformStderrlogEnable(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
-	if runtime.Spec.StderrLog {
-		value.Stderrlog = true
-	} else {
+	if runtime.Spec.Filelog {
 		value.Filelog = true
+	} else {
+		value.Stderrlog = true
 	}
 	return nil
 }
