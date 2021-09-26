@@ -359,6 +359,8 @@ spec:
               type: object
             secret:
               type: string
+            stderrlog:
+              type: boolean
             tieredstore:
               description: Tiered storage used by Jindo
               properties:

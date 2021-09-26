@@ -134,6 +134,8 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	}
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
+	e.transformResourcesForWorker(runtime, value)
+	e.transformStderrlogEnable(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	return value, err
@@ -285,6 +287,29 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 	return nil
 }
 
+func (e *JindoEngine) transformResourcesForWorker(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+
+	if runtime.Spec.Worker.Resources.Limits != nil {
+		e.Log.Info("setting Resources limit")
+		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
+			value.Worker.Resources.Limits.CPU = runtime.Spec.Worker.Resources.Limits.Cpu().String()
+		}
+		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
+			value.Worker.Resources.Limits.Memory = runtime.Spec.Worker.Resources.Limits.Memory().String()
+		}
+	}
+
+	if runtime.Spec.Worker.Resources.Requests != nil {
+		e.Log.Info("setting Resources request")
+		if runtime.Spec.Worker.Resources.Requests.Cpu() != nil {
+			value.Worker.Resources.Requests.CPU = runtime.Spec.Worker.Resources.Requests.Cpu().String()
+		}
+		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
+			value.Worker.Resources.Requests.Memory = runtime.Spec.Worker.Resources.Requests.Memory().String()
+		}
+	}
+}
+
 func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
@@ -320,6 +345,15 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
+	return nil
+}
+
+func (e *JindoEngine) transformStderrlogEnable(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if runtime.Spec.StderrLog {
+		value.Stderrlog = true
+	} else {
+		value.Filelog = true
+	}
 	return nil
 }
 

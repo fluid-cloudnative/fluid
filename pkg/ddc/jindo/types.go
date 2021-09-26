@@ -26,6 +26,8 @@ type Jindo struct {
 	Tolerations     []v1.Toleration      `yaml:"tolerations,omitempty"`
 	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
 	Labels          map[string]string    `yaml:"labels,omitempty"`
+	Stderrlog       bool              `yaml:"stderrlog"`
+	Filelog         bool              `yaml:"filelog"`
 }
 
 type HadoopConfig struct {
