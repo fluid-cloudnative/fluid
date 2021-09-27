@@ -76,6 +76,8 @@ spec:
         spec:
           description: JindoRuntimeSpec defines the desired state of JindoRuntime
           properties:
+            filelog:
+              type: boolean
             fuse:
               description: The component spec of Jindo Fuse
               properties:
