@@ -348,13 +348,12 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 	return nil
 }
 
-func (e *JindoEngine) transformStderrlogEnable(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoEngine) transformStderrlogEnable(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if runtime.Spec.Filelog {
 		value.Filelog = true
 	} else {
 		value.Stderrlog = true
 	}
-	return nil
 }
 
 func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
