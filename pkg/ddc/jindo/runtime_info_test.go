@@ -26,8 +26,6 @@ import (
 	"testing"
 )
 
-
-
 func newJindoEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool) *JindoEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "GooseFS", datav1alpha1.TieredStore{})
 	engine := &JindoEngine{
