@@ -135,7 +135,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	err = e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResourcesForWorker(runtime, value)
-	e.transformStderrlogEnable(runtime, value)
+	e.transformLogConfig(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	return value, err
@@ -348,7 +348,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 	return nil
 }
 
-func (e *JindoEngine) transformStderrlogEnable(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+func (e *JindoEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.LogConfig) > 0 {
 		value.LogConfig = runtime.Spec.LogConfig
 	} else {
