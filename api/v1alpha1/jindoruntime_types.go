@@ -152,7 +152,7 @@ type JindoRuntimeSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// +optional
-	Filelog bool `json:"filelog,omitempty"`
+	LogConfig map[string]string `json:"logConfig,omitempty"`
 }
 
 // +kubebuilder:object:root=true

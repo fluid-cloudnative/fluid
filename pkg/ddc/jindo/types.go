@@ -27,7 +27,7 @@ type Jindo struct {
 	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
 	Labels          map[string]string    `yaml:"labels,omitempty"`
 	Stderrlog       bool                 `yaml:"stderrlog"`
-	Filelog         bool                 `yaml:"filelog"`
+	LogConfig       map[string]string    `yaml:"logConfig,omitempty"`
 }
 
 type HadoopConfig struct {

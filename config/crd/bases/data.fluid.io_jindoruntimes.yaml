@@ -76,8 +76,6 @@ spec:
         spec:
           description: JindoRuntimeSpec defines the desired state of JindoRuntime
           properties:
-            filelog:
-              type: boolean
             fuse:
               description: The component spec of Jindo Fuse
               properties:
@@ -219,6 +217,10 @@ spec:
               additionalProperties:
                 type: string
               description: Labels will be added on all the JindoFS pods.
+              type: object
+            logConfig:
+              additionalProperties:
+                type: string
               type: object
             master:
               description: The component spec of Jindo master
