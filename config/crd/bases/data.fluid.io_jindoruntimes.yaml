@@ -218,6 +218,10 @@ spec:
                 type: string
               description: Labels will be added on all the JindoFS pods.
               type: object
+            logConfig:
+              additionalProperties:
+                type: string
+              type: object
             master:
               description: The component spec of Jindo master
               properties:
