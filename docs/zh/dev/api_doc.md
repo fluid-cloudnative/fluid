@@ -1187,6 +1187,17 @@ map[string]string
 <p>Labels will be added on all the JindoFS pods.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>logConfig</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -3697,6 +3708,17 @@ map[string]string
 <p>Labels will be added on all the JindoFS pods.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>logConfig</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.Level">Level
@@ -4689,5 +4711,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>026c51d</code>.
+on git commit <code>6d168e3</code>.
 </em></p>
