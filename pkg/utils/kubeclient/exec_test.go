@@ -66,11 +66,7 @@ func TestInitClient(t *testing.T) {
 		}
 	}
 
-	err := initClient()
-	if err != nil {
-		t.Error("fail to exec the initClient function")
-	}
-	err = os.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
+	err := os.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
 	if err != nil {
 		t.Errorf("expected no error, get %v", err)
 	}
