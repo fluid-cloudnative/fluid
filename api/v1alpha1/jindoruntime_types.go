@@ -150,6 +150,9 @@ type JindoRuntimeSpec struct {
 	// Labels will be added on all the JindoFS pods.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// +optional
+	LogConfig map[string]string `json:"logConfig,omitempty"`
 }
 
 // +kubebuilder:object:root=true
