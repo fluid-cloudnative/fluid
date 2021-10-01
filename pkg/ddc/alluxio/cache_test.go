@@ -164,22 +164,21 @@ func TestGetCacheHitStates(t *testing.T) {
 	})
 }
 
-
-func TestPatchDatasetStatus(t *testing.T){
+func TestPatchDatasetStatus(t *testing.T) {
 	engine := &AlluxioEngine{}
 	testCases := []struct {
-		total 		string
-		cached 		string
-		percentage 	string
+		total      string
+		cached     string
+		percentage string
 	}{
 		{
-			total: 		"100",
-			cached: 	"10",
+			total:      "100",
+			cached:     "10",
 			percentage: "10.0%",
 		},
 		{
-			total: 		"100",
-			cached: 	"50",
+			total:      "100",
+			cached:     "50",
 			percentage: "50.0%",
 		},
 	}
@@ -192,14 +191,14 @@ func TestPatchDatasetStatus(t *testing.T){
 		states := &cacheStates{
 			cached: testCase.cached,
 		}
-		engine.patchDatasetStatus(dataset,states)
-		if states.cachedPercentage != testCase.percentage{
+		engine.patchDatasetStatus(dataset, states)
+		if states.cachedPercentage != testCase.percentage {
 			t.Errorf(" want %s, got %s", testCase.percentage, states.cachedPercentage)
 		}
 	}
 }
 
-func TestInvokeCleanCache(t *testing.T){
+func TestInvokeCleanCache(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -225,42 +224,41 @@ func TestInvokeCleanCache(t *testing.T){
 		objs = append(objs, masterInput.DeepCopy())
 	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
-	testCases := []struct{
-		name 		string
-		namespace 	string
-		isErr 		bool
+	testCases := []struct {
+		name      string
+		namespace string
+		isErr     bool
 	}{
 		{
-			name:		"hadoop",
-			namespace: 	"fluid",
-			isErr: 		false,
+			name:      "hadoop",
+			namespace: "fluid",
+			isErr:     false,
 		},
 		{
-			name:		"hbase",
-			namespace: 	"fluid",
-			isErr: 		true,
+			name:      "hbase",
+			namespace: "fluid",
+			isErr:     true,
 		},
 		{
-			name: 		"none",
-			namespace: 	"fluid",
-			isErr: 		false,
+			name:      "none",
+			namespace: "fluid",
+			isErr:     false,
 		},
 	}
-	for _,testCase := range testCases{
+	for _, testCase := range testCases {
 		engine := &AlluxioEngine{
-			Client: fakeClient,
+			Client:    fakeClient,
 			namespace: testCase.namespace,
-			name: testCase.name,
-			Log: log.NullLogger{},
+			name:      testCase.name,
+			Log:       log.NullLogger{},
 		}
 		err := engine.invokeCleanCache("")
 		isErr := err != nil
-		if isErr != testCase.isErr{
-			t.Errorf("test-name:%s want %t, got %t", testCase.name,testCase.isErr, isErr)
+		if isErr != testCase.isErr {
+			t.Errorf("test-name:%s want %t, got %t", testCase.name, testCase.isErr, isErr)
 		}
 	}
 }
-
 
 //
 // $ alluxio fsadmin report summary

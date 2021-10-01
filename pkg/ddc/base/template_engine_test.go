@@ -58,71 +58,108 @@ var _ = Describe("TemplateEngine", func() {
 		FinalizerName: "test-finalizer-name",
 		Runtime:       nil,
 	}
-	var t = base.TemplateEngine{
-		Id:      "test-id",
-		Log:     fakeCtx.Log,
-		Context: fakeCtx,
-		Client:  fakeClient,
-	}
-	var impl *enginemock.MockImplement
+	var t *base.TemplateEngine
+
+	var (
+		impl *enginemock.MockImplement
+		ctrl *gomock.Controller
+	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		impl = enginemock.NewMockImplement(ctrl)
-		t.Implement = impl
+		t = base.NewTemplateEngine(impl, "default-test", fakeCtx)
+	})
+
+	// Check if all expectations have been met after each It
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Describe("Setup", func() {
 		Context("When everything is set up", func() {
-			It("Should return immediately after checking setup", func() {
-				impl.EXPECT().IsSetupDone().Return(true, nil).Times(1)
-			})
 			It("Should check all if checking setup failed", func() {
-				impl.EXPECT().IsSetupDone().Return(false, nil).Times(1)
-				impl.EXPECT().ShouldSetupMaster().Return(false, nil).Times(1)
-				impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1)
-				impl.EXPECT().ShouldCheckUFS().Return(false, nil).Times(1)
-				impl.EXPECT().ShouldSetupWorkers().Return(false, nil).Times(1)
-				impl.EXPECT().CheckWorkersReady().Return(true, nil).Times(1)
-				impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
-				impl.EXPECT().UpdateDatasetStatus(gomock.Any()).Return(nil).Times(1)
-				impl.EXPECT().BindToDataset().Return(nil).Times(1)
+				gomock.InOrder(
+					impl.EXPECT().ShouldSetupMaster().Return(false, nil).Times(1),
+					impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1),
+					impl.EXPECT().ShouldCheckUFS().Return(false, nil).Times(1),
+					impl.EXPECT().ShouldSetupWorkers().Return(false, nil).Times(1),
+					impl.EXPECT().CheckWorkersReady().Return(true, nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().BindToDataset().Return(nil).Times(1),
+				)
+
 				Expect(t.Setup(fakeCtx)).Should(Equal(true))
 			})
 		})
 
 		Context("When nothing is set up", func() {
-			Context("When everything goes fine", func() {
-				It("Should set all up successfully", func() {
-					impl.EXPECT().IsSetupDone().Return(false, nil).Times(1)
-					impl.EXPECT().ShouldSetupMaster().Return(true, nil).Times(1)
-					impl.EXPECT().SetupMaster().Return(nil).Times(1)
-					impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1)
-					impl.EXPECT().ShouldCheckUFS().Return(true, nil).Times(1)
-					impl.EXPECT().PrepareUFS().Return(nil).Times(1)
-					impl.EXPECT().ShouldSetupWorkers().Return(true, nil).Times(1)
-					impl.EXPECT().SetupWorkers().Return(nil).Times(1)
-					impl.EXPECT().CheckWorkersReady().Return(true, nil).Times(1)
-					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
-					impl.EXPECT().UpdateDatasetStatus(gomock.Any()).Return(nil).Times(1)
-					impl.EXPECT().BindToDataset().Return(nil).Times(1)
-					Expect(t.Setup(fakeCtx)).Should(Equal(true))
-				})
+			It("Should set all up successfully", func() {
+				gomock.InOrder(
+					impl.EXPECT().ShouldSetupMaster().Return(true, nil).Times(1),
+					impl.EXPECT().SetupMaster().Return(nil).Times(1),
+					impl.EXPECT().CheckMasterReady().Return(true, nil).Times(1),
+					impl.EXPECT().ShouldCheckUFS().Return(true, nil).Times(1),
+					impl.EXPECT().PrepareUFS().Return(nil).Times(1),
+					impl.EXPECT().ShouldSetupWorkers().Return(true, nil).Times(1),
+					impl.EXPECT().SetupWorkers().Return(nil).Times(1),
+					impl.EXPECT().CheckWorkersReady().Return(true, nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().BindToDataset().Return(nil).Times(1),
+				)
+
+				Expect(t.Setup(fakeCtx)).Should(Equal(true))
 			})
 		})
 	})
 
 	Describe("Sync", func() {
-		It("Should sync successfully", func() {
-			impl.EXPECT().SyncMetadata().Return(nil).Times(1)
-			impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
-			impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1)
-			impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1)
-			impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1)
-			impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1)
-			impl.EXPECT().ShouldUpdateUFS().Return(&utils.UFSToUpdate{}).Times(1)
-			impl.EXPECT().UpdateOnUFSChange(&utils.UFSToUpdate{}).Return(true, nil).Times(1)
-			Expect(t.Sync(fakeCtx)).To(BeNil())
+		Context("When all mount points are synced", func() {
+			It("Should sync successfully", func() {
+				gomock.InOrder(
+					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
+					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().ShouldUpdateUFS().Return(&utils.UFSToUpdate{}).Times(1),
+				)
+
+				Expect(t.Sync(fakeCtx)).To(BeNil())
+			})
+		})
+
+		Context("When some mount points need to be synced", func() {
+			It("All mount points should be synced successfully", func() {
+				datasetWithNewMountPoints := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								// newly added mount points
+								Name: "spark",
+							},
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						Mounts: []datav1alpha1.Mount{},
+					},
+				}
+				ufsToUpdate := utils.NewUFSToUpdate(datasetWithNewMountPoints)
+				ufsToUpdate.AnalyzePathsDelta()
+
+				gomock.InOrder(
+					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
+					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
+					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().ShouldUpdateUFS().Return(ufsToUpdate).Times(1),
+					impl.EXPECT().UpdateOnUFSChange(ufsToUpdate).Times(1),
+				)
+				Expect(t.Sync(fakeCtx)).Should(BeNil())
+			})
 		})
 	})
 
