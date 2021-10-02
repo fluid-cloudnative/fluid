@@ -34,12 +34,19 @@ import (
 
 var _ = Describe("TemplateEngine", func() {
 	mockDatasetName := "fluid-data-set"
-	mockDatasetNamespace := "default"
+	mockDataLoadName := "fluid-data-load"
+	mockNamespace := "default"
 
 	fakeDataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockDatasetName,
-			Namespace: mockDatasetNamespace,
+			Namespace: mockNamespace,
+		},
+	}
+	fakeDataLoad := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mockDataLoadName,
+			Namespace: mockNamespace,
 		},
 	}
 	s := apimachineryRuntime.NewScheme()
@@ -49,7 +56,7 @@ var _ = Describe("TemplateEngine", func() {
 	var fakeCtx = runtime.ReconcileRequestContext{
 		Context: context.Background(),
 		NamespacedName: types.NamespacedName{
-			Namespace: mockDatasetNamespace,
+			Namespace: mockNamespace,
 			Name:      mockDatasetName,
 		},
 		Client:        fakeClient,
@@ -187,6 +194,27 @@ var _ = Describe("TemplateEngine", func() {
 		It("Should shutdown successfully", func() {
 			impl.EXPECT().Shutdown().Return(nil).Times(1)
 			Expect(t.Shutdown()).To(BeNil())
+		})
+	})
+
+	Describe("LoadData", func() {
+		It("Should Load data successfully", func() {
+			impl.EXPECT().CreateDataLoadJob(fakeCtx, fakeDataLoad).Return(nil).Times(1)
+			Expect(t.LoadData(fakeCtx, fakeDataLoad)).To(BeNil())
+		})
+	})
+
+	Describe("CheckRuntimeReady", func() {
+		It("Should check runtime is ready", func() {
+			impl.EXPECT().CheckRuntimeReady().Return(true).Times(1)
+			Expect(t.CheckRuntimeReady()).Should(Equal(true))
+		})
+	})
+
+	Describe("CheckExistenceOfPath", func() {
+		It("Should check path exists", func() {
+			impl.EXPECT().CheckExistenceOfPath(fakeDataLoad).Return(false, nil)
+			Expect(t.CheckExistenceOfPath(fakeDataLoad)).Should(Equal(false))
 		})
 	})
 })
