@@ -54,7 +54,7 @@ func (e *JindoEngine) getRuntime() (*datav1alpha1.JindoRuntime, error) {
 	return &runtime, nil
 }
 
-func (e *JindoEngine) getMasterStatefulset(name string, namespace string) (master *appsv1.StatefulSet, err error) {
+func (e *JindoEngine) getStatefulset(name string, namespace string) (master *appsv1.StatefulSet, err error) {
 	master = &appsv1.StatefulSet{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
@@ -68,7 +68,7 @@ func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
 	return e.name + "-jindofs-master"
 }
 
-func (e *JindoEngine) getWorkerDaemonsetName() (dsName string) {
+func (e *JindoEngine) getWorkertName() (dsName string) {
 	return e.name + "-jindofs-worker"
 }
 

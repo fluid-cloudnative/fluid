@@ -93,7 +93,7 @@ func (e *JindoEngine) ShouldSetupWorkers() (should bool, err error) {
 func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 	var (
 		workerReady, workerPartialReady bool
-		workerName                      string = e.getWorkerDaemonsetName()
+		workerName                      string = e.getWorkertName()
 		namespace                       string = e.namespace
 	)
 
@@ -102,15 +102,15 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		return ready, err
 	}
 
-	workers, err := e.getDaemonset(workerName, namespace)
+	workers, err := e.getStatefulset(workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
-	if workers.Status.NumberReady > 0 {
-		if runtime.Replicas() == workers.Status.NumberReady {
+	if workers.Status.ReadyReplicas > 0 {
+		if runtime.Replicas() == workers.Status.ReadyReplicas {
 			workerReady = true
-		} else if workers.Status.NumberReady >= 1 {
+		} else if workers.Status.ReadyReplicas >= 1 {
 			workerPartialReady = true
 		}
 	}

@@ -86,7 +86,7 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 		}
-		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
+		value.Fuse.NodeSelector[common.FluidFuseBalloonKey] = common.FluidBalloonValue
 		e.Log.Info("Enable Fuse's global mode")
 	} else {
 		labelName := e.getCommonLabelname()

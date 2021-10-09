@@ -4,7 +4,7 @@
 {{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
 
 apiVersion: apps/v1
-kind: DaemonSet
+kind: StatefulSet
 metadata:
   name: {{ template "jindofs.fullname" . }}-worker
   labels:
@@ -19,6 +19,8 @@ spec:
       app: {{ template "jindofs.name" . }}
       release: {{ .Release.Name }}
       role: jindofs-worker
+  serviceName: {{ template "jindofs.fullname" $dot }}-worker
+  replicas: {{ $masterCount }}
   template:
     metadata:
       labels:

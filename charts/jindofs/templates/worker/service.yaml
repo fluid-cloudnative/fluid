@@ -1,0 +1,22 @@
+{{- $dot := . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "jindofs.fullname" $dot }}-worker
+  labels:
+    app: {{ template "jindofs.name" $dot }}
+    chart: {{ template "jindofs.chart" $dot }}
+    release: {{ $dot.Release.Name }}
+    heritage: {{ $dot.Release.Service }}
+    role: jindofs-worker
+spec:
+  ports:
+  - port: {{ $dot.Values.worker.ports.rpc }}
+    name: rpc
+  clusterIP: None
+  selector:
+    role: jindofs-worker
+    app: {{ template "jindofs.name" $dot }}
+    release: {{ $dot.Release.Name }}
+---
+{{- end }}
