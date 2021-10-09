@@ -319,6 +319,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		"client.oss.upload.max.parallelism":         "16",
 		"client.oss.timeout.millisecond":            "30000",
 		"client.oss.connection.timeout.millisecond": "3000",
+		"client.storage.connect.enable":             "true",
 		"jfs.cache.meta-cache.enable":               "0",
 		"jfs.cache.data-cache.enable":               "1",
 		"jfs.cache.data-cache.slicecache.enable":    "0",
