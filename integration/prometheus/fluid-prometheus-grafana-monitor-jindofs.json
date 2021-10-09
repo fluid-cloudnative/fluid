@@ -15,8 +15,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1633769023384,
+  "id": 3,
+  "iteration": 1633784611923,
   "links": [],
   "panels": [
     {
@@ -1398,9 +1398,9 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "default",
-          "value": "default"
+          "selected": true,
+          "text": "Prometheus",
+          "value": "Prometheus"
         },
         "error": null,
         "hide": 0,
@@ -1421,10 +1421,10 @@
         "current": {
           "selected": true,
           "text": [
-            "spark"
+            "All"
           ],
           "value": [
-            "spark"
+            "$__all"
           ]
         },
         "datasource": "$jindo_datasource",
@@ -1487,6 +1487,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "JindoRuntime",
-  "uid": "AnXqNrS7k",
-  "version": 18
+  "uid": "AnXqNrS7kd",
+  "version": 1
 }
