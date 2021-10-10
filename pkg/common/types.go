@@ -78,9 +78,6 @@ type Resources struct {
 const (
 	FluidFuseBalloonKey = "fluid_fuse_balloon"
 
-	// FluidWorkerPendingKey is used to pend the worker when master is not ready
-	FluidWorkerPendingKey = "fluid_worker_pending"
-
 	FluidBalloonValue = "true"
 )
 

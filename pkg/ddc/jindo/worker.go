@@ -2,7 +2,6 @@ package jindo
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -18,28 +17,48 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *JindoEngine) SetupWorkers() (err error) {
-	runtime, err := e.getRuntime()
+	var (
+		workerName        string = e.getWorkertName()
+		namespace         string = e.namespace
+		needRuntimeUpdate bool   = false
+	)
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := e.getStatefulset(workerName, namespace)
+		if err != nil {
+			return err
+		}
+
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		desireReplicas := runtime.Replicas()
+		if *workers.Spec.Replicas != desireReplicas {
+			workerToUpdate := workers.DeepCopy()
+			workerToUpdate.Spec.Replicas = &desireReplicas
+			err = e.Client.Update(context.TODO(), workerToUpdate)
+			if err != nil {
+				return err
+			}
+		} else {
+			e.Log.V(1).Info("Nothing to do for syncing")
+		}
+
+		needRuntimeUpdate = true
+		return nil
+	})
+
 	if err != nil {
-		e.Log.Error(err, "setupWorker")
+		e.Log.Error(err, "Failed to setup worker")
 		return err
 	}
 
-	replicas := runtime.Replicas()
-
-	currentReplicas, err := e.AssignNodesToCache(replicas)
-	if err != nil {
-		return err
+	if !needRuntimeUpdate {
+		return nil
 	}
 
-	e.Log.Info("check the desired and current replicas",
-		"desiredReplicas", replicas,
-		"currentReplicas", currentReplicas)
-
-	if currentReplicas == 0 {
-		return fmt.Errorf("the number of the current workers which can be scheduled is 0")
-	}
-
-	// 2. Update the status
+	// 2. Update the runtime status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
 		if err != nil {
@@ -47,11 +66,16 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 			return err
 		}
 
+		workers, err := e.getStatefulset(workerName, namespace)
+		if err != nil {
+			return err
+		}
+
 		runtimeToUpdate := runtime.DeepCopy()
 
 		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = currentReplicas
+		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = runtime.Replicas()
+		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = workers.Status.Replicas
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
