@@ -1,17 +1,16 @@
 package jindo
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -45,6 +44,7 @@ func TestSetupWorkers(t *testing.T) {
 	type fields struct {
 		replicas    int32
 		nodeInputs  []*v1.Node
+		worker      appsv1.StatefulSet
 		runtime     *datav1alpha1.JindoRuntime
 		runtimeInfo base.RuntimeInfoInterface
 		name        string
@@ -64,6 +64,16 @@ func TestSetupWorkers(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node-spark",
 						},
+					},
+				},
+				worker: appsv1.StatefulSet{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 				runtime: &datav1alpha1.JindoRuntime{
@@ -93,11 +103,14 @@ func TestSetupWorkers(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				replicas: 1,
-				nodeInputs: []*v1.Node{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "test-node-hadoop",
-						},
+				worker: appsv1.StatefulSet{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 				runtime: &datav1alpha1.JindoRuntime{
@@ -130,6 +143,7 @@ func TestSetupWorkers(t *testing.T) {
 			for _, nodeInput := range tt.fields.nodeInputs {
 				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
 			}
+			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
 
 			s := runtime.NewScheme()
 			data := &v1alpha1.Dataset{
@@ -140,6 +154,7 @@ func TestSetupWorkers(t *testing.T) {
 			}
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
 			_ = v1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
 			runtimeObjs = append(runtimeObjs, data)
@@ -157,19 +172,24 @@ func TestSetupWorkers(t *testing.T) {
 			if err != nil {
 				t.Errorf("JindoEngine.SetupWorkers() error = %v", err)
 			}
-			for _, node := range tt.fields.nodeInputs {
-				newNode, err := kubeclient.GetNode(mockClient, node.Name)
-				if err != nil {
-					t.Errorf("fail to get the node with the error %v", err)
-				}
 
-				if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
-				if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
+			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
+				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
 			}
+
+			// for _, node := range tt.fields.nodeInputs {
+			// 	newNode, err := kubeclient.GetNode(mockClient, node.Name)
+			// 	if err != nil {
+			// 		t.Errorf("fail to get the node with the error %v", err)
+			// 	}
+
+			// 	if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
+			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			// 	}
+			// 	if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
+			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			// 	}
+			// }
 		})
 	}
 }
