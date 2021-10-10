@@ -153,7 +153,7 @@ func TestSyncReplicas(t *testing.T) {
 			},
 		},
 	}
-	statefulSetInputs := []*appsv1.StatefulSet{
+	workersInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-jindofs-worker",
@@ -166,6 +166,15 @@ func TestSyncReplicas(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop-jindofs-worker",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj-jindofs-worker",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -200,6 +209,12 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj-jindofs-fuse",
+				Namespace: "fluid",
+			},
+		},
 	}
 
 	objs := []runtime.Object{}
@@ -209,8 +224,8 @@ func TestSyncReplicas(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-	for _, statefulSetInput := range statefulSetInputs {
-		objs = append(objs, statefulSetInput.DeepCopy())
+	for _, workerInput := range workersInputs {
+		objs = append(objs, workerInput.DeepCopy())
 	}
 	for _, fuseInput := range fuseInputs {
 		objs = append(objs, fuseInput.DeepCopy())
