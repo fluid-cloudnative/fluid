@@ -1,6 +1,8 @@
 package jindo
 
 import (
+	"testing"
+
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -11,10 +13,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func newJindoEngineREP(client client.Client, name string, namespace string) *JindoEngine {
@@ -151,17 +153,14 @@ func TestSyncReplicas(t *testing.T) {
 			},
 		},
 	}
-	daemonSetInputs := []*appsv1.DaemonSet{
+	statefulSetInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-jindofs-worker",
 				Namespace: "fluid",
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-jindofs-fuse",
-				Namespace: "fluid",
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 		{
@@ -169,11 +168,8 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "hadoop-jindofs-worker",
 				Namespace: "fluid",
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-jindofs-fuse",
-				Namespace: "fluid",
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 	}
@@ -191,6 +187,20 @@ func TestSyncReplicas(t *testing.T) {
 			},
 		},
 	}
+	fuseInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-jindofs-fuse",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-jindofs-fuse",
+				Namespace: "fluid",
+			},
+		},
+	}
 
 	objs := []runtime.Object{}
 	for _, nodeInput := range nodeInputs {
@@ -199,8 +209,11 @@ func TestSyncReplicas(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-	for _, daemonSetInput := range daemonSetInputs {
-		objs = append(objs, daemonSetInput.DeepCopy())
+	for _, statefulSetInput := range statefulSetInputs {
+		objs = append(objs, statefulSetInput.DeepCopy())
+	}
+	for _, fuseInput := range fuseInputs {
+		objs = append(objs, fuseInput.DeepCopy())
 	}
 	for _, dataSetInput := range dataSetInputs {
 		objs = append(objs, dataSetInput.DeepCopy())

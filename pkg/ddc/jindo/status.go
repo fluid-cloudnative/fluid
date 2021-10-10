@@ -68,7 +68,7 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Spec.Replicas - workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
 		if runtime.Replicas() == workers.Status.ReadyReplicas {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady

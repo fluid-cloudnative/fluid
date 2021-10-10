@@ -297,7 +297,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 func TestCheckWorkersReady(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.JindoRuntime
-		worker    *appsv1.DaemonSet
+		worker    *appsv1.StatefulSet
 		fuse      *appsv1.DaemonSet
 		name      string
 		namespace string
@@ -325,13 +325,13 @@ func TestCheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-worker",
 						Namespace: "big-data",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberReady: 1,
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -366,13 +366,13 @@ func TestCheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-jindofs-worker",
 						Namespace: "big-data",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberReady: 0,
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 0,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -405,6 +405,7 @@ func TestCheckWorkersReady(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
 			_ = v1.AddToScheme(s)
 
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker, tt.fields.fuse)
