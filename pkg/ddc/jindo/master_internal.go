@@ -2,13 +2,14 @@ package jindo
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
 )
 
 func (e *JindoEngine) setupMasterInernal() (err error) {
@@ -32,7 +33,9 @@ func (e *JindoEngine) setupMasterInernal() (err error) {
 }
 
 func (e *JindoEngine) generateJindoValueFile() (valueFileName string, err error) {
-	err = kubeclient.DeleteConfigMap(e.Client, e.name+"-jindofs-config", e.namespace)
+	// why need to delete configmap e.name+"-jindofs-config" ? Or it should be
+	// err = kubeclient.DeleteConfigMap(e.Client, e.name+"-jindofs-config", e.namespace)
+	err = kubeclient.DeleteConfigMap(e.Client, e.getConfigmapName(), e.namespace)
 	if err != nil {
 		e.Log.Error(err, "Failed to clean value files")
 	}
