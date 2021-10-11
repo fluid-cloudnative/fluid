@@ -293,7 +293,7 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 func (e *JindoEngine) transformWorkerAffinity(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if dataset.Spec.NodeAffinity != nil {
 		if dataset.Spec.NodeAffinity.Required != nil {
-			value.Worker.Affinity = &corev1.Affinity{
+			value.Worker.Affinity = corev1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: dataset.Spec.NodeAffinity.Required,
 				},

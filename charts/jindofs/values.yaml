@@ -41,6 +41,7 @@ master:
 worker:
   labels: {}
   nodeSelector: {}
+  affinity: {}
   replicaCount: 0
   properties:
     storage.rpc.port: 6101

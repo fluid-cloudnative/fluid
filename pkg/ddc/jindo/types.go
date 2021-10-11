@@ -56,7 +56,7 @@ type Worker struct {
 	WorkerProperties map[string]string `yaml:"properties"`
 	Port             Ports             `yaml:"ports,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
-	Affinity         *v1.Affinity      `yaml:"affinity,omitempty"`
+	Affinity         v1.Affinity       `yaml:"affinity,omitempty"`
 	Labels           map[string]string `yaml:"labels,omitempty"`
 }
 
