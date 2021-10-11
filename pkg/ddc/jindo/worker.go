@@ -73,9 +73,18 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 		runtimeToUpdate := runtime.DeepCopy()
 
-		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
+		if workers.Status.ReadyReplicas > 0 {
+			if runtime.Replicas() == workers.Status.ReadyReplicas {
+				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseReady
+			} else if workers.Status.ReadyReplicas >= 1 {
+				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
+			}
+		} else {
+			runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
+		}
+
 		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = runtime.Replicas()
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = workers.Status.Replicas
+		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = *workers.Spec.Replicas
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
