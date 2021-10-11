@@ -70,13 +70,14 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if runtime.Replicas() == workers.Status.ReadyReplicas {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-			// runtimeToUpdate.Status.CacheStates[data.Cacheable] = runtime.Status.CacheStates[data.CacheCapacity]
-			workerReady = true
-		} else if workers.Status.ReadyReplicas == workers.Status.CurrentReplicas {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-			workerReady = true
+		if workers.Status.ReadyReplicas > 0 {
+			if runtime.Replicas() == workers.Status.ReadyReplicas {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+				workerReady = true
+			} else if workers.Status.ReadyReplicas >= 1 {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
+				workerReady = true
+			}
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
