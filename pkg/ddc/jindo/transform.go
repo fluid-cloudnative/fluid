@@ -13,6 +13,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
@@ -137,6 +138,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResourcesForWorker(runtime, value)
 	e.transformLogConfig(runtime, value)
+	e.transformWorkerAffinity(dataset, runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	return value, err
@@ -286,6 +288,18 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 	}
 	value.Worker.WorkerProperties = properties
 	return nil
+}
+
+func (e *JindoEngine) transformWorkerAffinity(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	if dataset.Spec.NodeAffinity != nil {
+		if dataset.Spec.NodeAffinity.Required != nil {
+			value.Worker.Affinity = &corev1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: dataset.Spec.NodeAffinity.Required,
+				},
+			}
+		}
+	}
 }
 
 func (e *JindoEngine) transformResourcesForWorker(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
