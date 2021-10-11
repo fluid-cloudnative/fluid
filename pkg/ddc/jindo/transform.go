@@ -2,16 +2,17 @@ package jindo
 
 import (
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	corev1 "k8s.io/api/core/v1"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
@@ -373,10 +374,11 @@ func (e *JindoEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) 
 	properties := map[string]string{}
 	if runtime.Spec.Worker.NodeSelector != nil {
 		properties = runtime.Spec.Worker.NodeSelector
-	} else {
-		labelName := e.getCommonLabelname()
-		properties[labelName] = "true"
 	}
+	// } else {
+	// 	labelName := e.getCommonLabelname()
+	// 	properties[labelName] = "true"
+	// }
 	return properties
 }
 
