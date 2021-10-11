@@ -19,7 +19,7 @@ spec:
       app: {{ template "jindofs.name" . }}
       release: {{ .Release.Name }}
       role: jindofs-worker
-  serviceName: {{ template "jindofs.fullname" $dot }}-worker
+  serviceName: {{ template "jindofs.fullname" . }}-worker
   replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
