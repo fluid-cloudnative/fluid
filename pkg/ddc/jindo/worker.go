@@ -9,6 +9,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 )
@@ -35,6 +36,10 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 		desireReplicas := runtime.Replicas()
 		if *workers.Spec.Replicas != desireReplicas {
+			err := e.buildWorkersAffinity(workers)
+			if err != nil {
+				return err
+			}
 			workerToUpdate := workers.DeepCopy()
 			workerToUpdate.Spec.Replicas = &desireReplicas
 			err = e.Client.Update(context.TODO(), workerToUpdate)
@@ -207,4 +212,70 @@ func (e *JindoEngine) getWorkerSelectors() string {
 		selectorValue = selector.String()
 	}
 	return selectorValue
+}
+
+// buildWorkersAffinity builds workers affinity if it doesn't have
+func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (err error) {
+	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
+	// We need to enhance it in future
+
+	if workers.Spec.Template.Spec.Affinity == nil {
+		workers.Spec.Template.Spec.Affinity = &corev1.Affinity{}
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+		// 1. Set pod anti affinity(required) for same dataset (Current using port conflict for scheduling, no need to do)
+
+		// 2. Set pod anti affinity for the different dataset
+		if dataset.IsExclusiveMode() {
+			workers.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "fluidDataset",
+									Operator: metav1.LabelSelectorOpExists,
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			}
+		} else {
+			workers.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						// The default weight is 50
+						Weight: 50,
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "fluidDataset",
+										Operator: metav1.LabelSelectorOpExists,
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+			}
+		}
+
+		// 3. set node affinity if possible
+		if dataset.Spec.NodeAffinity != nil {
+			if dataset.Spec.NodeAffinity.Required != nil {
+				workers.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: dataset.Spec.NodeAffinity.Required,
+				}
+			}
+		}
+
+	}
+
+	return
 }

@@ -13,6 +13,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: jindofs-worker
+    fluidDataset: {{ .Release.Namespace }}-{{ .Release.Name }}
 spec:
   selector:
     matchLabels:
@@ -29,6 +30,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-worker
+        fluidDataset: {{ .Release.Namespace }}-{{ .Release.Name }}
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}
@@ -53,9 +55,6 @@ spec:
 {{ toYaml .Values.worker.tolerations | indent 8 }}
       {{- end }}
       {{- if .Values.worker.affinity }}
-      affinity:
-{{ toYaml .Values.worker.affinity | indent 8 }}
-      {{- end }}
       containers:
         - name: jindofs-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}

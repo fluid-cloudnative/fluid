@@ -21,7 +21,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -182,67 +181,6 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}
 		if test.jindoValue.Worker.Resources.Limits.CPU != "2" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.CPU)
-		}
-	}
-}
-
-func TestTransformWorkerAffinity(t *testing.T) {
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     v1.Affinity
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				},
-				},
-				NodeAffinity: &datav1alpha1.CacheableNodeAffinity{
-					Required: &v1.NodeSelector{
-						NodeSelectorTerms: []v1.NodeSelectorTerm{
-							{
-								MatchExpressions: []v1.NodeSelectorRequirement{
-									{
-										Key:      "type",
-										Operator: v1.NodeSelectorOpDoesNotExist,
-									},
-								},
-							},
-						},
-					},
-				},
-			}}, &Jindo{
-			Worker: Worker{},
-		}, v1.Affinity{
-			NodeAffinity: &v1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-					NodeSelectorTerms: []v1.NodeSelectorTerm{
-						{
-							MatchExpressions: []v1.NodeSelectorRequirement{
-								{
-									Key:      "type",
-									Operator: v1.NodeSelectorOpDoesNotExist,
-								},
-							},
-						},
-					},
-				},
-			},
-		}},
-	}
-	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
-		engine.transformWorkerAffinity(test.dataset, test.runtime, test.jindoValue)
-		if test.jindoValue.Worker.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Key !=
-			test.expect.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Key {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Worker.Affinity)
 		}
 	}
 }
