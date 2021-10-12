@@ -106,10 +106,16 @@ build()
   GIT_COMMIT=$(git rev-parse --short HEAD)
   echo "GIT_COMMIT=${GIT_COMMIT}"
 
-  docker build -t alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.6.2-SNAPSHOT-bin.tar.gz .
+  docker build -t alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.6.2-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
+  docker tag alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT ${alluxio_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT
 
-  docker tag alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT  ${alluxio_fuse_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT
-  docker tag alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT  ${alluxio_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT
+  # fuse image is the same as the alluxio image starting from 2.6.2
+  if test -f /alluxio/integration/docker/Dockerfile.fuse; then
+    docker build -f Dockerfile.fuse -t alluxio/alluxio-fuse:release-2.6.2-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.6.2-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
+    docker tag alluxio/alluxio-fuse:release-2.6.2-SNAPSHOT-$GIT_COMMIT ${alluxio_fuse_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT
+  else
+    docker tag alluxio/alluxio:release-2.6.2-SNAPSHOT-$GIT_COMMIT ${alluxio_fuse_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT
+  fi
 
   docker push ${alluxio_fuse_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT &
   docker push ${alluxio_image_name}:release-2.6.2-SNAPSHOT-$GIT_COMMIT &
