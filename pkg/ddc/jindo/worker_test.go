@@ -574,7 +574,8 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []metav1.LabelSelectorRequirement{
 										{
 											Key:      "fluid.io/dataset-placement",
-											Operator: metav1.LabelSelectorOpExists,
+											Operator: metav1.LabelSelectorOpIn,
+											Values:   []string{"Exclusive"},
 										},
 									},
 								},
