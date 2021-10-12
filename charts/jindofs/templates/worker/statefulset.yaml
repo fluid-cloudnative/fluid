@@ -13,7 +13,8 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: jindofs-worker
-    fluidDataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
 spec:
   selector:
     matchLabels:
@@ -30,7 +31,8 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-worker
-        fluidDataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}

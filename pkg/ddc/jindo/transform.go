@@ -133,7 +133,12 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	// set the placementMode
+	e.transformPlacementMode(dataset, value)
 	err = e.transformRunAsUser(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResourcesForWorker(runtime, value)
 	e.transformLogConfig(runtime, value)
@@ -615,4 +620,13 @@ func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value 
 	value.Fuse.Labels = runtime.Spec.Fuse.Labels
 
 	return nil
+}
+
+func (e *JindoEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *Jindo) {
+
+	value.PlacementMode = string(dataset.Spec.PlacementMode)
+	if len(value.PlacementMode) == 0 {
+		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
+
 }

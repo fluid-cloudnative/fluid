@@ -235,7 +235,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      "fluidDataset",
+									Key:      "fluid.io/dataset",
 									Operator: metav1.LabelSelectorOpExists,
 								},
 							},
@@ -254,7 +254,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 							LabelSelector: &metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
-										Key:      "fluidDataset",
+										Key:      "fluid.io/dataset",
 										Operator: metav1.LabelSelectorOpExists,
 									},
 								},

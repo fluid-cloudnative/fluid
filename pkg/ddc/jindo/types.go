@@ -27,6 +27,7 @@ type Jindo struct {
 	InitPortCheck   common.InitPortCheck `yaml:"initPortCheck,omitempty"`
 	Labels          map[string]string    `yaml:"labels,omitempty"`
 	LogConfig       map[string]string    `yaml:"logConfig,omitempty"`
+	PlacementMode   string               `yaml:"placement,omitempty"`
 }
 
 type HadoopConfig struct {
