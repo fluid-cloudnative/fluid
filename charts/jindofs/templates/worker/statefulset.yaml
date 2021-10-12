@@ -54,7 +54,6 @@ spec:
       tolerations:
 {{ toYaml .Values.worker.tolerations | indent 8 }}
       {{- end }}
-      {{- if .Values.worker.affinity }}
       containers:
         - name: jindofs-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
