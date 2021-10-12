@@ -262,6 +262,18 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 							TopologyKey: "kubernetes.io/hostname",
 						},
 					},
+				}, RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "fluid.io/dataset-placement",
+									Operator: metav1.LabelSelectorOpExists,
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
 				},
 			}
 		}

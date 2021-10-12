@@ -568,6 +568,19 @@ func TestBuildWorkersAffinity(t *testing.T) {
 								},
 							},
 						},
+						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+							{
+								LabelSelector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "fluid.io/dataset-placement",
+											Operator: metav1.LabelSelectorOpExists,
+										},
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
 					},
 				},
 			},
