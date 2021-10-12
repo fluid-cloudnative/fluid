@@ -658,11 +658,12 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			}
 
 			want := tt.fields.want
-			if err := e.buildWorkersAffinity(tt.fields.worker); err != nil {
+			worker, err := e.buildWorkersAffinity(tt.fields.worker)
+			if err != nil {
 				t.Errorf("JindoEngine.buildWorkersAffinity() = %v", err)
 			}
 
-			if !reflect.DeepEqual(tt.fields.worker.Spec.Template.Spec.Affinity, want) {
+			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
 				t.Errorf("JindoEngine.buildWorkersAffinity() = %v, want %v", tt.fields.worker.Spec.Template.Spec.Affinity, tt.fields.want)
 			}
 		})

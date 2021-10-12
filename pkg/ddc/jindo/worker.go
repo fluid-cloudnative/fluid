@@ -36,11 +36,10 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 		desireReplicas := runtime.Replicas()
 		if *workers.Spec.Replicas != desireReplicas {
-			err := e.buildWorkersAffinity(workers)
+			workerToUpdate, err := e.buildWorkersAffinity(workers)
 			if err != nil {
 				return err
 			}
-			workerToUpdate := workers.DeepCopy()
 			workerToUpdate.Spec.Replicas = &desireReplicas
 			err = e.Client.Update(context.TODO(), workerToUpdate)
 			if err != nil {
@@ -215,21 +214,22 @@ func (e *JindoEngine) getWorkerSelectors() string {
 }
 
 // buildWorkersAffinity builds workers affinity if it doesn't have
-func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (err error) {
+func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUpdate *v1.StatefulSet, err error) {
 	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
 	// We need to enhance it in future
+	workersToUpdate = workers.DeepCopy()
 
-	if workers.Spec.Template.Spec.Affinity == nil {
-		workers.Spec.Template.Spec.Affinity = &corev1.Affinity{}
+	if workersToUpdate.Spec.Template.Spec.Affinity == nil {
+		workersToUpdate.Spec.Template.Spec.Affinity = &corev1.Affinity{}
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
-			return err
+			return workersToUpdate, err
 		}
 		// 1. Set pod anti affinity(required) for same dataset (Current using port conflict for scheduling, no need to do)
 
 		// 2. Set pod anti affinity for the different dataset
 		if dataset.IsExclusiveMode() {
-			workers.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
 						LabelSelector: &metav1.LabelSelector{
@@ -245,7 +245,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (err error) 
 				},
 			}
 		} else {
-			workers.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
 				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
 					{
 						// The default weight is 50
@@ -269,10 +269,15 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (err error) 
 		// 3. set node affinity if possible
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {
-				workers.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{
+				workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: dataset.Spec.NodeAffinity.Required,
 				}
 			}
+		}
+
+		err = e.Client.Update(context.TODO(), workersToUpdate)
+		if err != nil {
+			return workersToUpdate, err
 		}
 
 	}
