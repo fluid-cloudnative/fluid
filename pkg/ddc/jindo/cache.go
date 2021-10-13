@@ -2,9 +2,10 @@ package jindo
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
 )
 
 // queryCacheStatus checks the cache status
@@ -60,7 +61,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 func (e *JindoEngine) invokeCleanCache() (err error) {
 	// 1. Check if master is ready, if not, just return
 	masterName := e.getMasterStatefulsetName()
-	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	master, err := e.getStatefulset(masterName, e.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())

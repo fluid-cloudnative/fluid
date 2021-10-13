@@ -16,11 +16,12 @@ limitations under the License.
 package jindo
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strings"
-	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"

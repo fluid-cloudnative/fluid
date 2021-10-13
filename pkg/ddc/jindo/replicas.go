@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -19,31 +18,12 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 		return err
 	}
 
-	if runtime.Replicas() > runtime.Status.CurrentWorkerNumberScheduled {
-		err = e.SetupWorkers()
-		if err != nil {
-			return err
-		}
-		_, err = e.CheckWorkersReady()
-		if err != nil {
-			e.Log.Error(err, "Check if the workers are ready")
-			return err
-		}
+	var (
+		cond datav1alpha1.RuntimeCondition
+	)
 
-	} else if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
-		replicas := runtime.Replicas()
-		e.Log.Info("Scaling in Jindo workers", "expectedReplicas", replicas)
-		curReplicas, err := e.destroyWorkers(replicas)
-		if err != nil {
-			return err
-		}
-
-		if curReplicas > replicas {
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeScaleInFailed,
-				"Jindo workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
-				replicas, curReplicas)
-		}
-
+	if runtime.Replicas() != runtime.Status.CurrentWorkerNumberScheduled {
+		// 1. Update scale condtion
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			runtime, err := e.getRuntime()
 			if err != nil {
@@ -57,10 +37,13 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 			}
 
-			runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-			runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
-				"The workers scaled in.", corev1.ConditionTrue)
+			if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
+				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
+					"The workers scaled in.", corev1.ConditionTrue)
+			} else {
+				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledOut, datav1alpha1.RuntimeWorkersScaledOutReason,
+					"The workers scaled out.", corev1.ConditionTrue)
+			}
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
@@ -74,8 +57,20 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 		if err != nil {
 			return err
 		}
+
+		// 2. setup the workers for scaling
+		err = e.SetupWorkers()
+		if err != nil {
+			return err
+		}
+		_, err = e.CheckWorkersReady()
+		if err != nil {
+			e.Log.Error(err, "Check if the workers are ready")
+			return err
+		}
 	} else {
 		e.Log.V(1).Info("Nothing to do")
+		return
 	}
 
 	return
