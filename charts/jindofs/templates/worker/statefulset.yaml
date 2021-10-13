@@ -4,7 +4,7 @@
 {{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
 
 apiVersion: apps/v1
-kind: DaemonSet
+kind: StatefulSet
 metadata:
   name: {{ template "jindofs.fullname" . }}-worker
   labels:
@@ -13,12 +13,16 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: jindofs-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
 spec:
   selector:
     matchLabels:
       app: {{ template "jindofs.name" . }}
       release: {{ .Release.Name }}
       role: jindofs-worker
+  serviceName: {{ template "jindofs.fullname" . }}-worker
+  replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
       labels:
@@ -27,6 +31,8 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}

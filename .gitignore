@@ -34,3 +34,4 @@ cmd/*/start.sh
 # client sdk
 openapi-gen
 sdk
+**/__debug_bin

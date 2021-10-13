@@ -15,18 +15,18 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	var (
 		masterReady, workerReady bool
 		masterName               string = e.getMasterStatefulsetName()
-		workerName               string = e.getWorkerDaemonsetName()
+		workerName               string = e.getWorkertName()
 		namespace                string = e.namespace
 	)
 
 	// 1. Master should be ready
-	master, err := e.getMasterStatefulset(masterName, namespace)
+	master, err := e.getStatefulset(masterName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
 	// 2. Worker should be ready
-	workers, err := e.getDaemonset(workerName, namespace)
+	workers, err := e.getStatefulset(workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -67,16 +67,17 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Status.NumberUnavailable)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
-		if runtime.Replicas() == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-			// runtimeToUpdate.Status.CacheStates[data.Cacheable] = runtime.Status.CacheStates[data.CacheCapacity]
-			workerReady = true
-		} else if workers.Status.NumberAvailable == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-			workerReady = true
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+		if workers.Status.ReadyReplicas > 0 {
+			if runtime.Replicas() == workers.Status.ReadyReplicas {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+				workerReady = true
+			} else if workers.Status.ReadyReplicas >= 1 {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
+				workerReady = true
+			}
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}

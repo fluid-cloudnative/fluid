@@ -76,8 +76,9 @@ type Resources struct {
 }
 
 const (
-	FLUID_FUSE_BALLOON_KEY   = "fluid_fuse_balloon"
-	FLUID_FUSE_BALLOON_VALUE = "true"
+	FluidFuseBalloonKey = "fluid_fuse_balloon"
+
+	FluidBalloonValue = "true"
 )
 
 // UserInfo to run a Container
