@@ -270,7 +270,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 								{
 									Key:      "fluid.io/dataset-placement",
 									Operator: metav1.LabelSelectorOpIn,
-									Values:   []string{"Exclusive"},
+									Values:   []string{string(datav1alpha1.ExclusiveMode)},
 								},
 							},
 						},
