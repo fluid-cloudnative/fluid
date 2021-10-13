@@ -6,7 +6,7 @@ workdir: /tmp
 
 dataset:
   controller:
-    image: fluidcloudnative/dataset-controller:v0.7.0-8fa4dec
+    image: fluidcloudnative/dataset-controller:v0.7.0-8b73bbe
 
 csi:
   config:
@@ -14,7 +14,7 @@ csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.7.0-8fa4dec
+    image: fluidcloudnative/fluid-csi:v0.7.0-8b73bbe
   kubelet:
     rootDir: /var/lib/kubelet
 
@@ -26,9 +26,9 @@ runtime:
     portRange: 20000-26000
     enabled: true
     init:
-      image: fluidcloudnative/init-users:v0.7.0-8fa4dec
+      image: fluidcloudnative/init-users:v0.7.0-8b73bbe
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v0.7.0-8fa4dec
+      image: fluidcloudnative/alluxioruntime-controller:v0.7.0-8b73bbe
     runtime:
       image: registry.aliyuncs.com/alluxio/alluxio:release-2.5.0-2-SNAPSHOT-52ad95c
     fuse:
@@ -42,7 +42,7 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.7.0
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v0.7.0-8fa4dec
+      image: fluidcloudnative/jindoruntime-controller:v0.7.0-8b73bbe
     init:
       portCheck:
         enabled: false
@@ -52,9 +52,9 @@ runtime:
     portRange: 26000-32000
     enabled: false 
     init:
-      image: fluidcloudnative/init-users:v0.7.0-8fa4dec
+      image: fluidcloudnative/init-users:v0.7.0-8b73bbe
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v0.7.0-8fa4dec
+      image: fluidcloudnative/goosefsruntime-controller:v0.7.0-8b73bbe
     runtime:
       image: ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1
     fuse:
@@ -62,5 +62,5 @@ runtime:
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v0.7.0-8fa4dec
+  image: fluidcloudnative/fluid-webhook:v0.7.0-8b73bbe
 
