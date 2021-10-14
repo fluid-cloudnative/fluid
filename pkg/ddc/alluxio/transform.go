@@ -154,6 +154,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	if len(runtime.Spec.JvmOptions) > 0 {
 		value.JvmOptions = runtime.Spec.JvmOptions
 	}
+	// Alluxio v2.6.2 in container requires an extra jvmOption to specify # of cpus
+	if strings.Contains(runtime.Spec.AlluxioVersion.ImageTag, "2.6.2") {
+		if len(value.JvmOptions) > 0 {
+			value.JvmOptions = append(value.JvmOptions, "-XX:ActiveProcessorCount=8")
+		} else {
+			value.JvmOptions = []string{"-XX:ActiveProcessorCount=8"}
+		}
+	}
 
 	value.Fuse.ShortCircuitPolicy = "local"
 
