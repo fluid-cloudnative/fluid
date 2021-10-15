@@ -4,11 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -148,7 +146,7 @@ func TestSetupWorkers(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
 
 			s := runtime.NewScheme()
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -284,7 +282,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -416,7 +414,7 @@ func TestCheckWorkersReady(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -550,12 +548,12 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					},
 				},
 				want: &v1.Affinity{
-					PodAntiAffinity: &corev1.PodAntiAffinity{
-						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
 							{
 								// The default weight is 50
 								Weight: 50,
-								PodAffinityTerm: corev1.PodAffinityTerm{
+								PodAffinityTerm: v1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchExpressions: []metav1.LabelSelectorRequirement{
 											{
@@ -568,7 +566,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 								},
 							},
 						},
-						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 							{
 								LabelSelector: &metav1.LabelSelector{
 									MatchExpressions: []metav1.LabelSelectorRequirement{

@@ -24,6 +24,7 @@ type JindoEngine struct {
 	//initImage              string
 	runtimeInfo        base.RuntimeInfoInterface
 	MetadataSyncDoneCh chan MetadataSyncResult
+	cacheNodeNames     []string
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
@@ -35,6 +36,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
+		cacheNodeNames:         []string{},
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
