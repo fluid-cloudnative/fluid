@@ -7,6 +7,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -525,6 +526,22 @@ func TestBuildWorkersAffinity(t *testing.T) {
 							},
 						},
 					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test1",
+											Operator: corev1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		}, {name: "shared",
@@ -578,6 +595,22 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									},
 								},
 								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test2",
+											Operator: corev1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -641,6 +674,20 @@ func TestBuildWorkersAffinity(t *testing.T) {
 										{
 											Key:      "nodeA",
 											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test3",
+											Operator: corev1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
