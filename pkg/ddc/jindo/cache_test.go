@@ -1,7 +1,12 @@
 package jindo
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	. "github.com/agiledragon/gomonkey"
@@ -109,6 +114,70 @@ func TestQueryCacheStatus(t *testing.T) {
 	})
 }
 
+
+
+func TestInvokeCleanCache(t *testing.T){
+	masterInputs := []*appsv1.StatefulSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-jindofs-master",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 0,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-jindofs-master",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		},
+	}
+	objs := []runtime.Object{}
+	for _, masterInput := range masterInputs {
+		objs = append(objs, masterInput.DeepCopy())
+	}
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+	testCases := []struct{
+		name 		string
+		namespace 	string
+		isErr 		bool
+	}{
+		{
+			name:		"hadoop",
+			namespace: 	"fluid",
+			isErr: 		false,
+		},
+		{
+			name:		"hbase",
+			namespace: 	"fluid",
+			isErr: 		true,
+		},
+		{
+			name: 		"none",
+			namespace: 	"fluid",
+			isErr: 		false,
+		},
+	}
+	for _,testCase := range testCases{
+		engine := &JindoEngine{
+			Client: fakeClient,
+			namespace: testCase.namespace,
+			name: testCase.name,
+			Log: log.NullLogger{},
+		}
+		err := engine.invokeCleanCache()
+		isErr := err != nil
+		if isErr != testCase.isErr{
+			t.Errorf("test-name:%s want %t, got %t", testCase.name,testCase.isErr, isErr)
+		}
+	}
+}
+
 //
 // $ jindo jfs -report
 //
@@ -125,3 +194,5 @@ func mockJindoReportSummary() string {
 	`
 	return s
 }
+
+
