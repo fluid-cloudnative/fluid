@@ -35,8 +35,11 @@ func GetPodsForStatefulSet(c client.Client, set *appsv1.StatefulSet, selector la
 	for _, pod := range podList.Items {
 		if isMemberOf(set, &pod) {
 			controllerRef := metav1.GetControllerOf(&pod)
-			if controllerRef == nil {
+			if controllerRef != nil {
 				// No controller should care about orphans being deleted.
+
+				resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
+			} else {
 
 			}
 		} else {
