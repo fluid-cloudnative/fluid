@@ -6,23 +6,16 @@ import (
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	// controllerKind           = appsv1alpha1.SchemeGroupVersion.WithKind("BroadcastJob")
-	statefulSetControllerKind = appsv1.SchemeGroupVersion.WithKind("StatefulSet")
-)
+// GetPodsForStatefulSet gets pods of the specified statefulset
+func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*v1.Pod, err error) {
 
-// Get pods of the specified statefulset
-func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*corev1.Pod, err error) {
-
-	podList := &corev1.PodList{}
-
+	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
 		LabelSelector: selector,
 	})
@@ -44,13 +37,8 @@ func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector la
 				if matched {
 					pods = append(pods, &pod)
 				}
-
 				// wantedSet, err := resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
-			} else {
-
 			}
-		} else {
-
 		}
 	}
 
@@ -63,7 +51,7 @@ var statefulPodRegex = regexp.MustCompile("(.*)-([0-9]+)$")
 // getParentNameAndOrdinal gets the name of pod's parent StatefulSet and pod's ordinal as extracted from its Name. If
 // the Pod was not created by a StatefulSet, its parent is considered to be empty string, and its ordinal is considered
 // to be -1.
-func getParentNameAndOrdinal(pod *corev1.Pod) (string, int) {
+func getParentNameAndOrdinal(pod *v1.Pod) (string, int) {
 	parent := ""
 	ordinal := -1
 	subMatches := statefulPodRegex.FindStringSubmatch(pod.Name)
@@ -83,7 +71,7 @@ func getParentName(pod *v1.Pod) string {
 	return parent
 }
 
-// isMemberOf tests if pod is a member of set.
-func isMemberOf(set *appsv1.StatefulSet, pod *v1.Pod) bool {
-	return getParentName(pod) == set.Name
+// isMemberOf tests if pod is a member of statefulset sts.
+func isMemberOf(sts *appsv1.StatefulSet, pod *v1.Pod) bool {
+	return getParentName(pod) == sts.Name
 }

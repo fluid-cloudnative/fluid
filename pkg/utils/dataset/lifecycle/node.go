@@ -17,9 +17,10 @@ package lifecycle
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/go-logr/logr"
 
@@ -108,6 +109,16 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
+// findLabelNameOnNode checks if the label exist
+func FindLabelNameOnNode(node v1.Node, key string) (found bool) {
+	labels := node.Labels
+	if len(labels) == 0 {
+		return
+	}
+	_, found = labels[key]
+	return
+}
+
 // LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	defer utils.TimeTrack(time.Now(), "LabelCacheNode", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace(), "node", nodeToLabel.Name)
@@ -144,6 +155,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			log.Error(err, "GetNode In labelCacheNode")
 			return err
 		}
+
 		toUpdate = node.DeepCopy()
 		if toUpdate.Labels == nil {
 			toUpdate.Labels = make(map[string]string)

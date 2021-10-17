@@ -2,6 +2,9 @@ package lifecycle
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -10,9 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 var (
@@ -382,6 +383,46 @@ func TestIncreaseDatasetNum(t *testing.T) {
 		_ = increaseDatasetNum(test.node, &test.runtimeInfo, &labels)
 		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult.GetLabels()) {
 			t.Errorf("fail to exec the function with the error ")
+		}
+	}
+}
+
+func TestFindLabelNameOnNode(t *testing.T) {
+	var testCase = []struct {
+		node   *v1.Node
+		key    string
+		wanted bool
+	}{
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
+				Spec:       v1.NodeSpec{},
+			},
+			key:    "abc",
+			wanted: false,
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
+				Spec:       v1.NodeSpec{},
+			},
+			key:    "fluid.io/dataset-num",
+			wanted: true,
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec:       v1.NodeSpec{},
+			},
+			key:    "fluid.io/dataset-num",
+			wanted: false,
+		},
+	}
+
+	for _, test := range testCase {
+		wanted := FindLabelNameOnNode(*test.node, test.key)
+		if wanted != test.wanted {
+			t.Errorf("fail to Find the label on node ")
 		}
 	}
 }
