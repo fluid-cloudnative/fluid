@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,12 +33,12 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				child: &corev1.Pod{
+				child: &v1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-0",
 						Namespace: "big-data",
 					},
-					Spec: corev1.PodSpec{},
+					Spec: v1.PodSpec{},
 				},
 			},
 		}, {name: "the_controller_uid_is_not_matched",
@@ -51,7 +51,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				child: &corev1.Pod{
+				child: &v1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-0",
 						Namespace: "big-data",
@@ -62,7 +62,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 							Controller: utilpointer.BoolPtr(true),
 						}},
 					},
-					Spec: corev1.PodSpec{},
+					Spec: v1.PodSpec{},
 				},
 			},
 			want: false,
@@ -81,7 +81,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				child: &corev1.Pod{
+				child: &v1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-0",
 						Namespace: "big-data",
@@ -93,7 +93,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 							Controller: utilpointer.BoolPtr(true),
 						}},
 					},
-					Spec: corev1.PodSpec{},
+					Spec: v1.PodSpec{},
 				},
 			},
 			want: true,
