@@ -19,7 +19,7 @@ var (
 )
 
 // Get pods of the specified statefulset
-func GetPodsForStatefulSet(c client.Client, set *appsv1.StatefulSet, selector labels.Selector) (pods []*corev1.Pod, err error) {
+func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*corev1.Pod, err error) {
 
 	podList := &corev1.PodList{}
 
@@ -33,12 +33,19 @@ func GetPodsForStatefulSet(c client.Client, set *appsv1.StatefulSet, selector la
 	}
 
 	for _, pod := range podList.Items {
-		if isMemberOf(set, &pod) {
+		if isMemberOf(sts, &pod) {
 			controllerRef := metav1.GetControllerOf(&pod)
 			if controllerRef != nil {
 				// No controller should care about orphans being deleted.
+				matched, err := compareOwnerRefMatcheWithExpected(c, controllerRef, pod.Namespace, sts)
+				if err != nil {
+					return pods, err
+				}
+				if matched {
+					pods = append(pods, &pod)
+				}
 
-				resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
+				// wantedSet, err := resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
 			} else {
 
 			}
