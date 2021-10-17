@@ -16,8 +16,10 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 	controllerRef *metav1.OwnerReference,
 	namespace string,
 	target runtime.Object) (matched bool, err error) {
-	parentObject, err := resolveControllerRef(c, controllerRef, namespace, target)
-	if err != nil || parentObject == nil {
+
+	kind := target.GetObjectKind()
+	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject())
+	if err != nil || controllerObject == nil {
 		return matched, err
 	}
 
@@ -27,13 +29,18 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 
 	// controllerRef.
 
-	matched = (parentObject.GetUID() == controllerRef.UID)
+	targetObject, err := meta.Accessor(target)
+	if err != nil {
+		return matched, err
+	}
+
+	matched = (controllerRef.UID == targetObject.GetUID())
 
 	return matched, err
 }
 
 // resolveControllerRef resolves the parent object from the
-func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, obj runtime.Object) (result metav1.Object, err error) {
+func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, objectKind schema.ObjectKind, obj runtime.Object) (result metav1.Object, err error) {
 	if controllerRef == nil {
 		log.Info("No controllerRef found")
 		return nil, nil
@@ -44,11 +51,14 @@ func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference,
 		return nil, err
 	}
 
+	kind := objectKind.GroupVersionKind().Kind
+	group := objectKind.GroupVersionKind().Group
+
 	// We can't look up by UID, so look up by Name and then verify UID.
 	// Don't even try to look up by Name if it's the wrong Kind.
-	if controllerRef.Kind != obj.GetObjectKind().GroupVersionKind().Kind ||
-		controllerRefGV.Group != obj.GetObjectKind().GroupVersionKind().Version {
-		log.Info("Wrong Kind", "expected", obj.GetObjectKind().GroupVersionKind().Kind, "actual", controllerRef.Kind)
+	if controllerRef.Kind != kind ||
+		controllerRefGV.Group != group {
+		log.Info("Wrong Kind", "expected", kind, "actual", controllerRef.Kind)
 		// return nil, fmt.Errorf("wrong kind to expect, expected %s but got %s",
 		// 	expectedGroupVersionKind.Kind,
 		// 	controllerRef.Kind)
@@ -63,12 +73,6 @@ func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference,
 	result, err = meta.Accessor(obj)
 	if err != nil {
 		return nil, err
-	}
-
-	if result.GetUID() != controllerRef.UID {
-		// The controller we found with this Name is not the same one that the
-		// ControllerRef points to.
-		return result, nil
 	}
 	return result, nil
 }

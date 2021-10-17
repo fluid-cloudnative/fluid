@@ -10,10 +10,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
-
 	type fields struct {
 		controller *appsv1.StatefulSet
 		child      runtime.Object
@@ -23,7 +24,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 		fields fields
 		want   bool
 	}{
-		{name: "No controller",
+		{name: "NoController",
 			fields: fields{
 				controller: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
@@ -40,12 +41,13 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					Spec: corev1.PodSpec{},
 				},
 			},
-		}, {name: "the controller uid is not matched",
+		}, {name: "the_controller_uid_is_not_matched",
 			fields: fields{
 				controller: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
 						Namespace: "big-data",
+						UID:       "uid",
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
@@ -53,18 +55,29 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-0",
 						Namespace: "big-data",
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "app/v1",
+							UID:        "uid1",
+							Controller: utilpointer.BoolPtr(true),
+						}},
 					},
 					Spec: corev1.PodSpec{},
 				},
 			},
 			want: false,
 		},
-		{name: "Is Controller",
+		{name: "ControllerEqual",
 			fields: fields{
 				controller: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "app/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
 						Namespace: "big-data",
+						UID:       "uid2",
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
@@ -72,6 +85,13 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-0",
 						Namespace: "big-data",
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "app/v1",
+							UID:        "uid2",
+							Name:       "test2",
+							Controller: utilpointer.BoolPtr(true),
+						}},
 					},
 					Spec: corev1.PodSpec{},
 				},
@@ -101,7 +121,10 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 			}
 
 			if want != tt.want {
-				t.Errorf("compareOwnerRefMatcheWithExpected() = %v, want %v", want, tt.want)
+				t.Errorf("test case %s compareOwnerRefMatcheWithExpected() = %v, want %v",
+					tt.name,
+					want,
+					tt.want)
 			}
 		})
 	}
