@@ -43,7 +43,7 @@ func NewCertificateBuilder(c client.Client, log logr.Logger) *CertificateBuilder
 	return ch
 }
 
-// use service name and namespace generate webhook caBundle
+// BuildAndSyncCABundle use service name and namespace generate webhook caBundle
 // and patch the caBundle to MutatingWebhookConfiguration
 func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) error {
 
@@ -61,7 +61,7 @@ func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath 
 	return c.PatchCABundle(webhookName, ca)
 }
 
-// use shell script to generate the caBundle
+// genCA use shell script to generate the caBundle
 func (c *CertificateBuilder) genCA(ns, svc, certFile, certPath string) ([]byte, error) {
 
 	genCertCmd := fmt.Sprintf(genCertFormat, certFile, svc, ns, certPath)
@@ -86,7 +86,7 @@ func (c *CertificateBuilder) genCA(ns, svc, certFile, certPath string) ([]byte, 
 	return ca, nil
 }
 
-// patch the caBundle to MutatingWebhookConfiguration
+// PatchCABundle patch the caBundle to MutatingWebhookConfiguration
 func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error {
 
 	var m v1beta1.MutatingWebhookConfiguration
