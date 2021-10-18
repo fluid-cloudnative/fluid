@@ -7,9 +7,11 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -38,8 +40,8 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes")
 
 	var (
-		nodesShouldHaveLabel  []*v1.Node
-		nodesAlreadyHaveLabel []*v1.Node
+		currentCacheNodenames  []string
+		previousCacheNodenames []string
 	)
 
 	workers, err := e.getStatefulset(e.getWorkertName(), e.namespace)
@@ -64,15 +66,83 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		if err := e.Get(context.TODO(), types.NamespacedName{Name: nodeName}, node); err != nil {
 			return err
 		}
-		nodesShouldHaveLabel = append(nodesShouldHaveLabel, node)
+		// nodesShouldHaveLabel = append(nodesShouldHaveLabel, node)
+		currentCacheNodenames = append(currentCacheNodenames, nodeName)
 	}
 
 	// find the nodes which already have the runtime label
+	previousCacheNodenames, err = e.getAssignedNodes()
+	if err != nil {
+		return err
+	}
 
 	// runtimeLabel indicates the specific runtime pod is on the node
 	// e.g. fluid.io/s-alluxio-default-hbase=true
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 
+	addedCacheNodenames := utils.SubtractString(currentCacheNodenames, previousCacheNodenames)
+	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
+
+	if len(addedCacheNodenames) > 0 {
+
+		for _, nodeName := range addedCacheNodenames {
+			node := v1.Node{}
+			err = e.Get(context.TODO(), types.NamespacedName{
+				Name: nodeName,
+			}, &node)
+			if err != nil {
+				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
+				return err
+			}
+
+			err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
+			if err != nil {
+				e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
+				return err
+			}
+		}
+	}
+
+	if len(removedCacheNodenames) > 0 {
+		for _, nodeName := range removedCacheNodenames {
+			node := v1.Node{}
+			err = e.Get(context.TODO(), types.NamespacedName{
+				Name: nodeName,
+			}, &node)
+			if utils.IgnoreNotFound(err) != nil {
+				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
+				return err
+			}
+		}
+	}
+
 	return err
+}
+
+// getAssignedNodes gets the node which is already
+func (e *JindoEngine) getAssignedNodes() (nodeNames []string, err error) {
+	var (
+		nodeList     = &corev1.NodeList{}
+		runtimeLabel = e.runtimeInfo.GetRuntimeLabelName()
+	)
+
+	nodeNames = []string{}
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeLabel))
+	if err != nil {
+		return
+	}
+
+	err = e.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		return
+	}
+
+	for _, node := range nodeList.Items {
+		nodeNames = append(nodeNames, node.Name)
+	}
+
+	return
 }
