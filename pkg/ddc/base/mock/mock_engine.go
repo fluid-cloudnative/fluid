@@ -570,6 +570,20 @@ func (mr *MockImplementMockRecorder) SyncReplicas(ctx interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncReplicas", reflect.TypeOf((*MockImplement)(nil).SyncReplicas), ctx)
 }
 
+// SyncScheduleInfoToCacheNodes mocks base method.
+func (m *MockImplement) SyncScheduleInfoToCacheNodes() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncScheduleInfoToCacheNodes")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncScheduleInfoToCacheNodes indicates an expected call of SyncScheduleInfoToCacheNodes.
+func (mr *MockImplementMockRecorder) SyncScheduleInfoToCacheNodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncScheduleInfoToCacheNodes", reflect.TypeOf((*MockImplement)(nil).SyncScheduleInfoToCacheNodes))
+}
+
 // TotalFileNums mocks base method.
 func (m *MockImplement) TotalFileNums() (int64, error) {
 	m.ctrl.T.Helper()
