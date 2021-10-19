@@ -74,5 +74,5 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		}
 	}
 
-	return
+	return t.Implement.SyncScheduleInfoToCacheNodes()
 }

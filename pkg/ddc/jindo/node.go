@@ -114,6 +114,7 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
 			}
+
 		}
 	}
 

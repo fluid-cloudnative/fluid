@@ -134,8 +134,11 @@ type Implement interface {
 	// checks if the runtime is ready
 	CheckRuntimeReady() (ready bool)
 
-	// Check existence Of targetDataload path
+	// Check existence of targetDataload path
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
+
+	// Sync the scheduleInfo to cacheNodes
+	SyncScheduleInfoToCacheNodes() (err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented
