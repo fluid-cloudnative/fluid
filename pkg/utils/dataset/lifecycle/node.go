@@ -300,10 +300,10 @@ func UnlabelCacheNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface, clien
 		// Update the toUpdate in PATCH mode
 		modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(client, nodeToUpdate, labelsToModify)
 		if err != nil {
-			return err
+			log.Error(err, "Failed to change node label with patch mode")
 		}
 		log.Info("Destroy worker", "Dataset", runtimeInfo.GetName(), "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
-		return nil
+		return err
 
 	})
 

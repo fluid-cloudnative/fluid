@@ -426,3 +426,161 @@ func TestFindLabelNameOnNode(t *testing.T) {
 		}
 	}
 }
+
+func TestUnlabelCacheNode(t *testing.T) {
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoExclusive.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+	})
+
+	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoShareSpark.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	})
+
+	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoShareHbase.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	})
+
+	tireStore := datav1alpha1.TieredStore{
+		Levels: []datav1alpha1.Level{
+			{
+				MediumType: common.Memory,
+				Quota:      resource.NewQuantity(1, resource.BinarySI),
+			},
+			{
+				MediumType: common.SSD,
+				Quota:      resource.NewQuantity(2, resource.BinarySI),
+			},
+			{
+				MediumType: common.HDD,
+				Quota:      resource.NewQuantity(3, resource.BinarySI),
+			},
+		},
+	}
+	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", tireStore)
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoWithTireStore.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+	})
+
+	var testCases = []struct {
+		name        string
+		node        *v1.Node
+		runtimeInfo base.RuntimeInfoInterface
+		wantedMap   map[string]string
+	}{
+		{
+			name: "test-node-exclusive",
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node-exclusive",
+					Labels: map[string]string{
+						"fluid.io/dataset-num":               "1",
+						"fluid.io/s-alluxio-fluid-hbase":     "true",
+						"fluid.io/s-fluid-hbase":             "true",
+						"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
+						"fluid_exclusive":                    "fluid_hbase",
+						"test":                               "abc",
+					},
+				},
+			},
+			runtimeInfo: runtimeInfoExclusive,
+			wantedMap: map[string]string{
+				"test": "abc",
+			},
+		},
+		{
+			name: "test-node-share",
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node-share",
+					Labels: map[string]string{
+						"fluid.io/dataset-num":               "1",
+						"fluid.io/s-alluxio-fluid-spark":     "true",
+						"fluid.io/s-fluid-spark":             "true",
+						"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+					},
+				},
+			},
+			runtimeInfo: runtimeInfoShareSpark,
+			wantedMap:   map[string]string{},
+		}, {
+			name: "test-node-share-1",
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node-share-1",
+					Labels: map[string]string{
+						"fluid.io/dataset-num":               "2",
+						"fluid.io/s-alluxio-fluid-spark":     "true",
+						"fluid.io/s-fluid-spark":             "true",
+						"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+						"fluid.io/s-alluxio-fluid-hbase":     "true",
+						"fluid.io/s-fluid-hbase":             "true",
+						"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
+					},
+				},
+			},
+			runtimeInfo: runtimeInfoShareHbase,
+			wantedMap: map[string]string{
+				"fluid.io/dataset-num":               "1",
+				"fluid.io/s-alluxio-fluid-spark":     "true",
+				"fluid.io/s-fluid-spark":             "true",
+				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+			},
+		}, {
+			name: "test-node-tireStore",
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node-tireStore",
+					Labels: map[string]string{
+						"fluid.io/dataset-num":               "1",
+						"fluid.io/s-alluxio-fluid-spark":     "true",
+						"fluid.io/s-fluid-spark":             "true",
+						"fluid.io/s-h-alluxio-d-fluid-spark": "5B",
+						"fluid.io/s-h-alluxio-m-fluid-spark": "1B",
+						"fluid.io/s-h-alluxio-t-fluid-spark": "6B",
+						"fluid_exclusive":                    "fluid_spark",
+					},
+				},
+			},
+			runtimeInfo: runtimeInfoWithTireStore,
+			wantedMap:   map[string]string{},
+		},
+	}
+	testNodes := []runtime.Object{}
+	for _, test := range testCases {
+		testNodes = append(testNodes, test.node)
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+
+	for _, test := range testCases {
+		err := UnlabelCacheNode(*test.node, test.runtimeInfo, client)
+		if err != nil {
+			t.Errorf("fail to exec the function with the error %v", err)
+		}
+		node, err := kubeclient.GetNode(client, test.node.Name)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if len(node.Labels) == 0 && len(test.wantedMap) == 0 {
+			continue
+		}
+		if !reflect.DeepEqual(node.Labels, test.wantedMap) {
+			t.Errorf("test case %v fail to delete the labels, wanted %v, got %v", test.name, test.wantedMap, node.Labels)
+		}
+	}
+}

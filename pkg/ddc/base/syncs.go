@@ -28,10 +28,10 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		return
 	}
 
-	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
-	if err != nil {
-		return
-	}
+	// _, err = t.Implement.CheckAndUpdateRuntimeStatus()
+	// if err != nil {
+	// 	return
+	// }
 
 	err = t.Implement.UpdateCacheOfDataset()
 	if err != nil {
