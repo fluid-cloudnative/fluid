@@ -17,6 +17,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -32,6 +33,7 @@ func init() {
 		"alluxio": alluxio.Build,
 		"jindo":   jindo.Build,
 		"goosefs": goosefs.Build,
+		"juicefs": juicefs.Build,
 	}
 }
 

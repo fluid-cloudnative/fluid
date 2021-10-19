@@ -1,0 +1,175 @@
+{{ if .Values.fuse.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "juicefs.fullname" . }}-fuse
+  labels:
+    app: {{ template "juicefs.name" . }}
+    chart: {{ template "juicefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: juicefs-fuse
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "juicefs.name" . }}
+      chart: {{ template "juicefs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: juicefs-fuse
+  template:
+    metadata:
+      labels:
+        app: {{ template "juicefs.name" . }}
+        chart: {{ template "juicefs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: juicefs-fuse
+    spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
+      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: prepare
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - "sh /root/prepare/prepare-subpath.sh"
+          securityContext:
+            privileged: true
+          env:
+            - name: NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.nameSecret }}
+                  key: name
+            - name: ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.accesskeySecret }}
+                  key: access-key
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.secretkeySecret }}
+                  key: secret-key
+            - name: BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.bucketSecret }}
+                  key: bucket
+            - name: META_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.metaurlSecret }}
+                  key: metaurl
+            - name: STORAGE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fuse.prepare.storageSecret }}
+                  key: storage
+          volumeMounts:
+          - mountPath: /root/.juicefs
+            mountPropagation: Bidirectional
+            name: jfs-root-dir
+          - mountPath: /root/prepare
+            name: prepare
+      containers:
+        - name: juicefs-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          {{- if .Values.fuse.resources  }}
+          resources:
+            {{- if .Values.fuse.resources.limits }}
+            limits:
+              cpu: {{ .Values.fuse.resources.limits.cpu }}
+              memory: {{ .Values.fuse.resources.limits.memory }}
+            {{- end }}
+            {{- if .Values.fuse.resources.requests }}
+            requests:
+              cpu: {{ .Values.fuse.resources.requests.cpu }}
+              memory: {{ .Values.fuse.resources.requests.memory }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.fuse.command }}
+          command: ["sh", "-c", "{{ .Values.fuse.command }}"]
+          {{- end }}
+          env:
+          - name: JFS_FOREGROUND
+            value: "1"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'if [ x$({{ .Values.fuse.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
+            failureThreshold: 3
+            initialDelaySeconds: 1
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+          - containerPort: 9567
+            name: metrics
+            protocol: TCP
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
+          volumeMounts:
+            - name: jfs-dir
+              mountPath: {{ .Values.fuse.mountPath }}
+              mountPropagation: Bidirectional
+            - mountPath: /root/.juicefs
+              mountPropagation: Bidirectional
+              name: jfs-root-dir
+      restartPolicy: Always
+      volumes:
+        - name: jfs-dir
+          hostPath:
+            path: {{ .Values.fuse.hostMountPath }}
+            type: DirectoryOrCreate
+        - name: jfs-root-dir
+          emptyDir: {}
+        - name: prepare
+          configMap:
+            name: juicefs-prepare-subpath
+            defaultMode: 0777
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: juicefs-prepare-subpath
+  labels:
+    app: {{ template "juicefs.name" . }}
+    chart: {{ template "juicefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  prepare-subpath.sh: |
+    #!/bin/bash
+
+    /usr/local/bin/juicefs format --storage=${STORAGE} --bucket=${BUCKET} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} ${META_URL} ${NAME}
+
+    /usr/local/bin/juicefs mount -d {{ .Values.fuse.metaUrl }} /mnt/jfs
+    if [ ! -d /mnt/jfs/{{ .Values.fuse.subPath }} ]; then
+      mkdir /mnt/jfs/{{ .Values.fuse.subPath }}
+    fi;
+    umount /mnt/jfs
+
+{{- end }}

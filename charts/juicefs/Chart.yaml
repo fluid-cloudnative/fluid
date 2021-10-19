@@ -1,0 +1,10 @@
+name: juicefs
+apiVersion: v1
+description: FileSystem aimed for data analytics and machine learning in any cloud.
+version: 0.0.1
+home: https://juicefs.com/
+maintainers:
+- name: Weiwei Zhu
+  email: weiwei.zhu@juicedata.io
+- name: Dongdong Lv
+  email: lvdongdong30@gmail.com
