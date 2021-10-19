@@ -1,0 +1,64 @@
+{{ if .Values.runtime.juicefs.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juicefsruntime-controller
+  namespace: fluid-system
+  labels:
+    control-plane: juicefsruntime-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: juicefsruntime-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: juicefsruntime-controller
+    spec:
+      serviceAccountName: juicefsruntime-controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
+      tolerations:
+      - operator: Exists
+      #hostNetwork: true
+      containers:
+      - image: "{{ .Values.runtime.juicefs.controller.image }}"
+        name: manager
+        args:
+          - --development=false
+        command: ["juicefsruntime-controller", "start"]
+        env:
+          {{- if .Values.runtime.juicefs.fuse.image }}
+          - name: JUICEFS_FUSE_IMAGE_ENV
+            value: {{ .Values.runtime.juicefs.fuse.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.mountRoot }}
+          - name: MOUNT_ROOT
+            value: {{ .Values.runtime.mountRoot | quote }}
+          {{- end }}
+          {{- if .Values.runtime.criticalFusePod }}
+          - name: CRITICAL_FUSE_POD
+            value: {{ .Values.runtime.criticalFusePod | quote }}
+          {{- end }}
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 1536Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10
+{{- end }}
