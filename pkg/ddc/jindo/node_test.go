@@ -159,7 +159,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		{
 			name: "create",
 			fields: fields{
-				name:      "jindofs",
+				name:      "spark",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
@@ -187,6 +187,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 					},
 				},
 			},
+			nodeNames: []string{"node1"},
 		},
 	}
 
@@ -206,7 +207,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	c := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 	for _, testcase := range testcases {
-		engine := getTestJindoEngineNode(c, testcase.fields.name, testcase.fields.namespace, false)
+		engine := getTestJindoEngineNode(c, testcase.fields.name, testcase.fields.namespace, true)
 		err := engine.SyncScheduleInfoToCacheNodes()
 		if err != nil {
 			t.Errorf("Got error %t.", err)
@@ -231,8 +232,12 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 			nodeNames = append(nodeNames, node.Name)
 		}
 
+		if len(testcase.nodeNames) == 0 && len(nodeNames) == 0 {
+			continue
+		}
+
 		if !reflect.DeepEqual(testcase.nodeNames, nodeNames) {
-			t.Errorf("test case %v fail to delete the labels, wanted %v, got %v", testcase.name, testcase.nodeNames, nodeNames)
+			t.Errorf("test case %v fail to sync node labels, wanted %v, got %v", testcase.name, testcase.nodeNames, nodeNames)
 		}
 
 	}
