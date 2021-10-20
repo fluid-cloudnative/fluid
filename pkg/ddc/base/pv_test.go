@@ -7,30 +7,29 @@ import (
 
 func TestGetPersistentVolumeName(t *testing.T) {
 	var testCases = []struct {
-		runtimeName    string
-		runtimeNamespace string
+		runtimeName        string
+		runtimeNamespace   string
 		isDeprecatedPVName bool
-		expectedPVName string
+		expectedPVName     string
 	}{
 		{
-			runtimeName:    "spark",
-			runtimeNamespace: "fluid",
+			runtimeName:        "spark",
+			runtimeNamespace:   "fluid",
 			isDeprecatedPVName: false,
-			expectedPVName: "fluid-spark",
+			expectedPVName:     "fluid-spark",
 		},
 		{
-			runtimeName:    "hadoop",
-			runtimeNamespace: "test",
+			runtimeName:        "hadoop",
+			runtimeNamespace:   "test",
 			isDeprecatedPVName: false,
-			expectedPVName: "test-hadoop",
+			expectedPVName:     "test-hadoop",
 		},
 		{
-			runtimeName:    "hbase",
-			runtimeNamespace: "fluid",
+			runtimeName:        "hbase",
+			runtimeNamespace:   "fluid",
 			isDeprecatedPVName: true,
-			expectedPVName: "hbase",
+			expectedPVName:     "hbase",
 		},
-
 	}
 	for _, testCase := range testCases {
 		runtimeInfo, err := BuildRuntimeInfo(testCase.runtimeName, testCase.runtimeNamespace, "alluxio", datav1alpha1.TieredStore{})
