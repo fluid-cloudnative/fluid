@@ -202,6 +202,103 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				},
 			},
 			nodeNames: []string{"node1"},
+		}, {
+			name: "add",
+			fields: fields{
+				name:      "hbase",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-jindofs-worker",
+						Namespace: "big-data",
+						UID:       "uid2",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hbase-jindofs-worker-0",
+							Namespace: "big-data",
+							OwnerReferences: []metav1.OwnerReference{{
+								Kind:       "StatefulSet",
+								APIVersion: "apps/v1",
+								Name:       "hbase-jindofs-worker",
+								UID:        "uid2",
+								Controller: utilpointer.BoolPtr(true),
+							}},
+							Labels: map[string]string{
+								"app":              "jindofs",
+								"role":             "jindofs-worker",
+								"fluid.io/dataset": "big-data-hbase",
+							},
+						},
+						Spec: v1.PodSpec{
+							NodeName: "node3",
+						},
+					},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node3",
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node2",
+							Labels: map[string]string{
+								"fluid.io/s-default-hbase": "true",
+							},
+						},
+					},
+				},
+			},
+			nodeNames: []string{"node3"},
+		}, {
+			name: "noController",
+			fields: fields{
+				name:      "hbase-a",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-a-jindofs-worker",
+						Namespace: "big-data",
+						UID:       "uid3",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hbase-a-jindofs-worker-0",
+							Namespace: "big-data",
+							Labels: map[string]string{
+								"app":              "jindofs",
+								"role":             "jindofs-worker",
+								"fluid.io/dataset": "big-data-hbase-a",
+							},
+						},
+						Spec: v1.PodSpec{
+							NodeName: "node5",
+						},
+					},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node5",
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node4",
+							Labels: map[string]string{
+								"fluid.io/s-default-hbase-a": "true",
+							},
+						},
+					},
+				},
+			},
+			nodeNames: []string{},
 		},
 	}
 

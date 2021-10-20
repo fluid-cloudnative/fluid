@@ -70,9 +70,5 @@ func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference,
 		return result, client.IgnoreNotFound(err)
 	}
 
-	result, err = meta.Accessor(obj)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	return meta.Accessor(obj)
 }
