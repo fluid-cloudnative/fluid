@@ -182,7 +182,7 @@ func (j JuiceFSEngine) SetupWorkers() (err error) {
 			// Clean the label to start the daemonset deployment
 			fusesToUpdate := fuses.DeepCopy()
 			j.Log.Info("check node labels of fuse before cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
-			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FLUID_FUSE_BALLOON_KEY)
+			delete(fusesToUpdate.Spec.Template.Spec.NodeSelector, common.FluidFuseBalloonKey)
 			j.Log.Info("check node labels of fuse after cleaning balloon key", "labels", fusesToUpdate.Spec.Template.Spec.NodeSelector)
 			err = j.Client.Update(context.TODO(), fusesToUpdate)
 			if err != nil {

@@ -80,6 +80,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		},
 		Data: map[string][]byte{
 			"metaurl": []byte("test"),
+			"name":    []byte("name"),
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -108,7 +109,14 @@ func TestSetupMasterInternal(t *testing.T) {
 						SecretKeyRef: datav1alpha1.SecretKeySelector{
 							Name: "test",
 							Key:  "metaurl",
-						}}}},
+						}}}, {
+					Name: "name",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test",
+							Key:  "name",
+						}}},
+				},
 			}}},
 		},
 	}
@@ -191,6 +199,7 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 		},
 		Data: map[string][]byte{
 			"metaurl": []byte("test"),
+			"name":    []byte("test"),
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -221,7 +230,14 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 								SecretKeyRef: datav1alpha1.SecretKeySelector{
 									Name: "test",
 									Key:  "metaurl"},
-							}}}}},
+							}}, {
+							Name: "name",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test",
+									Key:  "name"},
+							}}}},
+				},
 			},
 		},
 	}

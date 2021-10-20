@@ -5,5 +5,5 @@ metadata:
 spec:
   replicas: 1
   fuse:
-    image: juicedata/juicefs-csi-driver:v0.10.5
-    secret_name: juicefs-secret
+    image: juicedata/juicefs-csi-driver
+    image_tag: v0.10.5
