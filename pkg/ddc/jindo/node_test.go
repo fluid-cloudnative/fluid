@@ -178,6 +178,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							OwnerReferences: []metav1.OwnerReference{{
 								Kind:       "StatefulSet",
 								APIVersion: "apps/v1",
+								Name:       "spark-jindofs-worker",
 								UID:        "uid1",
 								Controller: utilpointer.BoolPtr(true),
 							}},
