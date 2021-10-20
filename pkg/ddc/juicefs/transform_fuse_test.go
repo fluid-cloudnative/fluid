@@ -35,6 +35,7 @@ func TestTransformFuse(t *testing.T) {
 		},
 		Data: map[string][]byte{
 			"metaurl": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"name":    []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -74,6 +75,12 @@ func TestTransformFuse(t *testing.T) {
 							SecretKeyRef: datav1alpha1.SecretKeySelector{
 								Name: "test",
 								Key:  "metaurl",
+							}}}, {
+						Name: "name",
+						ValueFrom: datav1alpha1.EncryptOptionSource{
+							SecretKeyRef: datav1alpha1.SecretKeySelector{
+								Name: "test",
+								Key:  "name",
 							}}}},
 				}},
 			}}, &JuiceFS{}, ""},

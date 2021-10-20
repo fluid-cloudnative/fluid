@@ -164,7 +164,11 @@ data:
   prepare-subpath.sh: |
     #!/bin/bash
 
+    {{- if and .Values.fuse.prepare.storageSecret .Values.fuse.prepare.bucketSecret }}
     /usr/local/bin/juicefs format --storage=${STORAGE} --bucket=${BUCKET} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} ${META_URL} ${NAME}
+    {{- else }}
+    /usr/local/bin/juicefs format ${META_URL} ${NAME} --no-update
+    {{- end }}
 
     /usr/local/bin/juicefs mount -d {{ .Values.fuse.metaUrl }} /mnt/jfs
     if [ ! -d /mnt/jfs/{{ .Values.fuse.subPath }} ]; then

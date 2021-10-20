@@ -68,6 +68,9 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		}
 	}
 
+	if value.Fuse.Prepare.NameSecret == "" {
+		return errors.New("can't get name in secret")
+	}
 	if source == "" {
 		return errors.New("can't get metaurl in secret")
 	}
@@ -119,7 +122,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 		}
-		value.Fuse.NodeSelector[common.FLUID_FUSE_BALLOON_KEY] = common.FLUID_FUSE_BALLOON_VALUE
+		value.Fuse.NodeSelector[common.FluidFuseBalloonKey] = common.FluidBalloonValue
 		j.Log.Info("Enable Fuse's global mode")
 	} else {
 		labelName := j.getCommonLabelName()
