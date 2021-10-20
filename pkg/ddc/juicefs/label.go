@@ -21,3 +21,7 @@ import "github.com/fluid-cloudnative/fluid/pkg/common"
 func (j *JuiceFSEngine) getCommonLabelName() string {
 	return common.LabelAnnotationStorageCapacityPrefix + j.namespace + "-" + j.name
 }
+
+func (j *JuiceFSEngine) getFuseLabelName() string {
+	return common.LabelAnnotationFusePrefix + j.namespace + "-" + j.name
+}
