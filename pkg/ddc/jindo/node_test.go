@@ -177,7 +177,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Namespace: "big-data",
 							OwnerReferences: []metav1.OwnerReference{{
 								Kind:       "StatefulSet",
-								APIVersion: "app/v1",
+								APIVersion: "apps/v1",
 								UID:        "uid1",
 								Controller: utilpointer.BoolPtr(true),
 							}},
