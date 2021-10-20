@@ -9,7 +9,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -17,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func getTestJindoEngineNode(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
@@ -165,6 +166,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-worker",
 						Namespace: "big-data",
+						UID:       "uid1",
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
@@ -173,6 +175,17 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "spark-jindofs-worker-0",
 							Namespace: "big-data",
+							OwnerReferences: []metav1.OwnerReference{{
+								Kind:       "StatefulSet",
+								APIVersion: "app/v1",
+								UID:        "uid1",
+								Controller: utilpointer.BoolPtr(true),
+							}},
+							Labels: map[string]string{
+								"app":              "jindofs",
+								"role":             "jindofs-worker",
+								"fluid.io/dataset": "big-data-spark",
+							},
 						},
 						Spec: v1.PodSpec{
 							NodeName: "node1",
@@ -213,7 +226,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 			t.Errorf("Got error %t.", err)
 		}
 
-		nodeList := &corev1.NodeList{}
+		nodeList := &v1.NodeList{}
 		datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", engine.getCommonLabelname()))
 		if err != nil {
 			return

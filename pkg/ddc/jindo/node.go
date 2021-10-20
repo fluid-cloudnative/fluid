@@ -7,7 +7,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -124,7 +123,7 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 // getAssignedNodes gets the node which is already
 func (e *JindoEngine) getAssignedNodes() (nodeNames []string, err error) {
 	var (
-		nodeList     = &corev1.NodeList{}
+		nodeList     = &v1.NodeList{}
 		runtimeLabel = e.runtimeInfo.GetRuntimeLabelName()
 	)
 
