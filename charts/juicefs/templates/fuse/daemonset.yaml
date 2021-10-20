@@ -148,13 +148,13 @@ spec:
           emptyDir: {}
         - name: prepare
           configMap:
-            name: juicefs-prepare-subpath
+            name: {{ template "juicefs.fullname" . }}-prepare
             defaultMode: 0777
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: juicefs-prepare-subpath
+  name: {{ template "juicefs.fullname" . }}-prepare
   labels:
     app: {{ template "juicefs.name" . }}
     chart: {{ template "juicefs.chart" . }}
@@ -170,9 +170,9 @@ data:
     /usr/local/bin/juicefs format ${META_URL} ${NAME} --no-update
     {{- end }}
 
-    /usr/local/bin/juicefs mount -d {{ .Values.fuse.metaUrl }} /mnt/jfs
-    if [ ! -d /mnt/jfs/{{ .Values.fuse.subPath }} ]; then
-      mkdir /mnt/jfs/{{ .Values.fuse.subPath }}
+    /usr/local/bin/juicefs mount -d ${META_URL} /mnt/jfs
+    if [ ! -d /mnt/jfs/{{ .Values.fuse.prepare.subPath }} ]; then
+      mkdir /mnt/jfs/{{ .Values.fuse.prepare.subPath }}
     fi;
     umount /mnt/jfs
 

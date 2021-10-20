@@ -125,7 +125,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		value.Fuse.NodeSelector[common.FluidFuseBalloonKey] = common.FluidBalloonValue
 		j.Log.Info("Enable Fuse's global mode")
 	} else {
-		labelName := j.getCommonLabelName()
+		labelName := j.getFuseLabelName()
 		value.Fuse.NodeSelector[labelName] = "true"
 		j.Log.Info("Disable Fuse's global mode")
 	}
