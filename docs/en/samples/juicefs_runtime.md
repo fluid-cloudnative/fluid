@@ -93,6 +93,7 @@ spec:
 EOF
 ```
 
+> Note: demo refers to the Subpath of JuiceFS, which is the directory of the JuiceFS file system where users store data in.   
 > Attention：Only name and metaurl are required. If the juicefs has been formatted, you only need to fill in the name and metaurl.
 
 Since JuiceFS uses local cache, the corresponding Dataset supports only one mount, and JuiceFS does not have UFS, name/path represents the subdirectory that needs to be mounted, and it will be mounted as the root directory into the container.
@@ -130,6 +131,7 @@ spec:
         low: "0.1"
 EOF
 ```
+> Note: The smallest unit of quota in JuiceFS is the MiB
 
 **Create JuiceFSRuntime**
 
@@ -165,7 +167,7 @@ Then, check the Dataset status again and find that it has been bound with JuiceF
 ```shell
 $ kubectl get dataset jfsdemo
 NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   4.00KiB          -                         -                   Bound   9m28s
+jfsdemo   4.00KiB          -        40.00GiB         -                   Bound   9m28s
 ```
 
 **Check Pod to be create**, the Pod uses the Dataset created above to specify the PVC with the same name.
