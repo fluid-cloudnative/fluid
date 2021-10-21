@@ -16,10 +16,13 @@ limitations under the License.
 package lifecycle
 
 import (
+	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/go-logr/logr"
 
@@ -108,6 +111,16 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
+// findLabelNameOnNode checks if the label exist
+func FindLabelNameOnNode(node v1.Node, key string) (found bool) {
+	labels := node.Labels
+	if len(labels) == 0 {
+		return
+	}
+	_, found = labels[key]
+	return
+}
+
 // LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
 func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	defer utils.TimeTrack(time.Now(), "LabelCacheNode", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace(), "node", nodeToLabel.Name)
@@ -144,6 +157,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			log.Error(err, "GetNode In labelCacheNode")
 			return err
 		}
+
 		toUpdate = node.DeepCopy()
 		if toUpdate.Labels == nil {
 			toUpdate.Labels = make(map[string]string)
@@ -238,6 +252,62 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 	}
 	totalValue := utils.TranformQuantityToUnits(&totalRequirement)
 	labelsToModify.Add(totalCapacityLabel, totalValue)
+}
+
+// UnlabelCacheNode remove labels on a selected node to indicate the node doesn't have the cache for
+func UnlabelCacheNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+
+	var (
+		labelExclusiveName = utils.GetExclusiveKey()
+		labelName          = runtimeInfo.GetRuntimeLabelName()
+		labelCommonName    = runtimeInfo.GetCommonLabelName()
+		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
+		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
+	)
+
+	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
+	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+	log.Info("check node labels", "labelNames", labelNames)
+
+	nodeName := node.Name
+	nodeToUpdate := &v1.Node{}
+	var labelsToModify common.LabelsToModify
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		err = client.Get(context.TODO(), types.NamespacedName{Name: nodeName}, nodeToUpdate)
+		if err != nil {
+			log.Error(err, "Fail to get node", "nodename", nodeName)
+			return err
+		}
+
+		nodeToUpdate = nodeToUpdate.DeepCopy()
+		for _, label := range labelNames {
+			labelsToModify.Delete(label)
+		}
+
+		exclusiveLabelValue := utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+		if val, exist := nodeToUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+			labelsToModify.Delete(labelExclusiveName)
+		}
+
+		err = DecreaseDatasetNum(nodeToUpdate, runtimeInfo, &labelsToModify)
+		if err != nil {
+			return err
+		}
+
+		// Update the toUpdate in UPDATE mode
+		// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
+		// Update the toUpdate in PATCH mode
+		modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(client, nodeToUpdate, labelsToModify)
+		if err != nil {
+			log.Error(err, "Failed to change node label with patch mode")
+		}
+		log.Info("Destroy worker", "Dataset", runtimeInfo.GetName(), "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
+		return err
+
+	})
+
+	return
 }
 
 // DecreaseDatasetNum deletes the datasetNum label or updates the number of the dataset in the specific node.

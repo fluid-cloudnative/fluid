@@ -40,3 +40,8 @@ func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 		desiredNum)
 
 }
+
+// SyncScheduleInfoToCacheNodes syncs schedule info to nodes
+func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
+	return
+}

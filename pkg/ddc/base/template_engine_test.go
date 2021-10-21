@@ -17,6 +17,7 @@ package base_test
 
 import (
 	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
@@ -131,6 +132,7 @@ var _ = Describe("TemplateEngine", func() {
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(&utils.UFSToUpdate{}).Times(1),
+					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),
 				)
 
 				Expect(t.Sync(fakeCtx)).To(BeNil())
@@ -164,6 +166,7 @@ var _ = Describe("TemplateEngine", func() {
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(ufsToUpdate).Times(1),
 					impl.EXPECT().UpdateOnUFSChange(ufsToUpdate).Times(1),
+					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),
 				)
 				Expect(t.Sync(fakeCtx)).Should(BeNil())
 			})

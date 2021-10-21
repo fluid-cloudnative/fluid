@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
@@ -148,7 +147,7 @@ func TestSetupWorkers(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
 
 			s := runtime.NewScheme()
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -284,7 +283,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -416,7 +415,7 @@ func TestCheckWorkersReady(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -527,6 +526,22 @@ func TestBuildWorkersAffinity(t *testing.T) {
 							},
 						},
 					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test1",
+											Operator: corev1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		}, {name: "shared",
@@ -550,12 +565,12 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					},
 				},
 				want: &v1.Affinity{
-					PodAntiAffinity: &corev1.PodAntiAffinity{
-						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
 							{
 								// The default weight is 50
 								Weight: 50,
-								PodAffinityTerm: corev1.PodAffinityTerm{
+								PodAffinityTerm: v1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchExpressions: []metav1.LabelSelectorRequirement{
 											{
@@ -568,7 +583,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 								},
 							},
 						},
-						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 							{
 								LabelSelector: &metav1.LabelSelector{
 									MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -580,6 +595,22 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									},
 								},
 								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test2",
+											Operator: corev1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -643,6 +674,20 @@ func TestBuildWorkersAffinity(t *testing.T) {
 										{
 											Key:      "nodeA",
 											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 200,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test3",
+											Operator: corev1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},

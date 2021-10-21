@@ -135,3 +135,11 @@ func TestAssignNodesToCache(t *testing.T) {
 		}
 	}
 }
+
+func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
+	engine := getTestGooseFSEngine(nil, "test", "test")
+	err := engine.SyncScheduleInfoToCacheNodes()
+	if err != nil {
+		t.Errorf("Failed with err %v", err)
+	}
+}
