@@ -1,6 +1,8 @@
 package alluxio
 
 import (
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	v1 "k8s.io/api/core/v1"
@@ -9,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func getTestAlluxioEngineNode(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
@@ -132,5 +133,13 @@ func TestAssignNodesToCache(t *testing.T) {
 		if isErr != testCase.isErr {
 			t.Errorf("expected %t, got %t.", testCase.isErr, isErr)
 		}
+	}
+}
+
+func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
+	engine := getTestAlluxioEngineNode(nil, "test", "test", false)
+	err := engine.SyncScheduleInfoToCacheNodes()
+	if err != nil {
+		t.Errorf("Failed with err %v", err)
 	}
 }
