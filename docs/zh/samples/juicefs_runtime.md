@@ -91,6 +91,7 @@ spec:
 EOF
 ```
 
+> 说明：demo 指的是 JuiceFS 的 Subpath,是用户在 JuiceFS 文件系统中存储数据的目录
 > 注意：只有 name 和 metaurl 为必填项，若 juicefs 已经 format 过，只需要填 name 和 metaurl 即可。
 
 由于 JuiceFS 采用的是本地缓存，对应的 Dataset 只支持一个 mount，且 JuiceFS 没有 UFS，name/path 代表需要挂载的子目录，会作为根目录挂载到容器内。
@@ -128,6 +129,7 @@ spec:
         low: "0.1"
 EOF
 ```
+> 注意：JuiceFS 中 quota 的最小单位是 MiB
 
 **创建 JuiceFSRuntime 资源对象**
 
@@ -163,7 +165,7 @@ jfsdemo   6m13s
 ```shell
 $ kubectl get dataset jfsdemo
 NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   4.00KiB          -                         -                   Bound   9m28s
+jfsdemo   4.00KiB          -        40.00GiB         -                   Bound   9m28s
 ```
 
 **查看待创建的 Pod 资源对象**，其中 Pod 使用上面创建的 Dataset 的方式为指定同名的 PVC。
