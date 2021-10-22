@@ -51,6 +51,7 @@ spec:
           volumeMounts:
             - name: kubelet-dir
               mountPath: {{ .Values.csi.kubelet.rootDir }}
+              mountPropagation: "HostToContainer"
             - name: registration-dir
               mountPath: /registration
         - name: plugins
