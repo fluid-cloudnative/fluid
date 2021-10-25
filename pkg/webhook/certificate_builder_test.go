@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
+	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
@@ -31,16 +32,22 @@ import (
 
 var (
 	testScheme *runtime.Scheme
+	log = ctrl.Log.WithName("test")
 )
 
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
+	// prepare the shell script
+	cmd := exec.Command("cp", "../../tools/certificate.sh", "/usr/local/bin/certificate.sh")
+	stdout, err := cmd.Output()
+	if err != nil {
+		log.Error(err, "fail to prepare the shell script", "output", stdout)
+	}
 }
 
 func TestNewCertificateBuilder(t *testing.T) {
 	c := fake.NewFakeClient()
-	log := ctrl.Log.WithName("test")
 	cb := NewCertificateBuilder(c, log)
 	if cb.log != log {
 		t.Errorf("fail to new the CertificateBuilder because log is not coincident")
@@ -104,7 +111,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 	}
 	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1beta1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
-	cb := NewCertificateBuilder(client, ctrl.Log.WithName("test"))
+	cb := NewCertificateBuilder(client, log)
 	for index, item := range testCases {
 		err := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
 		if err != nil {
@@ -159,7 +166,7 @@ func TestGenCA(t *testing.T) {
 	}
 
 	c := fake.NewFakeClient()
-	cb := NewCertificateBuilder(c, ctrl.Log.WithName("test"))
+	cb := NewCertificateBuilder(c, log)
 
 	for index, item := range testCases {
 		ca, _ := cb.genCA(item.ns, item.svc, certExeFile, certPath)
@@ -227,7 +234,7 @@ func TestPatchCABundle(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 
 	for index, item := range testCases {
-		cb := NewCertificateBuilder(client, ctrl.Log.WithName("test"))
+		cb := NewCertificateBuilder(client, log)
 		err := cb.PatchCABundle(webhookName, item.ca)
 		if err != nil {
 			t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
