@@ -292,7 +292,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
 			append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
 				corev1.PreferredSchedulingTerm{
-					Weight: 200,
+					Weight: 90,
 					Preference: corev1.NodeSelectorTerm{
 						MatchExpressions: []corev1.NodeSelectorRequirement{
 							{

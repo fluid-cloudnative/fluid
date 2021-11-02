@@ -529,7 +529,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					NodeAffinity: &v1.NodeAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 90,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
@@ -601,7 +601,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					NodeAffinity: &v1.NodeAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 90,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
@@ -682,7 +682,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 90,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
@@ -723,7 +723,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
-				t.Errorf("JindoEngine.buildWorkersAffinity() = %v, want %v", tt.fields.worker.Spec.Template.Spec.Affinity, tt.fields.want)
+				t.Errorf("Test case %s JindoEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
 			}
 		})
 	}
