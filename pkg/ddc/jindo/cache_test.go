@@ -114,9 +114,7 @@ func TestQueryCacheStatus(t *testing.T) {
 	})
 }
 
-
-
-func TestInvokeCleanCache(t *testing.T){
+func TestInvokeCleanCache(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -142,38 +140,38 @@ func TestInvokeCleanCache(t *testing.T){
 		objs = append(objs, masterInput.DeepCopy())
 	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
-	testCases := []struct{
-		name 		string
-		namespace 	string
-		isErr 		bool
+	testCases := []struct {
+		name      string
+		namespace string
+		isErr     bool
 	}{
 		{
-			name:		"hadoop",
-			namespace: 	"fluid",
-			isErr: 		false,
+			name:      "hadoop",
+			namespace: "fluid",
+			isErr:     false,
 		},
 		{
-			name:		"hbase",
-			namespace: 	"fluid",
-			isErr: 		true,
+			name:      "hbase",
+			namespace: "fluid",
+			isErr:     true,
 		},
 		{
-			name: 		"none",
-			namespace: 	"fluid",
-			isErr: 		false,
+			name:      "none",
+			namespace: "fluid",
+			isErr:     false,
 		},
 	}
-	for _,testCase := range testCases{
+	for _, testCase := range testCases {
 		engine := &JindoEngine{
-			Client: fakeClient,
+			Client:    fakeClient,
 			namespace: testCase.namespace,
-			name: testCase.name,
-			Log: log.NullLogger{},
+			name:      testCase.name,
+			Log:       log.NullLogger{},
 		}
 		err := engine.invokeCleanCache()
 		isErr := err != nil
-		if isErr != testCase.isErr{
-			t.Errorf("test-name:%s want %t, got %t", testCase.name,testCase.isErr, isErr)
+		if isErr != testCase.isErr {
+			t.Errorf("test-name:%s want %t, got %t", testCase.name, testCase.isErr, isErr)
 		}
 	}
 }
@@ -194,5 +192,3 @@ func mockJindoReportSummary() string {
 	`
 	return s
 }
-
-

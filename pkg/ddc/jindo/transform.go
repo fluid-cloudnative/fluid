@@ -140,7 +140,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 	e.transformTolerations(dataset, runtime, value)
-	e.transformResourcesForWorker(runtime, value)
+	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
@@ -293,7 +293,47 @@ func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPa
 	return nil
 }
 
-func (e *JindoEngine) transformResourcesForWorker(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+func (e *JindoEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+
+	if runtime.Spec.Master.Resources.Limits != nil {
+		e.Log.Info("setting Resources limit")
+		if runtime.Spec.Master.Resources.Limits.Cpu() != nil {
+			value.Master.Resources.Limits.CPU = runtime.Spec.Master.Resources.Limits.Cpu().String()
+		}
+		if runtime.Spec.Master.Resources.Limits.Memory() != nil {
+			value.Master.Resources.Limits.Memory = runtime.Spec.Master.Resources.Limits.Memory().String()
+		}
+	}
+
+	if runtime.Spec.Master.Resources.Requests != nil {
+		e.Log.Info("setting Resources request")
+		if runtime.Spec.Master.Resources.Requests.Cpu() != nil {
+			value.Master.Resources.Requests.CPU = runtime.Spec.Master.Resources.Requests.Cpu().String()
+		}
+		if runtime.Spec.Master.Resources.Requests.Memory() != nil {
+			value.Master.Resources.Requests.Memory = runtime.Spec.Master.Resources.Requests.Memory().String()
+		}
+	}
+
+	if runtime.Spec.Fuse.Resources.Limits != nil {
+		e.Log.Info("setting Resources limit")
+		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
+			value.Fuse.Resources.Limits.CPU = runtime.Spec.Fuse.Resources.Limits.Cpu().String()
+		}
+		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
+			value.Fuse.Resources.Limits.Memory = runtime.Spec.Fuse.Resources.Limits.Memory().String()
+		}
+	}
+
+	if runtime.Spec.Fuse.Resources.Requests != nil {
+		e.Log.Info("setting Resources request")
+		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
+			value.Fuse.Resources.Requests.CPU = runtime.Spec.Fuse.Resources.Requests.Cpu().String()
+		}
+		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
+			value.Fuse.Resources.Requests.Memory = runtime.Spec.Fuse.Resources.Requests.Memory().String()
+		}
+	}
 
 	if runtime.Spec.Worker.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")

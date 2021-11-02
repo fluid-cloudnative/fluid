@@ -60,6 +60,7 @@ spec:
         - name: jindofs-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.worker.resources }}
           resources:
             limits:
             {{- if .Values.worker.resources }}
@@ -77,6 +78,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+          {{- end }}
           command: ["/entrypoint.sh"]
           args: ["worker"]
           env:
