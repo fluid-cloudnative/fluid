@@ -19,6 +19,7 @@ import (
 	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -29,8 +30,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"testing"
 )
 
 var _ = Describe("TemplateEngine", func() {
@@ -221,3 +224,57 @@ var _ = Describe("TemplateEngine", func() {
 		})
 	})
 })
+
+var (
+	testScheme *apimachineryRuntime.Scheme
+)
+
+func TestNewTemplateEngine(t *testing.T) {
+	testObjs := []apimachineryRuntime.Object{}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	engine := &alluxio.AlluxioEngine{
+		Client: client,
+	}
+
+	id := "test id"
+
+	ctx := runtime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         log.NullLogger{},
+		RuntimeType: "alluxio",
+	}
+
+	templateEngine := base.NewTemplateEngine(engine, id, ctx)
+	if !reflect.DeepEqual(templateEngine.Implement, engine) && templateEngine.Id != id && !reflect.DeepEqual(templateEngine.Context, ctx) {
+		t.Errorf("expected implement %v, get %v; expected id %s, get %s, expected context %v, get %v", engine, templateEngine.Implement, id, templateEngine.Id, ctx, templateEngine.Context)
+	}
+}
+
+func TestID(t *testing.T) {
+	testObjs := []apimachineryRuntime.Object{}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	engine := &alluxio.AlluxioEngine{
+		Client: client,
+	}
+
+	id := "test id"
+
+	ctx := runtime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         log.NullLogger{},
+		RuntimeType: "alluxio",
+	}
+
+	templateEngine := base.NewTemplateEngine(engine, id, ctx)
+	if templateEngine.Id != templateEngine.ID() {
+		t.Errorf("expected %s, get %s", templateEngine.Id, templateEngine.ID())
+	}
+}
