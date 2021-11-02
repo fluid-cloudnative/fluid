@@ -226,6 +226,23 @@ $ make build
 $ make unit-test
 ```
 
+如果您需要增加接口中的方法
+
+下载`go-mock`, 大于Go 1.16
+
+```shell
+go install github.com/golang/mock/mockgen@v1.6.0
+```
+
+生产mock代码
+
+```shell
+cd fluid
+mockgen --source=pkg/ddc/base/engine.go --destination pkg/ddc/base/mock/mock_engine.go --package base
+```
+
+修改`pkg/ddc/base/template_engine_test.go`
+
 #### 集成测试
 
 `kubebuilder`基于[envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest)提供了controller测试的基本框架，如果您想运行controller测试，您需要执行如下命令安装`kubebuilder`：

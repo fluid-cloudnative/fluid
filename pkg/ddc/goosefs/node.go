@@ -40,3 +40,7 @@ func (e *GooseFSEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum
 		e.Client,
 		desiredNum)
 }
+
+func (e *GooseFSEngine) SyncScheduleInfoToCacheNodes() (err error) {
+	return
+}
