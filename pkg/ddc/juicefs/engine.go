@@ -38,7 +38,6 @@ type JuiceFSEngine struct {
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
 	retryShutdown          int32
-	initImage              string
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {

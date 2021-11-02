@@ -8,6 +8,29 @@ metadata:
   creationTimestamp: null
   name: juicefsruntimes.data.fluid.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.workerNumberReady
+    name: Ready Workers
+    priority: 10
+    type: integer
+  - JSONPath: .status.desiredWorkerNumberScheduled
+    name: Desired Workers
+    priority: 10
+    type: integer
+  - JSONPath: .status.workerPhase
+    name: Worker Phase
+    type: string
+  - JSONPath: .status.fuseNumberReady
+    name: Ready Fuses
+    priority: 10
+    type: integer
+  - JSONPath: .status.desiredFuseNumberScheduled
+    name: Desired Fuses
+    priority: 10
+    type: integer
+  - JSONPath: .status.fusePhase
+    name: Fuse Phase
+    type: string
   group: data.fluid.io
   names:
     kind: JuiceFSRuntime
@@ -16,6 +39,10 @@ spec:
     singular: juicefsruntime
   scope: Namespaced
   subresources:
+    scale:
+      labelSelectorPath: .status.selector
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.currentWorkerNumberScheduled
     status: {}
   validation:
     openAPIV3Schema:

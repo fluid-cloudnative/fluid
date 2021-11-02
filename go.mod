@@ -19,6 +19,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
+	golang.org/dl v0.0.0-20211007222857-6589945b0d11 // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8

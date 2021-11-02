@@ -32,7 +32,7 @@ import (
 
 var (
 	testScheme *runtime.Scheme
-	log = ctrl.Log.WithName("test")
+	log        = ctrl.Log.WithName("test")
 )
 
 func init() {
@@ -61,8 +61,8 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 	var webhookName = "webhookName"
 	var caBundles = [][]byte{
 		{3, 5, 54, 34},
-		{3, 8 ,54, 4},
-		{35, 5 ,54, 4},
+		{3, 8, 54, 4},
+		{35, 5, 54, 4},
 	}
 	var testMutatingWebhookConfiguration = &v1beta1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -191,7 +191,7 @@ func TestGenCA(t *testing.T) {
 func TestPatchCABundle(t *testing.T) {
 	var webhookName = "webhookName"
 	testCases := map[string]struct {
-		ca          []byte
+		ca []byte
 	}{
 		"test case 1": {
 			ca: []byte{1, 2, 3},
@@ -212,19 +212,19 @@ func TestPatchCABundle(t *testing.T) {
 			{
 				Name: "webhook1",
 				ClientConfig: v1beta1.WebhookClientConfig{
-					CABundle: []byte{3, 5 ,54, 34},
+					CABundle: []byte{3, 5, 54, 34},
 				},
 			},
 			{
 				Name: "webhook2",
 				ClientConfig: v1beta1.WebhookClientConfig{
-					CABundle: []byte{3, 8 ,54, 4},
+					CABundle: []byte{3, 8, 54, 4},
 				},
 			},
 			{
 				Name: "webhook3",
 				ClientConfig: v1beta1.WebhookClientConfig{
-					CABundle: []byte{35, 5 ,54, 4},
+					CABundle: []byte{35, 5, 54, 4},
 				},
 			},
 		},
