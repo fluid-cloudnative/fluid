@@ -38,3 +38,7 @@ func (j JuiceFSEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum 
 		j.Client,
 		desiredNum)
 }
+
+func (j *JuiceFSEngine) SyncScheduleInfoToCacheNodes() (err error) {
+	return
+}
