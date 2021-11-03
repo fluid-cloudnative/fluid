@@ -36,3 +36,7 @@
 * High Availability
 * Update mountPoint dynamically in runtime
 * Add GooseFSRuntime
+
+### 0.7.0
+
+* Add mountPropagation for registrar
