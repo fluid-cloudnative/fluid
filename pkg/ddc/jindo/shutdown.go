@@ -3,6 +3,7 @@ package jindo
 import (
 	"context"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
@@ -17,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// shut down the Jindo engine
+// Shutdown shuts down the Jindo engine
 func (e *JindoEngine) Shutdown() (err error) {
 
 	err = e.invokeCleanCache()
@@ -44,7 +45,7 @@ func (e *JindoEngine) Shutdown() (err error) {
 	return err
 }
 
-// destroyMaster Destroies the master
+// destroyMaster destroys the master
 func (e *JindoEngine) destroyMaster() (err error) {
 	var found bool
 	found, err = helm.CheckRelease(e.name, e.namespace)
@@ -91,6 +92,22 @@ func (e *JindoEngine) releasePorts() (err error) {
 
 // cleanAll cleans up the all
 func (e *JindoEngine) cleanAll() (err error) {
+	err = e.cleanupFuse()
+	if err != nil {
+		e.Log.Error(err, "Err in cleaning configMap")
+		return err
+	}
+
+	err = e.cleanConfigmap()
+	if err != nil {
+		e.Log.Error(err, "Err in cleaning configMap")
+		return err
+	}
+	return
+}
+
+// cleanAll cleans up the all
+func (e *JindoEngine) cleanConfigmap() (err error) {
 	var (
 		valueConfigmapName = e.name + "-" + e.runtimeType + "-values"
 		configmapName      = e.name + "-config"
