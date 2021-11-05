@@ -54,6 +54,8 @@ func (e *JindoEngine) cleanupFuse() (count int, err error) {
 	if len(nodes) == 0 {
 		e.Log.Info("No node with fuse label need to be delete")
 		return
+	} else {
+		e.Log.Info("Try to clean the fuse label for nodes", "len", len(nodes))
 	}
 
 	var labelsToModify common.LabelsToModify
