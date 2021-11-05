@@ -107,7 +107,8 @@ func (e *JindoEngine) cleanAll() (err error) {
 	return
 }
 
-// cleanAll cleans up the all
+// cleanConfigmap cleans up the configmaps, such as:
+// {dataset name}-jindo-values, {dataset name}-jindofs-client-config, {dataset name}-jindofs-config
 func (e *JindoEngine) cleanConfigmap() (err error) {
 	var (
 		valueConfigmapName  = e.name + "-" + e.runtimeType + "-values"
