@@ -17,8 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/brahma-adshonor/gohook"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
 func mockJuiceFSMetric() string {
@@ -146,5 +149,24 @@ func TestJuiceFSEngine_parseMetric(t *testing.T) {
 				t.Errorf("parseMetric() = %v, want %v", gotPodMetric, tt.wantPodMetric)
 			}
 		})
+	}
+}
+
+func TestJuiceFSEngine_getPodMetrics(t *testing.T) {
+	GetMetricCommon := func(a operations.JuiceFileUtils) (metric string, err error) {
+		return mockJuiceFSMetric(), nil
+	}
+	err := gohook.Hook(operations.JuiceFileUtils.GetMetric, GetMetricCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	j := JuiceFSEngine{}
+	gotMetrics, err := j.getPodMetrics("test")
+	if err != nil {
+		t.Errorf("getPodMetrics() error = %v", err)
+		return
+	}
+	if gotMetrics != mockJuiceFSMetric() {
+		t.Errorf("getPodMetrics() gotMetrics = %v, want %v", gotMetrics, mockJuiceFSMetric())
 	}
 }
