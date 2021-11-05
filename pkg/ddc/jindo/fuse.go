@@ -29,7 +29,7 @@ import (
 )
 
 // cleanupFuse will cleanup Fuse
-func (e *JindoEngine) cleanupFuse() (err error) {
+func (e *JindoEngine) cleanupFuse() (count int, err error) {
 
 	var (
 		nodeList     = &corev1.NodeList{}
@@ -47,7 +47,7 @@ func (e *JindoEngine) cleanupFuse() (err error) {
 		LabelSelector: fuseLabelSelector,
 	})
 	if err != nil {
-		return err
+		return count, err
 	}
 
 	nodes := nodeList.Items
@@ -63,9 +63,10 @@ func (e *JindoEngine) cleanupFuse() (err error) {
 		_, err = utils.ChangeNodeLabelWithPatchMode(e.Client, &node, labelsToModify)
 		if err != nil {
 			e.Log.Error(err, "Error when patching labels on node", "nodeName", node.Name)
-			return errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", node.Name)
+			return count, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", node.Name)
 		}
+		count++
 	}
 
-	return nil
+	return
 }

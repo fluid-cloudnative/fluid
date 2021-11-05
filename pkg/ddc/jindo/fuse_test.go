@@ -40,7 +40,13 @@ func TestCleanupFuse(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "fuse",
 				Labels: map[string]string{
-					"fluid.io/f-jindo-fluid-hadoop": "true",
+					"fluid.io/f-jindo-fluid-hadoop":    "true",
+					"node-select":                      "true",
+					"fluid.io/f-jindo-fluid-hbase":     "true",
+					"fluid.io/s-fluid-hbase":           "true",
+					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
 				},
 			},
 		},
@@ -68,42 +74,26 @@ func TestCleanupFuse(t *testing.T) {
 		name             string
 		namespace        string
 		wantedNodeLabels map[string]map[string]string
+		wantedCount      int
 	}{
 		{
-			expectedWorkers:  -1,
-			name:             "fluid-hadoop",
-			namespace:        "jindo",
-			wantedNodeNumber: 0,
+			wantedCount: 2,
+			name:        "fluid-hadoop",
+			namespace:   "jindo",
 			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":              "2",
-					"fluid.io/s-jindo-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":           "true",
-					"fluid.io/s-h-jindo-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-jindo-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-jindo-t-fluid-hadoop": "6B",
-					"fluid.io/s-jindo-fluid-hbase":      "true",
-					"fluid.io/s-fluid-hbase":            "true",
-					"fluid.io/s-h-jindo-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-jindo-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-jindo-t-fluid-hbase":  "6B",
+				"no-fuse": {},
+				"fuse": {
+					"node-select": "true",
 				},
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":              "1",
-					"fluid.io/s-jindo-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":           "true",
-					"fluid.io/s-h-jindo-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-jindo-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-jindo-t-fluid-hadoop": "6B",
-					"node-select":                       "true",
+				"multiple-fuse": {
+					"fluid.io/dataset-num":            "1",
+					"fluid.io/f-jindo-fluid-hadoop-1": "true",
+					"node-select":                     "true",
 				},
 			},
 		},
 		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoHadoop,
-			wantedNodeNumber: 0,
+			wantedCount: 0,
 			wantedNodeLabels: map[string]map[string]string{
 				"test-node-spark": {},
 				"test-node-share": {
@@ -121,19 +111,16 @@ func TestCleanupFuse(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &JindoEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &JindoEngine{Log: log.NullLogger{}}
 		engine.Client = client
-		engine.name = test.runtimeInfo.GetName()
-		engine.namespace = test.runtimeInfo.GetNamespace()
+		engine.name = test.name
+		engine.namespace = test.namespace
+		count, err := engine.cleanupFuse()
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		currentWorkers, err := engine.destroyWorkers(test.expectedWorkers)
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		if currentWorkers != test.wantedNodeNumber {
-			t.Errorf("shutdown the worker with the wrong number of the workers")
+		if count != test.wantedCount {
+			t.Errorf("with the wrong number of the fuse")
 		}
 		for _, node := range nodeInputs {
 			newNode, err := kubeclient.GetNode(client, node.Name)
@@ -142,10 +129,10 @@ func TestCleanupFuse(t *testing.T) {
 			}
 
 			if len(newNode.Labels) != len(test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
+				t.Errorf("fail to clean up the labels")
 			}
 			if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
+				t.Errorf("fail to clean up the labels")
 			}
 		}
 
