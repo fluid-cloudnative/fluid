@@ -17,13 +17,14 @@ limitations under the License.
 package jindo
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	cli "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -77,40 +78,69 @@ func TestCleanupFuse(t *testing.T) {
 		wantedCount      int
 	}{
 		{
+			wantedCount: 1,
+			name:        "fluid-hadoop-1",
+			namespace:   "jindo",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"fuse": {
+					"fluid.io/f-jindo-fluid-hadoop":    "true",
+					"node-select":                      "true",
+					"fluid.io/f-jindo-fluid-hbase":     "true",
+					"fluid.io/s-fluid-hbase":           "true",
+					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
+				},
+				"multiple-fuse": {
+					"fluid.io/dataset-num":          "1",
+					"fluid.io/f-jindo-fluid-hadoop": "true",
+					"node-select":                   "true",
+				},
+			},
+		}, {
 			wantedCount: 2,
 			name:        "fluid-hadoop",
 			namespace:   "jindo",
 			wantedNodeLabels: map[string]map[string]string{
 				"no-fuse": {},
 				"fuse": {
-					"node-select": "true",
-				},
-				"multiple-fuse": {
-					"fluid.io/dataset-num":            "1",
-					"fluid.io/f-jindo-fluid-hadoop-1": "true",
-					"node-select":                     "true",
-				},
-			},
-		},
-		{
-			wantedCount: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":             "1",
-					"fluid.io/s-jindo-fluid-hbase":     "true",
+					"node-select":                      "true",
+					"fluid.io/f-jindo-fluid-hbase":     "true",
 					"fluid.io/s-fluid-hbase":           "true",
 					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
 					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
 					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
 				},
-				"test-node-hadoop": {
-					"node-select": "true",
+				"multiple-fuse": {
+					"fluid.io/dataset-num": "1",
+					"node-select":          "true",
+				},
+			},
+		},
+		{
+			wantedCount: 0,
+			name:        "test",
+			namespace:   "default",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"fuse": {
+					"node-select":                      "true",
+					"fluid.io/f-jindo-fluid-hbase":     "true",
+					"fluid.io/s-fluid-hbase":           "true",
+					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
+				},
+				"multiple-fuse": {
+					"fluid.io/dataset-num": "1",
+					"node-select":          "true",
 				},
 			},
 		},
 	}
 	for _, test := range testCase {
+		nodeList := &v1.NodeList{}
 		engine := &JindoEngine{Log: log.NullLogger{}}
 		engine.Client = client
 		engine.name = test.name
@@ -122,17 +152,18 @@ func TestCleanupFuse(t *testing.T) {
 		if count != test.wantedCount {
 			t.Errorf("with the wrong number of the fuse")
 		}
-		for _, node := range nodeInputs {
-			newNode, err := kubeclient.GetNode(client, node.Name)
-			if err != nil {
-				t.Errorf("fail to get the node with the error %v", err)
-			}
 
-			if len(newNode.Labels) != len(test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to clean up the labels")
+		err = client.List(context.TODO(), nodeList, &cli.ListOptions{})
+		if err != nil {
+			t.Errorf("testcase %s: fail to get the node with the error %v  ", test.name, err)
+		}
+
+		for _, node := range nodeList.Items {
+			if len(node.Labels) != len(test.wantedNodeLabels[node.Name]) {
+				t.Errorf("testcase %s: fail to clean up the labels for node %s  expected %v, got %v", test.name, node.Name, test.wantedNodeLabels[node.Name], node.Labels)
 			}
-			if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to clean up the labels")
+			if len(node.Labels) != 0 && !reflect.DeepEqual(node.Labels, test.wantedNodeLabels[node.Name]) {
+				t.Errorf("testcase %s: fail to clean up the labels for node  %s  expected %v, got %v", test.name, node.Name, test.wantedNodeLabels[node.Name], node.Labels)
 			}
 		}
 
