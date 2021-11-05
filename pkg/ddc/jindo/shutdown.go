@@ -110,12 +110,13 @@ func (e *JindoEngine) cleanAll() (err error) {
 // cleanAll cleans up the all
 func (e *JindoEngine) cleanConfigmap() (err error) {
 	var (
-		valueConfigmapName = e.name + "-" + e.runtimeType + "-values"
-		configmapName      = e.name + "-config"
-		namespace          = e.namespace
+		valueConfigmapName  = e.name + "-" + e.runtimeType + "-values"
+		configmapName       = e.name + "-" + runtimeFSType + "-config"
+		clientConfigmapName = e.name + "-" + runtimeFSType + "-client-config"
+		namespace           = e.namespace
 	)
 
-	cms := []string{valueConfigmapName, configmapName}
+	cms := []string{valueConfigmapName, configmapName, clientConfigmapName}
 
 	for _, cm := range cms {
 		err = kubeclient.DeleteConfigMap(e.Client, cm, namespace)

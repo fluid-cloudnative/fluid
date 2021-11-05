@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// cleanupFuse will cleanup Fuse
+// cleanupFuse will cleanup node label for Fuse
 func (e *JindoEngine) cleanupFuse() (count int, err error) {
 
 	var (
