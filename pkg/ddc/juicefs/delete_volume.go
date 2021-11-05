@@ -16,7 +16,7 @@ limitations under the License.
 
 package juicefs
 
-import volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 
 func (j JuiceFSEngine) DeleteVolume() (err error) {
 	if j.runtime == nil {
@@ -46,7 +46,7 @@ func (j *JuiceFSEngine) deleteFusePersistentVolume() (err error) {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolume(j.Client, runtimeInfo, j.Log)
+	return volumehelper.DeleteFusePersistentVolume(j.Client, runtimeInfo, j.Log)
 }
 
 // deleteFusePersistentVolume
@@ -56,5 +56,5 @@ func (j *JuiceFSEngine) deleteFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolumeClaim(j.Client, runtimeInfo, j.Log)
+	return volumehelper.DeleteFusePersistentVolumeClaim(j.Client, runtimeInfo, j.Log)
 }

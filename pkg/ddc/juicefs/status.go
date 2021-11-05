@@ -21,10 +21,11 @@ import (
 	"reflect"
 	"time"
 
+	"k8s.io/client-go/util/retry"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/client-go/util/retry"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.

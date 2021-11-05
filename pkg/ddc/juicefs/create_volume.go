@@ -18,10 +18,10 @@ package juicefs
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-func (j JuiceFSEngine) CreateVolume() (err error) {
+func (j *JuiceFSEngine) CreateVolume() (err error) {
 	if j.runtime == nil {
 		j.runtime, err = j.getRuntime()
 		if err != nil {
@@ -48,7 +48,7 @@ func (j *JuiceFSEngine) createFusePersistentVolume() (err error) {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeForRuntime(j.Client,
+	return volumehelper.CreatePersistentVolumeForRuntime(j.Client,
 		runtimeInfo,
 		j.getMountPoint(),
 		common.JuiceFSMountType,
@@ -62,5 +62,5 @@ func (j *JuiceFSEngine) createFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeClaimForRuntime(j.Client, runtimeInfo, j.Log)
+	return volumehelper.CreatePersistentVolumeClaimForRuntime(j.Client, runtimeInfo, j.Log)
 }

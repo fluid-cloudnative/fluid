@@ -20,12 +20,13 @@ import (
 	"context"
 	"reflect"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 // SyncReplicas syncs the replicas

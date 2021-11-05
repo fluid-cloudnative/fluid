@@ -18,13 +18,15 @@ package juicefs
 
 import (
 	"encoding/base64"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"testing"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestTransformFuse(t *testing.T) {

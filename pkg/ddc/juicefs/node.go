@@ -18,7 +18,7 @@ package juicefs
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
+	datasetschedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 )
 
 func (j JuiceFSEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
@@ -33,7 +33,7 @@ func (j JuiceFSEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum 
 	}
 
 	j.Log.Info("AssignNodesToCache", "dataset", dataset)
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
+	return datasetschedule.AssignDatasetToNodes(runtimeInfo,
 		dataset,
 		j.Client,
 		desiredNum)

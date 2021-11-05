@@ -27,6 +27,8 @@ worker:
   imagePullPolicy: ""
   nodeSelector: ""
   cacheDir: ""
+  ports: []
+  envs: []
   resources:
     requests:
 #      cpu: "0.5"
@@ -52,6 +54,7 @@ fuse:
   image: juicedata/juicefs-csi-driver
   imageTag: v0.10.5
   imagePullPolicy: IfNotPresent
+  envs: []
   nodeSelector: {}
   dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host

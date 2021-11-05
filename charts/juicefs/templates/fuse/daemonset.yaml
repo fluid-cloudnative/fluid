@@ -51,36 +51,39 @@ spec:
           securityContext:
             privileged: true
           env:
-            - name: NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.nameSecret }}
-                  key: name
-            - name: ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.accesskeySecret }}
-                  key: access-key
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.secretkeySecret }}
-                  key: secret-key
-            - name: BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.bucketSecret }}
-                  key: bucket
-            - name: META_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.metaurlSecret }}
-                  key: metaurl
-            - name: STORAGE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.fuse.prepare.storageSecret }}
-                  key: storage
+          {{- if .Values.fuse.envs }}
+{{ toYaml .Values.fuse.envs | trim | indent 10  }}
+          {{- end }}
+          - name: NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.nameSecret }}
+                key: name
+          - name: ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.accesskeySecret }}
+                key: access-key
+          - name: SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.secretkeySecret }}
+                key: secret-key
+          - name: BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.bucketSecret }}
+                key: bucket
+          - name: META_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.metaurlSecret }}
+                key: metaurl
+          - name: STORAGE
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.storageSecret }}
+                key: storage
           volumeMounts:
           - mountPath: /root/.juicefs
             mountPropagation: Bidirectional
@@ -110,6 +113,9 @@ spec:
           env:
           - name: JFS_FOREGROUND
             value: "1"
+          {{- if .Values.fuse.envs }}
+{{ toYaml .Values.fuse.envs | trim | indent 10  }}
+          {{- end }}
           readinessProbe:
             exec:
               command:
@@ -132,12 +138,12 @@ spec:
               exec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
-            - name: jfs-dir
-              mountPath: {{ .Values.fuse.mountPath }}
-              mountPropagation: Bidirectional
-            - mountPath: /root/.juicefs
-              mountPropagation: Bidirectional
-              name: jfs-root-dir
+          - name: jfs-dir
+            mountPath: {{ .Values.fuse.mountPath }}
+            mountPropagation: Bidirectional
+          - mountPath: /root/.juicefs
+            mountPropagation: Bidirectional
+            name: jfs-root-dir
       restartPolicy: Always
       volumes:
         - name: jfs-dir

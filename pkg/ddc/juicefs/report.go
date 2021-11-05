@@ -17,10 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"regexp"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
 // getPodMetrics get juicefs pod metrics

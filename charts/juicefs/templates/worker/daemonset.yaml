@@ -53,6 +53,14 @@ spec:
             {{- end }}
           {{- end }}
           command: ["sh", "-c", "sleep infinity"]
+          {{- if .Values.worker.ports }}
+          ports:
+{{ toYaml .Values.worker.ports | trim | indent 10  }}
+          {{- end }}
+          {{- if .Values.worker.envs }}
+          env:
+{{ toYaml .Values.worker.envs | trim | indent 10  }}
+          {{- end }}
           {{- if .Values.worker.cacheDir }}
           volumeMounts:
             - name: cache-dir
@@ -63,6 +71,6 @@ spec:
       volumes:
         - name: cache-dir
           hostPath:
-            path: {{ .Values.worker.cacheDir}}
+            path: {{ .Values.worker.cacheDir }}
             type: DirectoryOrCreate
       {{- end }}

@@ -22,10 +22,11 @@ import (
 	"reflect"
 	"time"
 
+	"k8s.io/client-go/util/retry"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/client-go/util/retry"
 )
 
 // MetadataSyncResult describes result for asynchronous metadata sync

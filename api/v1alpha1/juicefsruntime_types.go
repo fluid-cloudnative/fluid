@@ -71,14 +71,14 @@ type JuiceFSCompTemplateSpec struct {
 
 	// Ports used by JuiceFS
 	// +optional
-	Ports map[string]int `json:"ports,omitempty"`
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
 
 	// Resources that will be requested by the JuiceFS component.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Environment variables that will be used by JuiceFS component.
-	Env map[string]string `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Enabled or Disabled for the components.
 	// +optional
@@ -100,7 +100,7 @@ type JuiceFSFuseSpec struct {
 	ImagePullPolicy string `json:"image_pull_policy,omitempty"`
 
 	// Environment variables that will be used by JuiceFS Fuse
-	Env map[string]string `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Resources that will be requested by JuiceFS Fuse.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`

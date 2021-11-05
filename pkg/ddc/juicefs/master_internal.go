@@ -18,13 +18,14 @@ package juicefs
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	yaml "gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
 )
 
 // setup fuse

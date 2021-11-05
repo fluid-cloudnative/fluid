@@ -24,8 +24,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 type JuiceFileUtils struct {

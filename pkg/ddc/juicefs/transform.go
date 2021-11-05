@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -61,6 +62,9 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 	image := runtime.Spec.JuiceFSVersion.Image
 	imageTag := runtime.Spec.JuiceFSVersion.ImageTag
 	imagePullPolicy := runtime.Spec.JuiceFSVersion.ImagePullPolicy
+
+	value.Worker.Envs = runtime.Spec.Worker.Env
+	value.Worker.Ports = runtime.Spec.Worker.Ports
 
 	value.Image, value.ImageTag, value.ImagePullPolicy = j.parseRuntimeImage(image, imageTag, imagePullPolicy)
 

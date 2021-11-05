@@ -19,10 +19,11 @@ package juicefs
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"strings"
 )
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
@@ -94,6 +95,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	value.Fuse.NodeSelector = map[string]string{}
 	value.Fuse.HostMountPath = j.getMountPoint()
 	value.Fuse.Prepare.SubPath = subPath
+	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
 	mountArgs := []string{common.JuiceFSMountPath, source, value.Fuse.MountPath}
 	options := []string{"metrics=0.0.0.0:9567"}

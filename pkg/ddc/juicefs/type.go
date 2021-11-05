@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // JuiceFS The value yaml file
@@ -34,18 +35,21 @@ type JuiceFS struct {
 }
 
 type Worker struct {
-	Image           string            `yaml:"image,omitempty"`
-	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
-	ImageTag        string            `yaml:"imageTag,omitempty"`
-	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
-	Resources       common.Resources  `yaml:"resources,omitempty"`
-	CacheDir        string            `yaml:"cache_dir"`
+	Image           string                 `yaml:"image,omitempty"`
+	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
+	ImageTag        string                 `yaml:"imageTag,omitempty"`
+	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
+	Resources       common.Resources       `yaml:"resources,omitempty"`
+	CacheDir        string                 `yaml:"cache_dir"`
+	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
+	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 }
 
 type Fuse struct {
 	Prepare         Prepare           `yaml:"prepare,omitempty"`
 	Image           string            `yaml:"image,omitempty"`
 	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
+	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
 	ImageTag        string            `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
 	MountPath       string            `yaml:"mountPath,omitempty"`

@@ -20,11 +20,12 @@ import (
 	"context"
 	"reflect"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 // UpdateDatasetStatus updates the status of the dataset

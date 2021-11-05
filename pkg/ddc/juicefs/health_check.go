@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"reflect"
 
-	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
+
+	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (j *JuiceFSEngine) CheckRuntimeHealthy() (err error) {
