@@ -169,3 +169,56 @@ func TestCleanupFuse(t *testing.T) {
 
 	}
 }
+
+func TestCleanAll(t *testing.T) {
+	var nodeInputs = []*v1.Node{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "no-fuse",
+				Labels: map[string]string{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "fuse",
+				Labels: map[string]string{
+					"fluid.io/f-jindo-fluid-hadoop":    "true",
+					"node-select":                      "true",
+					"fluid.io/f-jindo-fluid-hbase":     "true",
+					"fluid.io/s-fluid-hbase":           "true",
+					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "multiple-fuse",
+				Labels: map[string]string{
+					"fluid.io/dataset-num":            "1",
+					"fluid.io/f-jindo-fluid-hadoop":   "true",
+					"fluid.io/f-jindo-fluid-hadoop-1": "true",
+					"node-select":                     "true",
+				},
+			},
+		},
+	}
+
+	testNodes := []runtime.Object{}
+	for _, nodeInput := range nodeInputs {
+		testNodes = append(testNodes, nodeInput.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+
+	engine := &JindoEngine{Log: log.NullLogger{}}
+	engine.Client = client
+	engine.name = "fluid-hadoop"
+	engine.namespace = "default"
+	err := engine.cleanAll()
+	if err != nil {
+		t.Errorf("failed to cleanAll due to %v", err)
+	}
+
+}
