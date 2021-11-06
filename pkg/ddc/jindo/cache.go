@@ -61,7 +61,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 // clean cache
 func (e *JindoEngine) invokeCleanCache() (err error) {
 	// 1. Check if master is ready, if not, just return
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {

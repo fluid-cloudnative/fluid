@@ -54,7 +54,7 @@ func (e *JindoEngine) getRuntime() (*datav1alpha1.JindoRuntime, error) {
 	return &runtime, nil
 }
 
-func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
+func (e *JindoEngine) getMasterName() (dsName string) {
 	return e.name + "-jindofs-master"
 }
 

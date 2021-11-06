@@ -14,7 +14,7 @@ import (
 )
 
 func (e *JindoEngine) CheckMasterReady() (ready bool, err error) {
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 	// 1. Check the status
 	runtime, err := e.getRuntime()
 	if err != nil {
@@ -102,7 +102,7 @@ func (e *JindoEngine) ShouldSetupMaster() (should bool, err error) {
 func (e *JindoEngine) SetupMaster() (err error) {
 
 	// Setup the Jindo cluster
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
