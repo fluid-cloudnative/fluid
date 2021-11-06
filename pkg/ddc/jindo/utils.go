@@ -54,16 +54,6 @@ func (e *JindoEngine) getRuntime() (*datav1alpha1.JindoRuntime, error) {
 	return &runtime, nil
 }
 
-func (e *JindoEngine) getStatefulset(name string, namespace string) (master *appsv1.StatefulSet, err error) {
-	master = &appsv1.StatefulSet{}
-	err = e.Client.Get(context.TODO(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, master)
-
-	return master, err
-}
-
 func (e *JindoEngine) getMasterStatefulsetName() (dsName string) {
 	return e.name + "-jindofs-master"
 }

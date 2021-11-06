@@ -10,6 +10,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (e *JindoEngine) CheckMasterReady() (ready bool, err error) {
@@ -20,7 +21,7 @@ func (e *JindoEngine) CheckMasterReady() (ready bool, err error) {
 		return
 	}
 
-	master, err := e.getStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		return
 	}
@@ -102,7 +103,7 @@ func (e *JindoEngine) SetupMaster() (err error) {
 
 	// Setup the Jindo cluster
 	masterName := e.getMasterStatefulsetName()
-	master, err := e.getStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", e.name+"-master")

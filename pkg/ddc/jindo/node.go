@@ -43,7 +43,7 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		previousCacheNodenames []string
 	)
 
-	workers, err := e.getStatefulset(e.getWorkertName(), e.namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
 	if err != nil {
 		return err
 	}

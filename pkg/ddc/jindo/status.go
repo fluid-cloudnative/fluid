@@ -6,6 +6,7 @@ import (
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -20,13 +21,13 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	)
 
 	// 1. Master should be ready
-	master, err := e.getStatefulset(masterName, namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
 	// 2. Worker should be ready
-	workers, err := e.getStatefulset(workerName, namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 	if err != nil {
 		return ready, err
 	}

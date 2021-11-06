@@ -6,6 +6,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // queryCacheStatus checks the cache status
@@ -61,7 +62,7 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 func (e *JindoEngine) invokeCleanCache() (err error) {
 	// 1. Check if master is ready, if not, just return
 	masterName := e.getMasterStatefulsetName()
-	master, err := e.getStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())
