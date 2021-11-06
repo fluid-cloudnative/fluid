@@ -65,7 +65,11 @@ core_component() {
   mkdir -p "$diagnose_dir/pods-${namespace}"
   pods=$(kubectl get po -n ${namespace} "${constrains}" | awk '{print $1}' | grep -v NAME)
   for po in ${pods}; do
-    kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
+    if [[ "${namespace}"="${fluid_namesapce}" ]]; then
+      kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
+    else
+      kubectl cp "${namespace}/${po}":/opt/alluxio/logs -c "${container}" "$diagnose_dir/pods-${namespace}/${po}-${container}" 2>&1
+    fi
   done
 }
 
