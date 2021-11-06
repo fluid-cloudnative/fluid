@@ -9,8 +9,20 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// GetStatefulset gets the statefulset by name and namespace
+func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
+	master = &appsv1.StatefulSet{}
+	err = c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, master)
+
+	return master, err
+}
 
 // GetPodsForStatefulSet gets pods of the specified statefulset
 func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*v1.Pod, err error) {
