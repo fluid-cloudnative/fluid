@@ -254,7 +254,7 @@ func TestCleanConfigmap(t *testing.T) {
 				namespace:   tt.args.namespace,
 				runtimeType: runtimeType,
 				Client:      client}
-			err := engine.cleanConfigmap()
+			err := engine.cleanConfigMap()
 			if err != nil {
 				t.Errorf("fail to clean configmap due to %v", err)
 			}

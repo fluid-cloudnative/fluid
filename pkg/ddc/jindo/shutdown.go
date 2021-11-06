@@ -99,7 +99,7 @@ func (e *JindoEngine) cleanAll() (err error) {
 	}
 	e.Log.Info("clean up fuse count", "n", count)
 
-	err = e.cleanConfigmap()
+	err = e.cleanConfigMap()
 	if err != nil {
 		e.Log.Error(err, "Err in cleaning configMap")
 		return err
@@ -109,7 +109,7 @@ func (e *JindoEngine) cleanAll() (err error) {
 
 // cleanConfigmap cleans up the configmaps, such as:
 // {dataset name}-jindo-values, {dataset name}-jindofs-client-config, {dataset name}-jindofs-config
-func (e *JindoEngine) cleanConfigmap() (err error) {
+func (e *JindoEngine) cleanConfigMap() (err error) {
 	var (
 		valueConfigmapName  = e.name + "-" + e.runtimeType + "-values"
 		configmapName       = e.name + "-" + runtimeFSType + "-config"
