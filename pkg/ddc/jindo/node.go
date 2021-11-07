@@ -97,11 +97,14 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
 			}
-
-			err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
-			if err != nil {
-				e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
-				return err
+			if !datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already added to cache", "node", nodeName)
 			}
 		}
 	}
@@ -116,12 +119,16 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
 			}
-
-			err = datasetSchedule.UnlabelCacheNode(node, e.runtimeInfo, e.Client)
-			if err != nil {
-				e.Log.Error(err, "Failed to unlabel cache node", "node", nodeName)
-				return err
+			if datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.UnlabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to unlabel cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already removed from cache", "node", nodeName)
 			}
+
 		}
 	}
 
