@@ -8,7 +8,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -99,8 +99,8 @@ func TestSyncReplicas(t *testing.T) {
 				DesiredWorkerNumberScheduled: 3,
 				DesiredFuseNumberScheduled:   3,
 				Conditions: []v1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
-					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
 				FusePhase:   "NotReady",
@@ -122,8 +122,8 @@ func TestSyncReplicas(t *testing.T) {
 				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
-					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
 				FusePhase:   "NotReady",
@@ -145,8 +145,8 @@ func TestSyncReplicas(t *testing.T) {
 				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
-					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
+					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
 				},
 				WorkerPhase: "NotReady",
 				FusePhase:   "NotReady",
