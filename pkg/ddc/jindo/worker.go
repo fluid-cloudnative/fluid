@@ -37,7 +37,8 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 		desireReplicas := runtime.Replicas()
 		if *workers.Spec.Replicas != desireReplicas {
-			workerToUpdate, err := e.buildWorkersAffinity(workers)
+			// workerToUpdate, err := e.buildWorkersAffinity(workers)
+			workerToUpdate, err := e.BuildWorkersAffinity(workers)
 			if err != nil {
 				return err
 			}
