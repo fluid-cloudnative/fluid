@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -29,6 +30,7 @@ func newJindoEngineREP(client client.Client, name string, namespace string) *Jin
 		Client:      client,
 		runtimeInfo: runTimeInfo,
 		Log:         log.NullLogger{},
+		Helper:      ctrl.BuildHelper(runTimeInfo, client),
 	}
 	return engine
 }
