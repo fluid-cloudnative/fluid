@@ -80,6 +80,9 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 
+	currentCacheNodenames = utils.RemoveDuplicateStr(currentCacheNodenames)
+	previousCacheNodenames = utils.RemoveDuplicateStr(previousCacheNodenames)
+
 	addedCacheNodenames := utils.SubtractString(currentCacheNodenames, previousCacheNodenames)
 	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
 
@@ -114,6 +117,11 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				return err
 			}
 
+			err = datasetSchedule.UnlabelCacheNode(node, e.runtimeInfo, e.Client)
+			if err != nil {
+				e.Log.Error(err, "Failed to unlabel cache node", "node", nodeName)
+				return err
+			}
 		}
 	}
 

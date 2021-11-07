@@ -25,7 +25,7 @@ func GetStatefulSet(c client.Client, name string, namespace string) (master *app
 }
 
 // GetPodsForStatefulSet gets pods of the specified statefulset
-func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*v1.Pod, err error) {
+func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []v1.Pod, err error) {
 
 	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
@@ -47,7 +47,7 @@ func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector la
 					return pods, err
 				}
 				if matched {
-					pods = append(pods, &pod)
+					pods = append(pods, pod)
 				}
 				// wantedSet, err := resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
 			}
