@@ -1,3 +1,18 @@
+/*
+Copyright 2021 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package operations
 
 import (
@@ -246,6 +261,164 @@ func TestJuiceFileUtils_DeleteDir(t *testing.T) {
 	err = a.DeleteDir("")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Load juicefs metadata", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExecWithoutTimeout := func() {
+		err := gohook.UnHook(JuiceFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := JuiceFileUtils{log: NullLogger{}}
+	err = a.LoadMetadataWithoutTimeout("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExecWithoutTimeout()
+
+	err = gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.LoadMetadataWithoutTimeout("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExecWithoutTimeout()
+}
+
+func TestJuiceFileUtils_Count(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "6367897   /tmp", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &JuiceFileUtils{log: NullLogger{}}
+	_, err = a.Count("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.Count("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFileUtils_GetFileCount(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "6367897", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &JuiceFileUtils{log: NullLogger{}}
+	_, err = a.GetFileCount("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.GetFileCount("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
+	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "JuiceFS  cluster summary", "", nil
+	}
+	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := JuiceFileUtils{log: NullLogger{}}
+
+	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err == nil {
+			t.Errorf("%d check failure, want err, got nil", index)
+			return
+		}
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
 	}
 	wrappedUnhookExec()
 }

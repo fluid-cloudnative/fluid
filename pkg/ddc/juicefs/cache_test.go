@@ -62,7 +62,7 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := JuiceFSEngine{
+	a := &JuiceFSEngine{
 		name:        "test",
 		namespace:   "default",
 		runtimeType: "JuiceFSRuntime",
