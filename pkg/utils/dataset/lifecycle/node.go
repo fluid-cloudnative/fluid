@@ -111,8 +111,14 @@ func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
 
 }
 
+// CheckIfRuntimeInNode checks if the the runtime on this node
+func CheckIfRuntimeInNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface) (found bool) {
+	key := runtimeInfo.GetRuntimeLabelName()
+	return findLabelNameOnNode(node, key)
+}
+
 // findLabelNameOnNode checks if the label exist
-func FindLabelNameOnNode(node v1.Node, key string) (found bool) {
+func findLabelNameOnNode(node v1.Node, key string) (found bool) {
 	labels := node.Labels
 	if len(labels) == 0 {
 		return

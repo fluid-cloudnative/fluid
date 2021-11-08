@@ -43,7 +43,7 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		previousCacheNodenames []string
 	)
 
-	workers, err := e.getStatefulset(e.getWorkertName(), e.namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -80,6 +80,9 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 
+	currentCacheNodenames = utils.RemoveDuplicateStr(currentCacheNodenames)
+	previousCacheNodenames = utils.RemoveDuplicateStr(previousCacheNodenames)
+
 	addedCacheNodenames := utils.SubtractString(currentCacheNodenames, previousCacheNodenames)
 	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
 
@@ -94,11 +97,14 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
 			}
-
-			err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
-			if err != nil {
-				e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
-				return err
+			if !datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already added to cache", "node", nodeName)
 			}
 		}
 	}
@@ -112,6 +118,15 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 			if utils.IgnoreNotFound(err) != nil {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
+			}
+			if datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.UnlabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to unlabel cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already removed from cache", "node", nodeName)
 			}
 
 		}
