@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// The common part of the engine which can be reused by the engine
+// The common part of the engine which can be reused
 type Helper struct {
 	runtime base.RuntimeInfoInterface
 
