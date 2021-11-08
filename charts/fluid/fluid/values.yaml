@@ -62,7 +62,7 @@ runtime:
   juicefs:
     enabled: false
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v0.7.0-90f28ea
+      image: fluidcloudnative/juicefsruntime-controller:v0.7.0-d4ceed7
     fuse:
       image: juicedata/juicefs-csi-driver:v0.10.5
 

@@ -1,6 +1,9 @@
 package jindo
 
 import (
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -10,10 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
-)
-import (
-	"reflect"
 )
 
 var (
@@ -189,5 +188,76 @@ func TestDestroyWorker(t *testing.T) {
 			}
 		}
 
+	}
+}
+
+func TestCleanConfigmap(t *testing.T) {
+
+	namespace := "default"
+	runtimeType := "jindo"
+
+	configMapInputs := []*v1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "hbase-alluxio-values", Namespace: namespace},
+			Data: map[string]string{
+				"data": "image: fluid\nimageTag: 0.6.0",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "hbase-alluxio-config", Namespace: namespace},
+			Data:       map[string]string{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "spark-alluxio-values", Namespace: namespace},
+			Data: map[string]string{
+				"test-data": "image: fluid\n imageTag: 0.6.0",
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "hadoop-alluxio-config", Namespace: namespace},
+		},
+	}
+
+	testConfigMaps := []runtime.Object{}
+	for _, cm := range configMapInputs {
+		testConfigMaps = append(testConfigMaps, cm.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testConfigMaps...)
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "ConfigMap doesn't exist",
+			args: args{
+				name:      "notExist",
+				namespace: namespace,
+			},
+		},
+		{
+			name: "ConfigMap value exists",
+			args: args{
+				name:      "test1",
+				namespace: namespace,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := &JindoEngine{
+				Log:         log.NullLogger{},
+				name:        tt.args.name,
+				namespace:   tt.args.namespace,
+				runtimeType: runtimeType,
+				Client:      client}
+			err := engine.cleanConfigMap()
+			if err != nil {
+				t.Errorf("fail to clean configmap due to %v", err)
+			}
+		})
 	}
 }

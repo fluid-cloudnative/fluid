@@ -31,4 +31,6 @@ const (
 	POD_ROLE_TYPE = "role"
 
 	WOKRER_POD_ROLE = "jindo-worker"
+
+	runtimeFSType = "jindofs"
 )
