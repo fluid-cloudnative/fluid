@@ -529,7 +529,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					NodeAffinity: &v1.NodeAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 100,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
@@ -601,7 +601,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					NodeAffinity: &v1.NodeAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 100,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
@@ -682,7 +682,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
 							{
-								Weight: 200,
+								Weight: 100,
 								Preference: v1.NodeSelectorTerm{
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
