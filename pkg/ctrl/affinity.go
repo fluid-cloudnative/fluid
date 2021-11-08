@@ -98,7 +98,7 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 			}
 		}
 
-		// 3. Perefer to locate on the node which already has fuse on it
+		// 3. Prefer to locate on the node which already has fuse on it
 		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
 			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
 		}
