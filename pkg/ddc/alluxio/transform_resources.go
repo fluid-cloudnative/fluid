@@ -24,6 +24,19 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+
+	if runtime == nil {
+		return
+	}
+
+	if len(runtime.Spec.Master.Resources.Limits) == 0 && len(runtime.Spec.Master.Resources.Requests) == 0 {
+		return
+	}
+
+	value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+}
+
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
 	if runtime.Spec.Worker.Resources.Limits == nil {
