@@ -161,7 +161,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 			j.Log.Info("Metadata Sync starts", "dataset namespace", j.namespace, "dataset name", j.name)
 
 			dsName := j.getFuseDaemonsetName()
-			pods, err := j.getRunningPodsOfDaemonset(dsName, j.namespace)
+			pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 			if err != nil || len(pods) == 0 {
 				return
 			}

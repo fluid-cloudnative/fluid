@@ -23,7 +23,7 @@ import (
 
 func (j *JuiceFSEngine) totalStorageBytesInternal() (total int64, err error) {
 	dsName := j.getFuseDaemonsetName()
-	pods, err := j.getRunningPodsOfDaemonset(dsName, j.namespace)
+	pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
@@ -38,7 +38,7 @@ func (j *JuiceFSEngine) totalStorageBytesInternal() (total int64, err error) {
 
 func (j *JuiceFSEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	dsName := j.getFuseDaemonsetName()
-	pods, err := j.getRunningPodsOfDaemonset(dsName, j.namespace)
+	pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}

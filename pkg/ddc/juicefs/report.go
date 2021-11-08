@@ -24,8 +24,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
-// getPodMetrics get juicefs pod metrics
-func (j JuiceFSEngine) getPodMetrics(podName string) (metrics string, err error) {
+// GetPodMetrics get juicefs pod metrics
+func (j *JuiceFSEngine) GetPodMetrics(podName string) (metrics string, err error) {
 	fileUtils := operations.NewJuiceFileUtils(podName, common.JuiceFSFuseContainer, j.namespace, j.Log)
 	metrics, err = fileUtils.GetMetric()
 	if err != nil {

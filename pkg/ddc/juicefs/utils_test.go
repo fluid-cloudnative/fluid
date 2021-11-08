@@ -363,3 +363,150 @@ func Test_getMountRoot(t *testing.T) {
 		})
 	}
 }
+
+func TestJuiceFSEngine_parseRuntimeImage(t *testing.T) {
+	type args struct {
+		image           string
+		tag             string
+		imagePullPolicy string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 string
+		want2 string
+	}{
+		{
+			name: "test1",
+			args: args{
+				image:           "juicedata/juicefs-csi-driver",
+				tag:             "v0.10.6",
+				imagePullPolicy: "Never",
+			},
+			want:  "juicedata/juicefs-csi-driver",
+			want1: "v0.10.6",
+			want2: "Never",
+		},
+		{
+			name: "test2",
+			args: args{
+				image:           "",
+				tag:             "",
+				imagePullPolicy: "",
+			},
+			want:  "juicedata/juicefs-csi-driver",
+			want1: "v0.10.5",
+			want2: "IfNotPresent",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			got, got1, got2 := j.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			if got != tt.want {
+				t.Errorf("parseRuntimeImage() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_parseRuntimeImage1(t *testing.T) {
+	type args struct {
+		image           string
+		tag             string
+		imagePullPolicy string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 string
+		want2 string
+	}{
+		{
+			name: "test1",
+			args: args{
+				image:           "juicedata/juicefs-csi-driver",
+				tag:             "v0.10.6",
+				imagePullPolicy: "Never",
+			},
+			want:  "juicedata/juicefs-csi-driver",
+			want1: "v0.10.6",
+			want2: "Never",
+		},
+		{
+			name: "test2",
+			args: args{
+				image:           "",
+				tag:             "",
+				imagePullPolicy: "",
+			},
+			want:  "juicedata/juicefs-csi-driver",
+			want1: "v0.10.5",
+			want2: "IfNotPresent",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			got, got1, got2 := j.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			if got != tt.want {
+				t.Errorf("parseRuntimeImage() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func Test_parseInt64Size(t *testing.T) {
+	type args struct {
+		sizeStr string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				sizeStr: "10",
+			},
+			want:    10,
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				sizeStr: "v",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseInt64Size(tt.args.sizeStr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseInt64Size() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("parseInt64Size() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

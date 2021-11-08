@@ -17,9 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
+	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	. "github.com/agiledragon/gomonkey"
+	. "github.com/smartystreets/goconvey/convey"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -28,67 +30,53 @@ import (
 )
 
 func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
-	ReturnOnePods := func(a JuiceFSEngine, dsName string, namespace string) (pods []corev1.Pod, err error) {
-		return []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "test1"}},
-		}, nil
-	}
-	PodMetrics := func(a JuiceFSEngine, podName string) (metrics string, err error) {
-		return mockJuiceFSMetric(), nil
-	}
-	wrappedUnhookPods := func() {
-		err := gohook.UnHook(JuiceFSEngine.getRunningPodsOfDaemonset)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookMetrics := func() {
-		err := gohook.UnHook(JuiceFSEngine.getPodMetrics)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	Convey("Test CleanupCache ", t, func() {
+		Convey("cleanup success", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
+			runtimeInfo.SetupFuseDeployMode(false, nil)
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch1.Reset()
+			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetPodMetrics",
+				func(_ *JuiceFSEngine, podName string) (string, error) {
+					return mockJuiceFSMetric(), nil
+				})
+			defer patch2.Reset()
 
-	err = gohook.Hook(JuiceFSEngine.getRunningPodsOfDaemonset, ReturnOnePods, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(JuiceFSEngine.getPodMetrics, PodMetrics, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := &JuiceFSEngine{
-		name:        "test",
-		namespace:   "default",
-		runtimeType: "JuiceFSRuntime",
-		Log:         nil,
-		runtimeInfo: runtimeInfo,
-		runtime: &datav1alpha1.JuiceFSRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "fluid",
-			},
-		},
-	}
-	want := cacheStates{
-		cacheCapacity:        "",
-		cached:               "387.17KiB",
-		cachedPercentage:     "151.2%",
-		cacheHitRatio:        "100.0%",
-		cacheThroughputRatio: "100.0%",
-	}
-	got, err := a.queryCacheStatus()
-	if err != nil {
-		t.Error("check failure, want err, got nil")
-	}
-	if want != got {
-		t.Errorf("got=%v, want=%v", got, want)
-	}
-	wrappedUnhookPods()
-	wrappedUnhookMetrics()
+			a := &JuiceFSEngine{
+				name:        "test",
+				namespace:   "default",
+				runtimeType: "JuiceFSRuntime",
+				Log:         nil,
+				runtimeInfo: runtimeInfo,
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "fluid",
+					},
+				},
+			}
+			want := cacheStates{
+				cacheCapacity:        "",
+				cached:               "387.17KiB",
+				cachedPercentage:     "151.2%",
+				cacheHitRatio:        "100.0%",
+				cacheThroughputRatio: "100.0%",
+			}
+			got, err := a.queryCacheStatus()
+			if err != nil {
+				t.Error("check failure, want err, got nil")
+			}
+			if want != got {
+				t.Errorf("got=%v, want=%v", got, want)
+			}
+		})
+	})
 }

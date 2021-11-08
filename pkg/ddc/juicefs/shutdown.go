@@ -95,7 +95,7 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 	}
 
 	workerName := j.getWorkerDaemonsetName()
-	pods, err := j.getRunningPodsOfDaemonset(workerName, j.namespace)
+	pods, err := j.GetRunningPodsOfDaemonset(workerName, j.namespace)
 	if err != nil {
 		return err
 	}

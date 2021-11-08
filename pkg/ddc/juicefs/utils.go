@@ -74,7 +74,7 @@ func (j *JuiceFSEngine) getDaemonset(name string, namespace string) (fuse *appsv
 	return fuse, err
 }
 
-func (j JuiceFSEngine) getRunningPodsOfDaemonset(dsName string, namespace string) (pods []corev1.Pod, err error) {
+func (j *JuiceFSEngine) GetRunningPodsOfDaemonset(dsName string, namespace string) (pods []corev1.Pod, err error) {
 	ds, err := j.getDaemonset(dsName, namespace)
 	if err != nil {
 		return pods, err

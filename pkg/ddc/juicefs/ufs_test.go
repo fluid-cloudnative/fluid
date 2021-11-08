@@ -16,14 +16,16 @@ limitations under the License.
 package juicefs
 
 import (
+	"reflect"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -213,6 +215,178 @@ func TestTotalFileNums(t *testing.T) {
 			}
 			if gotValue != tt.wantValue {
 				t.Errorf("JuiceFSEngine.TotalFileNums() = %v, want %v", gotValue, tt.wantValue)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_FreeStorageBytes(t *testing.T) {
+	type fields struct{}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:    "test",
+			fields:  fields{},
+			want:    0,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			got, err := j.FreeStorageBytes()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FreeStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("FreeStorageBytes() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_PrepareUFS(t *testing.T) {
+	type fields struct{}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name:    "test",
+			fields:  fields{},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			if err := j.PrepareUFS(); (err != nil) != tt.wantErr {
+				t.Errorf("PrepareUFS() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_ShouldCheckUFS(t *testing.T) {
+	type fields struct {
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantShould bool
+		wantErr    bool
+	}{
+		{
+			name:       "test",
+			fields:     fields{},
+			wantShould: false,
+			wantErr:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			gotShould, err := j.ShouldCheckUFS()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ShouldCheckUFS() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotShould != tt.wantShould {
+				t.Errorf("ShouldCheckUFS() gotShould = %v, want %v", gotShould, tt.wantShould)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_ShouldUpdateUFS(t *testing.T) {
+	type fields struct{}
+	tests := []struct {
+		name            string
+		fields          fields
+		wantUfsToUpdate *utils.UFSToUpdate
+	}{
+		{
+			name:            "test",
+			fields:          fields{},
+			wantUfsToUpdate: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			if gotUfsToUpdate := j.ShouldUpdateUFS(); !reflect.DeepEqual(gotUfsToUpdate, tt.wantUfsToUpdate) {
+				t.Errorf("ShouldUpdateUFS() = %v, want %v", gotUfsToUpdate, tt.wantUfsToUpdate)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_UpdateOnUFSChange(t *testing.T) {
+	type fields struct{}
+	type args struct {
+		ufsToUpdate *utils.UFSToUpdate
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantReady bool
+		wantErr   bool
+	}{
+		{
+			name:      "test",
+			fields:    fields{},
+			args:      args{},
+			wantReady: true,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			gotReady, err := j.UpdateOnUFSChange(tt.args.ufsToUpdate)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateOnUFSChange() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotReady != tt.wantReady {
+				t.Errorf("UpdateOnUFSChange() gotReady = %v, want %v", gotReady, tt.wantReady)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_UsedStorageBytes(t *testing.T) {
+	type fields struct{}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:    "test",
+			fields:  fields{},
+			want:    0,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{}
+			got, err := j.UsedStorageBytes()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UsedStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("UsedStorageBytes() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

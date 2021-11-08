@@ -26,13 +26,13 @@ import (
 // queryCacheStatus checks the cache status
 func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	dsName := j.getFuseDaemonsetName()
-	pods, err := j.getRunningPodsOfDaemonset(dsName, j.namespace)
+	pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
 	podMetrics := []fuseMetrics{}
 	for _, pod := range pods {
-		podMetricStr, err := j.getPodMetrics(pod.Name)
+		podMetricStr, err := j.GetPodMetrics(pod.Name)
 		if err != nil {
 			return states, err
 		}

@@ -17,17 +17,39 @@ limitations under the License.
 package juicefs
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"errors"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	"reflect"
+	"testing"
+
+	. "github.com/agiledragon/gomonkey"
+	"github.com/brahma-adshonor/gohook"
+	. "github.com/smartystreets/goconvey/convey"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
+
+func mockRunningPodsOfDaemonSet() (pods []corev1.Pod) {
+	return []corev1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec:   v1.PodSpec{},
+		Status: v1.PodStatus{},
+	}}
+}
 
 func TestDestroyWorker(t *testing.T) {
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
@@ -194,4 +216,171 @@ func TestDestroyWorker(t *testing.T) {
 		}
 
 	}
+}
+
+func TestJuiceFSEngine_destroyMaster(t *testing.T) {
+	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
+		return true, nil
+	}
+	mockExecCheckReleaseCommonNotFound := func(name string, namespace string) (exist bool, err error) {
+		return false, nil
+	}
+	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
+		return false, errors.New("fail to check release")
+	}
+	mockExecDeleteReleaseCommon := func(name string, namespace string) error {
+		return nil
+	}
+	mockExecDeleteReleaseErr := func(name string, namespace string) error {
+		return errors.New("fail to delete chart")
+	}
+
+	wrappedUnhookCheckRelease := func() {
+		err := gohook.UnHook(helm.CheckRelease)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+	wrappedUnhookDeleteRelease := func() {
+		err := gohook.UnHook(helm.DeleteRelease)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	engine := JuiceFSEngine{
+		name:      "test",
+		namespace: "fluid",
+		Log:       log.NullLogger{},
+		runtime: &datav1alpha1.JuiceFSRuntime{
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+			},
+		},
+	}
+
+	// check release found & delete common
+	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.destroyMaster()
+	if err != nil {
+		t.Errorf("fail to exec check helm release: %v", err)
+	}
+	wrappedUnhookCheckRelease()
+	wrappedUnhookDeleteRelease()
+
+	// check release not found
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.destroyMaster()
+	if err != nil {
+		t.Errorf("fail to exec check helm release: %v", err)
+	}
+
+	// check release error
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.destroyMaster()
+	if err == nil {
+		t.Errorf("fail to exec check helm release: %v", err)
+	}
+
+	// check release found & delete common error
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.destroyMaster()
+	if err == nil {
+		t.Errorf("fail to exec check helm release: %v", err)
+	}
+	wrappedUnhookDeleteRelease()
+}
+
+func TestJuiceFSEngine_cleanupCache(t *testing.T) {
+	testRuntime := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.JuiceFSRuntimeSpec{
+			Replicas: 1,
+		},
+		Status: datav1alpha1.JuiceFSRuntimeStatus{
+			CacheStates: map[common.CacheStateName]string{
+				common.Cached: "true",
+			},
+		},
+	}
+
+	s := apimachineryRuntime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+	client := fake.NewFakeClientWithScheme(testScheme, testRuntime)
+
+	Convey("Test CleanupCache ", t, func() {
+		Convey("cleanup success", func() {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch1.Reset()
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
+				func(_ operations.JuiceFileUtils, cacheDir string) error {
+					return nil
+				})
+			defer patch2.Reset()
+
+			e := &JuiceFSEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				runtime:   testRuntime,
+				Log:       log.NullLogger{},
+			}
+
+			got := e.cleanupCache()
+			So(got, ShouldEqual, nil)
+		})
+		Convey("test", func() {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch1.Reset()
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
+				func(_ operations.JuiceFileUtils, cacheDir string) error {
+					return errors.New("delete dir error")
+				})
+			defer patch2.Reset()
+
+			e := &JuiceFSEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				runtime:   testRuntime,
+				Log:       log.NullLogger{},
+			}
+
+			got := e.cleanupCache()
+			So(got, ShouldNotBeNil)
+		})
+	})
 }

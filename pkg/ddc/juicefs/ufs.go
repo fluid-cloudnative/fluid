@@ -21,11 +21,11 @@ import (
 )
 
 func (j JuiceFSEngine) UsedStorageBytes() (int64, error) {
-	panic("implement me")
+	return 0, nil
 }
 
 func (j JuiceFSEngine) FreeStorageBytes() (int64, error) {
-	panic("implement me")
+	return 0, nil
 }
 
 func (j JuiceFSEngine) TotalStorageBytes() (int64, error) {
@@ -50,5 +50,5 @@ func (j JuiceFSEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 }
 
 func (j JuiceFSEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
-	panic("implement me")
+	return true, nil
 }

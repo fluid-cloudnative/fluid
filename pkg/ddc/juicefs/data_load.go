@@ -22,9 +22,11 @@ import (
 )
 
 func (j JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error {
-	panic("implement me")
+	// todo
+	return nil
 }
 
 func (j JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	panic("implement me")
+	// todo
+	return true, nil
 }

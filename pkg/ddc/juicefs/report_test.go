@@ -161,7 +161,7 @@ func TestJuiceFSEngine_getPodMetrics(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	j := JuiceFSEngine{}
-	gotMetrics, err := j.getPodMetrics("test")
+	gotMetrics, err := j.GetPodMetrics("test")
 	if err != nil {
 		t.Errorf("getPodMetrics() error = %v", err)
 		return
