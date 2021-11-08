@@ -7,7 +7,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -534,7 +534,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test1",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
@@ -606,7 +606,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test2",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
@@ -687,7 +687,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test3",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},

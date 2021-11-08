@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -24,7 +25,7 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		needRuntimeUpdate bool   = false
 	)
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := e.getStatefulset(workerName, namespace)
+		workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 		if err != nil {
 			return err
 		}
@@ -36,7 +37,8 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 		desireReplicas := runtime.Replicas()
 		if *workers.Spec.Replicas != desireReplicas {
-			workerToUpdate, err := e.buildWorkersAffinity(workers)
+			// workerToUpdate, err := e.buildWorkersAffinity(workers)
+			workerToUpdate, err := e.BuildWorkersAffinity(workers)
 			if err != nil {
 				return err
 			}
@@ -70,7 +72,7 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 			return err
 		}
 
-		workers, err := e.getStatefulset(workerName, namespace)
+		workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,7 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		return ready, err
 	}
 
-	workers, err := e.getStatefulset(workerName, namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -280,7 +282,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 			}
 		}
 
-		// 3. Perefer to locate on the node which already has fuse on it
+		// 3. Prefer to locate on the node which already has fuse on it
 		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
 			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
 		}
