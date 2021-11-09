@@ -58,6 +58,10 @@ spec:
       containers:
         - name: jindofs-fuse
           image: {{ .Values.fuseImage }}:{{ .Values.fuseImageTag }}
+          lifecycle:
+            preStart:
+              exec:
+                command: ["umount -v -l /jfs"]
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.fuse.resources }}
           resources:
