@@ -2,6 +2,9 @@ package alluxio
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/brahma-adshonor/gohook"
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -11,11 +14,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {

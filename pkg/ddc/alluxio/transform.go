@@ -305,6 +305,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 		}
 	}
 
+	e.transformResourcesForMaster(runtime, value)
+
 	return
 }
 
