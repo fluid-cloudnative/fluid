@@ -58,6 +58,10 @@ spec:
       containers:
         - name: jindofs-fuse
           image: {{ .Values.fuseImage }}:{{ .Values.fuseImageTag }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/prestop.sh"]
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.fuse.resources }}
           resources:
@@ -147,6 +151,7 @@ spec:
       dnsPolicy: None
       enableServiceLinks: true
       {{- end }}
+      terminationGracePeriodSeconds: 60
       volumes:
         - name: jindofs-fuse-device
           hostPath:
