@@ -6,3 +6,4 @@ Support fuse critical pod
 0.8.0
 
 Change worker from Daemonset to Statefulset
+Repair fuse MountPoint leak issue
