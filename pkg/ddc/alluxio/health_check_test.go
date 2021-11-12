@@ -1,5 +1,3 @@
-package alluxio
-
 /*
 
 Copyright <year> The <project-name> Author.
@@ -17,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 */
+
+package alluxio
 
 import (
 	"context"
