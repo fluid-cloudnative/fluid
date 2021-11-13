@@ -197,6 +197,6 @@ func (runtime *JindoRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
 }
 
-func (runtime *JindoRuntime) GetStatus() RuntimeStatus {
-	return runtime.Status
+func (runtime *JindoRuntime) GetStatus() *RuntimeStatus {
+	return &runtime.Status
 }

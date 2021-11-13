@@ -30,8 +30,8 @@ func newJindoEngineREP(client client.Client, name string, namespace string) *Jin
 		Client:      client,
 		runtimeInfo: runTimeInfo,
 		Log:         log.NullLogger{},
-		Helper:      ctrl.BuildHelper(runTimeInfo, client),
 	}
+	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
 }
 

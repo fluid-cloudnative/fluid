@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -267,7 +268,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to %v", tt.name, err)
 			}
-			h := BuildHelper(runtimeInfo, mockClient)
+			h := BuildHelper(runtimeInfo, mockClient, log.NullLogger{})
 
 			want := tt.fields.want
 			worker, err := h.BuildWorkersAffinity(tt.fields.worker)

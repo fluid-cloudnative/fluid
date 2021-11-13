@@ -27,11 +27,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func (e *Helper) checkIfWorkerAffinitySet(workers *appsv1.StatefulSet) (set bool) {
+
+	if workers.Spec.Template.Spec.Affinity == nil {
+		return
+	}
+
+	if workers.Spec.Template.Spec.Affinity.NodeAffinity == nil {
+		return
+	}
+
+	if len(workers.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
+		return
+	}
+
+	for _, preferred := range workers.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+		for _, term := range preferred.Preference.MatchExpressions {
+			if term.Key == e.runtimeInfo.GetFuseLabelName() {
+				set = true
+				return
+			}
+		}
+	}
+
+	return
+}
+
 // BuildWorkersAffinity builds workers affinity if it doesn't have
 func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpdate *appsv1.StatefulSet, err error) {
 	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
 	// We need to enhance it in future
 	workersToUpdate = workers.DeepCopy()
+	if e.checkIfWorkerAffinitySet(workersToUpdate) {
+		return
+	}
 	var (
 		name      = e.runtimeInfo.GetName()
 		namespace = e.runtimeInfo.GetNamespace()
