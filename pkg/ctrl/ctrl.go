@@ -51,7 +51,7 @@ func BuildHelper(runtimeInfo base.RuntimeInfoInterface, client client.Client, lo
 // SetupWorkers checks the desired and current replicas of workers and makes an update
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
-func (e *Helper) SetupWorkers(runtime datav1alpha1.RuntimeInterface,
+func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 
