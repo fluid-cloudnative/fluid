@@ -277,7 +277,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
-				t.Errorf("Test case %s JindoEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
+				t.Errorf("Test case %s uildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
 			}
 		})
 	}
