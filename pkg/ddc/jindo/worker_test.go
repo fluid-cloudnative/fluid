@@ -14,6 +14,8 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 )
 
 func TestSetupWorkers(t *testing.T) {
@@ -169,6 +171,8 @@ func TestSetupWorkers(t *testing.T) {
 				namespace:   tt.fields.namespace,
 				Log:         ctrl.Log.WithName(tt.fields.name),
 			}
+
+			e.Helper = ctrlhelper.BuildHelper(tt.fields.runtimeInfo, mockClient, e.Log)
 			err := e.SetupWorkers()
 			if err != nil {
 				t.Errorf("JindoEngine.SetupWorkers() error = %v", err)
