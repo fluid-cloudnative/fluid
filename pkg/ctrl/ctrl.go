@@ -90,7 +90,7 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 		}
 
 		statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-		statusToUpdate.CurrentWorkerNumberScheduled = *workers.Spec.Replicas
+		statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
 
 		if len(statusToUpdate.Conditions) == 0 {
 			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}

@@ -22,7 +22,7 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 		cond datav1alpha1.RuntimeCondition
 	)
 
-	if runtime.Replicas() != runtime.Status.CurrentWorkerNumberScheduled {
+	if runtime.Replicas() != runtime.Status.DesiredWorkerNumberScheduled {
 		// 1. Update scale condtion
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			runtime, err := e.getRuntime()
@@ -37,7 +37,7 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 			}
 
-			if runtime.Replicas() < runtime.Status.CurrentWorkerNumberScheduled {
+			if runtime.Replicas() < runtime.Status.DesiredFuseNumberScheduled {
 				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
 					"The workers scaled in.", corev1.ConditionTrue)
 			} else {
