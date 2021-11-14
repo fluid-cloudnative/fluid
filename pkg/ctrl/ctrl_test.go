@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestcheckWorkerAffinity(t *testing.T) {
+func TestCheckWorkerAffinity(t *testing.T) {
 
 	s := runtime.NewScheme()
 	name := "check-worker-affinity"
