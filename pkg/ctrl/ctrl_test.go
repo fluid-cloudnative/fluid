@@ -377,7 +377,10 @@ func TestSetupWorkers(t *testing.T) {
 				Name:      tt.fields.worker.Name,
 			}
 
-			mockClient.Get(context.TODO(), key, worker)
+			err = mockClient.Get(context.TODO(), key, worker)
+			if err != nil {
+				t.Errorf("test case %s mockClient.Get() error = %v", t.Name(), err)
+			}
 
 			if tt.fields.replicas != *worker.Spec.Replicas {
 				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
