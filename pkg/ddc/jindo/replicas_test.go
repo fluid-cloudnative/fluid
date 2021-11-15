@@ -30,8 +30,8 @@ func newJindoEngineREP(client client.Client, name string, namespace string) *Jin
 		Client:      client,
 		runtimeInfo: runTimeInfo,
 		Log:         log.NullLogger{},
-		Helper:      ctrl.BuildHelper(runTimeInfo, client),
 	}
+	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
 }
 
@@ -98,7 +98,7 @@ func TestSyncReplicas(t *testing.T) {
 				CurrentMasterNumberScheduled: 2, // 0
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 3,
-				DesiredWorkerNumberScheduled: 3,
+				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   3,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
@@ -121,7 +121,7 @@ func TestSyncReplicas(t *testing.T) {
 				CurrentMasterNumberScheduled: 3,
 				CurrentFuseNumberScheduled:   3,
 				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
+				DesiredWorkerNumberScheduled: 3,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
