@@ -59,7 +59,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Build the helper
-	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client)
+	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 

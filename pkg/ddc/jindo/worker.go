@@ -20,94 +20,29 @@ import (
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *JindoEngine) SetupWorkers() (err error) {
 	var (
-		workerName        string = e.getWorkertName()
-		namespace         string = e.namespace
-		needRuntimeUpdate bool   = false
+		workerName string = e.getWorkertName()
+		namespace  string = e.namespace
 	)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 		if err != nil {
 			return err
 		}
-
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
-
-		desireReplicas := runtime.Replicas()
-		if *workers.Spec.Replicas != desireReplicas {
-			// workerToUpdate, err := e.buildWorkersAffinity(workers)
-			workerToUpdate, err := e.BuildWorkersAffinity(workers)
-			if err != nil {
-				return err
-			}
-			workerToUpdate.Spec.Replicas = &desireReplicas
-			err = e.Client.Update(context.TODO(), workerToUpdate)
-			if err != nil {
-				return err
-			}
-		} else {
-			e.Log.V(1).Info("Nothing to do for syncing")
+		runtimeToUpdate := runtime.DeepCopy()
+		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			e.Log.Error(err, "Failed to call e.Helper.SetupWorkers")
 		}
-
-		needRuntimeUpdate = true
 		return nil
 	})
-
 	if err != nil {
 		e.Log.Error(err, "Failed to setup worker")
-		return err
 	}
-
-	if !needRuntimeUpdate {
-		return nil
-	}
-
-	// 2. Update the runtime status
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			e.Log.Error(err, "setupWorker")
-			return err
-		}
-
-		workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-		if err != nil {
-			return err
-		}
-
-		runtimeToUpdate := runtime.DeepCopy()
-
-		if workers.Status.ReadyReplicas > 0 {
-			if runtime.Replicas() == workers.Status.ReadyReplicas {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseReady
-			} else if workers.Status.ReadyReplicas >= 1 {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-			}
-		} else {
-			runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		}
-
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = runtime.Replicas()
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = *workers.Spec.Replicas
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-			"The workers are initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
-	})
-
 	return
 }
 
