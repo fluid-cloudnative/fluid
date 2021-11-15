@@ -11,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 // GetStatefulset gets the statefulset by name and namespace
@@ -86,4 +88,20 @@ func getParentName(pod *v1.Pod) string {
 // isMemberOf tests if pod is a member of statefulset sts.
 func isMemberOf(sts *appsv1.StatefulSet, pod *v1.Pod) bool {
 	return getParentName(pod) == sts.Name
+}
+
+// GetPhaseFromStatefulset gets the phase from statefulset
+func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase datav1alpha1.RuntimePhase) {
+	if sts.Status.ReadyReplicas > 0 {
+		if replicas == sts.Status.ReadyReplicas {
+			phase = datav1alpha1.RuntimePhaseReady
+		} else if sts.Status.ReadyReplicas >= 1 {
+			phase = datav1alpha1.RuntimePhasePartialReady
+		}
+	} else {
+		phase = datav1alpha1.RuntimePhaseNotReady
+	}
+
+	return
+
 }

@@ -23,6 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestGetStatefulSet(t *testing.T) {
@@ -92,4 +94,79 @@ func TestGetStatefulSet(t *testing.T) {
 
 		})
 	}
+}
+
+func TestGetPhaseFromStatefulset(t *testing.T) {
+	namespace := "default"
+	tests := []struct {
+		name     string
+		args     appsv1.StatefulSet
+		replicas int32
+		want     datav1alpha1.RuntimePhase
+	}{
+		{
+			name: "notReady",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "notReady",
+					Namespace: namespace},
+				Spec: appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 0,
+				},
+			},
+			replicas: 1,
+			want:     datav1alpha1.RuntimePhaseNotReady,
+		}, {
+			name: "partialReady",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "partialReady",
+					Namespace: namespace},
+				Spec: appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 1,
+				},
+			},
+			replicas: 3,
+			want:     datav1alpha1.RuntimePhasePartialReady,
+		}, {
+			name: "ready-1",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "ready",
+					Namespace: namespace},
+				Spec: appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 1,
+				},
+			},
+			replicas: 1,
+			want:     datav1alpha1.RuntimePhaseReady,
+		}, {
+			name: "ready-1",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "ready",
+					Namespace: namespace},
+				Spec: appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 2,
+				},
+			},
+			replicas: 2,
+			want:     datav1alpha1.RuntimePhaseReady,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			result := GetPhaseFromStatefulset(tt.replicas, tt.args)
+
+			if result != tt.want {
+				t.Errorf("testcase %v GetPhaseFromStatefulset= %v, the expect is %v", tt.name, result, tt.want)
+			}
+
+			// t.Errorf("testcase %v IsPersistentVolumeClaimExist() = %v, want %v", tt.name, got, tt.want)
+
+		})
+	}
+
 }
