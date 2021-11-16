@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/go-logr/logr"
@@ -133,39 +132,37 @@ func (e *Helper) CheckWorkersReady(runtime base.RuntimeInterface,
 
 	// update the status as the workers are ready
 	if needRuntimeUpdate {
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		statusToUpdate := runtime.GetStatus()
+		statusToUpdate.WorkerPhase = phase
 
-			statusToUpdate := runtime.GetStatus()
-			statusToUpdate.WorkerPhase = phase
+		if len(statusToUpdate.Conditions) == 0 {
+			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+		}
 
-			if len(statusToUpdate.Conditions) == 0 {
-				statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
+		switch phase {
+		case datav1alpha1.RuntimePhaseReady:
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+				"The workers are ready.", corev1.ConditionTrue)
+		case datav1alpha1.RuntimePhasePartialReady:
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+				"The workers are partially ready.", corev1.ConditionTrue)
+		case datav1alpha1.RuntimePhaseNotReady:
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+				"The workers are not ready.", corev1.ConditionFalse)
+		}
 
-			switch phase {
-			case datav1alpha1.RuntimePhaseReady:
-				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-					"The workers are ready.", corev1.ConditionTrue)
-			case datav1alpha1.RuntimePhasePartialReady:
-				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-					"The workers are partially ready.", corev1.ConditionTrue)
-			case datav1alpha1.RuntimePhaseNotReady:
-				cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-					"The workers are not ready.", corev1.ConditionFalse)
-			}
+		if cond.Type != "" {
+			statusToUpdate.Conditions =
+				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
+					cond)
+		}
 
-			if cond.Type != "" {
-				statusToUpdate.Conditions =
-					utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-						cond)
-			}
+		if !reflect.DeepEqual(currentStatus, statusToUpdate) {
+			err = e.client.Status().Update(context.TODO(), runtime)
+		}
 
-			if !reflect.DeepEqual(currentStatus, statusToUpdate) {
-				return e.client.Status().Update(context.TODO(), runtime)
-			}
-
-			return nil
-		})
+	} else {
+		e.log.V(1).Info("No need to update runtime status for checking healthy")
 	}
 
 	return
