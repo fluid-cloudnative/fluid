@@ -63,11 +63,7 @@ func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err err
 		if err != nil {
 			return err
 		}
-		_, err = e.CheckWorkersReady()
-		if err != nil {
-			e.Log.Error(err, "Check if the workers are ready")
-			return err
-		}
+
 	} else {
 		e.Log.V(1).Info("Nothing to do")
 		return
