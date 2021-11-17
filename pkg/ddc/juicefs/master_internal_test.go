@@ -23,7 +23,6 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,18 +74,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
-	juicefsSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Data: map[string][]byte{
-			"metaurl": []byte("test"),
-			"name":    []byte("name"),
-		},
-	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
 
 	juicefsruntime := &datav1alpha1.JuiceFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
@@ -103,21 +91,10 @@ func TestSetupMasterInternal(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{
-				MountPoint: "jfs://mnt",
+				MountPoint: "juicefs://mnt",
 				Name:       "test",
-				EncryptOptions: []datav1alpha1.EncryptOption{{
-					Name: "metaurl",
-					ValueFrom: datav1alpha1.EncryptOptionSource{
-						SecretKeyRef: datav1alpha1.SecretKeySelector{
-							Name: "test",
-							Key:  "metaurl",
-						}}}, {
-					Name: "name",
-					ValueFrom: datav1alpha1.EncryptOptionSource{
-						SecretKeyRef: datav1alpha1.SecretKeySelector{
-							Name: "test",
-							Key:  "name",
-						}}},
+				Options: map[string]string{
+					"metaurl": "test",
 				},
 			}}},
 		},
@@ -194,19 +171,7 @@ func TestSetupMasterInternal(t *testing.T) {
 }
 
 func TestGenerateJuiceFSValueFile(t *testing.T) {
-	juicefsSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Data: map[string][]byte{
-			"metaurl": []byte("test"),
-			"name":    []byte("test"),
-		},
-	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
-
 	juicefsruntime := &datav1alpha1.JuiceFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -215,34 +180,19 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 	}
 	testObjs = append(testObjs, (*juicefsruntime).DeepCopy())
 
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{
-					{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-						EncryptOptions: []datav1alpha1.EncryptOption{{
-							Name: "metaurl",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test",
-									Key:  "metaurl"},
-							}}, {
-							Name: "name",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test",
-									Key:  "name"},
-							}}}},
-				},
-			},
+	datasetInputs := []datav1alpha1.Dataset{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
 		},
-	}
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{{
+				MountPoint: "juicefs:///mnt/test",
+				Name:       "test",
+				Options:    map[string]string{"metaurl": "test"},
+			}},
+		},
+	}}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}

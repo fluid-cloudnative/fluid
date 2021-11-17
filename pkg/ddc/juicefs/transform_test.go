@@ -19,8 +19,6 @@ package juicefs
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -31,18 +29,7 @@ import (
 )
 
 func TestJuiceFSEngine_transform(t *testing.T) {
-	juicefsSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Data: map[string][]byte{
-			"metaurl": []byte("test"),
-			"name":    []byte("test"),
-		},
-	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
@@ -72,21 +59,9 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
+					MountPoint: "juicefs:///mnt/test",
 					Name:       "test",
-					EncryptOptions: []datav1alpha1.EncryptOption{{
-						Name: "metaurl",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "test",
-								Key:  "metaurl",
-							}}}, {
-						Name: "name",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "test",
-								Key:  "name",
-							}}}},
+					Options:    map[string]string{"metaurl": "test"},
 				}},
 			},
 		}, &JuiceFS{}},

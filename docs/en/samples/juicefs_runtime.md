@@ -40,12 +40,8 @@ Before using JuiceFS, you need to provide parameters for metadata services (such
 
 ```shell
 kubectl create secret generic jfs-secret \
-    --from-literal=name=pics \
-    --from-literal=metaurl=redis://192.168.169.168:6379/1 \
-    --from-literal=storage=minio  \
-    --from-literal=bucket=http://192.168.169.169:9000/pics \
-    --from-literal=access-key=minioadmin \
-    --from-literal=secret-key=minioadmin
+    --from-literal=access-key=<accesskey> \
+    --from-literal=secret-key=<secretkey> 
 ```
 
 **Check Dataset to be created**
@@ -58,28 +54,13 @@ metadata:
   name: jfsdemo
 spec:
   mounts:
-    - name: demo
+    - name: minio
+      mountPoint: "juicefs:///demo"
+      options:
+        metaurl: "<metaurl>"
+        bucket: "<bucket>"
+        storage: "minio"
       encryptOptions:
-        - name: name
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: name
-        - name: metaurl
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: metaurl
-        - name: storage
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: storage
-        - name: bucket
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: bucket
         - name: access-key
           valueFrom:
             secretKeyRef:
@@ -96,7 +77,7 @@ EOF
 > Note: demo refers to the Subpath of JuiceFS, which is the directory of the JuiceFS file system where users store data in.   
 > Attention：Only name and metaurl are required. If the juicefs has been formatted, you only need to fill in the name and metaurl.
 
-Since JuiceFS uses local cache, the corresponding Dataset supports only one mount, and JuiceFS does not have UFS, name/path represents the subdirectory that needs to be mounted, and it will be mounted as the root directory into the container.
+Since JuiceFS uses local cache, the corresponding Dataset supports only one mount, and JuiceFS does not have UFS, you can specify subdirectory in mountpoint  ("juicefs:///" represents root directory), and it will be mounted as the root directory into the container.
 
 **Create Dataset**
 ```shell

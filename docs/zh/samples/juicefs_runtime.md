@@ -38,12 +38,8 @@ $ cd <any-path>/juicefs
 
 ```shell
 kubectl create secret generic jfs-secret \
-    --from-literal=name=pics \
-    --from-literal=metaurl=redis://192.168.169.168:6379/1 \
-    --from-literal=storage=minio  \
-    --from-literal=bucket=http://192.168.169.169:9000/pics \
-    --from-literal=access-key=minioadmin \
-    --from-literal=secret-key=minioadmin
+    --from-literal=access-key=<accesskey> \
+    --from-literal=secret-key=<secretkey>
 ```
 
 **查看待创建的 Dataset 资源对象**
@@ -56,28 +52,13 @@ metadata:
   name: jfsdemo
 spec:
   mounts:
-    - name: demo
+    - name: minio
+      mountPoint: "juicefs:///demo"
+      options:
+        metaurl: "<metaurl>"
+        bucket: "<bucket>"
+        storage: "minio"
       encryptOptions:
-        - name: name
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: name
-        - name: metaurl
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: metaurl
-        - name: storage
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: storage
-        - name: bucket
-          valueFrom:
-            secretKeyRef:
-              name: jfs-secret
-              key: bucket
         - name: access-key
           valueFrom:
             secretKeyRef:
@@ -94,7 +75,7 @@ EOF
 > 说明：demo 指的是 JuiceFS 的 Subpath,是用户在 JuiceFS 文件系统中存储数据的目录
 > 注意：只有 name 和 metaurl 为必填项，若 juicefs 已经 format 过，只需要填 name 和 metaurl 即可。
 
-由于 JuiceFS 采用的是本地缓存，对应的 Dataset 只支持一个 mount，且 JuiceFS 没有 UFS，name/path 代表需要挂载的子目录，会作为根目录挂载到容器内。
+由于 JuiceFS 采用的是本地缓存，对应的 Dataset 只支持一个 mount，且 JuiceFS 没有 UFS，mountpoint 中可以指定需要挂载的子目录 ("juicefs:///" 为根路径)，会作为根目录挂载到容器内。
 
 **创建 Dataset 资源对象**
 ```shell

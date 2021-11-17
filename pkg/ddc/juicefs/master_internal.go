@@ -18,6 +18,8 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -59,6 +61,13 @@ func (j *JuiceFSEngine) setupMasterInternal() (err error) {
 
 // generate juicefs struct
 func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRuntime) (valueFileName string, err error) {
+	//0. Check if the configmap exists
+	err = kubeclient.DeleteConfigMap(j.Client, j.getConfigmapName(), j.namespace)
+	if err != nil {
+		j.Log.Error(err, "Failed to clean value files")
+		return
+	}
+
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
 	// configmapName := e.name + "-" + e.runtimeType + "-values"
 	//1. Transform the runtime to value
@@ -89,5 +98,15 @@ func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRu
 		return
 	}
 
+	//3. Save the configfile into configmap
+	err = kubectl.CreateConfigMapFromFile(j.getConfigmapName(), "data", valueFileName, j.namespace)
+	if err != nil {
+		return
+	}
+
 	return valueFileName, err
+}
+
+func (j *JuiceFSEngine) getConfigmapName() string {
+	return j.name + "-" + j.runtimeType + "-values"
 }

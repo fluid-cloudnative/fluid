@@ -75,8 +75,10 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		if runtime.Spec.TieredStore.Levels[0].MediumType != common.Memory {
-			value.Worker.CacheDir = "memory"
+			value.Worker.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
 		}
+	} else {
+		value.Worker.CacheDir = DefaultCacheDir
 	}
 
 	j.transformResourcesForWorker(runtime, value)

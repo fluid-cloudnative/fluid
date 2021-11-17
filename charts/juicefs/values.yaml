@@ -42,12 +42,12 @@ worker:
 
 fuse:
   prepare:
-    nameSecret: jfs-secret
+    name: jfs-secret
     accesskeySecret: jfs-secret
     secretkeySecret: jfs-secret
-    bucketSecret: jfs-secret
-    metaurlSecret: jfs-secret
-    storageSecret: jfs-secret
+    bucket: jfs-secret
+    metaurl: jfs-secret
+    storage: jfs-secret
     subPath: /mnt/jfs
   criticalPod: false
   enabled: true
@@ -59,6 +59,7 @@ fuse:
   dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host
   mountPath: /mnt/jfs
+  cacheDir: ""
   metaUrl : ""
   hostMountPath: /mnt/jfs
   command: "/usr/local/bin/juicefs mount /mnt/jfs"

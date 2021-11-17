@@ -119,7 +119,7 @@ func (j *JuiceFSEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) error
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
-			if !runtimeToUpdate.Spec.Fuse.Global {
+			if global, _ := j.runtimeInfo.GetFuseDeployMode(); global {
 				runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
 				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
 				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,

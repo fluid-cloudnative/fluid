@@ -510,3 +510,44 @@ func Test_parseInt64Size(t *testing.T) {
 		})
 	}
 }
+
+func TestParseSubPathFromMountPoint(t *testing.T) {
+	type args struct {
+		mountPoint string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test-correct",
+			args: args{
+				mountPoint: "juicefs:///abc",
+			},
+			want:    "/abc",
+			wantErr: false,
+		},
+		{
+			name: "test-wrong",
+			args: args{
+				mountPoint: "/abc",
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseSubPathFromMountPoint(tt.args.mountPoint)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseSubPathFromMountPoint() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ParseSubPathFromMountPoint() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

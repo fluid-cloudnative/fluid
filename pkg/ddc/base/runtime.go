@@ -315,6 +315,17 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
 		return runtimeInfo, nil
+	case common.JuiceFSRuntime:
+		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
+		if err != nil {
+			return runtimeInfo, err
+		}
+		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
+		return runtimeInfo, nil
 	default:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
 		return runtimeInfo, err

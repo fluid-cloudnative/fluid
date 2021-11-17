@@ -195,3 +195,11 @@ func parseInt64Size(sizeStr string) (int64, error) {
 	size, err := strconv.ParseFloat(sizeStr, 64)
 	return int64(size), err
 }
+
+func ParseSubPathFromMountPoint(mountPoint string) (string, error) {
+	jPath := strings.Split(mountPoint, "juicefs://")
+	if len(jPath) != 2 {
+		return "", fmt.Errorf("MountPoint error, can not parse jfs path")
+	}
+	return jPath[1], nil
+}

@@ -40,7 +40,7 @@ type Worker struct {
 	ImageTag        string                 `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources       `yaml:"resources,omitempty"`
-	CacheDir        string                 `yaml:"cache_dir"`
+	CacheDir        string                 `yaml:"cacheDir,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 }
@@ -53,6 +53,7 @@ type Fuse struct {
 	ImageTag        string            `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
 	MountPath       string            `yaml:"mountPath,omitempty"`
+	CacheDir        string            `yaml:"cacheDir,omitempty"`
 	MetaUrl         string            `yaml:"metaUrl,omitempty"`
 	HostMountPath   string            `yaml:"hostMountPath,omitempty"`
 	Command         string            `yaml:"command,omitempty"`
@@ -64,12 +65,12 @@ type Fuse struct {
 
 type Prepare struct {
 	SubPath         string `yaml:"subPath,omitempty"`
-	NameSecret      string `yaml:"nameSecret"`
-	AccessKeySecret string `yaml:"accesskeySecret"`
-	SecretKeySecret string `yaml:"secretkeySecret"`
-	BucketSecret    string `yaml:"bucketSecret"`
-	MetaUrlSecret   string `yaml:"metaurlSecret"`
-	StorageSecret   string `yaml:"storageSecret"`
+	Name            string `yaml:"name"`
+	AccessKeySecret string `yaml:"accesskeySecret,omitempty"`
+	SecretKeySecret string `yaml:"secretkeySecret,omitempty"`
+	Bucket          string `yaml:"bucket,omitempty"`
+	MetaUrl         string `yaml:"metaurl,omitempty"`
+	Storage         string `yaml:"storage,omitempty"`
 }
 
 type TieredStore struct {

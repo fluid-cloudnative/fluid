@@ -44,8 +44,8 @@ func (j JuiceFSEngine) Shutdown() (err error) {
 		}
 	}
 
-	if MetadataSyncDoneCh != nil {
-		close(MetadataSyncDoneCh)
+	if j.MetadataSyncDoneCh != nil {
+		close(j.MetadataSyncDoneCh)
 	}
 
 	_, err = j.destroyWorkers(-1)
@@ -57,7 +57,9 @@ func (j JuiceFSEngine) Shutdown() (err error) {
 	if err != nil {
 		return
 	}
-	return nil
+
+	err = j.cleanAll()
+	return err
 }
 
 // destroyMaster Destroy the master
@@ -256,4 +258,23 @@ func (j *JuiceFSEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGl
 	//Todo
 
 	return nodes, nil
+}
+
+func (j *JuiceFSEngine) cleanAll() (err error) {
+	var (
+		valueConfigmapName = j.name + "-" + j.runtimeType + "-values"
+		configmapName      = j.name + "-config"
+		namespace          = j.namespace
+	)
+
+	cms := []string{valueConfigmapName, configmapName}
+
+	for _, cm := range cms {
+		err = kubeclient.DeleteConfigMap(j.Client, cm, namespace)
+		if err != nil {
+			return
+		}
+	}
+
+	return nil
 }

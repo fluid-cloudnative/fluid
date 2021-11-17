@@ -38,8 +38,6 @@ type MetadataSyncResult struct {
 	Err       error
 }
 
-var MetadataSyncDoneCh chan MetadataSyncResult
-
 // SyncMetadata syncs metadata if necessary
 func (j *JuiceFSEngine) SyncMetadata() (err error) {
 	should, err := j.shouldSyncMetadata()
@@ -84,12 +82,12 @@ func (j *JuiceFSEngine) shouldSyncMetadata() (should bool, err error) {
 // Any following calls to this function will try to get result of the working goroutine with a timeout, which
 // ensures the function won't block the following Sync operations(e.g. CheckAndUpdateRuntimeStatus) for a long time.
 func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
-	if MetadataSyncDoneCh != nil {
+	if j.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout
 		select {
-		case result := <-MetadataSyncDoneCh:
+		case result := <-j.MetadataSyncDoneCh:
 			defer func() {
-				MetadataSyncDoneCh = nil
+				j.MetadataSyncDoneCh = nil
 			}()
 			j.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
 			if result.Done {
@@ -142,7 +140,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			j.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
 		}
-		MetadataSyncDoneCh = make(chan MetadataSyncResult)
+		j.MetadataSyncDoneCh = make(chan MetadataSyncResult)
 		go func(resultChan chan MetadataSyncResult) {
 			defer close(resultChan)
 			result := MetadataSyncResult{
@@ -204,7 +202,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				result.Err = nil
 			}
 			resultChan <- result
-		}(MetadataSyncDoneCh)
+		}(j.MetadataSyncDoneCh)
 	}
 
 	return

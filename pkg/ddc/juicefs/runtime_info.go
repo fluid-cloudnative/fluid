@@ -36,12 +36,7 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		if runtime.Spec.Fuse.Global {
-			j.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
-			j.Log.Info("Enable global mode for fuse")
-		} else {
-			j.Log.Info("Disable global mode for fuse")
-		}
+		j.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
 
 		if !j.UnitTest {
 			// Check if the runtime is using deprecated labels
