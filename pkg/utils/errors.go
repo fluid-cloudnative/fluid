@@ -6,11 +6,11 @@ import (
 )
 
 // LoggingErrorExceptConflict logs error except for updating operation violates with etcd concurrency control
-func LoggingErrorExceptConflict(logging logr.Logger, err error) (result error) {
+func LoggingErrorExceptConflict(logging logr.Logger, err error, info string) (result error) {
 	if apierrs.IsConflict(err) {
 		log.Info("Retry later when update operation violates with etcd concurrency control.", "error", err)
 	} else {
-		log.Error(err, "Failed to setup worker")
+		log.Error(err, info)
 		result = err
 	}
 	return result

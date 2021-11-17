@@ -36,12 +36,12 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err)
+			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
 		}
 		return err
 	})
 	if err != nil {
-		_ = utils.LoggingErrorExceptConflict(e.Log, err)
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
 	}
 	return
 }
@@ -83,7 +83,7 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err)
+			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
 		}
 		return err
 	})
