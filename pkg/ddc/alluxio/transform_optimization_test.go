@@ -16,6 +16,8 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
 
@@ -355,12 +357,24 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 							Web:      port,
 							Embedded: 0,
 						},
+						Resources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+						},
 					},
 					JobWorker: JobWorker{
 						Ports: Ports{
 							Rpc:  port,
 							Web:  port,
 							Data: port,
+						},
+						Resources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
 						},
 					},
 					Properties: map[string]string{},
