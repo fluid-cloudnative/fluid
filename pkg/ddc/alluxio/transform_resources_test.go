@@ -60,6 +60,18 @@ func TestTransformResourcesForMaster(t *testing.T) {
 						},
 					},
 				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+						Limits: common.ResourceList{
+							corev1.ResourceCPU:    "400m",
+							corev1.ResourceMemory: "400Mi",
+						},
+					},
+				},
 			},
 		},
 		"test alluxio master pass through resources with request case 1": {
@@ -74,6 +86,14 @@ func TestTransformResourcesForMaster(t *testing.T) {
 			got: &Alluxio{},
 			want: &Alluxio{
 				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+					},
+				},
+				JobMaster: JobMaster{
 					Resources: common.Resources{
 						Requests: common.ResourceList{
 							corev1.ResourceCPU:    "100m",
@@ -127,6 +147,9 @@ func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.
 			Master: datav1alpha1.AlluxioCompTemplateSpec{
 				Resources: res,
 			},
+			JobMaster: datav1alpha1.AlluxioCompTemplateSpec{
+				Resources: res,
+			},
 		},
 	}
 	return runtime
@@ -158,6 +181,10 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	resources := corev1.ResourceRequirements{}
 	resources.Limits = make(corev1.ResourceList)
 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+	resources.Limits[corev1.ResourceCPU] = resource.MustParse("500m")
+	resources.Requests = make(corev1.ResourceList)
+	resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
+	resources.Requests[corev1.ResourceCPU] = resource.MustParse("500m")
 
 	result := resource.MustParse("20Gi")
 
@@ -170,6 +197,9 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 				Worker: datav1alpha1.AlluxioCompTemplateSpec{
 					Resources: resources,
 				},
+				JobWorker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
@@ -180,6 +210,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}, &Alluxio{
 			Properties: map[string]string{},
 			Master:     Master{},
+			JobMaster: JobMaster{},
 		}},
 	}
 	for _, test := range tests {
