@@ -56,7 +56,6 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 
-	var needRuntimeUpdate bool = false
 	desireReplicas := runtime.Replicas()
 	if *workers.Spec.Replicas != desireReplicas {
 		// workerToUpdate, err := e.buildWorkersAffinity(workers)
@@ -72,12 +71,12 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 			return err
 		}
 
-		needRuntimeUpdate = true
+		workers = workerToUpdate
 	} else {
 		e.log.V(1).Info("Nothing to do for syncing")
 	}
 
-	if needRuntimeUpdate {
+	if *workers.Spec.Replicas != runtime.GetStatus().DesiredWorkerNumberScheduled {
 		statusToUpdate := runtime.GetStatus()
 
 		if workers.Status.ReadyReplicas > 0 {
