@@ -36,7 +36,7 @@ func (e *JindoEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum i
 // SyncScheduleInfoToCacheNodes syncs the cache info of the nodes by labeling the nodes
 // And the Application pod can leverage such info for scheduling
 func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes")
+	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", e.name, "namespace", e.namespace)
 
 	var (
 		currentCacheNodenames  []string

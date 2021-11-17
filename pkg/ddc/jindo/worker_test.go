@@ -442,6 +442,14 @@ func TestCheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
+
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "jindo", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("JindoEngine.CheckWorkersReady() error = %v", err)
+			}
+
+			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
 			gotReady, err := e.CheckWorkersReady()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JindoEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
