@@ -35,8 +35,10 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		_ = utils.LoggingErrorExceptConflict(e.Log, err)
-		return nil
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(e.Log, err)
+		}
+		return err
 	})
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err)
