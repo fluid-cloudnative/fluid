@@ -68,7 +68,10 @@ func InstallCoreDumpGenerator() {
 func coredump(fileName string) {
 	log.Info("Dump stacktrace to file", "fileName", fileName)
 	trace := StackTrace(true)
-	ioutil.WriteFile(fileName, []byte(trace), 0644)
+	err := ioutil.WriteFile(fileName, []byte(trace), 0644)
+	if err != nil {
+		log.Error(err, "Failed to write coredump.")
+	}
 	stdout := fmt.Sprintf("=== received SIGQUIT ===\n*** goroutine dump...\n%s", trace)
 	log.Info(stdout)
 
