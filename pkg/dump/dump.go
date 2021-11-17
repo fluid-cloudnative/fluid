@@ -38,6 +38,8 @@ func StackTrace(all bool) string {
 
 func InstallCoreDumpGenerator() {
 
+	log.Info("Install goroutine generator")
+
 	signals := make(chan os.Signal, 1)
 
 	signal.Notify(signals, syscall.SIGQUIT)
@@ -66,7 +68,8 @@ func InstallCoreDumpGenerator() {
 func coredump(fileName string) {
 	log.Info("Dump stacktrace to file", "fileName", fileName)
 	trace := StackTrace(true)
-	log.Info("=== received SIGQUIT ===\n*** goroutine dump...", "trace", trace)
 	ioutil.WriteFile(fileName, []byte(trace), 0644)
+	stdout := fmt.Sprintf("=== received SIGQUIT ===\n*** goroutine dump...\n%s", trace)
+	log.Info(stdout)
 
 }
