@@ -6,6 +6,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -36,12 +37,24 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
 		return err
 	})
 	if err != nil {
-		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to setup worker",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
 	}
 	return
 }
@@ -83,7 +96,13 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker")
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
 		return err
 	})
