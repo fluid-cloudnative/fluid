@@ -210,7 +210,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}, &Alluxio{
 			Properties: map[string]string{},
 			Master:     Master{},
-			JobMaster: JobMaster{},
+			JobMaster:  JobMaster{},
 		}},
 	}
 	for _, test := range tests {
