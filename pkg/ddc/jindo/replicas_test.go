@@ -146,12 +146,8 @@ func TestSyncReplicas(t *testing.T) {
 				DesiredMasterNumberScheduled: 2,
 				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   2,
-				Conditions: []datav1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
-				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
+				WorkerPhase:                  "NotReady",
+				FusePhase:                    "NotReady",
 			},
 		},
 	}
@@ -267,7 +263,7 @@ func TestSyncReplicas(t *testing.T) {
 			namespace:      "fluid",
 			Type:           "",
 			isErr:          false,
-			condtionLength: 2,
+			condtionLength: 0,
 		},
 	}
 	for _, testCase := range testCases {
