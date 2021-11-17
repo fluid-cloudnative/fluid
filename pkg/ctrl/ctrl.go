@@ -117,9 +117,8 @@ func (e *Helper) CheckWorkersReady(runtime base.RuntimeInterface,
 	workers *appsv1.StatefulSet) (ready bool, err error) {
 
 	var (
-		phase             datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
-		needRuntimeUpdate bool                          = (phase != currentStatus.WorkerPhase)
-		cond              datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
+		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
+		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
 	)
 
 	switch phase {
@@ -130,7 +129,7 @@ func (e *Helper) CheckWorkersReady(runtime base.RuntimeInterface,
 	}
 
 	// update the status as the workers are ready
-	if needRuntimeUpdate {
+	if phase != currentStatus.WorkerPhase {
 		statusToUpdate := runtime.GetStatus()
 		statusToUpdate.WorkerPhase = phase
 
