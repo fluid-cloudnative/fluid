@@ -40,7 +40,7 @@ import (
 
 // var _ RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
 func init() {
-	dump.InstallCoreDumpGenerator()
+	dump.InstallgoroutineDumpGenerator()
 }
 
 // RuntimeReconciler is the default implementation

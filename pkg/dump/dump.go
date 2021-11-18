@@ -36,9 +36,9 @@ func StackTrace(all bool) string {
 	return string(buf)
 }
 
-func InstallCoreDumpGenerator() {
+func InstallgoroutineDumpGenerator() {
 
-	log.Info("Install goroutine generator")
+	log.Info("Register goroutine dump generator")
 
 	signals := make(chan os.Signal, 1)
 
@@ -52,7 +52,7 @@ func InstallCoreDumpGenerator() {
 			case syscall.SIGQUIT:
 				t := time.Now()
 				timestamp := fmt.Sprint(t.Format("20060102150405"))
-				log.Info("User uses kill -3 to generate core dump")
+				log.Info("User uses kill -3 to generate groutine dump")
 				coredump("/tmp/go_" + timestamp + ".txt")
 			// case syscall.SIGTERM:
 			// 	fmt.Println("User told me to exit")
