@@ -115,13 +115,13 @@ type APIGateway struct {
 }
 
 type JobMaster struct {
-	Ports Ports `yaml:"ports,omitempty"`
-	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports     Ports            `yaml:"ports,omitempty"`
+	Resources common.Resources `yaml:"resources,omitempty"`
 }
 
 type JobWorker struct {
-	Ports Ports `yaml:"ports,omitempty"`
-	Resources    common.Resources  `yaml:"resources,omitempty"`
+	Ports     Ports            `yaml:"ports,omitempty"`
+	Resources common.Resources `yaml:"resources,omitempty"`
 }
 
 type Worker struct {
