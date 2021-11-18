@@ -17,6 +17,8 @@ package base
 
 import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // Setup the ddc engine
@@ -78,7 +80,14 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	if shouldSetupWorkers {
 		err = b.Implement.SetupWorkers()
 		if err != nil {
-			b.Log.Error(err, "SetupWorker")
+			// b.Log.Error(err, "SetupWorker")
+			_ = utils.LoggingErrorExceptConflict(b.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: b.Context.Namespace,
+					Name:      b.Context.Name,
+				})
 			return ready, err
 		}
 	}
@@ -97,7 +106,14 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	// 5.Check if the runtime is ready
 	runtimeReady, err := b.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
-		b.Log.Error(err, "Check if the runtime is ready")
+		// b.Log.Error(err, "Check if the runtime is ready")
+		_ = utils.LoggingErrorExceptConflict(b.Log,
+			err,
+			"Failed to check if the runtime is ready",
+			types.NamespacedName{
+				Namespace: b.Context.Namespace,
+				Name:      b.Context.Name,
+			})
 		return runtimeReady, err
 	}
 
@@ -108,7 +124,14 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	// 6.Update the dataset status from pending to bound
 	err = b.Implement.BindToDataset()
 	if err != nil {
-		b.Log.Error(err, "Bind the dataset")
+		// b.Log.Error(err, "Bind the dataset")
+		_ = utils.LoggingErrorExceptConflict(b.Log,
+			err,
+			"Failed to bind the dataset",
+			types.NamespacedName{
+				Namespace: b.Context.Namespace,
+				Name:      b.Context.Name,
+			})
 		return workersReady, err
 	}
 
