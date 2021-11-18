@@ -6,7 +6,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -21,17 +20,18 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *JindoEngine) SetupWorkers() (err error) {
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		if err != nil {
+			if fluiderrs.IsDeprecated(err) {
+				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+				return nil
+			}
+			return err
+		}
+
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
