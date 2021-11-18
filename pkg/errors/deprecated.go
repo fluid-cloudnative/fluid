@@ -5,6 +5,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -24,15 +25,14 @@ func (e FluidStatusError) Details() *metav1.StatusDetails {
 	return e.details
 }
 
-func NewDeprecated(qualifiedResource schema.GroupResource, name string) *FluidStatusError {
+func NewDeprecated(qualifiedResource schema.GroupResource, key types.NamespacedName) *FluidStatusError {
 	return &FluidStatusError{
 		reason: StatusReasonDeprecated,
 		details: &metav1.StatusDetails{
 			Group: qualifiedResource.Group,
 			Kind:  qualifiedResource.Resource,
-			Name:  name,
 		},
-		message: fmt.Sprintf("%s %q is deprecated", qualifiedResource.String(), name),
+		message: fmt.Sprintf("%s in namespace %s %q is deprecated", qualifiedResource.String(), key.Namespace, key.Name),
 	}
 }
 

@@ -123,9 +123,9 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 						NodeAffinity: &corev1.NodeAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									corev1.NodeSelectorTerm{
+									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
-											corev1.NodeSelectorRequirement{
+											{
 												Key:      "test",
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"test-label-value2"},

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func resource(resource string) schema.GroupResource {
@@ -20,7 +21,7 @@ func TestIsDeprecated(t *testing.T) {
 	}{
 		{
 			Name:   "deprecated",
-			Err:    NewDeprecated(resource("test"), "1"),
+			Err:    NewDeprecated(resource("test"), types.NamespacedName{}),
 			expect: true,
 		},
 		{

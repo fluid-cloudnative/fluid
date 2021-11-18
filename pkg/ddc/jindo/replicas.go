@@ -1,20 +1,22 @@
 package jindo
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
 
 func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
 
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
 		return err
 	}
 

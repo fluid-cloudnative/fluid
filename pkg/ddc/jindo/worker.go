@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,13 +80,15 @@ func (e *JindoEngine) ShouldSetupWorkers() (should bool, err error) {
 
 // CheckWorkersReady checks if the workers are ready
 func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
 
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			ready = true
+			return ready, nil
+		}
 		return ready, err
 	}
 
