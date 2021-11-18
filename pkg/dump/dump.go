@@ -15,9 +15,7 @@ import (
 
 var log logr.Logger
 
-func init() {
-	log = ctrl.Log.WithName("dump")
-}
+var initialized bool
 
 func StackTrace(all bool) string {
 	buf := make([]byte, 10240)
@@ -37,32 +35,38 @@ func StackTrace(all bool) string {
 }
 
 func InstallgoroutineDumpGenerator() {
+	if !initialized {
+		log = ctrl.Log.WithName("dump")
+		log.Info("Register goroutine dump generator")
 
-	log.Info("Register goroutine dump generator")
+		signals := make(chan os.Signal, 1)
 
-	signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGQUIT)
 
-	signal.Notify(signals, syscall.SIGQUIT)
+		go func() {
+			for {
+				sig := <-signals
 
-	go func() {
-		for {
-			sig := <-signals
-
-			switch sig {
-			case syscall.SIGQUIT:
-				t := time.Now()
-				timestamp := fmt.Sprint(t.Format("20060102150405"))
-				log.Info("User uses kill -3 to generate groutine dump")
-				coredump("/tmp/go_" + timestamp + ".txt")
-			// case syscall.SIGTERM:
-			// 	fmt.Println("User told me to exit")
-			// 	os.Exit(0)
-			default:
-				continue
+				switch sig {
+				case syscall.SIGQUIT:
+					t := time.Now()
+					timestamp := fmt.Sprint(t.Format("20060102150405"))
+					log.Info("User uses kill -3 to generate groutine dump")
+					coredump("/tmp/go_" + timestamp + ".txt")
+				// case syscall.SIGTERM:
+				// 	fmt.Println("User told me to exit")
+				// 	os.Exit(0)
+				default:
+					continue
+				}
 			}
-		}
 
-	}()
+		}()
+
+		initialized = true
+	} else {
+		log.Info("Do nothing for installing grouting dump.")
+	}
 }
 
 func coredump(fileName string) {

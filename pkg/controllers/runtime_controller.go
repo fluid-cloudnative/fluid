@@ -39,9 +39,6 @@ import (
 )
 
 // var _ RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
-func init() {
-	dump.InstallgoroutineDumpGenerator()
-}
 
 // RuntimeReconciler is the default implementation
 type RuntimeReconciler struct {
@@ -54,6 +51,8 @@ type RuntimeReconciler struct {
 
 // NewRuntimeReconciler creates the default RuntimeReconciler
 func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.Client, log logr.Logger, recorder record.EventRecorder) *RuntimeReconciler {
+	// install gorouting dump generator for all runtime reconciler
+	dump.InstallgoroutineDumpGenerator()
 	r := &RuntimeReconciler{
 		implement: reconciler,
 		Client:    client,
