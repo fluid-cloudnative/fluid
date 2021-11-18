@@ -17,6 +17,8 @@ var log logr.Logger
 
 var initialized bool
 
+var dumpfile string = "%s/%s-%s.txt"
+
 func StackTrace(all bool) string {
 	buf := make([]byte, 10240)
 
@@ -51,8 +53,9 @@ func InstallgoroutineDumpGenerator() {
 				case syscall.SIGQUIT:
 					t := time.Now()
 					timestamp := fmt.Sprint(t.Format("20060102150405"))
-					log.Info("User uses kill -3 to generate groutine dump")
-					coredump("/tmp/go_" + timestamp + ".txt")
+					log.Info("User uses kill -3 to generate goroutine dump")
+					// coredump("/tmp/go_" + timestamp + ".txt")
+					coredump(fmt.Sprintf(dumpfile, "/tmp", "go", timestamp))
 				// case syscall.SIGTERM:
 				// 	fmt.Println("User told me to exit")
 				// 	os.Exit(0)
