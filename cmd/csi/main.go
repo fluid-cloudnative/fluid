@@ -16,13 +16,19 @@ limitations under the License.
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
@@ -34,6 +40,7 @@ var (
 	nodeID      string
 	short       bool
 	metricsAddr string
+	pprofAddr   string
 )
 
 var scheme = runtime.NewScheme()
@@ -80,6 +87,7 @@ func init() {
 	}
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
+	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
@@ -100,6 +108,41 @@ func main() {
 func handle() {
 	// startReaper()
 	fluid.LogVersion()
+
+	if pprofAddr != "" {
+		glog.Infof("Enabling pprof with address %s", pprofAddr)
+		mux := http.NewServeMux()
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		pprofServer := http.Server{
+			Addr:    pprofAddr,
+			Handler: mux,
+		}
+		glog.Infof("Starting pprof HTTP server at %s", pprofServer.Addr)
+
+		go func() {
+			go func() {
+				ctx := context.Background()
+				<-ctx.Done()
+
+				ctx, cancelFunc := context.WithTimeout(context.Background(), 60*time.Minute)
+				defer cancelFunc()
+
+				if err := pprofServer.Shutdown(ctx); err != nil {
+					glog.Error(err, "Failed to shutdown debug HTTP server")
+				}
+			}()
+
+			if err := pprofServer.ListenAndServe(); !errors.Is(http.ErrServerClosed, err) {
+				glog.Error(err, "Failed to start debug HTTP server")
+				panic(err)
+			}
+		}()
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
