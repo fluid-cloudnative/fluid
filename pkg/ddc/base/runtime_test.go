@@ -301,7 +301,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
-	juicefsRuntimeObjs = append(jindoRuntimeObjs, &juicefsRuntime, &dataJuice)
+	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime, &dataJuice)
 	type args struct {
 		client    client.Client
 		name      string

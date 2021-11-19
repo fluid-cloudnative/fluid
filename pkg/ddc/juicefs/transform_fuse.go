@@ -67,7 +67,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 			value.Fuse.Prepare.MetaUrlSecret = secretKeyRef.Name
 			v, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
-				return errors.New(fmt.Sprintf("can't get metaurl from secret %s", secret.Name))
+				return fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
 			source = string(v)
 		case "access-key":
