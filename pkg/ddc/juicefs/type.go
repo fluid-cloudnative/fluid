@@ -54,7 +54,6 @@ type Fuse struct {
 	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
 	MountPath       string            `yaml:"mountPath,omitempty"`
 	CacheDir        string            `yaml:"cacheDir,omitempty"`
-	MetaUrl         string            `yaml:"metaUrl,omitempty"`
 	HostMountPath   string            `yaml:"hostMountPath,omitempty"`
 	Command         string            `yaml:"command,omitempty"`
 	StatCmd         string            `yaml:"statCmd,omitempty"`
@@ -69,7 +68,7 @@ type Prepare struct {
 	AccessKeySecret string `yaml:"accesskeySecret,omitempty"`
 	SecretKeySecret string `yaml:"secretkeySecret,omitempty"`
 	Bucket          string `yaml:"bucket,omitempty"`
-	MetaUrl         string `yaml:"metaurl,omitempty"`
+	MetaUrlSecret   string `yaml:"metaurlSecret,omitempty"`
 	Storage         string `yaml:"storage,omitempty"`
 }
 

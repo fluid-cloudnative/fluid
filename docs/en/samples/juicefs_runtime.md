@@ -40,6 +40,7 @@ Before using JuiceFS, you need to provide parameters for metadata services (such
 
 ```shell
 kubectl create secret generic jfs-secret \
+    --from-literal=metaurl=redis://192.168.169.168:6379/1 \
     --from-literal=access-key=<accesskey> \
     --from-literal=secret-key=<secretkey> 
 ```
@@ -57,10 +58,14 @@ spec:
     - name: minio
       mountPoint: "juicefs:///demo"
       options:
-        metaurl: "<metaurl>"
         bucket: "<bucket>"
         storage: "minio"
       encryptOptions:
+        - name: metaurl
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: metaurl
         - name: access-key
           valueFrom:
             secretKeyRef:

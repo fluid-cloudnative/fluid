@@ -36,6 +36,7 @@ func TestTransformFuse(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Data: map[string][]byte{
+			"metaurl":    []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 			"access-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 		},
@@ -76,23 +77,32 @@ func TestTransformFuse(t *testing.T) {
 						MountPoint: "juicefs:///mnt/test",
 						Name:       "test1",
 						Options: map[string]string{
-							"metaurl": "test1",
 							"storage": "test1",
 							"bucket":  "test1",
 						},
-						EncryptOptions: []datav1alpha1.EncryptOption{{
-							Name: "access-key",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test1",
-									Key:  "access-key",
-								}}}, {
-							Name: "secret-key",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test1",
-									Key:  "secret-key",
-								}}}},
+						EncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "access-key",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test1",
+										Key:  "access-key",
+									}},
+							}, {
+								Name: "secret-key",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test1",
+										Key:  "secret-key",
+									}},
+							}, {
+								Name: "metaurl",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test1",
+										Key:  "metaurl",
+									}},
+							}},
 					}},
 				}},
 			juicefsValue: &JuiceFS{},
@@ -108,7 +118,15 @@ func TestTransformFuse(t *testing.T) {
 					Mounts: []datav1alpha1.Mount{{
 						MountPoint: "juicefs:///mnt/test",
 						Name:       "test2",
-						Options:    map[string]string{"metaurl": "test2"},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test1",
+									Key:  "metaurl",
+								},
+							},
+						}},
 					}},
 				}}, juicefsValue: &JuiceFS{}, expect: "", wantErr: true},
 		{
@@ -122,7 +140,15 @@ func TestTransformFuse(t *testing.T) {
 					Mounts: []datav1alpha1.Mount{{
 						MountPoint: "juicefs:///mnt/test",
 						Name:       "test3",
-						Options:    map[string]string{"metaurl": "test3"},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test1",
+									Key:  "metaurl",
+								},
+							},
+						}},
 					}}}},
 			juicefsValue: &JuiceFS{},
 			expect:       "",
@@ -146,7 +172,16 @@ func TestTransformFuse(t *testing.T) {
 					Mounts: []datav1alpha1.Mount{{
 						MountPoint: "juicefs:///mnt/test",
 						Name:       "test2",
-						Options:    map[string]string{"metaurl": "test3", "debug": ""},
+						Options:    map[string]string{"debug": ""},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test1",
+									Key:  "metaurl",
+								},
+							},
+						}},
 					}}}},
 			juicefsValue: &JuiceFS{},
 			expect:       "",

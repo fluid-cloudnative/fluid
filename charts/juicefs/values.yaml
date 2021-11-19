@@ -42,13 +42,13 @@ worker:
 
 fuse:
   prepare:
-    name: jfs-secret
-    accesskeySecret: jfs-secret
-    secretkeySecret: jfs-secret
-    bucket: jfs-secret
-    metaurl: jfs-secret
-    storage: jfs-secret
-    subPath: /mnt/jfs
+    name: ""
+    accesskeySecret: ""
+    secretkeySecret: ""
+    bucket: ""
+    metaurlSecret: ""
+    storage: ""
+    subPath: ""
   criticalPod: false
   enabled: true
   image: juicedata/juicefs-csi-driver

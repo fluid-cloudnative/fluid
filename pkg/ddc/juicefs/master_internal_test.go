@@ -78,15 +78,23 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
-	testObjs := []runtime.Object{}
-
+	juicefsSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"metaurl": []byte("test"),
+		},
+	}
 	juicefsruntime := &datav1alpha1.JuiceFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
 		},
 	}
-	testObjs = append(testObjs, (*juicefsruntime).DeepCopy())
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, (*juicefsruntime).DeepCopy(), (*juicefsSecret).DeepCopy())
 
 	var datasetInputs = []datav1alpha1.Dataset{
 		{
@@ -97,9 +105,15 @@ func TestSetupMasterInternal(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{
 				MountPoint: "juicefs://mnt",
 				Name:       "test",
-				Options: map[string]string{
-					"metaurl": "test",
-				},
+				EncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: "metaurl",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test",
+							Key:  "metaurl",
+						},
+					},
+				}},
 			}}},
 		},
 	}
@@ -203,7 +217,17 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 			t.Fatal(err.Error())
 		}
 	}
+	juicefsSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"metaurl": []byte("test"),
+		},
+	}
 	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
 	juicefsruntime := &datav1alpha1.JuiceFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -221,7 +245,15 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 			Mounts: []datav1alpha1.Mount{{
 				MountPoint: "juicefs:///mnt/test",
 				Name:       "test",
-				Options:    map[string]string{"metaurl": "test"},
+				EncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: "metaurl",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test",
+							Key:  "metaurl",
+						},
+					},
+				}},
 			}},
 		},
 	}}

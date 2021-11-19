@@ -36,6 +36,9 @@ type JuiceFSRuntimeSpec struct {
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
 	// The component spec of JuiceFS worker
+	Master JuiceFSCompTemplateSpec `json:"master,omitempty"`
+
+	// The component spec of JuiceFS worker
 	Worker JuiceFSCompTemplateSpec `json:"worker,omitempty"`
 
 	// The component spec of JuiceFS job Worker

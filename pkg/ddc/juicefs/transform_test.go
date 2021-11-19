@@ -17,6 +17,8 @@ limitations under the License.
 package juicefs
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +31,17 @@ import (
 )
 
 func TestJuiceFSEngine_transform(t *testing.T) {
+	juicefsSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"metaurl": []byte("test"),
+		},
+	}
 	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
@@ -61,7 +73,15 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "juicefs:///mnt/test",
 					Name:       "test",
-					Options:    map[string]string{"metaurl": "test"},
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name: "metaurl",
+						ValueFrom: datav1alpha1.EncryptOptionSource{
+							SecretKeyRef: datav1alpha1.SecretKeySelector{
+								Name: "test",
+								Key:  "metaurl",
+							},
+						},
+					}},
 				}},
 			},
 		}, &JuiceFS{}},

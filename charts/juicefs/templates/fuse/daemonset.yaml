@@ -54,16 +54,27 @@ spec:
           {{- if .Values.fuse.envs }}
 {{ toYaml .Values.fuse.envs | trim | indent 10  }}
           {{- end }}
+          {{- if .Values.fuse.prepare.metaurlSecret }}
+          - name: METAURL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.prepare.metaurlSecret }}
+                key: metaurl
+          {{- end }}
+          {{- if .Values.fuse.prepare.accesskeySecret }}
           - name: ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.fuse.prepare.accesskeySecret }}
                 key: access-key
+          {{- end }}
+          {{- if .Values.fuse.prepare.secretkeySecret }}
           - name: SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.fuse.prepare.secretkeySecret }}
                 key: secret-key
+          {{- end }}
           volumeMounts:
           - mountPath: /root/.juicefs
             mountPropagation: Bidirectional
@@ -160,13 +171,13 @@ data:
   prepare-subpath.sh: |
     #!/bin/bash
 
-    {{- if and .Values.fuse.prepare.storage .Values.fuse.prepare.bucket }}
-    /usr/local/bin/juicefs format --storage={{ .Values.fuse.prepare.storage }} --bucket={{ .Values.fuse.prepare.bucket }} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} {{ .Values.fuse.prepare.metaurl }} {{ .Values.fuse.prepare.name }}
+    {{- if and .Values.fuse.prepare.storage .Values.fuse.prepare.bucket .Values.fuse.prepare.accesskeySecret .Values.fuse.prepare.secretkeySecret }}
+    /usr/local/bin/juicefs format --storage={{ .Values.fuse.prepare.storage }} --bucket={{ .Values.fuse.prepare.bucket }} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} ${METAURL} {{ .Values.fuse.prepare.name }}
     {{- else }}
-    /usr/local/bin/juicefs format {{ .Values.fuse.prepare.metaurl }} {{ .Values.fuse.prepare.name }} --no-update
+    /usr/local/bin/juicefs format ${METAURL} {{ .Values.fuse.prepare.name }} --no-update
     {{- end }}
 
-    /usr/local/bin/juicefs mount -d {{ .Values.fuse.prepare.metaurl }} /mnt/jfs
+    /usr/local/bin/juicefs mount -d ${METAURL} /mnt/jfs
     if [ ! -d /mnt/jfs{{ .Values.fuse.prepare.subPath }} ]; then
       mkdir /mnt/jfs{{ .Values.fuse.prepare.subPath }}
     fi;

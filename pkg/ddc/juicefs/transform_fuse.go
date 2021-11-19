@@ -40,10 +40,6 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	source := ""
 	for k, v := range mount.Options {
 		switch k {
-		case "metaurl":
-			value.Fuse.Prepare.MetaUrl = v
-			source = v
-			continue
 		case "storage":
 			value.Fuse.Prepare.Storage = v
 			continue
@@ -57,7 +53,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		_, err := utils.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+		secret, err := utils.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
 		if err != nil {
 			j.Log.Info("can't get the secret",
 				"namespace", j.namespace,
@@ -67,6 +63,13 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		}
 
 		switch key {
+		case "metaurl":
+			value.Fuse.Prepare.MetaUrlSecret = secretKeyRef.Name
+			v, ok := secret.Data[secretKeyRef.Key]
+			if !ok {
+				return errors.New(fmt.Sprintf("can't get metaurl from secret %s", secret.Name))
+			}
+			source = string(v)
 		case "access-key":
 			value.Fuse.Prepare.AccessKeySecret = secretKeyRef.Name
 		case "secret-key":
@@ -80,7 +83,6 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if !strings.Contains(source, "://") {
 		source = "redis://" + source
 	}
-	value.Fuse.MetaUrl = source
 
 	image := runtime.Spec.Fuse.Image
 	tag := runtime.Spec.Fuse.ImageTag
