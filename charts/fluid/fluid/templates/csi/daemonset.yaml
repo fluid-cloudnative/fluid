@@ -63,10 +63,11 @@ spec:
             allowPrivilegeEscalation: true
           image: "{{ .Values.csi.plugins.image }}"
           command: ["/usr/local/bin/entrypoint.sh"]
-          args :
+          args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - --v=5
+            - "--pprof-addr=:6060"
           env:
             - name: NODE_ID
               valueFrom:
