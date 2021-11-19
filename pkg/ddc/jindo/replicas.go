@@ -10,17 +10,17 @@ import (
 
 func (e JindoEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
 
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
-	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return nil
-		}
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		if err != nil {
+			if fluiderrs.IsDeprecated(err) {
+				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+				return nil
+			}
+			return err
+		}
+
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
