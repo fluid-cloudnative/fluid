@@ -35,7 +35,7 @@ func TestJuiceFSEngine_ShouldSetupMaster(t *testing.T) {
 				Name:      "test0",
 				Namespace: "fluid",
 			},
-			Status: datav1alpha1.JuiceFSRuntimeStatus{
+			Status: datav1alpha1.RuntimeStatus{
 				WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
 			},
 		},
@@ -44,7 +44,7 @@ func TestJuiceFSEngine_ShouldSetupMaster(t *testing.T) {
 				Name:      "test1",
 				Namespace: "fluid",
 			},
-			Status: datav1alpha1.JuiceFSRuntimeStatus{
+			Status: datav1alpha1.RuntimeStatus{
 				WorkerPhase: datav1alpha1.RuntimePhaseNone,
 			},
 		},

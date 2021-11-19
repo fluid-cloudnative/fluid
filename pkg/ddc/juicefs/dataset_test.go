@@ -52,7 +52,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Replicas: 1,
 			},
-			Status: datav1alpha1.JuiceFSRuntimeStatus{
+			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{
 					common.Cached: "true",
 				},
@@ -141,7 +141,7 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Replicas: 1,
 			},
-			Status: datav1alpha1.JuiceFSRuntimeStatus{
+			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{
 					common.Cached: "true",
 				},
@@ -274,7 +274,7 @@ func TestBindToDataset(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{},
-			Status: datav1alpha1.JuiceFSRuntimeStatus{
+			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{
 					common.Cached: "true",
 				},

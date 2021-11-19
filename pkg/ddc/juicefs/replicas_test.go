@@ -106,7 +106,7 @@ func TestSyncReplicas(t *testing.T) {
 			Spec: v1alpha1.JuiceFSRuntimeSpec{
 				Replicas: 3, // 2
 			},
-			Status: v1alpha1.JuiceFSRuntimeStatus{
+			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,
 				CurrentFuseNumberScheduled:   2,
 				DesiredWorkerNumberScheduled: 3,
@@ -127,7 +127,7 @@ func TestSyncReplicas(t *testing.T) {
 			Spec: v1alpha1.JuiceFSRuntimeSpec{
 				Replicas: 2,
 			},
-			Status: v1alpha1.JuiceFSRuntimeStatus{
+			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 3,
 				CurrentFuseNumberScheduled:   3,
 				DesiredWorkerNumberScheduled: 2,
@@ -148,7 +148,7 @@ func TestSyncReplicas(t *testing.T) {
 			Spec: v1alpha1.JuiceFSRuntimeSpec{
 				Replicas: 2,
 			},
-			Status: v1alpha1.JuiceFSRuntimeStatus{
+			Status: v1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,
 				CurrentFuseNumberScheduled:   2,
 				DesiredWorkerNumberScheduled: 2,

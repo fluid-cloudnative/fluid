@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -116,87 +115,6 @@ type JuiceFSFuseSpec struct {
 	NodeSelector map[string]string `json:"node_selector,omitempty"`
 }
 
-// JuiceFSRuntimeStatus defines the observed state of JuiceFSRuntime
-type JuiceFSRuntimeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// config map used to set configurations
-
-	// WorkerPhase is the worker running phase
-	WorkerPhase RuntimePhase `json:"workerPhase"`
-
-	// Reason for Worker's condition transition
-	WorkerReason string `json:"workerReason,omitempty"`
-
-	// The total number of nodes that should be running the runtime worker
-	// pod (including nodes correctly running the runtime worker pod).
-	DesiredWorkerNumberScheduled int32 `json:"desiredWorkerNumberScheduled"`
-
-	// The total number of nodes that can be running the runtime worker
-	// pod (including nodes correctly running the runtime worker pod).
-	CurrentWorkerNumberScheduled int32 `json:"currentWorkerNumberScheduled"`
-
-	// The number of nodes that should be running the runtime worker pod and have one
-	// or more of the runtime worker pod running and ready.
-	WorkerNumberReady int32 `json:"workerNumberReady"`
-
-	// The number of nodes that should be running the
-	// runtime worker pod and have one or more of the runtime worker pod running and
-	// available (ready for at least spec.minReadySeconds)
-	// +optional
-	WorkerNumberAvailable int32 `json:"workerNumberAvailable,omitempty"`
-
-	// The number of nodes that should be running the
-	// runtime worker pod and have none of the runtime worker pod running and available
-	// (ready for at least spec.minReadySeconds)
-	// +optional
-	WorkerNumberUnavailable int32 `json:"workerNumberUnavailable,omitempty"`
-
-	// FusePhase is the Fuse running phase
-	FusePhase RuntimePhase `json:"fusePhase"`
-
-	// Reason for the condition's last transition.
-	FuseReason string `json:"fuseReason,omitempty"`
-
-	// The total number of nodes that can be running the runtime Fuse
-	// pod (including nodes correctly running the runtime Fuse pod).
-	CurrentFuseNumberScheduled int32 `json:"currentFuseNumberScheduled"`
-
-	// The total number of nodes that should be running the runtime Fuse
-	// pod (including nodes correctly running the runtime Fuse pod).
-	DesiredFuseNumberScheduled int32 `json:"desiredFuseNumberScheduled"`
-
-	// The number of nodes that should be running the runtime Fuse pod and have one
-	// or more of the runtime Fuse pod running and ready.
-	FuseNumberReady int32 `json:"fuseNumberReady"`
-
-	// The number of nodes that should be running the
-	// runtime fuse pod and have none of the runtime fuse pod running and available
-	// (ready for at least spec.minReadySeconds)
-	// +optional
-	FuseNumberUnavailable int32 `json:"fuseNumberUnavailable,omitempty"`
-
-	// The number of nodes that should be running the
-	// runtime Fuse pod and have one or more of the runtime Fuse pod running and
-	// available (ready for at least spec.minReadySeconds)
-	// +optional
-	FuseNumberAvailable int32 `json:"fuseNumberAvailable,omitempty"`
-
-	// Duration tell user how much time was spent to setup the runtime
-	SetupDuration string `json:"setupDuration,omitempty"`
-
-	// Represents the latest available observations of a ddc runtime's current state.
-	// +patchMergeKey=type
-	// +patchStrategy=merge
-	Conditions []RuntimeCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
-
-	// CacheStatus represents the total resources of the dataset.
-	CacheStates common.CacheStateList `json:"cacheStates,omitempty"`
-
-	// Selector is used for auto-scaling
-	Selector string `json:"selector,omitempty"` // this must be the string form of the selector
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.currentWorkerNumberScheduled,selectorpath=.status.selector
@@ -213,8 +131,8 @@ type JuiceFSRuntime struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   JuiceFSRuntimeSpec   `json:"spec,omitempty"`
-	Status JuiceFSRuntimeStatus `json:"status,omitempty"`
+	Spec   JuiceFSRuntimeSpec `json:"spec,omitempty"`
+	Status RuntimeStatus      `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

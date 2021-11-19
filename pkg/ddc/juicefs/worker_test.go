@@ -54,7 +54,7 @@ func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test0",
 						Namespace: "juicefs",
 					},
-					Status: datav1alpha1.JuiceFSRuntimeStatus{
+					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNone,
 					},
 				},
@@ -72,7 +72,7 @@ func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test1",
 						Namespace: "juicefs",
 					},
-					Status: datav1alpha1.JuiceFSRuntimeStatus{
+					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
 					},
 				},
@@ -90,7 +90,7 @@ func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test2",
 						Namespace: "juicefs",
 					},
-					Status: datav1alpha1.JuiceFSRuntimeStatus{
+					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
 					},
 				},
@@ -108,7 +108,7 @@ func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test3",
 						Namespace: "juicefs",
 					},
-					Status: datav1alpha1.JuiceFSRuntimeStatus{
+					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseReady,
 					},
 				},

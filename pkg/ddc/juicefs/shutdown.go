@@ -33,7 +33,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func (j JuiceFSEngine) Shutdown() (err error) {
+func (j *JuiceFSEngine) Shutdown() (err error) {
 	if j.retryShutdown < j.gracefulShutdownLimits {
 		err = j.cleanupCache()
 		if err != nil {

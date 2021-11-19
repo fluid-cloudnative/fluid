@@ -751,7 +751,7 @@ spec:
               type: object
           type: object
         status:
-          description: JuiceFSRuntimeStatus defines the observed state of JuiceFSRuntime
+          description: RuntimeStatus defines the observed state of JuiceFSRuntime
           properties:
             cacheStates:
               additionalProperties:

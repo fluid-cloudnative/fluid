@@ -161,6 +161,10 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 			dsName := j.getFuseDaemonsetName()
 			pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 			if err != nil || len(pods) == 0 {
+				result.UfsTotal = ""
+				result.FileNum = ""
+				result.Done = true
+				resultChan <- result
 				return
 			}
 			for _, pod := range pods {

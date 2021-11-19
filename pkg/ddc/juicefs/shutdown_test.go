@@ -320,7 +320,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 		Spec: datav1alpha1.JuiceFSRuntimeSpec{
 			Replicas: 1,
 		},
-		Status: datav1alpha1.JuiceFSRuntimeStatus{
+		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{
 				common.Cached: "true",
 			},

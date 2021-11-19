@@ -57,7 +57,7 @@ func TestBuild(t *testing.T) {
 				Global: false,
 			},
 		},
-		Status: datav1alpha1.JuiceFSRuntimeStatus{
+		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{
 				common.Cached: "true",
 			},
