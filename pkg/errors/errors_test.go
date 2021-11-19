@@ -47,6 +47,15 @@ func TestIsDeprecated(t *testing.T) {
 		},
 	}
 
+	err := NewDeprecated(resource("test"), types.NamespacedName{})
+	if err.Details() == nil {
+		t.Errorf("expect error details %v is not nil", err.Details())
+	}
+
+	if len(err.Error()) == 0 {
+		t.Errorf("expect error is not empty, but %v", err.Error())
+	}
+
 	for _, testCase := range testCases {
 		if testCase.expect != IsDeprecated(testCase.Err) {
 			t.Errorf("testCase %s: expected %v ,got %v", testCase.Name, testCase.expect, IsDeprecated(testCase.Err))
