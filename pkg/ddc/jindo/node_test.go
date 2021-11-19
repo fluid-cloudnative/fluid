@@ -148,6 +148,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		// runtime   *datav1alpha1.JindoRuntime
 		worker    *appsv1.StatefulSet
 		pods      []*v1.Pod
+		ds        *appsv1.DaemonSet
 		nodes     []*v1.Node
 		name      string
 		namespace string
@@ -299,6 +300,56 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				},
 			},
 			nodeNames: []string{},
+		}, {
+			name: "deprecated",
+			fields: fields{
+				name:      "deprecated",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated-worker",
+						Namespace: "big-data",
+						UID:       "uid3",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				ds: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
+					Name:      "deprecated-jindofs-worker",
+					Namespace: "big-data",
+					UID:       "uid3",
+				}},
+				pods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "deprecated-jindofs-worker-0",
+							Namespace: "big-data",
+							Labels: map[string]string{
+								"app":              "jindofs",
+								"role":             "jindofs-worker",
+								"fluid.io/dataset": "big-data-hbase-a",
+							},
+						},
+						Spec: v1.PodSpec{
+							NodeName: "node5",
+						},
+					},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node6",
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node7",
+							Labels: map[string]string{
+								"fluid.io/s-default-hbase-a": "true",
+							},
+						},
+					},
+				},
+			},
+			nodeNames: []string{},
 		},
 	}
 
@@ -306,6 +357,10 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 
 	for _, testcase := range testcases {
 		runtimeObjs = append(runtimeObjs, testcase.fields.worker)
+
+		if testcase.fields.ds != nil {
+			runtimeObjs = append(runtimeObjs, testcase.fields.ds)
+		}
 		for _, pod := range testcase.fields.pods {
 			runtimeObjs = append(runtimeObjs, pod)
 		}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	v1 "k8s.io/api/core/v1"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -43,8 +45,13 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		previousCacheNodenames []string
 	)
 
-	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
 		return err
 	}
 

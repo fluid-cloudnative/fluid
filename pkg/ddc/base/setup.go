@@ -78,7 +78,8 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	if shouldSetupWorkers {
 		err = b.Implement.SetupWorkers()
 		if err != nil {
-			b.Log.Error(err, "SetupWorker")
+			// b.Log.Error(err, "SetupWorker")
+			_ = b.loggingErrorExceptConflict(err, "Failed to setup worker")
 			return ready, err
 		}
 	}
@@ -97,7 +98,8 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	// 5.Check if the runtime is ready
 	runtimeReady, err := b.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
-		b.Log.Error(err, "Check if the runtime is ready")
+		// b.Log.Error(err, "Check if the runtime is ready")
+		_ = b.loggingErrorExceptConflict(err, "Failed to check if the runtime is ready")
 		return runtimeReady, err
 	}
 
@@ -108,7 +110,8 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	// 6.Update the dataset status from pending to bound
 	err = b.Implement.BindToDataset()
 	if err != nil {
-		b.Log.Error(err, "Bind the dataset")
+		// b.Log.Error(err, "Bind the dataset")
+		_ = b.loggingErrorExceptConflict(err, "Failed to bind the dataset")
 		return workersReady, err
 	}
 
