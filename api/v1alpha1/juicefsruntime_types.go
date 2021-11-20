@@ -35,7 +35,7 @@ type JuiceFSRuntimeSpec struct {
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
-	// The component spec of JuiceFS worker
+	// The component spec of JuiceFS master
 	Master JuiceFSCompTemplateSpec `json:"master,omitempty"`
 
 	// The component spec of JuiceFS worker
