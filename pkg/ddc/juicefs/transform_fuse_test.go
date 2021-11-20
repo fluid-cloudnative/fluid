@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"encoding/base64"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -41,8 +42,18 @@ func TestTransformFuse(t *testing.T) {
 			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 		},
 	}
+	juicefsSecret2 := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test2",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"access-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+		},
+	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy())
+	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy(), juicefsSecret2.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
@@ -128,7 +139,8 @@ func TestTransformFuse(t *testing.T) {
 							},
 						}},
 					}},
-				}}, juicefsValue: &JuiceFS{}, expect: "", wantErr: true},
+				}}, juicefsValue: &JuiceFS{}, expect: "", wantErr: true,
+		},
 		{
 			name: "test-secret-wrong-2",
 			runtime: &datav1alpha1.JuiceFSRuntime{
@@ -172,6 +184,94 @@ func TestTransformFuse(t *testing.T) {
 					Mounts: []datav1alpha1.Mount{{
 						MountPoint: "juicefs:///mnt/test",
 						Name:       "test2",
+						Options:    map[string]string{"debug": ""},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test1",
+									Key:  "metaurl",
+								},
+							},
+						}},
+					}}}},
+			juicefsValue: &JuiceFS{},
+			expect:       "",
+			wantErr:      false,
+		},
+		{
+			name:    "test-no-mount",
+			runtime: &datav1alpha1.JuiceFSRuntime{},
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-no-mount",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{},
+			},
+			juicefsValue: &JuiceFS{},
+			expect:       "",
+			wantErr:      true,
+		},
+		{
+			name:    "test-no-secret",
+			runtime: &datav1alpha1.JuiceFSRuntime{},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "juicefs:///mnt/test",
+						Name:       "test2",
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "not-exist",
+									Key:  "metaurl",
+								},
+							},
+						}},
+					}},
+				}}, juicefsValue: &JuiceFS{}, expect: "", wantErr: true,
+		},
+		{
+			name:    "test-no-metaurl",
+			runtime: &datav1alpha1.JuiceFSRuntime{},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "juicefs:///mnt/test",
+						Name:       "test",
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "metaurl",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "no-metaurl",
+									Key:  "metaurl",
+								},
+							},
+						}},
+					}},
+				}}, juicefsValue: &JuiceFS{}, expect: "", wantErr: true,
+		},
+		{
+			name: "test-tiredstore",
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{},
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							MediumType: "SSD",
+							Path:       "/data",
+							Low:        "0.7",
+							Quota:      resource.NewQuantity(10, resource.BinarySI),
+						}},
+					},
+				}},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "juicefs:///mnt/test",
+						Name:       "test",
 						Options:    map[string]string{"debug": ""},
 						EncryptOptions: []datav1alpha1.EncryptOption{{
 							Name: "metaurl",

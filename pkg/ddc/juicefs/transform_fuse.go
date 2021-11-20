@@ -40,10 +40,10 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	source := ""
 	for k, v := range mount.Options {
 		switch k {
-		case "storage":
+		case JuiceStorage:
 			value.Fuse.Prepare.Storage = v
 			continue
-		case "bucket":
+		case JuiceBucket:
 			value.Fuse.Prepare.Bucket = v
 			continue
 		default:
@@ -63,25 +63,25 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		}
 
 		switch key {
-		case "metaurl":
+		case JuiceMetaUrl:
 			value.Fuse.Prepare.MetaUrlSecret = secretKeyRef.Name
 			v, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
 				return fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
 			source = string(v)
-		case "access-key":
+		case JuiceAccessKey:
 			value.Fuse.Prepare.AccessKeySecret = secretKeyRef.Name
-		case "secret-key":
+		case JuiceSecretKey:
 			value.Fuse.Prepare.SecretKeySecret = secretKeyRef.Name
 		}
 	}
 
 	if source == "" {
-		return errors.New("can't get metaurl")
+		return fmt.Errorf("can't get metaurl from dataset %s namesapce %s", dataset.Name, dataset.Namespace)
 	}
 	if !strings.Contains(source, "://") {
-		source = "redis://" + source
+		source = fmt.Sprintf("redis://%s", source)
 	}
 
 	image := runtime.Spec.Fuse.Image

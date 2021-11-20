@@ -108,5 +108,5 @@ func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRu
 }
 
 func (j *JuiceFSEngine) getConfigmapName() string {
-	return j.name + "-" + j.runtimeType + "-values"
+	return fmt.Sprintf("%s-%s-values", j.name, j.runtimeType)
 }

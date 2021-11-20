@@ -89,4 +89,20 @@ func TestBuild(t *testing.T) {
 	if err != nil || engine == nil {
 		t.Errorf("fail to exec the build function with the eror %v", err)
 	}
+
+	var errCtx = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         log.NullLogger{},
+		RuntimeType: "juicefs",
+		Runtime:     nil,
+	}
+
+	got, err := Build("testId", errCtx)
+	if err == nil {
+		t.Errorf("expect err, but no err got %v", got)
+	}
 }

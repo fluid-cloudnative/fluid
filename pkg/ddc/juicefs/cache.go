@@ -40,7 +40,10 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		podMetrics = append(podMetrics, podMetric)
 	}
 
-	totalSpace := podMetrics[0].usedSpace
+	var totalSpace int64
+	if len(podMetrics) != 0 {
+		totalSpace = podMetrics[0].usedSpace
+	}
 	var totalCache, totalCacheHits, totalCacheMiss, totalCacheHitThroughput, totalCacheMissThroughput int64
 	for _, p := range podMetrics {
 		totalCache += p.blockCacheBytes

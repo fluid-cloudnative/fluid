@@ -32,4 +32,10 @@ const (
 	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
 
 	DefaultCacheDir = "/var/jfsCache"
+
+	JuiceStorage   = "storage"
+	JuiceBucket    = "bucket"
+	JuiceMetaUrl   = "metaurl"
+	JuiceAccessKey = "access-key"
+	JuiceSecretKey = "secret-key"
 )

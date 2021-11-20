@@ -20,6 +20,7 @@ import (
 	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"testing"
 
@@ -30,7 +31,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -326,10 +326,30 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			},
 		},
 	}
+	testRuntimeWithTiredStore := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test2",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.JuiceFSRuntimeSpec{
+			Replicas: 1,
+			TieredStore: datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{{
+					MediumType: "MEM",
+					Path:       "/data",
+					Quota:      resource.NewQuantity(1024, resource.BinarySI),
+				}},
+			},
+		},
+		Status: datav1alpha1.RuntimeStatus{
+			CacheStates: map[common.CacheStateName]string{
+				common.Cached: "true",
+			},
+		},
+	}
 
-	s := apimachineryRuntime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
-	client := fake.NewFakeClientWithScheme(testScheme, testRuntime)
+	testObjs := []runtime.Object{testRuntime.DeepCopy(), testRuntimeWithTiredStore.DeepCopy()}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	Convey("Test CleanupCache ", t, func() {
 		Convey("cleanup success", func() {
@@ -357,7 +377,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			got := e.cleanupCache()
 			So(got, ShouldEqual, nil)
 		})
-		Convey("test", func() {
+		Convey("test1", func() {
 			var engine *JuiceFSEngine
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
@@ -376,6 +396,31 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntime,
+				Log:       log.NullLogger{},
+			}
+
+			got := e.cleanupCache()
+			So(got, ShouldNotBeNil)
+		})
+		Convey("test2", func() {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch1.Reset()
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
+				func(_ operations.JuiceFileUtils, cacheDir string) error {
+					return errors.New("delete dir error")
+				})
+			defer patch2.Reset()
+
+			e := &JuiceFSEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				runtime:   testRuntimeWithTiredStore,
 				Log:       log.NullLogger{},
 			}
 

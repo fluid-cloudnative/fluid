@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"testing"
 
@@ -33,6 +34,59 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 	Convey("Test CleanupCache ", t, func() {
 		Convey("cleanup success", func() {
 			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
+			runtimeInfo.SetupFuseDeployMode(false, nil)
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch1.Reset()
+			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetPodMetrics",
+				func(_ *JuiceFSEngine, podName string) (string, error) {
+					return mockJuiceFSMetric(), nil
+				})
+			defer patch2.Reset()
+
+			a := &JuiceFSEngine{
+				name:        "test",
+				namespace:   "default",
+				runtimeType: "JuiceFSRuntime",
+				Log:         nil,
+				runtimeInfo: runtimeInfo,
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "fluid",
+					},
+				},
+			}
+			want := cacheStates{
+				cacheCapacity:        "",
+				cached:               "387.17KiB",
+				cachedPercentage:     "151.2%",
+				cacheHitRatio:        "100.0%",
+				cacheThroughputRatio: "100.0%",
+			}
+			got, err := a.queryCacheStatus()
+			if err != nil {
+				t.Error("check failure, want err, got nil")
+			}
+			if want != got {
+				t.Errorf("got=%v, want=%v", got, want)
+			}
+		})
+		Convey("cleanup", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{{
+					MediumType: "MEM",
+					Path:       "/data",
+					Quota:      resource.NewQuantity(100, resource.BinarySI),
+				}},
+			})
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}

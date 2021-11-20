@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -232,6 +233,15 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.JuiceFSRuntimeSpec{
+			TieredStore: datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{{
+					MediumType: "SSD",
+					Path:       "/data",
+					Quota:      resource.NewQuantity(1024, resource.BinarySI),
+				}},
+			},
 		},
 	}
 	testObjs = append(testObjs, (*juicefsruntime).DeepCopy())

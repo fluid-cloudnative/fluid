@@ -29,6 +29,7 @@ import (
 )
 
 func (j JuiceFSEngine) CheckMasterReady() (ready bool, err error) {
+	// JuiceFS Runtime has no master role
 	return true, nil
 }
 

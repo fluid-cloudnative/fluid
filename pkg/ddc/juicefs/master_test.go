@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"testing"
 
 	v1 "k8s.io/api/apps/v1"
@@ -154,5 +155,47 @@ func TestJuiceFSEngine_SetupMaster(t *testing.T) {
 			t.Errorf("fail to update the runtime")
 			return
 		}
+	}
+}
+
+func TestJuiceFSEngine_CheckMasterReady(t *testing.T) {
+	type fields struct {
+		runtime     *datav1alpha1.JuiceFSRuntime
+		name        string
+		namespace   string
+		runtimeType string
+		runtimeInfo base.RuntimeInfoInterface
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		wantReady bool
+		wantErr   bool
+	}{
+		{
+			name:      "test",
+			fields:    fields{},
+			wantReady: true,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{
+				runtime:     tt.fields.runtime,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				runtimeType: tt.fields.runtimeType,
+				runtimeInfo: tt.fields.runtimeInfo,
+			}
+			gotReady, err := j.CheckMasterReady()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CheckMasterReady() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotReady != tt.wantReady {
+				t.Errorf("CheckMasterReady() gotReady = %v, want %v", gotReady, tt.wantReady)
+			}
+		})
 	}
 }
