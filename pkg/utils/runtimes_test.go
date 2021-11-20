@@ -70,6 +70,65 @@ func TestGetAlluxioRuntime(t *testing.T) {
 	}
 }
 
+func TestGetJuiceFSRuntime(t *testing.T) {
+	runtimeNamespace := "default"
+	runtimeName := "juicefs-runtime-1"
+	juicefsRuntime := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: runtimeNamespace,
+		},
+	}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, juicefsRuntime)
+
+	fakeClient := fake.NewFakeClientWithScheme(s, juicefsRuntime)
+
+	tests := []struct {
+		name      string
+		namespace string
+		wantName  string
+		notFound  bool
+	}{
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace,
+			wantName:  runtimeName,
+			notFound:  false,
+		},
+		{
+			name:      runtimeName + "not-exist",
+			namespace: runtimeNamespace,
+			wantName:  "",
+			notFound:  true,
+		},
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace + "not-exist",
+			wantName:  "",
+			notFound:  true,
+		},
+	}
+
+	for k, item := range tests {
+		gotRuntime, err := GetJuiceFSRuntime(fakeClient, item.name, item.namespace)
+		if item.notFound {
+			if err == nil || gotRuntime != nil {
+				t.Errorf("%d check failure, want to got nil", k)
+			} else {
+				if !apierrs.IsNotFound(err) {
+					t.Errorf("%d check failure, want notFound err but got %s", k, err)
+				}
+			}
+		} else {
+			if gotRuntime.Name != item.wantName {
+				t.Errorf("%d check failure, got JuiceFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+			}
+		}
+	}
+}
+
 func TestGetJindoRuntime(t *testing.T) {
 	runtimeNamespace := "default"
 	runtimeName := "jindo-runtime-1"
