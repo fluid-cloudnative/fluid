@@ -385,6 +385,24 @@ func TestGetRuntimeInfo(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "juicefs_test_err",
+			args: args{
+				client:    fake.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:      "juice-fake",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "juice-fake",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -393,7 +411,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
 			}
 		})
