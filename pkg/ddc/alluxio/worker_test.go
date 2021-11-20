@@ -459,7 +459,7 @@ func TestCheckWorkersReady(t *testing.T) {
 
 			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "alluxio", datav1alpha1.TieredStore{})
 			if err != nil {
-				t.Errorf("JindoEngine.CheckWorkersReady() error = %v", err)
+				t.Errorf("AlluxioEngine.CheckWorkersReady() error = %v", err)
 			}
 
 			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
@@ -529,7 +529,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 				},
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1-jindofs-worker",
+						Name:      "test1-alluxio-worker",
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
@@ -745,11 +745,11 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			want := tt.fields.want
 			worker, err := e.buildWorkersAffinity(tt.fields.worker)
 			if err != nil {
-				t.Errorf("JindoEngine.buildWorkersAffinity() = %v", err)
+				t.Errorf("AlluxioEngine.buildWorkersAffinity() = %v", err)
 			}
 
 			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
-				t.Errorf("Test case %s JindoEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
+				t.Errorf("Test case %s AlluxioEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
 			}
 		})
 	}
