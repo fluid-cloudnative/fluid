@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	. "github.com/agiledragon/gomonkey"
@@ -428,4 +429,59 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldNotBeNil)
 		})
 	})
+}
+
+func TestJuiceFSEngine_cleanAll(t *testing.T) {
+	configMaps := []corev1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-config",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-fluid-value",
+				Namespace: "fluid",
+			},
+		},
+	}
+	testObjs := []runtime.Object{}
+	for _, cm := range configMaps {
+		testObjs = append(testObjs, cm.DeepCopy())
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	type fields struct {
+		name      string
+		namespace string
+		Client    client.Client
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Client:    fakeClient,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    fakeClient,
+			}
+			if err := j.cleanAll(); (err != nil) != tt.wantErr {
+				t.Errorf("cleanAll() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
