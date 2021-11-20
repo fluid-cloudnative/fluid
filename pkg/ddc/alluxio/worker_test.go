@@ -21,12 +21,13 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -60,6 +61,7 @@ func TestSetupWorkers(t *testing.T) {
 	type fields struct {
 		replicas    int32
 		nodeInputs  []*v1.Node
+		worker      appsv1.StatefulSet
 		runtime     *datav1alpha1.AlluxioRuntime
 		runtimeInfo base.RuntimeInfoInterface
 		name        string
@@ -79,6 +81,16 @@ func TestSetupWorkers(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node-spark",
 						},
+					},
+				},
+				worker: appsv1.StatefulSet{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 				runtime: &datav1alpha1.AlluxioRuntime{
@@ -108,11 +120,13 @@ func TestSetupWorkers(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				replicas: 1,
-				nodeInputs: []*v1.Node{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "test-node-hadoop",
-						},
+				worker: appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 				runtime: &datav1alpha1.AlluxioRuntime{
@@ -146,6 +160,8 @@ func TestSetupWorkers(t *testing.T) {
 				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
 			}
 
+			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
+
 			s := runtime.NewScheme()
 			data := &v1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -155,6 +171,7 @@ func TestSetupWorkers(t *testing.T) {
 			}
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
 			_ = v1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
 			runtimeObjs = append(runtimeObjs, data)
@@ -168,23 +185,30 @@ func TestSetupWorkers(t *testing.T) {
 				namespace:   tt.fields.namespace,
 				Log:         ctrl.Log.WithName(tt.fields.name),
 			}
+
+			e.Helper = ctrlhelper.BuildHelper(tt.fields.runtimeInfo, mockClient, e.Log)
 			err := e.SetupWorkers()
 			if err != nil {
 				t.Errorf("AlluxioEngine.SetupWorkers() error = %v", err)
 			}
-			for _, node := range tt.fields.nodeInputs {
-				newNode, err := kubeclient.GetNode(mockClient, node.Name)
-				if err != nil {
-					t.Errorf("fail to get the node with the error %v", err)
-				}
 
-				if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
-				if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
+			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
+				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
 			}
+
+			//for _, node := range tt.fields.nodeInputs {
+			//	newNode, err := kubeclient.GetNode(mockClient, node.Name)
+			//	if err != nil {
+			//		t.Errorf("fail to get the node with the error %v", err)
+			//	}
+			//
+			//	if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
+			//		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			//	}
+			//	if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
+			//		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			//	}
+			//}
 		})
 	}
 }
@@ -312,7 +336,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 func TestCheckWorkersReady(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
-		worker    *appsv1.DaemonSet
+		worker    *appsv1.StatefulSet
 		fuse      *appsv1.DaemonSet
 		name      string
 		namespace string
@@ -340,13 +364,13 @@ func TestCheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
 						Namespace: "big-data",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberReady: 1,
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -381,13 +405,13 @@ func TestCheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-worker",
 						Namespace: "big-data",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberReady: 0,
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 0,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -420,6 +444,7 @@ func TestCheckWorkersReady(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
 			_ = v1.AddToScheme(s)
 
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker, tt.fields.fuse)
@@ -431,6 +456,14 @@ func TestCheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
+
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "alluxio", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("JindoEngine.CheckWorkersReady() error = %v", err)
+			}
+
+			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
 			gotReady, err := e.CheckWorkersReady()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AlluxioEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
@@ -467,6 +500,256 @@ func TestGetWorkerSelectors(t *testing.T) {
 			}
 			if got := e.getWorkerSelectors(); got != tt.want {
 				t.Errorf("AlluxioEngine.getWorkerSelectors() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildWorkersAffinity(t *testing.T) {
+	type fields struct {
+		dataset *datav1alpha1.Dataset
+		worker  *appsv1.StatefulSet
+		want    *v1.Affinity
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   *v1.Affinity
+	}{
+		{name: "exlusive",
+			fields: fields{
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test1",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						PlacementMode: datav1alpha1.ExclusiveMode,
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test1-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+				},
+				want: &v1.Affinity{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+							{
+								LabelSelector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "fluid.io/dataset",
+											Operator: metav1.LabelSelectorOpExists,
+										},
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test1",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {name: "shared",
+			fields: fields{
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test2",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						PlacementMode: datav1alpha1.ShareMode,
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test2-alluxio-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+				},
+				want: &v1.Affinity{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
+							{
+								// The default weight is 50
+								Weight: 50,
+								PodAffinityTerm: v1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchExpressions: []metav1.LabelSelectorRequirement{
+											{
+												Key:      "fluid.io/dataset",
+												Operator: metav1.LabelSelectorOpExists,
+											},
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+							{
+								LabelSelector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "fluid.io/dataset-placement",
+											Operator: metav1.LabelSelectorOpIn,
+											Values:   []string{"Exclusive"},
+										},
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test2",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {name: "dataset-with-affinity",
+			fields: fields{
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test3",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						NodeAffinity: &datav1alpha1.CacheableNodeAffinity{
+							Required: &v1.NodeSelector{
+								NodeSelectorTerms: []v1.NodeSelectorTerm{
+									{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "nodeA",
+												Operator: v1.NodeSelectorOpIn,
+												Values:   []string{"true"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test3-alluxio-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+				},
+				want: &v1.Affinity{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+							{
+								LabelSelector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "fluid.io/dataset",
+											Operator: metav1.LabelSelectorOpExists,
+										},
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "nodeA",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test3",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
+			_ = v1.AddToScheme(s)
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.fields.dataset)
+			runtimeObjs = append(runtimeObjs, tt.fields.worker)
+			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			e := &AlluxioEngine{
+				name:      tt.fields.dataset.Name,
+				namespace: tt.fields.dataset.Namespace,
+				Client:    mockClient,
+			}
+
+			want := tt.fields.want
+			worker, err := e.buildWorkersAffinity(tt.fields.worker)
+			if err != nil {
+				t.Errorf("JindoEngine.buildWorkersAffinity() = %v", err)
+			}
+
+			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
+				t.Errorf("Test case %s JindoEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
 			}
 		})
 	}

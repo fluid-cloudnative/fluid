@@ -96,6 +96,9 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 
 	// 12.set API Gateway
 	err = e.transformAPIGateway(runtime, value)
+
+	// 13.set the placementMode
+	e.transformPlacementMode(dataset, value)
 	return
 }
 
@@ -316,12 +319,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	e.optimizeDefaultForWorker(runtime, value)
 
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
-	labelName := e.getCommonLabelname()
+	//labelName := e.getCommonLabelname()
 
 	if len(value.Worker.NodeSelector) == 0 {
 		value.Worker.NodeSelector = map[string]string{}
 	}
-	value.Worker.NodeSelector[labelName] = "true"
+	//value.Worker.NodeSelector[labelName] = "true"
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		value.Worker.Properties = runtime.Spec.Worker.Properties
@@ -414,4 +417,13 @@ func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRun
 		properties = runtime.Spec.Master.NodeSelector
 	}
 	return properties
+}
+
+func (e *AlluxioEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *Alluxio) {
+
+	value.PlacementMode = string(dataset.Spec.PlacementMode)
+	if len(value.PlacementMode) == 0 {
+		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
+
 }

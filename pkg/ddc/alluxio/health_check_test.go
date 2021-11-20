@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -44,6 +45,20 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				ReadyReplicas: 3,
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-worker",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
+			},
+		},
 	}
 	testObjs := []runtime.Object{}
 	for _, statefulset := range statefulsetInputs {
@@ -51,17 +66,6 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	}
 
 	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-worker",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-fuse",
@@ -354,16 +358,19 @@ func TestCheckMasterHealthy(t *testing.T) {
 }
 
 func TestCheckWorkersHealthy(t *testing.T) {
-	var daemonSetInputs = []appsv1.DaemonSet{
+	var statefulSetInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 		{
@@ -371,16 +378,19 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				Name:      "spark-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
 			},
 		},
 	}
 
 	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
+	for _, daemonSet := range statefulSetInputs {
 		testObjs = append(testObjs, daemonSet.DeepCopy())
 	}
 

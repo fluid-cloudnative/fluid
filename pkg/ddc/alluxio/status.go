@@ -20,6 +20,8 @@ import (
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
 	"time"
@@ -30,19 +32,19 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (
 		masterReady, workerReady bool
-		masterName               string = e.getMasterStatefulsetName()
-		workerName               string = e.getWorkerDaemonsetName()
+		masterName               string = e.getMasterName()
+		workerName               string = e.getWorkertName()
 		namespace                string = e.namespace
 	)
 
 	// 1. Master should be ready
-	master, err := e.getMasterStatefulset(masterName, namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
 	// 2. Worker should be ready
-	workers, err := e.getDaemonset(workerName, namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -91,16 +93,17 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Status.NumberUnavailable)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
-		if runtime.Replicas() == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-			// runtimeToUpdate.Status.CacheStates[data.Cacheable] = runtime.Status.CacheStates[data.CacheCapacity]
-			workerReady = true
-		} else if workers.Status.NumberAvailable == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-			workerReady = true
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+		if workers.Status.ReadyReplicas > 0 {
+			if runtime.Replicas() == workers.Status.ReadyReplicas {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+				workerReady = true
+			} else if workers.Status.ReadyReplicas >= 1 {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
+				workerReady = true
+			}
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
@@ -117,7 +120,13 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if err != nil {
-				e.Log.Error(err, "Failed to update the runtime")
+				_ = utils.LoggingErrorExceptConflict(e.Log,
+					err,
+					"Failed to update the runtime",
+					types.NamespacedName{
+						Namespace: e.namespace,
+						Name:      e.name,
+					})
 			}
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")

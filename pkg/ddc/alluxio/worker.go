@@ -17,14 +17,14 @@ package alluxio
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -32,57 +32,43 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
-	runtime, err := e.getRuntime()
-	if err != nil {
-		e.Log.Error(err, "setupWorker")
-		return err
-	}
+	var (
+		workerName string = e.getWorkertName()
+		namespace  string = e.namespace
+	)
 
-	replicas := runtime.Replicas()
-
-	currentReplicas, err := e.AssignNodesToCache(replicas)
+	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 	if err != nil {
 		return err
 	}
 
-	e.Log.Info("check the desired and current replicas",
-		"desiredReplicas", replicas,
-		"currentReplicas", currentReplicas)
-
-	if currentReplicas == 0 {
-		return fmt.Errorf("the number of the current workers which can be scheduled is 0")
-	}
-
-	// 2. Update the status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
 		if err != nil {
-			e.Log.Error(err, "setupWorker")
 			return err
 		}
-
 		runtimeToUpdate := runtime.DeepCopy()
-
-		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = currentReplicas
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
+		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-			"The workers are initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
+		return err
 	})
-
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to setup worker",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
+	}
 	return
 }
 
@@ -106,71 +92,32 @@ func (e *AlluxioEngine) ShouldSetupWorkers() (should bool, err error) {
 // are the workers ready
 func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 	var (
-		workerReady, workerPartialReady bool
-		workerName                      string = e.getWorkerDaemonsetName()
-		namespace                       string = e.namespace
+		workerName string = e.getWorkertName()
+		namespace  string = e.namespace
 	)
 
-	runtime, err := e.getRuntime()
+	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
-	// runtime, err := e.getRuntime()
-	// if err != nil {
-	// 	return
-	// }
-
-	workers, err := e.getDaemonset(workerName, namespace)
-	if err != nil {
-		return ready, err
-	}
-
-	// replicas := runtime.Replicas()
-
-	if workers.Status.NumberReady > 0 {
-		if runtime.Replicas() == workers.Status.NumberReady {
-			workerReady = true
-		} else if workers.Status.NumberReady >= 1 {
-			workerPartialReady = true
-		}
-	}
-
-	if workerReady || workerPartialReady {
-		ready = true
-	} else {
-		e.Log.Info("workers are not ready", "workerReady", workerReady,
-			"workerPartialReady", workerPartialReady)
-		return
-	}
-
-	// update the status as the workers are ready
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
+		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-			"The workers are ready.", corev1.ConditionTrue)
-		if workerPartialReady {
-			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-				"The workers are partially ready.", corev1.ConditionTrue)
-
-			runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-		}
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
+		return err
 	})
 
 	return
@@ -195,4 +142,113 @@ func (e *AlluxioEngine) getWorkerSelectors() string {
 		selectorValue = selector.String()
 	}
 	return selectorValue
+}
+
+// buildWorkersAffinity builds workers affinity if it doesn't have
+func (e *AlluxioEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUpdate *v1.StatefulSet, err error) {
+	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
+	// We need to enhance it in future
+	workersToUpdate = workers.DeepCopy()
+
+	if workersToUpdate.Spec.Template.Spec.Affinity == nil {
+		workersToUpdate.Spec.Template.Spec.Affinity = &corev1.Affinity{}
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return workersToUpdate, err
+		}
+		// 1. Set pod anti affinity(required) for same dataset (Current using port conflict for scheduling, no need to do)
+
+		// 2. Set pod anti affinity for the different dataset
+		if dataset.IsExclusiveMode() {
+			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "fluid.io/dataset",
+									Operator: metav1.LabelSelectorOpExists,
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			}
+		} else {
+			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						// The default weight is 50
+						Weight: 50,
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "fluid.io/dataset",
+										Operator: metav1.LabelSelectorOpExists,
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "fluid.io/dataset-placement",
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{string(datav1alpha1.ExclusiveMode)},
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			}
+		}
+
+		// 3. Prefer to locate on the node which already has fuse on it
+		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
+			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
+		}
+
+		if len(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
+			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.PreferredSchedulingTerm{}
+		}
+
+		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+			append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+				corev1.PreferredSchedulingTerm{
+					Weight: 100,
+					Preference: corev1.NodeSelectorTerm{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      e.getFuseLabelname(),
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"true"},
+							},
+						},
+					},
+				})
+
+		// 3. set node affinity if possible
+		if dataset.Spec.NodeAffinity != nil {
+			if dataset.Spec.NodeAffinity.Required != nil {
+				workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution =
+					dataset.Spec.NodeAffinity.Required
+			}
+		}
+
+		err = e.Client.Update(context.TODO(), workersToUpdate)
+		if err != nil {
+			return workersToUpdate, err
+		}
+
+	}
+
+	return
 }

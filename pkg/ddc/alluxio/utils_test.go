@@ -595,7 +595,7 @@ func TestGetMasterStatefulsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getMasterStatefulsetName(); gotDsName != tt.wantDsName {
+			if gotDsName := e.getMasterName(); gotDsName != tt.wantDsName {
 				t.Errorf("AlluxioEngine.getMasterStatefulsetName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
@@ -624,7 +624,7 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getWorkerDaemonsetName(); gotDsName != tt.wantDsName {
+			if gotDsName := e.getWorkertName(); gotDsName != tt.wantDsName {
 				t.Errorf("AlluxioEngine.getWorkerDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
