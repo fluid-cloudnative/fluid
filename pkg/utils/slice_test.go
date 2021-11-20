@@ -77,3 +77,15 @@ func TestSubtractString(t *testing.T) {
 	}
 
 }
+
+func TestRemoveDuplicateStr(t *testing.T) {
+
+	input := []string{"Mumbai", "Delhi", "Ahmedabad", "Mumbai", "Bangalore", "Delhi", "Kolkata", "Pune"}
+	expected := []string{"Mumbai", "Delhi", "Ahmedabad", "Bangalore", "Kolkata", "Pune"}
+
+	result := RemoveDuplicateStr(input)
+
+	if !reflect.DeepEqual(expected, result) {
+		t.Errorf("check RemoveDuplicateStr failure,want:%v,got:%v", expected, result)
+	}
+}

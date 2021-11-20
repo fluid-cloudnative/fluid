@@ -420,8 +420,54 @@ func TestFindLabelNameOnNode(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		wanted := FindLabelNameOnNode(*test.node, test.key)
+		wanted := findLabelNameOnNode(*test.node, test.key)
 		if wanted != test.wanted {
+			t.Errorf("fail to Find the label on node ")
+		}
+	}
+}
+
+func TestCheckIfRuntimeInNode(t *testing.T) {
+	var testCase = []struct {
+		node   *v1.Node
+		key    string
+		wanted bool
+	}{
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
+				Spec:       v1.NodeSpec{},
+			},
+			key:    "abc",
+			wanted: false,
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-alluxio-fluid-hbase": "true"}},
+				Spec:       v1.NodeSpec{},
+			},
+
+			wanted: true,
+		},
+		{
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec:       v1.NodeSpec{},
+			},
+
+			wanted: false,
+		},
+	}
+
+	for _, test := range testCase {
+		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
+
+		found := CheckIfRuntimeInNode(*test.node, runtimeInfo)
+
+		if found != test.wanted {
 			t.Errorf("fail to Find the label on node ")
 		}
 	}

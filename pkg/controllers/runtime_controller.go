@@ -25,8 +25,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/fluid-cloudnative/fluid/pkg/dump"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 
@@ -49,6 +51,8 @@ type RuntimeReconciler struct {
 
 // NewRuntimeReconciler creates the default RuntimeReconciler
 func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.Client, log logr.Logger, recorder record.EventRecorder) *RuntimeReconciler {
+	// install gorouting dump generator for all runtime reconciler
+	dump.InstallgoroutineDumpGenerator()
 	r := &RuntimeReconciler{
 		implement: reconciler,
 		Client:    client,
@@ -240,7 +244,7 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+	return utils.RequeueAfterInterval(time.Duration(90 * time.Second))
 }
 
 // AddFinalizerAndRequeue add  finalizer and requeue

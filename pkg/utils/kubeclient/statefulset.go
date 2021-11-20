@@ -9,11 +9,25 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
+// GetStatefulset gets the statefulset by name and namespace
+func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
+	master = &appsv1.StatefulSet{}
+	err = c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, master)
+
+	return master, err
+}
+
 // GetPodsForStatefulSet gets pods of the specified statefulset
-func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []*v1.Pod, err error) {
+func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (pods []v1.Pod, err error) {
 
 	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
@@ -35,7 +49,7 @@ func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector la
 					return pods, err
 				}
 				if matched {
-					pods = append(pods, &pod)
+					pods = append(pods, pod)
 				}
 				// wantedSet, err := resolveControllerRef(c, controllerRef, set.Namespace, statefulSetControllerKind)
 			}
@@ -74,4 +88,20 @@ func getParentName(pod *v1.Pod) string {
 // isMemberOf tests if pod is a member of statefulset sts.
 func isMemberOf(sts *appsv1.StatefulSet, pod *v1.Pod) bool {
 	return getParentName(pod) == sts.Name
+}
+
+// GetPhaseFromStatefulset gets the phase from statefulset
+func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase datav1alpha1.RuntimePhase) {
+	if sts.Status.ReadyReplicas > 0 {
+		if replicas == sts.Status.ReadyReplicas {
+			phase = datav1alpha1.RuntimePhaseReady
+		} else {
+			phase = datav1alpha1.RuntimePhasePartialReady
+		}
+	} else {
+		phase = datav1alpha1.RuntimePhaseNotReady
+	}
+
+	return
+
 }

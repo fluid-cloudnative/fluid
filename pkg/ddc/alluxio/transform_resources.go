@@ -24,6 +24,20 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+
+	if runtime == nil {
+		return
+	}
+	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
+		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+	}
+	if len(runtime.Spec.JobMaster.Resources.Limits) > 0 || len(runtime.Spec.JobMaster.Resources.Requests) > 0 {
+		value.JobMaster.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobMaster.Resources)
+	}
+
+}
+
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
 	if runtime.Spec.Worker.Resources.Limits == nil {
@@ -37,6 +51,11 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 	}
 
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
+
+	// for job worker
+	if len(runtime.Spec.JobWorker.Resources.Limits) > 0 || len(runtime.Spec.JobWorker.Resources.Requests) > 0 {
+		value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
+	}
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {

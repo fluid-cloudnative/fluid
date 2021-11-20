@@ -211,7 +211,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 		Status: v1alpha1.DatasetStatus{
 			Runtimes: []v1alpha1.Runtime{
-				v1alpha1.Runtime{
+				{
 					Name:      "alluxio",
 					Namespace: "default",
 					Type:      common.ALLUXIO_RUNTIME,
@@ -234,7 +234,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 		Status: v1alpha1.DatasetStatus{
 			Runtimes: []v1alpha1.Runtime{
-				v1alpha1.Runtime{
+				{
 					Name:      "goosefs",
 					Namespace: "default",
 					Type:      common.GooseFSRuntime,
@@ -257,7 +257,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 		Status: v1alpha1.DatasetStatus{
 			Runtimes: []v1alpha1.Runtime{
-				v1alpha1.Runtime{
+				{
 					Name:      "jindo",
 					Namespace: "default",
 					Type:      common.JINDO_RUNTIME,

@@ -2,10 +2,12 @@ package jindo
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -18,14 +20,15 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *JindoEngine) SetupWorkers() (err error) {
-	var (
-		workerName        string = e.getWorkertName()
-		namespace         string = e.namespace
-		needRuntimeUpdate bool   = false
-	)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := e.getStatefulset(workerName, namespace)
+		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 		if err != nil {
+			if fluiderrs.IsDeprecated(err) {
+				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+				return nil
+			}
 			return err
 		}
 
@@ -33,79 +36,28 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 		if err != nil {
 			return err
 		}
-
-		desireReplicas := runtime.Replicas()
-		if *workers.Spec.Replicas != desireReplicas {
-			workerToUpdate, err := e.buildWorkersAffinity(workers)
-			if err != nil {
-				return err
-			}
-			workerToUpdate.Spec.Replicas = &desireReplicas
-			err = e.Client.Update(context.TODO(), workerToUpdate)
-			if err != nil {
-				return err
-			}
-		} else {
-			e.Log.V(1).Info("Nothing to do for syncing")
-		}
-
-		needRuntimeUpdate = true
-		return nil
-	})
-
-	if err != nil {
-		e.Log.Error(err, "Failed to setup worker")
-		return err
-	}
-
-	if !needRuntimeUpdate {
-		return nil
-	}
-
-	// 2. Update the runtime status
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			e.Log.Error(err, "setupWorker")
-			return err
-		}
-
-		workers, err := e.getStatefulset(workerName, namespace)
-		if err != nil {
-			return err
-		}
-
 		runtimeToUpdate := runtime.DeepCopy()
-
-		if workers.Status.ReadyReplicas > 0 {
-			if runtime.Replicas() == workers.Status.ReadyReplicas {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseReady
-			} else if workers.Status.ReadyReplicas >= 1 {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-			}
-		} else {
-			runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
+		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
-
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = runtime.Replicas()
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = *workers.Spec.Replicas
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-			"The workers are initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
+		return err
 	})
-
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to setup worker",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
+	}
 	return
 }
 
@@ -126,67 +78,37 @@ func (e *JindoEngine) ShouldSetupWorkers() (should bool, err error) {
 	return
 }
 
-// are the workers ready
+// CheckWorkersReady checks if the workers are ready
 func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
-	var (
-		workerReady, workerPartialReady bool
-		workerName                      string = e.getWorkertName()
-		namespace                       string = e.namespace
-	)
 
-	runtime, err := e.getRuntime()
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
-		return ready, err
-	}
-
-	workers, err := e.getStatefulset(workerName, namespace)
-	if err != nil {
-		return ready, err
-	}
-
-	if workers.Status.ReadyReplicas > 0 {
-		if runtime.Replicas() == workers.Status.ReadyReplicas {
-			workerReady = true
-		} else if workers.Status.ReadyReplicas >= 1 {
-			workerPartialReady = true
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			ready = true
+			return ready, nil
 		}
+		return ready, err
 	}
 
-	if workerReady || workerPartialReady {
-		ready = true
-	} else {
-		e.Log.Info("workers are not ready", "workerReady", workerReady,
-			"workerPartialReady", workerPartialReady)
-		return
-	}
-
-	// update the status as the workers are ready
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
+		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(e.Log,
+				err,
+				"Failed to setup worker",
+				types.NamespacedName{
+					Namespace: e.namespace,
+					Name:      e.name,
+				})
 		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-			"The workers are ready.", corev1.ConditionTrue)
-		if workerPartialReady {
-			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-				"The workers are partially ready.", corev1.ConditionTrue)
-
-			runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-		}
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
+		return err
 	})
 
 	return
@@ -280,7 +202,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 			}
 		}
 
-		// 3. Perefer to locate on the node which already has fuse on it
+		// 3. Prefer to locate on the node which already has fuse on it
 		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
 			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
 		}

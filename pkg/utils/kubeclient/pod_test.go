@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +23,7 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
+	_ = appsv1.AddToScheme(testScheme)
 }
 
 func TestGetPVCNamesFromPod(t *testing.T) {

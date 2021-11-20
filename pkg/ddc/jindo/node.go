@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	v1 "k8s.io/api/core/v1"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -36,15 +38,20 @@ func (e *JindoEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum i
 // SyncScheduleInfoToCacheNodes syncs the cache info of the nodes by labeling the nodes
 // And the Application pod can leverage such info for scheduling
 func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes")
+	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", e.name, "namespace", e.namespace)
 
 	var (
 		currentCacheNodenames  []string
 		previousCacheNodenames []string
 	)
 
-	workers, err := e.getStatefulset(e.getWorkertName(), e.namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
 		return err
 	}
 
@@ -80,6 +87,9 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 
+	currentCacheNodenames = utils.RemoveDuplicateStr(currentCacheNodenames)
+	previousCacheNodenames = utils.RemoveDuplicateStr(previousCacheNodenames)
+
 	addedCacheNodenames := utils.SubtractString(currentCacheNodenames, previousCacheNodenames)
 	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
 
@@ -94,11 +104,14 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
 			}
-
-			err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
-			if err != nil {
-				e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
-				return err
+			if !datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.LabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to label new cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already added to cache", "node", nodeName)
 			}
 		}
 	}
@@ -112,6 +125,15 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 			if utils.IgnoreNotFound(err) != nil {
 				e.Log.Error(err, "Failed to find new cache node", "node", nodeName)
 				return err
+			}
+			if datasetSchedule.CheckIfRuntimeInNode(node, e.runtimeInfo) {
+				err = datasetSchedule.UnlabelCacheNode(node, e.runtimeInfo, e.Client)
+				if err != nil {
+					e.Log.Error(err, "Failed to unlabel cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				e.Log.Info("The node is already removed from cache", "node", nodeName)
 			}
 
 		}

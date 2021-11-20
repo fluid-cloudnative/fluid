@@ -7,13 +7,15 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 )
 
 func TestSetupWorkers(t *testing.T) {
@@ -43,13 +45,15 @@ func TestSetupWorkers(t *testing.T) {
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
 	type fields struct {
-		replicas    int32
-		nodeInputs  []*v1.Node
-		worker      appsv1.StatefulSet
-		runtime     *datav1alpha1.JindoRuntime
-		runtimeInfo base.RuntimeInfoInterface
-		name        string
-		namespace   string
+		replicas         int32
+		nodeInputs       []*v1.Node
+		worker           *appsv1.StatefulSet
+		deprecatedWorker *appsv1.DaemonSet
+		runtime          *datav1alpha1.JindoRuntime
+		runtimeInfo      base.RuntimeInfoInterface
+		name             string
+		namespace        string
+		deprecated       bool
 	}
 	tests := []struct {
 		name             string
@@ -67,7 +71,7 @@ func TestSetupWorkers(t *testing.T) {
 						},
 					},
 				},
-				worker: appsv1.StatefulSet{
+				worker: &appsv1.StatefulSet{
 
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-worker",
@@ -104,7 +108,7 @@ func TestSetupWorkers(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				replicas: 1,
-				worker: appsv1.StatefulSet{
+				worker: &appsv1.StatefulSet{
 
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hadoop-jindofs-worker",
@@ -135,6 +139,37 @@ func TestSetupWorkers(t *testing.T) {
 					"fluid.io/s-h-jindo-t-big-data-hadoop": "0B",
 				},
 			},
+		}, {
+			name: "deprecated",
+			fields: fields{
+				replicas: 0,
+				worker:   &appsv1.StatefulSet{},
+				deprecatedWorker: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
+					Name:      "deprecated-jindofs-worker",
+					Namespace: "big-data",
+				}},
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 1,
+					},
+				},
+				runtimeInfo: runtimeInfoHadoop,
+				name:        "deprecated",
+				namespace:   "big-data",
+				deprecated:  true,
+			},
+			wantedNodeLabels: map[string]map[string]string{
+				"test-node-hadoop": {
+					"fluid.io/dataset-num":                 "1",
+					"fluid.io/s-jindo-big-data-hadoop":     "true",
+					"fluid.io/s-big-data-hadoop":           "true",
+					"fluid.io/s-h-jindo-t-big-data-hadoop": "0B",
+				},
+			},
 		},
 	}
 
@@ -155,9 +190,15 @@ func TestSetupWorkers(t *testing.T) {
 			}
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
+			if tt.fields.deprecatedWorker != nil {
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.deprecatedWorker)
+			}
 			_ = v1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
+			if tt.fields.deprecatedWorker != nil {
+				runtimeObjs = append(runtimeObjs, tt.fields.deprecatedWorker)
+			}
 			runtimeObjs = append(runtimeObjs, data)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
@@ -169,13 +210,17 @@ func TestSetupWorkers(t *testing.T) {
 				namespace:   tt.fields.namespace,
 				Log:         ctrl.Log.WithName(tt.fields.name),
 			}
+
+			e.Helper = ctrlhelper.BuildHelper(tt.fields.runtimeInfo, mockClient, e.Log)
 			err := e.SetupWorkers()
 			if err != nil {
-				t.Errorf("JindoEngine.SetupWorkers() error = %v", err)
+				t.Errorf("testCase %s JindoEngine.SetupWorkers() error = %v", tt.name, err)
 			}
 
-			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
-				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+			if !tt.fields.deprecated {
+				if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
+					t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+				}
 			}
 
 			// for _, node := range tt.fields.nodeInputs {
@@ -410,6 +455,46 @@ func TestCheckWorkersReady(t *testing.T) {
 			},
 			wantReady: false,
 			wantErr:   false,
+		}, {
+			name: "deprecated",
+			fields: fields{
+				name:      "deprecated",
+				namespace: "big-data",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 1,
+						Fuse: datav1alpha1.JindoFuseSpec{
+							Global: true,
+						},
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated-jindofs-worker-0",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 0,
+					},
+				},
+				fuse: &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberAvailable:        0,
+						DesiredNumberScheduled: 1,
+						CurrentNumberScheduled: 0,
+					},
+				},
+			},
+			wantReady: true,
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
@@ -438,6 +523,14 @@ func TestCheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
+
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "jindo", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("JindoEngine.CheckWorkersReady() error = %v", err)
+			}
+
+			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
 			gotReady, err := e.CheckWorkersReady()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JindoEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
@@ -534,7 +627,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test1",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
@@ -606,7 +699,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test2",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
@@ -687,7 +780,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test3",
-											Operator: corev1.NodeSelectorOpIn,
+											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
 									},
