@@ -10,6 +10,9 @@ import (
 
 var timeLog logr.Logger
 
+// the default task elapsed
+var taskTimeThreshold time.Duration = 2 * time.Second
+
 func init() {
 	timeLog = ctrl.Log.WithName("utils")
 }
@@ -29,6 +32,5 @@ func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}
 
 // checkLongTask checks the time conusmes
 func checkLongTask(elpased time.Duration) bool {
-	var threshold time.Duration = 2 * time.Second
-	return elpased >= threshold
+	return elpased >= taskTimeThreshold
 }
