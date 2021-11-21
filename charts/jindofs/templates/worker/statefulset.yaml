@@ -23,6 +23,7 @@ spec:
       role: jindofs-worker
   serviceName: {{ template "jindofs.fullname" . }}-worker
   replicas: {{ .Values.worker.replicaCount }}
+  podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   template:
     metadata:
       labels:

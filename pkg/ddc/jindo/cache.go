@@ -3,6 +3,7 @@ package jindo
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -11,6 +12,7 @@ import (
 
 // queryCacheStatus checks the cache status
 func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
+	defer utils.TimeTrack(time.Now(), "JindoEngine.queryCacheStatus", "name", e.name, "namespace", e.namespace)
 	summary, err := e.GetReportSummary()
 	if err != nil {
 		e.Log.Error(err, "Failed to get Jindo summary when query cache status")

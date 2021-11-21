@@ -2,12 +2,16 @@ package utils
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 )
 
 var timeLog logr.Logger
+
+// the default task elapsed
+var taskTimeThreshold time.Duration = 2 * time.Second
 
 func init() {
 	timeLog = ctrl.Log.WithName("utils")
@@ -19,5 +23,14 @@ func init() {
 //   defer utils.TimeTrack(time.Now(), <func-name>, <keysAndValues>...)
 func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}) {
 	elpased := time.Since(start)
-	timeLog.Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
+	if checkLongTask(elpased) {
+		timeLog.Info(fmt.Sprintf("Warning: %s took %s, it's a long task.", processName, elpased), keysAndValues...)
+	} else {
+		timeLog.V(1).Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
+	}
+}
+
+// checkLongTask checks the time conusmes
+func checkLongTask(elpased time.Duration) bool {
+	return elpased >= taskTimeThreshold
 }

@@ -16,6 +16,8 @@ limitations under the License.
 package base
 
 import (
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -23,6 +25,7 @@ import (
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
+	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
 	err = t.Implement.SyncMetadata()
 	if err != nil {
 		return

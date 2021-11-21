@@ -17,9 +17,10 @@ package jindo
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sync"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/pkg/errors"
 
@@ -67,7 +68,7 @@ func NewRuntimeReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=jindoruntimes/status,verbs=get;update;patch
 
 func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	defer utils.TimeTrack(time.Now(), "Reconcile", "request", req)
+	defer utils.TimeTrack(time.Now(), "Reconcile JindoRuntime", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context.Background(),
 		Log:            r.Log.WithValues("jindoruntime", req.NamespacedName),

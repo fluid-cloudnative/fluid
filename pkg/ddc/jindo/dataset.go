@@ -3,6 +3,7 @@ package jindo
 import (
 	"context"
 	"reflect"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -71,6 +72,7 @@ func (e *JindoEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 }
 
 func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
+	defer utils.TimeTrack(time.Now(), "JindoEngine.UpdateCacheOfDataset", "name", e.name, "namespace", e.namespace)
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
 	if err != nil {
