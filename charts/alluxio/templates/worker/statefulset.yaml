@@ -32,8 +32,8 @@ spec:
       app: {{ template "alluxio.name" . }}
       release: {{ .Release.Name }}
       role: alluxio-worker
-  serviceName: { { template "alluxio.fullname" . } }-worker
-  replicas: { { .Values.worker.replicaCount } }
+  serviceName: {{ template "alluxio.fullname" . }}-worker
+  replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
       labels:
@@ -42,8 +42,8 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: alluxio-worker
-        fluid.io/dataset: { { .Release.Namespace } }-{{ .Release.Name }}
-        fluid.io/dataset-placement: { { .Values.placement } }
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
       enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
