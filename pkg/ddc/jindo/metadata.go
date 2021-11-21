@@ -3,10 +3,11 @@ package jindo
 import (
 	"context"
 	"errors"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/client-go/util/retry"
 	"reflect"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/client-go/util/retry"
 )
 
 // MetadataSyncResult describes result for asynchronous metadata sync
@@ -18,6 +19,9 @@ type MetadataSyncResult struct {
 }
 
 func (e *JindoEngine) SyncMetadata() (err error) {
+	defer utils.TimeTrack(time.Now(), "JindoEngine.SyncMetadata", "name", e.name, "namespace", e.namespace)
+	defer e.Log.V(1).Info("End to sync metadata", "name", e.name, "namespace", e.namespace)
+	e.Log.V(1).Info("Start to sync metadata", "name", e.name, "namespace", e.namespace)
 	should, err := e.shouldSyncMetadata()
 	if err != nil {
 		e.Log.Error(err, "Failed to check if should sync metadata")
