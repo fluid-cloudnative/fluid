@@ -366,7 +366,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:        1,
-				ReadyReplicas:   1,
+				ReadyReplicas:   0,
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -451,7 +451,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			engine:                           engines[0],
 			expectedWorkerPhase:              datav1alpha1.RuntimePhaseNotReady,
 			expectedErrorNil:                 false,
-			expectedRuntimeWorkerNumberReady: 1,
+			expectedRuntimeWorkerNumberReady: 0,
 			expectedRuntimeWorkerAvailable:   1,
 		},
 		{
