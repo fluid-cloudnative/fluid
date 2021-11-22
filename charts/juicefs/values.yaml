@@ -1,0 +1,73 @@
+# This should not be modified in the usual case.
+fullnameOverride: juicefs
+
+##
+## Example:
+##   - key: "toleration=key"
+##     operator: "Equal"
+##     value: "value"
+##     effect: "NoSchedule"
+##
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+
+tieredstore:
+  path: /dev/shm
+
+# Docker Image
+image: juicedata/juicefs-csi-driver
+imageTag: v0.10.5
+imagePullPolicy: IfNotPresent
+
+## WORKER ##
+worker:
+  image: ""
+  imageTag: ""
+  imagePullPolicy: ""
+  nodeSelector: ""
+  cacheDir: ""
+  ports: []
+  envs: []
+  resources:
+    requests:
+#      cpu: "0.5"
+#      memory: "1G"
+    limits:
+#      cpu: "4"
+#      memory: "4G"
+
+
+## FUSE ##
+
+fuse:
+  prepare:
+    name: ""
+    accesskeySecret: ""
+    secretkeySecret: ""
+    bucket: ""
+    metaurlSecret: ""
+    storage: ""
+    subPath: ""
+  criticalPod: false
+  enabled: true
+  image: juicedata/juicefs-csi-driver
+  imageTag: v0.10.5
+  imagePullPolicy: IfNotPresent
+  envs: []
+  nodeSelector: {}
+  dnsPolicy: ClusterFirstWithHostNet
+  # Mount path in the host
+  mountPath: /mnt/jfs
+  cacheDir: ""
+  metaUrl : ""
+  hostMountPath: /mnt/jfs
+  command: "/usr/local/bin/juicefs mount /mnt/jfs"
+  statCmd: "stat -c %i /mnt/jfs"
+  resources:
+    requests:
+#      cpu: "0.5"
+#      memory: "1G"
+    limits:
+#      cpu: "4"
+#      memory: "4G"

@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
+	github.com/axw/gocov v1.0.0 // indirect
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.2.0
 	github.com/docker/go-units v0.4.0
@@ -19,6 +20,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5
 	go.uber.org/zap v1.10.0
+	golang.org/dl v0.0.0-20211007222857-6589945b0d11 // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8
