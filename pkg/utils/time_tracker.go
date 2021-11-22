@@ -11,7 +11,7 @@ import (
 var timeLog logr.Logger
 
 // the default task elapsed
-var taskTimeThreshold time.Duration = 2 * time.Second
+var taskTimeThreshold time.Duration = 30 * time.Second
 
 func init() {
 	timeLog = ctrl.Log.WithName("utils")
