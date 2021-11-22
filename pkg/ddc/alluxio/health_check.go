@@ -166,15 +166,14 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-
-		if *workers.Spec.Replicas-workers.Status.ReadyReplicas > 0 ||
+		if (workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0) ||
 			(*workers.Spec.Replicas > 0 && workers.Status.CurrentReplicas == 0) {
 			// if workers.Status.NumberReady != workers.Status.DesiredNumberScheduled {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
+				fmt.Sprintf("The workers %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
 					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
@@ -227,7 +226,7 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("the statefulset %s in %s are not ready, the unhealthy number %d",
+		err = fmt.Errorf("the workers %s in %s are not ready, the unhealthy number %d",
 			workers.Name,
 			workers.Namespace,
 			*workers.Spec.Replicas-workers.Status.ReadyReplicas)
