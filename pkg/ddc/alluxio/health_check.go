@@ -172,7 +172,7 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-				fmt.Sprintf("The workers %s in %s are not ready, the Unavailable number is %d, please fix it.",
+				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
 					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
