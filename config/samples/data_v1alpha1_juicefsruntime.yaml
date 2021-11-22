@@ -1,0 +1,9 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: juicefsruntime-sample
+spec:
+  replicas: 1
+  fuse:
+    image: juicedata/juicefs-csi-driver
+    image_tag: v0.10.5

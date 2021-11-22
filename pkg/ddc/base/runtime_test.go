@@ -265,18 +265,43 @@ func TestGetRuntimeInfo(t *testing.T) {
 			},
 		},
 	}
+
+	juicefsRuntime := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "juice",
+			Namespace: "default",
+		},
+	}
+	dataJuice := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "juice",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				v1alpha1.Runtime{
+					Name:      "juice",
+					Namespace: "default",
+					Type:      common.JuiceFSRuntime,
+				},
+			},
+		},
+	}
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
 	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
+	juicefsRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
+	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime, &dataJuice)
 	type args struct {
 		client    client.Client
 		name      string
@@ -342,6 +367,42 @@ func TestGetRuntimeInfo(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "juicefs_test",
+			args: args{
+				client:    fake.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:      "juice",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "juice",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "juicefs_test_err",
+			args: args{
+				client:    fake.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:      "juice-fake",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "juice-fake",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global: true,
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -350,7 +411,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
 			}
 		})

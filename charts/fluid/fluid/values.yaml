@@ -50,7 +50,7 @@ runtime:
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000
-    enabled: false 
+    enabled: false
     init:
       image: fluidcloudnative/init-users:v0.7.0-3db3f9a
     controller:
@@ -59,6 +59,12 @@ runtime:
       image: ccr.ccs.tencentyun.com/goosefs/goosefs:v1.0.1
     fuse:
       image: ccr.ccs.tencentyun.com/goosefs/goosefs-fuse:v1.0.1
+  juicefs:
+    enabled: false
+    controller:
+      image: fluidcloudnative/juicefsruntime-controller:v0.7.0-db86a47
+    fuse:
+      image: juicedata/juicefs-csi-driver:v0.10.5
 
 webhook:
   enabled: true

@@ -86,3 +86,23 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - juicefsruntimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - juicefsruntimes/status
+  verbs:
+  - get
+  - patch
+  - update

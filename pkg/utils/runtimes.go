@@ -94,3 +94,17 @@ func GetGooseFSRuntime(client client.Client, name, namespace string) (*data.Goos
 	}
 	return &runtime, nil
 }
+
+// GetJuiceFSRuntime gets JuiceFS Runtime object with the given name and namespace
+func GetJuiceFSRuntime(client client.Client, name, namespace string) (*data.JuiceFSRuntime, error) {
+
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.JuiceFSRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+	return &runtime, nil
+}
