@@ -62,7 +62,7 @@ func (j *JuiceFSEngine) shouldSyncMetadata() (should bool, err error) {
 
 	//todo(xuzhihao): option to enable/disable automatic metadata sync
 	//todo: periodical metadata sync
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != MetadataSyncNotDoneMsg {
 		j.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
 			"dataset namespace", dataset.Namespace,
@@ -116,7 +116,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				j.Log.Error(result.Err, "Metadata sync failed")
 				return result.Err
 			}
-		case <-time.After(CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC * time.Millisecond):
+		case <-time.After(CheckMetadataSyncDoneTimeoutMillisec * time.Millisecond):
 			j.Log.V(1).Info("Metadata sync still in progress")
 		}
 	} else {
@@ -127,8 +127,8 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				return
 			}
 			datasetToUpdate := dataset.DeepCopy()
-			datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
-			datasetToUpdate.Status.FileNum = METADATA_SYNC_NOT_DONE_MSG
+			datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
+			datasetToUpdate.Status.FileNum = MetadataSyncNotDoneMsg
 			if !reflect.DeepEqual(dataset, datasetToUpdate) {
 				err = j.Client.Status().Update(context.TODO(), datasetToUpdate)
 				if err != nil {

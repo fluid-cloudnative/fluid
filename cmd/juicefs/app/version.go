@@ -14,18 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package app
 
 import (
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/cmd/juicefs/app"
-	"os"
+	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd := app.NewJuiceFSControllerCommand()
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
-	}
+var (
+	short bool
+)
+
+func init() {
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fluid.PrintVersion(short)
+	},
 }
