@@ -29,17 +29,11 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
+		if err != nil {
+			return err
+		}
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
@@ -47,8 +41,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: e.namespace, Name: e.name})
+			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}
 		return err
 	})
@@ -96,8 +89,7 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: e.namespace, Name: e.name})
+			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}
 		return err
 	})

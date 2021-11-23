@@ -23,24 +23,16 @@ import (
 
 // SyncReplicas syncs the replicas
 func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
-
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
+		if err != nil {
+			return err
+		}
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		// err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
 			e.Log.Error(err, "Failed to sync the replicas")

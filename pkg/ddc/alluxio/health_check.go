@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -149,10 +150,8 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
-	workerName := e.getWorkertName()
-
 	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, e.namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -211,7 +210,7 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
-				e.Log.Error(updateErr, "Failed to update the runtime")
+				_ = utils.LoggingErrorExceptConflict(e.Log, updateErr, "Failed to update runtime status", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 				return updateErr
 			}
 		}
