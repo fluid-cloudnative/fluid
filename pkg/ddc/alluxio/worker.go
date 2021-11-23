@@ -40,14 +40,11 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
-		}
 		return err
 	})
 	if err != nil {
-		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-			types.NamespacedName{Namespace: e.namespace, Name: e.name})
+		e.Log.Error(err, "Failed setup workers")
+		return err
 	}
 	return
 }
