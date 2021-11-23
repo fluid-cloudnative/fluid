@@ -51,7 +51,7 @@ func (e *GooseFSEngine) optimizeDefaultProperties(runtime *datav1alpha1.GooseFSR
 	setDefaultProperties(runtime, value, "goosefs.user.file.writetype.default", "MUST_CACHE")
 	setDefaultProperties(runtime, value, "goosefs.user.ufs.block.read.location.policy", "com.qcloud.cos.goosefs.client.block.policy.LocalFirstAvoidEvictionPolicy")
 	setDefaultProperties(runtime, value, "goosefs.user.block.write.location.policy.class", "com.qcloud.cos.goosefs.client.block.policy.LocalFirstAvoidEvictionPolicy")
-	setDefaultProperties(runtime, value, "goosefs.worker.allocator.class", "alluxio.worker.block.allocator.MaxFreeAllocator")
+	setDefaultProperties(runtime, value, "goosefs.worker.allocator.class", "com.qcloud.cos.goosefs.worker.block.allocator.MaxFreeAllocator")
 	setDefaultProperties(runtime, value, "goosefs.user.block.size.bytes.default", "16MB")
 	setDefaultProperties(runtime, value, "goosefs.user.streaming.reader.chunk.size.bytes", "32MB")
 	setDefaultProperties(runtime, value, "goosefs.user.local.reader.chunk.size.bytes", "32MB")
