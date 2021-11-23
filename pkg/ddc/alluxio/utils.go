@@ -91,11 +91,11 @@ func (e *AlluxioEngine) getMasterPodInfo() (podName string, containerName string
 	return
 }
 
-func (e *AlluxioEngine) getMasterStatefulsetName() (dsName string) {
+func (e *AlluxioEngine) getMasterName() (dsName string) {
 	return e.name + "-master"
 }
 
-func (e *AlluxioEngine) getWorkerDaemonsetName() (dsName string) {
+func (e *AlluxioEngine) getWorkertName() (dsName string) {
 	return e.name + "-worker"
 }
 

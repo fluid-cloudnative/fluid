@@ -282,3 +282,7 @@ func init() {
 func (runtime *AlluxioRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
 }
+
+func (runtime *AlluxioRuntime) GetStatus() *RuntimeStatus {
+	return &runtime.Status
+}
