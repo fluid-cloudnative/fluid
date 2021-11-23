@@ -71,9 +71,9 @@ release-2.5.0-2-SNAPSHOT-52ad95c
 Version: https://github.com/Alluxio/alluxio/commit/52ad95ca6b6af5c19a73a48f01a15db9d81ea38c
 Branch: https://github.com/alluxio/alluxio/tree/release-2.5.0-2
 
-20211120:
+20211123:
 
-release-2.7.0-SNAPSHOT-281696a
+release-2.7.0-SNAPSHOT-c058736
 
-Version: https://github.com/Alluxio/alluxio/commit/281696ab0c68db1aa6b520a9d8754f4bec3e88af
+Version: https://github.com/Alluxio/alluxio/commit/c05873681a824c8e056b71e3b97cb3706ed63c91
 Branch: https://github.com/Alluxio/alluxio/commits/release-2.7.0
