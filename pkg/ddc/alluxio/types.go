@@ -67,6 +67,8 @@ type Alluxio struct {
 	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
 
 	Tolerations []v1.Toleration `yaml:"tolerations,omitempty"`
+
+	PlacementMode string `yaml:"placement,omitempty"`
 }
 
 type HadoopConfig struct {
