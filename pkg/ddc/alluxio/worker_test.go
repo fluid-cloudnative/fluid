@@ -194,20 +194,6 @@ func TestSetupWorkers(t *testing.T) {
 			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
 				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
 			}
-
-			//for _, node := range tt.fields.nodeInputs {
-			//	newNode, err := kubeclient.GetNode(mockClient, node.Name)
-			//	if err != nil {
-			//		t.Errorf("fail to get the node with the error %v", err)
-			//	}
-			//
-			//	if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
-			//		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-			//	}
-			//	if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
-			//		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-			//	}
-			//}
 		})
 	}
 }
