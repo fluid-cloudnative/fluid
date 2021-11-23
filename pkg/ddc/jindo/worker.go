@@ -37,18 +37,9 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log,
-				err,
-				"Failed to setup worker",
-				types.NamespacedName{
-					Namespace: e.namespace,
-					Name:      e.name,
-				})
-		}
-		return err
+		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
+
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log,
 			err,
