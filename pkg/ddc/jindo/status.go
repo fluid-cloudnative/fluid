@@ -99,21 +99,22 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if err != nil {
-				_ = utils.LoggingErrorExceptConflict(e.Log,
-					err,
-					"Failed to update the runtime",
-					types.NamespacedName{
-						Namespace: e.namespace,
-						Name:      e.name,
-					})
-			}
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")
 		}
 
 		return err
 	})
+
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to update the runtime",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
+	}
 
 	return
 }
