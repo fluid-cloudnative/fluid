@@ -31,19 +31,21 @@ import (
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
-
-	var daemonSetInputs = []appsv1.DaemonSet{
+	var stsInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
 			},
 		},
+	}
+
+	var daemonSetInputs = []appsv1.DaemonSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-fuse",
@@ -59,6 +61,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	testObjs := []runtime.Object{}
 	for _, daemonSet := range daemonSetInputs {
 		testObjs = append(testObjs, daemonSet.DeepCopy())
+	}
+	for _, sts := range stsInputs {
+		testObjs = append(testObjs, sts.DeepCopy())
 	}
 
 	var juicefsruntimeInputs = []datav1alpha1.JuiceFSRuntime{

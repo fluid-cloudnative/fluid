@@ -17,131 +17,39 @@ limitations under the License.
 package juicefs
 
 import (
-	"context"
-	"reflect"
-
-	corev1 "k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/client-go/util/retry"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // SyncReplicas syncs the replicas
-func (j *JuiceFSEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) error {
-	runtime, err := j.getRuntime()
+func (j *JuiceFSEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
+	var (
+		workerName string = j.getWorkerName()
+		namespace  string = j.namespace
+	)
+
+	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
 	if err != nil {
 		return err
 	}
 
-	desireReplicas := runtime.Replicas()
-	if desireReplicas > runtime.Status.CurrentWorkerNumberScheduled {
-
-		err = j.SetupWorkers()
-		if err != nil {
-			return err
-		}
-		_, err = j.CheckWorkersReady()
-		if err != nil {
-			j.Log.Error(err, "Check if the workers are ready")
-			return err
-		}
-
-		// update conditions
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			runtime, err := j.getRuntime()
-			if err != nil {
-				return err
-			}
-
-			runtimeToUpdate := runtime.DeepCopy()
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersScaledOutReason, datav1alpha1.RuntimeWorkersScaledOutReason,
-				"The workers are scale out.", corev1.ConditionTrue)
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-
-			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-				return j.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			return err
-		}
-
-		// add the event
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := j.getRuntime()
 		if err != nil {
 			return err
 		}
-		currentReplicas := runtime.Status.CurrentWorkerNumberScheduled
-		desireReplicas := runtime.Status.DesiredWorkerNumberScheduled
-		ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "JuiceFS runtime scaled out. current replicas: %d, desired replicas: %d.", currentReplicas, desireReplicas)
-
-	} else if desireReplicas < runtime.Status.CurrentWorkerNumberScheduled {
-		replicas := runtime.Replicas()
-		j.Log.Info("Scaling in JuiceFS workers", "expectedReplicas", replicas)
-		curReplicas, err := j.destroyWorkers(replicas)
+		runtimeToUpdate := runtime.DeepCopy()
+		err = j.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			return err
+			j.Log.Error(err, "Failed to sync the replicas")
 		}
-
-		if curReplicas > replicas {
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeScaleInFailed,
-				"JuiceFS workers are being used by some pods, can't scale in (expected replicas: %v, current replicas: %v)",
-				replicas, curReplicas)
-		} else {
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "JuiceFS runtime scaled in. current replicas: %d, desired replicas: %d.", curReplicas, desireReplicas)
-		}
-
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			runtime, err := j.getRuntime()
-			if err != nil {
-				j.Log.Error(err, "scale in when sync replicas")
-				return err
-			}
-
-			runtimeToUpdate := runtime.DeepCopy()
-
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
-
-			runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-			runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
-				"The workers scaled in.", corev1.ConditionTrue)
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
-
-			if global, _ := j.runtimeInfo.GetFuseDeployMode(); global {
-				runtimeToUpdate.Status.DesiredFuseNumberScheduled = replicas
-				runtimeToUpdate.Status.CurrentWorkerNumberScheduled = curReplicas
-				fuseCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesScaledIn, datav1alpha1.RuntimeFusesScaledInReason,
-					"The fuses scaled in.", corev1.ConditionTrue)
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, fuseCond)
-			}
-
-			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-				return j.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			return err
-		}
-
-	} else {
-		j.Log.V(1).Info("Nothing to do")
+		return nil
+	})
+	if err != nil {
+		j.Log.Error(err, "Failed to sync the replicas")
 	}
 
-	return nil
+	return
 }

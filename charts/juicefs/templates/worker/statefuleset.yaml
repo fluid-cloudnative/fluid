@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: StatefulSet
 metadata:
   name: {{ template "juicefs.fullname" . }}-worker
   labels:
@@ -8,7 +8,11 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: juicefs-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
 spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  serviceName: {{ template "juicefs.fullname" . }}-worker
   selector:
     matchLabels:
       app: {{ template "juicefs.name" . }}
@@ -24,6 +28,8 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: juicefs-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}

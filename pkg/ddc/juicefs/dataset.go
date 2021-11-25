@@ -72,7 +72,7 @@ func (j *JuiceFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = j.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
-				j.Log.Error(err, "Update dataset %s in namespace %s error", datasetToUpdate.Name, datasetToUpdate.Namespace)
+				j.Log.Error(err, "Update dataset error", datasetToUpdate.Name, datasetToUpdate.Namespace)
 				return err
 			} else {
 				j.Log.Info("No need to update the cache of the data")

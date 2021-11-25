@@ -52,6 +52,17 @@ func mockRunningPodsOfDaemonSet() (pods []corev1.Pod) {
 	}}
 }
 
+func mockRunningPodsOfStatefulSet() (pods []corev1.Pod) {
+	return []corev1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec:   v1.PodSpec{},
+		Status: v1.PodStatus{},
+	}}
+}
+
 func TestDestroyWorker(t *testing.T) {
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
 	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "juicefs", datav1alpha1.TieredStore{})
@@ -355,9 +366,9 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 	Convey("Test CleanupCache ", t, func() {
 		Convey("cleanup success", func() {
 			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfDaemonSet()
+					r := mockRunningPodsOfStatefulSet()
 					return r, nil
 				})
 			defer patch1.Reset()
@@ -380,9 +391,9 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 		})
 		Convey("test1", func() {
 			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfDaemonSet()
+					r := mockRunningPodsOfStatefulSet()
 					return r, nil
 				})
 			defer patch1.Reset()
@@ -405,9 +416,9 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 		})
 		Convey("test2", func() {
 			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfDaemonSet()
+					r := mockRunningPodsOfStatefulSet()
 					return r, nil
 				})
 			defer patch1.Reset()

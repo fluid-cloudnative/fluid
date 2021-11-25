@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,6 +42,7 @@ type JuiceFSEngine struct {
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
 	retryShutdown          int32
+	*ctrl.Helper
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
@@ -52,6 +54,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
+		MetadataSyncDoneCh:     nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
@@ -65,8 +68,15 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
+	// Build and setup runtime info
+	runtimeInfo, err := engine.getRuntimeInfo()
+	if err != nil {
+		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
+	}
+
+	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	err := kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
+	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }
