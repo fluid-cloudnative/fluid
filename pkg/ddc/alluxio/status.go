@@ -17,14 +17,17 @@ package alluxio
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
@@ -44,8 +47,13 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	}
 
 	// 2. Worker should be ready
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: workerName})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return ready, nil
+		}
 		return ready, err
 	}
 
@@ -56,9 +64,6 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-		if reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			e.Log.V(1).Info("The runtime is equal after deepcopy")
-		}
 
 		states, err := e.queryCacheStatus()
 		if err != nil {
@@ -66,7 +71,6 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		// 0. Update the cache status
-		// runtimeToUpdate.Status.CacheStates[data.Cacheable] = states.cacheable
 		if len(runtime.Status.CacheStates) == 0 {
 			runtimeToUpdate.Status.CacheStates = map[common.CacheStateName]string{}
 		}
@@ -119,7 +123,6 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			return err
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")
 		}
