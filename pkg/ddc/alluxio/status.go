@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
 	"time"
@@ -118,15 +119,17 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if err != nil {
-				e.Log.Error(err, "Failed to update the runtime")
-			}
+			return err
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")
 		}
 
 		return err
 	})
+
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to update runtime status", types.NamespacedName{Namespace: e.namespace, Name: e.name})
+	}
 
 	return
 }

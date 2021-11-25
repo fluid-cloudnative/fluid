@@ -16,39 +16,36 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
 
 // SyncReplicas syncs the replicas
 func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
-
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		if err != nil {
+			if fluiderrs.IsDeprecated(err) {
+				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+				return nil
+			}
+			return err
+		}
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		// err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			e.Log.Error(err, "Failed to sync the replicas")
-		}
-		return nil
+		return err
 	})
 	if err != nil {
-		e.Log.Error(err, "Failed to sync the replicas")
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to sync replicas", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 	}
 
 	return
