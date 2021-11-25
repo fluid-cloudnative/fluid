@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -133,17 +134,13 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-			if err != nil {
-				e.Log.Error(err, "Update dataset")
-				return err
-			}
 		}
 
-		return nil
+		return err
 	})
 
 	if err != nil {
-		e.Log.Error(err, "Update dataset")
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to update dataset status", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return err
 	}
 
