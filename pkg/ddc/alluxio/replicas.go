@@ -19,6 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
@@ -41,13 +42,10 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			e.Log.Error(err, "Failed to sync the replicas")
-		}
-		return nil
+		return err
 	})
 	if err != nil {
-		e.Log.Error(err, "Failed to sync the replicas")
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to sync replicas", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 	}
 
 	return

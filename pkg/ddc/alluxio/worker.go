@@ -43,7 +43,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		return err
 	})
 	if err != nil {
-		e.Log.Error(err, "Failed setup workers")
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup workers", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return err
 	}
 	return
