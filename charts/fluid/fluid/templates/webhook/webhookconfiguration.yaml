@@ -20,6 +20,7 @@ webhooks:
     timeoutSeconds: 20
     failurePolicy: Fail
     admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: None
     namespaceSelector:
       matchLabels:
         fluid.io/enable-injection: "true"
