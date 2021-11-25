@@ -18,8 +18,9 @@ package alluxio
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -29,32 +30,27 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		if err != nil {
+			if fluiderrs.IsDeprecated(err) {
+				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+				return nil
+			}
+			return err
+		}
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: e.namespace, Name: e.name})
-		}
 		return err
 	})
 	if err != nil {
-		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-			types.NamespacedName{Namespace: e.namespace, Name: e.name})
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup workers", types.NamespacedName{Namespace: e.namespace, Name: e.name})
+		return err
 	}
 	return
 }
@@ -78,13 +74,14 @@ func (e *AlluxioEngine) ShouldSetupWorkers() (should bool, err error) {
 
 // are the workers ready
 func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
-	var (
-		workerName string = e.getWorkertName()
-		namespace  string = e.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			ready = true
+			return ready, nil
+		}
 		return ready, err
 	}
 
@@ -96,8 +93,7 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: e.namespace, Name: e.name})
+			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}
 		return err
 	})

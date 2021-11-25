@@ -58,13 +58,15 @@ func TestSetupWorkers(t *testing.T) {
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
 	type fields struct {
-		replicas    int32
-		nodeInputs  []*v1.Node
-		worker      appsv1.StatefulSet
-		runtime     *datav1alpha1.AlluxioRuntime
-		runtimeInfo base.RuntimeInfoInterface
-		name        string
-		namespace   string
+		replicas         int32
+		nodeInputs       []*v1.Node
+		worker           *appsv1.StatefulSet
+		deprecatedWorker *appsv1.DaemonSet
+		runtime          *datav1alpha1.AlluxioRuntime
+		runtimeInfo      base.RuntimeInfoInterface
+		name             string
+		namespace        string
+		deprecated       bool
 	}
 	tests := []struct {
 		name             string
@@ -82,7 +84,7 @@ func TestSetupWorkers(t *testing.T) {
 						},
 					},
 				},
-				worker: appsv1.StatefulSet{
+				worker: &appsv1.StatefulSet{
 
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
@@ -119,7 +121,7 @@ func TestSetupWorkers(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				replicas: 1,
-				worker: appsv1.StatefulSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hadoop-worker",
 						Namespace: "big-data",
@@ -140,6 +142,37 @@ func TestSetupWorkers(t *testing.T) {
 				runtimeInfo: runtimeInfoHadoop,
 				name:        "hadoop",
 				namespace:   "big-data",
+			},
+			wantedNodeLabels: map[string]map[string]string{
+				"test-node-hadoop": {
+					"fluid.io/dataset-num":                   "1",
+					"fluid.io/s-alluxio-big-data-hadoop":     "true",
+					"fluid.io/s-big-data-hadoop":             "true",
+					"fluid.io/s-h-alluxio-t-big-data-hadoop": "0B",
+				},
+			},
+		}, {
+			name: "deprecated",
+			fields: fields{
+				replicas: 0,
+				worker:   &appsv1.StatefulSet{},
+				deprecatedWorker: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
+					Name:      "deprecated-worker",
+					Namespace: "big-data",
+				}},
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Replicas: 1,
+					},
+				},
+				runtimeInfo: runtimeInfoHadoop,
+				name:        "deprecated",
+				namespace:   "big-data",
+				deprecated:  true,
 			},
 			wantedNodeLabels: map[string]map[string]string{
 				"test-node-hadoop": {
@@ -170,9 +203,15 @@ func TestSetupWorkers(t *testing.T) {
 			}
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
+			if tt.fields.deprecatedWorker != nil {
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.deprecatedWorker)
+			}
 			_ = v1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
+			if tt.fields.deprecatedWorker != nil {
+				runtimeObjs = append(runtimeObjs, tt.fields.deprecatedWorker)
+			}
 			runtimeObjs = append(runtimeObjs, data)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
@@ -188,11 +227,13 @@ func TestSetupWorkers(t *testing.T) {
 			e.Helper = ctrlhelper.BuildHelper(tt.fields.runtimeInfo, mockClient, e.Log)
 			err := e.SetupWorkers()
 			if err != nil {
-				t.Errorf("AlluxioEngine.SetupWorkers() error = %v", err)
+				t.Errorf("testCase %s AlluxioEngine.SetupWorkers() error = %v", tt.name, err)
 			}
 
-			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
-				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+			if !tt.fields.deprecated {
+				if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
+					t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+				}
 			}
 		})
 	}
@@ -412,6 +453,46 @@ func TestCheckWorkersReady(t *testing.T) {
 				},
 			},
 			wantReady: false,
+			wantErr:   false,
+		}, {
+			name: "deprecated",
+			fields: fields{
+				name:      "deprecated",
+				namespace: "big-data",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Replicas: 1,
+						Fuse: datav1alpha1.AlluxioFuseSpec{
+							Global: true,
+						},
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated-worker-0",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 0,
+					},
+				},
+				fuse: &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "deprecated-worker",
+						Namespace: "big-data",
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberAvailable:        0,
+						DesiredNumberScheduled: 1,
+						CurrentNumberScheduled: 0,
+					},
+				},
+			},
+			wantReady: true,
 			wantErr:   false,
 		},
 	}
