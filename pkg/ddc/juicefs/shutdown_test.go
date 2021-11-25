@@ -20,7 +20,9 @@ import (
 	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
@@ -427,6 +429,44 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return errors.New("delete dir error")
 				})
 			defer patch2.Reset()
+
+			e := &JuiceFSEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				runtime:   testRuntimeWithTiredStore,
+				Log:       log.NullLogger{},
+			}
+
+			got := e.cleanupCache()
+			So(got, ShouldNotBeNil)
+		})
+		Convey("test3", func() {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, apierrs.NewNotFound(schema.GroupResource{}, "test")
+				})
+			defer patch1.Reset()
+
+			e := &JuiceFSEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				runtime:   testRuntimeWithTiredStore,
+				Log:       log.NullLogger{},
+			}
+
+			got := e.cleanupCache()
+			So(got, ShouldEqual, nil)
+		})
+		Convey("test4", func() {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, errors.New("new error")
+				})
+			defer patch1.Reset()
 
 			e := &JuiceFSEngine{
 				name:      "test",

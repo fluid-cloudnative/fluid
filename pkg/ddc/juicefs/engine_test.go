@@ -64,14 +64,30 @@ func TestBuild(t *testing.T) {
 		},
 	}
 	testObjs = append(testObjs, runtime.DeepCopy())
+	var runtime2 = datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.JuiceFSRuntimeSpec{
+			Fuse: datav1alpha1.JuiceFSFuseSpec{
+				Global: false,
+			},
+		},
+		Status: datav1alpha1.RuntimeStatus{
+			CacheStates: map[common.CacheStateName]string{
+				common.Cached: "true",
+			},
+		},
+	}
 
-	var daemonset = appsv1.DaemonSet{
+	var sts = appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase-worker",
 			Namespace: "fluid",
 		},
 	}
-	testObjs = append(testObjs, daemonset.DeepCopy())
+	testObjs = append(testObjs, sts.DeepCopy())
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	var ctx = cruntime.ReconcileRequestContext{
@@ -104,5 +120,21 @@ func TestBuild(t *testing.T) {
 	got, err := Build("testId", errCtx)
 	if err == nil {
 		t.Errorf("expect err, but no err got %v", got)
+	}
+
+	var errrCtx = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         log.NullLogger{},
+		RuntimeType: "juicefs",
+		Runtime:     &runtime2,
+	}
+
+	gott, err := Build("testId", errrCtx)
+	if err == nil {
+		t.Errorf("expect err, but no err got %v", gott)
 	}
 }

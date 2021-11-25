@@ -46,6 +46,10 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: utilpointer.Int32Ptr(1),
 					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      1,
+						ReadyReplicas: 1,
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -54,6 +58,10 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: utilpointer.Int32Ptr(1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      2,
+						ReadyReplicas: 2,
 					},
 				},
 				{

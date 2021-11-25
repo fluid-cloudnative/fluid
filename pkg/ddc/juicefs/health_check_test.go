@@ -17,6 +17,7 @@ package juicefs
 
 import (
 	"context"
+	utilpointer "k8s.io/utils/pointer"
 	"reflect"
 	"testing"
 
@@ -41,6 +42,20 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Replicas:        1,
 				ReadyReplicas:   1,
 				CurrentReplicas: 1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-worker",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   0,
+				CurrentReplicas: 0,
 			},
 		},
 	}
@@ -81,6 +96,20 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				},
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Replicas: 1,
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CacheStates: map[common.CacheStateName]string{
+					common.Cached: "true",
+				},
+			},
+		},
 	}
 	for _, juicefsruntime := range juicefsruntimeInputs {
 		testObjs = append(testObjs, juicefsruntime.DeepCopy())
@@ -90,6 +119,19 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+			Status: datav1alpha1.DatasetStatus{
+				HCFSStatus: &datav1alpha1.HCFSStatus{
+					Endpoint:                    "test Endpoint",
+					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{},
@@ -115,6 +157,13 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			name:      "hbase",
 			runtime:   &juicefsruntimeInputs[0],
 		},
+		{
+			Client:    client,
+			Log:       log.NullLogger{},
+			namespace: "fluid",
+			name:      "test",
+			runtime:   &juicefsruntimeInputs[1],
+		},
 	}
 
 	var testCase = []struct {
@@ -138,6 +187,31 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			expectedDataset: datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
+					CacheStates: map[common.CacheStateName]string{
+						common.Cached: "true",
+					},
+					HCFSStatus: &datav1alpha1.HCFSStatus{
+						Endpoint:                    "test Endpoint",
+						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+					},
+				},
+			},
+		},
+		{
+			engine:                             engines[1],
+			expectedErrorNil:                   false,
+			expectedWorkerPhase:                "",
+			expectedRuntimeWorkerNumberReady:   0,
+			expectedRuntimeWorkerAvailable:     0,
+			expectedRuntimeFuseNumberReady:     0,
+			expectedRuntimeFuseNumberAvailable: 0,
+			expectedDataset: datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
 					Namespace: "fluid",
 				},
 				Status: datav1alpha1.DatasetStatus{
