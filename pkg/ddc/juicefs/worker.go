@@ -91,7 +91,7 @@ func (j JuiceFSEngine) SetupWorkers() (err error) {
 		return err
 	})
 	if err != nil {
-		_ = utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
+		return utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
 			types.NamespacedName{Namespace: j.namespace, Name: j.name})
 	}
 	return

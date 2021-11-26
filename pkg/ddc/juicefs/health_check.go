@@ -118,7 +118,6 @@ func (j *JuiceFSEngine) checkWorkersHealthy() (err error) {
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := j.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
-				j.Log.Error(updateErr, "Failed to update the runtime")
 				return updateErr
 			}
 		}
@@ -199,7 +198,6 @@ func (j *JuiceFSEngine) checkFuseHealthy() (err error) {
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := j.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
-				j.Log.Error(updateErr, "Failed to update the runtime")
 				return updateErr
 			}
 		}

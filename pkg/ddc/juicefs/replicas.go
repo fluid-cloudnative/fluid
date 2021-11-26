@@ -17,7 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -45,7 +47,8 @@ func (j *JuiceFSEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		return err
 	})
 	if err != nil {
-		j.Log.Error(err, "Failed to sync the replicas")
+		return utils.LoggingErrorExceptConflict(j.Log, err, "Failed to sync the replicas",
+			types.NamespacedName{Namespace: j.namespace, Name: j.name})
 	}
 
 	return
