@@ -42,10 +42,7 @@ func (j *JuiceFSEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = j.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			j.Log.Error(err, "Failed to sync the replicas")
-		}
-		return nil
+		return err
 	})
 	if err != nil {
 		j.Log.Error(err, "Failed to sync the replicas")

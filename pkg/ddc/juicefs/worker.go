@@ -77,22 +77,17 @@ func (j JuiceFSEngine) SetupWorkers() (err error) {
 		namespace  string = j.namespace
 	)
 
-	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
+		if err != nil {
+			return err
+		}
 		runtime, err := j.getRuntime()
 		if err != nil {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		err = j.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: j.namespace, Name: j.name})
-		}
 		return err
 	})
 	if err != nil {
