@@ -92,21 +92,22 @@ func TestJuiceFSEngine_ShouldSetupMaster(t *testing.T) {
 }
 
 func TestJuiceFSEngine_SetupMaster(t *testing.T) {
-	daemonSetInputs := []v1.DaemonSet{
+	stsInputs := []v1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-worker",
 				Namespace: "fluid",
 			},
-			Status: v1.DaemonSetStatus{
-				NumberReady: 1,
+			Status: v1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 1,
 			},
 		},
 	}
 
 	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
+	for _, sts := range stsInputs {
+		testObjs = append(testObjs, sts.DeepCopy())
 	}
 
 	juicefsruntimeInputs := []datav1alpha1.JuiceFSRuntime{
@@ -132,12 +133,12 @@ func TestJuiceFSEngine_SetupMaster(t *testing.T) {
 	}
 
 	var testCases = []struct {
-		engine          JuiceFSEngine
-		wantedDaemonSet v1.DaemonSet
+		engine            JuiceFSEngine
+		wantedStatefulSet v1.StatefulSet
 	}{
 		{
-			engine:          engines[0],
-			wantedDaemonSet: daemonSetInputs[0],
+			engine:            engines[0],
+			wantedStatefulSet: stsInputs[0],
 		},
 	}
 

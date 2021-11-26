@@ -19,6 +19,7 @@ package juicefs
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"strconv"
 	"strings"
 
@@ -60,7 +61,7 @@ func (j *JuiceFSEngine) getRuntime() (*datav1alpha1.JuiceFSRuntime, error) {
 func (j *JuiceFSEngine) getFuseDaemonsetName() (dsName string) {
 	return j.name + "-fuse"
 }
-func (j *JuiceFSEngine) getWorkerDaemonsetName() (dsName string) {
+func (j *JuiceFSEngine) getWorkerName() (dsName string) {
 	return j.name + "-worker"
 }
 
@@ -81,6 +82,32 @@ func (j *JuiceFSEngine) GetRunningPodsOfDaemonset(dsName string, namespace strin
 	}
 
 	selector := ds.Spec.Selector.MatchLabels
+
+	pods = []corev1.Pod{}
+	podList := &corev1.PodList{}
+	err = j.Client.List(context.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
+	if err != nil {
+		return pods, err
+	}
+
+	for _, pod := range podList.Items {
+		if !podutil.IsPodReady(&pod) {
+			j.Log.Info("Skip the pod because it's not ready", "pod", pod.Name, "namespace", pod.Namespace)
+			continue
+		}
+		pods = append(pods, pod)
+	}
+
+	return pods, nil
+}
+
+func (j *JuiceFSEngine) GetRunningPodsOfStatefulSet(stsName string, namespace string) (pods []corev1.Pod, err error) {
+	sts, err := kubeclient.GetStatefulSet(j.Client, stsName, namespace)
+	if err != nil {
+		return pods, err
+	}
+
+	selector := sts.Spec.Selector.MatchLabels
 
 	pods = []corev1.Pod{}
 	podList := &corev1.PodList{}

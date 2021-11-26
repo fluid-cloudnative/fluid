@@ -152,6 +152,10 @@ func init() {
 }
 
 // Replicas gets the replicas of runtime worker
-func (r *JuiceFSRuntime) Replicas() int32 {
-	return r.Spec.Replicas
+func (j *JuiceFSRuntime) Replicas() int32 {
+	return j.Spec.Replicas
+}
+
+func (j *JuiceFSRuntime) GetStatus() *RuntimeStatus {
+	return &j.Status
 }

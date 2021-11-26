@@ -28,10 +28,11 @@ type JuiceFS struct {
 	common.ImageInfo `yaml:",inline"`
 	common.UserInfo  `yaml:",inline"`
 
-	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
-	Fuse         Fuse              `yaml:"fuse,omitempty"`
-	Worker       Worker            `yaml:"worker,omitempty"`
-	TieredStore  TieredStore       `yaml:"tieredstore,omitempty"`
+	NodeSelector  map[string]string `yaml:"nodeSelector,omitempty"`
+	Fuse          Fuse              `yaml:"fuse,omitempty"`
+	Worker        Worker            `yaml:"worker,omitempty"`
+	TieredStore   TieredStore       `yaml:"tieredstore,omitempty"`
+	PlacementMode string            `yaml:"placement,omitempty"`
 }
 
 type Worker struct {

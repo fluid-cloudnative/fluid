@@ -17,7 +17,7 @@ tieredstore:
 
 # Docker Image
 image: juicedata/juicefs-csi-driver
-imageTag: v0.10.5
+imageTag: v0.11.0
 imagePullPolicy: IfNotPresent
 
 ## WORKER ##
@@ -36,6 +36,7 @@ worker:
     limits:
 #      cpu: "4"
 #      memory: "4G"
+  replicaCount: 0
 
 
 ## FUSE ##
@@ -52,7 +53,7 @@ fuse:
   criticalPod: false
   enabled: true
   image: juicedata/juicefs-csi-driver
-  imageTag: v0.10.5
+  imageTag: v0.11.0
   imagePullPolicy: IfNotPresent
   envs: []
   nodeSelector: {}

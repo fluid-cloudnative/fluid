@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
@@ -49,10 +50,10 @@ func (j JuiceFSEngine) ShouldSetupMaster() (should bool, err error) {
 }
 
 func (j JuiceFSEngine) SetupMaster() (err error) {
-	workerName := j.getWorkerDaemonsetName()
+	workerName := j.getWorkerName()
 
 	// 1. Setup
-	_, err = j.getDaemonset(workerName, j.namespace)
+	_, err = kubeclient.GetStatefulSet(j.Client, workerName, j.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		j.Log.V(1).Info("SetupMaster", "worker", workerName)

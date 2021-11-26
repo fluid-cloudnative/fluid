@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 	"time"
 
@@ -33,12 +34,12 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 	var (
 		workerReady bool
-		workerName  string = j.getWorkerDaemonsetName()
+		workerName  string = j.getWorkerName()
 		namespace   string = j.namespace
 	)
 
 	// 1. Worker should be ready
-	workers, err := j.getDaemonset(workerName, namespace)
+	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
 	if err != nil {
 		return ready, err
 	}
@@ -77,18 +78,17 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		// 2. Update cache throughput ratio
 		runtimeToUpdate.Status.CacheStates[common.CacheThroughputRatio] = states.cacheThroughputRatio
 
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = int32(workers.Status.CurrentNumberScheduled)
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = int32(workers.Status.DesiredNumberScheduled)
-
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(workers.Status.NumberUnavailable)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
-		if runtime.Replicas() == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-			workerReady = true
-		} else if workers.Status.NumberAvailable == workers.Status.NumberReady {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-			workerReady = true
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+		if workers.Status.ReadyReplicas > 0 {
+			if runtime.Replicas() == workers.Status.ReadyReplicas {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+				workerReady = true
+			} else if workers.Status.ReadyReplicas >= 1 {
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
+				workerReady = true
+			}
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
