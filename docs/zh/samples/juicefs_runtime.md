@@ -2,7 +2,7 @@
 
 ## 背景介绍
 
-JuiceFS 是一款面向云环境设计的高性能共享文件系统，提供完备的 POSIX 兼容性，可将海量低价的云存储作为本地磁盘使用，亦可同时被多台主机同时挂载读写。
+JuiceFS 是一款面向云环境设计的开源高性能共享文件系统，提供完备的 POSIX 兼容性，可将海量低价的云存储作为本地磁盘使用，亦可同时被多台主机同时挂载读写。
 
 如何使用 JuiceFS 可以参考文档 [JuiceFS 快速上手指南](https://juicefs.com/docs/zh/community/quick_start_guide)。
 

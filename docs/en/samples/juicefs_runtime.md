@@ -2,7 +2,7 @@
 
 ## Background introduction
 
-JuiceFS is a high-performance POSIX file system released under GNU Affero General Public License v3.0. It is specially optimized for the cloud-native environment. Provides complete POSIX compatibility, which can use massive and low-cost cloud storage as a local disk, and can also be mounted and read by multiple hosts at the same time.
+JuiceFS is an open source high-performance POSIX file system released under GNU Affero General Public License v3.0. It is specially optimized for the cloud-native environment. Provides complete POSIX compatibility, which can use massive and low-cost cloud storage as a local disk, and can also be mounted and read by multiple hosts at the same time.
 
 About how to use JuiceFS you can refer to the document [JuiceFS Quick Start Guide](https://juicefs.com/docs/community/quick_start_guide).
 
