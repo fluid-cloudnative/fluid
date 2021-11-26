@@ -46,7 +46,7 @@ kubectl create secret generic jfs-secret \
 **查看待创建的 `Dataset` 资源对象**
 
 ```yaml
-cat<<EOF >dataset.yaml
+$ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
