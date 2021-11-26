@@ -77,9 +77,9 @@ spec:
 EOF
 ```
 
-> 说明：`/demo` 指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录。
+> **说明**：`/demo` 指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录。
 
-> 注意：只有 `name` 和 `metaurl` 为必填项，若 JuiceFS 已经格式化过，只需要填写 `name` 和 `metaurl` 即可。
+> **注意**：只有 `name` 和 `metaurl` 为必填项，若 JuiceFS 已经格式化过，只需要填写 `name` 和 `metaurl` 即可。
 
 由于 JuiceFS 采用的是本地缓存，对应的 `Dataset` 只支持一个 mount，且 JuiceFS 没有 UFS，`mountPoint` 中可以指定需要挂载的子目录（`juicefs:///` 为根路径），会作为根目录挂载到容器内。
 

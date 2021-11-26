@@ -77,11 +77,11 @@ spec:
 EOF
 ```
 
-> Note: `/demo` refers to the subpath of JuiceFS, which is the directory of the JuiceFS file system where users store data in.
+> **Note**: `/demo` refers to the subpath of JuiceFS, which is the directory of the JuiceFS file system where users store data in.
 
-> Attention: Only `name` and `metaurl` are required. If the JuiceFS has been formatted, you only need to fill in the `name` and `metaurl`.
+> **Attention**: Only `name` and `metaurl` are required. If the JuiceFS has been formatted, you only need to fill in the `name` and `metaurl`.
 
-Since JuiceFS uses local cache, the corresponding `Dataset` supports only one mount, and JuiceFS does not have UFS, you can specify subdirectory in `mountpoint` (`juicefs:///` represents root directory), and it will be mounted as the root directory into the container.
+Since JuiceFS uses local cache, the corresponding `Dataset` supports only one mount, and JuiceFS does not have UFS, you can specify subdirectory in `mountPoint` (`juicefs:///` represents root directory), and it will be mounted as the root directory into the container.
 
 **Create `Dataset`**
 ```shell
