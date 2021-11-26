@@ -127,6 +127,9 @@ type JuiceFSFuseSpec struct {
 // +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
 // +kubebuilder:printcolumn:name="Desired Fuses",type="integer",JSONPath=`.status.desiredFuseNumberScheduled`,priority=10
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
+// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=juicefs
 // +genclient
 
 // JuiceFSRuntime is the Schema for the juicefsruntimes API
@@ -139,6 +142,8 @@ type JuiceFSRuntime struct {
 }
 
 //+kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
+// +kubebuilder:resource:scope=Namespaced
 
 // JuiceFSRuntimeList contains a list of JuiceFSRuntime
 type JuiceFSRuntimeList struct {

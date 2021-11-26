@@ -177,6 +177,9 @@ type GooseFSRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
 // +kubebuilder:printcolumn:name="API Gateway",type="string",JSONPath=`.status.apiGateway.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=goose
 // +genclient
 
 // GooseFSRuntime is the Schema for the goosefsruntimes API
@@ -189,6 +192,8 @@ type GooseFSRuntime struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
+// +kubebuilder:resource:scope=Namespaced
 
 // GooseFSRuntimeList contains a list of GooseFSRuntime
 type GooseFSRuntimeList struct {
