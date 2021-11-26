@@ -75,7 +75,7 @@ allKubernetesObjectsEverywhere)
 ```
 
 While it's possible to use higher log levels, it's recommended that you
-stick with `V(1)` or V(0)` (which is equivalent to not specifying `V`),
+stick with `V(1)` or `V(0)` (which is equivalent to not specifying `V`),
 and then filter later based on key-value pairs or messages; different
 numbers tend to lose meaning easily over time, and you'll be left
 wondering why particular logs lines are at `V(5)` instead of `V(7)`.
@@ -89,6 +89,9 @@ providing stack traces in debug mode).
 It's acceptable to log call `log.Error` with a nil error object.  This
 conveys that an error occurred in some capacity, but that no actual
 `error` object was involved.
+
+Errors returned by the `Reconcile` implementation of the `Reconciler` interface are commonly logged as a `Reconciler error`.
+It's a developer choice to create an additional error log in the `Reconcile` implementation so a more specific file name and line for the error are returned. 
 
 ## Logging messages
 
