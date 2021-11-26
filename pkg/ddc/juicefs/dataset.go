@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
@@ -72,7 +73,6 @@ func (j *JuiceFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = j.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
-				j.Log.Error(err, "Update dataset %s in namespace %s error", datasetToUpdate.Name, datasetToUpdate.Namespace)
 				return err
 			} else {
 				j.Log.Info("No need to update the cache of the data")
@@ -83,8 +83,8 @@ func (j *JuiceFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 	})
 
 	if err != nil {
-		j.Log.Error(err, "Update dataset")
-		return err
+		return utils.LoggingErrorExceptConflict(j.Log, err, "Failed to Update dataset",
+			types.NamespacedName{Namespace: j.namespace, Name: j.name})
 	}
 
 	return
@@ -121,10 +121,7 @@ func (j *JuiceFSEngine) UpdateCacheOfDataset() (err error) {
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = j.Client.Status().Update(context.TODO(), datasetToUpdate)
-			if err != nil {
-				j.Log.Error(err, "Update dataset")
-				return err
-			}
+			return err
 		} else {
 			j.Log.Info("No need to update the cache of the data")
 		}
@@ -133,8 +130,8 @@ func (j *JuiceFSEngine) UpdateCacheOfDataset() (err error) {
 	})
 
 	if err != nil {
-		j.Log.Error(err, "Update dataset")
-		return err
+		return utils.LoggingErrorExceptConflict(j.Log, err, "Failed to Update dataset",
+			types.NamespacedName{Namespace: j.namespace, Name: j.name})
 	}
 
 	return

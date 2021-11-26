@@ -51,13 +51,13 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		return
 	}
 
+	// set the placementMode
+	j.transformPlacementMode(dataset, value)
 	return
 }
 
 func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
 	value.Worker = Worker{}
-
-	labelName := j.getCommonLabelName()
 
 	image := runtime.Spec.JuiceFSVersion.Image
 	imageTag := runtime.Spec.JuiceFSVersion.ImageTag
@@ -71,7 +71,6 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 	if len(value.Worker.NodeSelector) == 0 {
 		value.Worker.NodeSelector = map[string]string{}
 	}
-	value.Worker.NodeSelector[labelName] = "true"
 
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		if runtime.Spec.TieredStore.Levels[0].MediumType != common.Memory {
@@ -83,4 +82,11 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 
 	j.transformResourcesForWorker(runtime, value)
 	return
+}
+
+func (j *JuiceFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *JuiceFS) {
+	value.PlacementMode = string(dataset.Spec.PlacementMode)
+	if len(value.PlacementMode) == 0 {
+		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
 }

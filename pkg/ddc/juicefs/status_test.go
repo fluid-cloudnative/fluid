@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
@@ -36,11 +37,18 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			var workerInputs = []appsv1.DaemonSet{
+			var workerInputs = []appsv1.StatefulSet{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "juicefs1-worker",
 						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      1,
+						ReadyReplicas: 1,
 					},
 				},
 				{
@@ -48,11 +56,21 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Name:      "juicefs2-worker",
 						Namespace: "fluid",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      2,
+						ReadyReplicas: 2,
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "no-fuse-worker",
 						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 			}
