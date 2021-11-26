@@ -17,7 +17,7 @@ package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type RuntimeInterface interface {
@@ -28,5 +28,5 @@ type RuntimeInterface interface {
 	// GetStatus gets the status of runtime
 	GetStatus() *datav1alpha1.RuntimeStatus
 
-	runtime.Object
+	client.Object
 }

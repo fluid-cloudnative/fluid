@@ -66,9 +66,9 @@ func NewDataLoadReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads/status,verbs=get;update;patch
 // Reconcile reconciles the DataLoad object
-func (r *DataLoadReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := cruntime.ReconcileRequestContext{
-		Context:  context.Background(),
+		Context:  context,
 		Log:      r.Log.WithValues("dataload", req.NamespacedName),
 		Recorder: r.Recorder,
 		Client:   r.Client,
