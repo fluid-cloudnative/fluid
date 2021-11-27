@@ -57,19 +57,21 @@ replace k8s.io/sample-controller => k8s.io/sample-controller v0.20.10
 require (
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/brahma-adshonor/gohook v1.1.9
-	github.com/container-storage-interface/spec v1.5.0
+	github.com/container-storage-interface/spec v1.2.0
 	github.com/docker/go-units v0.4.0
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.3
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/mock v1.4.1
-	github.com/kubernetes-csi/csi-lib-utils v0.10.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/kubernetes-csi/csi-lib-utils v0.9.1 // indirect
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v1.1.1
+	github.com/stretchr/testify v1.7.0 // indirect
 	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023
 	google.golang.org/grpc v1.38.0
@@ -77,7 +79,10 @@ require (
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.20.10
 	k8s.io/client-go v0.22.0
+	k8s.io/component-base v0.22.0 // indirect
+	k8s.io/component-helpers v0.20.10
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	k8s.io/kubernetes v1.20.10
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
