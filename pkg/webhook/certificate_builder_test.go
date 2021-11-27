@@ -110,7 +110,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 			svc:         "fluid-pod-admission-webhook",
 		},
 	}
-	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "admissionregistrationv1"}, testMutatingWebhookConfiguration)
+	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 	cb := NewCertificateBuilder(client, log)
 	for index, item := range testCases {
@@ -231,7 +231,7 @@ func TestPatchCABundle(t *testing.T) {
 		},
 	}
 
-	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "admissionregistrationv1"}, testMutatingWebhookConfiguration)
+	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 
 	for index, item := range testCases {

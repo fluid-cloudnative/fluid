@@ -647,8 +647,8 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 				return
 			}
 			if !tt.wantErr {
-				if !reflect.DeepEqual(gotPods, tt.wantPods) {
-					t.Errorf("GetRunningPodsOfStatefulSet() gotPods = %v, want %v", gotPods, tt.wantPods)
+				if !reflect.DeepEqual(gotPods[0].Status, tt.wantPods[0].Status) {
+					t.Errorf("testcase %s GetRunningPodsOfStatefulSet() gotPods = %v, want %v", tt.name, gotPods, tt.wantPods)
 				}
 			}
 		})
