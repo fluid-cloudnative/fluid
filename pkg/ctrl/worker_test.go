@@ -21,12 +21,12 @@ import (
 
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestGetWorkersAsStatefulset(t *testing.T) {

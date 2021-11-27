@@ -18,13 +18,14 @@ package juicefs
 
 import (
 	"encoding/base64"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
