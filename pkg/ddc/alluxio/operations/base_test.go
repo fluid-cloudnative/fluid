@@ -40,13 +40,6 @@ const (
 	PARSE_ERR      = "parse err"
 )
 
-// a empty logger just for testing ...
-type NullLogger struct{}
-
-func (log NullLogger) Info(_ string, _ ...interface{}) {
-	// Do nothing.
-}
-
 func TestNewAlluxioFileUtils(t *testing.T) {
 	var expectedResult = AlluxioFileUtils{
 		podName:   "hbase",
