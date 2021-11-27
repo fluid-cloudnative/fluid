@@ -1,7 +1,6 @@
 package lifecycle
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -172,7 +171,7 @@ func TestAssignDatasetToNodesWithIllegalLabel(t *testing.T) {
 	for _, test := range testCase {
 		_, err := AssignDatasetToNodes(test.runtimeInfo, datasetoHadoop, client, 1)
 		if err != nil {
-			fmt.Errorf("Failed due to %v", err)
+			t.Errorf("Failed due to %v", err)
 		}
 	}
 }
