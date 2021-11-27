@@ -114,7 +114,12 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {
 				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
-				if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
+				matched, err := v1helper.MatchNodeSelectorTerms(&node, &corev1.NodeSelector{NodeSelectorTerms: terms})
+				if err != nil {
+					log.Error(err, "Node is skipped because of error", "node", node.Name)
+					continue
+				}
+				if !matched {
 					log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 					continue
 				}
