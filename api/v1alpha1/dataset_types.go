@@ -261,7 +261,6 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=dataset
 // +genclient
@@ -276,7 +275,6 @@ type Dataset struct {
 }
 
 // +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
 // +kubebuilder:resource:scope=Namespaced
 
 // DatasetList contains a list of Dataset

@@ -73,7 +73,6 @@ type DataLoadStatus struct {
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=load
 // +genclient
@@ -88,7 +87,6 @@ type DataLoad struct {
 }
 
 // +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=sigs.k8s.io/controller-runtime/pkg/client.Object
 // +kubebuilder:resource:scope=Namespaced
 
 // DataLoadList contains a list of DataLoad

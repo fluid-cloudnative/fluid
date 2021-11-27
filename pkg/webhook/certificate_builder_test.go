@@ -16,18 +16,19 @@ package webhook
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/api/admissionregistration/v1beta1"
-	"k8s.io/api/core/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 var (
@@ -64,26 +65,26 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		{3, 8, 54, 4},
 		{35, 5, 54, 4},
 	}
-	var testMutatingWebhookConfiguration = &v1beta1.MutatingWebhookConfiguration{
+	var testMutatingWebhookConfiguration = &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: webhookName,
 		},
-		Webhooks: []v1beta1.MutatingWebhook{
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
 				Name: "webhook1",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: caBundles[0],
 				},
 			},
 			{
 				Name: "webhook2",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: caBundles[1],
 				},
 			},
 			{
 				Name: "webhook3",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: caBundles[2],
 				},
 			},
@@ -109,7 +110,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 			svc:         "fluid-pod-admission-webhook",
 		},
 	}
-	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1beta1"}, testMutatingWebhookConfiguration)
+	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "admissionregistrationv1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 	cb := NewCertificateBuilder(client, log)
 	for index, item := range testCases {
@@ -117,7 +118,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		if err != nil {
 			t.Errorf("fail to build and sync ca, err:%v", err)
 		}
-		var mc v1beta1.MutatingWebhookConfiguration
+		var mc admissionregistrationv1.MutatingWebhookConfiguration
 		err = client.Get(context.TODO(), types.NamespacedName{Name: webhookName}, &mc)
 		if err != nil {
 			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
@@ -204,33 +205,33 @@ func TestPatchCABundle(t *testing.T) {
 		},
 	}
 
-	var testMutatingWebhookConfiguration = &v1beta1.MutatingWebhookConfiguration{
+	var testMutatingWebhookConfiguration = &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: webhookName,
 		},
-		Webhooks: []v1beta1.MutatingWebhook{
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
 				Name: "webhook1",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: []byte{3, 5, 54, 34},
 				},
 			},
 			{
 				Name: "webhook2",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: []byte{3, 8, 54, 4},
 				},
 			},
 			{
 				Name: "webhook3",
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: []byte{35, 5, 54, 4},
 				},
 			},
 		},
 	}
 
-	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1beta1"}, testMutatingWebhookConfiguration)
+	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "admissionregistrationv1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 
 	for index, item := range testCases {
@@ -240,7 +241,7 @@ func TestPatchCABundle(t *testing.T) {
 			t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
 			continue
 		}
-		var mc v1beta1.MutatingWebhookConfiguration
+		var mc admissionregistrationv1.MutatingWebhookConfiguration
 		err = client.Get(context.TODO(), types.NamespacedName{Name: webhookName}, &mc)
 		if err != nil {
 			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
