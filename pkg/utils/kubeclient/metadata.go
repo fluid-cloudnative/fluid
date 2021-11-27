@@ -18,7 +18,7 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 	target runtime.Object) (matched bool, err error) {
 
 	kind := target.GetObjectKind()
-	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject())
+	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject().(client.Object))
 	if err != nil || controllerObject == nil {
 		return matched, err
 	}
@@ -40,7 +40,7 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 }
 
 // resolveControllerRef resolves the parent object from the
-func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, objectKind schema.ObjectKind, obj runtime.Object) (result metav1.Object, err error) {
+func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, objectKind schema.ObjectKind, obj client.Object) (result metav1.Object, err error) {
 	if controllerRef == nil {
 		log.Info("No controllerRef found")
 		return nil, nil
