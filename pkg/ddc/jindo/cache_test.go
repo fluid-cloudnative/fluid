@@ -20,8 +20,8 @@ import (
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil
@@ -52,8 +52,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil
@@ -83,8 +83,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is empty", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil

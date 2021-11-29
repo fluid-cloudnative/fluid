@@ -20,8 +20,8 @@ import (
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
-			var enging *GooseFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *GooseFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *GooseFSEngine) (string, error) {
 					summary := mockGooseFSReportSummary()
 					return summary, nil
@@ -39,7 +39,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *GooseFSEngine) cacheHitStates {
 					return cacheHitStates{
 						bytesReadLocal:  20310917,
@@ -65,8 +65,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var enging *GooseFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *GooseFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *GooseFSEngine) (string, error) {
 					summary := mockGooseFSReportSummary()
 					return summary, nil
@@ -84,7 +84,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *GooseFSEngine) cacheHitStates {
 					return cacheHitStates{}
 				})
@@ -102,8 +102,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is empty", func() {
-			var enging *GooseFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *GooseFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *GooseFSEngine) (string, error) {
 					summary := mockGooseFSReportSummary()
 					return summary, nil
@@ -121,7 +121,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *GooseFSEngine) cacheHitStates {
 					return cacheHitStates{}
 				})
