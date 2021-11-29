@@ -69,9 +69,9 @@ func NewDataBackupReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=databackups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=databackups/status,verbs=get;update;patch
 // Reconcile reconciles the DataBackup object
-func (r *DataBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *DataBackupReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
-		Context:        context.Background(),
+		Context:        context,
 		NamespacedName: req.NamespacedName,
 		Log:            r.Log.WithValues("databackup", req.NamespacedName),
 	}

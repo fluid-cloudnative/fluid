@@ -17,10 +17,15 @@ limitations under the License.
 package client
 
 import (
+	"fmt"
+
 	jsonpatch "github.com/evanphx/json-patch"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 var (
@@ -52,20 +57,46 @@ func RawPatch(patchType types.PatchType, data []byte) Patch {
 	return &patch{patchType, data}
 }
 
-// ConstantPatch constructs a new Patch with the given PatchType and data.
+// MergeFromWithOptimisticLock can be used if clients want to make sure a patch
+// is being applied to the latest resource version of an object.
 //
-// Deprecated: use RawPatch instead
-func ConstantPatch(patchType types.PatchType, data []byte) Patch {
-	return RawPatch(patchType, data)
+// The behavior is similar to what an Update would do, without the need to send the
+// whole object. Usually this method is useful if you might have multiple clients
+// acting on the same object and the same API version, but with different versions of the Go structs.
+//
+// For example, an "older" copy of a Widget that has fields A and B, and a "newer" copy with A, B, and C.
+// Sending an update using the older struct definition results in C being dropped, whereas using a patch does not.
+type MergeFromWithOptimisticLock struct{}
+
+// ApplyToMergeFrom applies this configuration to the given patch options.
+func (m MergeFromWithOptimisticLock) ApplyToMergeFrom(in *MergeFromOptions) {
+	in.OptimisticLock = true
+}
+
+// MergeFromOption is some configuration that modifies options for a merge-from patch data.
+type MergeFromOption interface {
+	// ApplyToMergeFrom applies this configuration to the given patch options.
+	ApplyToMergeFrom(*MergeFromOptions)
+}
+
+// MergeFromOptions contains options to generate a merge-from patch data.
+type MergeFromOptions struct {
+	// OptimisticLock, when true, includes `metadata.resourceVersion` into the final
+	// patch data. If the `resourceVersion` field doesn't match what's stored,
+	// the operation results in a conflict and clients will need to try again.
+	OptimisticLock bool
 }
 
 type mergeFromPatch struct {
-	from runtime.Object
+	patchType   types.PatchType
+	createPatch func(originalJSON, modifiedJSON []byte, dataStruct interface{}) ([]byte, error)
+	from        runtime.Object
+	opts        MergeFromOptions
 }
 
 // Type implements patch.
 func (s *mergeFromPatch) Type() types.PatchType {
-	return types.MergePatchType
+	return s.patchType
 }
 
 // Data implements Patch.
@@ -80,12 +111,79 @@ func (s *mergeFromPatch) Data(obj runtime.Object) ([]byte, error) {
 		return nil, err
 	}
 
+	data, err := s.createPatch(originalJSON, modifiedJSON, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.opts.OptimisticLock {
+		dataMap := map[string]interface{}{}
+		if err := json.Unmarshal(data, &dataMap); err != nil {
+			return nil, err
+		}
+		fromMeta, ok := s.from.(metav1.Object)
+		if !ok {
+			return nil, fmt.Errorf("cannot use OptimisticLock, from object %q is not a valid metav1.Object", s.from)
+		}
+		resourceVersion := fromMeta.GetResourceVersion()
+		if len(resourceVersion) == 0 {
+			return nil, fmt.Errorf("cannot use OptimisticLock, from object %q does not have any resource version we can use", s.from)
+		}
+		u := &unstructured.Unstructured{Object: dataMap}
+		u.SetResourceVersion(resourceVersion)
+		data, err = json.Marshal(u)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return data, nil
+}
+
+func createMergePatch(originalJSON, modifiedJSON []byte, _ interface{}) ([]byte, error) {
 	return jsonpatch.CreateMergePatch(originalJSON, modifiedJSON)
 }
 
+func createStrategicMergePatch(originalJSON, modifiedJSON []byte, dataStruct interface{}) ([]byte, error) {
+	return strategicpatch.CreateTwoWayMergePatch(originalJSON, modifiedJSON, dataStruct)
+}
+
 // MergeFrom creates a Patch that patches using the merge-patch strategy with the given object as base.
+// The difference between MergeFrom and StrategicMergeFrom lays in the handling of modified list fields.
+// When using MergeFrom, existing lists will be completely replaced by new lists.
+// When using StrategicMergeFrom, the list field's `patchStrategy` is respected if specified in the API type,
+// e.g. the existing list is not replaced completely but rather merged with the new one using the list's `patchMergeKey`.
+// See https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/ for more details on
+// the difference between merge-patch and strategic-merge-patch.
 func MergeFrom(obj runtime.Object) Patch {
-	return &mergeFromPatch{obj}
+	return &mergeFromPatch{patchType: types.MergePatchType, createPatch: createMergePatch, from: obj}
+}
+
+// MergeFromWithOptions creates a Patch that patches using the merge-patch strategy with the given object as base.
+// See MergeFrom for more details.
+func MergeFromWithOptions(obj runtime.Object, opts ...MergeFromOption) Patch {
+	options := &MergeFromOptions{}
+	for _, opt := range opts {
+		opt.ApplyToMergeFrom(options)
+	}
+	return &mergeFromPatch{patchType: types.MergePatchType, createPatch: createMergePatch, from: obj, opts: *options}
+}
+
+// StrategicMergeFrom creates a Patch that patches using the strategic-merge-patch strategy with the given object as base.
+// The difference between MergeFrom and StrategicMergeFrom lays in the handling of modified list fields.
+// When using MergeFrom, existing lists will be completely replaced by new lists.
+// When using StrategicMergeFrom, the list field's `patchStrategy` is respected if specified in the API type,
+// e.g. the existing list is not replaced completely but rather merged with the new one using the list's `patchMergeKey`.
+// See https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/ for more details on
+// the difference between merge-patch and strategic-merge-patch.
+// Please note, that CRDs don't support strategic-merge-patch, see
+// https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#advanced-features-and-flexibility
+func StrategicMergeFrom(obj Object, opts ...MergeFromOption) Patch {
+	options := &MergeFromOptions{}
+	for _, opt := range opts {
+		opt.ApplyToMergeFrom(options)
+	}
+	return &mergeFromPatch{patchType: types.StrategicMergePatchType, createPatch: createStrategicMergePatch, from: obj, opts: *options}
 }
 
 // mergePatch uses a raw merge strategy to patch the object.

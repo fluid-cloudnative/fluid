@@ -17,6 +17,9 @@ package juicefs
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -29,8 +32,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sync"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -62,10 +63,10 @@ func NewRuntimeReconciler(client client.Client,
 //+kubebuilder:rbac:groups=data.fluid.io,resources=juicefsruntimes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=data.fluid.io,resources=juicefsruntimes/status,verbs=get;update;patch
 
-func (r *JuiceFSRuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	defer utils.TimeTrack(time.Now(), "Reconcile", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
-		Context:        context.Background(),
+		Context:        context,
 		Log:            r.Log.WithValues("juicefsruntime", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,

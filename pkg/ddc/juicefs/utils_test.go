@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +30,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -647,8 +647,8 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 				return
 			}
 			if !tt.wantErr {
-				if !reflect.DeepEqual(gotPods, tt.wantPods) {
-					t.Errorf("GetRunningPodsOfStatefulSet() gotPods = %v, want %v", gotPods, tt.wantPods)
+				if !reflect.DeepEqual(gotPods[0].Status, tt.wantPods[0].Status) {
+					t.Errorf("testcase %s GetRunningPodsOfStatefulSet() gotPods = %v, want %v", tt.name, gotPods, tt.wantPods)
 				}
 			}
 		})

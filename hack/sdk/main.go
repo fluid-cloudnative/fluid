@@ -23,7 +23,7 @@ import (
 
 	fluid "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/go-openapi/spec"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kube-openapi/pkg/common"
 )
 

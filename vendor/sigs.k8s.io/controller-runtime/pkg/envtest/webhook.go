@@ -40,14 +40,14 @@ import (
 
 // WebhookInstallOptions are the options for installing mutating or validating webhooks
 type WebhookInstallOptions struct {
-	// Paths is a list of paths to the directories containing the mutating or validating webhooks yaml or json configs.
-	DirectoryPaths []string
+	// Paths is a list of paths to the directories or files containing the mutating or validating webhooks yaml or json configs.
+	Paths []string
 
 	// MutatingWebhooks is a list of MutatingWebhookConfigurations to install
-	MutatingWebhooks []runtime.Object
+	MutatingWebhooks []client.Object
 
 	// ValidatingWebhooks is a list of ValidatingWebhookConfigurations to install
-	ValidatingWebhooks []runtime.Object
+	ValidatingWebhooks []client.Object
 
 	// IgnoreErrorIfPathMissing will ignore an error if a DirectoryPath does not exist when set to true
 	IgnoreErrorIfPathMissing bool
@@ -63,6 +63,12 @@ type WebhookInstallOptions struct {
 	// LocalServingCertDir is the allocated directory for serving certificates.
 	// it will be automatically populated by the local temp dir
 	LocalServingCertDir string
+
+	// CAData is the CA that can be used to trust the serving certificates in LocalServingCertDir.
+	LocalServingCAData []byte
+
+	// LocalServingHostExternalName is the hostname to use to reach the webhook server.
+	LocalServingHostExternalName string
 
 	// MaxTime is the max time to wait
 	MaxTime time.Duration
@@ -134,27 +140,46 @@ func modifyWebhook(webhook map[string]interface{}, caData []byte, hostPort strin
 }
 
 func (o *WebhookInstallOptions) generateHostPort() (string, error) {
-	port, host, err := addr.Suggest()
-	if err != nil {
-		return "", fmt.Errorf("unable to grab random port for serving webhooks on: %v", err)
+	if o.LocalServingPort == 0 {
+		port, host, err := addr.Suggest(o.LocalServingHost)
+		if err != nil {
+			return "", fmt.Errorf("unable to grab random port for serving webhooks on: %v", err)
+		}
+		o.LocalServingPort = port
+		o.LocalServingHost = host
 	}
-	o.LocalServingPort = port
-	o.LocalServingHost = host
-	return net.JoinHostPort(host, fmt.Sprintf("%d", port)), nil
+	host := o.LocalServingHostExternalName
+	if host == "" {
+		host = o.LocalServingHost
+	}
+	return net.JoinHostPort(host, fmt.Sprintf("%d", o.LocalServingPort)), nil
 }
 
-// Install installs specified webhooks to the API server
-func (o *WebhookInstallOptions) Install(config *rest.Config) error {
+// PrepWithoutInstalling does the setup parts of Install (populating host-port,
+// setting up CAs, etc), without actually truing to do anything with webhook
+// definitions.  This is largely useful for internal testing of
+// controller-runtime, where we need a random host-port & caData for webhook
+// tests, but may be useful in similar scenarios.
+func (o *WebhookInstallOptions) PrepWithoutInstalling() error {
 	hookCA, err := o.setupCA()
 	if err != nil {
 		return err
 	}
-	if err := parseWebhookDirs(o); err != nil {
+	if err := parseWebhook(o); err != nil {
 		return err
 	}
 
 	err = o.ModifyWebhookDefinitions(hookCA)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Install installs specified webhooks to the API server
+func (o *WebhookInstallOptions) Install(config *rest.Config) error {
+	if err := o.PrepWithoutInstalling(); err != nil {
 		return err
 	}
 
@@ -179,8 +204,8 @@ func (o *WebhookInstallOptions) Cleanup() error {
 
 // WaitForWebhooks waits for the Webhooks to be available through API server
 func WaitForWebhooks(config *rest.Config,
-	mutatingWebhooks []runtime.Object,
-	validatingWebhooks []runtime.Object,
+	mutatingWebhooks []client.Object,
+	validatingWebhooks []client.Object,
 	options WebhookInstallOptions) error {
 
 	waitingFor := map[schema.GroupVersionKind]*sets.String{}
@@ -250,7 +275,8 @@ func (o *WebhookInstallOptions) setupCA() ([]byte, error) {
 		return nil, fmt.Errorf("unable to set up webhook CA: %v", err)
 	}
 
-	hookCert, err := hookCA.NewServingCert()
+	names := []string{"localhost", o.LocalServingHost, o.LocalServingHostExternalName}
+	hookCert, err := hookCA.NewServingCert(names...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to set up webhook serving certs: %v", err)
 	}
@@ -273,10 +299,11 @@ func (o *WebhookInstallOptions) setupCA() ([]byte, error) {
 		return nil, fmt.Errorf("unable to write webhook serving key to disk: %v", err)
 	}
 
+	o.LocalServingCAData = certData
 	return certData, nil
 }
 
-func createWebhooks(config *rest.Config, mutHooks []runtime.Object, valHooks []runtime.Object) error {
+func createWebhooks(config *rest.Config, mutHooks []client.Object, valHooks []client.Object) error {
 	cs, err := client.New(config, client.Options{})
 	if err != nil {
 		return err
@@ -319,10 +346,10 @@ func ensureCreated(cs client.Client, obj *unstructured.Unstructured) error {
 	return nil
 }
 
-// parseWebhookDirs reads the directories of Webhooks in options.DirectoryPaths and adds the Webhook structs to options
-func parseWebhookDirs(options *WebhookInstallOptions) error {
-	if len(options.DirectoryPaths) > 0 {
-		for _, path := range options.DirectoryPaths {
+// parseWebhook reads the directories or files of Webhooks in options.Paths and adds the Webhook structs to options
+func parseWebhook(options *WebhookInstallOptions) error {
+	if len(options.Paths) > 0 {
+		for _, path := range options.Paths {
 			_, err := os.Stat(path)
 			if options.IgnoreErrorIfPathMissing && os.IsNotExist(err) {
 				continue // skip this path
@@ -343,22 +370,30 @@ func parseWebhookDirs(options *WebhookInstallOptions) error {
 
 // readWebhooks reads the Webhooks from files and Unmarshals them into structs
 // returns slice of mutating and validating webhook configurations
-func readWebhooks(path string) ([]runtime.Object, []runtime.Object, error) {
+func readWebhooks(path string) ([]client.Object, []client.Object, error) {
 	// Get the webhook files
 	var files []os.FileInfo
 	var err error
 	log.V(1).Info("reading Webhooks from path", "path", path)
-	if files, err = ioutil.ReadDir(path); err != nil {
+	info, err := os.Stat(path)
+	if err != nil {
 		return nil, nil, err
+	}
+	if !info.IsDir() {
+		path, files = filepath.Dir(path), []os.FileInfo{info}
+	} else {
+		if files, err = ioutil.ReadDir(path); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// file extensions that may contain Webhooks
 	resourceExtensions := sets.NewString(".json", ".yaml", ".yml")
 
-	var mutHooks []runtime.Object
-	var valHooks []runtime.Object
+	var mutHooks []client.Object
+	var valHooks []client.Object
 	for _, file := range files {
-		// Only parse whitelisted file types
+		// Only parse allowlisted file types
 		if !resourceExtensions.Has(filepath.Ext(file.Name())) {
 			continue
 		}
@@ -408,7 +443,7 @@ func readWebhooks(path string) ([]runtime.Object, []runtime.Object, error) {
 	return mutHooks, valHooks, nil
 }
 
-func runtimeListToUnstructured(l []runtime.Object) []*unstructured.Unstructured {
+func runtimeListToUnstructured(l []client.Object) []*unstructured.Unstructured {
 	res := []*unstructured.Unstructured{}
 	for _, obj := range l {
 		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj.DeepCopyObject())

@@ -261,6 +261,8 @@ type DatasetCondition struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=dataset
 // +genclient
 
 // Dataset is the Schema for the datasets API
@@ -273,6 +275,7 @@ type Dataset struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // DatasetList contains a list of Dataset
 type DatasetList struct {
