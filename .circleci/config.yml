@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     working_directory: /go/src/github.com/fluid-cloudnative/fluid
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'

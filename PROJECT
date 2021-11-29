@@ -1,19 +1,70 @@
 domain: fluid.io
+layout:
+- go.kubebuilder.io/v3
+projectName: fluid
 repo: github.com/fluid-cloudnative/fluid
 resources:
-- group: data
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
   kind: Dataset
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
-- group: data
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
   kind: AlluxioRuntime
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
-- group: data
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
   kind: DataLoad
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
-- group: data
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
   kind: JindoRuntime
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
-- group: data
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
+  kind: JuiceFSRuntime
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
+  kind: GooseFSRuntime
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
   kind: DataBackup
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
-version: "2"
+version: "3"
