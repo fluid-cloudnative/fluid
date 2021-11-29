@@ -1,4 +1,5 @@
 {{ if .Values.webhook.enabled -}}
+{{- if semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version -}}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -24,4 +25,5 @@ webhooks:
     namespaceSelector:
       matchLabels:
         fluid.io/enable-injection: "true"
+{{- end }}
 {{- end }}
