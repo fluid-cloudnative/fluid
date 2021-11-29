@@ -67,10 +67,10 @@ func NewRuntimeReconciler(client client.Client,
 // +kubebuilder:rbac:groups=data.fluid.io,resources=jindoruntimes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=jindoruntimes/status,verbs=get;update;patch
 
-func (r *RuntimeReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	defer utils.TimeTrack(time.Now(), "Reconcile JindoRuntime", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
-		Context:        context.Background(),
+		Context:        context,
 		Log:            r.Log.WithValues("jindoruntime", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,

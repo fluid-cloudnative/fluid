@@ -19,11 +19,12 @@ package controllerutil
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
@@ -180,6 +181,10 @@ const ( // They should complete the sentence "Deployment default/foo has been ..
 	OperationResultCreated OperationResult = "created"
 	// OperationResultUpdated means that an existing resource is updated
 	OperationResultUpdated OperationResult = "updated"
+	// OperationResultUpdatedStatus means that an existing resource and its status is updated
+	OperationResultUpdatedStatus OperationResult = "updatedStatus"
+	// OperationResultUpdatedStatusOnly means that only an existing status is updated
+	OperationResultUpdatedStatusOnly OperationResult = "updatedStatusOnly"
 )
 
 // CreateOrUpdate creates or updates the given object in the Kubernetes
@@ -189,12 +194,8 @@ const ( // They should complete the sentence "Deployment default/foo has been ..
 // The MutateFn is called regardless of creating or updating an object.
 //
 // It returns the executed operation and an error.
-func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f MutateFn) (OperationResult, error) {
-	key, err := client.ObjectKeyFromObject(obj)
-	if err != nil {
-		return OperationResultNone, err
-	}
-
+func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f MutateFn) (OperationResult, error) {
+	key := client.ObjectKeyFromObject(obj)
 	if err := c.Get(ctx, key, obj); err != nil {
 		if !errors.IsNotFound(err) {
 			return OperationResultNone, err
@@ -223,12 +224,110 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f 
 	return OperationResultUpdated, nil
 }
 
+// CreateOrPatch creates or patches the given object in the Kubernetes
+// cluster. The object's desired state must be reconciled with the before
+// state inside the passed in callback MutateFn.
+//
+// The MutateFn is called regardless of creating or updating an object.
+//
+// It returns the executed operation and an error.
+func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object, f MutateFn) (OperationResult, error) {
+	key := client.ObjectKeyFromObject(obj)
+	if err := c.Get(ctx, key, obj); err != nil {
+		if !errors.IsNotFound(err) {
+			return OperationResultNone, err
+		}
+		if f != nil {
+			if err := mutate(f, key, obj); err != nil {
+				return OperationResultNone, err
+			}
+		}
+		if err := c.Create(ctx, obj); err != nil {
+			return OperationResultNone, err
+		}
+		return OperationResultCreated, nil
+	}
+
+	// Create patches for the object and its possible status.
+	objPatch := client.MergeFrom(obj.DeepCopyObject())
+	statusPatch := client.MergeFrom(obj.DeepCopyObject())
+
+	// Create a copy of the original object as well as converting that copy to
+	// unstructured data.
+	before, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj.DeepCopyObject())
+	if err != nil {
+		return OperationResultNone, err
+	}
+
+	// Attempt to extract the status from the resource for easier comparison later
+	beforeStatus, hasBeforeStatus, err := unstructured.NestedFieldCopy(before, "status")
+	if err != nil {
+		return OperationResultNone, err
+	}
+
+	// If the resource contains a status then remove it from the unstructured
+	// copy to avoid unnecessary patching later.
+	if hasBeforeStatus {
+		unstructured.RemoveNestedField(before, "status")
+	}
+
+	// Mutate the original object.
+	if f != nil {
+		if err := mutate(f, key, obj); err != nil {
+			return OperationResultNone, err
+		}
+	}
+
+	// Convert the resource to unstructured to compare against our before copy.
+	after, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return OperationResultNone, err
+	}
+
+	// Attempt to extract the status from the resource for easier comparison later
+	afterStatus, hasAfterStatus, err := unstructured.NestedFieldCopy(after, "status")
+	if err != nil {
+		return OperationResultNone, err
+	}
+
+	// If the resource contains a status then remove it from the unstructured
+	// copy to avoid unnecessary patching later.
+	if hasAfterStatus {
+		unstructured.RemoveNestedField(after, "status")
+	}
+
+	result := OperationResultNone
+
+	if !reflect.DeepEqual(before, after) {
+		// Only issue a Patch if the before and after resources (minus status) differ
+		if err := c.Patch(ctx, obj, objPatch); err != nil {
+			return result, err
+		}
+		result = OperationResultUpdated
+	}
+
+	if (hasBeforeStatus || hasAfterStatus) && !reflect.DeepEqual(beforeStatus, afterStatus) {
+		// Only issue a Status Patch if the resource has a status and the beforeStatus
+		// and afterStatus copies differ
+		if err := c.Status().Patch(ctx, obj, statusPatch); err != nil {
+			return result, err
+		}
+		if result == OperationResultUpdated {
+			result = OperationResultUpdatedStatus
+		} else {
+			result = OperationResultUpdatedStatusOnly
+		}
+	}
+
+	return result, nil
+}
+
 // mutate wraps a MutateFn and applies validation to its result
-func mutate(f MutateFn, key client.ObjectKey, obj runtime.Object) error {
+func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {
 	if err := f(); err != nil {
 		return err
 	}
-	if newKey, err := client.ObjectKeyFromObject(obj); err != nil || key != newKey {
+	if newKey := client.ObjectKeyFromObject(obj); key != newKey {
 		return fmt.Errorf("MutateFn cannot mutate object name and/or object namespace")
 	}
 	return nil
@@ -237,8 +336,8 @@ func mutate(f MutateFn, key client.ObjectKey, obj runtime.Object) error {
 // MutateFn is a function which mutates the existing object into it's desired state.
 type MutateFn func() error
 
-// AddFinalizer accepts a metav1 object and adds the provided finalizer if not present.
-func AddFinalizer(o metav1.Object, finalizer string) {
+// AddFinalizer accepts an Object and adds the provided finalizer if not present.
+func AddFinalizer(o client.Object, finalizer string) {
 	f := o.GetFinalizers()
 	for _, e := range f {
 		if e == finalizer {
@@ -248,19 +347,8 @@ func AddFinalizer(o metav1.Object, finalizer string) {
 	o.SetFinalizers(append(f, finalizer))
 }
 
-// AddFinalizerWithError tries to convert a runtime object to a metav1 object and add the provided finalizer.
-// It returns an error if the provided object cannot provide an accessor.
-func AddFinalizerWithError(o runtime.Object, finalizer string) error {
-	m, err := meta.Accessor(o)
-	if err != nil {
-		return err
-	}
-	AddFinalizer(m, finalizer)
-	return nil
-}
-
-// RemoveFinalizer accepts a metav1 object and removes the provided finalizer if present.
-func RemoveFinalizer(o metav1.Object, finalizer string) {
+// RemoveFinalizer accepts an Object and removes the provided finalizer if present.
+func RemoveFinalizer(o client.Object, finalizer string) {
 	f := o.GetFinalizers()
 	for i := 0; i < len(f); i++ {
 		if f[i] == finalizer {
@@ -271,13 +359,19 @@ func RemoveFinalizer(o metav1.Object, finalizer string) {
 	o.SetFinalizers(f)
 }
 
-// RemoveFinalizerWithError tries to convert a runtime object to a metav1 object and remove the provided finalizer.
-// It returns an error if the provided object cannot provide an accessor.
-func RemoveFinalizerWithError(o runtime.Object, finalizer string) error {
-	m, err := meta.Accessor(o)
-	if err != nil {
-		return err
+// ContainsFinalizer checks an Object that the provided finalizer is present.
+func ContainsFinalizer(o client.Object, finalizer string) bool {
+	f := o.GetFinalizers()
+	for _, e := range f {
+		if e == finalizer {
+			return true
+		}
 	}
-	RemoveFinalizer(m, finalizer)
-	return nil
+	return false
 }
+
+// Object allows functions to work indistinctly with any resource that
+// implements both Object interfaces.
+//
+// Deprecated: Use client.Object instead.
+type Object = client.Object

@@ -58,7 +58,7 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 
 ## 先决条件
 
-- Kubernetes version > 1.14, 支持CSI
+- Kubernetes version > 1.16, 支持CSI
 - Golang 1.12+
 - Helm 3
 

@@ -14,9 +14,10 @@ package dataset
 
 import (
 	"context"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
-	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
@@ -54,9 +55,9 @@ type reconcileRequestContext struct {
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datasets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datasets/status,verbs=get;update;patch
 
-func (r *DatasetReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
-		Context:        context.Background(),
+		Context:        context,
 		Log:            r.Log.WithValues("dataset", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 	}

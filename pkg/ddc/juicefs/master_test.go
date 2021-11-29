@@ -17,13 +17,14 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"

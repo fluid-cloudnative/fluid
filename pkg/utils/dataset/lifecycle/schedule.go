@@ -25,7 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
+	v1helper "k8s.io/component-helpers/scheduling/corev1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -114,7 +114,12 @@ func AssignDatasetToNodes(runtimeInfo base.RuntimeInfoInterface,
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {
 				terms := dataset.Spec.NodeAffinity.Required.NodeSelectorTerms
-				if !v1helper.MatchNodeSelectorTerms(terms, labels.Set(node.Labels), nil) {
+				matched, err := v1helper.MatchNodeSelectorTerms(&node, &corev1.NodeSelector{NodeSelectorTerms: terms})
+				if err != nil {
+					log.Error(err, "Node is skipped because of error", "node", node.Name)
+					continue
+				}
+				if !matched {
 					log.Info("Node is skipped because it can't meet node selector terms", "node", node.Name)
 					continue
 				}

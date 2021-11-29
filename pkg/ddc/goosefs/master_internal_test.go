@@ -35,7 +35,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/net"
 
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 

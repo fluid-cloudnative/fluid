@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
-	"github.com/go-logr/logr"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
@@ -33,41 +33,14 @@ const (
 	FINE      = "fine"
 )
 
-// an empty logger just for testing ...
-type NullLogger struct{}
-
-func (log NullLogger) Info(_ string, _ ...interface{}) {
-	// Do nothing.
-}
-
-func (log NullLogger) Enabled() bool {
-	return false
-}
-
-func (log NullLogger) Error(_ error, _ string, _ ...interface{}) {
-	// Do nothing.
-}
-
-func (log NullLogger) V(_ int) logr.InfoLogger {
-	return log
-}
-
-func (log NullLogger) WithName(_ string) logr.Logger {
-	return log
-}
-
-func (log NullLogger) WithValues(_ ...interface{}) logr.Logger {
-	return log
-}
-
 func TestNewJuiceFSFileUtils(t *testing.T) {
 	var expectedResult = JuiceFileUtils{
 		podName:   "juicefs",
 		namespace: "default",
 		container: common.JuiceFSFuseContainer,
-		log:       NullLogger{},
+		log:       logf.NullLogger{},
 	}
-	result := NewJuiceFileUtils("juicefs", common.JuiceFSFuseContainer, "default", NullLogger{})
+	result := NewJuiceFileUtils("juicefs", common.JuiceFSFuseContainer, "default", logf.NullLogger{})
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the JuiceFSFileUtils, want: %v, got: %v", expectedResult, result)
 	}
@@ -105,7 +78,7 @@ func TestJuiceFileUtils_IsExist(t *testing.T) {
 		{FINE, true, true},
 	}
 	for _, test := range tests {
-		found, err := JuiceFileUtils{log: NullLogger{}}.IsExist(test.in)
+		found, err := JuiceFileUtils{log: logf.NullLogger{}}.IsExist(test.in)
 		if found != test.out {
 			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
 		}
@@ -172,7 +145,7 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JuiceFileUtils{log: NullLogger{}}
+	a := &JuiceFileUtils{log: logf.NullLogger{}}
 	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -283,7 +256,7 @@ func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := JuiceFileUtils{log: NullLogger{}}
+	a := JuiceFileUtils{log: logf.NullLogger{}}
 	err = a.LoadMetadataWithoutTimeout("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -319,7 +292,7 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JuiceFileUtils{log: NullLogger{}}
+	a := &JuiceFileUtils{log: logf.NullLogger{}}
 	_, err = a.Count("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -358,7 +331,7 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JuiceFileUtils{log: NullLogger{}}
+	a := &JuiceFileUtils{log: logf.NullLogger{}}
 	_, err = a.GetFileCount("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -397,7 +370,7 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := JuiceFileUtils{log: NullLogger{}}
+	a := JuiceFileUtils{log: logf.NullLogger{}}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
 	for index, keySet := range keySets {

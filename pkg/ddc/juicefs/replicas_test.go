@@ -16,9 +16,11 @@ limitations under the License.
 package juicefs
 
 import (
-	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"testing"
 
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -26,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"

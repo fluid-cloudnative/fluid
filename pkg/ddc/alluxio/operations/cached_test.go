@@ -18,8 +18,10 @@ package operations
 
 import (
 	"errors"
-	"github.com/brahma-adshonor/gohook"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestAlluxioFileUtils_CachedState(t *testing.T) {
@@ -40,7 +42,7 @@ func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: NullLogger{}}
+	a := &AlluxioFileUtils{log: logf.NullLogger{}}
 	_, err = a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -82,7 +84,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: NullLogger{}}
+	a := &AlluxioFileUtils{log: logf.NullLogger{}}
 	err = a.CleanCache("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

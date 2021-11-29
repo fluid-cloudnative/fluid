@@ -19,7 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
-// +kubebuilder:webhook:path=/mutate-fluid-io-v1alpha1-schedulepod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=schedulepod.fluid.io
+// +kubebuilder:webhook:path=/mutate-fluid-io-v1alpha1-schedulepod,mutating=true,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1;v1beta1,groups="",resources=pods,verbs=create;update,versions=v1,name=schedulepod.fluid.io
 
 var (
 	// HandlerMap contains admission webhook handlers
