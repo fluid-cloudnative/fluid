@@ -1,4 +1,4 @@
-
+{{- if semverCompare ">1.18.0-0" .Capabilities.KubeVersion.Version -}}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -498,3 +498,5 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
+{{- end -}}
+
