@@ -127,6 +127,7 @@ type JuiceFSFuseSpec struct {
 // +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
 // +kubebuilder:printcolumn:name="Desired Fuses",type="integer",JSONPath=`.status.desiredFuseNumberScheduled`,priority=10
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=juicefs
 // +genclient
