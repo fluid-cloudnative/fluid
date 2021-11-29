@@ -432,7 +432,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			portRange := "26000-32000"
-			pr, err := net.ParsePortRange(portRange)
+			pr, _ := net.ParsePortRange(portRange)
 			testObjs := []runtime.Object{}
 			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
 			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
@@ -445,14 +445,13 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 			}
 
 			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
-			allocator, err := portallocator.GetRuntimePortAllocator()
+			allocator, _ := portallocator.GetRuntimePortAllocator()
 			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
 				func(_ *portallocator.RuntimePortAllocator, ports []int) {
-					return
 				})
 			defer patch1.Reset()
 
-			if err = e.releasePorts(); (err != nil) != tt.wantErr {
+			if err := e.releasePorts(); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
