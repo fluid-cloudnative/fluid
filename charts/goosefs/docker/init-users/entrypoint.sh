@@ -8,6 +8,7 @@ function printUsage() {
     echo -e " init_users"
     echo -e " chmod_tierpath"
     echo -e " chmod_fuse_mountpoint"
+    echo -e " check_port"
 }
 
 function main() {
@@ -25,6 +26,9 @@ function main() {
             ;;
         chmod_fuse_mountpoint)
             sh -c ./chmod_fuse_mountpoint.sh
+            ;;
+        check_port)
+            sh -c ./check_port.sh
             ;;
         *)
             printUsage

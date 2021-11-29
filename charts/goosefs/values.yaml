@@ -216,6 +216,7 @@ worker:
   # JVM options specific to the worker container
   jvmOptions:
   nodeSelector: {}
+  replicaCount: 0
 
 jobWorker:
   args:

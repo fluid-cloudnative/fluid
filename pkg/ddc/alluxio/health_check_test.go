@@ -391,8 +391,8 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	}
 
 	testObjs := []runtime.Object{}
-	for _, daemonSet := range statefulSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
+	for _, statefulSet := range statefulSetInputs {
+		testObjs = append(testObjs, statefulSet.DeepCopy())
 	}
 
 	var alluxioruntimeInputs = []datav1alpha1.AlluxioRuntime{

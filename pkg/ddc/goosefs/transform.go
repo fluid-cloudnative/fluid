@@ -96,6 +96,9 @@ func (e *GooseFSEngine) transform(runtime *datav1alpha1.GooseFSRuntime) (value *
 
 	// 12.set API Gateway
 	err = e.transformAPIGateway(runtime, value)
+
+	// 13.set the placementMode
+	e.transformPlacementMode(dataset, value)
 	return
 }
 
@@ -305,6 +308,7 @@ func (e *GooseFSEngine) transformMasters(runtime *datav1alpha1.GooseFSRuntime,
 		}
 	}
 
+	e.transformResourcesForMaster(runtime, value)
 	return
 }
 
@@ -313,13 +317,9 @@ func (e *GooseFSEngine) transformWorkers(runtime *datav1alpha1.GooseFSRuntime, v
 	value.Worker = Worker{}
 	e.optimizeDefaultForWorker(runtime, value)
 
-	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
-	labelName := e.getCommonLabelname()
-
 	if len(value.Worker.NodeSelector) == 0 {
 		value.Worker.NodeSelector = map[string]string{}
 	}
-	value.Worker.NodeSelector[labelName] = "true"
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		value.Worker.Properties = runtime.Spec.Worker.Properties
@@ -412,4 +412,11 @@ func (e *GooseFSEngine) transformMasterSelector(runtime *datav1alpha1.GooseFSRun
 		properties = runtime.Spec.Master.NodeSelector
 	}
 	return properties
+}
+
+func (e *GooseFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *GooseFS) {
+	value.PlacementMode = string(dataset.Spec.PlacementMode)
+	if len(value.PlacementMode) == 0 {
+		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
 }

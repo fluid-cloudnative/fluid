@@ -18,12 +18,13 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -150,7 +151,7 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 // checkWorkersHealthy check workers number changed
 func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkertName(), e.namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkerName(), e.namespace)
 	if err != nil {
 		return err
 	}

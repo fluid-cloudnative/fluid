@@ -190,7 +190,7 @@ type AlluxioRuntimeSpec struct {
 	// The component spec of Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`
 
-	// The component spec ofAlluxio job master
+	// The component spec of Alluxio job master
 	JobMaster AlluxioCompTemplateSpec `json:"jobMaster,omitempty"`
 
 	// The component spec of Alluxio worker

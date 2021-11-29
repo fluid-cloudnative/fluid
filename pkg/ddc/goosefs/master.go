@@ -25,19 +25,20 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // CheckMasterReady checks if the master is ready
 func (e *GooseFSEngine) CheckMasterReady() (ready bool, err error) {
 
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 	// 1. Check the status
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return
 	}
 
-	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		return
 	}
@@ -125,10 +126,10 @@ func (e *GooseFSEngine) ShouldSetupMaster() (should bool, err error) {
 // It will print the information in the Debug window according to the Master status
 // It return any cache error encountered
 func (e *GooseFSEngine) SetupMaster() (err error) {
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 
 	// 1. Setup the master
-	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", masterName)
