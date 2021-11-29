@@ -43,6 +43,9 @@ spec:
     - jsonPath: .status.fusePhase
       name: Fuse Phase
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
