@@ -95,7 +95,7 @@ func (e *AlluxioEngine) getMasterName() (dsName string) {
 	return e.name + "-master"
 }
 
-func (e *AlluxioEngine) getWorkertName() (dsName string) {
+func (e *AlluxioEngine) getWorkerName() (dsName string) {
 	return e.name + "-worker"
 }
 

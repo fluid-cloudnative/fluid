@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package alluxio
+package goosefs
 
 import (
 	"reflect"
@@ -79,13 +79,13 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	runtimeInputs := []*datav1alpha1.AlluxioRuntime{
+	runtimeInputs := []*datav1alpha1.GooseFSRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -108,7 +108,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Name:      "obj",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -126,7 +126,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Name:      "deprecated",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -181,11 +181,11 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		engine := newAlluxioEngineREP(fakeClient, testCase.name, testCase.namespace)
+		engine := newGooseFSEngineREP(fakeClient, testCase.name, testCase.namespace)
 
 		patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-			func(_ *AlluxioEngine) (string, error) {
-				summary := mockAlluxioReportSummary()
+			func(_ *GooseFSEngine) (string, error) {
+				summary := mockGooseFSReportSummary()
 				return summary, nil
 			})
 		defer patch1.Reset()
@@ -202,7 +202,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		defer patch2.Reset()
 
 		patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-			func(_ *AlluxioEngine) cacheHitStates {
+			func(_ *GooseFSEngine) cacheHitStates {
 				return cacheHitStates{
 					bytesReadLocal:  20310917,
 					bytesReadUfsAll: 32243712,

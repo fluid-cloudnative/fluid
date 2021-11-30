@@ -92,11 +92,11 @@ func (e *GooseFSEngine) getMasterPodInfo() (podName string, containerName string
 	return
 }
 
-func (e *GooseFSEngine) getMasterStatefulsetName() (dsName string) {
+func (e *GooseFSEngine) getMasterName() (dsName string) {
 	return e.name + "-master"
 }
 
-func (e *GooseFSEngine) getWorkerDaemonsetName() (dsName string) {
+func (e *GooseFSEngine) getWorkerName() (dsName string) {
 	return e.name + "-worker"
 }
 

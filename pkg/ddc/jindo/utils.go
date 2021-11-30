@@ -58,7 +58,7 @@ func (e *JindoEngine) getMasterName() (dsName string) {
 	return e.name + "-jindofs-master"
 }
 
-func (e *JindoEngine) getWorkertName() (dsName string) {
+func (e *JindoEngine) getWorkerName() (dsName string) {
 	return e.name + "-jindofs-worker"
 }
 

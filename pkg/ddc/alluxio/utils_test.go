@@ -624,7 +624,7 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getWorkertName(); gotDsName != tt.wantDsName {
+			if gotDsName := e.getWorkerName(); gotDsName != tt.wantDsName {
 				t.Errorf("AlluxioEngine.getWorkerDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})

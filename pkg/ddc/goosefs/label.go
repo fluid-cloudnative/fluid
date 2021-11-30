@@ -20,3 +20,7 @@ import "github.com/fluid-cloudnative/fluid/pkg/common"
 func (e *GooseFSEngine) getCommonLabelname() string {
 	return common.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 }
+
+func (e *GooseFSEngine) getFuseLabelname() string {
+	return common.LabelAnnotationFusePrefix + e.namespace + "-" + e.name
+}

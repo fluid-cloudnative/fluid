@@ -108,25 +108,25 @@ type GooseFSRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of GooseFS.
 	GooseFSVersion VersionSpec `json:"goosefsVersion,omitempty"`
 
-	// Desired state for GooseFS master
+	// The component spec of GooseFS master
 	Master GooseFSCompTemplateSpec `json:"master,omitempty"`
 
-	// Desired state for GooseFS job master
+	// The component spec of GooseFS job master
 	JobMaster GooseFSCompTemplateSpec `json:"jobMaster,omitempty"`
 
-	// Desired state for GooseFS worker
+	// The component spec of GooseFS worker
 	Worker GooseFSCompTemplateSpec `json:"worker,omitempty"`
 
-	// Desired state for GooseFS job Worker
+	// The component spec of GooseFS job Worker
 	JobWorker GooseFSCompTemplateSpec `json:"jobWorker,omitempty"`
 
-	// Desired state for GooseFS API Gateway
+	// The component spec of GooseFS API Gateway
 	APIGateway GooseFSCompTemplateSpec `json:"apiGateway,omitempty"`
 
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
-	// Desired state for GooseFS Fuse
+	// The component spec of GooseFS Fuse
 	Fuse GooseFSFuseSpec `json:"fuse,omitempty"`
 
 	// Configurable properties for the GOOSEFS component. <br>
@@ -207,4 +207,8 @@ func init() {
 // Replicas gets the replicas of runtime worker
 func (runtime *GooseFSRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
+}
+
+func (runtime *GooseFSRuntime) GetStatus() *RuntimeStatus {
+	return &runtime.Status
 }

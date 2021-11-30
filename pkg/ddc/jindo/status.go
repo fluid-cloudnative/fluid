@@ -21,7 +21,7 @@ func (e *JindoEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	var (
 		masterReady, workerReady bool
 		masterName               string = e.getMasterName()
-		workerName               string = e.getWorkertName()
+		workerName               string = e.getWorkerName()
 		namespace                string = e.namespace
 	)
 

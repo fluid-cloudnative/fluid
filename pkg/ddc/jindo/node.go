@@ -46,7 +46,7 @@ func (e *JindoEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	)
 
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)

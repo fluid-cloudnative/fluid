@@ -67,6 +67,8 @@ type GooseFS struct {
 	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
 
 	Tolerations []v1.Toleration `yaml:"tolerations,omitempty"`
+
+	PlacementMode string `yaml:"placement,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -115,11 +117,13 @@ type APIGateway struct {
 }
 
 type JobMaster struct {
-	Ports Ports `yaml:"ports,omitempty"`
+	Ports     Ports            `yaml:"ports,omitempty"`
+	Resources common.Resources `yaml:"resources,omitempty"`
 }
 
 type JobWorker struct {
-	Ports Ports `yaml:"ports,omitempty"`
+	Ports     Ports            `yaml:"ports,omitempty"`
+	Resources common.Resources `yaml:"resources,omitempty"`
 }
 
 type Worker struct {

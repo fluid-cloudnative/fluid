@@ -11,7 +11,7 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 
 	if !ready {
 		err = fmt.Errorf("the workers %s in %s are not healthy",
-			e.getWorkertName(),
+			e.getWorkerName(),
 			e.namespace)
 	}
 

@@ -16,6 +16,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -25,6 +26,135 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+func TestTransformResourcesForMaster(t *testing.T) {
+	testCases := map[string]struct {
+		runtime *datav1alpha1.GooseFSRuntime
+		got     *GooseFS
+		want    *GooseFS
+	}{
+		"test goosefs master pass through resources with limits and request case 1": {
+			runtime: mockGooseFSRuntimeForMaster(
+				corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("100Mi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("400m"),
+						corev1.ResourceMemory: resource.MustParse("400Mi"),
+					},
+				},
+			),
+			got: &GooseFS{},
+			want: &GooseFS{
+				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+						Limits: common.ResourceList{
+							corev1.ResourceCPU:    "400m",
+							corev1.ResourceMemory: "400Mi",
+						},
+					},
+				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+						Limits: common.ResourceList{
+							corev1.ResourceCPU:    "400m",
+							corev1.ResourceMemory: "400Mi",
+						},
+					},
+				},
+			},
+		},
+		"test GooseFS master pass through resources with request case 1": {
+			runtime: mockGooseFSRuntimeForMaster(
+				corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("100Mi"),
+					},
+				},
+			),
+			got: &GooseFS{},
+			want: &GooseFS{
+				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+					},
+				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceCPU:    "100m",
+							corev1.ResourceMemory: "100Mi",
+						},
+					},
+				},
+			},
+		},
+		"test goosefs master pass through resources without request and limit case 1": {
+			runtime: mockGooseFSRuntimeForMaster(
+				corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{},
+				},
+			),
+			got:  &GooseFS{},
+			want: &GooseFS{},
+		},
+		"test goosefs master pass through resources without request and limit case 2": {
+			runtime: mockGooseFSRuntimeForMaster(corev1.ResourceRequirements{}),
+			got:     &GooseFS{},
+			want:    &GooseFS{},
+		},
+		"test goosefs master pass through resources without request and limit case 3": {
+			runtime: mockGooseFSRuntimeForMaster(
+				corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{},
+				},
+			),
+			got:  &GooseFS{},
+			want: &GooseFS{},
+		},
+	}
+
+	engine := &GooseFSEngine{}
+	for k, item := range testCases {
+		engine.transformResourcesForMaster(item.runtime, item.got)
+		if !reflect.DeepEqual(item.want.Master.Resources, item.got.Master.Resources) {
+			t.Errorf("%s failure, want resource: %+v,got resource: %+v",
+				k,
+				item.want.Master.Resources,
+				item.got.Master.Resources,
+			)
+		}
+	}
+}
+
+func mockGooseFSRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.GooseFSRuntime {
+	runtime := &datav1alpha1.GooseFSRuntime{
+		Spec: datav1alpha1.GooseFSRuntimeSpec{
+			Master: datav1alpha1.GooseFSCompTemplateSpec{
+				Resources: res,
+			},
+			JobMaster: datav1alpha1.GooseFSCompTemplateSpec{
+				Resources: res,
+			},
+		},
+	}
+	return runtime
+
+}
 
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
@@ -51,6 +181,10 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	resources := corev1.ResourceRequirements{}
 	resources.Limits = make(corev1.ResourceList)
 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+	resources.Limits[corev1.ResourceCPU] = resource.MustParse("500m")
+	resources.Requests = make(corev1.ResourceList)
+	resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
+	resources.Requests[corev1.ResourceCPU] = resource.MustParse("500m")
 
 	result := resource.MustParse("20Gi")
 
@@ -61,6 +195,9 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		{&datav1alpha1.GooseFSRuntime{
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Worker: datav1alpha1.GooseFSCompTemplateSpec{
+					Resources: resources,
+				},
+				JobWorker: datav1alpha1.GooseFSCompTemplateSpec{
 					Resources: resources,
 				},
 				TieredStore: datav1alpha1.TieredStore{
@@ -133,6 +270,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		}, &GooseFS{
 			Properties: map[string]string{},
 			Master:     Master{},
+			JobMaster:  JobMaster{},
 		}},
 	}
 	for _, test := range tests {
