@@ -93,6 +93,84 @@ func TestCreateDataLoadJob(t *testing.T) {
 	}
 }
 
+func TestCreateDataLoadJobWithOption(t *testing.T) {
+	mockExecCheckReleaseCommon := func(name string, namespace string) (exist bool, err error) {
+		return false, nil
+	}
+	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
+		return false, errors.New("fail to check release")
+	}
+	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
+		return errors.New("fail to install dataload chart")
+	}
+
+	wrappedUnhookCheckRelease := func() {
+		err := gohook.UnHook(helm.CheckRelease)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	targetDataLoad := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			LoadMetadata: true,
+			Options: map[string]string{
+				"atomicCache":      "true",
+				"loadMetadataOnly": "true",
+			},
+		},
+	}
+	datasetInputs := []datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+		},
+	}
+	testObjs := []runtime.Object{}
+	for _, datasetInput := range datasetInputs {
+		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	engine := JindoEngine{
+		name: "hbase",
+	}
+	ctx := cruntime.ReconcileRequestContext{
+		Log:      log.NullLogger{},
+		Client:   client,
+		Recorder: record.NewFakeRecorder(1),
+	}
+
+	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.CreateDataLoadJob(ctx, targetDataLoad)
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
+	wrappedUnhookCheckRelease()
+
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
 func TestGenerateDataLoadValueFile(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
