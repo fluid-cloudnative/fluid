@@ -3,6 +3,8 @@ package jindo
 import (
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"path/filepath"
 	"strings"
@@ -178,6 +180,7 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 				Name:      "test-dataset",
 				Namespace: "fluid",
 			},
+			Spec: datav1alpha1.DatasetSpec{},
 		},
 	}
 	jindo := &datav1alpha1.JindoRuntime{
@@ -186,11 +189,25 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 			Namespace: "fluid",
 		},
 	}
+
+	jindo.Spec = datav1alpha1.JindoRuntimeSpec{
+		Secret: "secret",
+		TieredStore: datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{{
+				MediumType: common.Memory,
+				Quota:      resource.NewQuantity(1, resource.BinarySI),
+				High:       "0.8",
+				Low:        "0.1",
+			}},
+		},
+	}
+
 	testScheme.AddKnownTypes(datav1alpha1.GroupVersion, jindo)
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	testObjs = append(testObjs, jindo.DeepCopy())
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	context := cruntime.ReconcileRequestContext{
