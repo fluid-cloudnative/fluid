@@ -20,30 +20,48 @@ import (
 	"reflect"
 	"testing"
 
+	utilpointer "k8s.io/utils/pointer"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
-
-	var daemonSetInputs = []appsv1.DaemonSet{
+	var stsInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-worker",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   0,
+				CurrentReplicas: 0,
+			},
+		},
+	}
+
+	var daemonSetInputs = []appsv1.DaemonSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-fuse",
@@ -60,11 +78,28 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	for _, daemonSet := range daemonSetInputs {
 		testObjs = append(testObjs, daemonSet.DeepCopy())
 	}
+	for _, sts := range stsInputs {
+		testObjs = append(testObjs, sts.DeepCopy())
+	}
 
 	var juicefsruntimeInputs = []datav1alpha1.JuiceFSRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Replicas: 1,
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CacheStates: map[common.CacheStateName]string{
+					common.Cached: "true",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
@@ -95,6 +130,19 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				},
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+			Status: datav1alpha1.DatasetStatus{
+				HCFSStatus: &datav1alpha1.HCFSStatus{
+					Endpoint:                    "test Endpoint",
+					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+				},
+			},
+		},
 	}
 	for _, dataset := range datasetInputs {
 		testObjs = append(testObjs, dataset.DeepCopy())
@@ -109,6 +157,13 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &juicefsruntimeInputs[0],
+		},
+		{
+			Client:    client,
+			Log:       log.NullLogger{},
+			namespace: "fluid",
+			name:      "test",
+			runtime:   &juicefsruntimeInputs[1],
 		},
 	}
 
@@ -133,6 +188,31 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			expectedDataset: datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
+					CacheStates: map[common.CacheStateName]string{
+						common.Cached: "true",
+					},
+					HCFSStatus: &datav1alpha1.HCFSStatus{
+						Endpoint:                    "test Endpoint",
+						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+					},
+				},
+			},
+		},
+		{
+			engine:                             engines[1],
+			expectedErrorNil:                   false,
+			expectedWorkerPhase:                "",
+			expectedRuntimeWorkerNumberReady:   0,
+			expectedRuntimeWorkerAvailable:     0,
+			expectedRuntimeFuseNumberReady:     0,
+			expectedRuntimeFuseNumberAvailable: 0,
+			expectedDataset: datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
 					Namespace: "fluid",
 				},
 				Status: datav1alpha1.DatasetStatus{

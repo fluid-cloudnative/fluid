@@ -61,7 +61,7 @@ Fluid can manage and schedule Alluxio Runtime to achieve dataset visibility, ela
 
 ## Prerequisites
 
-- Kubernetes version > 1.14, and support CSI
+- Kubernetes version > 1.16, and support CSI
 - Golang 1.12+
 - Helm 3
 

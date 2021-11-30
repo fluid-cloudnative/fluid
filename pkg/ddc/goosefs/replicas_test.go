@@ -18,17 +18,19 @@ import (
 	"testing"
 
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -43,6 +45,7 @@ func newGooseFSEngineREP(client client.Client, name string, namespace string) *G
 		runtimeInfo: runTimeInfo,
 		Log:         log.NullLogger{},
 	}
+	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
 }
 
@@ -109,7 +112,7 @@ func TestSyncReplicas(t *testing.T) {
 				CurrentMasterNumberScheduled: 2, // 0
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 3,
-				DesiredWorkerNumberScheduled: 3,
+				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   3,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
@@ -132,7 +135,7 @@ func TestSyncReplicas(t *testing.T) {
 				CurrentMasterNumberScheduled: 3,
 				CurrentFuseNumberScheduled:   3,
 				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
+				DesiredWorkerNumberScheduled: 3,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
@@ -155,28 +158,21 @@ func TestSyncReplicas(t *testing.T) {
 				CurrentMasterNumberScheduled: 2,
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
+				DesiredWorkerNumberScheduled: 3,
 				DesiredFuseNumberScheduled:   2,
-				Conditions: []v1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
-					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
-				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
+				WorkerPhase:                  "NotReady",
+				FusePhase:                    "NotReady",
 			},
 		},
 	}
-	daemonSetInputs := []*appsv1.DaemonSet{
+	workersInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-fuse",
-				Namespace: "fluid",
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 		{
@@ -184,11 +180,17 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "hadoop-worker",
 				Namespace: "fluid",
 			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-fuse",
+				Name:      "obj-worker",
 				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 	}
@@ -207,6 +209,32 @@ func TestSyncReplicas(t *testing.T) {
 		},
 	}
 
+	fuseInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-fuse",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj-fuse",
+				Namespace: "fluid",
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "deprecated-worker",
+				Namespace: "fluid",
+			},
+		},
+	}
+
 	objs := []runtime.Object{}
 	for _, nodeInput := range nodeInputs {
 		objs = append(objs, nodeInput.DeepCopy())
@@ -214,8 +242,11 @@ func TestSyncReplicas(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-	for _, daemonSetInput := range daemonSetInputs {
-		objs = append(objs, daemonSetInput.DeepCopy())
+	for _, workerInput := range workersInputs {
+		objs = append(objs, workerInput.DeepCopy())
+	}
+	for _, fuseInput := range fuseInputs {
+		objs = append(objs, fuseInput.DeepCopy())
 	}
 	for _, dataSetInput := range dataSetInputs {
 		objs = append(objs, dataSetInput.DeepCopy())
@@ -223,28 +254,45 @@ func TestSyncReplicas(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	testCases := []struct {
-		name      string
-		namespace string
-		Type      v1alpha1.RuntimeConditionType
-		isErr     bool
+		testName       string
+		name           string
+		namespace      string
+		Type           v1alpha1.RuntimeConditionType
+		isErr          bool
+		condtionLength int
+		deprecated     bool
 	}{
 		{
-			name:      "hbase",
-			namespace: "fluid",
-			Type:      "FusesScaledOut",
-			isErr:     false,
+			testName:       "scaleout",
+			name:           "hbase",
+			namespace:      "fluid",
+			Type:           v1alpha1.RuntimeWorkerScaledOut,
+			isErr:          false,
+			condtionLength: 3,
 		},
 		{
-			name:      "hadoop",
-			namespace: "fluid",
-			Type:      "FusesScaledIn",
-			isErr:     false,
+			testName:       "scalein",
+			name:           "hadoop",
+			namespace:      "fluid",
+			Type:           v1alpha1.RuntimeWorkerScaledIn,
+			isErr:          false,
+			condtionLength: 3,
 		},
 		{
-			name:      "obj",
-			namespace: "fluid",
-			Type:      "",
-			isErr:     false,
+			testName:       "noscale",
+			name:           "obj",
+			namespace:      "fluid",
+			Type:           "",
+			isErr:          false,
+			condtionLength: 0,
+		}, {
+			testName:       "deprecated",
+			name:           "deprecated",
+			namespace:      "fluid",
+			Type:           "",
+			isErr:          false,
+			condtionLength: 0,
+			deprecated:     true,
 		},
 	}
 	for _, testCase := range testCases {
@@ -257,11 +305,19 @@ func TestSyncReplicas(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 		rt, _ := engine.getRuntime()
-		if len(rt.Status.Conditions) == 4 {
-			Type := rt.Status.Conditions[3].Type
-			if Type != testCase.Type {
-				t.Errorf("runtime condition want %s, got %s", testCase.Type, Type)
+		found := false
+		if testCase.deprecated {
+			break
+		}
+		for _, cond := range rt.Status.Conditions {
+
+			if cond.Type == testCase.Type {
+				found = true
+				break
 			}
+		}
+		if !found && testCase.condtionLength > 0 {
+			t.Errorf("testCase: %s runtime condition want conditionType %v, got  conditions %v", testCase.testName, testCase.Type, rt.Status.Conditions)
 		}
 	}
 }

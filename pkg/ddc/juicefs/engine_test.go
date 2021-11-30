@@ -17,17 +17,18 @@ limitations under the License.
 package juicefs
 
 import (
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func TestBuild(t *testing.T) {
@@ -64,14 +65,30 @@ func TestBuild(t *testing.T) {
 		},
 	}
 	testObjs = append(testObjs, runtime.DeepCopy())
+	var runtime2 = datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.JuiceFSRuntimeSpec{
+			Fuse: datav1alpha1.JuiceFSFuseSpec{
+				Global: false,
+			},
+		},
+		Status: datav1alpha1.RuntimeStatus{
+			CacheStates: map[common.CacheStateName]string{
+				common.Cached: "true",
+			},
+		},
+	}
 
-	var daemonset = appsv1.DaemonSet{
+	var sts = appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase-worker",
 			Namespace: "fluid",
 		},
 	}
-	testObjs = append(testObjs, daemonset.DeepCopy())
+	testObjs = append(testObjs, sts.DeepCopy())
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	var ctx = cruntime.ReconcileRequestContext{
@@ -104,5 +121,21 @@ func TestBuild(t *testing.T) {
 	got, err := Build("testId", errCtx)
 	if err == nil {
 		t.Errorf("expect err, but no err got %v", got)
+	}
+
+	var errrCtx = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         log.NullLogger{},
+		RuntimeType: "juicefs",
+		Runtime:     &runtime2,
+	}
+
+	gott, err := Build("testId", errrCtx)
+	if err == nil {
+		t.Errorf("expect err, but no err got %v", gott)
 	}
 }

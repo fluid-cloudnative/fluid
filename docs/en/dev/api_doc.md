@@ -16,6 +16,8 @@ Resource Types:
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>
 </li></ul>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime
 </h3>
@@ -110,7 +112,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -782,7 +784,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -795,7 +797,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -808,7 +810,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -821,7 +823,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -834,7 +836,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -860,7 +862,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -1196,6 +1198,208 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime
+</h3>
+<p>
+<p>JuiceFSRuntime is the Schema for the juicefsruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>JuiceFSRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">
+JuiceFSRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>juicefsVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of JuiceFS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initUsers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
+InitUsersSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init users</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobWorker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS job Worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">
+JuiceFSFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for JuiceFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by JuiceFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Juicefs Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for JuiceFS Runtime
+Prometheus is enabled by default</p>
 </td>
 </tr>
 </table>
@@ -1563,7 +1767,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -2958,7 +3162,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -2971,7 +3175,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -2984,7 +3188,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -2997,7 +3201,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -3010,7 +3214,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -3036,7 +3240,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -3190,7 +3394,8 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
 </p>
 <p>
 <p>InitUsersSpec is a description of the initialize the users for runtime</p>
@@ -3721,6 +3926,354 @@ map[string]string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+</p>
+<p>
+<p>JuiceFSCompTemplateSpec is a description of the JuiceFS components</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the given template.
+If unspecified, defaults to 1.
+replicas is the min replicas of dataset in the cluster</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ports</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+[]Kubernetes core/v1.ContainerPort
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports used by JuiceFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by the JuiceFS component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+[]Kubernetes core/v1.EnvVar
+</a>
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by JuiceFS component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enabled or Disabled for the components.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for JuiceFS fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>image_tag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for JuiceFS fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>image_pull_policy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+[]Kubernetes core/v1.EnvVar
+</a>
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by JuiceFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<p>Resources that will be requested by JuiceFS Fuse.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>global</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the fuse client should be deployed in global mode,
+otherwise the affinity should be considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>node_selector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>)
+</p>
+<p>
+<p>JuiceFSRuntimeSpec defines the desired state of JuiceFSRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>juicefsVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of JuiceFS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initUsers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitUsersSpec">
+InitUsersSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init users</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobWorker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">
+JuiceFSCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of JuiceFS job Worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">
+JuiceFSFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>Desired state for JuiceFS Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by JuiceFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Juicefs Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for JuiceFS Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Level">Level
 </h3>
 <p>
@@ -4109,7 +4662,8 @@ Kubernetes meta/v1.Time
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>)
+<a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>)
 </p>
 <p>
 <p>RuntimeStatus defines the observed state of Runtime</p>
@@ -4559,7 +5113,8 @@ int32
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
 </p>
 <p>
 <p>TieredStore is a description of the tiered store</p>
@@ -4595,7 +5150,8 @@ int32
 <a href="#data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
 </p>
 <p>
 <p>User explains the user and group to run a Container</p>
@@ -4660,7 +5216,8 @@ string
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
 </p>
 <p>
 <p>VersionSpec represents the settings for the  version that fluid is orchestrating.</p>
@@ -4711,5 +5268,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>6d168e3</code>.
+on git commit <code>0e0684eb</code>.
 </em></p>

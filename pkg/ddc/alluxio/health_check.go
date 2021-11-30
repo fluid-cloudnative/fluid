@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -72,10 +74,11 @@ func (e *AlluxioEngine) CheckRuntimeHealthy() (err error) {
 
 // checkMasterHealthy checks the master healthy
 func (e *AlluxioEngine) checkMasterHealthy() (err error) {
-	masterName := e.getMasterStatefulsetName()
+	masterName := e.getMasterName()
 
 	healthy := false
-	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+
 	if err != nil {
 		return err
 	}
@@ -147,10 +150,8 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
-	workerName := e.getWorkerDaemonsetName()
-
 	// Check the status of workers
-	workers, err := e.getDaemonset(workerName, e.namespace)
+	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkerName(), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -164,18 +165,16 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-
-		if workers.Status.NumberUnavailable > 0 ||
-			(workers.Status.DesiredNumberScheduled > 0 && workers.Status.NumberAvailable == 0) {
+		if workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0 {
 			// if workers.Status.NumberReady != workers.Status.DesiredNumberScheduled {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-				fmt.Sprintf("The daemonset %s in %s are not ready, the Unavailable number is %d, please fix it.",
+				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
-					workers.Status.NumberUnavailable), v1.ConditionFalse)
+					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
 
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
@@ -206,12 +205,11 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 			// runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 		}
 		// runtimeToUpdate.Status.DesiredWorkerNumberScheduled = int32(workers.Status.DesiredNumberScheduled)
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.NumberReady)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.NumberAvailable)
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
-				e.Log.Error(updateErr, "Failed to update the runtime")
 				return updateErr
 			}
 		}
@@ -225,10 +223,10 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	}
 
 	if !healthy {
-		err = fmt.Errorf("the daemonset %s in %s are not ready, the unhealthy number %d",
+		err = fmt.Errorf("the workers %s in %s are not ready, the unhealthy number %d",
 			workers.Name,
 			workers.Namespace,
-			workers.Status.NumberUnavailable)
+			*workers.Spec.Replicas-workers.Status.ReadyReplicas)
 	}
 
 	return err

@@ -79,21 +79,13 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_other"}, ",")
 	}
 
-	value.Fuse.NodeSelector = map[string]string{}
-
-	if runtime.Spec.Fuse.Global {
-		value.Fuse.Global = true
-		if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-			value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-		}
-		value.Fuse.NodeSelector[common.FluidFuseBalloonKey] = common.FluidBalloonValue
-		e.Log.Info("Enable Fuse's global mode")
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	} else {
-		labelName := e.getCommonLabelname()
-		value.Fuse.NodeSelector[labelName] = "true"
-		e.Log.Info("Disable Fuse's global mode")
+		value.Fuse.NodeSelector = map[string]string{}
 	}
 
+	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
 	value.Fuse.HostNetwork = true
 	value.Fuse.Enabled = true
 

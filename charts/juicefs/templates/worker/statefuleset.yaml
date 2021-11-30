@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "juicefs.fullname" . }}-worker
+  labels:
+    app: {{ template "juicefs.name" . }}
+    chart: {{ template "juicefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: juicefs-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  serviceName: {{ template "juicefs.fullname" . }}-worker
+  selector:
+    matchLabels:
+      app: {{ template "juicefs.name" . }}
+      chart: {{ template "juicefs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: juicefs-worker
+  template:
+    metadata:
+      labels:
+        app: {{ template "juicefs.name" . }}
+        chart: {{ template "juicefs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: juicefs-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
+    spec:
+      nodeSelector:
+      {{- if .Values.worker.nodeSelector }}
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+        - name: juicefs-worker
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.worker.resources  }}
+          resources:
+            {{- if .Values.worker.resources.limits }}
+            limits:
+              cpu: {{ .Values.worker.resources.limits.cpu }}
+              memory: {{ .Values.worker.resources.limits.memory }}
+            {{- end }}
+            {{- if .Values.worker.resources.requests }}
+            requests:
+              cpu: {{ .Values.worker.resources.requests.cpu }}
+              memory: {{ .Values.worker.resources.requests.memory }}
+            {{- end }}
+          {{- end }}
+          command: ["sh", "-c", "sleep infinity"]
+          {{- if .Values.worker.ports }}
+          ports:
+{{ toYaml .Values.worker.ports | trim | indent 10  }}
+          {{- end }}
+          {{- if .Values.worker.envs }}
+          env:
+{{ toYaml .Values.worker.envs | trim | indent 10  }}
+          {{- end }}
+          {{- if .Values.worker.cacheDir }}
+          volumeMounts:
+            - name: cache-dir
+              mountPath: {{ .Values.worker.cacheDir }}
+          {{- end }}
+      restartPolicy: Always
+      {{- if .Values.worker.cacheDir }}
+      volumes:
+        - name: cache-dir
+          hostPath:
+            path: {{ .Values.worker.cacheDir }}
+            type: DirectoryOrCreate
+      {{- end }}

@@ -127,6 +127,9 @@ type JuiceFSFuseSpec struct {
 // +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
 // +kubebuilder:printcolumn:name="Desired Fuses",type="integer",JSONPath=`.status.desiredFuseNumberScheduled`,priority=10
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=juicefs
 // +genclient
 
 // JuiceFSRuntime is the Schema for the juicefsruntimes API
@@ -139,6 +142,7 @@ type JuiceFSRuntime struct {
 }
 
 //+kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // JuiceFSRuntimeList contains a list of JuiceFSRuntime
 type JuiceFSRuntimeList struct {
@@ -152,6 +156,10 @@ func init() {
 }
 
 // Replicas gets the replicas of runtime worker
-func (r *JuiceFSRuntime) Replicas() int32 {
-	return r.Spec.Replicas
+func (j *JuiceFSRuntime) Replicas() int32 {
+	return j.Spec.Replicas
+}
+
+func (j *JuiceFSRuntime) GetStatus() *RuntimeStatus {
+	return &j.Status
 }

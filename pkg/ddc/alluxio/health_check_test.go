@@ -20,16 +20,18 @@ package alluxio
 
 import (
 	"context"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
@@ -44,6 +46,20 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				ReadyReplicas: 3,
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-worker",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
+			},
+		},
 	}
 	testObjs := []runtime.Object{}
 	for _, statefulset := range statefulsetInputs {
@@ -51,17 +67,6 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	}
 
 	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-worker",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-fuse",
@@ -354,16 +359,19 @@ func TestCheckMasterHealthy(t *testing.T) {
 }
 
 func TestCheckWorkersHealthy(t *testing.T) {
-	var daemonSetInputs = []appsv1.DaemonSet{
+	var statefulSetInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   0,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
 		{
@@ -371,17 +379,20 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				Name:      "spark-worker",
 				Namespace: "fluid",
 			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
+			Status: appsv1.StatefulSetStatus{
+				Replicas:        1,
+				ReadyReplicas:   1,
+				CurrentReplicas: 1,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(1),
 			},
 		},
 	}
 
 	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
+	for _, statefulSet := range statefulSetInputs {
+		testObjs = append(testObjs, statefulSet.DeepCopy())
 	}
 
 	var alluxioruntimeInputs = []datav1alpha1.AlluxioRuntime{
@@ -441,7 +452,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			engine:                           engines[0],
 			expectedWorkerPhase:              datav1alpha1.RuntimePhaseNotReady,
 			expectedErrorNil:                 false,
-			expectedRuntimeWorkerNumberReady: 1,
+			expectedRuntimeWorkerNumberReady: 0,
 			expectedRuntimeWorkerAvailable:   1,
 		},
 		{

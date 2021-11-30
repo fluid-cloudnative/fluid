@@ -96,10 +96,15 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 		cacheDir = runtime.Spec.TieredStore.Levels[0].Path
 	}
 
-	workerName := j.getWorkerDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(workerName, j.namespace)
+	workerName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(workerName, j.namespace)
 	if err != nil {
-		return err
+		if utils.IgnoreNotFound(err) == nil {
+			j.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	for _, pod := range pods {

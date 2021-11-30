@@ -1,13 +1,14 @@
 package jindo
 
 import (
+	"reflect"
+	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -19,8 +20,8 @@ import (
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil
@@ -51,8 +52,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil
@@ -82,8 +83,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is empty", func() {
-			var enging *JindoEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *JindoEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *JindoEngine) (string, error) {
 					summary := mockJindoReportSummary()
 					return summary, nil

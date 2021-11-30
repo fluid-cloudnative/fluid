@@ -1,18 +1,20 @@
 package juicefs
 
 import (
+	"reflect"
+	"testing"
+
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
@@ -36,11 +38,18 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			var workerInputs = []appsv1.DaemonSet{
+			var workerInputs = []appsv1.StatefulSet{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "juicefs1-worker",
 						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      1,
+						ReadyReplicas: 1,
 					},
 				},
 				{
@@ -48,11 +57,21 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Name:      "juicefs2-worker",
 						Namespace: "fluid",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      2,
+						ReadyReplicas: 2,
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "no-fuse-worker",
 						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 			}

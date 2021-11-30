@@ -4,19 +4,179 @@ import (
 	"reflect"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
-	testScheme *runtime.Scheme
+	testScheme        *runtime.Scheme
+	mockConfigMapData = `----
+fullnameOverride: mnist
+image: ccr.ccs.tencentyun.com/qcloud/goosefs
+imageTag: v1.1.0
+imagePullPolicy: IfNotPresent
+user: 0
+group: 0
+fsGroup: 0
+properties:
+  goosefs.fuse.cached.paths.max: "1000000"
+  goosefs.fuse.debug.enabled: "true"
+  goosefs.fuse.jnifuse.enabled: "true"
+  goosefs.fuse.logging.threshold: 1000ms
+  goosefs.fuse.shared.caching.reader.enabled: "true"
+  goosefs.fuse.user.group.translation.enabled: "true"
+  goosefs.job.master.finished.job.retention.time: 30sec
+  goosefs.job.master.rpc.port: "28362"
+  goosefs.job.master.web.port: "31380"
+  goosefs.job.worker.data.port: "30918"
+  goosefs.job.worker.rpc.port: "29476"
+  goosefs.job.worker.threadpool.size: "164"
+  goosefs.job.worker.web.port: "27403"
+  goosefs.master.journal.folder: /journal
+  goosefs.master.journal.log.size.bytes.max: 500MB
+  goosefs.master.journal.type: UFS
+  goosefs.master.metadata.sync.concurrency.level: "128"
+  goosefs.master.metadata.sync.executor.pool.size: "128"
+  goosefs.master.metadata.sync.ufs.prefetch.pool.size: "128"
+  goosefs.master.metastore: ROCKS
+  goosefs.master.metastore.inode.cache.max.size: "10000000"
+  goosefs.master.mount.table.root.ufs: /underFSStorage
+  goosefs.master.rpc.executor.core.pool.size: "128"
+  goosefs.master.rpc.executor.max.pool.size: "1024"
+  goosefs.master.rpc.port: "30399"
+  goosefs.master.security.impersonation.root.groups: '*'
+  goosefs.master.security.impersonation.root.users: '*'
+  goosefs.master.web.port: "31203"
+  goosefs.security.authorization.permission.enabled: "false"
+  goosefs.security.stale.channel.purge.interval: 365d
+  goosefs.underfs.object.store.breadcrumbs.enabled: "false"
+  goosefs.user.block.avoid.eviction.policy.reserved.size.bytes: 2GB
+  goosefs.user.block.master.client.pool.gc.threshold: 2day
+  goosefs.user.block.master.client.threads: "1024"
+  goosefs.user.block.size.bytes.default: 16MB
+  goosefs.user.block.worker.client.pool.min: "512"
+  goosefs.user.block.write.location.policy.class: com.qcloud.cos.goosefs.client.block.policy.LocalFirstAvoidEvictionPolicy
+  goosefs.user.client.cache.enabled: "false"
+  goosefs.user.file.create.ttl.action: FREE
+  goosefs.user.file.master.client.threads: "1024"
+  goosefs.user.file.passive.cache.enabled: "false"
+  goosefs.user.file.readtype.default: CACHE
+  goosefs.user.file.replication.max: "1"
+  goosefs.user.file.writetype.default: CACHE_THROUGH
+  goosefs.user.local.reader.chunk.size.bytes: 32MB
+  goosefs.user.logging.threshold: 1000ms
+  goosefs.user.metadata.cache.enabled: "true"
+  goosefs.user.metadata.cache.expiration.time: 2day
+  goosefs.user.metadata.cache.max.size: "6000000"
+  goosefs.user.metrics.collection.enabled: "true"
+  goosefs.user.streaming.reader.chunk.size.bytes: 32MB
+  goosefs.user.ufs.block.read.location.policy: com.qcloud.cos.goosefs.client.block.policy.LocalFirstAvoidEvictionPolicy
+  goosefs.user.update.file.accesstime.disabled: "true"
+  goosefs.user.worker.list.refresh.interval: 2min
+  goosefs.web.ui.enabled: "false"
+  goosefs.worker.allocator.class: com.qcloud.cos.goosefs.worker.block.allocator.MaxFreeAllocator
+  goosefs.worker.block.master.client.pool.size: "1024"
+  goosefs.worker.file.buffer.size: 1MB
+  goosefs.worker.network.reader.buffer.size: 32MB
+  goosefs.worker.rpc.port: "31285"
+  goosefs.worker.web.port: "31674"
+  log4j.logger.alluxio.fuse: DEBUG
+  log4j.logger.com.qcloud.cos.goosefs.fuse: DEBUG
+master:
+  jvmOptions:
+  - -Xmx16G
+  - -XX:+UnlockExperimentalVMOptions
+  env:
+    GOOSEFS_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH: /dev/shm/yijiupi/mnist
+  affinity:
+    nodeAffinity: null
+  replicaCount: 1
+  hostNetwork: true
+  ports:
+    rpc: 30399
+    web: 31203
+  backupPath: /tmp/goosefs-backup/yijiupi/mnist
+jobMaster:
+  ports:
+    rpc: 28362
+    web: 31380
+worker:
+  jvmOptions:
+  - -Xmx12G
+  - -XX:+UnlockExperimentalVMOptions
+  - -XX:MaxDirectMemorySize=32g
+  env:
+    GOOSEFS_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH: /dev/shm/yijiupi/mnist
+  hostNetwork: true
+  ports:
+    rpc: 31285
+    web: 31674
+jobWorker:
+  ports:
+    rpc: 29476
+    web: 27403
+    data: 30918
+fuse:
+  image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse
+  nodeSelector:
+    fluid.io/f-yijiupi-mnist: "true"
+  imageTag: v1.1.0
+  env:
+    MOUNT_POINT: /runtime-mnt/goosefs/yijiupi/mnist/goosefs-fuse
+  jvmOptions:
+  - -Xmx16G
+  - -Xms16G
+  - -XX:+UseG1GC
+  - -XX:MaxDirectMemorySize=32g
+  - -XX:+UnlockExperimentalVMOptions
+  mountPath: /runtime-mnt/goosefs/yijiupi/mnist/goosefs-fuse
+  args:
+  - fuse
+  - --fuse-opts=rw,allow_other
+  hostNetwork: true
+  enabled: true
+  criticalPod: true
+tieredstore:
+  levels:
+  - alias: MEM
+    level: 0
+    mediumtype: MEM
+    type: hostPath
+    path: /dev/shm/yijiupi/mnist
+    quota: 1953125KB
+    high: "0.8"
+    low: "0.7"
+journal:
+  volumeType: emptyDir
+  size: 30Gi
+shortCircuit:
+  enable: true
+  policy: local
+  volumeType: emptyDir
+initUsers:
+  image: fluidcloudnative/init-users
+  imageTag: v0.7.0-1cf2443
+  imagePullPolicy: IfNotPresent
+  envUsers: ""
+  dir: ""
+  envTieredPaths: ""
+monitoring: goosefs_runtime_metrics
+placement: Exclusive`
 )
 
 func init() {
@@ -190,5 +350,219 @@ func TestDestroyWorker(t *testing.T) {
 			}
 		}
 
+	}
+}
+
+func TestGooseFSEngineCleanAll(t *testing.T) {
+	type fields struct {
+		name        string
+		namespace   string
+		cm          *corev1.ConfigMap
+		runtimeType string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:        "spark",
+				namespace:   "fluid",
+				runtimeType: "goosefs",
+				cm: &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-goosefs-values",
+						Namespace: "fluid",
+					},
+					Data: map[string]string{"data": mockConfigMapData},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			e := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+			}
+			if err := e.cleanAll(); (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGooseFSEngineReleasePorts(t *testing.T) {
+	type fields struct {
+		runtime     *datav1alpha1.GooseFSRuntime
+		name        string
+		namespace   string
+		runtimeType string
+		cm          *corev1.ConfigMap
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:        "spark",
+				namespace:   "fluid",
+				runtimeType: "goosefs",
+				cm: &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-goosefs-values",
+						Namespace: "fluid",
+					},
+					Data: map[string]string{"data": mockConfigMapData},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			portRange := "26000-32000"
+			pr, _ := net.ParsePortRange(portRange)
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+			}
+
+			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
+			allocator, _ := portallocator.GetRuntimePortAllocator()
+			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
+				func(_ *portallocator.RuntimePortAllocator, ports []int) {
+				})
+			defer patch1.Reset()
+
+			if err := e.releasePorts(); (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGooseFSEngineCleanupCache(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:      "spark",
+				namespace: "field",
+				Log:       log.NullLogger{},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+				func(_ *GooseFSEngine) (string, error) {
+					summary := mockGooseFSReportSummary()
+					return summary, nil
+				})
+			defer patch1.Reset()
+
+			patch2 := ApplyFunc(utils.GetDataset,
+				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+					d := &datav1alpha1.Dataset{
+						Status: datav1alpha1.DatasetStatus{
+							UfsTotal: "19.07MiB",
+						},
+					}
+					return d, nil
+				})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
+				func(_ *GooseFSEngine) cacheHitStates {
+					return cacheHitStates{
+						bytesReadLocal:  20310917,
+						bytesReadUfsAll: 32243712,
+					}
+				})
+			defer patch3.Reset()
+
+			if err := engine.cleanupCache(); (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.cleanupCache() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGooseFSEngineDestroyMaster(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:      "spark",
+				namespace: "fluid",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+
+			patch1 := ApplyFunc(helm.CheckRelease,
+				func(_ string, _ string) (bool, error) {
+					d := true
+					return d, nil
+				})
+			defer patch1.Reset()
+
+			patch2 := ApplyFunc(helm.DeleteRelease,
+				func(_ string, _ string) error {
+					return nil
+				})
+			defer patch2.Reset()
+
+			if err := e.destroyMaster(); (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.destroyMaster() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

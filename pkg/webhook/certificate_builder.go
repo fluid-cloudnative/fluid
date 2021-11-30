@@ -25,7 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/api/admissionregistration/v1beta1"
+	v1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -89,7 +89,7 @@ func (c *CertificateBuilder) genCA(ns, svc, certFile, certPath string) ([]byte, 
 // PatchCABundle patch the caBundle to MutatingWebhookConfiguration
 func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error {
 
-	var m v1beta1.MutatingWebhookConfiguration
+	var m v1.MutatingWebhookConfiguration
 
 	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webHookName)
 

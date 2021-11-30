@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 )
 
@@ -174,8 +175,8 @@ func (e *AlluxioEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 // clean cache
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	// 1. Check if master is ready, if not, just return
-	masterName := e.getMasterStatefulsetName()
-	master, err := e.getMasterStatefulset(masterName, e.namespace)
+	masterName := e.getMasterName()
+	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())

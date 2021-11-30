@@ -15,13 +15,13 @@ package alluxio
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // AlluxioEngine implements the Engine interface.
@@ -41,6 +41,7 @@ type AlluxioEngine struct {
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
 	lastCacheHitStates     *cacheHitStates
+	*ctrl.Helper
 }
 
 // Build function builds the Alluxio Engine
@@ -69,10 +70,13 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	// Build and setup runtime info
-	_, err := engine.getRuntimeInfo()
+	runtimeInfo, err := engine.getRuntimeInfo()
 	if err != nil {
 		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
 	}
+
+	// Build the helper
+	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 

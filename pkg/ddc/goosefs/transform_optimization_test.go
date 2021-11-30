@@ -20,7 +20,9 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -348,6 +350,12 @@ func TestGooseFSEngine_setPortProperties(t *testing.T) {
 							Rpc: port,
 							Web: port,
 						},
+						Resources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+						},
 					},
 					JobMaster: JobMaster{
 						Ports: Ports{
@@ -361,6 +369,12 @@ func TestGooseFSEngine_setPortProperties(t *testing.T) {
 							Rpc:  port,
 							Web:  port,
 							Data: port,
+						},
+						Resources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
 						},
 					},
 					Properties: map[string]string{},

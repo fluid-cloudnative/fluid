@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -131,17 +132,13 @@ func (e *GooseFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-			if err != nil {
-				e.Log.Error(err, "Update dataset")
-				return err
-			}
 		}
 
-		return nil
+		return err
 	})
 
 	if err != nil {
-		e.Log.Error(err, "Update dataset")
+		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to update dataset status", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return err
 	}
 

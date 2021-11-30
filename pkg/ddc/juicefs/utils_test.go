@@ -22,13 +22,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -547,6 +548,108 @@ func TestParseSubPathFromMountPoint(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("ParseSubPathFromMountPoint() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
+	type args struct {
+		stsName   string
+		namespace string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		sts      *appsv1.StatefulSet
+		podLists *corev1.PodList
+		wantPods []corev1.Pod
+		wantErr  bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				stsName:   "test1",
+				namespace: "fluid",
+			},
+			sts: &appsv1.StatefulSet{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test1",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"sts": "test1"},
+					},
+				},
+			},
+			podLists: &corev1.PodList{
+				Items: []corev1.Pod{
+					{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "test1-pod",
+							Namespace: "fluid",
+							Labels:    map[string]string{"sts": "test1"},
+						},
+						Status: corev1.PodStatus{
+							Phase: corev1.PodRunning,
+							Conditions: []corev1.PodCondition{{
+								Type:   corev1.PodReady,
+								Status: corev1.ConditionTrue,
+							}},
+						},
+					},
+				},
+			},
+			wantPods: []corev1.Pod{
+				{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "test1-pod",
+						Namespace: "fluid",
+						Labels:    map[string]string{"sts": "test1"},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
+						Conditions: []corev1.PodCondition{{
+							Type:   corev1.PodReady,
+							Status: corev1.ConditionTrue,
+						}},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				stsName:   "app",
+				namespace: "fluid",
+			},
+			sts:      &appsv1.StatefulSet{},
+			podLists: &corev1.PodList{},
+			wantPods: []corev1.Pod{},
+			wantErr:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.StatefulSet{})
+			s.AddKnownTypes(corev1.SchemeGroupVersion, &corev1.PodList{})
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.sts.DeepCopy(), tt.podLists.DeepCopy())
+			j := &JuiceFSEngine{
+				Client: mockClient,
+			}
+			gotPods, err := j.GetRunningPodsOfStatefulSet(tt.args.stsName, tt.args.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRunningPodsOfStatefulSet() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				if !reflect.DeepEqual(gotPods[0].Status, tt.wantPods[0].Status) {
+					t.Errorf("testcase %s GetRunningPodsOfStatefulSet() gotPods = %v, want %v", tt.name, gotPods, tt.wantPods)
+				}
 			}
 		})
 	}

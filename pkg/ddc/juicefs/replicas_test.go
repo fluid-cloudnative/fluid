@@ -18,6 +18,9 @@ package juicefs
 import (
 	"testing"
 
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -162,16 +164,10 @@ func TestSyncReplicas(t *testing.T) {
 			},
 		},
 	}
-	daemonSetInputs := []*appsv1.DaemonSet{
+	statefulSetInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-worker",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-fuse",
 				Namespace: "fluid",
 			},
 		},
@@ -183,7 +179,27 @@ func TestSyncReplicas(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj-worker",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "obj-fuse",
+				Namespace: "fluid",
+			},
+		},
+	}
+	daemonsetInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop-fuse",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
 				Namespace: "fluid",
 			},
 		},
@@ -210,8 +226,11 @@ func TestSyncReplicas(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-	for _, daemonSetInput := range daemonSetInputs {
-		objs = append(objs, daemonSetInput.DeepCopy())
+	for _, statefulSetInput := range statefulSetInputs {
+		objs = append(objs, statefulSetInput.DeepCopy())
+	}
+	for _, daemonsetInput := range daemonsetInputs {
+		objs = append(objs, daemonsetInput.DeepCopy())
 	}
 	for _, dataSetInput := range dataSetInputs {
 		objs = append(objs, dataSetInput.DeepCopy())
@@ -245,7 +264,13 @@ func TestSyncReplicas(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		engine := newJuiceFSEngineREP(fakeClient, testCase.name, testCase.namespace)
-		err := engine.SyncReplicas(cruntime.ReconcileRequestContext{
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "juicefs", v1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v", err)
+		}
+
+		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, fakeClient, engine.Log)
+		err = engine.SyncReplicas(cruntime.ReconcileRequestContext{
 			Log:      log.NullLogger{},
 			Recorder: record.NewFakeRecorder(300),
 		})

@@ -17,15 +17,15 @@ package kubeclient
 
 import (
 	"errors"
+	"os"
+	"testing"
+
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"testing"
 )
 
 func TestInitClient(t *testing.T) {
@@ -35,10 +35,10 @@ func TestInitClient(t *testing.T) {
 	PathExistsFalse := func(path string) bool {
 		return false
 	}
-	BuildConfigFromFlagsCommon := func(masterUrl, kubeconfigPath string) (*restclient.Config, error) {
+	BuildConfigFromFlagsCommon := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
 		return nil, nil
 	}
-	BuildConfigFromFlagsErr := func(masterUrl, kubeconfigPath string) (*restclient.Config, error) {
+	BuildConfigFromFlagsErr := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
 		return nil, errors.New("fail to run the function")
 	}
 	NewForConfigCommon := func(c *rest.Config) (*kubernetes.Clientset, error) {

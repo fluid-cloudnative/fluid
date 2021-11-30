@@ -1,0 +1,320 @@
+#
+# The Alluxio Open Foundation licenses this work under the Apache License, version 2.0
+# (the "License"). You may not use this work except in compliance with the License, which is
+# available at www.apache.org/licenses/LICENSE-2.0
+#
+# This software is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied, as more fully set forth in the License.
+#
+# See the NOTICE file distributed with this work for information regarding copyright ownership.
+#
+
+{{- $shortCircuitEnabled := .Values.shortCircuit.enabled }}
+{{- $needDomainSocketVolume := and $shortCircuitEnabled (eq .Values.shortCircuit.policy "uuid") }}
+{{- $hostNetwork := .Values.worker.hostNetwork }}
+{{- $hostPID := .Values.worker.hostPID }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "alluxio.fullname" . }}-worker
+  labels:
+    app: {{ template "alluxio.name" . }}
+    chart: {{ template "alluxio.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: alluxio-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "alluxio.name" . }}
+      release: {{ .Release.Name }}
+      role: alluxio-worker
+  serviceName: {{ template "alluxio.fullname" . }}-worker
+  replicas: {{ .Values.worker.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "alluxio.name" . }}
+        chart: {{ template "alluxio.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: alluxio-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
+    spec:
+      enableServiceLinks: false
+      hostNetwork: {{ $hostNetwork }}
+      hostPID: {{ .Values.worker.hostPID }}
+      dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
+      securityContext:
+        fsGroup: {{ .Values.fsGroup }}
+      nodeSelector:
+      {{- if .Values.worker.nodeSelector }}
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      initContainers:
+        {{ if .Values.initUsers.enabled -}}
+        - name: init-users
+          image: {{ .Values.initUsers.image }}:{{ .Values.initUsers.imageTag }}
+          imagePullPolicy: {{ .Values.initUsers.imagePullPolicy }}
+          command: ["/entrypoint.sh"]
+          args:
+            - "init_users"
+            - "chmod_tierpath"
+          env:
+          {{- if .Values.initUsers.envUsers }}
+            - name: FLUID_INIT_USERS
+              value: {{.Values.initUsers.envUsers | quote }}
+          {{- end }}
+          {{- if .Values.initUsers.envTieredPaths }}
+            - name: FLUID_TIERSTORE_PATHS
+              value: {{ .Values.initUsers.envTieredPaths | quote }}
+          {{- end }}
+          volumeMounts:
+            - name: dir
+              mountPath: /tmp
+            - name: user
+              mountPath: /tmp/passwd
+            - name: group
+              mountPath: /tmp/group
+            {{- if .Values.tieredstore -}}
+{{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
+            {{- end -}}
+        {{- end }}
+      containers:
+        - name: alluxio-worker
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
+          {{- if .Values.worker.resources  }}
+{{ include "alluxio.worker.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.worker.args }}
+          args:
+{{ toYaml .Values.worker.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          - name: ALLUXIO_WORKER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          {{- if not .Values.worker.hostNetwork }}
+          - name: ALLUXIO_WORKER_CONTAINER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          {{- end }}
+          {{- range $key, $value := .Values.worker.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ template "alluxio.fullname" . }}-config
+          ports:
+          - containerPort: {{ .Values.worker.ports.rpc }}
+            name: rpc
+          - containerPort: {{ .Values.worker.ports.web }}
+            name: web
+          volumeMounts:
+            {{ if .Values.hadoopConfig  -}}
+            {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+            - name: hdfs-confs
+              mountPath: /hdfs-config
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if .Values.initUsers.enabled }}
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true
+            {{- end}}
+            {{- if $needDomainSocketVolume }}
+            - name: alluxio-domain
+              mountPath: /opt/domain
+            {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.secrets -}}
+              {{- if .Values.secrets.worker -}}
+{{- include "alluxio.worker.secretVolumeMounts" . }}
+              {{- end -}}
+            {{- end -}}
+            {{- if .Values.tieredstore -}}
+{{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
+            {{- end -}}
+            {{- if .Values.mounts -}}
+{{- include "alluxio.worker.otherVolumeMounts" . }}
+            {{- end }}
+        - name: alluxio-job-worker
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          securityContext:
+            runAsUser: {{ .Values.user }}
+            runAsGroup: {{ .Values.group }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.jobWorker.resources  }}
+{{ include "alluxio.jobWorker.resources" . | indent 10 }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.jobWorker.args }}
+          args:
+{{ toYaml .Values.jobWorker.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          - name: ALLUXIO_WORKER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          {{- if not .Values.worker.hostNetwork }}
+          - name: ALLUXIO_WORKER_CONTAINER_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          {{- end }}
+          {{- range $key, $value := .Values.jobWorker.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: {{ template "alluxio.fullname" . }}-config
+          ports:
+          - containerPort: {{ .Values.jobWorker.ports.rpc }}
+            name: job-rpc
+          - containerPort: {{ .Values.jobWorker.ports.data }}
+            name: job-data
+          - containerPort: {{ .Values.jobWorker.ports.web }}
+            name: job-web
+          volumeMounts:
+            {{ if .Values.hadoopConfig -}}
+            {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+            - name: hdfs-confs
+              mountPath: /hdfs-config
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if .Values.initUsers.enabled }}
+            - name: user
+              mountPath: /etc/passwd
+              readOnly: true
+            - name: group
+              mountPath: /etc/group
+              readOnly: true
+            {{- end}}
+            {{- if $needDomainSocketVolume }}
+            - name: alluxio-domain
+              mountPath: /opt/domain
+            {{- end }}
+            {{- if .Values.ufsPaths }}   
+              {{- range .Values.ufsPaths }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.ufsVolumes }}   
+              {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.secrets }}
+              {{- if .Values.secrets.worker }}
+{{- include "alluxio.worker.secretVolumeMounts" . }}
+              {{- end -}}
+            {{- end }}
+            {{- if .Values.tieredstore }}
+{{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
+            {{- end }}
+            {{- if .Values.mounts }}
+{{- include "alluxio.worker.otherVolumeMounts" . }}
+            {{- end }}
+      restartPolicy: Always
+      volumes:
+        {{ if .Values.hadoopConfig -}}
+        {{ if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite -}}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+            items:
+            {{ if .Values.hadoopConfig.includeHdfsSite -}}
+            - key: hdfs-site.xml
+              path: hdfs-site.xml
+            {{- end }}
+            {{- if .Values.hadoopConfig.includeCoreSite }}
+            - key: core-site.xml
+              path: core-site.xml
+            {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.initUsers.enabled }}
+        - name: dir
+          hostPath:
+            path: {{ .Values.initUsers.dir }}
+            type: DirectoryOrCreate 
+        - name: user         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/passwd
+            type: FileOrCreate
+        - name: group         
+          hostPath:
+            path: {{ .Values.initUsers.dir }}/group
+            type: FileOrCreate
+        {{- end }}
+        {{- if $needDomainSocketVolume }}
+{{- include "alluxio.worker.shortCircuit.volume" . }}
+        {{- end }}
+        {{- if .Values.secrets }}
+          {{- if .Values.secrets.worker }}
+{{- include "alluxio.worker.secretVolumes" . }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.tieredstore }} 
+{{- include "alluxio.worker.tieredstoreVolumes" . }}
+        {{- end}}
+        {{- if .Values.mounts }}   
+          {{- range .Values.mounts }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsPaths }}   
+          {{- range .Values.ufsPaths }}
+        - hostPath:
+            path: {{ .hostPath }}
+            type: ""
+          name: {{ .name }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}   
+          {{- range .Values.ufsVolumes }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}

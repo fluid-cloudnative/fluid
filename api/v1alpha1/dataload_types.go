@@ -53,6 +53,9 @@ type DataLoadSpec struct {
 
 	// Target defines target paths that needs to be loaded
 	Target []TargetPath `json:"target,omitempty"`
+
+	// Options specifies the extra dataload properties for runtime
+	Options map[string]string `json:"options,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad
@@ -73,6 +76,8 @@ type DataLoadStatus struct {
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=load
 // +genclient
 
 // DataLoad is the Schema for the dataloads API
@@ -85,6 +90,7 @@ type DataLoad struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // DataLoadList contains a list of DataLoad
 type DataLoadList struct {

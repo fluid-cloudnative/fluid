@@ -29,7 +29,7 @@ func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err err
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 
 	var (
-		workerName string = e.getWorkerDaemonsetName()
+		workerName string = e.getWorkerName()
 		namespace  string = e.namespace
 	)
 

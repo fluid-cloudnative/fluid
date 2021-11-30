@@ -1,22 +1,64 @@
+/*
+Copyright 2021 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package alluxio
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	"reflect"
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
+
+	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
-	testScheme *runtime.Scheme
+	testScheme        *runtime.Scheme
+	mockConfigMapData = `master:
+	ports:
+	  rpc: 30399
+	  web: 31203
+  jobMaster:
+	ports:
+	  rpc: 28362
+	  web: 31380
+  worker:
+	ports:
+	  rpc: 31285
+	  web: 31674
+  jobWorker:
+	ports:
+	  rpc: 29476
+	  web: 27403
+	  data: 30918`
 )
 
 func init() {
@@ -190,5 +232,219 @@ func TestDestroyWorker(t *testing.T) {
 			}
 		}
 
+	}
+}
+
+func TestAlluxioEngineCleanAll(t *testing.T) {
+	type fields struct {
+		name        string
+		namespace   string
+		cm          *corev1.ConfigMap
+		runtimeType string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:        "spark",
+				namespace:   "fluid",
+				runtimeType: "alluxio",
+				cm: &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-alluxio-values",
+						Namespace: "fluid",
+					},
+					Data: map[string]string{"data": mockConfigMapData},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			e := &AlluxioEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+			}
+			if err := e.cleanAll(); (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAlluxioEngineReleasePorts(t *testing.T) {
+	type fields struct {
+		runtime     *datav1alpha1.AlluxioRuntime
+		name        string
+		namespace   string
+		runtimeType string
+		cm          *corev1.ConfigMap
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:        "spark",
+				namespace:   "fluid",
+				runtimeType: "alluxio",
+				cm: &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-alluxio-values",
+						Namespace: "fluid",
+					},
+					Data: map[string]string{"data": mockConfigMapData},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			portRange := "26000-32000"
+			pr, _ := net.ParsePortRange(portRange)
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+			e := &AlluxioEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+			}
+
+			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
+			allocator, _ := portallocator.GetRuntimePortAllocator()
+			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
+				func(_ *portallocator.RuntimePortAllocator, ports []int) {
+				})
+			defer patch1.Reset()
+
+			if err := e.releasePorts(); (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAlluxioEngineCleanupCache(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:      "spark",
+				namespace: "field",
+				Log:       log.NullLogger{},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := &AlluxioEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+				func(_ *AlluxioEngine) (string, error) {
+					summary := mockAlluxioReportSummary()
+					return summary, nil
+				})
+			defer patch1.Reset()
+
+			patch2 := ApplyFunc(utils.GetDataset,
+				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+					d := &datav1alpha1.Dataset{
+						Status: datav1alpha1.DatasetStatus{
+							UfsTotal: "19.07MiB",
+						},
+					}
+					return d, nil
+				})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
+				func(_ *AlluxioEngine) cacheHitStates {
+					return cacheHitStates{
+						bytesReadLocal:  20310917,
+						bytesReadUfsAll: 32243712,
+					}
+				})
+			defer patch3.Reset()
+
+			if err := engine.cleanupCache(); (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.cleanupCache() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAlluxioEngineDestroyMaster(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "spark",
+			fields: fields{
+				name:      "spark",
+				namespace: "fluid",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+
+			patch1 := ApplyFunc(helm.CheckRelease,
+				func(_ string, _ string) (bool, error) {
+					d := true
+					return d, nil
+				})
+			defer patch1.Reset()
+
+			patch2 := ApplyFunc(helm.DeleteRelease,
+				func(_ string, _ string) error {
+					return nil
+				})
+			defer patch2.Reset()
+
+			if err := e.destroyMaster(); (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.destroyMaster() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

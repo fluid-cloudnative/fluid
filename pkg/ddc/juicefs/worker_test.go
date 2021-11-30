@@ -17,19 +17,20 @@ limitations under the License.
 package juicefs
 
 import (
-	"reflect"
 	"testing"
 
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	utilpointer "k8s.io/utils/pointer"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
@@ -170,6 +171,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 	type fields struct {
 		replicas    int32
 		nodeInputs  []*v1.Node
+		worker      appsv1.StatefulSet
 		runtime     *datav1alpha1.JuiceFSRuntime
 		runtimeInfo base.RuntimeInfoInterface
 		name        string
@@ -189,6 +191,15 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node",
 						},
+					},
+				},
+				worker: appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-worker",
+						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
 				runtime: &datav1alpha1.JuiceFSRuntime{
@@ -222,6 +233,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 			for _, nodeInput := range tt.fields.nodeInputs {
 				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
 			}
+			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
 
 			s := runtime.NewScheme()
 			data := &datav1alpha1.Dataset{
@@ -232,6 +244,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 			}
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
 			_ = v1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
 			runtimeObjs = append(runtimeObjs, data)
@@ -245,22 +258,14 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 				namespace:   tt.fields.namespace,
 				Log:         ctrl.Log.WithName(tt.fields.name),
 			}
-			err := e.SetupWorkers()
+
+			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+			err = e.SetupWorkers()
 			if err != nil {
 				t.Errorf("JuiceFSEngine.SetupWorkers() error = %v", err)
 			}
-			for _, node := range tt.fields.nodeInputs {
-				newNode, err := kubeclient.GetNode(mockClient, node.Name)
-				if err != nil {
-					t.Errorf("fail to get the node with the error %v", err)
-				}
-
-				if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
-				if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
-					t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-				}
+			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
+				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
 			}
 		})
 	}
@@ -270,7 +275,7 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.JuiceFSRuntime
 		fuse      *appsv1.DaemonSet
-		worker    *appsv1.DaemonSet
+		worker    *appsv1.StatefulSet
 		name      string
 		namespace string
 	}
@@ -297,16 +302,14 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0-worker",
 						Namespace: "juicefs",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        1,
-						NumberReady:            1,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 1,
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      1,
+						ReadyReplicas: 1,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -341,15 +344,14 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.DaemonSet{
+				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-worker",
 						Namespace: "juicefs",
 					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        0,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 0,
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      1,
+						ReadyReplicas: 0,
 					},
 				},
 				fuse: &appsv1.DaemonSet{
@@ -394,6 +396,13 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "juicefs", datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v", err)
+			}
+
+			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
 			gotReady, err := e.CheckWorkersReady()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)

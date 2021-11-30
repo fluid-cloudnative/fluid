@@ -190,7 +190,7 @@ type AlluxioRuntimeSpec struct {
 	// The component spec of Alluxio master
 	Master AlluxioCompTemplateSpec `json:"master,omitempty"`
 
-	// The component spec ofAlluxio job master
+	// The component spec of Alluxio job master
 	JobMaster AlluxioCompTemplateSpec `json:"jobMaster,omitempty"`
 
 	// The component spec of Alluxio worker
@@ -254,6 +254,8 @@ type AlluxioRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
 // +kubebuilder:printcolumn:name="API Gateway",type="string",JSONPath=`.status.apiGateway.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=alluxio
 // +genclient
 
 // AlluxioRuntime is the Schema for the alluxioruntimes API
@@ -266,6 +268,7 @@ type AlluxioRuntime struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // AlluxioRuntimeList contains a list of AlluxioRuntime
 type AlluxioRuntimeList struct {
@@ -281,4 +284,8 @@ func init() {
 // Replicas gets the replicas of runtime worker
 func (runtime *AlluxioRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
+}
+
+func (runtime *AlluxioRuntime) GetStatus() *RuntimeStatus {
+	return &runtime.Status
 }

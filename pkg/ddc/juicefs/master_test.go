@@ -17,13 +17,14 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -92,21 +93,22 @@ func TestJuiceFSEngine_ShouldSetupMaster(t *testing.T) {
 }
 
 func TestJuiceFSEngine_SetupMaster(t *testing.T) {
-	daemonSetInputs := []v1.DaemonSet{
+	stsInputs := []v1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-worker",
 				Namespace: "fluid",
 			},
-			Status: v1.DaemonSetStatus{
-				NumberReady: 1,
+			Status: v1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 1,
 			},
 		},
 	}
 
 	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
+	for _, sts := range stsInputs {
+		testObjs = append(testObjs, sts.DeepCopy())
 	}
 
 	juicefsruntimeInputs := []datav1alpha1.JuiceFSRuntime{
@@ -132,12 +134,12 @@ func TestJuiceFSEngine_SetupMaster(t *testing.T) {
 	}
 
 	var testCases = []struct {
-		engine          JuiceFSEngine
-		wantedDaemonSet v1.DaemonSet
+		engine            JuiceFSEngine
+		wantedStatefulSet v1.StatefulSet
 	}{
 		{
-			engine:          engines[0],
-			wantedDaemonSet: daemonSetInputs[0],
+			engine:            engines[0],
+			wantedStatefulSet: stsInputs[0],
 		},
 	}
 

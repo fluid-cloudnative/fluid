@@ -23,7 +23,7 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -37,18 +37,9 @@ func (e *JindoEngine) SetupWorkers() (err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log,
-				err,
-				"Failed to setup worker",
-				types.NamespacedName{
-					Namespace: e.namespace,
-					Name:      e.name,
-				})
-		}
-		return err
+		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
+
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log,
 			err,
@@ -82,7 +73,7 @@ func (e *JindoEngine) ShouldSetupWorkers() (should bool, err error) {
 func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkertName()})
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)

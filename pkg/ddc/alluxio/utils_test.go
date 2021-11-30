@@ -25,6 +25,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +33,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -595,7 +595,7 @@ func TestGetMasterStatefulsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getMasterStatefulsetName(); gotDsName != tt.wantDsName {
+			if gotDsName := e.getMasterName(); gotDsName != tt.wantDsName {
 				t.Errorf("AlluxioEngine.getMasterStatefulsetName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
@@ -624,7 +624,7 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getWorkerDaemonsetName(); gotDsName != tt.wantDsName {
+			if gotDsName := e.getWorkerName(); gotDsName != tt.wantDsName {
 				t.Errorf("AlluxioEngine.getWorkerDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})

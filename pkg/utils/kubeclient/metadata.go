@@ -1,3 +1,20 @@
+/*
+Copyright 2021 The Fluid Author.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
+
 package kubeclient
 
 import (
@@ -18,7 +35,7 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 	target runtime.Object) (matched bool, err error) {
 
 	kind := target.GetObjectKind()
-	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject())
+	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject().(client.Object))
 	if err != nil || controllerObject == nil {
 		return matched, err
 	}
@@ -40,7 +57,7 @@ func compareOwnerRefMatcheWithExpected(c client.Client,
 }
 
 // resolveControllerRef resolves the parent object from the
-func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, objectKind schema.ObjectKind, obj runtime.Object) (result metav1.Object, err error) {
+func resolveControllerRef(c client.Client, controllerRef *metav1.OwnerReference, controllerNamespace string, objectKind schema.ObjectKind, obj client.Object) (result metav1.Object, err error) {
 	if controllerRef == nil {
 		log.Info("No controllerRef found")
 		return nil, nil

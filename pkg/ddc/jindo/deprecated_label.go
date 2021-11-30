@@ -29,7 +29,7 @@ func (e *JindoEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 
 	var (
-		workerName string = e.getWorkertName()
+		workerName string = e.getWorkerName()
 		namespace  string = e.namespace
 	)
 
