@@ -181,8 +181,8 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 	for _, test := range testCases {
 		engine := GooseFSEngine{}
-		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
-			t.Errorf("fail to generate the dataload value file")
+		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
+			t.Errorf("fail to generate the dataload value file %v", err)
 		}
 	}
 }

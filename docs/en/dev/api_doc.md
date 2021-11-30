@@ -112,7 +112,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -784,7 +784,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -797,7 +797,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -810,7 +810,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -823,7 +823,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -836,7 +836,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -862,7 +862,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -1767,7 +1767,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -3162,7 +3162,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -3175,7 +3175,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -3188,7 +3188,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -3201,7 +3201,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -3214,7 +3214,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -3240,7 +3240,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -5268,5 +5268,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>2da804f</code>.
+on git commit <code>0e0684eb</code>.
 </em></p>

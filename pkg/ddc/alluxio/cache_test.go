@@ -36,8 +36,8 @@ import (
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
-			var enging *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *AlluxioEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *AlluxioEngine) (string, error) {
 					summary := mockAlluxioReportSummary()
 					return summary, nil
@@ -55,7 +55,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *AlluxioEngine) cacheHitStates {
 					return cacheHitStates{
 						bytesReadLocal:  20310917,
@@ -81,8 +81,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var enging *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *AlluxioEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *AlluxioEngine) (string, error) {
 					summary := mockAlluxioReportSummary()
 					return summary, nil
@@ -100,7 +100,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *AlluxioEngine) cacheHitStates {
 					return cacheHitStates{}
 				})
@@ -118,8 +118,8 @@ func TestQueryCacheStatus(t *testing.T) {
 		})
 
 		Convey("with dataset UFSTotal is empty", func() {
-			var enging *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(enging), "GetReportSummary",
+			var engine *AlluxioEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *AlluxioEngine) (string, error) {
 					summary := mockAlluxioReportSummary()
 					return summary, nil
@@ -137,7 +137,7 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(enging), "GetCacheHitStates",
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
 				func(_ *AlluxioEngine) cacheHitStates {
 					return cacheHitStates{}
 				})
