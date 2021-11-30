@@ -69,6 +69,11 @@ spec:
                 description: LoadMetadata specifies if the dataload job should load
                   metadata
                 type: boolean
+              options:
+                additionalProperties:
+                  type: string
+                description: Options specifies the extra dataload properties for runtime
+                type: object
               target:
                 description: Target defines target paths that needs to be loaded
                 items:

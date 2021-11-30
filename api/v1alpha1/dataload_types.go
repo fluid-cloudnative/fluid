@@ -53,6 +53,9 @@ type DataLoadSpec struct {
 
 	// Target defines target paths that needs to be loaded
 	Target []TargetPath `json:"target,omitempty"`
+
+	// Options specifies the extra dataload properties for runtime
+	Options map[string]string `json:"options,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad

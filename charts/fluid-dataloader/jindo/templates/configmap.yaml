@@ -35,28 +35,88 @@ data:
         local path=$1
         local replica=$2
         local default=$3
+        local cmd="jindo jfs -load"
 
         if [[ $needLoadMetadata == 'true' ]]; then
-            #echo -e "metadata cache start $default$path"
-            time jindo jfs -metaSync -R $default$path
+            echo -e "--- enable metaCache"
+            cmd="$cmd -meta"
+            echo -e "now cmd $cmd"
         else
-            echo -e "$default$path no need to cache metadata"
+            echo -e "--- disable metaCache"
         fi
 
-        if [[ $loadMemoryData == 'true' ]]; then
-            #echo -e "metadata cache start $default$path"
-            time jindo jfs -cache -s -m -r $replica $default$path
+        if [[ $loadMetadataOnly == 'true' ]]; then
+            echo -e "--- disable datacache"
         else
-            time jindo jfs -cache -s -r $replica $default$path
+           echo -e "--- enable datacache"
+           cmd="$cmd -data"
+           echo -e "now cmd $cmd"
+        fi
+
+        if [[ $atomicCache == 'true' ]]; then
+            echo -e "--- enable atomicCache"
+            cmd="$cmd -atomic"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable atomicCache"
+        fi
+
+        if [[ $loadMemorydata == 'true' ]]; then
+            echo -e "--- enable loadMemorydata"
+            cmd="$cmd -m"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable loadMemorydata"
+        fi
+
+        if [[ $enbaleCacheListLocation == 'false' ]]; then
+            cmd="$cmd -R -replica $replica $default$path"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        else
+            echo -e "--- begin download ossutil"
+            apt-get install wget -y
+            wget http://gosspublic.alicdn.com/ossutil/1.7.5/ossutil64
+            chmod 755 ossutil64
+            ./ossutil64 -e $cacheListEndpoint -i $cacheListAccessKeyId -k $cacheListAccessKeySecret cp $cacheListUrl /cachelist.txt
+            echo -e "--- enable File List"
+            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
+            echo -e "execute cmd $cmd"
+            time $cmd
         fi
 
         #echo -e "distributedLoad and sleep start now"
         #sleep 10m
     }
-    
+
     function main() {
         needLoadMetadata="$NEED_LOAD_METADATA"
-        loadMemoryData="$LOAD_MEMORY_DATA"
+        loadMemorydata="$LOAD_MEMORY_DATA"
+        loadMetadataOnly="$LOAD_METADATA_ONLY"
+        atomicCache="$ENABLE_ATOMIC_CACHE"
+        cacheListReplica=$CACHE_LIST_REPLICA
+        cacheListThread=$CACHE_LIST_THREAD
+        enbaleCacheListLocation=$Enable_CACHE_LIST_LOCATION
+        cacheListAccessKeyId=$CACHE_LIST_ACCESSKEYID
+        cacheListAccessKeySecret=$CACHE_LIST_ACCESSKEYSECRET
+        cacheListEndpoint=$CACHE_LIST_ENDPOINT
+        cacheListUrl=$CACHE_LIST_URL
+        #judge whether to use locaion list
+        if [[ -z "$cacheListAccessKeyId" ]] || [[ -z "$cacheListAccessKeySecret" ]] || [[ -z "$cacheListEndpoint" ]] || [[ -z "$cacheListUrl" ]]; then
+            enbaleCacheListLocation=false
+        else
+            enbaleCacheListLocation=true
+        fi
+        if [[ -z "$cacheListReplica" ]]; then
+            cacheListReplica=1
+        else
+            echo -e "cacheListReplica $cacheListReplica"
+        fi
+        if [[ -z "$cacheListThread" ]]; then
+            cacheListThread=10
+        else
+            echo -e "cacheListThread $cacheListThread"
+        fi
         dafault="jfs://jindo"
         paths="$DATA_PATH"
         paths=(${paths//:/ })
@@ -70,7 +130,7 @@ data:
             #echo -e "distributedLoad on $path ends"
         done
     }
-    
+
     main "$@"
 
 

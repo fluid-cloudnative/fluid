@@ -98,13 +98,13 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 		return
 	}
 	hadoopConfig := runtime.Spec.HadoopConfig
-	loadMemoryData := false
+	loadMemorydata := false
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		err = fmt.Errorf("the TieredStore is null")
 		return
 	}
 	if runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
-		loadMemoryData = true
+		loadMemorydata = true
 	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
@@ -125,13 +125,19 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 	dataloadInfo.TargetPaths = targetPaths
 	options := map[string]string{}
-	if loadMemoryData {
-		options["loadMemoryData"] = "true"
+	if loadMemorydata {
+		options["loadMemorydata"] = "true"
 	} else {
-		options["loadMemoryData"] = "false"
+		options["loadMemorydata"] = "false"
 	}
 	if hadoopConfig != "" {
 		options["hdfsConfig"] = hadoopConfig
+	}
+	// resolve spec options
+	if dataload.Spec.Options != nil {
+		for key, value := range dataload.Spec.Options {
+			options[key] = value
+		}
 	}
 	dataloadInfo.Options = options
 
