@@ -56,8 +56,44 @@ spec:
             - name: NEED_LOAD_METADATA
               value: {{ default false .Values.dataloader.loadMetadata | quote }}
             {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "loadMemoryData" }}
+            {{- if eq $key "loadMemorydata" }}
             - name: LOAD_MEMORY_DATA
+              value: {{ default false $val | quote }}
+            {{- end }}
+            {{- if eq $key "atomicCache" }}
+            - name: ENABLE_ATOMIC_CACHE
+              value: {{ default false $val | quote }}
+            {{- end }}
+            {{- if eq $key "loadMetadataOnly" }}
+            - name: LOAD_METADATA_ONLY
+              value: {{ default false $val | quote }}
+            {{- end }}
+            {{- if eq $key "cacheListReplica" }}
+            - name: CACHE_LIST_REPLICA
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "cacheListThread" }}
+            - name: CACHE_LIST_THREAD
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "accessKeyId" }}
+            - name: CACHE_LIST_ACCESSKEYID
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "accessKeySecret" }}
+            - name: CACHE_LIST_ACCESSKEYSECRET
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "endpoint" }}
+            - name: CACHE_LIST_ENDPOINT
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "url" }}
+            - name: CACHE_LIST_URL
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "cacheListLocationEnable" }}
+            - name: Enable_CACHE_LIST_LOCATION
               value: {{ default false $val | quote }}
             {{- end }}
             {{- end }}
