@@ -501,6 +501,17 @@ bool
 <p>Target defines target paths that needs to be loaded</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2320,6 +2331,17 @@ bool
 </td>
 <td>
 <p>Target defines target paths that needs to be loaded</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options specifies the extra dataload properties for runtime</p>
 </td>
 </tr>
 </tbody>
@@ -5268,5 +5290,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>0e0684eb</code>.
+on git commit <code>dc26f4b4</code>.
 </em></p>
