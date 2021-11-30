@@ -48,6 +48,8 @@ data:
         goosefs fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
             time goosefs fs distributedLoad -Dgoosefs.user.file.metadata.sync.interval=0 --replication $replica $path
+        elif [[ $needAtomicCache == 'true' ]]; then
+            time goosefs fs distributedLoad -A --replication $replica $path --expire-time $atomicCacheTTL
         else
             time goosefs fs distributedLoad --replication $replica $path
         fi
@@ -55,6 +57,13 @@ data:
     
     function main() {
         needLoadMetadata="$NEED_LOAD_METADATA"
+        needAtomicCache="$NEED_ATOMIC_CACHE"
+        atomicCacheTTL="$ATOMIC_CACHE_TTL"
+        if [[ $needAtomicCache == 'true' ]]; then
+          needLoadMetadata="false"
+           echo -e "when enable atomiccache, can't load metadata"
+        fi
+
         if [[ $needLoadMetadata == 'true' ]]; then
             if [[ -d "/data" ]]; then
                 du -sh "/data"

@@ -18,6 +18,16 @@ dataloader:
   loadMetadata: false
 
   # Optional
+  # Options
+  # atomicCache: false
+  # Default: false
+  # Description: when load path is still in cos but not in goosefs, if it not loaded in cache 100%, it will be invisible.
+
+  # expireTime: 43200000
+  # Default: 43200000
+  # Description: when enable atomiccache and failed, ttl will avoid space waste, default is 12h, unit is ms. 
+
+  # Optional
   # Default: (path: "/", replicas: 1, fluidNative: false)
   # Description: which paths should the DataLoad load
   targetPaths:
