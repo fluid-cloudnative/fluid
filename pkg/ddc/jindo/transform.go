@@ -93,7 +93,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			Master:            e.transformMasterMountPath(metaPath),
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
-		OwnerReference: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {

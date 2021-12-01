@@ -42,7 +42,7 @@ func TestGenerateOwnerReferenceFromCRD(t *testing.T) {
 			},
 		}
 		expect *common.OwnerReference = &common.OwnerReference{
-			Enable:             true,
+			Enabled:            true,
 			Controller:         true,
 			BlockOwnerDeletion: false,
 			UID:                "12345",

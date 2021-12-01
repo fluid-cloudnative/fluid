@@ -28,7 +28,7 @@ type Jindo struct {
 	Labels          map[string]string      `yaml:"labels,omitempty"`
 	LogConfig       map[string]string      `yaml:"logConfig,omitempty"`
 	PlacementMode   string                 `yaml:"placement,omitempty"`
-	OwnerReference  *common.OwnerReference `yaml:"ownerReference,omitempty"`
+	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
 }
 
 type HadoopConfig struct {
