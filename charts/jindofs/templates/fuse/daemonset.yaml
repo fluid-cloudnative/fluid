@@ -134,7 +134,7 @@ spec:
           {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
-      dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
+      dnsPolicy: ClusterFirstWithHostNet
       {{- else }}
       dnsConfig:
         nameservers:
