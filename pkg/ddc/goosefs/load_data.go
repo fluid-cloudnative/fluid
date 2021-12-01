@@ -104,6 +104,7 @@ func (e *GooseFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
 		Image:         image,
+		Options:       dataload.Spec.Options,
 	}
 
 	targetPaths := []cdataload.TargetPath{}

@@ -58,6 +58,14 @@ spec:
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "atomicCache" }}
+            - name: NEED_ATOMIC_CACHE
+              value: {{ default false $val | quote }}
+            {{- else if eq $key "expireTime" }}
+            - name: ATOMIC_CACHE_TTL
+              value: {{ default 43200000 $val | quote }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
