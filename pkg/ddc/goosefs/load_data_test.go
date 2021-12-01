@@ -166,6 +166,29 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 		},
 	}
 
+	dataLoadWithOptions := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Target: []datav1alpha1.TargetPath{
+				{
+					Path:     "/test",
+					Replicas: 1,
+				},
+			},
+			Options: map[string]string{
+				"atomicCache": "true",
+				"expireTime":  "43200000",
+			},
+		},
+	}
+
 	var testCases = []struct {
 		dataLoad       datav1alpha1.DataLoad
 		expectFileName string
@@ -176,6 +199,10 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 		},
 		{
 			dataLoad:       dataLoadWithTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+		},
+		{
+			dataLoad:       dataLoadWithOptions,
 			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
