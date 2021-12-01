@@ -62,10 +62,14 @@ func TestGenerateOwnerReferenceFromCRD(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	obj := &datav1alpha1.Dataset{}
 
-	fakeClient.Get(context.TODO(), types.NamespacedName{
+	err := fakeClient.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, obj)
+
+	if err != nil {
+		t.Errorf("Failed due to %v", err)
+	}
 
 	result := GenerateOwnerReferenceFromObject(obj)
 	if !reflect.DeepEqual(result, expect) {
