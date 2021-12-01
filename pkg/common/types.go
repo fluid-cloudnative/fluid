@@ -122,7 +122,7 @@ const (
 )
 
 type OwnerReference struct {
-	Enable bool `yaml:"enable"`
+	Enabled bool `yaml:"enabled"`
 	// API version of the referent.
 	APIVersion string `yaml:"apiVersion"`
 	// Kind of the referent.

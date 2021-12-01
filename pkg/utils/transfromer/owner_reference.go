@@ -27,7 +27,7 @@ func GenerateOwnerReferenceFromObject(obj client.Object) *common.OwnerReference 
 		APIVersion:         obj.GetObjectKind().GroupVersionKind().GroupKind().Group + "/" + obj.GetObjectKind().GroupVersionKind().Version,
 		Kind:               obj.GetObjectKind().GroupVersionKind().Kind,
 		UID:                string(obj.GetUID()),
-		Enable:             true,
+		Enabled:            true,
 		Name:               obj.GetName(),
 		BlockOwnerDeletion: false,
 		Controller:         true,

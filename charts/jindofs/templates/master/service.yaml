@@ -15,13 +15,13 @@ metadata:
     heritage: {{ $dot.Release.Service }}
     role: jindofs-master
   ownerReferences:
-  {{- if .Values.owner.enabled }}
-  - apiVersion: {{ .Values.owner.apiVersion }}
-    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
-    controller: {{ .Values.owner.controller }}
-    kind: {{ .Values.owner.kind }}
-    name: {{ .Values.owner.name }}
-    uid: {{ .Values.owner.uid }}
+  {{- if $dot.Values.owner.enabled }}
+  - apiVersion: {{ $dot.Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ $dot.Values.owner.blockOwnerDeletion }}
+    controller: {{ $dot.Values.owner.controller }}
+    kind: {{ $dot.Values.owner.kind }}
+    name: {{ $dot.Values.owner.name }}
+    uid: {{ $dot.Values.owner.uid }}
   {{- end }}
 spec:
   ports:
