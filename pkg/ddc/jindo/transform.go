@@ -142,6 +142,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
+	e.transformHostNetWork(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	return value, err
@@ -660,6 +661,18 @@ func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value 
 	value.Worker.Labels = runtime.Spec.Worker.Labels
 	value.Fuse.Labels = runtime.Spec.Fuse.Labels
 
+	return nil
+}
+
+func (e *JindoEngine) transformHostNetWork(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	// to set hostnetwork
+	if runtime.Spec.DisableHostNetWork {
+		value.UseHostNetwork = false
+		value.UseHostPID = false
+	} else {
+		value.UseHostNetwork = true
+		value.UseHostPID = true
+	}
 	return nil
 }
 
