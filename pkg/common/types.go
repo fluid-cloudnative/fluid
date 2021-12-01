@@ -120,3 +120,21 @@ const (
 	// Failed means the task has failed its execution.
 	Failed ConditionType = "Failed"
 )
+
+type OwnerReference struct {
+	Enable bool `yaml:"enable"`
+	// API version of the referent.
+	APIVersion string `yaml:"apiVersion"`
+	// Kind of the referent.
+	Kind string `yaml:"kind"`
+	// Name of the referent.
+	Name string `yaml:"name"`
+	// UID of the referent.
+	UID string `yaml:"uid"`
+	// If true, this reference points to the managing controller.
+	// +optional
+	Controller bool `yaml:"controller"`
+	// If true, AND if the owner has the "foregroundDeletion" finalizer, then
+	// +optional
+	BlockOwnerDeletion bool `yaml:"blockOwnerDeletion"`
+}
