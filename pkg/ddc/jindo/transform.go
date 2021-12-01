@@ -12,6 +12,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -92,6 +93,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			Master:            e.transformMasterMountPath(metaPath),
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
+		OwnerReference: transfromer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
