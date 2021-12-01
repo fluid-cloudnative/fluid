@@ -33,4 +33,7 @@ const (
 	WOKRER_POD_ROLE = "jindo-worker"
 
 	runtimeFSType = "jindofs"
+
+	NETWORKMODE_HOST      = "Host"
+	NETWORKMODE_CONTAINER = "Container"
 )

@@ -154,9 +154,9 @@ type JindoRuntimeSpec struct {
 	// +optional
 	LogConfig map[string]string `json:"logConfig,omitempty"`
 
-	// If enable hostnetwork and default true
+	// NetworkMode Host or Container
 	// +optional
-	DisableHostNetWork bool `json:"clusternetwork,omitempty"`
+	NetworkMode string `json:"networkmode,omitempty"`
 }
 
 // +kubebuilder:object:root=true

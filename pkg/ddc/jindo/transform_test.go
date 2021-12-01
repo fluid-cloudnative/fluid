@@ -172,7 +172,7 @@ func TestTransformHostNetWork(t *testing.T) {
 						Low:        "0.1",
 					}},
 				},
-				DisableHostNetWork: false,
+				NetworkMode: "Host",
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -193,7 +193,7 @@ func TestTransformHostNetWork(t *testing.T) {
 						Low:        "0.1",
 					}},
 				},
-				DisableHostNetWork: true,
+				NetworkMode: "Container",
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -206,9 +206,46 @@ func TestTransformHostNetWork(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
-		engine.transformHostNetWork(test.runtime, test.jindoValue)
+		engine.transformNetworkMode(test.runtime, test.jindoValue)
 		if test.jindoValue.UseHostNetwork != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
 		}
 	}
+
+	var errortests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     bool
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
+				},
+				NetworkMode: "Non",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, false,
+		},
+	}
+	for _, test := range errortests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		err := engine.transformNetworkMode(test.runtime, test.jindoValue)
+		if err == nil {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
+		}
+	}
+
 }

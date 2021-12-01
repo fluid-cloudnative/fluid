@@ -77,9 +77,6 @@ spec:
           spec:
             description: JindoRuntimeSpec defines the desired state of JindoRuntime
             properties:
-              clusternetwork:
-                description: If enable hostnetwork and default true
-                type: boolean
               fuse:
                 description: The component spec of Jindo Fuse
                 properties:
@@ -337,6 +334,9 @@ spec:
                       type: object
                     type: array
                 type: object
+              networkmode:
+                description: NetworkMode Host or Container
+                type: string
               properties:
                 additionalProperties:
                   type: string

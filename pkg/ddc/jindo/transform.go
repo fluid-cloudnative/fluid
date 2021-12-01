@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"regexp"
 	"strconv"
@@ -139,10 +140,13 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	err = e.transformNetworkMode(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
-	e.transformHostNetWork(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	return value, err
@@ -664,14 +668,14 @@ func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value 
 	return nil
 }
 
-func (e *JindoEngine) transformHostNetWork(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
 	// to set hostnetwork
-	if runtime.Spec.DisableHostNetWork {
-		value.UseHostNetwork = false
-		value.UseHostPID = false
-	} else {
+	if len(runtime.Spec.NetworkMode) == 0 || runtime.Spec.NetworkMode == NETWORKMODE_HOST {
 		value.UseHostNetwork = true
-		value.UseHostPID = true
+	} else if runtime.Spec.NetworkMode == NETWORKMODE_CONTAINER {
+		value.UseHostNetwork = false
+	} else {
+		return errors.Errorf("NetWorkMode not Support, only Host and Container are available")
 	}
 	return nil
 }
@@ -682,5 +686,4 @@ func (e *JindoEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, valu
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
-
 }
