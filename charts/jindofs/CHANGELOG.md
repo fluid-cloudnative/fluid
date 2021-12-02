@@ -14,5 +14,9 @@ Repair fuse MountPoint leak issue
 0.8.2
 
 Change podManagementPolicy from OrderedReady to Parallel
+
+0.8.3
+
+Add owner Reference
  
 
