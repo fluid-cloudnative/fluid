@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -36,6 +37,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -116,5 +118,10 @@ func (r *RuntimeReconciler) ControllerName() string {
 }
 
 func (r *RuntimeReconciler) ManagedResource() client.Object {
-	return &datav1alpha1.JindoRuntime{}
+	return &datav1alpha1.JindoRuntime{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       v1alpha1.JindoRuntimeKind,
+			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+		},
+	}
 }

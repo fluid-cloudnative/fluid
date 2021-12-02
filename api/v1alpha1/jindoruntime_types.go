@@ -20,6 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	JindoRuntimeKind = "JindoRuntime"
+)
+
 // JindoCompTemplateSpec is a description of the Jindo commponents
 type JindoCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
