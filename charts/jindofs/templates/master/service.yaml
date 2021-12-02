@@ -14,6 +14,15 @@ metadata:
     release: {{ $dot.Release.Name }}
     heritage: {{ $dot.Release.Service }}
     role: jindofs-master
+  ownerReferences:
+  {{- if $dot.Values.owner.enabled }}
+  - apiVersion: {{ $dot.Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ $dot.Values.owner.blockOwnerDeletion }}
+    controller: {{ $dot.Values.owner.controller }}
+    kind: {{ $dot.Values.owner.kind }}
+    name: {{ $dot.Values.owner.name }}
+    uid: {{ $dot.Values.owner.uid }}
+  {{- end }}
 spec:
   ports:
   - port: {{ $dot.Values.master.ports.rpc }}
