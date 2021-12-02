@@ -15,3 +15,70 @@ limitations under the License.
 */
 
 package watch
+
+import (
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type statefulsetEventHandler struct {
+}
+
+func (handler *statefulsetEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) bool {
+	return func(e event.CreateEvent) (onCreate bool) {
+		statefulset, ok := e.Object.(*appsv1.StatefulSet)
+		if !ok {
+			log.Info("statefulset.onCreateFunc Skip", "object", e.Object)
+			return false
+		}
+
+		if controllerRef := metav1.GetControllerOf(statefulset); controllerRef != nil && isOwnerMatched(controllerRef, r) {
+			log.V(1).Info("statefulset.onCreateFunc ControllerRef will handle the object due to  owner reference is matched with runtime", "name", statefulset.Name, "namespace", statefulset.Namespace)
+			onCreate = true
+		} else {
+			log.V(1).Info("statefulset.onCreateFunc  will skip the  object due to the  owner reference is not matched with fluid runtime", "name", statefulset.Name, "namespace", statefulset.Namespace)
+		}
+
+		log.V(1).Info("statefulsetEventHandler.onCreateFunc", "name", statefulset.GetName(), "namespace", statefulset.GetNamespace())
+		return true
+	}
+}
+
+func (handler *statefulsetEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) bool {
+	return func(e event.UpdateEvent) (needUpdate bool) {
+		statefulsetNew, ok := e.ObjectNew.(*appsv1.StatefulSet)
+		if !ok {
+			log.Info("statefulset.onUpdateFunc Skip", "object", e.ObjectNew)
+			return needUpdate
+		}
+
+		statefulsetOld, ok := e.ObjectOld.(*appsv1.StatefulSet)
+		if !ok {
+			log.Info("statefulset.onUpdateFunc Skip", "object", e.ObjectNew)
+			return needUpdate
+		}
+
+		if statefulsetNew.GetResourceVersion() == statefulsetOld.GetResourceVersion() {
+			log.V(1).Info("statefulset.onUpdateFunc Skip due to resourceVersion not changed")
+			return needUpdate
+		}
+
+		log.V(1).Info("statefulsetEventHandler.onUpdateFunc", "name", statefulsetNew.GetName(), "namespace", statefulsetNew.GetNamespace())
+		return true
+	}
+}
+
+func (handler *statefulsetEventHandler) onDeleteFunc(r Controller) func(e event.DeleteEvent) bool {
+	return func(e event.DeleteEvent) bool {
+		statefulset, ok := e.Object.(*appsv1.StatefulSet)
+		if !ok {
+			log.Info("statefulset.onDeleteFunc Skip", "object", e.Object)
+			return false
+		}
+
+		log.V(1).Info("statefulsetEventHandler.onDeleteFunc", "name", statefulset.GetName(), "namespace", statefulset.GetNamespace())
+		return true
+	}
+}

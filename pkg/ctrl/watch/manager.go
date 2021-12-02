@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -82,4 +83,12 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 	}
 
 	return
+}
+
+func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
+	target := c.ManagedResource()
+	kind := target.GetObjectKind().GroupVersionKind().Kind
+	group := target.GetObjectKind().GroupVersionKind().Group
+
+	return kind == controllerRef.Kind && group == controllerRef.APIVersion
 }
