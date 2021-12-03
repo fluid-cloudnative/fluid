@@ -46,6 +46,17 @@ func TestOnCreateFunc(t *testing.T) {
 	if predicate {
 		t.Errorf("The event %v should ben't reconciled, but pass.", createRuntimeEvent)
 	}
+
+	// 3. Skip the runtime which is deleting
+	createRuntimeEvent = event.CreateEvent{
+		Object: &datav1alpha1.JindoRuntime{},
+	}
+	createRuntimeEvent.Object.SetDeletionTimestamp(&metav1.Time{})
+	predicate = f(createRuntimeEvent)
+	if predicate {
+		t.Errorf("The event %v should ben't reconciled, but pass.", createRuntimeEvent)
+	}
+
 }
 
 func TestOnUpdateFunc(t *testing.T) {
@@ -79,9 +90,16 @@ func TestOnUpdateFunc(t *testing.T) {
 		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
 	}
 
-	// 2. expect the updateEvent is not validated due to the object is not kind of runtimeInterface
+	// 3. expect the updateEvent is not validated due to the object is not kind of runtimeInterface
 	updateRuntimeEvent.ObjectOld = &corev1.Pod{}
 	updateRuntimeEvent.ObjectNew = &corev1.Pod{}
+	predicate = f(updateRuntimeEvent)
+	if predicate {
+		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
+	}
+
+	// 4. expect the updateEvent is not validate due the old Object  is not kind of the runtimeInterface
+	updateRuntimeEvent.ObjectNew = &datav1alpha1.JindoRuntime{}
 	predicate = f(updateRuntimeEvent)
 	if predicate {
 		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)

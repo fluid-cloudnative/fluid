@@ -29,6 +29,9 @@ import (
 func TestIsObjectInManaged(t *testing.T) {
 	reconciler := &FakeRuntimeReconciler{}
 
+	_ = reconciler.ControllerName()
+	_ = reconciler.ManagedResource()
+
 	matchedPod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{
 		OwnerReferences: []metav1.OwnerReference{
 			{
