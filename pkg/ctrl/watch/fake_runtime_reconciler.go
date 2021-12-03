@@ -3,7 +3,6 @@ package watch
 import (
 	"context"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +29,7 @@ func (r *FakeRuntimeReconciler) ControllerName() string {
 func (r *FakeRuntimeReconciler) ManagedResource() (c client.Object) {
 	return &datav1alpha1.JindoRuntime{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.JindoRuntimeKind,
+			Kind:       datav1alpha1.JindoRuntimeKind,
 			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 		},
 	}
