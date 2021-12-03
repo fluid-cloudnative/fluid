@@ -32,6 +32,10 @@ func (handler *statefulsetEventHandler) onCreateFunc(r Controller) func(e event.
 			return false
 		}
 
+		if statefulset.DeletionTimestamp != nil {
+			return false
+		}
+
 		if !isObjectInManaged(statefulset, r) {
 			return false
 		}

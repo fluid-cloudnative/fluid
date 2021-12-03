@@ -16,6 +16,10 @@ func (handler *runtimeEventHandler) onCreateFunc(r Controller) func(e event.Crea
 			return false
 		}
 
+		if e.Object.GetDeletionTimestamp() != nil {
+			return false
+		}
+
 		log.V(1).Info("runtimeEventHandler.onCreateFunc", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
 		return true
 	}

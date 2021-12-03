@@ -95,6 +95,7 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 	return
 }
 
+// isObjectInManaged checks if the object is managed by Fluid runtime controller
 func isObjectInManaged(obj metav1.Object, r Controller) (managed bool) {
 	if controllerRef := metav1.GetControllerOf(obj); controllerRef != nil && isOwnerMatched(controllerRef, r) {
 		log.V(1).Info("obj.onCreateFunc ControllerRef will handle the object due to  owner reference is matched with runtime", "name", obj.GetName(), "namespace", obj.GetNamespace())
@@ -105,10 +106,11 @@ func isObjectInManaged(obj metav1.Object, r Controller) (managed bool) {
 	return managed
 }
 
+// isOwnerMatched checks if controllerRef matches with the controller
 func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 	target := c.ManagedResource()
 	kind := target.GetObjectKind().GroupVersionKind().Kind
-	group := target.GetObjectKind().GroupVersionKind().Group
+	apiVersion := target.GetObjectKind().GroupVersionKind().Group + "/" + target.GetObjectKind().GroupVersionKind().Version
 
-	return kind == controllerRef.Kind && group == controllerRef.APIVersion
+	return kind == controllerRef.Kind && apiVersion == controllerRef.APIVersion
 }
