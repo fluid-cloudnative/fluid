@@ -66,17 +66,27 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 		return err
 	}
 
+	statefulsetEventHandler := &statefulsetEventHandler{}
 	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    r.ManagedResource(),
+	}, predicate.Funcs{
+		CreateFunc: statefulsetEventHandler.onCreateFunc(r),
+		UpdateFunc: statefulsetEventHandler.onUpdateFunc(r),
+		DeleteFunc: statefulsetEventHandler.onDeleteFunc(r),
 	})
 	if err != nil {
 		return err
 	}
 
+	daemonsetEventHandler := &daemonsetEventHandler{}
 	err = c.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    r.ManagedResource(),
+	}, predicate.Funcs{
+		CreateFunc: daemonsetEventHandler.onCreateFunc(r),
+		UpdateFunc: daemonsetEventHandler.onUpdateFunc(r),
+		DeleteFunc: daemonsetEventHandler.onDeleteFunc(r),
 	})
 	if err != nil {
 		return err
