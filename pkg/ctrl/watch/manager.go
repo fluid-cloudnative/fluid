@@ -95,6 +95,16 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 	return
 }
 
+func isObjectInManaged(obj metav1.Object, r Controller) (managed bool) {
+	if controllerRef := metav1.GetControllerOf(obj); controllerRef != nil && isOwnerMatched(controllerRef, r) {
+		log.V(1).Info("obj.onCreateFunc ControllerRef will handle the object due to  owner reference is matched with runtime", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		managed = true
+	} else {
+		log.V(1).Info("obj.onCreateFunc  will skip the  object due to the  owner reference is not matched with fluid runtime", "name", obj.GetName(), "namespace", obj.GetNamespace())
+	}
+	return managed
+}
+
 func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 	target := c.ManagedResource()
 	kind := target.GetObjectKind().GroupVersionKind().Kind

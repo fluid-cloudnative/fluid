@@ -105,12 +105,16 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 }
 
 //SetupWithManager setups the manager with RuntimeReconciler
-func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) (err error) {
-	// return ctrl.NewControllerManagedBy(mgr).
-	// 	WithOptions(options).
-	// 	For(&datav1alpha1.JindoRuntime{}).
-	// 	Complete(r)
-	return watch.SetupWatcherWithReconciler(mgr, options, r)
+func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) (err error) {
+	if eventDriven {
+		err = watch.SetupWatcherWithReconciler(mgr, options, r)
+	} else {
+		err = ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.JindoRuntime{}).
+			Complete(r)
+	}
+	return
 }
 
 func (r *RuntimeReconciler) ControllerName() string {
