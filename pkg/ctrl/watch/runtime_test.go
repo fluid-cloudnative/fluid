@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-func TestStatefulsetEvOnCreateFunc(t *testing.T) {
+func TestOnCreateFunc(t *testing.T) {
 
 	// 1. the Object is RuntimeInterface
 	createRuntimeEvent := event.CreateEvent{
