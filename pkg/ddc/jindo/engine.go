@@ -9,6 +9,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,6 +27,7 @@ type JindoEngine struct {
 	runtimeInfo        base.RuntimeInfoInterface
 	MetadataSyncDoneCh chan MetadataSyncResult
 	cacheNodeNames     []string
+	Recorder           record.EventRecorder
 	*ctrl.Helper
 }
 

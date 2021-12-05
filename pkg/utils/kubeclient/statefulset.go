@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,4 +105,21 @@ func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase data
 
 	return
 
+}
+
+// GetPodsForStatefulSet gets pods of the specified statefulset
+func GetunavailablePodNamesForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (unavailablePodNames []*v1.Pod, err error) {
+
+	pods, err := GetPodsForStatefulSet(c, sts, selector)
+	if err != nil {
+		return
+	}
+
+	for _, pod := range pods {
+		if !isRunningAndReady(&pod) {
+			unavailablePodNames = append(unavailablePodNames, &pod)
+		}
+	}
+
+	return
 }
