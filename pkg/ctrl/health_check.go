@@ -32,12 +32,12 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-// checkMasterHealthy checks the master healthy
+// CheckMasterHealthy checks the sts healthy with role
 func (e *Helper) CheckMasterHealthy(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	master *appsv1.StatefulSet, recorder record.EventRecorder) (err error) {
+	sts *appsv1.StatefulSet, recorder record.EventRecorder) (err error) {
 	var healthy bool
-	if master.Status.Replicas == master.Status.ReadyReplicas {
+	if sts.Status.Replicas == sts.Status.ReadyReplicas {
 		healthy = true
 	}
 
@@ -61,7 +61,7 @@ func (e *Helper) CheckMasterHealthy(runtime base.RuntimeInterface,
 	} else {
 		// 1. Update the status
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, "The master is not ready.",
-			fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), corev1.ConditionFalse)
+			fmt.Sprintf("The master %s in %s is not ready.", sts.Name, sts.Namespace), corev1.ConditionFalse)
 		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
 
 		if oldCond == nil || oldCond.Type != cond.Type {
@@ -72,27 +72,25 @@ func (e *Helper) CheckMasterHealthy(runtime base.RuntimeInterface,
 		statusToUpdate.MasterPhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-		selector, err := metav1.LabelSelectorAsSelector(master.Spec.Selector)
+		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 		if err != nil {
-			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", master.Name, master.Namespace, err)
+			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.Name, sts.Namespace, err)
 		}
 
-		unavailablePodNames, err := kubeclient.GetunavailablePodNamesForStatefulSet(e.client, master, selector)
+		unavailablePodNames, err := kubeclient.GetunavailablePodNamesForStatefulSet(e.client, sts, selector)
 		if err != nil {
 			return err
 		}
 
 		// 3. Set error
 		msg := fmt.Sprintf("the master %s in %s is not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
-			master.Name,
-			master.Namespace,
-			master.Status.Replicas,
-			master.Status.ReadyReplicas,
+			sts.Name,
+			sts.Namespace,
+			sts.Status.Replicas,
+			sts.Status.ReadyReplicas,
 			unavailablePodNames)
 
 		recorder.Eventf(runtime, corev1.EventTypeWarning, "MasterUnhealthy", msg)
-
-		err = fmt.Errorf(msg)
 	}
 
 	if err != nil {
