@@ -337,9 +337,9 @@ spec:
               networkmode:
                 description: Whether to use hostnetwork or not
                 enum:
-                - Host
+                - HostNetwork
                 - ""
-                - Container
+                - ContainerNetwork
                 type: string
               properties:
                 additionalProperties:
