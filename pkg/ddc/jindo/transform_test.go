@@ -172,7 +172,7 @@ func TestTransformHostNetWork(t *testing.T) {
 						Low:        "0.1",
 					}},
 				},
-				NetworkMode: "Host",
+				NetworkMode: "HostNetwork",
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -193,7 +193,7 @@ func TestTransformHostNetWork(t *testing.T) {
 						Low:        "0.1",
 					}},
 				},
-				NetworkMode: "Container",
+				NetworkMode: "ContainerNetwork",
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{

@@ -40,9 +40,9 @@ const (
 type NetworkMode string
 
 const (
-	HostNetworkMode NetworkMode = "Host"
+	HostNetworkMode NetworkMode = "HostNetwork"
 
-	ContainerNetworkMode NetworkMode = "Container"
+	ContainerNetworkMode NetworkMode = "ContainerNetwork"
 
 	// DefaultMode is Host
 	DefaultNetworkMode NetworkMode = ""
