@@ -155,7 +155,7 @@ type JindoRuntimeSpec struct {
 	LogConfig map[string]string `json:"logConfig,omitempty"`
 
 	// Whether to use hostnetwork or not
-	// +kubebuilder:validation:Enum=Host;"";Container
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkmode,omitempty"`
 }
