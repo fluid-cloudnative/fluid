@@ -55,7 +55,6 @@ func (e *Helper) CheckFuseHealthy(runtime base.RuntimeInterface,
 					cond)
 		}
 		statusToUpdate.FusePhase = datav1alpha1.RuntimePhaseReady
-
 	} else {
 		// 1. Update the status
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, "The fuses are not ready.",
@@ -70,7 +69,6 @@ func (e *Helper) CheckFuseHealthy(runtime base.RuntimeInterface,
 		statusToUpdate.FusePhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-
 		unavailablePodNames, err := kubeclient.GetUnavailableDaemonPods(e.client, ds)
 		if err != nil {
 			return err
