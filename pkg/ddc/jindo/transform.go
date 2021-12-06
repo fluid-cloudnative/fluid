@@ -2,7 +2,6 @@ package jindo
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"regexp"
 	"strconv"
@@ -140,10 +139,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
-	err = e.transformNetworkMode(runtime, value)
-	if err != nil {
-		return
-	}
+	e.transformNetworkMode(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
@@ -668,16 +664,16 @@ func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value 
 	return nil
 }
 
-func (e *JindoEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	// to set hostnetwork
-	if len(runtime.Spec.NetworkMode) == 0 || runtime.Spec.NetworkMode == NETWORKMODE_HOST {
+	switch runtime.Spec.NetworkMode {
+	case datav1alpha1.HostNetworkMode:
 		value.UseHostNetwork = true
-	} else if runtime.Spec.NetworkMode == NETWORKMODE_CONTAINER {
+	case datav1alpha1.ContainerNetworkMode:
 		value.UseHostNetwork = false
-	} else {
-		return errors.Errorf("NetWorkMode not Support, only Host and Container are available")
+	case datav1alpha1.DefaultNetworkMode:
+		value.UseHostNetwork = true
 	}
-	return nil
 }
 
 func (e *JindoEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *Jindo) {

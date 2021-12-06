@@ -206,9 +206,9 @@ func TestTransformHostNetWork(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
-		err := engine.transformNetworkMode(test.runtime, test.jindoValue)
-		if test.jindoValue.UseHostNetwork != test.expect && err != nil {
-			t.Errorf("expected value %v, but got %v, and err %v", test.expect, test.jindoValue.UseHostNetwork, err)
+		engine.transformNetworkMode(test.runtime, test.jindoValue)
+		if test.jindoValue.UseHostNetwork != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
 		}
 	}
 
@@ -242,8 +242,8 @@ func TestTransformHostNetWork(t *testing.T) {
 	}
 	for _, test := range errortests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
-		err := engine.transformNetworkMode(test.runtime, test.jindoValue)
-		if err == nil {
+		engine.transformNetworkMode(test.runtime, test.jindoValue)
+		if test.jindoValue.UseHostNetwork != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
 		}
 	}

@@ -36,3 +36,14 @@ const (
 	// DefaultMode is exclusive
 	DefaultMode PlacementMode = ""
 )
+
+type NetworkMode string
+
+const (
+	HostNetworkMode NetworkMode = "Host"
+
+	ContainerNetworkMode NetworkMode = "Container"
+
+	// DefaultMode is Host
+	DefaultNetworkMode NetworkMode = ""
+)
