@@ -18,9 +18,11 @@ package csi
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/util"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 	"os"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +51,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
 
-	isMount, err := isMounted(targetPath)
+	isMount, err := util.IsMounted(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -104,7 +106,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	// 1. Wait the runtime fuse ready
-	err = checkMountReady(fluidPath, mountType)
+	err = util.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -142,17 +144,29 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
 
-	command := exec.Command("umount",
-		targetPath,
-	)
-	glog.V(4).Infoln(command)
-	stdoutStderr, err := command.CombinedOutput()
-	if err != nil {
-		glog.V(3).Infoln(err)
+	// targetPath may be mount bind many times when mount point recovered.
+	// umount until it's not mounted.
+	for {
+		command := exec.Command("umount", targetPath)
+		glog.V(4).Infoln(command)
+		out, err := command.CombinedOutput()
+		if err == nil {
+			glog.V(3).Infoln(err)
+			continue
+		}
+		glog.V(4).Infoln(string(out))
+		if !strings.Contains(string(out), "not mounted") && !strings.Contains(string(out), "mountpoint not found") {
+			klog.V(5).Infof("Unmount %s failed: %q, try to lazy unmount", targetPath, err)
+			output, err1 := exec.Command("umount", "-l", targetPath).CombinedOutput()
+			if err1 != nil {
+				return nil, status.Errorf(codes.Internal, "Could not lazy unmount %q: %v, output: %s", targetPath, err1, string(output))
+			}
+		}
+		klog.V(5).Infof("umount:%s success", targetPath)
+		break
 	}
-	glog.V(4).Infoln(string(stdoutStderr))
 
-	err = mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
+	err := mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
 	if err != nil {
 		glog.V(3).Infoln(err)
 	} else {
@@ -243,7 +257,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	mountType := req.GetVolumeContext()["mount_type"]
 
 	// checkMountReady checks the fuse mount path every 3 second for 30 seconds in total.
-	err = checkMountReady(fluidPath, mountType)
+	err = util.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, errors.Errorf("fuse pod on node %s is not ready", ns.nodeId)
 	}

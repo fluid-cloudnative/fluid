@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,19 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package app
 
 import (
-	"github.com/fluid-cloudnative/fluid/cmd/csi/app"
-	"os"
+	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd := app.NewCSICommand()
+var (
+	short bool
+)
 
-	if err := cmd.Execute(); err != nil {
-		app.ErrorAndExit(err)
-	}
+func init() {
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+}
 
-	os.Exit(0)
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fluid.PrintVersion(short)
+	},
 }

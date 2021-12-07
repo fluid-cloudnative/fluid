@@ -1,0 +1,207 @@
+/*
+Copyright 2021 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package app
+
+import (
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	csi "github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
+	csimanager "github.com/fluid-cloudnative/fluid/pkg/csi/manager"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"net/http"
+	"net/http/pprof"
+	"os"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
+)
+
+var (
+	endpoint      string
+	nodeID        string
+	metricsAddr   string
+	pprofAddr     string
+	enableManager bool
+	clientCert    string
+	clientKey     string
+	token         string
+	timeout       int
+)
+
+var scheme = runtime.NewScheme()
+
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "start fluid driver on node",
+	Run: func(cmd *cobra.Command, args []string) {
+		handle()
+	},
+}
+
+func init() {
+	// Register k8s-native resources and Fluid CRDs
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = datav1alpha1.AddToScheme(scheme)
+
+	if err := flag.Set("logtostderr", "true"); err != nil {
+		fmt.Printf("Failed to flag.set due to %v", err)
+		os.Exit(1)
+	}
+
+	startCmd.Flags().StringVarP(&nodeID, "nodeid", "", "", "node id")
+	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
+		ErrorAndExit(err)
+	}
+
+	startCmd.Flags().StringVarP(&endpoint, "endpoint", "", "", "CSI endpoint")
+	if err := startCmd.MarkFlagRequired("endpoint"); err != nil {
+		ErrorAndExit(err)
+	}
+
+	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
+	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
+
+	// start csi manager
+	startCmd.Flags().StringVar(&clientCert, "client-cert", "", "Kubelet client cert")
+	startCmd.Flags().StringVar(&clientKey, "client-key", "", "Kubelet client key")
+	startCmd.Flags().StringVar(&token, "token", "", "Kubelet client token")
+	startCmd.Flags().IntVar(&timeout, "timeout", 10, "Kubelet client timeout")
+	startCmd.Flags().BoolVar(&enableManager, "enable-manager", false, "Enable manager to recover failed mount point automatically")
+}
+
+func ErrorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "%s", err.Error())
+	os.Exit(1)
+}
+
+func handle() {
+	// startReaper()
+	fluid.LogVersion()
+
+	if pprofAddr != "" {
+		glog.Infof("Enabling pprof with address %s", pprofAddr)
+		mux := http.NewServeMux()
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		pprofServer := http.Server{
+			Addr:    pprofAddr,
+			Handler: mux,
+		}
+		glog.Infof("Starting pprof HTTP server at %s", pprofServer.Addr)
+
+		go func() {
+			go func() {
+				ctx := context.Background()
+				<-ctx.Done()
+
+				ctx, cancelFunc := context.WithTimeout(context.Background(), 60*time.Minute)
+				defer cancelFunc()
+
+				if err := pprofServer.Shutdown(ctx); err != nil {
+					glog.Error(err, "Failed to shutdown debug HTTP server")
+				}
+			}()
+
+			if err := pprofServer.ListenAndServe(); !errors.Is(http.ErrServerClosed, err) {
+				glog.Error(err, "Failed to start debug HTTP server")
+				panic(err)
+			}
+		}()
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme:             scheme,
+		MetricsBindAddress: metricsAddr,
+		Port:               9443,
+	})
+
+	if err != nil {
+		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
+	}
+
+	ctx := ctrl.SetupSignalHandler()
+	go func() {
+		if err := mgr.Start(ctx); err != nil {
+			panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
+		}
+	}()
+
+	if enableManager {
+		go manage(ctx, mgr.GetClient())
+	}
+
+	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
+	d.Run()
+}
+
+func manage(ctx context.Context, k8sClient client.Client) {
+
+	if clientCert == "" && clientKey == "" && token == "" {
+		// todo kubelet run dir
+		tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+		if err != nil {
+			panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
+		}
+		token = string(tokenByte)
+	}
+
+	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
+		Address: "127.0.0.1",
+		Port:    10250,
+		TLSClientConfig: rest.TLSClientConfig{
+			Insecure:   true,
+			ServerName: "kubelet",
+			CertFile:   clientCert,
+			KeyFile:    clientKey,
+		},
+		BearerToken: token,
+		HTTPTimeout: time.Duration(timeout) * time.Second,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	driver := csimanager.NewPodDriver(k8sClient)
+	m := csimanager.Manager{
+		KubeletClient: kubeletClient,
+		Driver:        driver,
+	}
+	go func() {
+		m.Run(ctx)
+	}()
+
+	select {
+	case <-ctx.Done():
+		// We are done
+		return
+	}
+}
