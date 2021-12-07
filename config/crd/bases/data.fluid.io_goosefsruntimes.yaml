@@ -82,7 +82,7 @@ spec:
             description: GooseFSRuntimeSpec defines the desired state of GooseFSRuntime
             properties:
               apiGateway:
-                description: Desired state for GooseFS API Gateway
+                description: The component spec of GooseFS API Gateway
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,
@@ -172,7 +172,7 @@ spec:
                   enabled by default
                 type: boolean
               fuse:
-                description: Desired state for GooseFS Fuse
+                description: The component spec of GooseFS Fuse
                 properties:
                   args:
                     description: Arguments that will be passed to GooseFS Fuse
@@ -323,7 +323,7 @@ spec:
                     type: object
                 type: object
               jobMaster:
-                description: Desired state for GooseFS job master
+                description: The component spec of GooseFS job master
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,
@@ -396,7 +396,7 @@ spec:
                     type: object
                 type: object
               jobWorker:
-                description: Desired state for GooseFS job Worker
+                description: The component spec of GooseFS job Worker
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,
@@ -474,7 +474,7 @@ spec:
                   type: string
                 type: array
               master:
-                description: Desired state for GooseFS master
+                description: The component spec of GooseFS master
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,
@@ -640,7 +640,7 @@ spec:
                     type: array
                 type: object
               worker:
-                description: Desired state for GooseFS worker
+                description: The component spec of GooseFS worker
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,

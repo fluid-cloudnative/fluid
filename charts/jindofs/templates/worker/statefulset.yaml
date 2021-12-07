@@ -141,7 +141,7 @@ spec:
               name: volume-localtime
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
-      dnsPolicy: ClusterFirstWithHostNet
+      dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
       {{- else }}
       dnsConfig:
         nameservers:
