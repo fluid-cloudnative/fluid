@@ -22,7 +22,6 @@ import (
 	"reflect"
 
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -60,7 +60,7 @@ func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (wo
 }
 
 // CheckworkersHealthy checks the sts healthy with role
-func (e *Helper) CheckWorkersHealthy(ctx cruntime.ReconcileRequestContext, runtime base.RuntimeInterface,
+func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
 	var healthy bool
@@ -117,7 +117,7 @@ func (e *Helper) CheckWorkersHealthy(ctx cruntime.ReconcileRequestContext, runti
 			sts.Status.ReadyReplicas,
 			unavailablePodNames)
 
-		ctx.Recorder.Eventf(runtime, corev1.EventTypeWarning, "workersUnhealthy", msg)
+		recorder.Eventf(runtime, corev1.EventTypeWarning, "workersUnhealthy", msg)
 	}
 
 	if err != nil {

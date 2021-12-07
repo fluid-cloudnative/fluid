@@ -22,7 +22,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,13 +44,13 @@ func TestChecMasterHealthy(t *testing.T) {
 				Replicas: 3, // 2
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentmasterNumberScheduled: 2,
+
 				CurrentMasterNumberScheduled: 1, // 0
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 1,
-				DesiredmasterNumberScheduled: 2,
+				MasterNumberReady:            1,
 				DesiredFuseNumberScheduled:   3,
-				masterPhase:                  "NotReady",
+				MasterPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
 			},
 		},
@@ -64,11 +63,9 @@ func TestChecMasterHealthy(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentmasterNumberScheduled: 3,
 				CurrentMasterNumberScheduled: 0,
 				CurrentFuseNumberScheduled:   3,
 				DesiredMasterNumberScheduled: 1,
-				DesiredmasterNumberScheduled: 3,
 				DesiredFuseNumberScheduled:   2,
 				MasterPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
@@ -83,15 +80,13 @@ func TestChecMasterHealthy(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentmasterNumberScheduled: 2,
 				CurrentMasterNumberScheduled: 2,
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 2,
-				DesiredmasterNumberScheduled: 2,
+				MasterNumberReady:            2,
 				DesiredFuseNumberScheduled:   2,
-
-				masterPhase: "NotReady",
-				FusePhase:   "NotReady",
+				MasterPhase:                  "NotReady",
+				FusePhase:                    "NotReady",
 			},
 		},
 	}
@@ -268,10 +263,8 @@ func TestChecMasterHealthy(t *testing.T) {
 
 		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
 
-		err = h.CheckMasterHealthy(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
-			Recorder: record.NewFakeRecorder(300),
-		}, runtime, runtime.Status, statefulset)
+		err = h.CheckMasterHealthy(record.NewFakeRecorder(300),
+			runtime, runtime.Status, statefulset)
 
 		if err != nil {
 			t.Errorf("check master's healthy failed,err:%s", err.Error())

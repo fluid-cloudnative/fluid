@@ -27,15 +27,15 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 )
 
 // CheckMasterHealthy checks the sts healthy with role
-func (e *Helper) CheckMasterHealthy(runtime base.RuntimeInterface,
+func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	sts *appsv1.StatefulSet, recorder record.EventRecorder) (err error) {
+	sts *appsv1.StatefulSet) (err error) {
 	var healthy bool
 	if sts.Status.Replicas == sts.Status.ReadyReplicas {
 		healthy = true

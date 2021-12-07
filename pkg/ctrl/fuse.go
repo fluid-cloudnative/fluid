@@ -31,9 +31,9 @@ import (
 )
 
 // CheckFuseHealthy checks the ds healthy with role
-func (e *Helper) CheckFuseHealthy(runtime base.RuntimeInterface,
+func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	ds *appsv1.DaemonSet, recorder record.EventRecorder) (err error) {
+	ds *appsv1.DaemonSet) (err error) {
 	var healthy bool
 	if ds.Status.NumberUnavailable == 0 {
 		healthy = true

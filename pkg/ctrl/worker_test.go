@@ -23,7 +23,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -357,10 +356,9 @@ func TestCheckWorkersHealthy(t *testing.T) {
 
 		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
 
-		err = h.CheckWorkersHealthy(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
-			Recorder: record.NewFakeRecorder(300),
-		}, runtime, runtime.Status, statefulset)
+		err = h.CheckWorkersHealthy(
+			record.NewFakeRecorder(300),
+			runtime, runtime.Status, statefulset)
 
 		if err != nil {
 			t.Errorf("check workers‘ healthy failed,err:%s", err.Error())
