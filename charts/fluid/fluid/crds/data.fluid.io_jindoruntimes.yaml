@@ -334,6 +334,13 @@ spec:
                       type: object
                     type: array
                 type: object
+              networkmode:
+                description: Whether to use hostnetwork or not
+                enum:
+                - HostNetwork
+                - ""
+                - ContainerNetwork
+                type: string
               properties:
                 additionalProperties:
                   type: string

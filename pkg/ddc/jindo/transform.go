@@ -141,6 +141,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
+	e.transformNetworkMode(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
@@ -665,11 +666,22 @@ func (e *JindoEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value 
 	return nil
 }
 
+func (e *JindoEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	// to set hostnetwork
+	switch runtime.Spec.NetworkMode {
+	case datav1alpha1.HostNetworkMode:
+		value.UseHostNetwork = true
+	case datav1alpha1.ContainerNetworkMode:
+		value.UseHostNetwork = false
+	case datav1alpha1.DefaultNetworkMode:
+		value.UseHostNetwork = true
+	}
+}
+
 func (e *JindoEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *Jindo) {
 
 	value.PlacementMode = string(dataset.Spec.PlacementMode)
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
-
 }

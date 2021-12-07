@@ -323,7 +323,7 @@ spec:
                     type: object
                 type: object
               jobMaster:
-                description: The component spec ofAlluxio job master
+                description: The component spec of Alluxio job master
                 properties:
                   enabled:
                     description: Enabled or Disabled for the components. For now,
