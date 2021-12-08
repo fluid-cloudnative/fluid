@@ -495,7 +495,7 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, datas
 func (e *JindoEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "3.7.0"
+		defaultTag       = "3.7.3"
 		defaultDnsServer = "1.1.1.1"
 	)
 
@@ -519,7 +519,7 @@ func (e *JindoEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "3.7.0"
+		defaultTag   = "3.7.3"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)

@@ -18,5 +18,9 @@ Change podManagementPolicy from OrderedReady to Parallel
 0.8.3
 
 Add owner Reference
+
+0.8.4
+
+Support more Posix
  
 
