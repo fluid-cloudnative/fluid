@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -63,7 +64,11 @@ func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (wo
 func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
-	var healthy bool
+	var (
+		healthy             bool
+		selector            labels.Selector
+		unavailablePodNames []types.NamespacedName
+	)
 	if sts.Status.Replicas == sts.Status.ReadyReplicas {
 		healthy = true
 	}
@@ -99,25 +104,25 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 		statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+		selector, err = metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 		if err != nil {
 			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.Name, sts.Namespace, err)
 		}
 
-		unavailablePodNames, err := kubeclient.GetunavailablePodNamesForStatefulSet(e.client, sts, selector)
+		unavailablePodNames, err = kubeclient.GetUnavailablePodNamesForStatefulSet(e.client, sts, selector)
 		if err != nil {
 			return err
 		}
 
 		// 3. Set error
-		msg := fmt.Sprintf("the workers %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		err = fmt.Errorf("the workers %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
 			sts.Name,
 			sts.Namespace,
 			sts.Status.Replicas,
 			sts.Status.ReadyReplicas,
 			unavailablePodNames)
 
-		recorder.Eventf(runtime, corev1.EventTypeWarning, "workersUnhealthy", msg)
+		recorder.Eventf(runtime, corev1.EventTypeWarning, "workersUnhealthy", err.Error())
 	}
 
 	if err != nil {

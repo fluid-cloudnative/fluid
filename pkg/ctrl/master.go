@@ -30,13 +30,19 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // CheckMasterHealthy checks the sts healthy with role
 func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
-	var healthy bool
+	var (
+		healthy             bool
+		selector            labels.Selector
+		unavailablePodNames []types.NamespacedName
+	)
 	if sts.Status.Replicas == sts.Status.ReadyReplicas {
 		healthy = true
 	}
@@ -72,34 +78,39 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 		statusToUpdate.MasterPhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+
+		selector, err = metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 		if err != nil {
 			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.Name, sts.Namespace, err)
 		}
 
-		unavailablePodNames, err := kubeclient.GetunavailablePodNamesForStatefulSet(e.client, sts, selector)
+		unavailablePodNames, err = kubeclient.GetUnavailablePodNamesForStatefulSet(e.client, sts, selector)
 		if err != nil {
 			return err
 		}
 
-		// 3. Set error
-		msg := fmt.Sprintf("the master %s in %s is not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		// 3. Set event
+		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
 			sts.Name,
 			sts.Namespace,
 			sts.Status.Replicas,
 			sts.Status.ReadyReplicas,
 			unavailablePodNames)
 
-		recorder.Eventf(runtime, corev1.EventTypeWarning, "MasterUnhealthy", msg)
-	}
+		recorder.Eventf(runtime, corev1.EventTypeWarning, "MasterUnhealthy", err.Error())
 
-	if err != nil {
-		return
 	}
 
 	status := *statusToUpdate
 	if !reflect.DeepEqual(status, currentStatus) {
-		return e.client.Status().Update(context.TODO(), runtime)
+		updateErr := e.client.Status().Update(context.TODO(), runtime)
+		if updateErr != nil {
+			return updateErr
+		}
+	}
+
+	if err != nil {
+		return
 	}
 
 	return
