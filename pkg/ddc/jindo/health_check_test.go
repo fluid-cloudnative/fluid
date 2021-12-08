@@ -217,6 +217,92 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				},
 			},
 			wantErr: true,
+		}, {
+			name: "no-master-nohealthy",
+			fields: fields{
+				name:      "unhealthy-no-master",
+				namespace: "big-data",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-master",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 1,
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-master-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
+						Replicas:      1,
+					},
+				}, master: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-master-jindofs",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
+						Replicas:      1,
+					},
+				}, fuse: &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-master-jindofs-no-master",
+						Namespace: "big-data",
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 1,
+					},
+				},
+			},
+			wantErr: true,
+		}, {
+			name: "no-worker-nohealthy",
+			fields: fields{
+				name:      "unhealthy-no-worker",
+				namespace: "big-data",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-worker",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 1,
+					},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-worker-jindofs-master",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
+						Replicas:      1,
+					},
+				}, master: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-worker-jindofs",
+						Namespace: "big-data",
+					},
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 1,
+						Replicas:      1,
+					},
+				}, fuse: &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "unhealthy-no-worker-jindofs-no-worker",
+						Namespace: "big-data",
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 1,
+					},
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

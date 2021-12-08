@@ -10,18 +10,6 @@ import (
 )
 
 func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
-	// ready, err := e.CheckWorkersReady()
-	// if err != nil {
-	// 	e.Log.Error(err, "Check if the workers are ready")
-	// 	return err
-	// }
-
-	// if !ready {
-	// 	err = fmt.Errorf("the workers %s in %s are not healthy",
-	// 		e.getWorkerName(),
-	// 		e.namespace)
-	// }
-
 	// 1. Check the healthy of the master
 	err = e.checkMasterHealthy()
 	if err != nil {
@@ -60,14 +48,9 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 
 // checkMasterHealthy checks the master healthy
 func (e *JindoEngine) checkMasterHealthy() (err error) {
-	master, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getMasterName()})
+	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
 	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return
-		}
-		return
+		return err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
