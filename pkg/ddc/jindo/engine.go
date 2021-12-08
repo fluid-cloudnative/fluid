@@ -41,6 +41,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		cacheNodeNames:         []string{},
+		Recorder:               ctx.Recorder,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

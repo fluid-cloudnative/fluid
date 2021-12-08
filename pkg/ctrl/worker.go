@@ -115,23 +115,26 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 		}
 
 		// 3. Set error
-		err = fmt.Errorf("the workers %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		err = fmt.Errorf("the workers %s in namespace %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
 			sts.Name,
 			sts.Namespace,
 			sts.Status.Replicas,
 			sts.Status.ReadyReplicas,
 			unavailablePodNames)
 
-		recorder.Eventf(runtime, corev1.EventTypeWarning, "workersUnhealthy", err.Error())
-	}
-
-	if err != nil {
-		return
+		recorder.Eventf(runtime, corev1.EventTypeWarning, "WorkersUnhealthy", err.Error())
 	}
 
 	status := *statusToUpdate
 	if !reflect.DeepEqual(status, currentStatus) {
-		return e.client.Status().Update(context.TODO(), runtime)
+		updateErr := e.client.Status().Update(context.TODO(), runtime)
+		if updateErr != nil {
+			return updateErr
+		}
+	}
+
+	if err != nil {
+		return
 	}
 
 	return
