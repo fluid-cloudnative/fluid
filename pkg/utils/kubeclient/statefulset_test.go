@@ -17,7 +17,6 @@ limitations under the License.
 package kubeclient
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -25,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -208,15 +206,19 @@ func TestGetUnavailablePodNamesForStatefulSet(t *testing.T) {
 		t.Errorf("failed due to %v", err)
 	}
 
-	expectPodNames := []types.NamespacedName{
-		{
-			// Namespace: namespace,
-			// Name:      "unavailableSts-0",
-		},
+	if len(podNames) > 0 {
+		t.Errorf("failed due to pod name %v", podNames)
 	}
 
-	if !reflect.DeepEqual(podNames, expectPodNames) {
-		t.Errorf("The Pod names %v and expected name %v are not equal.", podNames, expectPodNames)
-	}
+	// expectPodNames := []types.NamespacedName{
+	// 	{
+	// 		// Namespace: namespace,
+	// 		// Name:      "unavailableSts-0",
+	// 	},
+	// }
+
+	// if !reflect.DeepEqual(podNames, expectPodNames) {
+	// 	t.Errorf("The Pod names %v and expected name %v are not equal.", podNames, expectPodNames)
+	// }
 
 }
