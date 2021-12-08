@@ -38,9 +38,9 @@ runtime:
     portRange: 18000-19999
     enabled: false
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.7.0
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.7.3
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.7.0
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.7.3
     controller:
       image: fluidcloudnative/jindoruntime-controller:v0.7.0-dc26f4b
     init:
