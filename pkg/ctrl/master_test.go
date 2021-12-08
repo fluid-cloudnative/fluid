@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func TestChecMasterHealthy(t *testing.T) {
+func TestCheckMasterHealthy(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JindoRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -266,8 +266,8 @@ func TestChecMasterHealthy(t *testing.T) {
 		err = h.CheckMasterHealthy(record.NewFakeRecorder(300),
 			runtime, runtime.Status, statefulset)
 
-		if err != nil {
-			t.Errorf("check master's healthy failed,err:%s", err.Error())
+		if testCase.isErr == (err == nil) {
+			t.Errorf("check master's healthy failed,err:%v", err)
 		}
 
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{

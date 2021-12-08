@@ -360,7 +360,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			record.NewFakeRecorder(300),
 			runtime, runtime.Status, statefulset)
 
-		if err != nil {
+		if testCase.isErr == (err == nil) {
 			t.Errorf("check workers‘ healthy failed,err:%s", err.Error())
 		}
 
