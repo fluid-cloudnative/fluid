@@ -26,7 +26,7 @@ const (
 
 	JINDO_FUSE_IMAGE_ENV = "JINDO_FUSE_IMAGE_ENV"
 
-	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.7.0"
+	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.7.3"
 
 	JINDO_DNS_SERVER = "JINDO_DNS_SERVER_ENV"
 )
