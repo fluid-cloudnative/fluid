@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -34,7 +35,10 @@ import (
 func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	ds *appsv1.DaemonSet) (err error) {
-	var healthy bool
+	var (
+		healthy             bool
+		unavailablePodNames []types.NamespacedName
+	)
 	if ds.Status.NumberUnavailable == 0 {
 		healthy = true
 	}
@@ -69,20 +73,20 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 		statusToUpdate.FusePhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-		unavailablePodNames, err := kubeclient.GetUnavailableDaemonPods(e.client, ds)
+		unavailablePodNames, err = kubeclient.GetUnavailableDaemonPodNames(e.client, ds)
 		if err != nil {
 			return err
 		}
 
 		// 3. Set error
-		msg := fmt.Sprintf("the fuse %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		err = fmt.Errorf("the fuse %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
 			ds.Name,
 			ds.Namespace,
 			ds.Status.DesiredNumberScheduled,
 			ds.Status.NumberReady,
 			unavailablePodNames)
 
-		recorder.Eventf(runtime, corev1.EventTypeWarning, "FuseUnhealthy", msg)
+		recorder.Eventf(runtime, corev1.EventTypeWarning, "FuseUnhealthy", err.Error())
 	}
 
 	if err != nil {

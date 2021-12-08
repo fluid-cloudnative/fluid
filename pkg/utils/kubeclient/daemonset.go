@@ -45,7 +45,7 @@ func GetDaemonPods(c client.Client, ds *appsv1.DaemonSet) (pods []*v1.Pod, err e
 	return
 }
 
-// GetDaemonPods gets pods of the specified daemonset
+// GetUnavailableDaemonPods gets unavailable pods of the specified daemonset
 func GetUnavailableDaemonPods(c client.Client, ds *appsv1.DaemonSet) (unavailablePods []*v1.Pod, err error) {
 	pods, err := GetDaemonPods(c, ds)
 	if err != nil {
@@ -55,6 +55,25 @@ func GetUnavailableDaemonPods(c client.Client, ds *appsv1.DaemonSet) (unavailabl
 	for _, pod := range pods {
 		if !isRunningAndReady(pod) {
 			unavailablePods = append(unavailablePods, pod)
+		}
+	}
+
+	return
+}
+
+// GetUnavailableDaemonPods gets unavailable pods of the specified daemonset
+func GetUnavailableDaemonPodNames(c client.Client, ds *appsv1.DaemonSet) (names []types.NamespacedName, err error) {
+	pods, err := GetUnavailableDaemonPods(c, ds)
+	if err != nil {
+		return
+	}
+
+	for _, pod := range pods {
+		if !isRunningAndReady(pod) {
+			names = append(names, types.NamespacedName{
+				Namespace: pod.Namespace,
+				Name:      pod.Name,
+			})
 		}
 	}
 
