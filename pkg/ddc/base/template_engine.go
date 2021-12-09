@@ -16,10 +16,12 @@ limitations under the License.
 package base
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,5 +91,18 @@ func getSyncRetryDuration() (d *time.Duration, err error) {
 		}
 		d = &duration
 	}
+	return
+}
+
+func (t *TemplateEngine) permitSync(key types.NamespacedName) (permit bool) {
+	if time.Since(t.timeOfLastSync) < t.syncRetryDuration {
+		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v).",
+			t.timeOfLastSync.Add(t.syncRetryDuration),
+			t.syncRetryDuration)
+		t.Log.Info(info, "name", key.Name, "namespace", key.Namespace)
+	} else {
+		permit = true
+	}
+
 	return
 }
