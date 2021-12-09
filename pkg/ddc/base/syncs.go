@@ -16,16 +16,27 @@ limitations under the License.
 package base
 
 import (
+	"fmt"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
+	// Avoid the retires too frequently
+	if time.Since(t.timeOfLastSync) < t.syncRetryDuration {
+		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v).",
+			t.timeOfLastSync.Add(t.syncRetryDuration),
+			t.syncRetryDuration)
+		log.Log.Info(info, "name", ctx.Name, "namespace", ctx.Namespace)
+		return
+	}
+
 	err = t.Implement.SyncMetadata()
 	if err != nil {
 		return

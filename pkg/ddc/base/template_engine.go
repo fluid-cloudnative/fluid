@@ -16,10 +16,17 @@ limitations under the License.
 package base
 
 import (
+	"os"
+	"time"
+
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -29,8 +36,10 @@ type TemplateEngine struct {
 	Implement
 	Id string
 	client.Client
-	Log     logr.Logger
-	Context cruntime.ReconcileRequestContext
+	Log               logr.Logger
+	Context           cruntime.ReconcileRequestContext
+	syncRetryDuration time.Duration
+	timeOfLastSync    time.Time
 }
 
 // NewTemplateEngine creates template engine
@@ -47,6 +56,18 @@ func NewTemplateEngine(impl Implement,
 		// Log:       log,
 	}
 	b.Log = context.Log.WithValues("engine", context.RuntimeType).WithValues("id", id)
+	b.timeOfLastSync = time.Now()
+	duration, err := getSyncRetryDuration()
+	if err != nil {
+		b.Log.Error(err, "Failed to parse syncRetryDurationEnv: FLUID_SYNC_RETRY_DURATION, use the default setting")
+	}
+	if duration != nil {
+		b.syncRetryDuration = *duration
+	} else {
+		b.syncRetryDuration = time.Duration(5 * time.Second)
+	}
+	b.Log.Info("Set the syncRetryDuration", "syncRetryDuration", b.syncRetryDuration)
+
 	return b
 }
 
@@ -58,4 +79,15 @@ func (t *TemplateEngine) ID() string {
 //Shutdown and clean up the engine
 func (t *TemplateEngine) Shutdown() error {
 	return t.Implement.Shutdown()
+}
+
+func getSyncRetryDuration() (d *time.Duration, err error) {
+	if value, existed := os.LookupEnv(syncRetryDurationEnv); existed {
+		duration, err := time.ParseDuration(value)
+		if err != nil {
+			return d, err
+		}
+		d = &duration
+	}
+	return
 }
