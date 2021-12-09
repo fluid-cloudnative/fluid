@@ -40,13 +40,6 @@ func (handler *statefulsetEventHandler) onCreateFunc(r Controller) func(e event.
 			return false
 		}
 
-		// if controllerRef := metav1.GetControllerOf(statefulset); controllerRef != nil && isOwnerMatched(controllerRef, r) {
-		// 	log.V(1).Info("statefulset.onCreateFunc ControllerRef will handle the object due to  owner reference is matched with runtime", "name", statefulset.Name, "namespace", statefulset.Namespace)
-		// 	onCreate = true
-		// } else {
-		// 	log.V(1).Info("statefulset.onCreateFunc  will skip the  object due to the  owner reference is not matched with fluid runtime", "name", statefulset.Name, "namespace", statefulset.Namespace)
-		// }
-
 		log.V(1).Info("statefulsetEventHandler.onCreateFunc", "name", statefulset.GetName(), "namespace", statefulset.GetNamespace())
 		return true
 	}

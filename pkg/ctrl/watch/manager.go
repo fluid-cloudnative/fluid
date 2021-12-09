@@ -109,8 +109,9 @@ func isObjectInManaged(obj metav1.Object, r Controller) (managed bool) {
 // isOwnerMatched checks if controllerRef matches with the controller
 func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 	target := c.ManagedResource()
-	kind := target.GetObjectKind().GroupVersionKind().Kind
-	apiVersion := target.GetObjectKind().GroupVersionKind().Group + "/" + target.GetObjectKind().GroupVersionKind().Version
+	// kind := target.GetObjectKind().GroupVersionKind().Kind
+	// apiVersion := target.GetObjectKind().GroupVersionKind().Group + "/" + target.GetObjectKind().GroupVersionKind().Version
+	apiVersion, kind := target.GetObjectKind().GroupVersionKind().ToAPIVersionAndKind()
 
 	return kind == controllerRef.Kind && apiVersion == controllerRef.APIVersion
 }

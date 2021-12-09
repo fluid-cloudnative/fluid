@@ -30,6 +30,7 @@ func GetDaemonPods(c client.Client, ds *appsv1.DaemonSet) (pods []*v1.Pod, err e
 
 	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
+		Namespace:     ds.Namespace,
 		LabelSelector: selector,
 	})
 

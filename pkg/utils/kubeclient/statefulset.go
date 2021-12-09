@@ -32,6 +32,7 @@ func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector la
 
 	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
+		Namespace:     sts.Namespace,
 		LabelSelector: selector,
 	})
 
