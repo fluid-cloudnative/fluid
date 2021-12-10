@@ -20,6 +20,7 @@ csi:
 
 runtime:
   criticalFusePod: true
+  syncRetryDuration: 15s
   mountRoot: /runtime-mnt
   alluxio:
     runtimeWorkers: 3
@@ -35,7 +36,6 @@ runtime:
       image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.7.0-SNAPSHOT-c058736
   jindo:
     runtimeWorkers: 3
-    syncRetryDuration: 15s
     portRange: 18000-19999
     enabled: false
     smartdata:
