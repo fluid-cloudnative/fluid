@@ -16,10 +16,21 @@ limitations under the License.
 package base
 
 import (
+	"fmt"
+	"os"
+	"time"
+
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
+
+	defaultSyncRetryDuration time.Duration = time.Duration(5 * time.Second)
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -29,8 +40,10 @@ type TemplateEngine struct {
 	Implement
 	Id string
 	client.Client
-	Log     logr.Logger
-	Context cruntime.ReconcileRequestContext
+	Log               logr.Logger
+	Context           cruntime.ReconcileRequestContext
+	syncRetryDuration time.Duration
+	timeOfLastSync    time.Time
 }
 
 // NewTemplateEngine creates template engine
@@ -47,6 +60,18 @@ func NewTemplateEngine(impl Implement,
 		// Log:       log,
 	}
 	b.Log = context.Log.WithValues("engine", context.RuntimeType).WithValues("id", id)
+	b.timeOfLastSync = time.Now()
+	duration, err := getSyncRetryDuration()
+	if err != nil {
+		b.Log.Error(err, "Failed to parse syncRetryDurationEnv: FLUID_SYNC_RETRY_DURATION, use the default setting")
+	}
+	if duration != nil {
+		b.syncRetryDuration = *duration
+	} else {
+		b.syncRetryDuration = defaultSyncRetryDuration
+	}
+	b.Log.Info("Set the syncRetryDuration", "syncRetryDuration", b.syncRetryDuration)
+
 	return b
 }
 
@@ -58,4 +83,34 @@ func (t *TemplateEngine) ID() string {
 //Shutdown and clean up the engine
 func (t *TemplateEngine) Shutdown() error {
 	return t.Implement.Shutdown()
+}
+
+func getSyncRetryDuration() (d *time.Duration, err error) {
+	if value, existed := os.LookupEnv(syncRetryDurationEnv); existed {
+		duration, err := time.ParseDuration(value)
+		if err != nil {
+			return d, err
+		}
+		d = &duration
+	}
+	return
+}
+
+func (t *TemplateEngine) permitSync(key types.NamespacedName) (permit bool) {
+	if time.Since(t.timeOfLastSync) < t.syncRetryDuration {
+		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v) since timeOfLastSync %v.",
+			t.timeOfLastSync.Add(t.syncRetryDuration),
+			t.syncRetryDuration,
+			t.timeOfLastSync)
+		t.Log.Info(info, "name", key.Name, "namespace", key.Namespace)
+	} else {
+		permit = true
+		info := fmt.Sprintf("Processing engine.Sync(). permmitted  %v (syncRetryDuration %v) since timeOfLastSync %v.",
+			t.timeOfLastSync.Add(t.syncRetryDuration),
+			t.syncRetryDuration,
+			t.timeOfLastSync)
+		t.Log.V(1).Info(info, "name", key.Name, "namespace", key.Namespace)
+	}
+
+	return
 }

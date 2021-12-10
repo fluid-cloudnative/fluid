@@ -40,3 +40,4 @@
 ### 0.7.0
 
 * Add mountPropagation for registrar
+* Add syncRetryDuration
