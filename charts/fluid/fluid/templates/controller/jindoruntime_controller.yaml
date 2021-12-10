@@ -66,6 +66,10 @@ spec:
           - name: CRITICAL_FUSE_POD
             value: {{ .Values.runtime.criticalFusePod | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.syncRetryDuration }}
+          - name: FLUID_SYNC_RETRY_DURATION
+            value: {{ .Values.runtime.jindo.syncRetryDuration | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics
