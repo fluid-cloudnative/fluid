@@ -1,17 +1,22 @@
 package base
 
 import (
+	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	fakeutils "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func Test_convertToTieredstoreInfo(t *testing.T) {
@@ -415,5 +420,54 @@ func TestGetRuntimeInfo(t *testing.T) {
 				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGetSyncRetryDuration(t *testing.T) {
+
+	_, err := getSyncRetryDuration()
+	if err != nil {
+		t.Errorf("Failed to getSyncRetryDuration %v", err)
+	}
+
+	os.Setenv(syncRetryDurationEnv, "s")
+	_, err = getSyncRetryDuration()
+	if err == nil {
+		t.Errorf("Expect to get err, but got nil")
+	}
+
+	os.Setenv(syncRetryDurationEnv, "3s")
+	d, err := getSyncRetryDuration()
+	if err != nil {
+		t.Errorf("Failed to getSyncRetryDuration %v", err)
+	}
+	if d == nil {
+		t.Errorf("Failed to set the duration, expect %v, got %v", time.Duration(3*time.Second), d)
+	}
+}
+
+func TestPermitSync(t *testing.T) {
+
+	id := "test id"
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Log: log.NullLogger{},
+	}
+
+	templateEngine := NewTemplateEngine(nil, id, ctx)
+	permit := templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
+	if permit {
+		t.Errorf("expect not permit, but got %v", permit)
+	}
+
+	templateEngine.setTimeOfLastSync()
+	templateEngine.syncRetryDuration = 1 * time.Microsecond
+	time.Sleep(1 * time.Second)
+	permit = templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
+	if !permit {
+		t.Errorf("expect permit, but got %v", permit)
 	}
 }
