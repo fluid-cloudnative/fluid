@@ -90,4 +90,5 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 
 func (t *TemplateEngine) setTimeOfLastSync() {
 	t.timeOfLastSync = time.Now()
+	t.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", t.timeOfLastSync)
 }

@@ -29,6 +29,8 @@ import (
 
 const (
 	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
+
+	defaultSyncRetryDuration time.Duration = time.Duration(5 * time.Second)
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -66,7 +68,7 @@ func NewTemplateEngine(impl Implement,
 	if duration != nil {
 		b.syncRetryDuration = *duration
 	} else {
-		b.syncRetryDuration = time.Duration(5 * time.Second)
+		b.syncRetryDuration = defaultSyncRetryDuration
 	}
 	b.Log.Info("Set the syncRetryDuration", "syncRetryDuration", b.syncRetryDuration)
 
@@ -102,6 +104,10 @@ func (t *TemplateEngine) permitSync(key types.NamespacedName) (permit bool) {
 		t.Log.Info(info, "name", key.Name, "namespace", key.Namespace)
 	} else {
 		permit = true
+		info := fmt.Sprintf("Processing engine.Sync(). permmitted  %v (syncRetryDuration %v).",
+			t.timeOfLastSync.Add(t.syncRetryDuration),
+			t.syncRetryDuration)
+		t.Log.V(1).Info(info, "name", key.Name, "namespace", key.Namespace)
 	}
 
 	return
