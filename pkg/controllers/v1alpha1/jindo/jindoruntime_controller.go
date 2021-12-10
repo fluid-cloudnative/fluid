@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	"github.com/pkg/errors"
 
 	"github.com/go-logr/logr"
@@ -29,17 +27,23 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Use compiler to check if the struct implements all the interface
 var _ controllers.RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
+
+const controllerName string = "JindoRuntimeController"
 
 // RuntimeReconciler reconciles a JindoRuntime object
 type RuntimeReconciler struct {
@@ -101,9 +105,27 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 }
 
 //SetupWithManager setups the manager with RuntimeReconciler
-func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(options).
-		For(&datav1alpha1.JindoRuntime{}).
-		Complete(r)
+func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) (err error) {
+	if eventDriven {
+		err = watch.SetupWatcherWithReconciler(mgr, options, r)
+	} else {
+		err = ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.JindoRuntime{}).
+			Complete(r)
+	}
+	return
+}
+
+func (r *RuntimeReconciler) ControllerName() string {
+	return controllerName
+}
+
+func (r *RuntimeReconciler) ManagedResource() client.Object {
+	return &datav1alpha1.JindoRuntime{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       v1alpha1.JindoRuntimeKind,
+			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+		},
+	}
 }

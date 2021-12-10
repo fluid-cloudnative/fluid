@@ -714,10 +714,10 @@ func TestGetInitTierPathsEnv(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						TieredStore: datav1alpha1.TieredStore{
 							Levels: []datav1alpha1.Level{
-								datav1alpha1.Level{
+								{
 									Path: "/mnt/alluxio0",
 								},
-								datav1alpha1.Level{
+								{
 									Path: "/mnt/alluxio1",
 								},
 							},

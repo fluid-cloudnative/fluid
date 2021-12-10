@@ -63,6 +63,7 @@ func (e *GooseFSEngine) CheckRuntimeHealthy() (err error) {
 		return
 	}
 
+	// 4. If the status is fine, update dataset's status
 	updateErr := e.UpdateDatasetStatus(data.BoundDatasetPhase)
 	if updateErr != nil {
 		e.Log.Error(updateErr, "Failed to update dataset")
