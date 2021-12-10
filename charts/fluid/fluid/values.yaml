@@ -20,6 +20,7 @@ csi:
 
 runtime:
   criticalFusePod: true
+  syncRetryDuration: 15s
   mountRoot: /runtime-mnt
   alluxio:
     runtimeWorkers: 3

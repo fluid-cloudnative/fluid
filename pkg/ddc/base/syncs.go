@@ -21,11 +21,19 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
+	// Avoid the retires too frequently
+	if !t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
+		return
+	}
+
 	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
+	defer t.setTimeOfLastSync()
+
 	err = t.Implement.SyncMetadata()
 	if err != nil {
 		return
@@ -78,4 +86,9 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	return t.Implement.SyncScheduleInfoToCacheNodes()
+}
+
+func (t *TemplateEngine) setTimeOfLastSync() {
+	t.timeOfLastSync = time.Now()
+	t.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", t.timeOfLastSync)
 }
