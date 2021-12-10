@@ -27,7 +27,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -52,7 +51,7 @@ func newAlluxioEngineREP(client client.Client, name string, namespace string) *A
 }
 
 func TestSyncReplicas(t *testing.T) {
-	nodeInputs := []*v1.Node{
+	nodeInputs := []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",
