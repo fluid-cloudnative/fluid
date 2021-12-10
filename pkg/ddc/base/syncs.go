@@ -26,13 +26,13 @@ import (
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
-	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
-	defer t.setTimeOfLastSync()
-
 	// Avoid the retires too frequently
 	if !t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
 		return
 	}
+
+	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
+	defer t.setTimeOfLastSync()
 
 	err = t.Implement.SyncMetadata()
 	if err != nil {
