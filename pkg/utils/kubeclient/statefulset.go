@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,7 @@ func GetPodsForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector la
 
 	podList := &v1.PodList{}
 	err = c.List(context.TODO(), podList, &client.ListOptions{
+		Namespace:     sts.Namespace,
 		LabelSelector: selector,
 	})
 
@@ -104,4 +106,39 @@ func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase data
 
 	return
 
+}
+
+// GetUnavailablePodsStatefulSet gets unavailable pods of the specified statefulset
+func GetUnavailablePodsStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (unavailablePods []*v1.Pod, err error) {
+
+	pods, err := GetPodsForStatefulSet(c, sts, selector)
+	if err != nil {
+		return
+	}
+
+	for _, pod := range pods {
+		if !isRunningAndReady(&pod) {
+			unavailablePods = append(unavailablePods, &pod)
+		}
+	}
+
+	return
+}
+
+// GetUnavailablePodNamesForStatefulSet gets pod names of the specified statefulset
+func GetUnavailablePodNamesForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (names []types.NamespacedName, err error) {
+
+	pods, err := GetUnavailablePodsStatefulSet(c, sts, selector)
+	if err != nil {
+		return
+	}
+
+	for _, pod := range pods {
+		names = append(names, types.NamespacedName{
+			Namespace: pod.Namespace,
+			Name:      pod.Name,
+		})
+	}
+
+	return
 }

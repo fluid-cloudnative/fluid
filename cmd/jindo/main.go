@@ -17,6 +17,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	jindoctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/jindo"
@@ -29,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -41,10 +42,12 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
 
-	short                   bool
-	metricsAddr             string
-	enableLeaderElection    bool
-	development             bool
+	short                bool
+	metricsAddr          string
+	enableLeaderElection bool
+	development          bool
+	// The new mode
+	eventDriven             bool
 	portRange               string
 	maxConcurrentReconciles int
 )
@@ -79,6 +82,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JindoRuntime controller")
+	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 
 	cmd.AddCommand(startCmd)
@@ -128,7 +132,7 @@ func handle() {
 		ctrl.Log.WithName("jindoctl").WithName("JindoRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("JindoRuntime"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
+	)).SetupWithManager(mgr, controllerOptions, eventDriven); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "JindoRuntime")
 		os.Exit(1)
 	}

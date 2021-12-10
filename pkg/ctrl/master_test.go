@@ -22,9 +22,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,96 +30,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func TestGetWorkersAsStatefulset(t *testing.T) {
-
-	statefulsetInputs := []*appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "sts-jindofs-worker",
-				Namespace: "big-data",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
-			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-	}
-
-	daemonsetInputs := []*appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ds-jindofs-worker",
-				Namespace: "big-data",
-			},
-		},
-	}
-
-	objs := []runtime.Object{}
-
-	for _, runtimeInput := range daemonsetInputs {
-		objs = append(objs, runtimeInput.DeepCopy())
-	}
-	for _, statefulsetInput := range statefulsetInputs {
-		objs = append(objs, statefulsetInput.DeepCopy())
-	}
-
-	s := runtime.NewScheme()
-	_ = appsv1.AddToScheme(s)
-	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-	testCases := []struct {
-		name            string
-		key             types.NamespacedName
-		success         bool
-		deprecatedError bool
-	}{
-		{
-			name: "noError",
-			key: types.NamespacedName{
-				Name:      "sts-jindofs-worker",
-				Namespace: "big-data",
-			},
-			success:         true,
-			deprecatedError: false,
-		}, {
-			name: "deprecatedError",
-			key: types.NamespacedName{
-				Name:      "ds-jindofs-worker",
-				Namespace: "big-data",
-			},
-			success:         false,
-			deprecatedError: true,
-		}, {
-			name: "otherError",
-			key: types.NamespacedName{
-				Name:      "test-jindofs-worker",
-				Namespace: "big-data",
-			},
-			success:         false,
-			deprecatedError: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		_, err := GetWorkersAsStatefulset(fakeClient, testCase.key)
-
-		if testCase.success != (err == nil) {
-			t.Errorf("testcase %s failed due to expect succcess %v, got error %v", testCase.name, testCase.success, err)
-		}
-
-		if !testCase.success {
-			if testCase.deprecatedError != fluiderrs.IsDeprecated(err) {
-				t.Errorf("testcase %s failed due to expect isdeprecated  %v, got  %v", testCase.name, testCase.deprecatedError, fluiderrs.IsDeprecated(err))
-			}
-		}
-	}
-
-}
-
-func TestCheckWorkersHealthy(t *testing.T) {
+func TestCheckMasterHealthy(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JindoRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -133,13 +44,13 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				Replicas: 3, // 2
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2, // 0
+
+				CurrentMasterNumberScheduled: 1, // 0
 				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 3,
-				DesiredWorkerNumberScheduled: 2,
+				DesiredMasterNumberScheduled: 1,
+				MasterNumberReady:            1,
 				DesiredFuseNumberScheduled:   3,
-				WorkerPhase:                  "NotReady",
+				MasterPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
 			},
 		},
@@ -152,13 +63,11 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				CurrentMasterNumberScheduled: 3,
+				CurrentMasterNumberScheduled: 0,
 				CurrentFuseNumberScheduled:   3,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 3,
+				DesiredMasterNumberScheduled: 1,
 				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
+				MasterPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
 			},
 		},
@@ -171,15 +80,13 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
 				CurrentMasterNumberScheduled: 2,
 				CurrentFuseNumberScheduled:   2,
 				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
+				MasterNumberReady:            2,
 				DesiredFuseNumberScheduled:   2,
-
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
+				MasterPhase:                  "NotReady",
+				FusePhase:                    "NotReady",
 			},
 		},
 	}
@@ -187,7 +94,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	podList := &corev1.PodList{
 		Items: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-jindofs-worker-0",
+				Name:      "hbase-jindofs-master-0",
 				Namespace: "big-data",
 				Labels:    map[string]string{"a": "b"},
 			},
@@ -219,7 +126,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	statefulsetInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-jindofs-worker",
+				Name:      "hbase-jindofs-master",
 				Namespace: "big-data",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -231,7 +138,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-jindofs-worker",
+				Name:      "hadoop-jindofs-master",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -243,7 +150,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "obj-jindofs-worker",
+				Name:      "obj-jindofs-master",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -281,7 +188,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		name      string
 		namespace string
 		Phase     datav1alpha1.RuntimePhase
-		worker    *appsv1.StatefulSet
+		master    *appsv1.StatefulSet
 		TypeValue bool
 		isErr     bool
 	}{
@@ -289,9 +196,9 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			caseName:  "Healthy",
 			name:      "hbase",
 			namespace: "fluid",
-			worker: &appsv1.StatefulSet{
+			master: &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-jindofs-worker",
+					Name:      "hbase-jindofs-master",
 					Namespace: "big-data",
 				},
 				Spec: appsv1.StatefulSetSpec{
@@ -310,9 +217,9 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			caseName:  "Unhealthy",
 			name:      "hadoop",
 			namespace: "fluid",
-			worker: &appsv1.StatefulSet{
+			master: &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hadoop-jindofs-worker",
+					Name:      "hadoop-jindofs-master",
 					Namespace: "fluid",
 				},
 				Spec: appsv1.StatefulSetSpec{
@@ -347,8 +254,8 @@ func TestCheckWorkersHealthy(t *testing.T) {
 
 		statefulset := &appsv1.StatefulSet{}
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{
-			Namespace: testCase.worker.Namespace,
-			Name:      testCase.worker.Name,
+			Namespace: testCase.master.Namespace,
+			Name:      testCase.master.Name,
 		}, statefulset)
 		if err != nil {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
@@ -356,12 +263,11 @@ func TestCheckWorkersHealthy(t *testing.T) {
 
 		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
 
-		err = h.CheckWorkersHealthy(
-			record.NewFakeRecorder(300),
+		err = h.CheckMasterHealthy(record.NewFakeRecorder(300),
 			runtime, runtime.Status, statefulset)
 
 		if testCase.isErr == (err == nil) {
-			t.Errorf("check workers‘ healthy failed,err:%s", err.Error())
+			t.Errorf("check master's healthy failed,err:%v", err)
 		}
 
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{
@@ -370,13 +276,13 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		}, runtime)
 
 		if err != nil {
-			t.Errorf("check workers‘ healthy failed,err:%s", err.Error())
+			t.Errorf("check master's healthy failed,err:%s", err.Error())
 		}
 
-		if runtime.Status.WorkerPhase != testCase.Phase {
+		if runtime.Status.MasterPhase != testCase.Phase {
 			t.Errorf("testcase %s is failed, expect phase %v, got %v", testCase.caseName,
 				testCase.Phase,
-				runtime.Status.WorkerPhase)
+				runtime.Status.MasterPhase)
 		}
 
 	}

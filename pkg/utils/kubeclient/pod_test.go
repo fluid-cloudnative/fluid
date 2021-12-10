@@ -10,7 +10,8 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,30 +23,30 @@ var (
 
 func init() {
 	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 }
 
 func TestGetPVCNamesFromPod(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
-	pod := v1.Pod{}
+	pod := corev1.Pod{}
 	var pvcNamesWant []string
 	for i := 1; i <= 30; i++ {
 		switch rand.Intn(4) {
 		case 0:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/tmp/data" + strconv.Itoa(i),
 					},
 				},
 			})
 		case 1:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: v1.VolumeSource{
-					PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: "pvc" + strconv.Itoa(i),
 						ReadOnly:  true,
 					},
@@ -53,17 +54,17 @@ func TestGetPVCNamesFromPod(t *testing.T) {
 			})
 			pvcNamesWant = append(pvcNamesWant, "pvc"+strconv.Itoa(i))
 		case 2:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: &v1.EmptyDirVolumeSource{},
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			})
 		case 3:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: v1.VolumeSource{
-					NFS: &v1.NFSVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					NFS: &corev1.NFSVolumeSource{
 						Server:   "172.0.0." + strconv.Itoa(i),
 						Path:     "/data" + strconv.Itoa(i),
 						ReadOnly: true,
@@ -82,31 +83,31 @@ func TestGetPVCNamesFromPod(t *testing.T) {
 
 func TestIsCompletePod(t *testing.T) {
 	namespace := "default"
-	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
+	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
 		Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod2",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodSucceeded,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodSucceeded,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod3",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodFailed,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodFailed,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
 			Namespace:         namespace,
 			DeletionTimestamp: &metav1.Time{Time: time.Now()}},
-		Spec: v1.PodSpec{},
+		Spec: corev1.PodSpec{},
 	}}
 
 	type args struct {
@@ -168,8 +169,8 @@ func TestIsCompletePod(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var pod v1.Pod
-			var podToTest *v1.Pod
+			var pod corev1.Pod
+			var podToTest *corev1.Pod
 			key := types.NamespacedName{
 				Namespace: tt.args.namespace,
 				Name:      tt.args.name,
@@ -193,31 +194,31 @@ func TestIsCompletePod(t *testing.T) {
 
 func TestGetPodByName(t *testing.T) {
 	namespace := "default"
-	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
+	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
 		Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod2",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodSucceeded,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodSucceeded,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod3",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodFailed,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodFailed,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
 			Namespace:         namespace,
 			DeletionTimestamp: &metav1.Time{Time: time.Now()}},
-		Spec: v1.PodSpec{},
+		Spec: corev1.PodSpec{},
 	}}
 
 	testPods := []runtime.Object{}
@@ -235,7 +236,7 @@ func TestGetPodByName(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *v1.Pod
+		want *corev1.Pod
 	}{
 		{
 			name: "Pod doesn't exist",
@@ -251,10 +252,10 @@ func TestGetPodByName(t *testing.T) {
 				name:      "pod1",
 				namespace: namespace,
 			},
-			want: &v1.Pod{
+			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1",
 					Namespace: namespace},
-				Spec: v1.PodSpec{},
+				Spec: corev1.PodSpec{},
 			},
 		},
 	}
@@ -280,29 +281,29 @@ func TestGetPodByName(t *testing.T) {
 
 func TestIsSucceededPod(t *testing.T) {
 	namespace := "default"
-	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
+	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
 		Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodSucceeded,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodSucceeded,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodFailed,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodFailed,
 		},
 	}}
 	type args struct {
-		pod *v1.Pod
+		pod *corev1.Pod
 	}
 	type testcase struct {
 		name string
@@ -336,29 +337,29 @@ func TestIsSucceededPod(t *testing.T) {
 
 func TestIsFailedPod(t *testing.T) {
 	namespace := "default"
-	pods := []*v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
+	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
 		Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodSucceeded,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodSucceeded,
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
 			Namespace: namespace},
-		Spec: v1.PodSpec{},
-		Status: v1.PodStatus{
-			Phase: v1.PodFailed,
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodFailed,
 		},
 	}}
 	type args struct {
-		pod *v1.Pod
+		pod *corev1.Pod
 	}
 	type testcase struct {
 		name string
@@ -385,6 +386,69 @@ func TestIsFailedPod(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsFailedPod(tt.args.pod); got != tt.want {
 				t.Errorf("testcase %v IsFailedPod() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsRunningAndReady(t *testing.T) {
+
+	namespace := "default"
+	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
+		Namespace: namespace},
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			Conditions: []corev1.PodCondition{
+				{
+					Type:   corev1.PodReady,
+					Status: corev1.ConditionTrue,
+				},
+			},
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
+			Namespace: namespace},
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodSucceeded,
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
+			Namespace: namespace},
+		Spec: corev1.PodSpec{},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodFailed,
+		},
+	}}
+	type args struct {
+		pod *corev1.Pod
+	}
+	type testcase struct {
+		name      string
+		args      args
+		isRunning bool
+	}
+
+	tests := []testcase{}
+
+	for _, pod := range pods {
+		tests = append(tests, testcase{
+			name: pod.Name,
+			args: args{
+				pod: pod,
+			},
+		})
+	}
+
+	tests[0].isRunning = true
+	tests[1].isRunning = false
+	tests[2].isRunning = false
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isRunningAndReady(tt.args.pod); got != tt.isRunning {
+				t.Errorf("testcase %v isRunningAndReady() = %v, want %v", tt.name, got, tt.isRunning)
 			}
 		})
 	}

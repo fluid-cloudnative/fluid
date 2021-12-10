@@ -32,7 +32,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -63,7 +62,7 @@ var (
 
 func init() {
 	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 }
@@ -91,7 +90,7 @@ func TestDestroyWorker(t *testing.T) {
 	}
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
-	var nodeInputs = []*v1.Node{
+	var nodeInputs = []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",
@@ -253,7 +252,7 @@ func TestAlluxioEngineCleanAll(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "alluxio",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-alluxio-values",
 						Namespace: "fluid",
@@ -300,7 +299,7 @@ func TestAlluxioEngineReleasePorts(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "alluxio",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-alluxio-values",
 						Namespace: "fluid",

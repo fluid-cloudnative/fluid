@@ -62,6 +62,10 @@ func (e *JindoEngine) getWorkerName() (dsName string) {
 	return e.name + "-jindofs-worker"
 }
 
+func (e *JindoEngine) getFuseName() (dsName string) {
+	return e.name + "-jindofs-fuse"
+}
+
 func (e *JindoEngine) getDaemonset(name string, namespace string) (daemonset *appsv1.DaemonSet, err error) {
 	daemonset = &appsv1.DaemonSet{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{

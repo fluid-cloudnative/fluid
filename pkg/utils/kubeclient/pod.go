@@ -22,6 +22,8 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 )
 
 // IsCompletePod determines if the pod is complete
@@ -79,4 +81,9 @@ func GetPVCNamesFromPod(pod *v1.Pod) (pvcNames []string) {
 		pvcNames = append(pvcNames, volume.PersistentVolumeClaim.ClaimName)
 	}
 	return
+}
+
+// isRunningAndReady returns true if pod is in the PodRunning Phase, if it has a condition of PodReady.
+func isRunningAndReady(pod *v1.Pod) bool {
+	return pod.Status.Phase == v1.PodRunning && podutil.IsPodReady(pod)
 }
