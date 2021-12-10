@@ -98,15 +98,17 @@ func getSyncRetryDuration() (d *time.Duration, err error) {
 
 func (t *TemplateEngine) permitSync(key types.NamespacedName) (permit bool) {
 	if time.Since(t.timeOfLastSync) < t.syncRetryDuration {
-		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v).",
+		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v) since timeOfLastSync %v.",
 			t.timeOfLastSync.Add(t.syncRetryDuration),
-			t.syncRetryDuration)
+			t.syncRetryDuration,
+			t.timeOfLastSync)
 		t.Log.Info(info, "name", key.Name, "namespace", key.Namespace)
 	} else {
 		permit = true
-		info := fmt.Sprintf("Processing engine.Sync(). permmitted  %v (syncRetryDuration %v).",
+		info := fmt.Sprintf("Processing engine.Sync(). permmitted  %v (syncRetryDuration %v) since timeOfLastSync %v.",
 			t.timeOfLastSync.Add(t.syncRetryDuration),
-			t.syncRetryDuration)
+			t.syncRetryDuration,
+			t.timeOfLastSync)
 		t.Log.V(1).Info(info, "name", key.Name, "namespace", key.Namespace)
 	}
 
