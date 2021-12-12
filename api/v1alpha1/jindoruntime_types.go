@@ -16,6 +16,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -112,6 +113,14 @@ type JindoFuseSpec struct {
 	// Any label already existed will be overriden
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// CleanPolicy decides when to clean JindoFS Fuse pods.
+	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
+	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+	// Defaults to OnDemand
+	// +optional
+	CleanPolicy base.FuseCleanPolicy `json:"clean_policy,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
