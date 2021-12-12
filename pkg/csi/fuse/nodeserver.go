@@ -17,6 +17,7 @@ package csi
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -199,9 +200,9 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	var shouldCleanFuse bool
 	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
 	switch cleanPolicy {
-	case base.OnDemandCleanPolicy:
+	case v1alpha1.OnDemandCleanPolicy:
 		shouldCleanFuse = true
-	case base.OnRuntimeDeletedCleanPolicy:
+	case v1alpha1.OnRuntimeDeletedCleanPolicy:
 		shouldCleanFuse = false
 	default:
 		return nil, errors.Errorf("Unknown Fuse clean policy: %s", cleanPolicy)

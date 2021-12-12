@@ -61,13 +61,13 @@ type RuntimeInfoInterface interface {
 
 	SetupFuseDeployMode(global bool, nodeSelector map[string]string)
 
-	SetupFuseCleanPolicy(policy FuseCleanPolicy)
+	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
 	GetFuseDeployMode() (global bool, nodeSelector map[string]string)
 
-	GetFuseCleanPolicy() FuseCleanPolicy
+	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
 	SetDeprecatedNodeLabel(deprecated bool)
 
@@ -108,7 +108,7 @@ type Fuse struct {
 	NodeSelector map[string]string
 
 	// CleanPolicy decides when to clean fuse pods.
-	CleanPolicy FuseCleanPolicy
+	CleanPolicy datav1alpha1.FuseCleanPolicy
 }
 
 type TieredStoreInfo struct {
@@ -198,11 +198,11 @@ func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[stri
 	return
 }
 
-func (info *RuntimeInfo) SetupFuseCleanPolicy(policy FuseCleanPolicy) {
+func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy) {
 	info.fuse.CleanPolicy = policy
 }
 
-func (info *RuntimeInfo) GetFuseCleanPolicy() FuseCleanPolicy {
+func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }
 
