@@ -199,6 +199,11 @@ func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[stri
 }
 
 func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy) {
+	if policy == datav1alpha1.NoneCleanPolicy {
+		// Default to set the fuse clean policy to OnDemand
+		info.fuse.CleanPolicy = datav1alpha1.OnDemandCleanPolicy
+		return
+	}
 	info.fuse.CleanPolicy = policy
 }
 
