@@ -18,6 +18,7 @@ package csi
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
@@ -187,9 +188,29 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
 	}
 
-	// 3. remove label on node.
+	// 3. remove label on node according to the specified fuse clean policy
 	// Once the label is removed, fuse pod on corresponding node will be terminated
 	// since node selector in the fuse daemonSet no longer matches.
+	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get fuse clean policy")
+	}
+
+	var shouldCleanFuse bool
+	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
+	switch cleanPolicy {
+	case base.OnDemandCleanPolicy:
+		shouldCleanFuse = true
+	case base.OnRuntimeDeletedCleanPolicy:
+		shouldCleanFuse = false
+	default:
+		return nil, errors.Errorf("Unknown Fuse clean policy: %s", cleanPolicy)
+	}
+
+	if !shouldCleanFuse {
+		return &csi.NodeUnstageVolumeResponse{}, nil
+	}
+
 	// TODO: move all the label keys into a util func
 	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
 	var labelsToModify common.LabelsToModify
