@@ -119,7 +119,7 @@ type JindoFuseSpec struct {
 	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 	// Defaults to OnDemand
 	// +optional
-	CleanPolicy FuseCleanPolicy `json:"clean_policy,omitempty"`
+	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
