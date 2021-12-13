@@ -199,6 +199,184 @@ func TestBuildRuntimeInfo(t *testing.T) {
 	}
 }
 
+func TestCleanPolicy(t *testing.T) {
+	s := runtime.NewScheme()
+
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
+
+	jindoRuntimeDefaultCleanPolicy := v1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_jindo",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JindoRuntimeSpec{
+			Fuse: v1alpha1.JindoFuseSpec{},
+		},
+	}
+
+	dataJindoDefaultCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_jindo",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "default_policy_jindo",
+					Namespace: "default",
+					Type:      common.JINDO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	jindoRuntimeOnDemandCleanPolicy := v1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_jindo",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JindoRuntimeSpec{
+			Fuse: v1alpha1.JindoFuseSpec{
+				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+			},
+		},
+	}
+
+	dataJindoOnDemandCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_jindo",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_demand_policy_jindo",
+					Namespace: "default",
+					Type:      common.JINDO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	jindoRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_jindo",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JindoRuntimeSpec{
+			Fuse: v1alpha1.JindoFuseSpec{
+				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+			},
+		},
+	}
+
+	dataJindoOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_jindo",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_runtime_deleted_policy_jindo",
+					Namespace: "default",
+					Type:      common.JINDO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	jindoRuntimeObjs := []runtime.Object{}
+	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeDefaultCleanPolicy, &dataJindoDefaultCleanPolicy)
+	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnDemandCleanPolicy, &dataJindoOnDemandCleanPolicy)
+	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnRuntimeDeletedCleanPolicy, &dataJindoOnRuntimeDeletedCleanPolicy)
+
+	type args struct {
+		client    client.Client
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    RuntimeInfoInterface
+		wantErr bool
+	}{
+		{
+			name: "default_test",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:      "default_policy_jindo",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "default_policy_jindo",
+				namespace:   "default",
+				runtimeType: common.JINDO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_demand_test",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:      "on_demand_policy_jindo",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_demand_policy_jindo",
+				namespace:   "default",
+				runtimeType: common.JINDO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_runtime_deleted_test",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:      "on_runtime_deleted_policy_jindo",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_runtime_deleted_policy_jindo",
+				namespace:   "default",
+				runtimeType: common.JINDO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// SetupFuseCleanPolicy will be called in GetRuntimeInfo()
+			got, err := GetRuntimeInfo(tt.args.client, tt.args.name, tt.args.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got.GetFuseCleanPolicy(), tt.want.GetFuseCleanPolicy()) {
+				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetRuntimeInfo(t *testing.T) {
 	s := runtime.NewScheme()
 
@@ -367,7 +545,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JINDO_RUNTIME,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
 			wantErr: false,

@@ -281,4 +281,3 @@ func TestID(t *testing.T) {
 		t.Errorf("expected %s, get %s", templateEngine.Id, templateEngine.ID())
 	}
 }
-

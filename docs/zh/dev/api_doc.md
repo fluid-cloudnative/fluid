@@ -112,7 +112,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -501,6 +501,17 @@ bool
 <p>Target defines target paths that needs to be loaded</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -784,7 +795,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -797,7 +808,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -810,7 +821,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -823,7 +834,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -836,7 +847,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -862,7 +873,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -1198,6 +1209,20 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkmode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
 </td>
 </tr>
 </table>
@@ -1767,7 +1792,7 @@ AlluxioCompTemplateSpec
 </em>
 </td>
 <td>
-<p>The component spec ofAlluxio job master</p>
+<p>The component spec of Alluxio job master</p>
 </td>
 </tr>
 <tr>
@@ -2322,6 +2347,17 @@ bool
 <p>Target defines target paths that needs to be loaded</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.DataLoadStatus">DataLoadStatus
@@ -2861,6 +2897,14 @@ SecretKeySelector
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.FuseCleanPolicy">FuseCleanPolicy
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>)
+</p>
+<p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">GooseFSCompTemplateSpec
 </h3>
 <p>
@@ -3162,7 +3206,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS master</p>
+<p>The component spec of GooseFS master</p>
 </td>
 </tr>
 <tr>
@@ -3175,7 +3219,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job master</p>
+<p>The component spec of GooseFS job master</p>
 </td>
 </tr>
 <tr>
@@ -3188,7 +3232,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS worker</p>
+<p>The component spec of GooseFS worker</p>
 </td>
 </tr>
 <tr>
@@ -3201,7 +3245,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS job Worker</p>
+<p>The component spec of GooseFS job Worker</p>
 </td>
 </tr>
 <tr>
@@ -3214,7 +3258,7 @@ GooseFSCompTemplateSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS API Gateway</p>
+<p>The component spec of GooseFS API Gateway</p>
 </td>
 </tr>
 <tr>
@@ -3240,7 +3284,7 @@ GooseFSFuseSpec
 </em>
 </td>
 <td>
-<p>Desired state for GooseFS Fuse</p>
+<p>The component spec of GooseFS Fuse</p>
 </td>
 </tr>
 <tr>
@@ -3747,6 +3791,24 @@ map[string]string
 Any label already existed will be overriden</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean JindoFS Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnDemand</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec
@@ -3922,6 +3984,20 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkmode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
 </td>
 </tr>
 </tbody>
@@ -4480,6 +4556,14 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.NetworkMode">NetworkMode
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+</p>
+<p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.PlacementMode">PlacementMode
 (<code>string</code> alias)</p></h3>
 <p>
@@ -5268,5 +5352,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>2da804f</code>.
+on git commit <code>414643b7</code>.
 </em></p>
