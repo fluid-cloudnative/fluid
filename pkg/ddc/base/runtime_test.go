@@ -638,6 +638,12 @@ func TestPermitSync(t *testing.T) {
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)
 	permit := templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
+	if !permit {
+		t.Errorf("expect permit, but got %v", permit)
+	}
+
+	templateEngine.setTimeOfLastSync()
+	permit = templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
 	if permit {
 		t.Errorf("expect not permit, but got %v", permit)
 	}
