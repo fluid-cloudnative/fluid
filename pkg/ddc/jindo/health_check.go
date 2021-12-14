@@ -32,7 +32,7 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 		return
 	}
 
-	// 2. Check the healthy of the fuse
+	// 3. Check the healthy of the fuse
 	err = e.checkFuseHealthy()
 	if err != nil {
 		e.Log.Error(err, "The fuse is not healthy")
@@ -41,6 +41,12 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 			e.Log.Error(updateErr, "Failed to update dataset")
 		}
 		return
+	}
+
+	// 4. Update the dataset as Bounded
+	updateErr := e.UpdateDatasetStatus(data.BoundDatasetPhase)
+	if updateErr != nil {
+		e.Log.Error(updateErr, "Failed to update dataset")
 	}
 
 	return
