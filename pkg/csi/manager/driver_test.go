@@ -144,7 +144,7 @@ func TestPodDriver_podReadyHandler(t *testing.T) {
 				},
 			}
 			err := p.podReadyHandler(pod)
-			So(err, ShouldNotBeNil)
+			So(err, ShouldBeNil)
 		})
 	})
 }
