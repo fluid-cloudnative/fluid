@@ -17,15 +17,19 @@ limitations under the License.
 package kubelet
 
 import (
+	"errors"
 	. "github.com/agiledragon/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/transport"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -71,5 +75,137 @@ func TestKubeletClient_GetNodeRunningPods(t *testing.T) {
 				t.Errorf("got = %v, \nwant %v", got.Items[0], mockPod)
 			}
 		})
+		Convey("GetNodeRunningPods http client get err", func() {
+			httpClient := &http.Client{}
+			patch1 := ApplyMethod(reflect.TypeOf(httpClient), "Get", func(_ *http.Client, url string) (resp *http.Response, err error) {
+				return nil, errors.New("test")
+			})
+			defer patch1.Reset()
+
+			kubeletClient := KubeletClient{}
+			got, err := kubeletClient.GetNodeRunningPods()
+			So(err, ShouldNotBeNil)
+			So(got, ShouldBeNil)
+		})
+		Convey("GetNodeRunningPods json parse err", func() {
+			httpClient := &http.Client{}
+			patch1 := ApplyMethod(reflect.TypeOf(httpClient), "Get", func(_ *http.Client, url string) (resp *http.Response, err error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader("{-}"))}, nil
+			})
+			defer patch1.Reset()
+
+			kubeletClient := KubeletClient{}
+			got, err := kubeletClient.GetNodeRunningPods()
+			So(err, ShouldNotBeNil)
+			So(got, ShouldBeNil)
+		})
 	})
+}
+
+func TestKubeletClientConfig_transportConfig(t *testing.T) {
+	type fields struct {
+		Address         string
+		Port            uint
+		TLSClientConfig rest.TLSClientConfig
+		BearerToken     string
+		HTTPTimeout     time.Duration
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   *transport.Config
+	}{
+		{
+			name: "test-ca",
+			fields: fields{
+				Address: "127.0.0.1",
+				Port:    10250,
+				TLSClientConfig: rest.TLSClientConfig{
+					CertFile: "test",
+					KeyFile:  "test",
+					CAFile:   "test",
+					CertData: []byte{},
+					KeyData:  []byte{},
+					CAData:   []byte{},
+				},
+				BearerToken: "test",
+				HTTPTimeout: 0,
+			},
+			want: &transport.Config{
+				TLS: transport.TLSConfig{
+					CAFile:   "test",
+					CertFile: "test",
+					KeyFile:  "test",
+					CAData:   []byte{},
+					CertData: []byte{},
+					KeyData:  []byte{},
+				},
+				BearerToken: "test",
+			},
+		},
+		{
+			name: "test-insecure",
+			fields: fields{
+				Address:         "127.0.0.1",
+				Port:            10250,
+				TLSClientConfig: rest.TLSClientConfig{},
+				BearerToken:     "test",
+				HTTPTimeout:     0,
+			},
+			want: &transport.Config{
+				TLS: transport.TLSConfig{
+					Insecure: true,
+				},
+				BearerToken: "test",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &KubeletClientConfig{
+				Address:         tt.fields.Address,
+				Port:            tt.fields.Port,
+				TLSClientConfig: tt.fields.TLSClientConfig,
+				BearerToken:     tt.fields.BearerToken,
+				HTTPTimeout:     tt.fields.HTTPTimeout,
+			}
+			if got := c.transportConfig(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("transportConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_makeTransport(t *testing.T) {
+	type args struct {
+		config                *KubeletClientConfig
+		insecureSkipTLSVerify bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    http.RoundTripper
+		wantErr bool
+	}{
+		{
+			name: "test-nil",
+			args: args{
+				config: nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := makeTransport(tt.args.config, tt.args.insecureSkipTLSVerify)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("makeTransport() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("makeTransport() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

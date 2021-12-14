@@ -18,6 +18,7 @@ package kubelet
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	v1 "k8s.io/api/core/v1"
@@ -72,6 +73,9 @@ func NewKubeletClient(config *KubeletClientConfig) (*KubeletClient, error) {
 func makeTransport(config *KubeletClientConfig, insecureSkipTLSVerify bool) (http.RoundTripper, error) {
 	// do the insecureSkipTLSVerify on the pre-transport *before* we go get a potentially cached connection.
 	// transportConfig always produces a new struct pointer.
+	if config == nil {
+		return nil, errors.New("get KubeletClientConfig nil")
+	}
 	preTLSConfig := config.transportConfig()
 	if insecureSkipTLSVerify && preTLSConfig != nil {
 		preTLSConfig.TLS.Insecure = true

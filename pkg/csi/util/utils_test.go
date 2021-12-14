@@ -24,8 +24,82 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
+	"os"
+	"os/exec"
+	"reflect"
 	"testing"
 )
+
+func TestCheckMountReady(t *testing.T) {
+	Convey("TestCheckMountReady", t, func() {
+		Convey("CheckMountReady success", func() {
+			cmd := &exec.Cmd{}
+			patch1 := ApplyMethod(reflect.TypeOf(cmd), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+				return nil, nil
+			})
+			defer patch1.Reset()
+
+			err := CheckMountReady("/test", "test")
+			So(err, ShouldBeNil)
+		})
+		Convey("CheckMountReady false", func() {
+			cmd := &exec.Cmd{}
+			patch1 := ApplyMethod(reflect.TypeOf(cmd), "CombinedOutput", func(_ *exec.Cmd) ([]byte, error) {
+				return nil, errors.New("test")
+			})
+			defer patch1.Reset()
+
+			err := CheckMountReady("/test", "test")
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
+func TestIsMounted(t *testing.T) {
+	Convey("TestIsMounted", t, func() {
+		Convey("IsMounted success", func() {
+			patch2 := ApplyFunc(os.Stat, func(filename string) (os.FileInfo, error) {
+				return nil, nil
+			})
+			defer patch2.Reset()
+			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte("JuiceFS:minio /var/lib/kubelet/pods/4781fc5b-72f9-4175-9321-2e1f169880ce/volumes/kubernetes.io~csi/default-jfsdemo/mount fuse.juicefs rw,relatime,user_id=0,group_id=0,default_permissions,allow_other 0 0"), nil
+			})
+			defer patch1.Reset()
+			absPath := "/var/lib/kubelet/pods/4781fc5b-72f9-4175-9321-2e1f169880ce/volumes/kubernetes.io~csi/default-jfsdemo/mount"
+
+			mounted, err := IsMounted(absPath)
+			So(err, ShouldBeNil)
+			So(mounted, ShouldBeTrue)
+		})
+		Convey("IsMounted false", func() {
+			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte("JuiceFS:minio /var/lib/kubelet/pods/4781fc5b-72f9-4175-9321-2e1f169880ce/volumes/kubernetes.io~csi/default-jfsdemo/mount fuse.juicefs rw,relatime,user_id=0,group_id=0,default_permissions,allow_other 0 0"), nil
+			})
+			defer patch1.Reset()
+			patch2 := ApplyFunc(os.Stat, func(filename string) (os.FileInfo, error) {
+				return nil, nil
+			})
+			defer patch2.Reset()
+			absPath := "/test"
+
+			mounted, err := IsMounted(absPath)
+			So(err, ShouldBeNil)
+			So(mounted, ShouldBeFalse)
+		})
+		Convey("IsMounted error", func() {
+			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte("JuiceFS:minio"), errors.New("test")
+			})
+			defer patch1.Reset()
+			absPath := "/test"
+
+			mounted, err := IsMounted(absPath)
+			So(err, ShouldNotBeNil)
+			So(mounted, ShouldBeFalse)
+		})
+	})
+}
 
 func TestGetPVMountPoint(t *testing.T) {
 	Convey("TestGetPVMountPoint", t, func() {
