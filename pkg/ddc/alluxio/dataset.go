@@ -17,8 +17,9 @@ package alluxio
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -98,27 +99,29 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		datasetToUpdate := dataset.DeepCopy()
 		var cond datav1alpha1.DatasetCondition
 
-		switch phase {
-		case datav1alpha1.BoundDatasetPhase:
-			if len(datasetToUpdate.Status.Mounts) == 0 {
-				datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
+		if phase != dataset.Status.Phase {
+			switch phase {
+			case datav1alpha1.BoundDatasetPhase:
+				if len(datasetToUpdate.Status.Mounts) == 0 {
+					datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
+				}
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is ready.",
+					corev1.ConditionTrue)
+			case datav1alpha1.FailedDatasetPhase:
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is not ready.",
+					corev1.ConditionFalse)
+			default:
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is unknown.",
+					corev1.ConditionFalse)
 			}
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is ready.",
-				corev1.ConditionTrue)
-		case datav1alpha1.FailedDatasetPhase:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is not ready.",
-				corev1.ConditionFalse)
-		default:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is unknown.",
-				corev1.ConditionFalse)
-		}
 
-		datasetToUpdate.Status.Phase = phase
-		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
-			cond)
+			datasetToUpdate.Status.Phase = phase
+			datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
+				cond)
+		}
 
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		// datasetToUpdate.Status.CacheStates =
