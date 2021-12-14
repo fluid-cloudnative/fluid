@@ -44,12 +44,7 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 	}
 
 	// 4. Update the dataset as Bounded
-	updateErr := e.UpdateDatasetStatus(data.BoundDatasetPhase)
-	if updateErr != nil {
-		e.Log.Error(updateErr, "Failed to update dataset")
-	}
-
-	return
+	return e.UpdateDatasetStatus(data.BoundDatasetPhase)
 }
 
 // checkMasterHealthy checks the master healthy
