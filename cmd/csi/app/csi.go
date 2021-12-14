@@ -30,6 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"net/http"
@@ -50,6 +51,8 @@ var (
 	clientKey     string
 	token         string
 	timeout       int
+	managerPeriod int
+	nodeIp        string
 )
 
 var scheme = runtime.NewScheme()
@@ -87,11 +90,12 @@ func init() {
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
 	// start csi manager
+	startCmd.Flags().BoolVar(&enableManager, "enable-manager", false, "Enable manager to recover failed mount point automatically")
+	startCmd.Flags().IntVar(&managerPeriod, "manager-period", 10, "CSI manager sync pods period, in seconds")
 	startCmd.Flags().StringVar(&clientCert, "client-cert", "", "Kubelet client cert")
 	startCmd.Flags().StringVar(&clientKey, "client-key", "", "Kubelet client key")
-	startCmd.Flags().StringVar(&token, "token", "", "Kubelet client token")
 	startCmd.Flags().IntVar(&timeout, "timeout", 10, "Kubelet client timeout")
-	startCmd.Flags().BoolVar(&enableManager, "enable-manager", false, "Enable manager to recover failed mount point automatically")
+	nodeIp = os.Getenv("NODE_IP")
 }
 
 func ErrorAndExit(err error) {
@@ -156,29 +160,28 @@ func handle() {
 	}()
 
 	if enableManager {
-		go manage(ctx, mgr.GetClient())
+		manageStart(mgr.GetClient())
 	}
 
 	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
 	d.Run()
 }
 
-func manage(ctx context.Context, k8sClient client.Client) {
+func manageStart(k8sClient client.Client) {
+	glog.V(3).Infoln("start csi manager")
 
-	if clientCert == "" && clientKey == "" && token == "" {
-		// todo kubelet run dir
-		tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-		if err != nil {
-			panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
-		}
-		token = string(tokenByte)
+	// get CSI sa token
+	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
 	}
+	token = string(tokenByte)
 
+	glog.V(3).Infoln("start kubelet client")
 	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
-		Address: "127.0.0.1",
+		Address: nodeIp,
 		Port:    10250,
 		TLSClientConfig: rest.TLSClientConfig{
-			Insecure:   true,
 			ServerName: "kubelet",
 			CertFile:   clientCert,
 			KeyFile:    clientKey,
@@ -187,7 +190,7 @@ func manage(ctx context.Context, k8sClient client.Client) {
 		HTTPTimeout: time.Duration(timeout) * time.Second,
 	})
 	if err != nil {
-		fmt.Println(err)
+		glog.Error(err)
 		return
 	}
 	driver := csimanager.NewPodDriver(k8sClient)
@@ -195,13 +198,6 @@ func manage(ctx context.Context, k8sClient client.Client) {
 		KubeletClient: kubeletClient,
 		Driver:        driver,
 	}
-	go func() {
-		m.Run(ctx)
-	}()
 
-	select {
-	case <-ctx.Done():
-		// We are done
-		return
-	}
+	go m.Run(managerPeriod, wait.NeverStop)
 }

@@ -17,7 +17,6 @@ limitations under the License.
 package manager
 
 import (
-	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/util"
@@ -25,7 +24,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,78 +31,54 @@ import (
 
 type PodDriver struct {
 	client.Client
-	handlers map[podStatus]podHandler
 	mount.SafeFormatAndMount
 }
 
 func NewPodDriver(client client.Client) *PodDriver {
-	mounter := &mount.SafeFormatAndMount{
-		Interface: mount.New(""),
-		Exec:      k8sexec.New(),
+	return &PodDriver{
+		Client: client,
+		SafeFormatAndMount: mount.SafeFormatAndMount{
+			Interface: mount.New(""),
+			Exec:      k8sexec.New(),
+		},
 	}
-	driver := &PodDriver{
-		Client:             client,
-		handlers:           map[podStatus]podHandler{},
-		SafeFormatAndMount: *mounter,
-	}
-	driver.handlers[podReady] = driver.podReadyHandler
-	driver.handlers[podError] = driver.podErrorHandler
-	driver.handlers[podPending] = driver.podPendingHandler
-	driver.handlers[podDeleted] = driver.podDeletedHandler
-	return driver
 }
 
-type podHandler func(ctx context.Context, pod *corev1.Pod) error
-type podStatus string
-
-const (
-	podReady   podStatus = "podReady"
-	podError   podStatus = "podError"
-	podDeleted podStatus = "podDeleted"
-	podPending podStatus = "podPending"
-)
-
-func (p *PodDriver) run(ctx context.Context, pod *corev1.Pod) error {
-	return p.handlers[p.getPodStatus(pod)](ctx, pod)
-}
-
-func (p *PodDriver) getPodStatus(pod *corev1.Pod) podStatus {
-	if pod == nil {
-		return podError
-	}
-	if pod.DeletionTimestamp != nil {
-		return podDeleted
-	}
-	if utils.IsPodError(pod) {
-		return podError
-	}
+func (p *PodDriver) run(pod *corev1.Pod) error {
 	if utils.IsPodReady(pod) {
-		return podReady
+		// Only handle pod ready
+		return p.podReadyHandler(pod)
 	}
-	return podPending
+	return nil
 }
 
-func (p *PodDriver) podReadyHandler(ctx context.Context, pod *corev1.Pod) (err error) {
+func (p *PodDriver) podReadyHandler(pod *corev1.Pod) (err error) {
 	if pod == nil {
-		klog.Errorf("[podReadyHandler] get nil pod")
+		glog.Error("[podReadyHandler] get nil pod")
 		return nil
 	}
+	glog.V(3).Infof("Get ready pod: [%s-%s]", pod.Namespace, pod.Name)
 
 	// get runtime name
 	runtimeName, err := util.GetRuntimeNameFromFusePod(*pod)
 	if err != nil {
 		return
 	}
+	glog.V(3).Infof("Get runtimeName %s from pod", runtimeName)
 	// get pv
 	pvName := fmt.Sprintf("%s-%s", pod.Namespace, runtimeName)
+	glog.V(3).Infof("Get pvName %s", pvName)
 	pv, err := kubeclient.GetPersistentVolume(p.Client, pvName)
 
 	// get mount point
 	mountPath := pv.Spec.CSI.VolumeAttributes[common.FLUID_PATH]
+	glog.V(3).Infof("Get mountPath %s", mountPath)
 
 	// get target path
 	targets, err := util.GetPVMountPoint(pvName)
+	glog.V(3).Infof("Get targetPath of PV: %v", targets)
 	if err != nil {
+		glog.Error(err)
 		return
 	}
 
@@ -130,29 +104,17 @@ func (p *PodDriver) podReadyHandler(ctx context.Context, pod *corev1.Pod) (err e
 		// check target should do recover
 		corruptedMnt, err := util.CheckMountPointBroken(target)
 		if err != nil {
-			klog.V(5).Infof("target path %s is normal, don't need do recover", target)
+			glog.Infof("CheckMountPointBroken %s err: %v", target, err)
 			continue
 		}
 		if !corruptedMnt {
-			klog.V(5).Infof("target %s not exists,  don't do recover", target)
+			glog.V(3).Infof("target %s not broken, don't do recover", target)
 			continue
 		}
-		klog.Infof("start exec cmd: mount -o bind %s %s \n", mountPath, target)
+		glog.V(3).Infof("Start exec cmd: mount %s %s -o %v \n", mountPath, target, mountOption)
 		if err := p.Mount(mountPath, target, "none", mountOption); err != nil {
-			klog.Errorf("exec cmd: mount -o bind %s %s err:%v", mountPath, target, err)
+			glog.Errorf("exec cmd: mount -o bind %s %s err:%v", mountPath, target, err)
 		}
 	}
-	return nil
-}
-
-func (p *PodDriver) podPendingHandler(ctx context.Context, pod *corev1.Pod) error {
-	return nil
-}
-
-func (p *PodDriver) podErrorHandler(ctx context.Context, pod *corev1.Pod) error {
-	return nil
-}
-
-func (p *PodDriver) podDeletedHandler(ctx context.Context, pod *corev1.Pod) error {
 	return nil
 }

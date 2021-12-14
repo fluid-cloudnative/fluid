@@ -1,3 +1,19 @@
+/*
+Copyright 2021 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package util
 
 import (
@@ -73,7 +89,7 @@ func IsMounted(absPath string) (bool, error) {
 }
 
 func GetPVMountPoint(pvName string) (mountPoints []string, err error) {
-	file, err := ioutil.ReadFile("/proc/mounts")
+	file, err := ioutil.ReadFile("/proc/self/mounts")
 	if err != nil {
 		return []string{}, err
 	}
@@ -117,4 +133,14 @@ func GetRuntimeNameFromFusePod(pod corev1.Pod) (runtimeName string, err error) {
 	}
 	runtimeName = strList[0]
 	return
+}
+
+func IsFusePod(pod corev1.Pod) bool {
+	labels := pod.Labels
+	for k, v := range labels {
+		if k == "role" && strings.Contains(v, "-fuse") {
+			return true
+		}
+	}
+	return false
 }

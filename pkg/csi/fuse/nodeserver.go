@@ -22,7 +22,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 	"os"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,23 +145,26 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 	// targetPath may be mount bind many times when mount point recovered.
 	// umount until it's not mounted.
+	mounter := mount.New("")
 	for {
-		command := exec.Command("umount", targetPath)
-		glog.V(4).Infoln(command)
-		out, err := command.CombinedOutput()
-		if err == nil {
+		notMount, err := mounter.IsLikelyNotMountPoint(targetPath)
+		if err != nil {
 			glog.V(3).Infoln(err)
-			continue
-		}
-		glog.V(4).Infoln(string(out))
-		if !strings.Contains(string(out), "not mounted") && !strings.Contains(string(out), "mountpoint not found") {
-			klog.V(5).Infof("Unmount %s failed: %q, try to lazy unmount", targetPath, err)
-			output, err1 := exec.Command("umount", "-l", targetPath).CombinedOutput()
-			if err1 != nil {
-				return nil, status.Errorf(codes.Internal, "Could not lazy unmount %q: %v, output: %s", targetPath, err1, string(output))
+			if corrupted := mount.IsCorruptedMnt(err); !corrupted {
+				return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
 			}
 		}
-		klog.V(5).Infof("umount:%s success", targetPath)
+		if notMount {
+			glog.V(3).Infof("umount:%s success", targetPath)
+			break
+		}
+
+		glog.V(3).Infof("umount:%s", targetPath)
+		err = mounter.Unmount(targetPath)
+		if err != nil {
+			glog.V(3).Infoln(err)
+			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s error %v", targetPath, err)
+		}
 		break
 	}
 

@@ -18,23 +18,6 @@ package utils
 
 import corev1 "k8s.io/api/core/v1"
 
-func IsPodError(pod *corev1.Pod) bool {
-	if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodUnknown {
-		return true
-	}
-	return containError(pod.Status.ContainerStatuses)
-}
-
-func containError(statuses []corev1.ContainerStatus) bool {
-	for _, status := range statuses {
-		if (status.State.Waiting != nil && status.State.Waiting.Reason != "ContainerCreating") ||
-			(status.State.Terminated != nil && status.State.Terminated.ExitCode != 0) {
-			return true
-		}
-	}
-	return false
-}
-
 func IsPodReady(pod *corev1.Pod) bool {
 	conditionsTrue := 0
 	for _, cond := range pod.Status.Conditions {

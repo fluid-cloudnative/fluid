@@ -17,7 +17,7 @@ limitations under the License.
 package manager
 
 import (
-	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/util"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
@@ -25,31 +25,35 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 )
 
-const DefaultCSIManagerPeriod = 10
-
 type Manager struct {
 	KubeletClient *kubelet.KubeletClient
 	Driver        *PodDriver
 }
 
-func (m *Manager) Run(ctx context.Context) {
-	wait.Forever(func() {
-		m.run(ctx)
-	}, DefaultCSIManagerPeriod*time.Second)
+func (m *Manager) Run(period int, stopCh <-chan struct{}) {
+	go wait.Until(m.run, time.Duration(period)*time.Second, stopCh)
+	<-stopCh
+	glog.V(3).Info("Shutdown CSI manager.")
 }
 
-func (m *Manager) run(ctx context.Context) {
+func (m *Manager) run() {
 	pods, err := m.KubeletClient.GetNodeRunningPods()
+	glog.V(6).Info("get pods from kubelet")
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	for i := range pods.Items {
-		pod := pods.Items[i]
-		// todo query pod
-		if err := m.Driver.run(ctx, &pod); err != nil {
-			glog.Error(err)
-			return
+	go func() {
+		for i := range pods.Items {
+			pod := pods.Items[i]
+			glog.V(6).Infof("get pod: %v", pod)
+			if !util.IsFusePod(pod) {
+				continue
+			}
+			if err := m.Driver.run(&pod); err != nil {
+				glog.Error(err)
+				return
+			}
 		}
-	}
+	}()
 }

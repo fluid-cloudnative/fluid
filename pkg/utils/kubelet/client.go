@@ -53,7 +53,7 @@ type KubeletClient struct {
 }
 
 func NewKubeletClient(config *KubeletClientConfig) (*KubeletClient, error) {
-	trans, err := makeTransport(config, true)
+	trans, err := makeTransport(config, config.Insecure)
 	if err != nil {
 		return nil, err
 	}
@@ -66,25 +66,6 @@ func NewKubeletClient(config *KubeletClientConfig) (*KubeletClient, error) {
 		defaultPort: config.Port,
 		client:      client,
 	}, nil
-}
-
-// transportConfig converts a client config to an appropriate transport config.
-func (c *KubeletClientConfig) transportConfig() *transport.Config {
-	cfg := &transport.Config{
-		TLS: transport.TLSConfig{
-			CAFile:   c.CAFile,
-			CAData:   c.CAData,
-			CertFile: c.CertFile,
-			CertData: c.CertData,
-			KeyFile:  c.KeyFile,
-			KeyData:  c.KeyData,
-		},
-		BearerToken: c.BearerToken,
-	}
-	if !cfg.HasCA() {
-		cfg.TLS.Insecure = true
-	}
-	return cfg
 }
 
 // makeTransport creates a RoundTripper for HTTP Transport.
@@ -112,6 +93,25 @@ func makeTransport(config *KubeletClientConfig, insecureSkipTLSVerify bool) (htt
 	}
 
 	return transport.HTTPWrappersForConfig(config.transportConfig(), rt)
+}
+
+// transportConfig converts a client config to an appropriate transport config.
+func (c *KubeletClientConfig) transportConfig() *transport.Config {
+	cfg := &transport.Config{
+		TLS: transport.TLSConfig{
+			CAFile:   c.CAFile,
+			CAData:   c.CAData,
+			CertFile: c.CertFile,
+			CertData: c.CertData,
+			KeyFile:  c.KeyFile,
+			KeyData:  c.KeyData,
+		},
+		BearerToken: c.BearerToken,
+	}
+	if !cfg.HasCA() {
+		cfg.TLS.Insecure = true
+	}
+	return cfg
 }
 
 func ReadAll(r io.Reader) ([]byte, error) {
