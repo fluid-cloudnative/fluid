@@ -167,7 +167,6 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 			glog.V(3).Infoln(err)
 			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s error %v", targetPath, err)
 		}
-		break
 	}
 
 	err := mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)

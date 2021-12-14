@@ -69,6 +69,10 @@ func (p *PodDriver) podReadyHandler(pod *corev1.Pod) (err error) {
 	pvName := fmt.Sprintf("%s-%s", pod.Namespace, runtimeName)
 	glog.V(3).Infof("Get pvName %s", pvName)
 	pv, err := kubeclient.GetPersistentVolume(p.Client, pvName)
+	if err != nil {
+		glog.Errorf("Get PersistentVolume %s err: %v", pv, err)
+		return
+	}
 
 	// get mount point
 	mountPath := pv.Spec.CSI.VolumeAttributes[common.FLUID_PATH]
