@@ -546,7 +546,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
-					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
 			wantErr: false,
