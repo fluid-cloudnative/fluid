@@ -15,6 +15,7 @@ rules:
       - alluxioruntimes
       - jindoruntimes
       - goosefsruntimes
+      - datasets
       - alluxioruntimes/status
       - jindoruntimes/status
       - goosefsruntimes/status

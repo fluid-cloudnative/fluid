@@ -112,6 +112,14 @@ type JindoFuseSpec struct {
 	// Any label already existed will be overriden
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// CleanPolicy decides when to clean JindoFS Fuse pods.
+	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
+	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+	// Defaults to OnDemand
+	// +optional
+	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
