@@ -51,7 +51,7 @@ const (
 type FuseCleanPolicy string
 
 const (
-	// NoneCleanPolicy is the default clean policy. It will be transformed to OnDemandCleanPolicy automatically.
+	// NoneCleanPolicy is the default clean policy. It will be transformed to OnRuntimeDeletedCleanPolicy automatically.
 	NoneCleanPolicy FuseCleanPolicy = ""
 
 	// OnDemandCleanPolicy cleans fuse pod once th fuse pod on some node is not needed
