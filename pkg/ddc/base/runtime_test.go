@@ -203,6 +203,7 @@ func TestCleanPolicy(t *testing.T) {
 	s := runtime.NewScheme()
 
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
 	jindoRuntimeDefaultCleanPolicy := v1alpha1.JindoRuntime{
@@ -292,6 +293,92 @@ func TestCleanPolicy(t *testing.T) {
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnDemandCleanPolicy, &dataJindoOnDemandCleanPolicy)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnRuntimeDeletedCleanPolicy, &dataJindoOnRuntimeDeletedCleanPolicy)
 
+	juiceRuntimeDefaultCleanPolicy := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_juicefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JuiceFSRuntimeSpec{
+			Fuse: v1alpha1.JuiceFSFuseSpec{},
+		},
+	}
+
+	dataJuiceDefaultCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_juicefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "default_policy_juicefs",
+					Namespace: "default",
+					Type:      common.JuiceFSRuntime,
+				},
+			},
+		},
+	}
+
+	juiceRuntimeOnDemandCleanPolicy := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_juicefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JuiceFSRuntimeSpec{
+			Fuse: v1alpha1.JuiceFSFuseSpec{
+				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+			},
+		},
+	}
+
+	dataJuiceOnDemandCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_juicefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_demand_policy_juicefs",
+					Namespace: "default",
+					Type:      common.JuiceFSRuntime,
+				},
+			},
+		},
+	}
+
+	juiceRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_juicefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.JuiceFSRuntimeSpec{
+			Fuse: v1alpha1.JuiceFSFuseSpec{
+				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+			},
+		},
+	}
+
+	dataJuiceOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_juicefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_runtime_deleted_policy_juicefs",
+					Namespace: "default",
+					Type:      common.JuiceFSRuntime,
+				},
+			},
+		},
+	}
+
+	juiceRuntimeObjs := []runtime.Object{}
+	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeDefaultCleanPolicy, &dataJuiceDefaultCleanPolicy)
+	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnDemandCleanPolicy, &dataJuiceOnDemandCleanPolicy)
+	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnRuntimeDeletedCleanPolicy, &dataJuiceOnRuntimeDeletedCleanPolicy)
 	type args struct {
 		client    client.Client
 		name      string
@@ -352,6 +439,63 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_jindo",
 				namespace:   "default",
 				runtimeType: common.JINDO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "default_test-juicefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, juiceRuntimeObjs...),
+				name:      "default_policy_juicefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "default_policy_juicefs",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_demand_test-juicefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, juiceRuntimeObjs...),
+				name:      "on_demand_policy_juicefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_demand_policy_juicefs",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_runtime_deleted_test-juicefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, juiceRuntimeObjs...),
+				name:      "on_runtime_deleted_policy_juicefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_runtime_deleted_policy_juicefs",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -564,7 +708,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
 			wantErr: false,
@@ -582,7 +727,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
 			wantErr: true,
