@@ -180,18 +180,8 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
-	// 2. check if the path is mounted
-	inUse, err := checkMountInUse(req.GetVolumeId())
-	if err != nil {
-		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
-	}
-	if inUse {
-		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
-	}
-
-	// 3. remove label on node according to the specified fuse clean policy
-	// Once the label is removed, fuse pod on corresponding node will be terminated
-	// since node selector in the fuse daemonSet no longer matches.
+	// 2. Check fuse clean policy. If clean policy is set to OnRuntimeDeleted, there is no
+	// need to clean fuse eagerly.
 	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get fuse clean policy")
@@ -199,6 +189,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 
 	var shouldCleanFuse bool
 	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
+	glog.Infof("Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 	switch cleanPolicy {
 	case v1alpha1.OnDemandCleanPolicy:
 		shouldCleanFuse = true
@@ -212,6 +203,18 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return &csi.NodeUnstageVolumeResponse{}, nil
 	}
 
+	// 3. check if the path is mounted
+	inUse, err := checkMountInUse(req.GetVolumeId())
+	if err != nil {
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
+	}
+	if inUse {
+		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
+	}
+
+	// 4. remove label on node
+	// Once the label is removed, fuse pod on corresponding node will be terminated
+	// since node selector in the fuse daemonSet no longer matches.
 	// TODO: move all the label keys into a util func
 	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
 	var labelsToModify common.LabelsToModify
