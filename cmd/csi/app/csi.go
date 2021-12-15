@@ -42,17 +42,16 @@ import (
 )
 
 var (
-	endpoint      string
-	nodeID        string
-	metricsAddr   string
-	pprofAddr     string
-	enableManager bool
-	clientCert    string
-	clientKey     string
-	token         string
-	timeout       int
-	managerPeriod int
-	nodeIp        string
+	endpoint          string
+	nodeID            string
+	metricsAddr       string
+	pprofAddr         string
+	enableRecoverFuse bool
+	clientCert        string
+	clientKey         string
+	token             string
+	timeout           int
+	managerPeriod     int
 )
 
 var scheme = runtime.NewScheme()
@@ -90,12 +89,11 @@ func init() {
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
 	// start csi manager
-	startCmd.Flags().BoolVar(&enableManager, "enable-manager", false, "Enable manager to recover failed mount point automatically")
+	startCmd.Flags().BoolVar(&enableRecoverFuse, "enable-recover-fuse", false, "Enable manager to recover failed mount point automatically")
 	startCmd.Flags().IntVar(&managerPeriod, "manager-period", 10, "CSI manager sync pods period, in seconds")
 	startCmd.Flags().StringVar(&clientCert, "client-cert", "", "Kubelet client cert")
 	startCmd.Flags().StringVar(&clientKey, "client-key", "", "Kubelet client key")
 	startCmd.Flags().IntVar(&timeout, "timeout", 10, "Kubelet client timeout")
-	nodeIp = os.Getenv("NODE_IP")
 }
 
 func ErrorAndExit(err error) {
@@ -159,25 +157,29 @@ func handle() {
 		}
 	}()
 
-	if enableManager {
-		manageStart(mgr.GetClient())
+	if enableRecoverFuse {
+		if err := manageStart(mgr.GetClient()); err != nil {
+			panic(fmt.Sprintf("unable to start manager due to error %v", err))
+		}
 	}
 
 	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
 	d.Run()
 }
 
-func manageStart(k8sClient client.Client) {
+func manageStart(k8sClient client.Client) (err error) {
 	glog.V(3).Infoln("start csi manager")
 
 	// get CSI sa token
 	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
+		return
 	}
 	token = string(tokenByte)
 
 	glog.V(3).Infoln("start kubelet client")
+	nodeIp := os.Getenv("NODE_IP")
+	glog.V(3).Infof("get node ip: %s", nodeIp)
 	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
 		Address: nodeIp,
 		Port:    10250,
@@ -200,4 +202,6 @@ func manageStart(k8sClient client.Client) {
 	}
 
 	go m.Run(managerPeriod, wait.NeverStop)
+
+	return
 }
