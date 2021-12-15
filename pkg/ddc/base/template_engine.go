@@ -30,7 +30,7 @@ import (
 const (
 	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
 
-	defaultSyncRetryDuration time.Duration = time.Duration(5 * time.Second)
+	defaultSyncRetryDuration time.Duration = time.Duration(60 * time.Second)
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -60,7 +60,7 @@ func NewTemplateEngine(impl Implement,
 		// Log:       log,
 	}
 	b.Log = context.Log.WithValues("engine", context.RuntimeType).WithValues("id", id)
-	b.timeOfLastSync = time.Now()
+	// b.timeOfLastSync = time.Now()
 	duration, err := getSyncRetryDuration()
 	if err != nil {
 		b.Log.Error(err, "Failed to parse syncRetryDurationEnv: FLUID_SYNC_RETRY_DURATION, use the default setting")
@@ -70,6 +70,7 @@ func NewTemplateEngine(impl Implement,
 	} else {
 		b.syncRetryDuration = defaultSyncRetryDuration
 	}
+	b.timeOfLastSync = time.Now().Add(-b.syncRetryDuration)
 	b.Log.Info("Set the syncRetryDuration", "syncRetryDuration", b.syncRetryDuration)
 
 	return b
