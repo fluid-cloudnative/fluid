@@ -1,8 +1,9 @@
-package inject
+package serverless
 
 import (
 	"fmt"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,13 +17,8 @@ var (
 	fuseContainerName = "fluid-fuse"
 )
 
-type (
-	Template  corev1.Pod
-	Templates map[string]string
-)
-
 // InjectObject injects sidecar into
-func InjectObject(in runtime.Object, sidecarTemplate Templates) (out interface{}, err error) {
+func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out interface{}, err error) {
 	out = in.DeepCopyObject()
 
 	var containers []corev1.Container
@@ -63,25 +59,70 @@ func InjectObject(in runtime.Object, sidecarTemplate Templates) (out interface{}
 		typeMeta = pod.TypeMeta
 		metadata = &pod.ObjectMeta
 	default:
-		log.Info("No supported K8s type", "v", v)
-		return out, fmt.Errorf("No support for k8s type", "v", v)
+		log.Info("No supported K8s Type", "v", v)
+		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}
 
 	name := types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      metadata.Name,
 	}
+	kind := typeMeta.Kind
+
 	// Skip injection for injected container
 	if len(containers) > 0 {
 		for _, c := range containers {
 			if c.Name == fuseContainerName {
 				warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
 					name, fuseContainerName)
+				if len(kind) != 0 {
+					warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
+						kind, name, fuseContainerName)
+				}
 				log.Info(warningStr)
 				return out, nil
 			}
 		}
 	}
+
+	// 1.Modify the volumes
+	for i, v := range volumes {
+		for _, toUpdate := range sidecarTemplate.VolumesToUpdate {
+			if v.Name == toUpdate.Name {
+				volumes[i] = toUpdate
+				// break
+			}
+		}
+	}
+
+	// 2.Add the volumes
+	if len(sidecarTemplate.VolumeMountsToAdd) > 0 {
+		volumes = append(volumes, sidecarTemplate.VolumesToAdd...)
+	}
+
+	// 2.Modify and add the volumeMounts of containers
+	for _, c := range containers {
+		shouldInsert := false
+		for i, v := range c.VolumeMounts {
+			for _, toUpdate := range sidecarTemplate.VolumeMountsToUpdate {
+				if toUpdate.Name == v.Name {
+					c.VolumeMounts[i] = toUpdate
+					shouldInsert = true
+					// break
+				}
+			}
+		}
+
+		if shouldInsert {
+			if len(sidecarTemplate.VolumeMountsToAdd) > 0 {
+				c.VolumeMounts = append(c.VolumeMounts, sidecarTemplate.VolumeMountsToAdd...)
+			}
+		}
+
+	}
+
+	// 3.Add sidecar as the first container
+	containers = append([]corev1.Container{sidecarTemplate.FuseContainer}, containers...)
 
 	return out, err
 }

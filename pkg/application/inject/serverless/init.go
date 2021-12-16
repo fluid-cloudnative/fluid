@@ -1,4 +1,4 @@
-package inject
+package serverless
 
 import (
 	"github.com/go-logr/logr"
@@ -8,5 +8,5 @@ import (
 var log logr.Logger
 
 func init() {
-	log = ctrl.Log.WithName("inject")
+	log = ctrl.Log.WithName("serverless")
 }
