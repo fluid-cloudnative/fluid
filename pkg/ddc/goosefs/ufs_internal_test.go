@@ -583,6 +583,10 @@ func TestProcessUpdatingUFS(t *testing.T) {
 				return nil
 			})
 			defer patch3.Reset()
+			patch4 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "LoadMetadataWithoutTimeout", func(_ operations.GooseFSFileUtils, goosefsPath string) error {
+				return nil
+			})
+			defer patch4.Reset()
 			if err := e.processUpdatingUFS(utils.NewUFSToUpdate(tt.fields.dataset)); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.processUpdatingUFS() error = %v, wantErr %v", err, tt.wantErr)
 			}
