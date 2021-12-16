@@ -38,6 +38,7 @@ import (
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"time"
 )
 
@@ -46,13 +47,10 @@ var (
 	nodeID            string
 	metricsAddr       string
 	pprofAddr         string
-	enableRecoverFuse bool
-	clientCert        string
-	clientKey         string
-	token             string
-	timeout           int
-	managerPeriod     int
+	recoverFusePeriod int
 )
+
+const defaultKubeletTimeout = 10
 
 var scheme = runtime.NewScheme()
 
@@ -89,11 +87,7 @@ func init() {
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
 	// start csi manager
-	startCmd.Flags().BoolVar(&enableRecoverFuse, "enable-recover-fuse", false, "Enable manager to recover failed mount point automatically")
-	startCmd.Flags().IntVar(&managerPeriod, "manager-period", 10, "CSI manager sync pods period, in seconds")
-	startCmd.Flags().StringVar(&clientCert, "client-cert", "", "Kubelet client cert")
-	startCmd.Flags().StringVar(&clientKey, "client-key", "", "Kubelet client key")
-	startCmd.Flags().IntVar(&timeout, "timeout", 10, "Kubelet client timeout")
+	startCmd.Flags().IntVar(&recoverFusePeriod, "recover-fuse-period", -1, "CSI manager sync pods period, in seconds")
 }
 
 func ErrorAndExit(err error) {
@@ -157,7 +151,7 @@ func handle() {
 		}
 	}()
 
-	if enableRecoverFuse {
+	if recoverFusePeriod > 0 {
 		if err := manageStart(mgr.GetClient()); err != nil {
 			panic(fmt.Sprintf("unable to start manager due to error %v", err))
 		}
@@ -175,21 +169,32 @@ func manageStart(k8sClient client.Client) (err error) {
 	if err != nil {
 		return
 	}
-	token = string(tokenByte)
+	token := string(tokenByte)
 
 	glog.V(3).Infoln("start kubelet client")
 	nodeIp := os.Getenv("NODE_IP")
+	kubeletClientCert := os.Getenv("KUBELET_CLIENT_CERT")
+	kubeletClientKey := os.Getenv("KUBELET_CLIENT_KEY")
+	var kubeletTimeout int
+	if os.Getenv("KUBELET_TIMEOUT") != "" {
+		if kubeletTimeout, err = strconv.Atoi(os.Getenv("KUBELET_TIMEOUT")); err != nil {
+			glog.Errorf("parse kubelet timeout error: %v", err)
+			return
+		}
+	} else {
+		kubeletTimeout = defaultKubeletTimeout
+	}
 	glog.V(3).Infof("get node ip: %s", nodeIp)
 	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
 		Address: nodeIp,
 		Port:    10250,
 		TLSClientConfig: rest.TLSClientConfig{
 			ServerName: "kubelet",
-			CertFile:   clientCert,
-			KeyFile:    clientKey,
+			CertFile:   kubeletClientCert,
+			KeyFile:    kubeletClientKey,
 		},
 		BearerToken: token,
-		HTTPTimeout: time.Duration(timeout) * time.Second,
+		HTTPTimeout: time.Duration(kubeletTimeout) * time.Second,
 	})
 	if err != nil {
 		glog.Error(err)
@@ -201,7 +206,7 @@ func manageStart(k8sClient client.Client) (err error) {
 		Driver:        driver,
 	}
 
-	go m.Run(managerPeriod, wait.NeverStop)
+	go m.Run(recoverFusePeriod, wait.NeverStop)
 
 	return
 }
