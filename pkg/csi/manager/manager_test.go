@@ -19,62 +19,29 @@ package manager
 import (
 	"errors"
 	. "github.com/agiledragon/gomonkey"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 	"testing"
 )
 
 func TestManager_run(t *testing.T) {
 	Convey("TestManager_run", t, func() {
 		Convey("run success", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{}, nil
+			patch1 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
+				return []mountinfo.MountPoint{}, nil
 			})
 			defer patch1.Reset()
 
-			driver := NewPodDriver(fake.NewFakeClient())
-			manager := Manager{
-				KubeletClient: &kubelet.KubeletClient{},
-				Driver:        driver,
-			}
+			manager := Manager{}
 			manager.run()
 		})
-		Convey("get pods error", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{}, errors.New("test")
+		Convey("get mountpoint error", func() {
+			patch1 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
+				return []mountinfo.MountPoint{}, errors.New("test")
 			})
 			defer patch1.Reset()
 
-			driver := NewPodDriver(fake.NewFakeClient())
-			manager := Manager{
-				KubeletClient: &kubelet.KubeletClient{},
-				Driver:        driver,
-			}
-			manager.run()
-		})
-		Convey("run pods", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{
-					Items: []v1.Pod{{
-						ObjectMeta: metav1.ObjectMeta{Name: "test-fuse-test"},
-						Status:     v1.PodStatus{},
-					}},
-				}, nil
-			})
-			defer patch1.Reset()
-
-			driver := NewPodDriver(fake.NewFakeClient())
-			manager := Manager{
-				KubeletClient: &kubelet.KubeletClient{},
-				Driver:        driver,
-			}
+			manager := Manager{}
 			manager.run()
 		})
 	})

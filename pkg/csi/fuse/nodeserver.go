@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/util"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -52,7 +51,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
 
-	isMount, err := util.IsMounted(targetPath)
+	isMount, err := utils.IsMounted(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -107,7 +106,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	// 1. Wait the runtime fuse ready
-	err = util.CheckMountReady(fluidPath, mountType)
+	err = utils.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -284,7 +283,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	mountType := req.GetVolumeContext()["mount_type"]
 
 	// checkMountReady checks the fuse mount path every 3 second for 30 seconds in total.
-	err = util.CheckMountReady(fluidPath, mountType)
+	err = utils.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, errors.Errorf("fuse pod on node %s is not ready", ns.nodeId)
 	}

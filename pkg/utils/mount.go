@@ -16,9 +16,15 @@ limitations under the License.
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"github.com/golang/glog"
+	"io/ioutil"
+	"k8s.io/utils/mount"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const MountRoot string = "MOUNT_ROOT"
@@ -31,4 +37,59 @@ func GetMountRoot() (string, error) {
 		return mountRoot, fmt.Errorf("the the value of the env variable named MOUNT_ROOT is illegal")
 	}
 	return mountRoot, nil
+}
+
+func CheckMountReady(fluidPath string, mountType string) error {
+	glog.Infof("Try to check if the mount target %s is ready", fluidPath)
+	if fluidPath == "" {
+		return errors.New("target is not specified for checking the mount")
+	}
+	args := []string{fluidPath, mountType}
+	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
+	glog.Infoln(command)
+	stdoutStderr, err := command.CombinedOutput()
+	glog.Infoln(string(stdoutStderr))
+	return err
+}
+
+func IsMounted(absPath string) (bool, error) {
+	glog.Infof("abspath: %s\n", absPath)
+	_, err := os.Stat(absPath)
+	if err != nil {
+		return false, err
+	}
+
+	file, err := ioutil.ReadFile("/proc/mounts")
+	if err != nil {
+		return false, err
+	}
+	lines := strings.Split(string(file), "\n")
+	for _, line := range lines {
+		tokens := strings.Split(line, " ")
+		if len(tokens) < 2 {
+			continue
+		}
+		if tokens[1] == absPath {
+			glog.Infof("found mount info %s for %s", line, absPath)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func CheckMountPointBroken(mountPath string) (broken bool, err error) {
+	if mountPath == "" {
+		return false, errors.New("target is not specified for checking the mount")
+	}
+	existed, err := mount.PathExists(mountPath)
+	if err != nil {
+		if mount.IsCorruptedMnt(err) {
+			return true, nil
+		}
+		return false, fmt.Errorf("checking mounted failed: %v", err)
+	}
+	if !existed {
+		return false, fmt.Errorf("mountPath %s not exist", mountPath)
+	}
+	return false, nil
 }

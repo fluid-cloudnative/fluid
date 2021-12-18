@@ -17,17 +17,15 @@ limitations under the License.
 package manager
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/csi/util"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/mount"
 	"time"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 )
 
 type Manager struct {
-	KubeletClient *kubelet.KubeletClient
-	Driver        *PodDriver
+	mount.SafeFormatAndMount
 }
 
 func (m *Manager) Run(period int, stopCh <-chan struct{}) {
@@ -37,23 +35,30 @@ func (m *Manager) Run(period int, stopCh <-chan struct{}) {
 }
 
 func (m *Manager) run() {
-	pods, err := m.KubeletClient.GetNodeRunningPods()
-	glog.V(6).Info("get pods from kubelet")
+	brokenMounts, err := mountinfo.GetBrokenMountPoints()
 	if err != nil {
 		glog.Error(err)
 		return
 	}
+	glog.V(4).Infof("Get broken mount point: %v", brokenMounts)
+
 	go func() {
-		for i := range pods.Items {
-			pod := pods.Items[i]
-			glog.V(6).Infof("get pod: %v", pod)
-			if !util.IsFusePod(pod) {
-				continue
-			}
-			if err := m.Driver.run(&pod); err != nil {
-				glog.Error(err)
-				return
-			}
+		for _, point := range brokenMounts {
+			m.recoverBrokenMount(point)
 		}
 	}()
+}
+
+func (m *Manager) recoverBrokenMount(point mountinfo.MountPoint) {
+	glog.V(3).Infof("Start recovery: [%s], source path: [%s]", point.MountPath, point.SourcePath)
+	// recovery for each bind mount path
+	mountOption := []string{"bind"}
+	if point.ReadOnly {
+		mountOption = append(mountOption, "ro")
+	}
+
+	glog.V(3).Infof("Start exec cmd: mount %s %s -o %v \n", point.SourcePath, point.MountPath, mountOption)
+	if err := m.Mount(point.SourcePath, point.MountPath, "none", mountOption); err != nil {
+		glog.Errorf("exec cmd: mount -o bind %s %s err:%v", point.SourcePath, point.MountPath, err)
+	}
 }
