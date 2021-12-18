@@ -17,10 +17,10 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // 4. Transform the fuse
@@ -85,7 +85,10 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.NodeSelector = map[string]string{}
 	}
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
-	value.Fuse.HostNetwork = true
+
+	// parse fuse container network mode
+	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+
 	value.Fuse.Enabled = true
 
 	e.transformResourcesForFuse(runtime, value)

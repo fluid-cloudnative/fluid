@@ -12,26 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package app
 
-import (
-	"github.com/spf13/cobra"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid"
-)
+func NewDatasetCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "dataset-controller",
+		Short: "controller for dataset",
+	}
 
-var (
-	short bool
-)
+	command.AddCommand(versionCmd, datasetCmd)
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fluid.PrintVersion(short)
-	},
-}
+	return command
 
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 }

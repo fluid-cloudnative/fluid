@@ -14,24 +14,14 @@ limitations under the License.
 */
 package app
 
-import (
-	"github.com/spf13/cobra"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid"
-)
+func NewAlluxioFSCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "alluxioruntime-controller",
+		Short: "Controller for alluxioruntime",
+	}
+	cmd.AddCommand(versionCmd, alluxioCmd)
 
-var (
-	short bool
-)
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fluid.PrintVersion(short)
-	},
-}
-
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+	return cmd
 }

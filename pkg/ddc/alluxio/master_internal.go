@@ -20,13 +20,14 @@ import (
 	"io/ioutil"
 	"os"
 
+	yaml "gopkg.in/yaml.v2"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // setup the cache master
@@ -73,6 +74,7 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 	// configmapName := e.name + "-" + e.runtimeType + "-values"
 	//1. Transform the runtime to value
 	value, err := e.transform(runtime)
+
 	if err != nil {
 		return
 	}

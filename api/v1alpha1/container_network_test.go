@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,26 +11,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package app
+package v1alpha1
 
-import (
-	"github.com/spf13/cobra"
+import "testing"
 
-	"github.com/fluid-cloudnative/fluid"
-)
+func TestIsHostNetwork(t *testing.T) {
+	testCases := map[string]struct {
+		n    NetworkMode
+		want bool
+	}{
+		"test host network case 1": {
+			n:    HostNetworkMode,
+			want: true,
+		},
+		"test host network case 2": {
+			n:    "",
+			want: true,
+		},
+		"test container network case 1": {
+			n:    ContainerNetworkMode,
+			want: false,
+		},
+	}
 
-var (
-	short bool
-)
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fluid.PrintVersion(short)
-	},
-}
-
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+	for k, v := range testCases {
+		got := IsHostNetwork(v.n)
+		if v.want != got {
+			t.Errorf("check %s failure, got:%t,want:%t", k, got, v.want)
+		}
+	}
 }

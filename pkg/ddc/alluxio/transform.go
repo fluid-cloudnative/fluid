@@ -263,7 +263,8 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 		value.Master.Properties = runtime.Spec.Master.Properties
 	}
 
-	value.Master.HostNetwork = true
+	// parse master pod network mode
+	value.Master.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode)
 
 	nodeSelector := e.transformMasterSelector(runtime)
 	if len(nodeSelector) != 0 {
@@ -342,7 +343,8 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	value.Worker.Env["ALLUXIO_WORKER_TIEREDSTORE_LEVEL0_DIRS_PATH"] = value.getTiredStoreLevel0Path(e.name, e.namespace)
 
-	value.Worker.HostNetwork = true
+	// parse work pod network mode
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 
 	e.transformResourcesForWorker(runtime, value)
 

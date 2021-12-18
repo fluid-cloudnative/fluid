@@ -12,26 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package app
 
-import (
-	"github.com/spf13/cobra"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid"
-)
+func NewJindoFSCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "jindoruntime-controller",
+		Short: "Controller for jindoruntime",
+	}
 
-var (
-	short bool
-)
+	command.AddCommand(versionCmd, jindoCmd)
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fluid.PrintVersion(short)
-	},
-}
-
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+	return command
 }

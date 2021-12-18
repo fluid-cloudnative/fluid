@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,10 +15,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 type AlluxioRuntimeRole common.RuntimeRole
@@ -76,6 +76,11 @@ type AlluxioCompTemplateSpec struct {
 	// NodeSelector is a selector which must be true for the master to fit on a node
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -121,6 +126,11 @@ type AlluxioFuseSpec struct {
 	// this option only effect when global is enabled
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 // Level describes configurations a tier needs. <br>

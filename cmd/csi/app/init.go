@@ -14,24 +14,15 @@ limitations under the License.
 */
 package app
 
-import (
-	"github.com/spf13/cobra"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid"
-)
+func NewFluidCSICommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fluid-csi",
+		Short: "CSI based fluid driver for Fuse",
+	}
 
-var (
-	short bool
-)
+	cmd.AddCommand(versionCmd, csiCmd)
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fluid.PrintVersion(short)
-	},
-}
-
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+	return cmd
 }

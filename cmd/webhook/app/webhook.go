@@ -19,11 +19,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,6 +27,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 )
 
 const (

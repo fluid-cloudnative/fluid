@@ -24,14 +24,14 @@ var (
 	short bool
 )
 
+func init() {
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
+}
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "print version information",
 	Run: func(cmd *cobra.Command, args []string) {
 		fluid.PrintVersion(short)
 	},
-}
-
-func init() {
-	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 }

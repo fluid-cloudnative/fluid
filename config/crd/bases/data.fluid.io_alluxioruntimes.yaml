@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: (devel)
   creationTimestamp: null
   name: alluxioruntimes.data.fluid.io
 spec:
@@ -114,6 +114,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -219,6 +226,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -340,6 +354,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -413,6 +434,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -491,6 +519,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -655,6 +690,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
