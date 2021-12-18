@@ -34,7 +34,7 @@ var (
 )
 
 // InjectObject injects sidecar into
-func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out interface{}, err error) {
+func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
 	var containers []corev1.Container
