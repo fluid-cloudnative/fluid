@@ -48,8 +48,6 @@ var (
 	recoverFusePeriod int
 )
 
-const defaultKubeletTimeout = 10
-
 var scheme = runtime.NewScheme()
 
 var startCmd = &cobra.Command{
