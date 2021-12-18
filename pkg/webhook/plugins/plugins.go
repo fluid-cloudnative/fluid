@@ -17,6 +17,7 @@ package plugins
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/mountpropagationinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/requirenodewithfuse"
@@ -56,6 +57,7 @@ func Registry(client client.Client) plugins {
 		podWithDatasetHandler: []MutatingHandler{
 			requirenodewithfuse.NewPlugin(client),
 			prefernodeswithcache.NewPlugin(client),
+			mountpropagationinjector.NewPlugin(client),
 		},
 	}
 }

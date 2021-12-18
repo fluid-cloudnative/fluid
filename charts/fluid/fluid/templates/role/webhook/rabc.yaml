@@ -17,6 +17,8 @@ rules:
       - datasets
       - alluxioruntimes
       - jindoruntimes
+      - juicfsruntimes
+      - gooseruntimes
     verbs:
       - get
       - list
