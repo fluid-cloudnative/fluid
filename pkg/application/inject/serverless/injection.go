@@ -61,7 +61,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 			}
 
 			re := runtime.RawExtension{}
-			re.Object = r.(runtime.Object)
+			re.Object = r
 			result.Items[i] = re
 		}
 		return result, nil
@@ -77,6 +77,11 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		return out, fmt.Errorf("no support for K8s Type %v", v)
+	}
+
+	isServerless := isServerlessPod(metadata.Annotations)
+	if !isServerless {
+		return out, nil
 	}
 
 	name := types.NamespacedName{
@@ -160,4 +165,14 @@ func fromRawToObject(raw []byte) (runtime.Object, error) {
 	}
 
 	return obj, nil
+}
+
+func isServerlessPod(annotions map[string]string) (match bool) {
+	for key, value := range annotions {
+		if key == common.Serverless && value == common.False {
+			match = true
+			break
+		}
+	}
+	return
 }

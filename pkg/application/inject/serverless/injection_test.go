@@ -22,6 +22,7 @@ func TestInjectObject(t *testing.T) {
 
 	testcases := []testCase{
 		{
+			name: "inject_success",
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{},
 			},

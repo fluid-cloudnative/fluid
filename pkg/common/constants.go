@@ -107,4 +107,5 @@ const (
 	MyPodNamespace         = "MY_POD_NAMESPACE"
 	True                   = "true"
 	False                  = "false"
+	Serverless             = "fluid.io/serverless"
 )
