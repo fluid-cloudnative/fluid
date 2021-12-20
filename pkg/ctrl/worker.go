@@ -37,6 +37,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 // GetWorkersAsStatefulset gets workers as statefulset object. if it returns deprecated errors, it indicates that
@@ -69,7 +70,8 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 		selector            labels.Selector
 		unavailablePodNames []types.NamespacedName
 	)
-	if sts.Status.Replicas == sts.Status.ReadyReplicas {
+
+	if sts.Spec.Replicas == utilpointer.Int32Ptr(0) || sts.Status.ReadyReplicas > 0 {
 		healthy = true
 	}
 
@@ -79,17 +81,22 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 	}
 
 	if healthy {
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The worker are ready.",
-			"The worker are ready.", corev1.ConditionTrue)
+		var cond datav1alpha1.RuntimeCondition
+		if sts.Status.Replicas == sts.Status.ReadyReplicas {
+			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The worker are ready.",
+				"The worker are ready.", corev1.ConditionTrue)
+		} else {
+			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The worker are partial ready.",
+				"The worker are partial ready.", corev1.ConditionTrue)
+		}
 		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
-
 		if oldCond == nil || oldCond.Type != cond.Type {
 			statusToUpdate.Conditions =
 				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
 					cond)
 		}
-		statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
-
 	} else {
 		// 1. Update the status
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The workers are not ready.",
