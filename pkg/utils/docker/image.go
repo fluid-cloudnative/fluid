@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
@@ -19,8 +20,8 @@ var (
 func ParseDockerImage(image string) (name string, tag string) {
 	matches := strings.Split(image, ":")
 	if len(matches) >= 2 {
-		name = matches[0]
-		tag = matches[1]
+		name = strings.Replace(strings.Trim(fmt.Sprint(matches[0: len(matches)-1]), "[]"), " ", ":",-1)
+		tag = matches[len(matches)-1]
 	} else if len(matches) == 1 {
 		name = matches[0]
 		tag = "latest"
