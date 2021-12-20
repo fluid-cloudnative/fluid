@@ -97,7 +97,6 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
 					cond)
 		}
-
 	} else {
 		// 1. Update the status
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The workers are not ready.",
