@@ -15,10 +15,12 @@ rules:
       - alluxioruntimes
       - jindoruntimes
       - goosefsruntimes
+      - juicefsruntimes
       - datasets
       - alluxioruntimes/status
       - jindoruntimes/status
       - goosefsruntimes/status
+      - juicefsruntimes/status
       - datasets/status
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
