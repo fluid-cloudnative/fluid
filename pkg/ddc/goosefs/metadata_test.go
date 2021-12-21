@@ -17,7 +17,6 @@ package goosefs
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -407,13 +406,6 @@ func TestSyncMetadataInternal(t *testing.T) {
 			MetadataSyncDoneCh: make(chan MetadataSyncResult),
 		},
 		{
-			name:               "spark",
-			namespace:          "fluid",
-			Client:             client,
-			Log:                log.NullLogger{},
-			MetadataSyncDoneCh: nil,
-		},
-		{
 			name:               "hadoop",
 			namespace:          "fluid",
 			Client:             client,
@@ -442,11 +434,6 @@ func TestSyncMetadataInternal(t *testing.T) {
 		},
 		{
 			engine:           engines[1],
-			expectedUfsTotal: "[Calculating]",
-			expectedFileNum:  "[Calculating]",
-		},
-		{
-			engine:           engines[2],
 			expectedUfsTotal: "2GB",
 			expectedFileNum:  "1331167",
 		},
@@ -460,14 +447,6 @@ func TestSyncMetadataInternal(t *testing.T) {
 		}
 
 		if index == 1 {
-			var goosefsFileUtils operations.GooseFSFileUtils
-			patch1 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "SyncLocalDir", func(_ operations.GooseFSFileUtils, path string) error {
-				return fmt.Errorf("SyncLocalDir Error")
-			})
-			defer patch1.Reset()
-		}
-
-		if index == 2 {
 			var goosefsFileUtils operations.GooseFSFileUtils
 			patch1 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "LoadMetadataWithoutTimeout", func(_ operations.GooseFSFileUtils, path string) error {
 				return nil
@@ -491,7 +470,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 		}
 
 		err := test.engine.syncMetadataInternal()
-		if err != nil && index != 1 {
+		if err != nil {
 			t.Errorf("fail to exec the function with error %v", err)
 		}
 
@@ -506,7 +485,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 			t.Errorf("failt to get the dataset with error %v", err)
 		}
 
-		if index != 2 {
+		if index != 1 {
 			if dataset.Status.UfsTotal != test.expectedUfsTotal || dataset.Status.FileNum != test.expectedFileNum {
 				t.Errorf("%s expected UfsTotal %s, get UfsTotal %s, expected FileNum %s, get FileNum %s", test.engine.name, test.expectedUfsTotal, dataset.Status.UfsTotal, test.expectedFileNum, dataset.Status.FileNum)
 			}
