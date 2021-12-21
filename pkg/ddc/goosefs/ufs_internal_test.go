@@ -505,7 +505,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test",
+			name: "test0",
 			fields: fields{
 				runtime: &datav1alpha1.GooseFSRuntime{
 					ObjectMeta: v1.ObjectMeta{
@@ -553,11 +553,175 @@ func TestProcessUpdatingUFS(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "test1",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								Name:       "test0",
+								MountPoint: "cos://test0",
+								Path:       "/spec",
+								Options: map[string]string{"fs.cosn.bucket.region": "ap-shanghai",
+									"fs.cosn.impl":                    "org.apache.hadoop.fs.CosFileSystem",
+									"fs.AbstractFileSystem.cosn.impl": "org.apache.hadoop.fs.CosN",
+									"fs.cos.app.id":                   "1251707795"},
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+										Name: "access-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "access-key",
+											}},
+									}, {
+										Name: "secret-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "secret-key",
+											}},
+									}, {
+										Name: "metaurl",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "metaurl",
+											}},
+									},
+								},
+							},
+							datav1alpha1.Mount{
+								Name:       "test1",
+								MountPoint: "cos://test1",
+								Path:       "/spec",
+							},
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								Name:       "test0",
+								MountPoint: "cos://test0",
+								Path:       "/status",
+							},
+						},
+					},
+				},
+				name:      "hbase",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								Name:       "test0",
+								MountPoint: "cos://test0",
+								Path:       "/spec",
+								Options: map[string]string{"fs.cosn.bucket.region": "ap-shanghai",
+									"fs.cosn.impl":                    "org.apache.hadoop.fs.CosFileSystem",
+									"fs.AbstractFileSystem.cosn.impl": "org.apache.hadoop.fs.CosN",
+									"fs.cos.app.id":                   "1251707795"},
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+										Name: "access-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "access-key",
+											}},
+									}, {
+										Name: "secret-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "secret-key",
+											}},
+									}, {
+										Name: "metaurl",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "test0",
+												Key:  "metaurl",
+											}},
+									},
+								},
+							},
+							datav1alpha1.Mount{
+								Name:       "test1",
+								MountPoint: "cos://test1",
+								Path:       "/spec",
+							},
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								Name:       "test0",
+								MountPoint: "cos://test0",
+								Path:       "/status",
+							},
+							datav1alpha1.Mount{
+								Name:       "test1",
+								MountPoint: "cos://test1",
+								Path:       "/status",
+							},
+							datav1alpha1.Mount{
+								Name:       "test2",
+								MountPoint: "cos://test2",
+								Path:       "/status",
+							},
+						},
+					},
+				},
+				name:      "hadoop",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			secret := corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test0",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"fs.cosn.userinfo.secretKey": []byte("key"),
+					"fs.cosn.userinfo.secretId":  []byte("id"),
+				},
+			}
 			testObjs := []runtime.Object{}
-			testObjs = append(testObjs, tt.fields.runtime, tt.fields.dataset)
+			testObjs = append(testObjs, tt.fields.runtime, tt.fields.dataset, &secret)
 			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 			e := &GooseFSEngine{
 				runtime:   tt.fields.runtime,
@@ -587,7 +751,10 @@ func TestProcessUpdatingUFS(t *testing.T) {
 				return nil
 			})
 			defer patch4.Reset()
-			if err := e.processUpdatingUFS(utils.NewUFSToUpdate(tt.fields.dataset)); (err != nil) != tt.wantErr {
+
+			ufs := e.ShouldUpdateUFS()
+			utils.UpdateMountStatus(client, tt.fields.name, tt.fields.namespace, datav1alpha1.UpdatingDatasetPhase)
+			if err := e.processUpdatingUFS(ufs); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.processUpdatingUFS() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
