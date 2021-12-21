@@ -1,3 +1,5 @@
 package utils
 
+func FieldByType() {
 
+}

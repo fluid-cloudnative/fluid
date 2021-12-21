@@ -18,6 +18,7 @@ package serverless
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"gopkg.in/yaml.v2"
@@ -76,6 +77,8 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		metadata = pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
+		outValue := reflect.ValueOf(out).Elem()
+
 		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}
 
