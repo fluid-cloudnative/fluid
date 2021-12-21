@@ -753,7 +753,10 @@ func TestProcessUpdatingUFS(t *testing.T) {
 			defer patch4.Reset()
 
 			ufs := e.ShouldUpdateUFS()
-			utils.UpdateMountStatus(client, tt.fields.name, tt.fields.namespace, datav1alpha1.UpdatingDatasetPhase)
+			err := utils.UpdateMountStatus(client, tt.fields.name, tt.fields.namespace, datav1alpha1.UpdatingDatasetPhase)
+			if err != nil {
+				t.Error("GooseFSEngine.UpdateMountStatus()")
+			}
 			if err := e.processUpdatingUFS(ufs); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.processUpdatingUFS() error = %v, wantErr %v", err, tt.wantErr)
 			}
