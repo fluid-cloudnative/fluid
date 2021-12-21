@@ -37,9 +37,9 @@ var (
 func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
-	var containers []corev1.Container
-	var volumes []corev1.Volume
-	var metadata *metav1.ObjectMeta
+	var containersPtr *[]corev1.Container
+	var volumesPtr *[]corev1.Volume
+	var metadataPtr *metav1.ObjectMeta
 	var typeMeta metav1.TypeMeta
 
 	// Handle Lists
@@ -70,29 +70,30 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	switch v := out.(type) {
 	case *corev1.Pod:
 		pod := v
-		containers = pod.Spec.Containers
-		volumes = pod.Spec.Volumes
+		containersPtr = &pod.Spec.Containers
+
+		volumesPtr = &pod.Spec.Volumes
 		typeMeta = pod.TypeMeta
-		metadata = &pod.ObjectMeta
+		metadataPtr = &pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}
 
-	isServerless := isServerlessPod(metadata.Annotations)
+	isServerless := isServerlessPod(metadataPtr.Annotations)
 	if !isServerless {
 		return out, nil
 	}
 
 	name := types.NamespacedName{
-		Namespace: metadata.Namespace,
-		Name:      metadata.Name,
+		Namespace: metadataPtr.Namespace,
+		Name:      metadataPtr.Name,
 	}
 	kind := typeMeta.Kind
 
 	// Skip injection for injected container
-	if len(containers) > 0 {
-		for _, c := range containers {
+	if len(*containersPtr) > 0 {
+		for _, c := range *containersPtr {
 			if c.Name == fuseContainerName {
 				warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
 					name, fuseContainerName)
@@ -107,27 +108,27 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	}
 
 	// 1.Modify the volumes
-	for i, v := range volumes {
+	for i, v := range *volumesPtr {
 		for _, toUpdate := range sidecarTemplate.VolumesToUpdate {
 			if v.Name == toUpdate.Name {
 				log.V(1).Info("Update volume", "original", v, "updated", toUpdate)
-				volumes[i] = toUpdate
+				(*volumesPtr)[i] = toUpdate
 				// break
 			}
 		}
 	}
 
 	// 2.Add the volumes
-	if len(sidecarTemplate.VolumeMountsToAdd) > 0 {
-		log.V(1).Info("Before append volume", "original", volumes)
-		volumes = append(volumes, sidecarTemplate.VolumesToAdd...)
-		log.V(1).Info("After append volume", "original", volumes)
+	if len(sidecarTemplate.VolumesToAdd) > 0 {
+		log.V(1).Info("Before append volume", "original", (*volumesPtr))
+		(*volumesPtr) = append((*volumesPtr), sidecarTemplate.VolumesToAdd...)
+		log.V(1).Info("After append volume", "original", (*volumesPtr))
 	}
 
 	// 3.Add sidecar as the first container
-	containers = append([]corev1.Container{sidecarTemplate.FuseContainer}, containers...)
+	*containersPtr = append([]corev1.Container{sidecarTemplate.FuseContainer}, *containersPtr...)
 
-	log.V(1).Info("Updated resource", "containers", containers, "volumes", volumes)
+	log.V(1).Info("Updated resource", "containers", *containersPtr, "volumes", *volumesPtr)
 
 	return out, err
 }

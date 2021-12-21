@@ -123,7 +123,12 @@ func TestInjectObject(t *testing.T) {
 						},
 					},
 					Volumes: []corev1.Volume{
-						{
+						{Name: "dataset1",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime_mnt/dataset1",
+								},
+							}}, {
 							Name: "fuse-device",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -131,12 +136,7 @@ func TestInjectObject(t *testing.T) {
 									Type: &hostPathCharDev,
 								},
 							},
-						}, {Name: "dataset1",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/runtime_mnt/dataset1",
-								},
-							}},
+						},
 					},
 				},
 			},
