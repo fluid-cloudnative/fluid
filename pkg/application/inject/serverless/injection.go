@@ -39,7 +39,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 
 	var containersPtr *[]corev1.Container
 	var volumesPtr *[]corev1.Volume
-	var metadataPtr *metav1.ObjectMeta
+	var metadata metav1.ObjectMeta
 	var typeMeta metav1.TypeMeta
 
 	// Handle Lists
@@ -71,23 +71,22 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	case *corev1.Pod:
 		pod := v
 		containersPtr = &pod.Spec.Containers
-
 		volumesPtr = &pod.Spec.Volumes
 		typeMeta = pod.TypeMeta
-		metadataPtr = &pod.ObjectMeta
+		metadata = pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}
 
-	isServerless := isServerlessPod(metadataPtr.Annotations)
+	isServerless := isServerlessPod(metadata.Annotations)
 	if !isServerless {
 		return out, nil
 	}
 
 	name := types.NamespacedName{
-		Namespace: metadataPtr.Namespace,
-		Name:      metadataPtr.Name,
+		Namespace: metadata.Namespace,
+		Name:      metadata.Name,
 	}
 	kind := typeMeta.Kind
 
