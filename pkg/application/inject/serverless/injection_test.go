@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"gopkg.in/yaml.v3"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,9 @@ func TestInjectObject(t *testing.T) {
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
+					Annotations: map[string]string{
+						common.Serverless: common.True,
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -78,6 +82,7 @@ func TestInjectObject(t *testing.T) {
 				},
 				VolumesToAdd: []corev1.Volume{
 					{
+						Name: "fuse-device",
 						VolumeSource: corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
 								Path: "/dev/fuse",
@@ -88,6 +93,12 @@ func TestInjectObject(t *testing.T) {
 				},
 			},
 			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+					Annotations: map[string]string{
+						common.Serverless: common.True,
+					},
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -113,6 +124,7 @@ func TestInjectObject(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
+							Name: "fuse-device",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/dev/fuse",
@@ -139,7 +151,17 @@ func TestInjectObject(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(testcase.want, out) {
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, testcase.want, out)
+			want, err := yaml.Marshal(testcase.want)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			outYaml, err := yaml.Marshal(out)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
 		}
 
 	}

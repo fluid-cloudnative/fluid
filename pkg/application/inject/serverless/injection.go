@@ -110,6 +110,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	for i, v := range volumes {
 		for _, toUpdate := range sidecarTemplate.VolumesToUpdate {
 			if v.Name == toUpdate.Name {
+				log.V(1).Info("Update volume", "original", v, "updated", toUpdate)
 				volumes[i] = toUpdate
 				// break
 			}
@@ -118,32 +119,15 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 
 	// 2.Add the volumes
 	if len(sidecarTemplate.VolumeMountsToAdd) > 0 {
+		log.V(1).Info("Before append volume", "original", volumes)
 		volumes = append(volumes, sidecarTemplate.VolumesToAdd...)
-	}
-
-	// 2.Modify and add the volumeMounts of containers
-	for _, c := range containers {
-		shouldInsert := false
-		for i, v := range c.VolumeMounts {
-			for _, toUpdate := range sidecarTemplate.VolumeMountsToUpdate {
-				if toUpdate.Name == v.Name {
-					c.VolumeMounts[i] = toUpdate
-					shouldInsert = true
-					// break
-				}
-			}
-		}
-
-		if shouldInsert {
-			if len(sidecarTemplate.VolumeMountsToAdd) > 0 {
-				c.VolumeMounts = append(c.VolumeMounts, sidecarTemplate.VolumeMountsToAdd...)
-			}
-		}
-
+		log.V(1).Info("After append volume", "original", volumes)
 	}
 
 	// 3.Add sidecar as the first container
 	containers = append([]corev1.Container{sidecarTemplate.FuseContainer}, containers...)
+
+	log.V(1).Info("Updated resource", "containers", containers, "volumes", volumes)
 
 	return out, err
 }
@@ -169,7 +153,7 @@ func fromRawToObject(raw []byte) (runtime.Object, error) {
 
 func isServerlessPod(annotions map[string]string) (match bool) {
 	for key, value := range annotions {
-		if key == common.Serverless && value == common.False {
+		if key == common.Serverless && value == common.True {
 			match = true
 			break
 		}
