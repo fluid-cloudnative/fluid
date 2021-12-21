@@ -17,10 +17,15 @@ package goosefs
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
+	. "github.com/agiledragon/gomonkey"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -364,11 +369,24 @@ func TestSyncMetadataInternal(t *testing.T) {
 				Name:      "spark",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.DatasetSpec{},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					datav1alpha1.Mount{
+						MountPoint: "cosn://imagenet-1234567/",
+					},
+				},
+			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{},
@@ -395,6 +413,13 @@ func TestSyncMetadataInternal(t *testing.T) {
 			Log:                log.NullLogger{},
 			MetadataSyncDoneCh: nil,
 		},
+		{
+			name:               "hadoop",
+			namespace:          "fluid",
+			Client:             client,
+			Log:                log.NullLogger{},
+			MetadataSyncDoneCh: nil,
+		},
 	}
 
 	result := MetadataSyncResult{
@@ -415,6 +440,16 @@ func TestSyncMetadataInternal(t *testing.T) {
 			expectedUfsTotal: "2GB",
 			expectedFileNum:  "5",
 		},
+		{
+			engine:           engines[1],
+			expectedUfsTotal: "[Calculating]",
+			expectedFileNum:  "[Calculating]",
+		},
+		{
+			engine:           engines[2],
+			expectedUfsTotal: "2GB",
+			expectedFileNum:  "1331167",
+		},
 	}
 
 	for index, test := range testCase {
@@ -424,8 +459,39 @@ func TestSyncMetadataInternal(t *testing.T) {
 			}()
 		}
 
+		if index == 1 {
+			var goosefsFileUtils operations.GooseFSFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "SyncLocalDir", func(_ operations.GooseFSFileUtils, path string) error {
+				return fmt.Errorf("SyncLocalDir Error")
+			})
+			defer patch1.Reset()
+		}
+
+		if index == 2 {
+			var goosefsFileUtils operations.GooseFSFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "LoadMetadataWithoutTimeout", func(_ operations.GooseFSFileUtils, path string) error {
+				return nil
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(&test.engine), "TotalStorageBytes", func(_ *GooseFSEngine) (int64, error) {
+				return 16, nil
+			})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(&test.engine), "TotalFileNums", func(_ *GooseFSEngine) (int64, error) {
+				return 16, nil
+			})
+			defer patch3.Reset()
+
+			patch4 := ApplyFunc(retry.RetryOnConflict, func(backoff wait.Backoff, fn func() error) error {
+				return nil
+			})
+			defer patch4.Reset()
+		}
+
 		err := test.engine.syncMetadataInternal()
-		if err != nil {
+		if err != nil && index != 1 {
 			t.Errorf("fail to exec the function with error %v", err)
 		}
 
@@ -440,8 +506,10 @@ func TestSyncMetadataInternal(t *testing.T) {
 			t.Errorf("failt to get the dataset with error %v", err)
 		}
 
-		if dataset.Status.UfsTotal != test.expectedUfsTotal || dataset.Status.FileNum != test.expectedFileNum {
-			t.Errorf("expected UfsTotal %s, get UfsTotal %s, expected FileNum %s, get FileNum %s", test.expectedUfsTotal, dataset.Status.UfsTotal, test.expectedFileNum, dataset.Status.FileNum)
+		if index != 2 {
+			if dataset.Status.UfsTotal != test.expectedUfsTotal || dataset.Status.FileNum != test.expectedFileNum {
+				t.Errorf("%s expected UfsTotal %s, get UfsTotal %s, expected FileNum %s, get FileNum %s", test.engine.name, test.expectedUfsTotal, dataset.Status.UfsTotal, test.expectedFileNum, dataset.Status.FileNum)
+			}
 		}
 	}
 }

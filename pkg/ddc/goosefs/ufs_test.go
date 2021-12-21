@@ -16,6 +16,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"fmt"
 	"testing"
 
 	"reflect"
@@ -399,10 +400,11 @@ func TestUpdateOnUFSChange(t *testing.T) {
 	tests := []struct {
 		name            string
 		fields          fields
-		wantAdd         []string
-		wantRemove      []string
 		wantUpdateReady bool
 		wantErr         bool
+		should          bool
+		notMount        bool
+		Ready           bool
 	}{
 		{
 			name: "test0",
@@ -430,10 +432,72 @@ func TestUpdateOnUFSChange(t *testing.T) {
 				namespace: "default",
 				Log:       log.NullLogger{},
 			},
-			wantAdd:         []string{"/"},
-			wantRemove:      []string{},
 			wantErr:         false,
 			wantUpdateReady: true,
+			should:          true,
+			Ready:           true,
+		},
+		{
+			name: "test1",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "hadoop",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr:         false,
+			wantUpdateReady: false,
+			should:          false,
+			Ready:           true,
+		},
+		{
+			name: "test2",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "hbase",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr:         true,
+			wantUpdateReady: false,
+			should:          true,
+			notMount:        true,
 		},
 	}
 	for _, tt := range tests {
@@ -455,13 +519,13 @@ func TestUpdateOnUFSChange(t *testing.T) {
 			ufs := utils.NewUFSToUpdate(tt.fields.dataset)
 			patch1 := ApplyMethod(reflect.TypeOf(ufs), "ShouldUpdate",
 				func(_ *utils.UFSToUpdate) bool {
-					return true
+					return tt.should
 				})
 			defer patch1.Reset()
 
 			var goosefsFileUtils operations.GooseFSFileUtils
 			patch2 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "Ready", func(_ operations.GooseFSFileUtils) bool {
-				return true
+				return tt.Ready
 			})
 			defer patch2.Reset()
 
@@ -470,7 +534,11 @@ func TestUpdateOnUFSChange(t *testing.T) {
 				options map[string]string,
 				readOnly bool,
 				shared bool) error {
-				return nil
+				if tt.notMount {
+					return fmt.Errorf("Mount Error")
+				} else {
+					return nil
+				}
 			})
 			defer patch3.Reset()
 			gotUpdateReady, err := e.UpdateOnUFSChange(ufs)
