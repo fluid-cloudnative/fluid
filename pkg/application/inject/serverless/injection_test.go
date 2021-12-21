@@ -21,6 +21,7 @@ func TestInjectObject(t *testing.T) {
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
+	bTrue := true
 
 	testcases := []testCase{
 		{
@@ -61,7 +62,10 @@ func TestInjectObject(t *testing.T) {
 						"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 					},
 					Command: []string{"/entrypoint.sh"},
-					Image:   "test"},
+					Image:   "test",
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: &bTrue,
+					}},
 				VolumesToUpdate: []corev1.Volume{
 					{
 						Name: "dataset1",
@@ -93,6 +97,9 @@ func TestInjectObject(t *testing.T) {
 							},
 							Command: []string{"/entrypoint.sh"},
 							Image:   "test",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bTrue,
+							},
 						}, {
 							Image: "test",
 							Name:  "test",
@@ -104,9 +111,24 @@ func TestInjectObject(t *testing.T) {
 							},
 						},
 					},
+					Volumes: []corev1.Volume{
+						{
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/dev/fuse",
+									Type: &hostPathCharDev,
+								},
+							},
+						}, {Name: "dataset1",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime_mnt/dataset1",
+								},
+							}},
+					},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
