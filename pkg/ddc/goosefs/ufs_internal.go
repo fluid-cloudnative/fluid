@@ -16,7 +16,9 @@ limitations under the License.
 package goosefs
 
 import (
+	"context"
 	"fmt"
+	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -96,6 +98,166 @@ func (e *GooseFSEngine) shouldMountUFS() (should bool, err error) {
 
 	return should, err
 
+}
+
+// getMounts get slice of mounted paths and expected mount paths
+func (e *GooseFSEngine) getMounts() (resultInCtx []string, resultHaveMounted []string, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	e.Log.V(1).Info("get dataset info", "dataset", dataset)
+	if err != nil {
+		return resultInCtx, resultHaveMounted, err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUitls := operations.NewGooseFSFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUitls.Ready()
+	if !ready {
+		err = fmt.Errorf("the UFS is not ready")
+		return resultInCtx, resultHaveMounted, err
+	}
+
+	// Check if any of the Mounts has not been mounted in GooseFS
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+			continue
+		}
+		goosefsPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		resultInCtx = append(resultInCtx, goosefsPathInCtx)
+	}
+
+	// get the mount points have been mountted
+	for _, mount := range dataset.Status.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+			continue
+		}
+		goosefsPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
+		resultHaveMounted = append(resultHaveMounted, goosefsPathHaveMountted)
+	}
+
+	return resultInCtx, resultHaveMounted, err
+
+}
+
+// calculateMountPointsChanges will compare diff of spec mount and status mount,
+// to find need to be added mount point and removed mount point
+func (e *GooseFSEngine) calculateMountPointsChanges(mountsHaveMountted []string, mountsInContext []string) ([]string, []string) {
+	removed := []string{}
+	added := []string{}
+
+	for _, v := range mountsHaveMountted {
+		if !ContainsString(mountsInContext, v) {
+			removed = append(removed, v)
+		}
+	}
+
+	for _, v := range mountsInContext {
+		if !ContainsString(mountsHaveMountted, v) {
+			added = append(added, v)
+		}
+	}
+
+	return added, removed
+}
+
+// ContainsString returns true if a string is present in a iteratee.
+func ContainsString(s []string, v string) bool {
+	for _, vv := range s {
+		if vv == v {
+			return true
+		}
+	}
+	return false
+}
+
+// processUpdatingUFS will mount needed mountpoint to ufs
+func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewGooseFSFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUtils.Ready()
+	if !ready {
+		return fmt.Errorf("the UFS is not ready, namespace:%s,name:%s", e.namespace, e.name)
+	}
+
+	// Iterate all the mount points, do mount if the mount point is in added array
+	// TODO: not allow to edit FluidNativeScheme MountPoint
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), goosefsPath) {
+			mountOptions := map[string]string{}
+			for key, value := range mount.Options {
+				mountOptions[key] = value
+			}
+
+			// Configure mountOptions using encryptOptions
+			// If encryptOptions have the same key with options, it will overwrite the corresponding value
+			for _, encryptOption := range mount.EncryptOptions {
+				key := encryptOption.Name
+				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+
+				secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+				if err != nil {
+					e.Log.Info("can't get the secret",
+						"namespace", e.namespace,
+						"name", e.name,
+						"secretName", secretKeyRef.Name)
+					return err
+				}
+
+				value := secret.Data[secretKeyRef.Key]
+				e.Log.Info("get value from secret",
+					"namespace", e.namespace,
+					"name", e.name,
+					"secretName", secretKeyRef.Name)
+
+				mountOptions[key] = string(value)
+			}
+			err = fileUtils.Mount(goosefsPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// unmount the mount point in the removed array
+	if len(ufsToUpdate.ToRemove()) > 0 {
+		for _, mountRemove := range ufsToUpdate.ToRemove() {
+			err = fileUtils.UnMount(mountRemove)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// need to reset ufsTotal to Calculating so that SyncMetadata will work
+	datasetToUpdate := dataset.DeepCopy()
+	datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
+	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+		if err != nil {
+			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+		}
+	}
+
+	err = e.SyncMetadata()
+	if err != nil {
+		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
+		e.Log.Error(err, "SyncMetadata", "dataset", e.name)
+		return nil
+	}
+
+	return nil
 }
 
 // mountUFS() mount all UFSs to GooseFS according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.

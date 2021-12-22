@@ -16,6 +16,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"fmt"
 	"testing"
 
 	"reflect"
@@ -23,6 +24,7 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -310,6 +312,242 @@ func TestPrepareUFS(t *testing.T) {
 			}
 			if err := e.PrepareUFS(); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.PrepareUFS() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestShouldUpdateUFS(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		dataset   *datav1alpha1.Dataset
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantAdd    []string
+		wantRemove []string
+	}{
+		{
+			name: "test0",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantAdd:    []string{"/"},
+			wantRemove: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.fields.dataset)
+
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+				Client:    mockClient,
+			}
+
+			gotUfsToUpdate := e.ShouldUpdateUFS()
+			if !reflect.DeepEqual(gotUfsToUpdate.ToAdd(), tt.wantAdd) {
+				t.Errorf("GooseFSEngine.ShouldUpdateUFS add = %v, want %v", gotUfsToUpdate.ToAdd(), tt.wantAdd)
+			}
+
+			if !reflect.DeepEqual(gotUfsToUpdate.ToRemove(), tt.wantRemove) {
+				t.Errorf("GooseFSEngine.ShouldUpdateUFS() remove = %v, want %v", gotUfsToUpdate.ToRemove(), tt.wantRemove)
+			}
+		})
+	}
+}
+
+func TestUpdateOnUFSChange(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		dataset   *datav1alpha1.Dataset
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	tests := []struct {
+		name            string
+		fields          fields
+		wantUpdateReady bool
+		wantErr         bool
+		should          bool
+		notMount        bool
+		Ready           bool
+	}{
+		{
+			name: "test0",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr:         false,
+			wantUpdateReady: true,
+			should:          true,
+			Ready:           true,
+		},
+		{
+			name: "test1",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "hadoop",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr:         false,
+			wantUpdateReady: false,
+			should:          false,
+			Ready:           true,
+		},
+		{
+			name: "test2",
+			fields: fields{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							datav1alpha1.Mount{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+					},
+				},
+				name:      "hbase",
+				namespace: "default",
+				Log:       log.NullLogger{},
+			},
+			wantErr:         true,
+			wantUpdateReady: false,
+			should:          true,
+			notMount:        true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.fields.dataset)
+
+			e := &GooseFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+				Client:    mockClient,
+			}
+
+			ufs := utils.NewUFSToUpdate(tt.fields.dataset)
+			patch1 := ApplyMethod(reflect.TypeOf(ufs), "ShouldUpdate",
+				func(_ *utils.UFSToUpdate) bool {
+					return tt.should
+				})
+			defer patch1.Reset()
+
+			var goosefsFileUtils operations.GooseFSFileUtils
+			patch2 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "Ready", func(_ operations.GooseFSFileUtils) bool {
+				return tt.Ready
+			})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(goosefsFileUtils), "Mount", func(_ operations.GooseFSFileUtils, goosefsPath string,
+				ufsPath string,
+				options map[string]string,
+				readOnly bool,
+				shared bool) error {
+				if tt.notMount {
+					return fmt.Errorf("Mount Error")
+				} else {
+					return nil
+				}
+			})
+			defer patch3.Reset()
+			gotUpdateReady, err := e.UpdateOnUFSChange(ufs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GooseFSEngine.UpdateOnUFSChange() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotUpdateReady != tt.wantUpdateReady {
+				t.Errorf("GooseFSEngine.UpdateOnUFSChange() = %v, want %v", gotUpdateReady, tt.wantUpdateReady)
 			}
 		})
 	}
