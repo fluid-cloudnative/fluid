@@ -7,6 +7,9 @@ COPY . .
 RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
 
+# Debug
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	rm -rf /var/cache/apk/* && \
@@ -25,6 +28,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 add charts/jindofs /charts/jindofs
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
+COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 
 CMD ["jindoruntime-controller", "start"]
