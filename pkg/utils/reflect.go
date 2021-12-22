@@ -13,10 +13,6 @@ func FieldNameByType(original interface{}, targetObject interface{}) (targetName
 	return
 }
 
-func matchFieldByType(original reflect.Value, targetType reflect.Type) (match bool) {
-	fmt.Printf("type %v", original.Type().String())
-	return original.Type() == targetType
-}
 
 func fieldNameByType(original reflect.Type, targetNames []string, targetType reflect.Type) (match bool) {
 
