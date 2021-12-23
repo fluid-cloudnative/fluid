@@ -25,20 +25,26 @@ func TestFieldNameByType(t *testing.T) {
 			},
 		},
 		{
-			name:     "Original is Ptr",
+			name:     "Original is Ptr, and search container",
 			original: &corev1.Pod{},
 			target:   corev1.Container{},
 			expect: []string{
 				"InitContainers", "Containers",
 			},
 		}, {
-			name:     "Both struct",
-			original: corev1.Pod{},
-			target:   corev1.Container{},
+			name:     "Both struct, and search volume",
+			original: &corev1.Pod{},
+			target:   []corev1.Volume{},
+			expect: []string{
+				"Volumes",
+			},
 		}, {
-			name:     "targetType struct",
-			original: corev1.Pod{},
+			name:     "TargetType struct, and search containers",
+			original: &corev1.Pod{},
 			target:   []corev1.Container{},
+			expect: []string{
+				"InitContainers", "Containers",
+			},
 		},
 	}
 
