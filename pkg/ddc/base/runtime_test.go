@@ -220,6 +220,7 @@ func TestCleanPolicy(t *testing.T) {
 
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
 	jindoRuntimeDefaultCleanPolicy := v1alpha1.JindoRuntime{
@@ -395,6 +396,94 @@ func TestCleanPolicy(t *testing.T) {
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeDefaultCleanPolicy, &dataJuiceDefaultCleanPolicy)
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnDemandCleanPolicy, &dataJuiceOnDemandCleanPolicy)
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnRuntimeDeletedCleanPolicy, &dataJuiceOnRuntimeDeletedCleanPolicy)
+
+	goosefsRuntimeDefaultCleanPolicy := v1alpha1.GooseFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_goosefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.GooseFSRuntimeSpec{
+			Fuse: v1alpha1.GooseFSFuseSpec{},
+		},
+	}
+
+	dataGooseFSDefaultCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_goosefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "default_policy_goosefs",
+					Namespace: "default",
+					Type:      common.GooseFSRuntime,
+				},
+			},
+		},
+	}
+
+	goosefsRuntimeOnDemandCleanPolicy := v1alpha1.GooseFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_goosefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.GooseFSRuntimeSpec{
+			Fuse: v1alpha1.GooseFSFuseSpec{
+				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+			},
+		},
+	}
+
+	dataGooseFSOnDemandCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_goosefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_demand_policy_goosefs",
+					Namespace: "default",
+					Type:      common.GooseFSRuntime,
+				},
+			},
+		},
+	}
+
+	goosefsRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.GooseFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_goosefs",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.GooseFSRuntimeSpec{
+			Fuse: v1alpha1.GooseFSFuseSpec{
+				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+			},
+		},
+	}
+
+	dataGooseFSOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_goosefs",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_runtime_deleted_policy_goosefs",
+					Namespace: "default",
+					Type:      common.GooseFSRuntime,
+				},
+			},
+		},
+	}
+
+	goosefsRuntimeObjs := []runtime.Object{}
+	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeDefaultCleanPolicy, &dataGooseFSDefaultCleanPolicy)
+	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnDemandCleanPolicy, &dataGooseFSOnDemandCleanPolicy)
+	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnRuntimeDeletedCleanPolicy, &dataGooseFSOnRuntimeDeletedCleanPolicy)
+
 	type args struct {
 		client    client.Client
 		name      string
@@ -512,6 +601,63 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_juicefs",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "default_test_goosefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:      "default_policy_goosefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "default_policy_goosefs",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_demand_test_goosefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:      "on_demand_policy_goosefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_demand_policy_goosefs",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_runtime_deleted_test-goosefs",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:      "on_runtime_deleted_policy_goosefs",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_runtime_deleted_policy_goosefs",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -687,10 +833,30 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "goosefs_test_fake",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:      "goosefs-fake",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "goosefs-fake",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "jindo_test",

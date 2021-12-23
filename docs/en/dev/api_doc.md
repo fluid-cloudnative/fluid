@@ -2901,7 +2901,9 @@ SecretKeySelector
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>)
+<a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>)
 </p>
 <p>
 </p>
@@ -3162,6 +3164,24 @@ map[string]string
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
 this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean GooseFS Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
 </td>
 </tr>
 </tbody>
@@ -3806,7 +3826,7 @@ FuseCleanPolicy
 Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
-Defaults to OnDemand</p>
+Defaults to OnRuntimeDeleted</p>
 </td>
 </tr>
 </tbody>
@@ -4199,6 +4219,24 @@ map[string]string
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
 this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean Juicefs Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnDemand</p>
 </td>
 </tr>
 </tbody>
@@ -5352,5 +5390,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>414643b7</code>.
+on git commit <code>9e654145</code>.
 </em></p>

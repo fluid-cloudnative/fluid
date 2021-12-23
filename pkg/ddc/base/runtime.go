@@ -336,7 +336,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
-		// todo: setup fuse clean policy when fuse lazy start is supported for GooseFS
+		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.JuiceFSRuntime:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
