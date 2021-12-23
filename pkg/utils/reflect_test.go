@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"reflect"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestFieldNameByType(t *testing.T) {
@@ -45,15 +45,38 @@ func TestFieldNameByType(t *testing.T) {
 			expect: []string{
 				"InitContainers", "Containers",
 			},
+		}, {
+			name:     "TargetType struct, and search *int64",
+			original: &corev1.Pod{},
+			target:   utilpointer.Int64Ptr(1),
+			expect: []string{
+				"ActiveDeadlineSeconds", "FSGroup", "TolerationSeconds", "DeletionGracePeriodSeconds", "ExpirationSeconds", "RunAsUser", "RunAsGroup", "TerminationGracePeriodSeconds",
+			},
 		},
 	}
 
 	for _, testcase := range testcases {
 		got := FieldNameByType(testcase.original, testcase.target)
 
-		if !reflect.DeepEqual(got, testcase.expect) {
+		result := difference(got, testcase.expect)
+		if len(result) > 0 {
 			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
 		}
+
 	}
 
+}
+
+func difference(a, b []string) []string {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
 }
