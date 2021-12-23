@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,6 +79,15 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		outValue := reflect.ValueOf(out).Elem()
+		containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
+
+		if len(containersReferenceNames) <= 2 {
+
+		} else {
+			return out, fmt.Errorf("no support for K8s Type %v", v)
+		}
+
+		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
 
 		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}

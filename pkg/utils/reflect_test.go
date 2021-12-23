@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -90,4 +92,111 @@ func difference(slice1 []string, slice2 []string) []string {
 	}
 
 	return diff
+}
+
+func TestContainersFieldNameFromObject(t *testing.T) {
+	type testCase struct {
+		name           string
+		object         interface{}
+		nominateName   string
+		excludeMatches []string
+		expect         string
+		wantErr        error
+	}
+
+	testcases := []testCase{
+		{
+			name:           "with Exclude names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{"init"},
+			expect:         "Containers",
+			wantErr:        nil,
+		}, {
+			name:           "with nominate names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "InitContainers",
+			excludeMatches: []string{""},
+			expect:         "InitContainers",
+			wantErr:        nil,
+		}, {
+			name:           "Empty",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{""},
+			expect:         "",
+			wantErr:        fmt.Errorf("can't determine the names in [InitContainers Containers]"),
+		},
+	}
+
+	for _, testcase := range testcases {
+		got, err := ContainersFieldNameFromObject(testcase.object, testcase.nominateName, testcase.excludeMatches)
+		if testcase.wantErr != err {
+			if testcase.wantErr != nil && err != nil {
+				if testcase.wantErr.Error() != err.Error() {
+					t.Errorf("testcase %s failed due to expected err %v, but got err %v", testcase.name, testcase.wantErr, err)
+				}
+			}
+
+		}
+
+		if testcase.expect != got {
+			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		}
+
+	}
+
+}
+
+func TestVolumesFieldNameFromObject(t *testing.T) {
+	type testCase struct {
+		name           string
+		object         interface{}
+		nominateName   string
+		excludeMatches []string
+		expect         string
+		wantErr        error
+	}
+
+	testcases := []testCase{
+		{
+			name:           "with Exclude names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{"init"},
+			expect:         "Volumes",
+			wantErr:        nil,
+		}, {
+			name:           "with nominate names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "Volumes",
+			excludeMatches: []string{""},
+			expect:         "Volumes",
+			wantErr:        nil,
+		}, {
+			name:           "Empty",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{""},
+			expect:         "",
+			wantErr:        nil,
+		},
+	}
+
+	for _, testcase := range testcases {
+		got, err := VolumesFieldNameFromObject(testcase.object, testcase.nominateName, testcase.excludeMatches)
+		if testcase.wantErr != err {
+			if testcase.wantErr != nil && err != nil {
+				if testcase.wantErr.Error() != err.Error() {
+					t.Errorf("testcase %s failed due to expected err %v, but got err %v", testcase.name, testcase.wantErr, err)
+				}
+			}
+
+		}
+
+		if testcase.expect != got {
+			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		}
+
+	}
 }
