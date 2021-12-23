@@ -117,7 +117,7 @@ type JuiceFSFuseSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"node_selector,omitempty"`
 
-	// CleanPolicy decides when to clean JuicefsFS Fuse pods.
+	// CleanPolicy decides when to clean Juicefs Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
 	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
