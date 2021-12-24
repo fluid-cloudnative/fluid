@@ -18,7 +18,7 @@ func FieldNameByType(original interface{}, targetObject interface{}) (targetName
 	targetType := reflect.TypeOf(targetObject)
 	originalType := reflect.TypeOf(original)
 	keys := NewfieldNameByTypeSearcher().fieldNameByType(originalType, "", targetType)
-	for key, _ := range keys {
+	for key := range keys {
 		targetNames = append(targetNames, key)
 	}
 	return
