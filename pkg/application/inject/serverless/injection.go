@@ -79,17 +79,22 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		outValue := reflect.ValueOf(out).Elem()
-		containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
+		// containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
 
-		if len(containersReferenceNames) <= 2 {
-
-		} else {
-			return out, fmt.Errorf("no support for K8s Type %v", v)
+		containersReferenceName, err := utils.ContainersFieldNameFromObject(out, "", []string{"init"})
+		if err != nil {
+			return out, fmt.Errorf("get container references failed for K8s Type %v with error %v", v, err)
 		}
 
+		volumesReferenceName, err := utils.VolumesFieldNameFromObject(out, "", []string{})
+		if err != nil {
+			return out, fmt.Errorf("get volume Reference volume for K8s Type %v with error %v", v, err)
+		}
+
+		containersPtr = outValue.FieldByName(containersReferenceName).Addr().Interface().(*[]corev1.Container)
+		volumesPtr = outValue.FieldByName(volumesReferenceName).Addr().Interface().(*[]corev1.Volume)
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
 
-		return out, fmt.Errorf("no support for K8s Type %v", v)
 	}
 
 	isServerless := isServerlessPod(metadata.Annotations)

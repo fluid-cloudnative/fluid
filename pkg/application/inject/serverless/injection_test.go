@@ -7,6 +7,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"gopkg.in/yaml.v3"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,7 +27,7 @@ func TestInjectObject(t *testing.T) {
 
 	testcases := []testCase{
 		{
-			name: "inject_success",
+			name: "inject_pod_success",
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
@@ -134,6 +135,130 @@ func TestInjectObject(t *testing.T) {
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/dev/fuse",
 									Type: &hostPathCharDev,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		}, {
+			name: "inject_deploy_success",
+			in: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+					Annotations: map[string]string{
+						common.Serverless: common.True,
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image: "test",
+									Name:  "test",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "dataset1",
+											MountPath: "/data",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "dataset1",
+									VolumeSource: corev1.VolumeSource{
+										PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+											ClaimName: "dataset1",
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			template: common.ServerlessInjectionTemplate{
+				FuseContainer: corev1.Container{Name: "fuse",
+					Args: []string{
+						"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+					},
+					Command: []string{"/entrypoint.sh"},
+					Image:   "test",
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: &bTrue,
+					}},
+				VolumesToUpdate: []corev1.Volume{
+					{
+						Name: "dataset1",
+						VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/runtime_mnt/dataset1",
+							},
+						},
+					},
+				},
+				VolumesToAdd: []corev1.Volume{
+					{
+						Name: "fuse-device",
+						VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/dev/fuse",
+								Type: &hostPathCharDev,
+							},
+						},
+					},
+				},
+			},
+			want: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+					Annotations: map[string]string{
+						common.Serverless: common.True,
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{
+								Name: "fuse",
+								Args: []string{
+									"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+								},
+								Command: []string{"/entrypoint.sh"},
+								Image:   "test",
+								SecurityContext: &corev1.SecurityContext{
+									Privileged: &bTrue,
+								},
+							},
+								{
+									Image: "test",
+									Name:  "test",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "dataset1",
+											MountPath: "/data",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{Name: "dataset1",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime_mnt/dataset1",
+										},
+									}}, {
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
 								},
 							},
 						},
