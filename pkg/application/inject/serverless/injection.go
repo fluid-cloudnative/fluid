@@ -91,6 +91,18 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 			return out, fmt.Errorf("get volume Reference volume for K8s Type %v with error %v", v, err)
 		}
 
+		containers := outValue.FieldByName(containersReferenceName)
+
+		log.Info("value", "valid", containers.IsValid())
+
+		log.Info("value", "isNil", containers.IsNil())
+
+		log.Info("value", "zero", containers.IsZero())
+
+		x := containers.Interface()
+
+		log.Info("test", "containers", x)
+
 		containersPtr = outValue.FieldByName(containersReferenceName).Addr().Interface().(*[]corev1.Container)
 		volumesPtr = outValue.FieldByName(volumesReferenceName).Addr().Interface().(*[]corev1.Volume)
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
