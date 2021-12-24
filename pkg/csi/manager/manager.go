@@ -18,7 +18,11 @@ package manager
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/golang/glog"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/mount"
 	"time"
@@ -26,6 +30,16 @@ import (
 
 type Manager struct {
 	mount.SafeFormatAndMount
+	KubeletClient *kubelet.KubeletClient
+	Driver        *PodDriver
+
+	containers map[string]*containerStat
+}
+
+type containerStat struct {
+	name    string
+	podName string
+	startAt metav1.Time
 }
 
 func (m *Manager) Run(period int, stopCh <-chan struct{}) {
@@ -35,6 +49,24 @@ func (m *Manager) Run(period int, stopCh <-chan struct{}) {
 }
 
 func (m *Manager) run() {
+	pods, err := m.KubeletClient.GetNodeRunningPods()
+	glog.V(6).Info("get pods from kubelet")
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range pods.Items {
+		pod := pods.Items[i]
+		glog.V(6).Infof("get pod: %v", pod)
+		if !utils.IsFusePod(pod) {
+			continue
+		}
+		if err := m.Driver.run(&pod); err != nil {
+			glog.Error(err)
+			return
+		}
+	}
+
 	brokenMounts, err := mountinfo.GetBrokenMountPoints()
 	if err != nil {
 		glog.Error(err)
@@ -61,4 +93,31 @@ func (m *Manager) recoverBrokenMount(point mountinfo.MountPoint) {
 	if err := m.Mount(point.SourcePath, point.MountPath, "none", mountOption); err != nil {
 		glog.Errorf("exec cmd: mount -o bind %s %s err:%v", point.SourcePath, point.MountPath, err)
 	}
+}
+
+func (m *Manager) compareOrRecordContainerStat(pod corev1.Pod) (restarted bool) {
+	if pod.Status.ContainerStatuses == nil {
+		return
+	}
+	for _, cn := range pod.Status.ContainerStatuses {
+		if cn.State.Running == nil {
+			continue
+		}
+		cs, ok := m.containers[cn.Name]
+		if !ok {
+			cs = &containerStat{
+				name:    cn.Name,
+				podName: pod.Name,
+				startAt: cn.State.Running.StartedAt,
+			}
+			m.containers[cn.Name] = cs
+			continue
+		}
+
+		if cs.startAt.Before(&cn.State.Running.StartedAt) {
+			restarted = true
+			return
+		}
+	}
+	return
 }

@@ -26,17 +26,22 @@ import (
 	csi "github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
 	csimanager "github.com/fluid-cloudnative/fluid/pkg/csi/manager"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"time"
 )
 
@@ -47,6 +52,8 @@ var (
 	pprofAddr         string
 	recoverFusePeriod int
 )
+
+const defaultKubeletTimeout = 10
 
 var scheme = runtime.NewScheme()
 
@@ -148,7 +155,7 @@ func handle() {
 	}()
 
 	if recoverFusePeriod > 0 {
-		if err := manageStart(); err != nil {
+		if err := manageStart(mgr.GetClient()); err != nil {
 			panic(fmt.Sprintf("unable to start manager due to error %v", err))
 		}
 	}
@@ -157,7 +164,7 @@ func handle() {
 	d.Run()
 }
 
-func manageStart() (err error) {
+func manageStart(k8sClient client.Client) (err error) {
 	glog.V(3).Infoln("start csi manager")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
@@ -165,7 +172,46 @@ func manageStart() (err error) {
 	}
 	glog.V(3).Infof("Get mount root: %s", mountRoot)
 
+	// get CSI sa token
+	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
+	}
+	token := string(tokenByte)
+
+	glog.V(3).Infoln("start kubelet client")
+	nodeIp := os.Getenv("NODE_IP")
+	kubeletClientCert := os.Getenv("KUBELET_CLIENT_CERT")
+	kubeletClientKey := os.Getenv("KUBELET_CLIENT_KEY")
+	var kubeletTimeout int
+	if os.Getenv("KUBELET_TIMEOUT") != "" {
+		if kubeletTimeout, err = strconv.Atoi(os.Getenv("KUBELET_TIMEOUT")); err != nil {
+			glog.Errorf("parse kubelet timeout error: %v", err)
+			return
+		}
+	} else {
+		kubeletTimeout = defaultKubeletTimeout
+	}
+	glog.V(3).Infof("get node ip: %s", nodeIp)
+	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
+		Address: nodeIp,
+		Port:    10250,
+		TLSClientConfig: rest.TLSClientConfig{
+			ServerName: "kubelet",
+			CertFile:   kubeletClientCert,
+			KeyFile:    kubeletClientKey,
+		},
+		BearerToken: token,
+		HTTPTimeout: time.Duration(kubeletTimeout) * time.Second,
+	})
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	driver := csimanager.NewPodDriver(k8sClient)
 	m := csimanager.Manager{
+		KubeletClient: kubeletClient,
+		Driver:        driver,
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
 			Exec:      k8sexec.New(),

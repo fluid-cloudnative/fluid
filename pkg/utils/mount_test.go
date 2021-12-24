@@ -5,6 +5,8 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
 	"os"
 	"os/exec"
@@ -184,4 +186,84 @@ func TestCheckMountPointBroken(t *testing.T) {
 			So(broken, ShouldBeFalse)
 		})
 	})
+}
+
+func TestGetRuntimeNameFromFusePod(t *testing.T) {
+	type args struct {
+		pod v1.Pod
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantRuntimeName string
+		wantErr         bool
+	}{
+		{
+			name: "test-right",
+			args: args{
+				pod: v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-fuse-123"},
+				},
+			},
+			wantRuntimeName: "test",
+			wantErr:         false,
+		},
+		{
+			name: "test-error",
+			args: args{
+				pod: v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "test"},
+				},
+			},
+			wantRuntimeName: "",
+			wantErr:         true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRuntimeName, err := GetRuntimeNameFromFusePod(tt.args.pod)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRuntimeNameFromFusePod() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotRuntimeName != tt.wantRuntimeName {
+				t.Errorf("GetRuntimeNameFromFusePod() gotRuntimeName = %v, want %v", gotRuntimeName, tt.wantRuntimeName)
+			}
+		})
+	}
+}
+
+func TestIsFusePod(t *testing.T) {
+	type args struct {
+		pod v1.Pod
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "test-true",
+			args: args{
+				pod: v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"role": "juicefs-fuse"}},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "test-false",
+			args: args{
+				pod: v1.Pod{},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsFusePod(tt.args.pod); got != tt.want {
+				t.Errorf("IsFusePod() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
