@@ -78,6 +78,7 @@ func Test_parseMountInfoLine(t *testing.T) {
 				FilesystemType: "fuse.juicefs",
 				PeerGroup:      &peerGroup,
 				ReadOnly:       true,
+				Count:          1,
 			},
 		},
 		{
@@ -91,6 +92,7 @@ func Test_parseMountInfoLine(t *testing.T) {
 				FilesystemType: "fuse.juicefs",
 				PeerGroup:      nil,
 				ReadOnly:       true,
+				Count:          1,
 			},
 		},
 	}

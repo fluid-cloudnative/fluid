@@ -25,10 +25,12 @@ import (
 )
 
 type MountPoint struct {
-	SourcePath     string
-	MountPath      string
-	FilesystemType string
-	ReadOnly       bool
+	SourcePath            string
+	MountPath             string
+	FilesystemType        string
+	ReadOnly              bool
+	Count                 int
+	NamespacedDatasetName string // <namespace>-<dataset>
 }
 
 func GetBrokenMountPoints() ([]MountPoint, error) {
@@ -65,9 +67,9 @@ func getGlobalMounts(mountByPath map[string]*Mount) (globalMountByName map[strin
 			if len(fields) < 6 {
 				continue
 			}
-			// fluid global mount path is: /{rootPath}/{runtimeType}/{namespace}/{runtimeName}/{runtimeTypeFuse}
-			namespace, runtimeName := fields[3], fields[4]
-			namespacedName := fmt.Sprintf("%s-%s", namespace, runtimeName)
+			// fluid global mount path is: /{rootPath}/{runtimeType}/{namespace}/{datasetName}/{runtimeTypeFuse}
+			namespace, datasetName := fields[3], fields[4]
+			namespacedName := fmt.Sprintf("%s-%s", namespace, datasetName)
 			globalMountByName[namespacedName] = v
 		}
 	}
@@ -77,14 +79,24 @@ func getGlobalMounts(mountByPath map[string]*Mount) (globalMountByName map[strin
 func getBindMounts(mountByPath map[string]*Mount) (bindMountByName map[string][]*Mount) {
 	bindMountByName = make(map[string][]*Mount)
 	for k, m := range mountByPath {
-		var runtimeNamespacedName string
+		var datasetNamespacedName string
 		if strings.Contains(k, "kubernetes.io~csi") && strings.Contains(k, "mount") {
+			// fluid bind mount target path is: /{kubeletRootDir}(default: /var/lib/kubelet)/pods/{podUID}/volumes/kubernetes.io~csi/{namespace}-{datasetName}/mount
 			fields := strings.Split(k, "/")
 			if len(fields) < 3 {
 				continue
 			}
-			runtimeNamespacedName = fields[len(fields)-2]
-			bindMountByName[runtimeNamespacedName] = append(bindMountByName[runtimeNamespacedName], m)
+			datasetNamespacedName = fields[len(fields)-2]
+			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], m)
+		}
+		if strings.Contains(k, "volume-subpaths") {
+			// pod using subPath, bind mount path is: /{kubeletRootDir}(default: /var/lib/kubelet)/pods/{podUID}/volume-subpaths/{namespace}-{datasetName}/{containerName}/{volumeIndex}
+			fields := strings.Split(k, "/")
+			if len(fields) < 4 {
+				continue
+			}
+			datasetNamespacedName = fields[len(fields)-3]
+			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], m)
 		}
 	}
 	return
@@ -95,16 +107,18 @@ func getBrokenBindMounts(globalMountByName map[string]*Mount, bindMountByName ma
 		globalMount, ok := globalMountByName[name]
 		if !ok {
 			// globalMount is unmount, ignore
-			glog.V(4).Infof("ignoring mountpoint %s because of not finding its global mount point", name)
+			glog.V(6).Infof("ignoring mountpoint %s because of not finding its global mount point", name)
 			continue
 		}
 		for _, bindMount := range bindMounts {
 			if *bindMount.PeerGroup != *globalMount.PeerGroup {
 				brokenMounts = append(brokenMounts, MountPoint{
-					SourcePath:     path.Join(globalMount.MountPath, bindMount.Subtree),
-					MountPath:      bindMount.MountPath,
-					FilesystemType: bindMount.FilesystemType,
-					ReadOnly:       bindMount.ReadOnly,
+					SourcePath:            path.Join(globalMount.MountPath, bindMount.Subtree),
+					MountPath:             bindMount.MountPath,
+					FilesystemType:        bindMount.FilesystemType,
+					ReadOnly:              bindMount.ReadOnly,
+					Count:                 bindMount.Count,
+					NamespacedDatasetName: name,
 				})
 			}
 		}

@@ -31,6 +31,7 @@ type Mount struct {
 	FilesystemType string
 	PeerGroup      *int
 	ReadOnly       bool
+	Count          int
 }
 
 // Parse one line of /proc/self/mountinfo.
@@ -83,6 +84,7 @@ func parseMountInfoLine(line string) *Mount {
 		}
 	}
 	mnt.FilesystemType = unescapeString(fields[n+1])
+	mnt.Count = 1
 	return mnt
 }
 
@@ -100,10 +102,14 @@ func readMountInfo(r io.Reader) (map[string]*Mount, error) {
 
 		// We can only use mountpoints that are directories for fluid.
 		if mnt.PeerGroup == nil {
-			glog.V(5).Infof("ignoring mountpoint %q because it is not shared", mnt.MountPath)
+			glog.V(6).Infof("ignoring mountpoint %q because it is not shared", mnt.MountPath)
 			continue
 		}
 
+		if oldMnt, ok := mountsByPath[mnt.MountPath]; ok {
+			// record mountpoint count in mountinfo
+			mnt.Count = oldMnt.Count + 1
+		}
 		// Note this overrides the info if we have seen the mountpoint
 		// earlier in the file. This is correct behavior because the
 		// mountpoints are listed in mount order.

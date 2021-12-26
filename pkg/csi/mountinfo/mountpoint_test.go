@@ -96,10 +96,12 @@ func Test_getBrokenBindMounts(t *testing.T) {
 			},
 			wantBrokenMounts: []MountPoint{
 				{
-					SourcePath:     "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
-					MountPath:      "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
-					FilesystemType: "fuse.juicefs",
-					ReadOnly:       false,
+					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+					MountPath:             "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
+					FilesystemType:        "fuse.juicefs",
+					ReadOnly:              false,
+					Count:                 0,
+					NamespacedDatasetName: "default-jfsdemo",
 				},
 			},
 		},

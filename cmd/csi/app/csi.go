@@ -24,7 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	csi "github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
-	csimanager "github.com/fluid-cloudnative/fluid/pkg/csi/manager"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/recover"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/golang/glog"
@@ -34,8 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	k8sexec "k8s.io/utils/exec"
-	"k8s.io/utils/mount"
+	"k8s.io/client-go/tools/record"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -89,8 +88,8 @@ func init() {
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
-	// start csi manager
-	startCmd.Flags().IntVar(&recoverFusePeriod, "recover-fuse-period", -1, "CSI manager sync pods period, in seconds")
+	// start csi recover
+	startCmd.Flags().IntVar(&recoverFusePeriod, "recover-fuse-period", -1, "CSI recover sync pods period, in seconds")
 }
 
 func ErrorAndExit(err error) {
@@ -144,19 +143,19 @@ func handle() {
 	})
 
 	if err != nil {
-		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
+		panic(fmt.Sprintf("csi: unable to create controller recover due to error %v", err))
 	}
 
 	ctx := ctrl.SetupSignalHandler()
 	go func() {
 		if err := mgr.Start(ctx); err != nil {
-			panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
+			panic(fmt.Sprintf("unable to start controller recover due to error %v", err))
 		}
 	}()
 
 	if recoverFusePeriod > 0 {
-		if err := manageStart(mgr.GetClient()); err != nil {
-			panic(fmt.Sprintf("unable to start manager due to error %v", err))
+		if err := recoverStart(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover")); err != nil {
+			panic(fmt.Sprintf("unable to start recover due to error %v", err))
 		}
 	}
 
@@ -164,8 +163,8 @@ func handle() {
 	d.Run()
 }
 
-func manageStart(k8sClient client.Client) (err error) {
-	glog.V(3).Infoln("start csi manager")
+func recoverStart(kubeClient client.Client, recorder record.EventRecorder) (err error) {
+	glog.V(3).Infoln("start csi recover")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
 		return
@@ -208,17 +207,10 @@ func manageStart(k8sClient client.Client) (err error) {
 		glog.Error(err)
 		return
 	}
-	driver := csimanager.NewPodDriver(k8sClient)
-	m := csimanager.Manager{
-		KubeletClient: kubeletClient,
-		Driver:        driver,
-		SafeFormatAndMount: mount.SafeFormatAndMount{
-			Interface: mount.New(""),
-			Exec:      k8sexec.New(),
-		},
-	}
-
+	m := recover.NewFuseRecoder(kubeClient, kubeletClient, recorder)
+	// do recovering at beginning
+	// recover set containerStat in memory, it's none when start
+	m.Recover()
 	go m.Run(recoverFusePeriod, wait.NeverStop)
-
 	return
 }
