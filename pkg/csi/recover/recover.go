@@ -78,8 +78,7 @@ func (r *FuseRecover) run() {
 		glog.Error(err)
 		return
 	}
-	for i := range pods.Items {
-		pod := pods.Items[i]
+	for _, pod := range pods.Items {
 		glog.V(6).Infof("get pod: %s, namespace: %s", pod.Name, pod.Namespace)
 		if !utils.IsFusePod(pod) {
 			continue

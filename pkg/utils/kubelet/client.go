@@ -142,9 +142,9 @@ func (k *KubeletClient) GetNodeRunningPods() (*v1.PodList, error) {
 	if err != nil {
 		return nil, err
 	}
-	podLists := &v1.PodList{}
-	if err = json.Unmarshal(body, &podLists); err != nil {
+	podList := &v1.PodList{}
+	if err = json.Unmarshal(body, &podList); err != nil {
 		return nil, err
 	}
-	return podLists, err
+	return podList, err
 }
