@@ -14,7 +14,7 @@ import (
 var log logr.Logger
 
 func init() {
-	log = ctrl.Log.WithName("utils")
+	log = ctrl.Log.WithName("reflect")
 }
 
 // fieldNameByTypeSearcher provides fieldNameByType for find the field name by using struct type
