@@ -1,13 +1,21 @@
-package utils
+package reflect
 
 import (
 	"fmt"
-	"reflect"
+	ref "reflect"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/slice"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var log logr.Logger
+
+func init() {
+	log = ctrl.Log.WithName("utils")
+}
 
 // fieldNameByTypeSearcher provides fieldNameByType for find the field name by using struct type
 type fieldNameByTypeSearcher struct {
@@ -15,8 +23,8 @@ type fieldNameByTypeSearcher struct {
 }
 
 func FieldNameByType(original interface{}, targetObject interface{}) (targetNames []string) {
-	targetType := reflect.TypeOf(targetObject)
-	originalType := reflect.TypeOf(original)
+	targetType := ref.TypeOf(targetObject)
+	originalType := ref.TypeOf(original)
 	keys := NewfieldNameByTypeSearcher().fieldNameByType(originalType, "", targetType)
 	for key := range keys {
 		targetNames = append(targetNames, key)
@@ -30,7 +38,7 @@ func NewfieldNameByTypeSearcher() *fieldNameByTypeSearcher {
 	}
 }
 
-func (f *fieldNameByTypeSearcher) fieldNameByType(currentType reflect.Type, currentName string, targetType reflect.Type) map[string]bool {
+func (f *fieldNameByTypeSearcher) fieldNameByType(currentType ref.Type, currentName string, targetType ref.Type) map[string]bool {
 	currentTypeStr := currentType.String()
 	log.V(1).Info("fieldNameByType enter", "currentType", currentTypeStr, "currentName", currentName, "targetNames", f.targetNames)
 
@@ -38,7 +46,7 @@ func (f *fieldNameByTypeSearcher) fieldNameByType(currentType reflect.Type, curr
 	// The first cases handle nested structures and search them recursively
 
 	// If it is a pointer, interface we need to unwrap and call once again
-	case reflect.Ptr, reflect.Interface, reflect.Slice:
+	case ref.Ptr, ref.Interface, ref.Slice:
 		// To get the actual value of the original we have to call Elem()
 		// At the same time this unwraps the pointer so we don't end up in
 		// an infinite recursion
@@ -50,7 +58,7 @@ func (f *fieldNameByTypeSearcher) fieldNameByType(currentType reflect.Type, curr
 			f.fieldNameByType(originalType, currentName, targetType)
 		}
 	// If it is a struct we serarch each field
-	case reflect.Struct:
+	case ref.Struct:
 		for i := 0; i < currentType.NumField(); i += 1 {
 			field := currentType.Field(i)
 			if field.Type == targetType {

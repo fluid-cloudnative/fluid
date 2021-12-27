@@ -78,7 +78,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		metadata = pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
-		outValue := reflect.ValueOf(out).Elem()
+
 		// containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
 
 		containersReferenceName, err := utils.ContainersFieldNameFromObject(out, "", []string{"init"})
@@ -91,9 +91,12 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 			return out, fmt.Errorf("get volume Reference volume for K8s Type %v with error %v", v, err)
 		}
 
-		containers := outValue.FieldByName(containersReferenceName)
+		outValue := reflect.ValueOf(out).Elem()
+		containers := outValue.FieldByName("Containers")
 
-		log.Info("value", "valid", containers.IsValid())
+		valid := containers.IsValid()
+
+		log.Info("value", "valid", valid)
 
 		log.Info("value", "isNil", containers.IsNil())
 
