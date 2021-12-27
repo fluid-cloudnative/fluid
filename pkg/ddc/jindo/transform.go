@@ -76,7 +76,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Group:           0,
 		FsGroup:         0,
 		UseHostNetwork:  true,
-		UseHostPID:      false,
+		UseHostPID:      true,
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
