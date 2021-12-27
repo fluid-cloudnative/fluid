@@ -57,6 +57,53 @@ func TestLoadMountInfoBasic(t *testing.T) {
 	}
 }
 
+func TestLoadMountInfoWithNoPeerGroup(t *testing.T) {
+	var mountinfo = `
+15 0 259:3 / / rw,relatime - ext4 /dev/root rw,data=ordered
+`
+	mountMap, err := loadMountInfoFromString(mountinfo)
+	if err != nil {
+		t.Fatal("Failed to load mount")
+	}
+	if len(mountMap) != 0 {
+		t.Fatal("wrong parse")
+	}
+}
+
+func TestLoadMountInfoMultiMount(t *testing.T) {
+	var mountinfo = `
+15 0 259:3 / / rw,relatime shared:1 - ext4 /dev/root rw,data=ordered
+15 0 259:3 / / rw,relatime shared:2 - ext4 /dev/root rw,data=ordered
+`
+	mountMap, err := loadMountInfoFromString(mountinfo)
+	if err != nil {
+		t.Fatal("Failed to load mount")
+	}
+	mnt, ok := mountMap["/"]
+	if !ok {
+		t.Fatal("wrong path")
+	}
+
+	if mnt.MountPath != "/" {
+		t.Error("Wrong path")
+	}
+	if mnt.FilesystemType != "ext4" {
+		t.Error("Wrong filesystem type")
+	}
+	if *mnt.PeerGroup != 2 {
+		t.Error("Wrong peer group")
+	}
+	if mnt.Subtree != "/" {
+		t.Error("Wrong subtree")
+	}
+	if mnt.ReadOnly {
+		t.Error("Wrong readonly flag")
+	}
+	if mnt.Count != 2 {
+		t.Error("Wrong count")
+	}
+}
+
 func Test_parseMountInfoLine(t *testing.T) {
 	peerGroup := 475
 	type args struct {
@@ -94,6 +141,27 @@ func Test_parseMountInfoLine(t *testing.T) {
 				ReadOnly:       true,
 				Count:          1,
 			},
+		},
+		{
+			name: "peer group err",
+			args: args{
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:abc - fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other",
+			},
+			want: nil,
+		},
+		{
+			name: "len err1",
+			args: args{
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 -",
+			},
+			want: nil,
+		},
+		{
+			name: "len err2",
+			args: args{
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 - fuse.juicefs",
+			},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {

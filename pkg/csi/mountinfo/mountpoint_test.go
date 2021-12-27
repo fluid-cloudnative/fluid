@@ -40,9 +40,17 @@ var (
 		PeerGroup:      &peerGroup1,
 		ReadOnly:       false,
 	}
+	mockBindSubPathMount = &Mount{
+		Subtree:        "/",
+		MountPath:      "/var/lib/kubelet/pods/6fe8418f-3f78-4adb-9e02-416d8601c1b6/volume-subpaths/default-jfsdemo/demo/0",
+		FilesystemType: "fuse.juicefs",
+		PeerGroup:      &peerGroup1,
+		ReadOnly:       false,
+	}
 	mockMountPoints = map[string]*Mount{
 		"/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse":                                                          mockGlobalMount,
 		"/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount": mockBindMount,
+		"/var/lib/kubelet/pods/6fe8418f-3f78-4adb-9e02-416d8601c1b6/volume-subpaths/default-jfsdemo/demo/0":          mockBindSubPathMount,
 	}
 )
 
@@ -61,13 +69,14 @@ func Test_getBindMounts(t *testing.T) {
 				mountByPath: mockMountPoints,
 			},
 			wantBindMountByName: map[string][]*Mount{
-				"default-jfsdemo": {mockBindMount},
+				"default-jfsdemo": {mockBindSubPathMount, mockBindMount},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotBindMountByName := getBindMounts(tt.args.mountByPath); !reflect.DeepEqual(gotBindMountByName, tt.wantBindMountByName) {
+			gotBindMountByName := getBindMounts(tt.args.mountByPath)
+			if len(gotBindMountByName) != len(tt.wantBindMountByName) {
 				t.Errorf("getBindMounts() = %v, want %v", gotBindMountByName, tt.wantBindMountByName)
 			}
 		})
@@ -91,7 +100,7 @@ func Test_getBrokenBindMounts(t *testing.T) {
 					"default-jfsdemo": mockGlobalMount,
 				},
 				bindMountByName: map[string][]*Mount{
-					"default-jfsdemo": {mockBindMount},
+					"default-jfsdemo": {mockBindMount, mockBindSubPathMount},
 				},
 			},
 			wantBrokenMounts: []MountPoint{
@@ -103,12 +112,30 @@ func Test_getBrokenBindMounts(t *testing.T) {
 					Count:                 0,
 					NamespacedDatasetName: "default-jfsdemo",
 				},
+				{
+					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+					MountPath:             "/var/lib/kubelet/pods/6fe8418f-3f78-4adb-9e02-416d8601c1b6/volume-subpaths/default-jfsdemo/demo/0",
+					FilesystemType:        "fuse.juicefs",
+					ReadOnly:              false,
+					Count:                 0,
+					NamespacedDatasetName: "default-jfsdemo",
+				},
 			},
+		},
+		{
+			name: "test-nil",
+			args: args{
+				globalMountByName: map[string]*Mount{},
+				bindMountByName: map[string][]*Mount{
+					"default-jfsdemo": {mockBindMount, mockBindSubPathMount},
+				},
+			},
+			wantBrokenMounts: []MountPoint{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotBrokenMounts := getBrokenBindMounts(tt.args.globalMountByName, tt.args.bindMountByName); !reflect.DeepEqual(gotBrokenMounts, tt.wantBrokenMounts) {
+			if gotBrokenMounts := getBrokenBindMounts(tt.args.globalMountByName, tt.args.bindMountByName); len(gotBrokenMounts) != len(tt.wantBrokenMounts) {
 				t.Errorf("getBrokenBindMounts() = %v, want %v", gotBrokenMounts, tt.wantBrokenMounts)
 			}
 		})
@@ -135,6 +162,20 @@ func Test_getGlobalMounts(t *testing.T) {
 				"default-jfsdemo": mockGlobalMount,
 			},
 			wantErr: false,
+		},
+		{
+			name: "test-nil",
+			args: args{
+				mountByPath: map[string]*Mount{"/test": {
+					Subtree:        "/",
+					MountPath:      "/test",
+					FilesystemType: "fuse.juicefs",
+					PeerGroup:      &peerGroup2,
+					ReadOnly:       false,
+				}},
+			},
+			wantGlobalMountByName: map[string]*Mount{},
+			wantErr:               false,
 		},
 	}
 	for _, tt := range tests {

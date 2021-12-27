@@ -81,6 +81,10 @@ func TestCheckMountReady(t *testing.T) {
 			err := CheckMountReady("/test", "test")
 			So(err, ShouldNotBeNil)
 		})
+		Convey("fluidPath nil", func() {
+			err := CheckMountReady("", "test")
+			So(err, ShouldNotBeNil)
+		})
 	})
 }
 
@@ -116,8 +120,23 @@ func TestIsMounted(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(mounted, ShouldBeFalse)
 		})
-		Convey("IsMounted error", func() {
+		Convey("token len is 1", func() {
 			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte("JuiceFS:minio "), nil
+			})
+			defer patch1.Reset()
+			patch2 := ApplyFunc(os.Stat, func(filename string) (os.FileInfo, error) {
+				return nil, nil
+			})
+			defer patch2.Reset()
+			absPath := "/test"
+
+			mounted, err := IsMounted(absPath)
+			So(err, ShouldBeNil)
+			So(mounted, ShouldBeFalse)
+		})
+		Convey("IsMounted error", func() {
+			patch1 := ApplyFunc(os.ReadFile, func(filename string) ([]byte, error) {
 				return []byte("JuiceFS:minio"), errors.New("test")
 			})
 			defer patch1.Reset()
