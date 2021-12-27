@@ -76,7 +76,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Group:           0,
 		FsGroup:         0,
 		UseHostNetwork:  true,
-		UseHostPID:      true,
+		UseHostPID:      false,
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
@@ -96,7 +96,6 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	e.transformNetworkMode(runtime, value)
-	e.transformHostPID(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
 		return
@@ -686,15 +685,6 @@ func (e *JindoEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, v
 		value.UseHostNetwork = false
 	case datav1alpha1.DefaultNetworkMode:
 		value.UseHostNetwork = true
-	}
-}
-
-func (e *JindoEngine) transformHostPID(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
-	// to set hostPID
-	if runtime.Spec.DisableHostPID {
-		value.UseHostPID = false
-	} else {
-		value.UseHostPID = true
 	}
 }
 

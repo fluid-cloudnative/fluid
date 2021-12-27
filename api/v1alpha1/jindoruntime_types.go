@@ -170,10 +170,6 @@ type JindoRuntimeSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkmode,omitempty"`
-
-	// Whether to enable hostPID or not
-	// +optional
-	DisableHostPID bool `json:"disableHostPID,omitempty"`
 }
 
 // +kubebuilder:object:root=true
