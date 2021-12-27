@@ -181,6 +181,19 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				WorkerPhase: "NotReady",
 				FusePhase:   "NotReady",
 			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "partial",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Replicas: 2,
+			},
+			Status: datav1alpha1.RuntimeStatus{
+
+				WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
+				FusePhase:   "NotReady",
+			},
 		},
 	}
 
@@ -211,6 +224,11 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop",
+				Namespace: "fluid",
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "partial",
 				Namespace: "fluid",
 			},
 		},
@@ -244,6 +262,17 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "obj-jindofs-worker",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(3),
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "partial-jindofs-worker",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -325,6 +354,25 @@ func TestCheckWorkersHealthy(t *testing.T) {
 			},
 			Phase: datav1alpha1.RuntimePhaseNotReady,
 			isErr: true,
+		}, {
+			caseName:  "Partial",
+			name:      "partial",
+			namespace: "fluid",
+			worker: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "partial-jindofs-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32Ptr(2),
+				},
+				Status: appsv1.StatefulSetStatus{
+					Replicas:      2,
+					ReadyReplicas: 1,
+				},
+			},
+			Phase: datav1alpha1.RuntimePhasePartialReady,
+			isErr: false,
 		},
 	}
 	for _, testCase := range testCases {

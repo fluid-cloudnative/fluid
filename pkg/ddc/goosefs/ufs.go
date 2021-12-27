@@ -15,7 +15,10 @@ limitations under the License.
 
 package goosefs
 
-import "github.com/fluid-cloudnative/fluid/pkg/utils"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+)
 
 // UsedStorageBytes returns used storage size of GooseFS in bytes
 func (e *GooseFSEngine) UsedStorageBytes() (value int64, err error) {
@@ -75,11 +78,43 @@ func (e *GooseFSEngine) PrepareUFS() (err error) {
 	return
 }
 
-// GooseFSEngine hasn't support UpdateOnUFSChange
 func (e *GooseFSEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
+	// 1. get the dataset
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "Failed to get the dataset")
+		return
+	}
+
+	// 2.get the ufs to update
+	ufsToUpdate = utils.NewUFSToUpdate(dataset)
+	ufsToUpdate.AnalyzePathsDelta()
+
 	return
 }
 
-func (e *GooseFSEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
+func (e *GooseFSEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
+	// 1. check if need to update ufs
+	if !ufsToUpdate.ShouldUpdate() {
+		e.Log.Info("no need to update ufs",
+			"namespace", e.namespace,
+			"name", e.name)
+		return
+	}
+
+	// 2. set update status to updating
+	err = utils.UpdateMountStatus(e.Client, e.name, e.namespace, datav1alpha1.UpdatingDatasetPhase)
+	if err != nil {
+		e.Log.Error(err, "Failed to update dataset status to updating")
+		return
+	}
+
+	// 3. process added and removed
+	err = e.processUpdatingUFS(ufsToUpdate)
+	if err != nil {
+		e.Log.Error(err, "Failed to add or remove mount points")
+		return
+	}
+	updateReady = true
 	return
 }

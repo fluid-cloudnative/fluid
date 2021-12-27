@@ -200,8 +200,8 @@ func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[stri
 
 func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy) {
 	if policy == datav1alpha1.NoneCleanPolicy {
-		// Default to set the fuse clean policy to OnDemand
-		info.fuse.CleanPolicy = datav1alpha1.OnDemandCleanPolicy
+		// Default to set the fuse clean policy to OnRuntimeDeleted
+		info.fuse.CleanPolicy = datav1alpha1.OnRuntimeDeletedCleanPolicy
 		return
 	}
 	info.fuse.CleanPolicy = policy
@@ -336,7 +336,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
-		// todo: setup fuse clean policy when fuse lazy start is supported for GooseFS
+		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.JuiceFSRuntime:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
@@ -348,7 +348,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
-		// todo: setup fuse clean policy when fuse lazy start is supported for JuiceFS
+		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	default:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})

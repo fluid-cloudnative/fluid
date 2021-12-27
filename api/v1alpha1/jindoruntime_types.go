@@ -117,7 +117,7 @@ type JindoFuseSpec struct {
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
 	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
-	// Defaults to OnDemand
+	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 }

@@ -60,11 +60,12 @@ spec:
               value: {{ $pathReplicas | quote }}
             {{- range $key, $val := .Values.dataloader.options }}
             {{- if eq $key "atomicCache" }}
-            - name: NEED_ATOMIC_CACHE
+            - name: ENABLE_ATOMIC_CACHE
               value: {{ default false $val | quote }}
             {{- else if eq $key "expireTime" }}
             - name: ATOMIC_CACHE_TTL
               value: {{ default 43200000 $val | quote }}
+            {{- end }}
             {{- end }}
           envFrom:
             - configMapRef:

@@ -7,6 +7,9 @@ COPY . .
 RUN make webhook-build && \
 	cp bin/fluid-webhook /go/bin/fluid-webhook
 
+# Debug
+RUN go get github.com/go-delve/delve/cmd/dlv
+
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat openssl vim &&  \
 	rm -rf /var/cache/apk/* && \
@@ -17,12 +20,13 @@ ENV K8S_VERSION v1.14.8
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
 
 COPY --from=builder /go/bin/fluid-webhook /usr/local/bin/fluid-webhook
+COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 COPY tools/certificate.sh /usr/local/bin/certificate.sh
 
 
 RUN mkdir -p /etc/k8s-webhook-server/certs && \
 	chmod -R u+w /etc/k8s-webhook-server/certs && \ 
-	chmod u+x /usr/local/bin/fluid-webhook
+	chmod -R u+x /usr/local/bin/
 
 
 CMD ["fluid-webhook", "start"]
