@@ -1,7 +1,9 @@
 package serverless
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"testing"
 
@@ -13,7 +15,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 )
 
 func TestInjectObject(t *testing.T) {
@@ -333,5 +337,93 @@ func getInjectPiece(object runtime.Object) ([]corev1.Container, []corev1.Volume,
 	}
 
 	return containersValue.Interface().([]corev1.Container), volumesValue.Interface().([]corev1.Volume), nil
+
+}
+
+func TestInjectObjectForUnstructed(t *testing.T) {
+	inputYaml := `
+apiVersion: "kubeflow.org/v1"
+kind: "TFJob"
+metadata:
+  name: "mnist"
+  namespace: kubeflow
+  annotaions:
+  	fluid.io/serverless: "true"
+spec:
+  cleanPodPolicy: None 
+  tfReplicaSpecs:
+    Worker:
+      replicas: 1 
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: tensorflow
+              image: gcr.io/kubeflow-ci/tf-mnist-with-summaries:1.0
+              command:
+                - "python"
+                - "/var/tf_mnist/mnist_with_summaries.py"
+                - "--log_dir=/train/logs"
+                - "--learning_rate=0.01"
+                - "--batch_size=150"
+              volumeMounts:
+                - mountPath: "/train"
+                  name: "training"
+          volumes:
+            - name: "training"
+              persistentVolumeClaim:
+                claimName: "tfevent-volume"  
+`
+	obj := &unstructured.Unstructured{}
+	hostPathCharDev := corev1.HostPathCharDev
+	bTrue := true
+
+	dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	_, gvk, err := dec.Decode([]byte(inputYaml), nil, obj)
+	if err != nil {
+		t.Errorf("Failed to decode due to %v", err)
+	}
+
+	// Get the common metadata, and show GVK
+	fmt.Println(obj.GetName(), gvk.String())
+
+	template := common.ServerlessInjectionTemplate{
+		FuseContainer: corev1.Container{Name: "fuse",
+			Args: []string{
+				"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+			},
+			Command: []string{"/entrypoint.sh"},
+			Image:   "test",
+			SecurityContext: &corev1.SecurityContext{
+				Privileged: &bTrue,
+			}},
+		VolumesToUpdate: []corev1.Volume{
+			{
+				Name: "dataset1",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/runtime_mnt/dataset1",
+					},
+				},
+			},
+		},
+		VolumesToAdd: []corev1.Volume{
+			{
+				Name: "fuse-device",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/dev/fuse",
+						Type: &hostPathCharDev,
+					},
+				},
+			},
+		},
+	}
+
+	out, err := InjectObject(obj, template)
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "    ")
+	enc.Encode(out)
 
 }
