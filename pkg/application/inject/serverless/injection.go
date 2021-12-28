@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,36 +78,26 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		metadata = pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
+		outValue := reflect.ValueOf(out).Elem()
 
 		// containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
 
-		containersReferenceName, err := utils.ContainersFieldNameFromObject(out, "", []string{"init"})
+		containersReferenceName, containersValue, err := reflectutil.ContainersValueFromObject(out, "", []string{"init"})
 		if err != nil {
 			return out, fmt.Errorf("get container references failed for K8s Type %v with error %v", v, err)
 		}
 
-		volumesReferenceName, err := utils.VolumesFieldNameFromObject(out, "", []string{})
+		log.Info("ContainersValueFromObject", "containersReferenceName", containersReferenceName)
+
+		volumesReferenceName, volumesValue, err := reflectutil.VolumesValueFromObject(out, "", []string{})
 		if err != nil {
 			return out, fmt.Errorf("get volume Reference volume for K8s Type %v with error %v", v, err)
 		}
 
-		outValue := reflect.ValueOf(out).Elem()
-		containers := outValue.FieldByName("Containers")
+		log.Info("VolumesValueFromObject", "volumesReferenceName", volumesReferenceName)
 
-		valid := containers.IsValid()
-
-		log.Info("value", "valid", valid)
-
-		log.Info("value", "isNil", containers.IsNil())
-
-		log.Info("value", "zero", containers.IsZero())
-
-		x := containers.Interface()
-
-		log.Info("test", "containers", x)
-
-		containersPtr = outValue.FieldByName(containersReferenceName).Addr().Interface().(*[]corev1.Container)
-		volumesPtr = outValue.FieldByName(volumesReferenceName).Addr().Interface().(*[]corev1.Volume)
+		containersPtr = containersValue.Addr().Interface().(*[]corev1.Container)
+		volumesPtr = volumesValue.Addr().Interface().(*[]corev1.Volume)
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
 
 	}
