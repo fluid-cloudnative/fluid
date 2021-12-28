@@ -79,5 +79,15 @@ func TestValueByType(t *testing.T) {
 func differenceMap(slice1 map[string]ref.Value, slice2 map[string]string) []string {
 	var diff []string
 
+	for k, v := range slice1 {
+		if typeValue, found := slice2[k]; found {
+			if v.Type().String() != typeValue {
+				diff = append(diff, k)
+			}
+		} else {
+			diff = append(diff, k)
+		}
+	}
+
 	return diff
 }

@@ -2,6 +2,7 @@ package reflect
 
 import (
 	"fmt"
+	"reflect"
 	ref "reflect"
 	"strings"
 
@@ -9,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// valueByTypeSearcher provides valueByType for find the field name by using struct type
+// valueByTypeSearcher provides valueByType for find the originalValue name by using struct type
 type valueByTypeSearcher struct {
 	targetNames map[string]ref.Value
 }
@@ -28,37 +29,61 @@ func ValueByType(original interface{}, targetObject interface{}) map[string]ref.
 
 func (f *valueByTypeSearcher) valueByType(currentValue ref.Value, currentName string, targetType ref.Type) map[string]ref.Value {
 	currentValueStr := currentValue.String()
-	log.V(1).Info("valueByType enter", "currentValue", currentValueStr, "currentName", currentName, "targetNames", f.targetNames)
+	log.V(1).Info("valueByType enter", "currentValue", currentValueStr, "type", currentValue.Type(), "currentName", currentName, "targetNames", f.targetNames)
+
+	// If the target is matched
+	if currentValue.Type() == targetType {
+		f.targetNames[currentName] = currentValue
+	}
 
 	switch currentValue.Kind() {
 	// The first cases handle nested structures and search them recursively
 
 	// If it is a pointer, interface we need to unwrap and call once again
-	case ref.Ptr, ref.Interface, ref.Slice:
+	case ref.Ptr, ref.Interface:
 		// To get the actual value of the original we have to call Elem()
 		// At the same time this unwraps the pointer so we don't end up in
 		// an infinite recursion
 		originalValue := currentValue.Elem()
-		if originalValue.Type() == targetType {
+
+		if !originalValue.IsValid() {
+			// fmt.Printf("result isZero %v\n", originalValue.IsZero())
+			// fmt.Printf("result Kind %v\n", originalValue.Kind())
+			// fmt.Printf("result isNil %v\n", originalValue.IsNil())
+			// fmt.Printf("result %v\n", originalValue.Type().String())
+			// fmt.Printf("result %v\n", originalValue.CanSet())
+			// fmt.Printf("result %v\n", originalValue.CanAddr())
+			originalValue.Set(reflect.New(currentValue.Type().Elem()))
+		}
+
+		if originalValue.Type() != targetType {
 			// f.targetNames = append(f.targetNames, currentName)
-			f.targetNames[currentName] = currentValue
-		} else {
 			f.valueByType(originalValue, currentName, targetType)
 		}
-	// If it is a struct we serarch each field
+	case ref.Slice:
+		originalValue := currentValue.Elem()
+		if !originalValue.IsValid() {
+			elemType := reflect.TypeOf(currentValue.Type().Elem())
+			slice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, 10)
+			originalValue.Set(slice)
+		}
+
+		if originalValue.Type() != targetType {
+			f.valueByType(originalValue, originalValue.Type().Name(), targetType)
+		}
+
+	// If it is a struct we serarch each originalValue
 	case ref.Struct:
 		for i := 0; i < currentValue.NumField(); i += 1 {
-			field := currentValue.Field(i)
-			if field.Type() == targetType {
-				f.targetNames[field.Type().Name()] = field
-			} else {
-				f.valueByType(field, field.Type().Name(), targetType)
+			originalValue := currentValue.Field(i)
+			if originalValue.Type() != targetType {
+				f.valueByType(originalValue, originalValue.Type().Name(), targetType)
 			}
 		}
-	default:
-		if currentValue.Type() == targetType {
-			f.targetNames[currentName] = currentValue
-		}
+	}
+
+	if currentValue.Type() == targetType {
+		f.targetNames[currentName] = currentValue
 	}
 
 	log.V(1).Info("valueByType exit", "currentValue", currentValue.String(), "currentName", currentName, "targetNames", f.targetNames)
@@ -115,12 +140,12 @@ func valueFromObject(object interface{}, searchObject interface{}, nominateName 
 	return name, ref.Value{}, fmt.Errorf("can't determine the names in %v", names)
 }
 
-// ContainersValueFromObject gets the name of field with the containers slice
+// ContainersValueFromObject gets the name of originalValue with the containers slice
 func ContainersValueFromObject(object interface{}, nominateName string, excludeMatches []string) (name string, value ref.Value, err error) {
 	return valueFromObject(object, []corev1.Container{}, nominateName, excludeMatches)
 }
 
-// VolumesValueFromObject gets the name of field with the containers slice
+// VolumesValueFromObject gets the name of originalValue with the containers slice
 func VolumesValueFromObject(object interface{}, nominateName string, excludeMatches []string) (name string, value ref.Value, err error) {
 	return valueFromObject(object, []corev1.Volume{}, nominateName, excludeMatches)
 }
