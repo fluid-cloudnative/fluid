@@ -22,7 +22,7 @@ func TestValueByType(t *testing.T) {
 			original: &corev1.Pod{},
 			target:   corev1.PodSpec{},
 			expect: map[string]string{
-				"Spec": "v1.",
+				"Spec": "v1.PodSpec",
 			},
 		},
 		{
@@ -30,37 +30,37 @@ func TestValueByType(t *testing.T) {
 			original: &corev1.Pod{},
 			target:   corev1.Container{},
 			expect: map[string]string{
-				"InitContainers": "v1.",
-				"Containers":     "v1.",
+				"InitContainers": "[]v1.Container",
+				"Containers":     "[]v1.Container",
 			},
 		}, {
 			name:     "Both struct, and search volume",
 			original: &corev1.Pod{},
 			target:   []corev1.Volume{},
 			expect: map[string]string{
-				"Volumes": "v1.",
+				"Volumes": "[]v1.Volume",
 			},
 		}, {
 			name:     "TargetType struct, and search containers",
 			original: &corev1.Pod{},
 			target:   []corev1.Container{},
 			expect: map[string]string{
-				"InitContainers": "v1.",
-				"Containers":     "v1.",
+				"InitContainers": "[]v1.Container",
+				"Containers":     "[]v1.Container",
 			},
 		}, {
 			name:     "TargetType struct, and search *int64",
 			original: &corev1.Pod{},
 			target:   utilpointer.Int64Ptr(1),
 			expect: map[string]string{
-				"ActiveDeadlineSeconds":         "v1.",
-				"FSGroup":                       "v1.",
-				"TolerationSeconds":             "v1.",
-				"DeletionGracePeriodSeconds":    "v1.",
-				"ExpirationSeconds":             "v1.",
-				"RunAsUser":                     "v1.",
-				"RunAsGroup":                    "v1.",
-				"TerminationGracePeriodSeconds": "v1."},
+				"ActiveDeadlineSeconds":         "*int64",
+				"FSGroup":                       "*int64",
+				"TolerationSeconds":             "*int64",
+				"DeletionGracePeriodSeconds":    "*int64",
+				"ExpirationSeconds":             "*int64",
+				"RunAsUser":                     "*int64",
+				"RunAsGroup":                    "*int64",
+				"TerminationGracePeriodSeconds": "*int64"},
 		},
 	}
 
