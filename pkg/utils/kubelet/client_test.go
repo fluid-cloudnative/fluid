@@ -17,6 +17,7 @@ limitations under the License.
 package kubelet
 
 import (
+	"errors"
 	. "github.com/agiledragon/gomonkey"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
@@ -70,6 +71,30 @@ func TestKubeletClient_GetNodeRunningPods(t *testing.T) {
 			if !reflect.DeepEqual(got.Items[0], mockPod) {
 				t.Errorf("got = %v, \nwant %v", got.Items[0], mockPod)
 			}
+		})
+		Convey("GetNodeRunningPods client err", func() {
+			httpClient := &http.Client{}
+			patch1 := ApplyMethod(reflect.TypeOf(httpClient), "Get", func(_ *http.Client, url string) (resp *http.Response, err error) {
+				return nil, errors.New("test")
+			})
+			defer patch1.Reset()
+
+			kubeletClient := KubeletClient{}
+			got, err := kubeletClient.GetNodeRunningPods()
+			So(err, ShouldNotBeNil)
+			So(got, ShouldBeNil)
+		})
+		Convey("GetNodeRunningPods json err", func() {
+			httpClient := &http.Client{}
+			patch1 := ApplyMethod(reflect.TypeOf(httpClient), "Get", func(_ *http.Client, url string) (resp *http.Response, err error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader("abc"))}, nil
+			})
+			defer patch1.Reset()
+
+			kubeletClient := KubeletClient{}
+			got, err := kubeletClient.GetNodeRunningPods()
+			So(err, ShouldNotBeNil)
+			So(got, ShouldBeNil)
 		})
 	})
 }

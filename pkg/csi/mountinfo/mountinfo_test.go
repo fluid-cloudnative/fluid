@@ -152,14 +152,14 @@ func Test_parseMountInfoLine(t *testing.T) {
 		{
 			name: "len err1",
 			args: args{
-				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 -",
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other",
 			},
 			want: nil,
 		},
 		{
 			name: "len err2",
 			args: args{
-				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 - fuse.juicefs",
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other -",
 			},
 			want: nil,
 		},
@@ -244,6 +244,13 @@ func Test_unescapeString(t *testing.T) {
 				str: "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
 			},
 			want: "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+		},
+		{
+			name: "test-ascii",
+			args: args{
+				str: "\\123abc",
+			},
+			want: "Sabc",
 		},
 	}
 	for _, tt := range tests {

@@ -19,12 +19,15 @@ package recover
 import (
 	"errors"
 	. "github.com/agiledragon/gomonkey"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	. "github.com/smartystreets/goconvey/convey"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/mount"
 	"reflect"
@@ -66,11 +69,21 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch1.Reset()
 			patch2 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
-				return []mountinfo.MountPoint{}, nil
+				return []mountinfo.MountPoint{{
+					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+					MountPath:             "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
+					FilesystemType:        "fuse.juicefs",
+					ReadOnly:              false,
+					Count:                 0,
+					NamespacedDatasetName: "default-jfsdemo",
+				}}, nil
 			})
 			defer patch2.Reset()
 
 			r := NewFuseRecoder(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1))
+			r.SafeFormatAndMount = mount.SafeFormatAndMount{
+				Interface: &mount.FakeMounter{},
+			}
 			r.run()
 		})
 		Convey("GetNodeRunningPods error", func() {
@@ -308,6 +321,84 @@ func TestFuseRecover_recoverBrokenMount(t *testing.T) {
 			if err := r.recoverBrokenMount(tt.args.point); (err != nil) != tt.wantErr {
 				t.Errorf("recoverBrokenMount() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestFuseRecover_eventRecord(t *testing.T) {
+	type fields struct {
+		containers map[string]*containerStat
+		dataset    *v1alpha1.Dataset
+	}
+	type args struct {
+		point       mountinfo.MountPoint
+		eventType   string
+		eventReason string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "test",
+			fields: fields{
+				dataset: &v1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jfsdemo",
+						Namespace: "default",
+					},
+				},
+			},
+			args: args{
+				point: mountinfo.MountPoint{
+					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+					MountPath:             "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
+					FilesystemType:        "fuse.juicefs",
+					ReadOnly:              false,
+					Count:                 0,
+					NamespacedDatasetName: "default-jfsdemo",
+				},
+				eventType:   v1.EventTypeNormal,
+				eventReason: common.FuseRecoverSucceed,
+			},
+		},
+		{
+			name: "test-err",
+			fields: fields{
+				dataset: &v1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jfsdemo",
+						Namespace: "default",
+					},
+				},
+			},
+			args: args{
+				point: mountinfo.MountPoint{
+					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+					MountPath:             "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
+					FilesystemType:        "fuse.juicefs",
+					ReadOnly:              false,
+					Count:                 0,
+					NamespacedDatasetName: "jfsdemo",
+				},
+				eventType:   v1.EventTypeNormal,
+				eventReason: common.FuseRecoverSucceed,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := apimachineryRuntime.NewScheme()
+			s.AddKnownTypes(v1alpha1.GroupVersion, tt.fields.dataset)
+			fakeClient := fake.NewFakeClientWithScheme(s, tt.fields.dataset)
+			r := &FuseRecover{
+				KubeClient:    fakeClient,
+				KubeletClient: nil,
+				Recorder:      record.NewFakeRecorder(1),
+				containers:    tt.fields.containers,
+			}
+			r.eventRecord(tt.args.point, tt.args.eventType, tt.args.eventReason)
 		})
 	}
 }

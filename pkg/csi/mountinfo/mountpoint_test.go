@@ -72,6 +72,38 @@ func Test_getBindMounts(t *testing.T) {
 				"default-jfsdemo": {mockBindSubPathMount, mockBindMount},
 			},
 		},
+		{
+			name: "test-bind-nil",
+			args: args{
+				mountByPath: map[string]*Mount{
+					"kubernetes.io~csi/mount": {
+						Subtree:        "/",
+						MountPath:      "kubernetes.io~csi/mount",
+						FilesystemType: "ext4",
+						PeerGroup:      nil,
+						ReadOnly:       false,
+						Count:          0,
+					},
+				},
+			},
+			wantBindMountByName: map[string][]*Mount{},
+		},
+		{
+			name: "test-subpath-nil",
+			args: args{
+				mountByPath: map[string]*Mount{
+					"/volume-subpaths/test": {
+						Subtree:        "/",
+						MountPath:      "/volume-subpaths/test",
+						FilesystemType: "ext4",
+						PeerGroup:      nil,
+						ReadOnly:       false,
+						Count:          0,
+					},
+				},
+			},
+			wantBindMountByName: map[string][]*Mount{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -166,13 +198,15 @@ func Test_getGlobalMounts(t *testing.T) {
 		{
 			name: "test-nil",
 			args: args{
-				mountByPath: map[string]*Mount{"/test": {
-					Subtree:        "/",
-					MountPath:      "/test",
-					FilesystemType: "fuse.juicefs",
-					PeerGroup:      &peerGroup2,
-					ReadOnly:       false,
-				}},
+				mountByPath: map[string]*Mount{
+					"/runtime-mnt/test": {
+						Subtree:        "/",
+						MountPath:      "/runtime-mnt/test",
+						FilesystemType: "fuse.juicefs",
+						PeerGroup:      &peerGroup2,
+						ReadOnly:       false,
+					},
+				},
 			},
 			wantGlobalMountByName: map[string]*Mount{},
 			wantErr:               false,

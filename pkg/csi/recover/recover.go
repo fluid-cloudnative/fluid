@@ -185,6 +185,10 @@ func (r *FuseRecover) compareOrRecordContainerStat(pod corev1.Pod) (restarted bo
 func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventReason string) {
 	namespacedName := point.NamespacedDatasetName
 	strs := strings.Split(namespacedName, "-")
+	if len(strs) < 2 {
+		glog.V(3).Infof("can't parse dataset from namespacedName: %s", namespacedName)
+		return
+	}
 	namespace, datasetName := strs[0], strs[1]
 
 	dataset, err := utils.GetDataset(r.KubeClient, datasetName, namespace)
