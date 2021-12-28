@@ -28,12 +28,20 @@ func ValueByType(original interface{}, targetObject interface{}) map[string]ref.
 }
 
 func (f *valueByTypeSearcher) valueByType(currentValue ref.Value, currentName string, targetType ref.Type) map[string]ref.Value {
+
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		log.Info("Reflection: Failed to set", "name", currentName)
+	// 	}
+	// }()
+
 	currentValueStr := currentValue.String()
 	log.V(1).Info("valueByType enter", "currentValue", currentValueStr, "type", currentValue.Type(), "currentName", currentName, "targetNames", f.targetNames)
 
 	// If the target is matched
 	if currentValue.Type() == targetType {
 		f.targetNames[currentName] = currentValue
+		return f.targetNames
 	}
 
 	switch currentValue.Kind() {
@@ -41,49 +49,22 @@ func (f *valueByTypeSearcher) valueByType(currentValue ref.Value, currentName st
 
 	// If it is a pointer, interface we need to unwrap and call once again
 	case ref.Ptr, ref.Interface:
-		// To get the actual value of the original we have to call Elem()
-		// At the same time this unwraps the pointer so we don't end up in
-		// an infinite recursion
-		originalValue := currentValue.Elem()
-
-		if !originalValue.IsValid() {
-			// fmt.Printf("result isZero %v\n", originalValue.IsZero())
-			// fmt.Printf("result Kind %v\n", originalValue.Kind())
-			// fmt.Printf("result isNil %v\n", originalValue.IsNil())
-			// fmt.Printf("result %v\n", originalValue.Type().String())
-			// fmt.Printf("result %v\n", originalValue.CanSet())
-			// fmt.Printf("result %v\n", originalValue.CanAddr())
-			originalValue.Set(reflect.New(currentValue.Type().Elem()))
-		}
-
-		if originalValue.Type() != targetType {
-			// f.targetNames = append(f.targetNames, currentName)
-			f.valueByType(originalValue, currentName, targetType)
-		}
-	case ref.Slice:
-		originalValue := currentValue.Elem()
-		if !originalValue.IsValid() {
-			elemType := reflect.TypeOf(currentValue.Type().Elem())
-			slice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, 10)
-			originalValue.Set(slice)
-		}
-
-		if originalValue.Type() != targetType {
-			f.valueByType(originalValue, originalValue.Type().Name(), targetType)
-		}
-
-	// If it is a struct we serarch each originalValue
-	case ref.Struct:
-		for i := 0; i < currentValue.NumField(); i += 1 {
-			originalValue := currentValue.Field(i)
-			if originalValue.Type() != targetType {
-				f.valueByType(originalValue, originalValue.Type().Name(), targetType)
+		currentName = currentValue.Type().Elem().Name()
+		if !currentValue.Elem().IsValid() {
+			if currentValue.CanSet() {
+				currentValue.Set(reflect.New(currentValue.Type().Elem()))
+			} else {
+				return f.targetNames
 			}
 		}
-	}
 
-	if currentValue.Type() == targetType {
-		f.targetNames[currentName] = currentValue
+		f.valueByType(currentValue.Elem(), currentValue.Type().Elem().Name(), targetType)
+	case ref.Struct:
+		for i := 0; i < currentValue.NumField(); i += 1 {
+			field := currentValue.Field(i)
+			name := currentValue.Type().Field(i).Name
+			f.valueByType(field, name, targetType)
+		}
 	}
 
 	log.V(1).Info("valueByType exit", "currentValue", currentValue.String(), "currentName", currentName, "targetNames", f.targetNames)
