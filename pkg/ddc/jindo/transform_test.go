@@ -282,6 +282,28 @@ func TestTransformAllocatePorts(t *testing.T) {
 				}},
 			}}, &Jindo{}, 8101,
 		},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
+				},
+				NetworkMode: "ContainerNetwork",
+				Replicas:    3,
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, 8101,
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
