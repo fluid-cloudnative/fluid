@@ -29,11 +29,11 @@ func ValueByType(original interface{}, targetObject interface{}) map[string]ref.
 
 func (f *valueByTypeSearcher) valueByType(currentValue ref.Value, currentName string, targetType ref.Type) map[string]ref.Value {
 
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		log.Info("Reflection: Failed to set", "name", currentName)
-	// 	}
-	// }()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Info("Reflection: Failed to set", "name", currentName)
+		}
+	}()
 
 	currentValueStr := currentValue.String()
 	log.V(1).Info("valueByType enter", "currentValue", currentValueStr, "type", currentValue.Type(), "currentName", currentName, "targetNames", f.targetNames)
@@ -109,6 +109,7 @@ func valueFromObject(object interface{}, searchObject interface{}, nominateName 
 
 	for _, exclude := range namesToExclude {
 		nameKeys = slice.RemoveString(nameKeys, exclude)
+		delete(names, exclude)
 	}
 
 	// 3. Checkout what's in names, if there are elements more than 1, skip it
@@ -118,7 +119,7 @@ func valueFromObject(object interface{}, searchObject interface{}, nominateName 
 	}
 
 	// 4. Checkout what's in names, if there are elements more than 1, return error
-	return name, ref.Value{}, fmt.Errorf("can't determine the names in %v", names)
+	return name, ref.Value{}, fmt.Errorf("can't determine the names in %v", nameKeys)
 }
 
 // ContainersValueFromObject gets the name of originalValue with the containers slice

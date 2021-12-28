@@ -1,9 +1,11 @@
 package reflect
 
 import (
+	"fmt"
 	ref "reflect"
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -90,4 +92,134 @@ func differenceMap(slice1 map[string]ref.Value, slice2 map[string]string) []stri
 	}
 
 	return diff
+}
+
+func TestContainersValueFromObject(t *testing.T) {
+	type testCase struct {
+		name           string
+		object         interface{}
+		nominateName   string
+		excludeMatches []string
+		expectName     string
+		expectType     string
+		wantErr        error
+	}
+
+	testcases := []testCase{
+		{
+			name:           "with Exclude names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{"init"},
+			expectName:     "Containers",
+			expectType:     "[]v1.Container",
+			wantErr:        nil,
+		}, {
+			name:           "with nominate names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "InitContainers",
+			excludeMatches: []string{""},
+			expectName:     "InitContainers",
+			expectType:     "[]v1.Container",
+			wantErr:        nil,
+		}, {
+			name:           "Empty",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{""},
+			expectName:     "",
+			expectType:     "[]v1.Container",
+			wantErr:        fmt.Errorf("can't determine the names in [InitContainers Containers]"),
+		},
+	}
+
+	for _, testcase := range testcases {
+		name, value, err := ContainersValueFromObject(testcase.object, testcase.nominateName, testcase.excludeMatches)
+		if testcase.wantErr != err {
+			if testcase.wantErr != nil && err != nil {
+				if len(testcase.wantErr.Error()) != len(err.Error()) {
+					t.Errorf("testcase %s failed due to expected err %v, but got err %v", testcase.name, testcase.wantErr, err)
+				}
+			}
+
+		}
+
+		if err == nil {
+			if testcase.expectName != name {
+				t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expectName, name)
+			}
+
+			// if !value.IsValid() {
+			// 	sliceType := ref.TypeOf(value)
+			// 	value.Set(ref.MakeSlice(sliceType, 0, 0))
+			// }
+
+			if testcase.expectType != value.Type().String() {
+				t.Errorf("testcase %s failed due to expected type %v, but got type %v", testcase.name, testcase.expectType, value.Type().String())
+			}
+		}
+
+	}
+
+}
+
+func TestVolumesValueFromObject(t *testing.T) {
+	type testCase struct {
+		name           string
+		object         interface{}
+		nominateName   string
+		excludeMatches []string
+		expect         string
+		expectType     string
+		wantErr        error
+	}
+
+	testcases := []testCase{
+		{
+			name:           "with Exclude names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{"init"},
+			expect:         "Volumes",
+			expectType:     "[]v1.Volume",
+			wantErr:        nil,
+		}, {
+			name:           "with nominate names",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "Volumes",
+			excludeMatches: []string{""},
+			expect:         "Volumes",
+			expectType:     "[]v1.Volume",
+			wantErr:        nil,
+		}, {
+			name:           "Empty",
+			object:         &appsv1.DaemonSet{},
+			nominateName:   "",
+			excludeMatches: []string{""},
+			expect:         "Volumes",
+			expectType:     "[]v1.Volume",
+			wantErr:        nil,
+		},
+	}
+
+	for _, testcase := range testcases {
+		name, value, err := VolumesValueFromObject(testcase.object, testcase.nominateName, testcase.excludeMatches)
+		if testcase.wantErr != err {
+			if testcase.wantErr != nil && err != nil {
+				if testcase.wantErr.Error() != err.Error() {
+					t.Errorf("testcase %s failed due to expected err %v, but got err %v", testcase.name, testcase.wantErr, err)
+				}
+			}
+
+		}
+
+		if testcase.expect != name {
+			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, name)
+		}
+
+		if testcase.expectType != value.Type().String() {
+			t.Errorf("testcase %s failed due to expected type %v, but got type %v", testcase.name, testcase.expectType, value.Type().String())
+		}
+
+	}
 }
