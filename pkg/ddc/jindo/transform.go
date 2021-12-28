@@ -95,6 +95,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 	}
+	e.transformNetworkMode(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
 		return
@@ -141,7 +142,6 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	if err != nil {
 		return
 	}
-	e.transformNetworkMode(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
@@ -553,8 +553,18 @@ func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *
 }
 
 func (e *JindoEngine) allocatePorts(value *Jindo) error {
-	// For now, Jindo only needs two ports for master and client rpc respectively
+
+	// if not usehostnetwork then use default port
+	// usehostnetwork to choose port from port allocator
 	expectedPortNum := 2
+	if !value.UseHostNetwork {
+		value.Master.Port.Rpc = DEFAULT_MASTER_RPC_PORT
+		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
+		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
+		}
+		return nil
+	}
 
 	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 		expectedPortNum = 3

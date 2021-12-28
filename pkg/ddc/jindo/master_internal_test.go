@@ -1,6 +1,8 @@
 package jindo
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -193,7 +195,7 @@ func TestGenerateJindoValueFile(t *testing.T) {
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
+	result := resource.MustParse("20Gi")
 	engine := JindoEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -203,6 +205,14 @@ func TestGenerateJindoValueFile(t *testing.T) {
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Replicas: 2,
+				},
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
 				},
 			},
 		},
