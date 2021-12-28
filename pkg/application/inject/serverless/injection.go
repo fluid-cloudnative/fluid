@@ -41,7 +41,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 
 	var containersPtr *[]corev1.Container
 	var volumesPtr *[]corev1.Volume
-	var metadata metav1.ObjectMeta
+	var objectMeta metav1.ObjectMeta
 	var typeMeta metav1.TypeMeta
 
 	// Handle Lists
@@ -75,12 +75,10 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		containersPtr = &pod.Spec.Containers
 		volumesPtr = &pod.Spec.Volumes
 		typeMeta = pod.TypeMeta
-		metadata = pod.ObjectMeta
+		objectMeta = pod.ObjectMeta
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		outValue := reflect.ValueOf(out).Elem()
-
-		// containersReferenceNames := utils.FieldNameByType(out, []corev1.Container{})
 
 		containersReferenceName, containersValue, err := reflectutil.ContainersValueFromObject(out, "", []string{"init"})
 		if err != nil {
@@ -99,17 +97,17 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		containersPtr = containersValue.Addr().Interface().(*[]corev1.Container)
 		volumesPtr = volumesValue.Addr().Interface().(*[]corev1.Volume)
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
-
+		objectMeta = outValue.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
 	}
 
-	isServerless := isServerlessPod(metadata.Annotations)
+	isServerless := ServerlessEnabled(objectMeta.Annotations)
 	if !isServerless {
 		return out, nil
 	}
 
 	name := types.NamespacedName{
-		Namespace: metadata.Namespace,
-		Name:      metadata.Name,
+		Namespace: objectMeta.Namespace,
+		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
 
@@ -174,7 +172,7 @@ func fromRawToObject(raw []byte) (runtime.Object, error) {
 	return obj, nil
 }
 
-func isServerlessPod(annotions map[string]string) (match bool) {
+func ServerlessEnabled(annotions map[string]string) (match bool) {
 	for key, value := range annotions {
 		if key == common.Serverless && value == common.True {
 			match = true
