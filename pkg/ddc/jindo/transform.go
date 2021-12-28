@@ -555,6 +555,8 @@ func (e *JindoEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *
 func (e *JindoEngine) allocatePorts(value *Jindo) error {
 
 	// if not usehostnetwork then use default port
+	// usehostnetwork to choose port from port allocator
+	expectedPortNum := 2
 	if !value.UseHostNetwork {
 		value.Master.Port.Rpc = DEFAULT_MASTER_RPC_PORT
 		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
@@ -564,8 +566,6 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 		return nil
 	}
 
-	// usehostnetwork to choose port from port allocator
-	expectedPortNum := 2
 	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 		expectedPortNum = 3
 	}

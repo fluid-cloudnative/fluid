@@ -308,6 +308,7 @@ func TestTransformAllocatePorts(t *testing.T) {
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
 		engine.transformNetworkMode(test.runtime, test.jindoValue)
+		test.jindoValue.Master.ReplicaCount = 3
 		err := engine.allocatePorts(test.jindoValue)
 		if test.jindoValue.Master.Port.Rpc != test.expect && err != nil {
 			t.Errorf("expected value %v, but got %v, and err %v", test.expect, test.jindoValue.Master.Port.Rpc, err)
