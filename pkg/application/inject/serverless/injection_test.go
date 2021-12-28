@@ -340,15 +340,14 @@ func getInjectPiece(object runtime.Object) ([]corev1.Container, []corev1.Volume,
 
 }
 
-func TestInjectObjectForUnstructed(t *testing.T) {
-	inputYaml := `
+const inputYaml = `
 apiVersion: "kubeflow.org/v1"
 kind: "TFJob"
 metadata:
   name: "mnist"
   namespace: kubeflow
-  annotaions:
-  	fluid.io/serverless: "true"
+  annotations:
+   fluid.io/serverless: true
 spec:
   cleanPodPolicy: None 
   tfReplicaSpecs:
@@ -374,6 +373,9 @@ spec:
               persistentVolumeClaim:
                 claimName: "tfevent-volume"  
 `
+
+func TestInjectObjectForUnstructed(t *testing.T) {
+
 	obj := &unstructured.Unstructured{}
 	hostPathCharDev := corev1.HostPathCharDev
 	bTrue := true
@@ -421,6 +423,9 @@ spec:
 	}
 
 	out, err := InjectObject(obj, template)
+	if err != nil {
+		t.Errorf("Failed to InjectObject due to %v", err)
+	}
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
