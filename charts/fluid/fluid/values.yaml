@@ -71,4 +71,5 @@ runtime:
 webhook:
   enabled: true
   image: fluidcloudnative/fluid-webhook:v0.7.0-075dde2
+  replicas: 1
 

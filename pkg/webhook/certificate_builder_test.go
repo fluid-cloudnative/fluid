@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package webhook
 
 import (
 	"context"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -39,12 +40,6 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
-	// prepare the shell script
-	cmd := exec.Command("cp", "../../tools/certificate.sh", "/usr/local/bin/certificate.sh")
-	stdout, err := cmd.Output()
-	if err != nil {
-		log.Error(err, "fail to prepare the shell script", "output", stdout)
-	}
 }
 
 func TestNewCertificateBuilder(t *testing.T) {
@@ -158,7 +153,6 @@ func TestGenCA(t *testing.T) {
 		},
 	}
 
-	certExeFile := "../../tools/certificate.sh"
 	certPath := "/tmp/fluid/certs"
 
 	// create dir
@@ -170,8 +164,8 @@ func TestGenCA(t *testing.T) {
 	cb := NewCertificateBuilder(c, log)
 
 	for index, item := range testCases {
-		ca, _ := cb.genCA(item.ns, item.svc, certExeFile, certPath)
-		gotLen := len(ca)
+		certs, _ := cb.genCA(item.ns, item.svc, certPath)
+		gotLen := len(certs.CACert)
 		if gotLen < item.lengthCheck {
 			t.Errorf("%s generate certification failed, ns:%s,svc:%s,want greater than %v,got:%v",
 				index,
