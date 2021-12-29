@@ -6,7 +6,7 @@ const (
 
 	ALLUXIO_MOUNT_TYPE = "fuse.alluxio-fuse"
 
-	ALLUXIO_NAMESPACE = "alluxio-system"
+	ALLUXIO_NAMESPACE = "alluxio-system-test"
 
 	ALLUXIO_CHART = ALLUXIO_RUNTIME
 
