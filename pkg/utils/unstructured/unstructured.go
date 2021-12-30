@@ -17,8 +17,15 @@ limitations under the License.
 package unstructured
 
 import (
+	"fmt"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/mitchellh/mapstructure"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
@@ -28,18 +35,24 @@ type UnstructuredApplication struct {
 	obj *unstructured.Unstructured
 }
 
-type Anchor struct {
+type UnstructuredAnchor struct {
 	fields []string
 }
 
-func (a Anchor) Key() (id string) {
+func NewUnstructuredAnchor(fields []string) common.Anchor {
+	return &UnstructuredAnchor{
+		fields: fields,
+	}
+}
+
+func (a UnstructuredAnchor) Key() (id string) {
 	for _, field := range a.fields {
 		id = id + "/" + field
 	}
 	return
 }
 
-func (a Anchor) Path() []string {
+func (a UnstructuredAnchor) Path() []string {
 	return a.fields
 }
 
@@ -49,28 +62,96 @@ func NewUnstructuredApplication(obj *unstructured.Unstructured) *UnstructuredApp
 	}
 }
 
-func ()
+func (u *UnstructuredApplication) GetObject() (obj *unstructured.Unstructured) {
+	return u.obj
+}
 
 func (u *UnstructuredApplication) SetContainers(containers []corev1.Container, fields ...string) {
+	if len(containers) == 0 {
+		unstructured.RemoveNestedField(u.obj.Object, fields...)
+		return
+	}
 
+	newContainers := make([]interface{}, 0, len(containers))
+	for _, container := range containers {
+		out, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&container)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("unable to convert Container: %v", err))
+			continue
+		}
+		newContainers = append(newContainers, out)
+	}
+	unstructured.SetNestedSlice(u.obj.Object, newContainers, fields...)
 }
 
 func (u *UnstructuredApplication) SetVolumes(volumes []corev1.Volume, fields ...string) {
+	if len(volumes) == 0 {
+		unstructured.RemoveNestedField(u.obj.Object, fields...)
+		return
+	}
 
+	newVolumes := make([]interface{}, 0, len(volumes))
+	for _, volume := range volumes {
+		out, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&volume)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("unable to convert Volume: %v", err))
+			continue
+		}
+		newVolumes = append(newVolumes, out)
+	}
+	unstructured.SetNestedSlice(u.obj.Object, newVolumes, fields...)
 }
 
 func (u *UnstructuredApplication) GetVolumes(fields ...string) (volumes []corev1.Volume) {
-	return
+	field, found, err := unstructured.NestedFieldNoCopy(u.obj.Object, fields...)
+	if !found || err != nil {
+		return nil
+	}
+	original, ok := field.([]interface{})
+	if !ok {
+		return nil
+	}
+	vol := make([]corev1.Volume, 0, len(original))
+	for _, obj := range original {
+		var volume corev1.Volume
+		o, ok := obj.(map[string]interface{})
+		if !ok {
+			// expected map[string]interface{}, got something else
+			return nil
+		}
+		mapstructure.Decode(o, &volume)
+		vol = append(vol, volume)
+	}
+	return vol
 }
 
 func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []corev1.Container) {
+	field, found, err := unstructured.NestedFieldNoCopy(u.obj.Object, fields...)
+	if !found || err != nil {
+		return nil
+	}
+	original, ok := field.([]interface{})
+	if !ok {
+		return nil
+	}
+	vol := make([]corev1.Container, 0, len(original))
+	for _, obj := range original {
+		var container corev1.Container
+		o, ok := obj.(map[string]interface{})
+		if !ok {
+			// expected map[string]interface{}, got something else
+			return nil
+		}
+		mapstructure.Decode(o, &container)
+		vol = append(vol, container)
+	}
+	return vol
+}
+
+func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor) {
 	return
 }
 
-func (u *UnstructuredApplication) LocateContainers() (anchors []Anchor) {
-	return
-}
-
-func (u *UnstructuredApplication) LocateVolumes() (anchors []Anchor) {
+func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor) {
 	return
 }
