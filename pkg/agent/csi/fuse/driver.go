@@ -13,24 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package csi
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -41,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/golang/glog"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -53,6 +40,8 @@ type driver struct {
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
+
+var _ manager.Runnable = &driver{}
 
 func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
@@ -105,4 +94,9 @@ func (d *driver) Run() {
 		d.newNodeServer(),
 	)
 	s.Wait()
+}
+
+func (d *driver) Start(ctx context.Context) error {
+	d.Run()
+	return nil
 }
