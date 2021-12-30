@@ -66,6 +66,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kubernetes-csi/csi-lib-utils v0.9.1 // indirect
 	github.com/kubernetes-csi/drivers v1.0.2
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
 	github.com/pkg/errors v0.9.1
