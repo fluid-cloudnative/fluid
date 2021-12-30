@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/agent/disk"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -31,7 +32,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
+	"github.com/fluid-cloudnative/fluid/pkg/agent/csi/fuse"
 	"github.com/spf13/cobra"
 )
 
@@ -109,6 +110,7 @@ func handle() {
 	// startReaper()
 	fluid.LogVersion()
 
+	// Enable pprof if pprofAddr is not empty
 	if pprofAddr != "" {
 		glog.Infof("Enabling pprof with address %s", pprofAddr)
 		mux := http.NewServeMux()
@@ -154,14 +156,21 @@ func handle() {
 		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
 	}
 
-	go func() {
-		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-			panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
-		}
-	}()
-
+	// Register CSI Driver to Fluid agent
 	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
-	d.Run()
+	if err := mgr.Add(d); err != nil {
+		panic(fmt.Sprintf("unable to add CSI driver due to error %v", err))
+	}
+
+	// Register Disk Resource Exporter to Fluid agent
+	e := disk.NewExporter(nodeID, mgr.GetClient())
+	if err := mgr.Add(e); err != nil {
+		panic(fmt.Sprintf("unable to add Disk Resource Exporter due to error %v", err))
+	}
+
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
+	}
 }
 
 func errorAndExit(err error) {
