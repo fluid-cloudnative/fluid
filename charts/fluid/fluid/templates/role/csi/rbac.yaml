@@ -40,9 +40,9 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: [""]
     resources: ["nodes"]
-    verbs: ["get", "list", "watch", "patch", "proxy"]
+    verbs: ["get", "list", "watch", "patch"]
   - apiGroups: [""]
-    resources: ["nodes/log", "nodes/metrics", "nodes/proxy", "nodes/spec", "nodes/stats"]
+    resources: ["nodes/proxy"]
     verbs: ["*"]
 ---
 kind: ClusterRoleBinding
