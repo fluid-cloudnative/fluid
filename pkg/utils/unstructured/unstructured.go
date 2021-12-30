@@ -26,6 +26,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/nqd/flat"
 )
 
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
@@ -148,10 +150,14 @@ func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []
 	return vol
 }
 
-func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor) {
-	return
+func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, err error) {
+	out, err := flat.Flatten(u.obj.Object, nil)
+	if err != nil {
+		return
+	}
+
 }
 
-func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor) {
+func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor, err error) {
 	return
 }

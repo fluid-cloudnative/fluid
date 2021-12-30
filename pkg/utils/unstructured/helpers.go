@@ -19,10 +19,7 @@ package unstructured
 import (
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-
 
 func ExtractContainer(v map[string]interface{}) (container corev1.Container) {
 	container = corev1.Container{}
