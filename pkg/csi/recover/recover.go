@@ -191,6 +191,10 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		return
 	}
 	namespace, datasetName, err := volume.GetNamespacedNameByVolumeId(r.KubeClient, namespacedName)
+	if err != nil {
+		glog.Errorf("error get namespacedName by volume id %s: %v", namespacedName, err)
+		return
+	}
 
 	dataset, err := utils.GetDataset(r.KubeClient, datasetName, namespace)
 	if err != nil {
