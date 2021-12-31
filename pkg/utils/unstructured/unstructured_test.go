@@ -58,6 +58,27 @@ spec:
             - name: "training"
               persistentVolumeClaim:
                 claimName: "tfevent-volume"  
+    PS:
+      replicas: 1 
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: tensorflow
+              image: gcr.io/kubeflow-ci/tf-mnist-with-summaries:1.0
+              command:
+                - "python"
+                - "/var/tf_mnist/mnist_with_summaries.py"
+                - "--log_dir=/train/logs"
+                - "--learning_rate=0.01"
+                - "--batch_size=150"
+              volumeMounts:
+                - mountPath: "/train"
+                  name: "training"
+          volumes:
+            - name: "training"
+              persistentVolumeClaim:
+                claimName: "tfevent-volume"
 `
 
 func TestInjectObjectForUnstructed(t *testing.T) {
@@ -74,9 +95,19 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 	fmt.Println(obj.GetName(), gvk.String())
 
 	app := NewUnstructuredApplication(obj)
+	ans, err := app.LocateVolumes()
+	if err != nil {
+		t.Errorf("Failed to LocateVolumes due to %v", err)
+	}
+	fmt.Printf("ans:%v", ans)
+	ans, err = app.LocateContainers()
+	if err != nil {
+		t.Errorf("Failed to LocateVolumes due to %v", err)
+	}
+	fmt.Printf("ans:%v", ans)
 	out := app.GetObject()
 	if err != nil {
-		t.Errorf("Failed to InjectObject due to %v", err)
+		t.Errorf("Failed to GetObject due to %v", err)
 	}
 
 	enc := json.NewEncoder(os.Stdout)

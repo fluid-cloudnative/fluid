@@ -31,7 +31,13 @@ import (
 	"github.com/nqd/flat"
 )
 
-const delimiter string = ":"
+const (
+	delimiter          string = ":"
+	containersMatchStr string = "containers:0:volumeMounts:0"
+	containersEndStr   string = "containers"
+	volumesMatchStr    string = "volumes:0"
+	volumesEndStr      string = "volumes"
+)
 
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
 // generically. This can be used to deal with the API objects from a plug-in. UnstructuredApp
@@ -44,9 +50,21 @@ type UnstructuredAnchor struct {
 	fields []string
 }
 
-func NewUnstructuredAnchor(fields []string) common.Anchor {
+func NewUnstructuredAnchor(fields []string, end string) common.Anchor {
+	fieldsToAdd := []string{}
+	if len(end) > 0 {
+		for _, field := range fields {
+			fieldsToAdd = append(fieldsToAdd, field)
+			if field == end {
+				break
+			}
+		}
+	} else {
+		fieldsToAdd = fields
+	}
+
 	return &UnstructuredAnchor{
-		fields: fields,
+		fields: fieldsToAdd,
 	}
 }
 
@@ -154,7 +172,19 @@ func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []
 }
 
 func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, err error) {
+	return u.locate(containersMatchStr, containersEndStr)
+}
 
+func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor, err error) {
+	return u.locate(volumesMatchStr, volumesEndStr)
+}
+
+func (u *UnstructuredApplication) LocatePartToCache() (anchors []common.Anchor, err error) {
+	return
+}
+
+func (u *UnstructuredApplication) locate(matchStr, endStr string) (anchors []common.Anchor, err error) {
+	anchorsMap := map[string]bool{}
 	out, err := flat.Flatten(u.obj.Object, &flat.Options{
 		Delimiter: delimiter,
 	})
@@ -162,14 +192,13 @@ func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, e
 		return anchors, err
 	}
 	for key, _ := range out {
-		if strings.Contains(key, "containers") {
-			anchors = append(anchors, NewUnstructuredAnchor(strings.Split(key, ":")))
+		if strings.Contains(key, matchStr) {
+			anchor := NewUnstructuredAnchor(strings.Split(key, ":"), endStr)
+			if _, found := anchorsMap[anchor.Key()]; !found {
+				anchors = append(anchors, anchor)
+				anchorsMap[anchor.Key()] = true
+			}
 		}
 	}
 	return anchors, err
-
-}
-
-func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor, err error) {
-	return
 }
