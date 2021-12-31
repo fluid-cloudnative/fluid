@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
@@ -189,7 +190,7 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		glog.V(3).Infof("can't parse dataset from namespacedName: %s", namespacedName)
 		return
 	}
-	namespace, datasetName := strs[0], strs[1]
+	namespace, datasetName, err := volume.GetNamespacedNameByVolumeId(r.KubeClient, namespacedName)
 
 	dataset, err := utils.GetDataset(r.KubeClient, datasetName, namespace)
 	if err != nil {

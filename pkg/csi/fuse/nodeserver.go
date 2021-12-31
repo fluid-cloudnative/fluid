@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	"os"
@@ -188,7 +189,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
 	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
 	// can be used to indicate a specific dataset.
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
@@ -255,7 +256,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	defer ns.mutex.Unlock()
 
 	// 1. get dataset namespace and name by volume id
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
@@ -348,29 +349,4 @@ func checkMountInUse(volumeName string) (bool, error) {
 	}
 
 	return inUse, err
-}
-
-func getNamespacedNameByVolumeId(client client.Client, volumeId string) (namespace, name string, err error) {
-	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
-	if err != nil {
-		return "", "", err
-	}
-
-	if pv.Spec.ClaimRef == nil {
-		return "", "", errors.Errorf("pv %s has unexpected nil claimRef", volumeId)
-	}
-
-	namespace = pv.Spec.ClaimRef.Namespace
-	name = pv.Spec.ClaimRef.Name
-
-	ok, err := kubeclient.IsDatasetPVC(client, name, namespace)
-	if err != nil {
-		return "", "", err
-	}
-
-	if !ok {
-		return "", "", errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
-	}
-
-	return
 }
