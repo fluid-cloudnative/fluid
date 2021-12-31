@@ -194,6 +194,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  cleanPolicy:
+                    description: 'CleanPolicy decides when to clean Alluxio Fuse pods.
+                      Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+                      OnDemand cleans fuse pod once th fuse pod on some node is not
+                      needed OnRuntimeDeleted cleans fuse pod only when the cache
+                      runtime is deleted Defaults to OnRuntimeDeleted'
+                    type: string
                   env:
                     additionalProperties:
                       type: string

@@ -1733,6 +1733,24 @@ map[string]string
 this option only effect when global is enabled</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean Alluxio Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntimeRole">AlluxioRuntimeRole
@@ -2901,6 +2919,7 @@ SecretKeySelector
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>)
@@ -5390,5 +5409,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9e654145</code>.
+on git commit <code>2ae79dba</code>.
 </em></p>
