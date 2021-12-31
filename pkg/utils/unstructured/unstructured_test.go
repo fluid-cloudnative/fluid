@@ -26,67 +26,21 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 )
 
-const inputYaml = `
-apiVersion: "kubeflow.org/v1"
-kind: "TFJob"
-metadata:
-  name: "mnist"
-  namespace: kubeflow
-  annotations:
-   fluid.io/serverless: true
-spec:
-  cleanPodPolicy: None 
-  tfReplicaSpecs:
-    Worker:
-      replicas: 1 
-      restartPolicy: Never
-      template:
-        spec:
-          containers:
-            - name: tensorflow
-              image: gcr.io/kubeflow-ci/tf-mnist-with-summaries:1.0
-              command:
-                - "python"
-                - "/var/tf_mnist/mnist_with_summaries.py"
-                - "--log_dir=/train/logs"
-                - "--learning_rate=0.01"
-                - "--batch_size=150"
-              volumeMounts:
-                - mountPath: "/train"
-                  name: "training"
-          volumes:
-            - name: "training"
-              persistentVolumeClaim:
-                claimName: "tfevent-volume"  
-    PS:
-      replicas: 1 
-      restartPolicy: Never
-      template:
-        spec:
-          containers:
-            - name: tensorflow
-              image: gcr.io/kubeflow-ci/tf-mnist-with-summaries:1.0
-              command:
-                - "python"
-                - "/var/tf_mnist/mnist_with_summaries.py"
-                - "--log_dir=/train/logs"
-                - "--learning_rate=0.01"
-                - "--batch_size=150"
-              volumeMounts:
-                - mountPath: "/train"
-                  name: "training"
-          volumes:
-            - name: "training"
-              persistentVolumeClaim:
-                claimName: "tfevent-volume"
-`
+func TestUnstrurured(t *testing.T) {
+	type testCase struct {
+		name   string
+		yaml   string
+		target interface{}
+		expect []string
+	}
+}
 
 func TestInjectObjectForUnstructed(t *testing.T) {
 
 	obj := &unstructured.Unstructured{}
 
 	dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	_, gvk, err := dec.Decode([]byte(inputYaml), nil, obj)
+	_, gvk, err := dec.Decode([]byte(tfjobYaml), nil, obj)
 	if err != nil {
 		t.Errorf("Failed to decode due to %v", err)
 	}
