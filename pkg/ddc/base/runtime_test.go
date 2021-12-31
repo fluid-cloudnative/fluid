@@ -218,11 +218,101 @@ func TestBuildRuntimeInfo(t *testing.T) {
 func TestCleanPolicy(t *testing.T) {
 	s := runtime.NewScheme()
 
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
+	// Test Alluxio Runtime
+	alluxioRuntimeDefaultCleanPolicy := v1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_alluxio",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AlluxioRuntimeSpec{
+			Fuse: v1alpha1.AlluxioFuseSpec{},
+		},
+	}
+
+	dataAlluxioDefaultCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default_policy_alluxio",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "default_policy_alluxio",
+					Namespace: "default",
+					Type:      common.ALLUXIO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	alluxioRuntimeOnDemandCleanPolicy := v1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_alluxio",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AlluxioRuntimeSpec{
+			Fuse: v1alpha1.AlluxioFuseSpec{
+				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+			},
+		},
+	}
+
+	dataAlluxioOnDemandCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_demand_policy_alluxio",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_demand_policy_alluxio",
+					Namespace: "default",
+					Type:      common.ALLUXIO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	alluxioRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_alluxio",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.AlluxioRuntimeSpec{
+			Fuse: v1alpha1.AlluxioFuseSpec{
+				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+			},
+		},
+	}
+
+	dataAlluxioOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "on_runtime_deleted_policy_alluxio",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "on_runtime_deleted_policy_alluxio",
+					Namespace: "default",
+					Type:      common.ALLUXIO_RUNTIME,
+				},
+			},
+		},
+	}
+
+	alluxioRuntimeObjs := []runtime.Object{}
+	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntimeDefaultCleanPolicy, &dataAlluxioDefaultCleanPolicy)
+	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntimeOnDemandCleanPolicy, &dataAlluxioOnDemandCleanPolicy)
+	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntimeOnRuntimeDeletedCleanPolicy, &dataAlluxioOnRuntimeDeletedCleanPolicy)
+
+	// Test JindoFs Runtime
 	jindoRuntimeDefaultCleanPolicy := v1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "default_policy_jindo",
@@ -310,6 +400,7 @@ func TestCleanPolicy(t *testing.T) {
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnDemandCleanPolicy, &dataJindoOnDemandCleanPolicy)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntimeOnRuntimeDeletedCleanPolicy, &dataJindoOnRuntimeDeletedCleanPolicy)
 
+	// Test JuiceFs Runtime
 	juiceRuntimeDefaultCleanPolicy := v1alpha1.JuiceFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "default_policy_juicefs",
@@ -397,6 +488,7 @@ func TestCleanPolicy(t *testing.T) {
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnDemandCleanPolicy, &dataJuiceOnDemandCleanPolicy)
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnRuntimeDeletedCleanPolicy, &dataJuiceOnRuntimeDeletedCleanPolicy)
 
+	// Test GooseFs Runtime
 	goosefsRuntimeDefaultCleanPolicy := v1alpha1.GooseFSRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "default_policy_goosefs",
@@ -495,6 +587,63 @@ func TestCleanPolicy(t *testing.T) {
 		want    RuntimeInfoInterface
 		wantErr bool
 	}{
+		{
+			name: "default_test_alluxio",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:      "default_policy_alluxio",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "default_policy_alluxio",
+				namespace:   "default",
+				runtimeType: common.ALLUXIO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_demand_test_alluxio",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:      "on_demand_policy_alluxio",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_demand_policy_alluxio",
+				namespace:   "default",
+				runtimeType: common.ALLUXIO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "on_runtime_deleted_test-alluxio",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:      "on_runtime_deleted_policy_alluxio",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "on_runtime_deleted_policy_alluxio",
+				namespace:   "default",
+				runtimeType: common.ALLUXIO_RUNTIME,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
 		{
 			name: "default_test",
 			args: args{
@@ -815,7 +964,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.ALLUXIO_RUNTIME,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
 			wantErr: false,

@@ -74,8 +74,8 @@ spec:
                 description: Desired state for JuiceFS Fuse
                 properties:
                   cleanPolicy:
-                    description: 'CleanPolicy decides when to clean JuicefsFS Fuse
-                      pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+                    description: 'CleanPolicy decides when to clean Juicefs Fuse pods.
+                      Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
                       OnDemand cleans fuse pod once th fuse pod on some node is not
                       needed OnRuntimeDeleted cleans fuse pod only when the cache
                       runtime is deleted Defaults to OnDemand'

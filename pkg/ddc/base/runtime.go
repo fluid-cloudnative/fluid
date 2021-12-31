@@ -312,7 +312,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
-		// todo: setup fuse clean policy when fuse lazy start is supported for Alluxio
+		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.JINDO_RUNTIME:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JINDO_RUNTIME, datav1alpha1.TieredStore{})
