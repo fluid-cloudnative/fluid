@@ -18,6 +18,7 @@ package unstructured
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +30,8 @@ import (
 
 	"github.com/nqd/flat"
 )
+
+const delimiter string = ":"
 
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
 // generically. This can be used to deal with the API objects from a plug-in. UnstructuredApp
@@ -151,10 +154,19 @@ func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []
 }
 
 func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, err error) {
-	out, err := flat.Flatten(u.obj.Object, nil)
+
+	out, err := flat.Flatten(u.obj.Object, &flat.Options{
+		Delimiter: delimiter,
+	})
 	if err != nil {
-		return
+		return anchors, err
 	}
+	for key, _ := range out {
+		if strings.Contains(key, "containers") {
+			anchors = append(anchors, NewUnstructuredAnchor(strings.Split(key, ":")))
+		}
+	}
+	return anchors, err
 
 }
 
