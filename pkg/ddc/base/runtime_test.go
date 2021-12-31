@@ -964,7 +964,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.ALLUXIO_RUNTIME,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global: true,
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
 			wantErr: false,
