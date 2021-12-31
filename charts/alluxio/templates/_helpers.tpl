@@ -57,20 +57,14 @@ resources:
 resources:
   limits:
     {{- if .Values.worker.resources.limits }}
-      {{- if .Values.worker.resources.limits.cpu  }}
-    cpu: {{ .Values.worker.resources.limits.cpu }}
-      {{- end }}
-      {{- if .Values.worker.resources.limits.memory  }}
-    memory: {{ .Values.worker.resources.limits.memory }}
+      {{- range $k, $v := .Values.worker.resources.limits }}
+    {{ $k }}: {{ $v }}
       {{- end }}
     {{- end }}
   requests:
     {{- if .Values.worker.resources.requests }}
-      {{- if .Values.worker.resources.requests.cpu  }}
-    cpu: {{ .Values.worker.resources.requests.cpu }}
-      {{- end }}
-      {{- if .Values.worker.resources.requests.memory  }}
-    memory: {{ .Values.worker.resources.requests.memory }}
+      {{- range $k, $v := .Values.worker.resources.requests }}
+    {{ $k }}: {{ $v }}
       {{- end }}
     {{- end }}
 {{- end -}}

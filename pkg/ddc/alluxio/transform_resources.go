@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"strconv"
 )
 
 func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
@@ -40,59 +41,98 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
-	if runtime.Spec.Worker.Resources.Limits == nil {
-		e.Log.Info("skip setting memory limit")
-		return
-	}
+	//if runtime.Spec.Worker.Resources.Limits == nil {
+	//	e.Log.Info("skip setting memory limit")
+	//	return
+	//}
+	//
+	//if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
+	//	e.Log.Info("skip setting memory limit")
+	//	return
+	//}
 
-	if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
-		e.Log.Info("skip setting memory limit")
-		return
-	}
-
+	// transform memory resource for worker
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 
-	// for job worker
-	if len(runtime.Spec.JobWorker.Resources.Limits) > 0 || len(runtime.Spec.JobWorker.Resources.Requests) > 0 {
-		value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
+	var memResSet bool
+	if len(value.Worker.Resources.Requests) > 0 {
+		if _, exists := value.Worker.Resources.Requests[corev1.ResourceMemory]; exists {
+			memResSet = true
+		}
 	}
 
+	if len(value.Worker.Resources.Limits) > 0 {
+		if _, exists := value.Worker.Resources.Limits[corev1.ResourceMemory]; exists {
+			memResSet = true
+		}
+	}
+
+	if !memResSet {
+		//todo(xuzhihao) MEM tieredstore quota + Alluxio worker JVM usage
+	} else {
+		e.Log.Info("User already set memory request or limit. Skipping setting it.")
+	}
+
+	// transform disk resource for worker
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
-		e.Log.Error(err, "failed to transformResourcesForWorker")
-	}
-	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
-
-	e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
-
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("20Gi")
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
+		e.Log.Error(err, "failed to get runtime info when transforming resources for worker")
 	}
 
-	for key, requirement := range storageMap {
+	devQuotaMap := tieredstore.GetDeviceQuotaMap(runtimeInfo)
+	e.Log.Info("GetDeviceQuotaMap", "devQuotaMap", devQuotaMap)
+	for dev, quota := range devQuotaMap {
+		// Fluid uses GiB as the resource unit
 		if value.Worker.Resources.Limits == nil {
-			value.Worker.Resources.Limits = make(common.ResourceList)
+			value.Worker.Resources.Limits = common.ResourceList{}
 		}
-		if key == common.MemoryCacheStore {
-			req := requirement.DeepCopy()
-
-			memLimit.Add(req)
-
-			e.Log.Info("update the requirement for memory", "requirement", memLimit)
-
-		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
-
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-
-		// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
+		value.Worker.Resources.Limits[corev1.ResourceName(dev)] = strconv.FormatInt(quota.ScaledValue(resource.Giga), 10)
 	}
 
-	value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	// transform resource for job worker
+	value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
+
+	// for job worker
+	//if len(runtime.Spec.JobWorker.Resources.Limits) > 0 || len(runtime.Spec.JobWorker.Resources.Requests) > 0 {
+	//	value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
+	//}
+
+	//runtimeInfo, err := e.getRuntimeInfo()
+	//if err != nil {
+	//	e.Log.Error(err, "failed to transformResourcesForWorker")
+	//}
+	//storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
+	//
+	//e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
+	//
+	//// TODO(iluoeli): it should be xmx + direct memory
+	//memLimit := resource.MustParse("20Gi")
+	//if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
+	//	memLimit = quantity
+	//}
+	//
+	//for key, requirement := range storageMap {
+	//	if value.Worker.Resources.Limits == nil {
+	//		value.Worker.Resources.Limits = make(common.ResourceList)
+	//	}
+	//	if key == common.MemoryCacheStore {
+	//		req := requirement.DeepCopy()
+	//
+	//		memLimit.Add(req)
+	//
+	//		e.Log.Info("update the requirement for memory", "requirement", memLimit)
+	//
+	//	}
+	//	// } else if key == common.DiskCacheStore {
+	//	// 	req := requirement.DeepCopy()
+	//
+	//	// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
+	//
+	//	// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
+	//	// }
+	//}
+	//
+	//value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
 }
 
 func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {

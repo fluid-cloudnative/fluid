@@ -597,6 +597,11 @@ spec:
                         Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring
                         Tiered Storage</a> for more info
                       properties:
+                        device:
+                          description: 'todo: support device list. separated by comma
+                            Device is the user-suggested disk device used by AlluxioRuntime
+                            (e.g. vda1, vdb1)'
+                          type: string
                         high:
                           description: Ratio of high watermark of the tier (e.g. 0.9)
                           type: string

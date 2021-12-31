@@ -129,6 +129,8 @@ type CachePath struct {
 	Path string
 
 	Quota *resource.Quantity
+
+	Device string
 }
 
 func BuildRuntimeInfo(name string,
@@ -253,11 +255,13 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 			for _, path := range paths {
 				pathQuota := avgQuota.DeepCopy()
 				cachePaths = append(cachePaths, CachePath{
-					Path:  strings.TrimRight(path, "/"),
-					Quota: &pathQuota,
+					Path:   strings.TrimRight(path, "/"),
+					Quota:  &pathQuota,
+					Device: level.Device,
 				})
 			}
 		} else {
+			// todo: support device list. Separated by comma
 			// quotaList will overwrite any value set in quota
 			quotaStrs := strings.Split(level.QuotaList, ",")
 			numQuotas := len(quotaStrs)

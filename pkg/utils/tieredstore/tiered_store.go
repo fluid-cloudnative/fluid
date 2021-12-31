@@ -78,7 +78,29 @@ func GetLevelStorageMap(runtimeInfo base.RuntimeInfoInterface) (storage map[comm
 	}
 
 	return storage
+}
 
+func GetDeviceQuotaMap(runtimeInfo base.RuntimeInfoInterface) map[string]*resource.Quantity {
+	devQuotaMap := map[string]*resource.Quantity{}
+
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
+		if level.MediumType == common.Memory {
+			continue
+		}
+
+		for _, cachePath := range level.CachePaths {
+			deviceName := cachePath.Device
+			totalQuota := resource.NewQuantity(0, resource.BinarySI)
+
+			if q, found := devQuotaMap[deviceName]; found {
+				totalQuota = q
+			}
+			totalQuota.Add(*cachePath.Quota)
+			devQuotaMap[deviceName] = totalQuota
+		}
+	}
+
+	return devQuotaMap
 }
 
 // GetTieredLevel returns index of the given mediumType

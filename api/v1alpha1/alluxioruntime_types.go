@@ -163,8 +163,9 @@ type Level struct {
 	// +kubebuilder:validation:Pattern:="^((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+)))),)+((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$"
 	QuotaList string `json:"quotaList,omitempty"`
 
-	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
-	// float64 is not supported, https://github.com/kubernetes-sigs/controller-tools/issues/245
+	// todo: support device list. separated by comma
+	// Device is the user-suggested disk device used by AlluxioRuntime (e.g. vda1, vdb1)
+	Device string `json:"device,omitempty"`
 
 	// Ratio of high watermark of the tier (e.g. 0.9)
 	High string `json:"high,omitempty"`
