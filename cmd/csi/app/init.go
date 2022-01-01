@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,19 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package app
 
-import (
-	"github.com/fluid-cloudnative/fluid/cmd/csi/app"
-	"os"
-)
+import "github.com/spf13/cobra"
 
-func main() {
-	cmd := app.NewCSICommand()
-
-	if err := cmd.Execute(); err != nil {
-		app.ErrorAndExit(err)
+func NewCSICommand() *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:   "fluid-csi",
+		Short: "CSI based fluid driver for Fuse",
 	}
-
-	os.Exit(0)
+	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
+	return cmd
 }

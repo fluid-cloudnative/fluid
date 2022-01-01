@@ -9,6 +9,7 @@ dataset:
     image: fluidcloudnative/dataset-controller:v0.7.0-c1464c6
 
 csi:
+  recoverFusePeriod: -1
   config:
     hostNetwork: false
   registrar:
