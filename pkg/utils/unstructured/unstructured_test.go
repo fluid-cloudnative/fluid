@@ -20,19 +20,83 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 )
 
-func TestUnstrurured(t *testing.T) {
+func TestLocateContainers(t *testing.T) {
 	type testCase struct {
-		name   string
-		yaml   string
-		target interface{}
-		expect []string
+		name    string
+		content string
+		expect  []common.Anchor
 	}
+
+	testcases := []testCase{
+		{
+			name:    "statefulset",
+			content: stsYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{}, UnstructuredAnchor{},
+			},
+		},
+		{
+			name:    "tfjob",
+			content: tfjobYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{}, UnstructuredAnchor{},
+			},
+		}, {
+			name:    "pytorch",
+			content: pytorchYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{}, UnstructuredAnchor{},
+			},
+		}, {
+			name:    "argo",
+			content: argoYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{}, UnstructuredAnchor{},
+			},
+		}, {
+			name:    "spark",
+			content: sparkYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{}, UnstructuredAnchor{},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		// got := ValueByType(testcase.original, testcase.target)
+
+		// result := differenceMap(got, testcase.expect)
+		// if len(result) > 0 {
+		// 	t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		// }
+		obj := &unstructured.Unstructured{}
+
+		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
+		if err != nil {
+			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
+		}
+
+		app := NewUnstructuredApplication(obj)
+		got, err := app.LocateContainers()
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+
+		if !reflect.DeepEqual(got, testcase.expect) {
+			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		}
+
+	}
+
 }
 
 func TestInjectObjectForUnstructed(t *testing.T) {

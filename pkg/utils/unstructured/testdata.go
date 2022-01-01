@@ -1,5 +1,35 @@
 package unstructured
 
+const stsYaml = `
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  serviceName: "none"
+  selector: # define how the deployment finds the pods it manages
+    matchLabels:
+      app: nginx
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          volumeMounts:
+            - mountPath: /data
+              name: hbase-vol
+      volumes:
+        - name: hbase-vol
+          persistentVolumeClaim:
+            claimName: shared-data
+`
+
 const tfjobYaml = `
 apiVersion: "kubeflow.org/v1"
 kind: "TFJob"
@@ -145,6 +175,7 @@ spec:
               value: dedicated
               effect: NoSchedule
 `
+
 const argoYaml string = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow

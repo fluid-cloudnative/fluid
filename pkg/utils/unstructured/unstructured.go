@@ -75,7 +75,7 @@ func (a UnstructuredAnchor) Key() (id string) {
 	return
 }
 
-func (a UnstructuredAnchor) Path() []string {
+func (a UnstructuredAnchor) Path() (paths []string) {
 	return a.fields
 }
 
