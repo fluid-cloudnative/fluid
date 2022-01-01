@@ -105,32 +105,42 @@ func TestLocateVolumes(t *testing.T) {
 			name:    "statefulset",
 			content: stsYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "template", "spec", "volumes"},
+				},
 			},
 		},
 		{
 			name:    "tfjob",
 			content: tfjobYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "volumes"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "volumes"},
+				},
 			},
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "volumes"},
+				},
 			},
 		}, {
 			name:    "argo",
 			content: argoYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{fields: []string{"spec", "volumes"}},
 			},
 		}, {
 			name:    "spark",
 			content: sparkYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{fields: []string{"spec", "volumes"}},
 			},
 		},
 	}
