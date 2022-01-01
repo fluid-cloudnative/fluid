@@ -42,6 +42,8 @@ rules:
       - jindoruntimes/status
       - goosefsruntimes
       - goosefsruntimes/status
+      - juicefsruntimes
+      - juicefsruntimes/status
     verbs:
       - '*'
   - apiGroups:
