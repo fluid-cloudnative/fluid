@@ -179,3 +179,44 @@ spec:
       - name: my-secret-vol     # mount file containing secret at /secret/mountpath
         mountPath: "/secret/mountpath"
 `
+
+const sparkYaml string = `
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: spark-pi
+  namespace: default
+spec:
+  type: Scala
+  mode: cluster
+  image: "gcr.io/spark-operator/spark:v3.1.1"
+  imagePullPolicy: Always
+  mainClass: org.apache.spark.examples.SparkPi
+  mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples_2.12-3.1.1.jar"
+  sparkVersion: "3.1.1"
+  restartPolicy:
+    type: Never
+  volumes:
+    - name: config-vol
+      configMap:
+        name: dummy-cm
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "512m"
+    labels:
+      version: 3.1.1
+    serviceAccount: spark
+    volumeMounts:
+      - name: config-vol
+        mountPath: /opt/spark/mycm
+  executor:
+    cores: 1
+    instances: 1
+    memory: "512m"
+    labels:
+      version: 3.1.1
+    volumeMounts:
+      - name: config-vol
+        mountPath: /opt/spark/mycm
+`
