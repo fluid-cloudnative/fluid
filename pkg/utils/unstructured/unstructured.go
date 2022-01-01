@@ -69,14 +69,15 @@ func NewUnstructuredAnchor(fields []string, end string) common.Anchor {
 }
 
 func (a UnstructuredAnchor) Key() (id string) {
-	for _, field := range a.fields {
-		id = id + "/" + field
-	}
-	return
+	return strings.Join(a.fields, "/")
 }
 
 func (a UnstructuredAnchor) Path() (paths []string) {
 	return a.fields
+}
+
+func (a UnstructuredAnchor) String() string {
+	return a.Key()
 }
 
 func NewUnstructuredApplication(obj *unstructured.Unstructured) *UnstructuredApplication {
