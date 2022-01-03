@@ -40,32 +40,42 @@ func TestLocateContainers(t *testing.T) {
 			name:    "statefulset",
 			content: stsYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "template", "spec", "containers"},
+				},
 			},
 		},
 		{
 			name:    "tfjob",
 			content: tfjobYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "containers"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "containers"},
+				},
 			},
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "containers"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "containers"},
+				},
 			},
 		}, {
 			name:    "argo",
 			content: argoYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{},
 			},
 		}, {
 			name:    "spark",
 			content: sparkYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{}, UnstructuredAnchor{},
+				UnstructuredAnchor{},
 			},
 		},
 	}
