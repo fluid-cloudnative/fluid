@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -77,6 +78,152 @@ func TestGetSecret(t *testing.T) {
 					gotSecret.Namespace,
 					item.wantName,
 					item.wantNamespace)
+			}
+		}
+	}
+}
+
+func TestCreateSecret(t *testing.T) {
+
+	mockSecret1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret2",
+			Namespace: "namespace",
+		},
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, mockSecret1)
+	testCases := map[string]struct {
+		mockSecret    *v1.Secret
+		notFound      bool
+	}{
+		"Case 1: create new secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret1",
+					Namespace: "namespace",
+				},
+			},
+			notFound: true,
+		},
+		"Case 2: create new secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret1",
+					Namespace: "namespace2",
+				},
+			},
+			notFound: true,
+		},
+		"Case 3: create existed secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret2",
+					Namespace: "namespace",
+				},
+			},
+			notFound: false,
+		},
+	}
+	for caseName, item := range testCases {
+		err := CreateSecret(fakeClient, item.mockSecret)
+		if err != nil {
+			if !item.notFound {
+				continue
+			} else {
+				t.Errorf("%s check failure, cannot create existed secret", caseName)
+			}
+		}
+		gotSecret, err := GetSecret(fakeClient, item.mockSecret.Name, item.mockSecret.Namespace)
+		if err != nil{
+			t.Errorf("%s check failure, want not found error, but got %v", caseName, err)
+		} else {
+			if gotSecret == nil {
+				t.Errorf("%s check failure, got nil secret", caseName)
+			} else if gotSecret.Name != item.mockSecret.Name || gotSecret.Namespace != item.mockSecret.Namespace {
+				t.Errorf("%s check failure, want secret with name %s and namespace %s, but got name %s and namespace %s",
+					caseName,
+					gotSecret.Name,
+					gotSecret.Namespace,
+					item.mockSecret.Name,
+					item.mockSecret.Namespace)
+			}
+		}
+	}
+}
+
+
+func TestUpdateSecret(t *testing.T) {
+
+	mockSecret1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret2",
+			Namespace: "namespace",
+			Labels: map[string]string{
+				"key": "old",
+			},
+		},
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, mockSecret1)
+	testCases := map[string]struct {
+		mockSecret    *v1.Secret
+		notFound      bool
+	}{
+		"Case 1: update new secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret1",
+					Namespace: "namespace",
+					Labels: map[string]string{
+						"key": "new",
+					},
+				},
+			},
+			notFound: true,
+		},
+		"Case 2: update new secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret1",
+					Namespace: "namespace2",
+					Labels: map[string]string{
+						"key": "new",
+					},
+				},
+			},
+			notFound: true,
+		},
+		"Case 3: update existed secret": {
+			mockSecret: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret2",
+					Namespace: "namespace",
+					Labels: map[string]string{
+						"key": "new",
+					},
+				},
+			},
+			notFound: false,
+		},
+	}
+	for caseName, item := range testCases {
+		err := UpdateSecret(fakeClient, item.mockSecret)
+		if err != nil {
+			if item.notFound {
+				continue
+			} else {
+				t.Errorf("%s check failure, cannot update unexisted secret", caseName)
+			}
+		}
+		gotSecret, err := GetSecret(fakeClient, item.mockSecret.Name, item.mockSecret.Namespace)
+		if err != nil{
+			t.Errorf("%s check failure, want not found error, but got %v", caseName, err)
+		} else {
+			if gotSecret == nil {
+				t.Errorf("%s check failure, got nil secret", caseName)
+			} else if gotSecret.Labels["key"] != item.mockSecret.Labels["key"] {
+				t.Errorf("%s check failure beacuse have not updated the secret", caseName)
 			}
 		}
 	}
