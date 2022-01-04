@@ -132,7 +132,7 @@ func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) 
 		return 
 	}
 
-	return fileUtils.UnmountedAlluxioPath(alluxioPaths)
+	return fileUtils.FindUnmountedAlluxioPaths(alluxioPaths)
 }
 
 func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {
