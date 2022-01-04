@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 )
 
@@ -207,7 +208,7 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 				key := encryptOption.Name
 				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 
-				secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+				secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 				if err != nil {
 					e.Log.Info("can't get the secret",
 						"namespace", e.namespace,
@@ -318,7 +319,7 @@ func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]str
 	for _, item := range m.EncryptOptions {
 
 		sRef := item.ValueFrom.SecretKeyRef
-		secret, err := utils.GetSecret(e.Client, sRef.Name, e.namespace)
+		secret, err := kubeclient.GetSecret(e.Client, sRef.Name, e.namespace)
 		if err != nil {
 			e.Log.Error(err, "get secret by mount encrypt options failed", "name", item.Name)
 			return mOptions, err

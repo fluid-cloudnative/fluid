@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
 	"strconv"
@@ -206,7 +207,7 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			secret, err := utils.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 			if err != nil {
 				e.Log.Info("can't get the secret")
 				break
