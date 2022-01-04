@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"os"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -104,10 +103,7 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 		if len(unmountedPaths) != 0{
 			ufsToUpdate.AddMountPaths(unmountedPaths)
 		}
-
-		e.Log.Info("ufs.toadd","ufs.toadd", strings.Join(ufsToUpdate.ToAdd(), ",") )
 	}
-
 
 	return
 }

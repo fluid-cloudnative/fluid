@@ -295,16 +295,16 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
-func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) (unmountedAlluxioPath []string, err error) {
+func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string,  error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}
 		stdout  string
 		stderr  string
 	)
 
-	stdout, stderr, err = a.exec(command, true)
+	stdout, stderr, err := a.exec(command, true)
 	if err != nil {
-		return unmountedAlluxioPath, fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return []string{}, fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 	}
 
 	results := strings.Split(stdout, "\n")
