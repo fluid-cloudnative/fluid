@@ -18,12 +18,13 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -96,6 +97,42 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 	}
 
 	return should, err
+}
+
+// FindUnmountedUFS return if UFSs not mounted
+func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	e.Log.Info("get dataset info", "dataset", dataset)
+	if err != nil {
+		return unmountedPaths, err
+	}
+
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+
+	ready := fileUtils.Ready()
+	if !ready {
+		err = fmt.Errorf("the UFS is not ready")
+		return unmountedPaths, err
+	}
+
+	var alluxioPaths []string
+	// Check if any of the Mounts has not been mounted in Alluxio
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
+			continue
+		}
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPaths = append(alluxioPaths, alluxioPath)
+	}
+
+	// For fluid native schema, skip mount check to avoid unnecessary system call
+	if len(alluxioPaths) == 0{
+		return 
+	}
+
+	return fileUtils.UnmountedAlluxioPath(alluxioPaths)
 }
 
 func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {

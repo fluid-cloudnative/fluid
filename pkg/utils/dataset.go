@@ -184,3 +184,9 @@ func (u *UFSToUpdate) ToAdd() []string {
 func (u *UFSToUpdate) ToRemove() []string {
 	return u.toRemove
 }
+
+// AddMountPaths add mounted path to ToAdd
+func (u *UFSToUpdate) AddMountPaths(mountPaths []string) {
+	u.toAdd = append(u.toAdd, mountPaths...)
+	return 
+}

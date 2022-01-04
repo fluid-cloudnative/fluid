@@ -16,6 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
+	"os"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -89,6 +92,22 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 2.get the ufs to update
 	ufsToUpdate = utils.NewUFSToUpdate(dataset)
 	ufsToUpdate.AnalyzePathsDelta()
+
+	// 3. for hostpath ufs mount, check if all mountpoints have been mounted
+	const envVar = "FLUID_ENABLE_REMOUNT_DURING_SYNC"
+	if os.Getenv(envVar) != ""{
+		unmountedPaths, err := e.FindUnmountedUFS()
+		if err != nil {
+			e.Log.Error(err, "Failed in finding unmounted ufs")
+			return
+		}
+		if len(unmountedPaths) != 0{
+			ufsToUpdate.AddMountPaths(unmountedPaths)
+		}
+
+		e.Log.Info("ufs.toadd","ufs.toadd", strings.Join(ufsToUpdate.ToAdd(), ",") )
+	}
+
 
 	return
 }
