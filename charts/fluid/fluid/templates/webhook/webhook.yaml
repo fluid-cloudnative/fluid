@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       control-plane: fluid-webhook
-  replicas: 1
+  replicas: {{ .Values.webhook.replicas }}
   template:
     metadata:
       labels:

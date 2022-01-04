@@ -26,8 +26,7 @@ const (
 	WebhookServiceName     = "fluid-pod-admission-webhook"
 	WebhookSchedulePodPath = "mutate-fluid-io-v1alpha1-schedulepod"
 
-	// CertificationGenerateFile comes from tools/certificate.sh
-	CertificationGenerateFile = "/usr/local/bin/certificate.sh"
+	CertSecretName         = "fluid-webhook-certs"
 )
 
 // AdmissionHandler wrappers admission.Handler, but adding client-go capablities
