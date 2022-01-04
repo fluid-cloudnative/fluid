@@ -32,11 +32,13 @@ import (
 )
 
 const (
-	delimiter          string = ":"
-	containersMatchStr string = "containers:0:volumeMounts:0"
-	containersEndStr   string = "containers"
-	volumesMatchStr    string = "volumes:0"
-	volumesEndStr      string = "volumes"
+	delimiter            string = ":"
+	containersMatchStr   string = "containers:0:volumeMounts:0"
+	containersEndStr     string = "containers"
+	volumesMatchStr      string = "volumes:0"
+	volumesEndStr        string = "volumes"
+	volumeMountsMatchStr string = "volumeMounts:0"
+	volumeMountssEndStr  string = "volumeMounts"
 )
 
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
@@ -178,6 +180,10 @@ func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, e
 
 func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor, err error) {
 	return u.locate(volumesMatchStr, volumesEndStr)
+}
+
+func (u *UnstructuredApplication) LocateVolumeMounts() (anchors []common.Anchor, err error) {
+	return u.locate(volumeMountsMatchStr, volumeMountssEndStr)
 }
 
 func (u *UnstructuredApplication) LocatePartToCache() (anchors []common.Anchor, err error) {
