@@ -2,12 +2,12 @@ package common
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // The Application which is concerned by Fluid
 type Application interface {
-	GetObject() (obj *unstructured.Unstructured)
+	GetObject() (obj runtime.Object)
 
 	SetContainers(containers []corev1.Container, fields ...string)
 

@@ -63,7 +63,7 @@ func (a RuntimeAnchor) String() string {
 	return a.Key()
 }
 
-func NewRuntimeApplication(obj runtime.Object) *RuntimeApplication {
+func NewRuntimeApplication(obj runtime.Object) common.Application {
 	return &RuntimeApplication{
 		obj: obj,
 	}

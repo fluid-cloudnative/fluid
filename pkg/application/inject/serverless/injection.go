@@ -21,10 +21,12 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
 	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	unstructuredtype "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,8 +41,7 @@ var (
 func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
-	var containersPtr *[]corev1.Container
-	var volumesPtr *[]corev1.Volume
+	var application common.Application
 	var objectMeta metav1.ObjectMeta
 	var typeMeta metav1.TypeMeta
 
@@ -72,10 +73,11 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 	switch v := out.(type) {
 	case *corev1.Pod:
 		pod := v
-		containersPtr = &pod.Spec.Containers
-		volumesPtr = &pod.Spec.Volumes
 		typeMeta = pod.TypeMeta
 		objectMeta = pod.ObjectMeta
+		application = object.NewRuntimeApplication(pod)
+	case *unstructuredtype.Unstructured:
+
 	default:
 		log.Info("No supported K8s Type", "v", v)
 		outValue := reflect.ValueOf(out).Elem()
