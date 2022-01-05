@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -95,7 +94,7 @@ func TestLocateContainers(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 
-		if !reflect.DeepEqual(got, testcase.expect) {
+		if len(differences(got, testcase.expect)) > 0 {
 			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
 		}
 
@@ -170,7 +169,7 @@ func TestLocateVolumes(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 
-		if !reflect.DeepEqual(got, testcase.expect) {
+		if len(differences(got, testcase.expect)) > 0 {
 			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
 		}
 
@@ -219,7 +218,7 @@ func TestLocateVolumeMounts(t *testing.T) {
 			name:    "argo",
 			content: argoYaml,
 			expect: []common.Anchor{
-				UnstructuredAnchor{fields: []string{"spec", "templates", "0", "container", "volumeMount"}},
+				UnstructuredAnchor{fields: []string{"spec", "templates", "0", "container", "volumeMounts"}},
 			},
 		}, {
 			name:    "spark",
@@ -246,7 +245,7 @@ func TestLocateVolumeMounts(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 
-		if !reflect.DeepEqual(got, testcase.expect) {
+		if len(differences(got, testcase.expect)) > 0 {
 			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
 		}
 
@@ -287,4 +286,30 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 	enc.SetIndent("", "    ")
 	enc.Encode(out)
 
+}
+
+func differences(source, target []common.Anchor) []common.Anchor {
+	var diff []common.Anchor
+
+	for i := 0; i < 2; i++ {
+		for _, s1 := range source {
+			found := false
+			for _, s2 := range target {
+				if s1.Key() == s2.Key() {
+					found = true
+					break
+				}
+			}
+			// String not found. We add it to return slice
+			if !found {
+				diff = append(diff, s1)
+			}
+		}
+		// Swap the slices, only if it was the first loop
+		if i == 0 {
+			source, target = source, target
+		}
+	}
+
+	return diff
 }
