@@ -32,6 +32,14 @@ GIT_TREE_STATE=$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ;
 GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION=${VERSION}-${GIT_SHA}
 PACKAGE=github.com/fluid-cloudnative/fluid
+DOCKER_BUILD := docker-build-dataset-controller docker-build-alluxioruntime-controller
+DOCKER_BUILD += docker-build-jindoruntime-controller
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-csi
+DOCKER_BUILD += docker-build-init-users
+DOCKER_BUILD += docker-build-webhook
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-juicefsruntime-controller
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -176,7 +184,9 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users docker-build-webhook docker-build-goosefsruntime-controller docker-build-juicefsruntime-controller
+
+
+docker-build-all: ${DOCKER_BUILD}
 docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook docker-push-goosefsruntime-controller docker-push-juicefsruntime-controller
 
 # find or download controller-gen
