@@ -178,6 +178,82 @@ func TestLocateVolumes(t *testing.T) {
 
 }
 
+func TestLocateVolumeMounts(t *testing.T) {
+	type testCase struct {
+		name    string
+		content string
+		expect  []common.Anchor
+	}
+
+	testcases := []testCase{
+		{
+			name:    "statefulset",
+			content: stsYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{
+					fields: []string{"spec", "template", "spec", "containers", "0", "volumeMounts"},
+				},
+			},
+		},
+		{
+			name:    "tfjob",
+			content: tfjobYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "containers", "0", "volumeMounts"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "containers", "0", "volumeMounts"},
+				},
+			},
+		}, {
+			name:    "pytorch",
+			content: pytorchYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "containers", "0", "volumeMounts"},
+				}, UnstructuredAnchor{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "containers", "0", "volumeMounts"},
+				},
+			},
+		}, {
+			name:    "argo",
+			content: argoYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{fields: []string{"spec", "templates", "0", "container", "volumeMount"}},
+			},
+		}, {
+			name:    "spark",
+			content: sparkYaml,
+			expect: []common.Anchor{
+				UnstructuredAnchor{fields: []string{"spec", "executor", "volumeMounts"}},
+				UnstructuredAnchor{fields: []string{"spec", "driver", "volumeMounts"}},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		obj := &unstructured.Unstructured{}
+
+		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
+		if err != nil {
+			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
+		}
+
+		app := NewUnstructuredApplication(obj)
+		got, err := app.LocateVolumeMounts()
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+
+		if !reflect.DeepEqual(got, testcase.expect) {
+			t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		}
+
+	}
+
+}
+
 func TestInjectObjectForUnstructed(t *testing.T) {
 
 	obj := &unstructured.Unstructured{}
