@@ -94,8 +94,8 @@ func TestCreateSecret(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, mockSecret1)
 	testCases := map[string]struct {
-		mockSecret    *v1.Secret
-		notFound      bool
+		mockSecret *v1.Secret
+		notFound   bool
 	}{
 		"Case 1: create new secret": {
 			mockSecret: &v1.Secret{
@@ -135,7 +135,7 @@ func TestCreateSecret(t *testing.T) {
 			}
 		}
 		gotSecret, err := GetSecret(fakeClient, item.mockSecret.Name, item.mockSecret.Namespace)
-		if err != nil{
+		if err != nil {
 			t.Errorf("%s check failure, want not found error, but got %v", caseName, err)
 		} else {
 			if gotSecret == nil {
@@ -152,7 +152,6 @@ func TestCreateSecret(t *testing.T) {
 	}
 }
 
-
 func TestUpdateSecret(t *testing.T) {
 
 	mockSecret1 := &v1.Secret{
@@ -167,8 +166,8 @@ func TestUpdateSecret(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, mockSecret1)
 	testCases := map[string]struct {
-		mockSecret    *v1.Secret
-		notFound      bool
+		mockSecret *v1.Secret
+		notFound   bool
 	}{
 		"Case 1: update new secret": {
 			mockSecret: &v1.Secret{
@@ -217,7 +216,7 @@ func TestUpdateSecret(t *testing.T) {
 			}
 		}
 		gotSecret, err := GetSecret(fakeClient, item.mockSecret.Name, item.mockSecret.Namespace)
-		if err != nil{
+		if err != nil {
 			t.Errorf("%s check failure, want not found error, but got %v", caseName, err)
 		} else {
 			if gotSecret == nil {
