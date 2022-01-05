@@ -22,6 +22,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
 	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -77,6 +78,8 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		objectMeta = pod.ObjectMeta
 		application = object.NewRuntimeApplication(pod)
 	case *unstructuredtype.Unstructured:
+		unstructuredObj := v
+		application = unstructured.NewUnstructuredApplication(unstructuredObj)
 
 	default:
 		log.Info("No supported K8s Type", "v", v)

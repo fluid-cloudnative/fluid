@@ -82,7 +82,7 @@ func (a UnstructuredAnchor) String() string {
 	return a.Key()
 }
 
-func NewUnstructuredApplication(obj *unstructured.Unstructured) *UnstructuredApplication {
+func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Application {
 	return &UnstructuredApplication{
 		obj: obj,
 	}

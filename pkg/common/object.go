@@ -24,6 +24,8 @@ type Application interface {
 
 	// LocatePodSpec locates the pod spec or similar part in the CRD spec
 	LocatePodSpec() (anchors []Anchor, err error)
+
+	LocateVolumeMounts() (anchors []Anchor, err error)
 }
 
 type Anchor interface {
