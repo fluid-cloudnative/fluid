@@ -16,20 +16,20 @@ limitations under the License.
 package app
 
 import (
-	"os"
-
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	goosefsctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -46,6 +46,7 @@ var (
 	development             bool
 	portRange               string
 	maxConcurrentReconciles int
+	pprofAddr               string
 )
 
 var cmd = &cobra.Command{
@@ -69,6 +70,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for GooseFS")
+	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for GooseFSRuntime controller")
 	cmd.AddCommand(startCmd)
 }
@@ -88,6 +90,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
