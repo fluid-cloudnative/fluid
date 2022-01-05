@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type PodApplication struct {
@@ -59,4 +60,46 @@ func (a PodAnchor) Path() (paths []string) {
 
 func (a PodAnchor) String() string {
 	return a.Key()
+}
+
+func NewPodApplication(obj *corev1.Pod) *PodApplication {
+	return &PodApplication{
+		obj: obj,
+	}
+}
+
+func (u *PodApplication) GetObject() (obj runtime.Object) {
+	return u.obj
+}
+
+func (u *PodApplication) SetContainers(containers []corev1.Container, fields ...string) {
+
+}
+
+func (u *PodApplication) SetVolumes(volumes []corev1.Volume, fields ...string) {
+
+}
+
+func (u *PodApplication) GetVolumes(fields ...string) (volumes []corev1.Volume) {
+	return
+}
+
+func (u *PodApplication) GetContainers(fields ...string) (containers []corev1.Container) {
+	return
+}
+
+func (u *PodApplication) LocateContainers() (anchors []common.Anchor, err error) {
+	return
+}
+
+func (u *PodApplication) LocateVolumes() (anchors []common.Anchor, err error) {
+	return
+}
+
+func (u *PodApplication) LocateVolumeMounts() (anchors []common.Anchor, err error) {
+	return
+}
+
+func (u *PodApplication) LocatePodSpec() (anchors []common.Anchor, err error) {
+	return
 }
