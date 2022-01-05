@@ -5,6 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// The Application which is concerned by Fluid
 type Application interface {
 	GetObject() (obj *unstructured.Unstructured)
 
@@ -16,9 +17,13 @@ type Application interface {
 
 	GetContainers(fields ...string) (containers []corev1.Container)
 
-	LocateContainers() (anchors []Anchor)
+	LocateContainers() (anchors []Anchor, err error)
 
-	LocateVolumes() (anchors []Anchor)
+	// LocateVolumes locates the volumes spec
+	LocateVolumes() (anchors []Anchor, err error)
+
+	// LocatePodSpec locates the pod spec or similar part in the CRD spec
+	LocatePodSpec() (anchors []Anchor, err error)
 }
 
 type Anchor interface {
