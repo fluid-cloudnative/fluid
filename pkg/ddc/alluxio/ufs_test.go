@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"strings"
 	"testing"
 
 	"reflect"
@@ -311,6 +312,107 @@ func TestPrepareUFS(t *testing.T) {
 			if err := e.PrepareUFS(); (err != nil) != tt.wantErr {
 				t.Errorf("AlluxioEngine.PrepareUFS() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestFindUnmountedUFS(t *testing.T) {
+	
+	type fields struct {
+		mountPoints          []datav1alpha1.Mount
+		wantedUnmountedPaths []string
+	}
+	
+	tests := [] struct {
+		paths                  []datav1alpha1.Mount
+		wantedUnmountedPaths   []string
+	}{
+		{
+			paths:                 []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path: "/path1",
+				},
+			},
+			wantedUnmountedPaths:  []string{"/path1"},
+		},
+		{
+			paths:                 []datav1alpha1.Mount{
+				{
+					MountPoint: "local://mnt/test",
+					Path: "/path2",
+				},
+			},
+			wantedUnmountedPaths:  []string{},
+		},
+		{
+			paths:                 []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path: "/path1",
+				},
+				{
+					MountPoint: "local://mnt/test",
+					Path: "/path2",
+				},
+				{
+					MountPoint: "hdfs://endpoint/path/train",
+					Path: "/path3",
+				},
+			},
+			wantedUnmountedPaths:  []string{"/path1", "/path3"},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			runtime := datav1alpha1.AlluxioRuntime{}
+			dataset := datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: test.paths,
+				},
+			}
+
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
+
+			var afsUtils operations.AlluxioFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+				return true
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+				return alluxioPaths, nil
+			})
+			defer patch2.Reset()
+
+			e := &AlluxioEngine{
+				runtime:            &runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			unmountedPaths, err := e.FindUnmountedUFS()
+			if err != nil{
+				t.Errorf("AlluxioEngine.FindUnmountedUFS() error = %v", err)
+				return
+			}
+			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0 ) && 
+			       !reflect.DeepEqual(unmountedPaths,test.wantedUnmountedPaths) {
+				t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
+				return
+		}
 		})
 	}
 }
