@@ -41,3 +41,4 @@
 
 * Add mountPropagation for registrar
 * Add syncRetryDuration
+* Add auto fuse recovery
