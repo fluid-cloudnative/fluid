@@ -75,9 +75,9 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: NODE_IP
-                valueFrom:
-                  fieldRef:
-                    fieldPath: status.hostIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             {{- if .Values.runtime.mountRoot }}
             - name: MOUNT_ROOT
               value: {{ .Values.runtime.mountRoot | quote }}
