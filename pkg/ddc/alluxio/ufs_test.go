@@ -323,12 +323,9 @@ func TestFindUnmountedUFS(t *testing.T) {
 		wantedUnmountedPaths []string
 	}
 	
-	tests := [] struct {
-		paths                  []datav1alpha1.Mount
-		wantedUnmountedPaths   []string
-	}{
+	tests := []fields {
 		{
-			paths:                 []datav1alpha1.Mount{
+			mountPoints:           []datav1alpha1.Mount{
 				{
 					MountPoint: "s3://bucket/path/train",
 					Path: "/path1",
@@ -337,7 +334,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 			wantedUnmountedPaths:  []string{"/path1"},
 		},
 		{
-			paths:                 []datav1alpha1.Mount{
+			mountPoints:           []datav1alpha1.Mount{
 				{
 					MountPoint: "local://mnt/test",
 					Path: "/path2",
@@ -346,7 +343,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 			wantedUnmountedPaths:  []string{},
 		},
 		{
-			paths:                 []datav1alpha1.Mount{
+			mountPoints:          []datav1alpha1.Mount{
 				{
 					MountPoint: "s3://bucket/path/train",
 					Path: "/path1",
@@ -374,7 +371,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: datav1alpha1.DatasetSpec{
-					Mounts: test.paths,
+					Mounts: test.mountPoints,
 				},
 			}
 
