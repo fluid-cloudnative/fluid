@@ -33,6 +33,36 @@ GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION=${VERSION}-${GIT_SHA}
 PACKAGE=github.com/fluid-cloudnative/fluid
 
+# Build binaries
+BINARY_BUILD := dataset-controller-build
+BINARY_BUILD += alluxioruntime-controller-build
+BINARY_BUILD += jindoruntime-controller-build
+BINARY_BUILD += juicefsruntime-controller-build
+BINARY_BUILD += csi-build
+BINARY_BUILD += webhook-build
+
+# Build docker images
+DOCKER_BUILD := docker-build-dataset-controller
+DOCKER_BUILD += docker-build-alluxioruntime-controller
+DOCKER_BUILD += docker-build-jindoruntime-controller
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-csi
+DOCKER_BUILD += docker-build-init-users
+DOCKER_BUILD += docker-build-webhook
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-juicefsruntime-controller
+
+# Push docker images
+DOCKER_PUSH := docker-push-dataset-controller
+DOCKER_PUSH += docker-push-alluxioruntime-controller
+DOCKER_PUSH += docker-push-jindoruntime-controller
+DOCKER_PUSH += docker-push-jindoruntime-controller
+DOCKER_PUSH += docker-push-csi
+DOCKER_PUSH += docker-push-init-users
+DOCKER_PUSH += docker-push-webhook
+DOCKER_PUSH += docker-push-goosefsruntime-controller
+DOCKER_PUSH += docker-push-juicefsruntime-controller
+
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
   -X ${PACKAGE}.buildDate=${BUILD_DATE} \
@@ -53,7 +83,7 @@ unit-test: generate fmt vet
 
 # Build binary
 
-build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build juicefsruntime-controller-build csi-build webhook-build
+build: ${BINARY_BUILD}
 
 csi-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
@@ -176,8 +206,10 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users docker-build-webhook docker-build-goosefsruntime-controller docker-build-juicefsruntime-controller
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook docker-push-goosefsruntime-controller docker-push-juicefsruntime-controller
+
+
+docker-build-all: ${DOCKER_BUILD}
+docker-push-all: ${DOCKER_PUSH}
 
 # find or download controller-gen
 # download controller-gen if necessary

@@ -46,7 +46,7 @@ var (
 	restConfig     *restclient.Config
 	log            logr.Logger = ctrl.Log.WithName("kubeclient")
 	kubeconfigPath             = "~/.kube/config"
-	mutex =&sync.Mutex{}
+	mutex                      = &sync.Mutex{}
 )
 
 // ExecOptions passed to ExecWithOptions
