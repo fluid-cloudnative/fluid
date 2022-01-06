@@ -41,31 +41,31 @@ func WriteCertsToDir(dir string, certs *generator.Artifacts) error {
 
 	// write or overwrite the cert for ca
 	filename := path.Join(dir, CAKeyName)
-	if err := ioutil.WriteFile(filename, certs.CAKey, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.CAKey, 0600); err != nil {
 		return err
 	}
 	filename = path.Join(dir, CACertName)
-	if err := ioutil.WriteFile(filename, certs.CACert, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.CACert, 0600); err != nil {
 		return err
 	}
 
 	// write or overwrite the certs for serverName
 	filename = path.Join(dir, ServerCertName)
-	if err := ioutil.WriteFile(filename, certs.Cert, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.Cert, 0600); err != nil {
 		return err
 	}
 	filename = path.Join(dir, ServerKeyName)
-	if err := ioutil.WriteFile(filename, certs.Key, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.Key, 0600); err != nil {
 		return err
 	}
 
 	// write or overwrite the certs for serverName2
 	filename = path.Join(dir, ServerCertName2)
-	if err := ioutil.WriteFile(filename, certs.Cert, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.Cert, 0600); err != nil {
 		return err
 	}
 	filename = path.Join(dir, ServerKeyName2)
-	if err := ioutil.WriteFile(filename, certs.Key, 0600); err != nil{
+	if err := ioutil.WriteFile(filename, certs.Key, 0600); err != nil {
 		return err
 	}
 	return nil

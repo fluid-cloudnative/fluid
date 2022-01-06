@@ -67,8 +67,8 @@ func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath 
 func (c *CertificateBuilder) genCA(ns, svc, certPath string) (*generator.Artifacts, error) {
 
 	certWriter, err := writer.NewSecretCertWriter(writer.SecretCertWriterOptions{
-		Client:    c.Client,
-		Secret:    &types.NamespacedName{Namespace: ns, Name: common.CertSecretName},
+		Client: c.Client,
+		Secret: &types.NamespacedName{Namespace: ns, Name: common.CertSecretName},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to new certWriter: %v", err)

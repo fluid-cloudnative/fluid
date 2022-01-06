@@ -191,7 +191,7 @@ func TestGenCA(t *testing.T) {
 
 	for index, item := range testCases {
 		certs, err := cb.genCA(item.ns, item.svc, item.certPath)
-		if err != nil && !item.canMkDir{
+		if err != nil && !item.canMkDir {
 			continue
 		}
 		gotLen := len(certs.CACert)
@@ -210,29 +210,28 @@ func TestGenCA(t *testing.T) {
 		}
 	}
 
-
 }
 
 func TestPatchCABundle(t *testing.T) {
 	var mockWebhookName = "mockWebhookName"
 	testCases := map[string]struct {
-		ca []byte
+		ca          []byte
 		webhookName string
 	}{
 		"test case 1": {
-			ca: []byte{1, 2, 3},
+			ca:          []byte{1, 2, 3},
 			webhookName: "mockWebhookName",
 		},
 		"test case 2": {
-			ca: []byte{2, 3, 4},
+			ca:          []byte{2, 3, 4},
 			webhookName: "mockWebhookName",
 		},
 		"test case 3": {
-			ca: []byte{3, 4, 5},
+			ca:          []byte{3, 4, 5},
 			webhookName: "mockWebhookName",
 		},
 		"test case 4": {
-			ca: []byte{4, 5, 6},
+			ca:          []byte{4, 5, 6},
 			webhookName: "WebhookName",
 		},
 	}
@@ -270,7 +269,7 @@ func TestPatchCABundle(t *testing.T) {
 		cb := NewCertificateBuilder(client, log)
 		err := cb.PatchCABundle(item.webhookName, item.ca)
 		if err != nil {
-			if utils.IgnoreNotFound(err)!= nil{
+			if utils.IgnoreNotFound(err) != nil {
 				t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
 			} else {
 				continue
