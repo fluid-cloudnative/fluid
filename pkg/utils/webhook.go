@@ -67,3 +67,20 @@ func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, 
 	}
 
 }
+
+func InjectMountPropagation(runtimeNames []string, pod *corev1.Pod) {
+	propagation := corev1.MountPropagationHostToContainer
+	mountNames := make([]string, 0)
+	for _, mount := range pod.Spec.Volumes {
+		if mount.PersistentVolumeClaim != nil && ContainsString(runtimeNames, mount.PersistentVolumeClaim.ClaimName) {
+			mountNames = append(mountNames, mount.Name)
+		}
+	}
+	for i, cn := range pod.Spec.Containers {
+		for j, mount := range cn.VolumeMounts {
+			if ContainsString(mountNames, mount.Name) && mount.MountPropagation == nil {
+				pod.Spec.Containers[i].VolumeMounts[j].MountPropagation = &propagation
+			}
+		}
+	}
+}

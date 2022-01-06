@@ -247,5 +247,71 @@ func TestTransformHostNetWork(t *testing.T) {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
 		}
 	}
+}
 
+func TestTransformAllocatePorts(t *testing.T) {
+	resources := corev1.ResourceRequirements{}
+	resources.Limits = make(corev1.ResourceList)
+	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+
+	result := resource.MustParse("20Gi")
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     int
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
+				},
+				NetworkMode: "ContainerNetwork",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, 8101,
+		},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
+				},
+				NetworkMode: "ContainerNetwork",
+				Replicas:    3,
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, 8101,
+		},
+	}
+	for _, test := range tests {
+		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine.transformNetworkMode(test.runtime, test.jindoValue)
+		test.jindoValue.Master.ReplicaCount = 3
+		err := engine.allocatePorts(test.jindoValue)
+		if test.jindoValue.Master.Port.Rpc != test.expect && err != nil {
+			t.Errorf("expected value %v, but got %v, and err %v", test.expect, test.jindoValue.Master.Port.Rpc, err)
+		}
+	}
 }

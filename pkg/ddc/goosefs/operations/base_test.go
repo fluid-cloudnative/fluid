@@ -22,9 +22,6 @@ import (
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -47,28 +44,6 @@ func TestNewGooseFSFileUtils(t *testing.T) {
 	result := NewGooseFSFileUtils("hbase", "hbase-container", "default", logf.NullLogger{})
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the GooseFSFileUtils, want: %v, got: %v", expectedResult, result)
-	}
-}
-
-func TestLoadMetaData(t *testing.T) {
-	var tests = []struct {
-		path string
-		sync bool
-		err  error
-	}{
-		{"/", true, nil},
-	}
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
-
-	for _, test := range tests {
-		tools := NewGooseFSFileUtils("", "", "", ctrl.Log)
-		err := tools.LoadMetaData(test.path, test.sync)
-		// fmt.Println(expectedErr)
-		if err == nil {
-			t.Errorf("expected %v, got %v", test.path, tools)
-		}
 	}
 }
 
@@ -210,7 +185,7 @@ func TestGooseFSFileUtils_ReportSummary(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
+func TestLoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS cluster summary", "", nil
 	}
@@ -246,7 +221,7 @@ func TestGooseFSFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	wrappedUnhookExecWithoutTimeout()
 }
 
-func TestGooseFSFileUtils_LoadMetaData(t *testing.T) {
+func TestLoadMetaData(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS cluster summary", "", nil
 	}
@@ -282,7 +257,7 @@ func TestGooseFSFileUtils_LoadMetaData(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
+func TestQueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS cluster summary", "", nil
 	}
@@ -326,7 +301,7 @@ func TestGooseFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFIleUtils_MKdir(t *testing.T) {
+func TestMKdir(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS mkdir success", "", nil
 	}
@@ -362,7 +337,7 @@ func TestGooseFSFIleUtils_MKdir(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFIleUtils_Mount(t *testing.T) {
+func TestMount(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS mkdir success", "", nil
 	}
@@ -430,7 +405,7 @@ func TestGooseFSFIleUtils_Mount(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_IsMounted(t *testing.T) {
+func TestIsMounted(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "https://mirrors.bit.edu.cn/apache/hbase/stable  on  /hbase (web, capacity=-1B, used=-1B, read-only, not shared, properties={}) \n /underFSStorage  on  /  (local, capacity=0B, used=0B, not read-only, not shared, properties={})", "", nil
 	}
@@ -487,7 +462,7 @@ func TestGooseFSFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
-func TestGooseFSFileUtils_Ready(t *testing.T) {
+func TestReady(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS cluster summary: ", "", nil
 	}
@@ -523,7 +498,7 @@ func TestGooseFSFileUtils_Ready(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFIleUtils_Du(t *testing.T) {
+func TestDu(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "File Size     In GooseFS       Path\n577575561     0 (0%)           /hbase", "", nil
 	}
@@ -568,7 +543,7 @@ func TestGooseFSFIleUtils_Du(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_Count(t *testing.T) {
+func TestCount(t *testing.T) {
 	out1, out2, out3 := 111, 222, 333
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 
@@ -621,7 +596,7 @@ func TestGooseFSFileUtils_Count(t *testing.T) {
 	}
 }
 
-func TestGooseFSFileUtils_GetFileCount(t *testing.T) {
+func TestGetFileCount(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
 	}
@@ -660,7 +635,7 @@ func TestGooseFSFileUtils_GetFileCount(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFIleUtils_ReportMetrics(t *testing.T) {
+func TestReportMetrics(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "report [category] [category args]\nReport GooseFS running cluster information.\n", "", nil
 	}
@@ -698,7 +673,7 @@ func TestGooseFSFIleUtils_ReportMetrics(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFIleUtils_ReportCapacity(t *testing.T) {
+func TestReportCapacity(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "report [category] [category args]\nReport GooseFS running cluster information.\n", "", nil
 	}
@@ -735,7 +710,7 @@ func TestGooseFSFIleUtils_ReportCapacity(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_exec(t *testing.T) {
+func TestExec(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
 	}
@@ -772,7 +747,7 @@ func TestGooseFSFileUtils_exec(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestGooseFSFileUtils_execWithoutTimeout(t *testing.T) {
+func TestExecWithoutTimeout(t *testing.T) {
 	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "conf", "", nil
 	}
@@ -807,7 +782,7 @@ func TestGooseFSFileUtils_execWithoutTimeout(t *testing.T) {
 	}
 }
 
-func TestGooseFSFileUtils_MasterPodName(t *testing.T) {
+func TestMasterPodName(t *testing.T) {
 	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "GooseFS cluster summary: \n    Master Address: 192.168.0.193:20009\n    Web Port: 20010", "", nil
 	}
@@ -843,6 +818,30 @@ func TestGooseFSFileUtils_MasterPodName(t *testing.T) {
 	}
 	if address != "192.168.0.193" {
 		t.Errorf("check failure, want: %s, got: %s", "192.168.0.193", address)
+	}
+	wrappedUnhookExec()
+}
+
+func TestUnMount(t *testing.T) {
+	ExecCommon := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Unmounted /hbase \n", "", nil
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(GooseFSFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &GooseFSFileUtils{log: logf.NullLogger{}}
+	err = a.UnMount("/hbase")
+	if err != nil {
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 }

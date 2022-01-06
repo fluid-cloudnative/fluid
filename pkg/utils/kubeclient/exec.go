@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -45,6 +46,7 @@ var (
 	restConfig     *restclient.Config
 	log            logr.Logger = ctrl.Log.WithName("kubeclient")
 	kubeconfigPath             = "~/.kube/config"
+	mutex                      = &sync.Mutex{}
 )
 
 // ExecOptions passed to ExecWithOptions
@@ -63,6 +65,8 @@ type ExecOptions struct {
 }
 
 func initClient() error {
+	mutex.Lock()
+	defer mutex.Unlock()
 	var err error
 
 	if restConfig == nil {

@@ -18,14 +18,14 @@ package main
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap/zapcore"
-	"os"
-
 	zapOpt "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -47,6 +47,7 @@ var (
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
+	pprofAddr            string
 )
 
 var cmd = &cobra.Command{
@@ -78,7 +79,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
-
+	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)
 
@@ -106,6 +107,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

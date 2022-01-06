@@ -31,6 +31,10 @@ spec:
   replicas: {{ $masterCount }}
   template:
     metadata:
+      {{- if .Values.master.annotations }}
+      annotations:
+{{ toYaml .Values.master.annotations | trim | indent 8  }}
+      {{- end }}
       labels:
         name: {{ $fullName }}-master
         app: {{ $name }}
@@ -222,7 +226,7 @@ spec:
           {{- end }}
           {{- if .Values.secrets }}
             {{- if .Values.secrets.master }}
-- include "goosefs.master.secretVolumeMounts" . }}
+{{- include "goosefs.master.secretVolumeMounts" . }}
             {{- end }}
           {{- end }}
           {{- if .Values.mounts }}

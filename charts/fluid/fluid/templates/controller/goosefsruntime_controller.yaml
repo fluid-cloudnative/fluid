@@ -39,6 +39,7 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.goosefs.portRange }}
           - --runtime-workers={{ .Values.runtime.goosefs.runtimeWorkers }}
+          - --pprof-addr=:6060
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

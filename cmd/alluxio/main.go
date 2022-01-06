@@ -18,13 +18,12 @@ package main
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/fluid-cloudnative/fluid"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/net"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"go.uber.org/zap/zapcore"
@@ -41,6 +40,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -55,6 +55,7 @@ var (
 	development             bool
 	portRange               string
 	maxConcurrentReconciles int
+	pprofAddr               string
 )
 
 var cmd = &cobra.Command{
@@ -88,7 +89,7 @@ func init() {
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for AlluxioRuntime controller")
 	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
-
+	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)
 }
@@ -115,6 +116,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

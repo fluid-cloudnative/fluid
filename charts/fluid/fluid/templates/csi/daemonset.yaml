@@ -67,12 +67,21 @@ spec:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - --v=5
+            - --recover-fuse-period={{ .Values.csi.recoverFusePeriod }}
             - "--pprof-addr=:6060"
           env:
             - name: NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: NODE_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+            {{- if .Values.runtime.mountRoot }}
+            - name: MOUNT_ROOT
+              value: {{ .Values.runtime.mountRoot | quote }}
+            {{- end }}
             - name: KUBELET_ROOTDIR
               value: {{ .Values.csi.kubelet.rootDir }}
             - name: CSI_ENDPOINT

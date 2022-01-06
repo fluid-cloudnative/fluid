@@ -157,3 +157,41 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 		}
 	}
 }
+
+func TestInjectMountPropagation(t *testing.T) {
+	type args struct {
+		runtimeNames []string
+		pod          *corev1.Pod
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "test",
+			args: args{
+				runtimeNames: []string{"test"},
+				pod: &corev1.Pod{
+					Spec: corev1.PodSpec{
+						Volumes: []corev1.Volume{{
+							Name:         "test-volume",
+							VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test"}},
+						}},
+						Containers: []corev1.Container{{
+							Name:         "test-cn",
+							VolumeMounts: []corev1.VolumeMount{{Name: "test-volume"}},
+						}},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			InjectMountPropagation(tt.args.runtimeNames, tt.args.pod)
+			if *tt.args.pod.Spec.Containers[0].VolumeMounts[0].MountPropagation != corev1.MountPropagationHostToContainer {
+				t.Errorf("InjectMountPropagation failure, got:%v", tt.args.pod)
+			}
+		})
+	}
+}

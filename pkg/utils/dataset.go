@@ -18,12 +18,13 @@ package utils
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -170,16 +171,16 @@ func (u *UFSToUpdate) AnalyzePathsDelta() (specMountPaths, mountedMountPaths []s
 }
 
 // ShouldUpdate check if needs to update the mount points according to ToAdd and ToRemove
-func (u UFSToUpdate) ShouldUpdate() bool {
+func (u *UFSToUpdate) ShouldUpdate() bool {
 	return len(u.toAdd) > 0 || len(u.toRemove) > 0
 }
 
 // ToAdd get the mountPaths to add into virtual file system of dataset
-func (u UFSToUpdate) ToAdd() []string {
+func (u *UFSToUpdate) ToAdd() []string {
 	return u.toAdd
 }
 
 // ToRemove get the mountPaths to remove from virtual file system of dataset
-func (u UFSToUpdate) ToRemove() []string {
+func (u *UFSToUpdate) ToRemove() []string {
 	return u.toRemove
 }

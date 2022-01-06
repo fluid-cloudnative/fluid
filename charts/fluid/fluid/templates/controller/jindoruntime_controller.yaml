@@ -37,6 +37,7 @@ spec:
             - --development=false
             - --runtime-node-port-range={{ .Values.runtime.jindo.portRange }}
             - --runtime-workers={{ .Values.runtime.jindo.runtimeWorkers }}
+            - --pprof-addr=:6060
           env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

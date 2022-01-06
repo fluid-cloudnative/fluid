@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -184,7 +185,7 @@ func TestRegistry(t *testing.T) {
 	)
 
 	plugins := Registry(client)
-	if len(plugins.GetPodWithDatasetHandler()) != 2 {
+	if len(plugins.GetPodWithDatasetHandler()) != 3 {
 		t.Errorf("expect GetPodWithDatasetHandler len=2, got %v", plugins.GetPodWithDatasetHandler())
 	}
 

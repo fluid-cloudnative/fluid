@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -56,7 +57,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
-	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" || pod.Labels["app"] == "goosefs" {
+	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" || pod.Labels["app"] == "goosefs" || pod.Labels["app"] == "juicefs" {
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}

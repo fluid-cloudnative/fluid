@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,12 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package webhook
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -39,12 +41,6 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
-	// prepare the shell script
-	cmd := exec.Command("cp", "../../tools/certificate.sh", "/usr/local/bin/certificate.sh")
-	stdout, err := cmd.Output()
-	if err != nil {
-		log.Error(err, "fail to prepare the shell script", "output", stdout)
-	}
 }
 
 func TestNewCertificateBuilder(t *testing.T) {
@@ -103,19 +99,33 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		lengthCheck int
 		ns          string
 		svc         string
+		clientIsNil bool
 	}{
 		"test build and sync ca case 1": {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
+			clientIsNil: false,
+		},
+		"test build and sync ca case 2": {
+			lengthCheck: 1000,
+			ns:          "fluid-system",
+			svc:         "fluid-pod-admission-webhook",
+			clientIsNil: true,
 		},
 	}
 	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
 	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
 	cb := NewCertificateBuilder(client, log)
 	for index, item := range testCases {
+		if item.clientIsNil {
+			cb.Client = nil
+		}
 		err := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
 		if err != nil {
+			if item.clientIsNil {
+				continue
+			}
 			t.Errorf("fail to build and sync ca, err:%v", err)
 		}
 		var mc admissionregistrationv1.MutatingWebhookConfiguration
@@ -150,28 +160,41 @@ func TestGenCA(t *testing.T) {
 		lengthCheck int
 		ns          string
 		svc         string
+		certPath    string
+		canMkDir    bool
 	}{
 		"test generate ca file case 1": {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
+			certPath:    "/tmp/fluid/certs",
+			canMkDir:    true,
 		},
-	}
-
-	certExeFile := "../../tools/certificate.sh"
-	certPath := "/tmp/fluid/certs"
-
-	// create dir
-	if err := os.MkdirAll(certPath, 0700); err != nil {
-		t.Errorf("fail to create path, path:%s,err:%v", certPath, err)
+		"test generate ca file case 2": {
+			lengthCheck: 1000,
+			ns:          "fluid-system",
+			svc:         "fluid-pod-admission-webhook",
+			certPath:    "/tmp/fluid/certs",
+			canMkDir:    true,
+		},
+		"test generate ca file case 3": {
+			lengthCheck: 1000,
+			ns:          "fluid-system",
+			svc:         "fluid-pod-admission-webhook",
+			certPath:    "////",
+			canMkDir:    false,
+		},
 	}
 
 	c := fake.NewFakeClient()
 	cb := NewCertificateBuilder(c, log)
 
 	for index, item := range testCases {
-		ca, _ := cb.genCA(item.ns, item.svc, certExeFile, certPath)
-		gotLen := len(ca)
+		certs, err := cb.genCA(item.ns, item.svc, item.certPath)
+		if err != nil && !item.canMkDir {
+			continue
+		}
+		gotLen := len(certs.CACert)
 		if gotLen < item.lengthCheck {
 			t.Errorf("%s generate certification failed, ns:%s,svc:%s,want greater than %v,got:%v",
 				index,
@@ -181,33 +204,41 @@ func TestGenCA(t *testing.T) {
 				gotLen,
 			)
 		}
+		// clean certificate files
+		if err := os.RemoveAll(item.certPath); err != nil {
+			t.Errorf("fail to recycle file, path:%s,err:%v", item.certPath, err)
+		}
 	}
 
-	// clean certificate files
-	if err := os.RemoveAll(certPath); err != nil {
-		t.Errorf("fail to recycle file, path:%s,err:%v", certPath, err)
-	}
 }
 
 func TestPatchCABundle(t *testing.T) {
-	var webhookName = "webhookName"
+	var mockWebhookName = "mockWebhookName"
 	testCases := map[string]struct {
-		ca []byte
+		ca          []byte
+		webhookName string
 	}{
 		"test case 1": {
-			ca: []byte{1, 2, 3},
+			ca:          []byte{1, 2, 3},
+			webhookName: "mockWebhookName",
 		},
 		"test case 2": {
-			ca: []byte{2, 3, 4},
+			ca:          []byte{2, 3, 4},
+			webhookName: "mockWebhookName",
 		},
 		"test case 3": {
-			ca: []byte{3, 4, 5},
+			ca:          []byte{3, 4, 5},
+			webhookName: "mockWebhookName",
+		},
+		"test case 4": {
+			ca:          []byte{4, 5, 6},
+			webhookName: "WebhookName",
 		},
 	}
 
 	var testMutatingWebhookConfiguration = &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: webhookName,
+			Name: mockWebhookName,
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
@@ -236,13 +267,16 @@ func TestPatchCABundle(t *testing.T) {
 
 	for index, item := range testCases {
 		cb := NewCertificateBuilder(client, log)
-		err := cb.PatchCABundle(webhookName, item.ca)
+		err := cb.PatchCABundle(item.webhookName, item.ca)
 		if err != nil {
-			t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
-			continue
+			if utils.IgnoreNotFound(err) != nil {
+				t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
+			} else {
+				continue
+			}
 		}
 		var mc admissionregistrationv1.MutatingWebhookConfiguration
-		err = client.Get(context.TODO(), types.NamespacedName{Name: webhookName}, &mc)
+		err = client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &mc)
 		if err != nil {
 			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
 			continue
@@ -261,4 +295,5 @@ func TestPatchCABundle(t *testing.T) {
 
 		}
 	}
+
 }
