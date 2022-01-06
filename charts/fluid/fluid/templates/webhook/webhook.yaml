@@ -23,6 +23,7 @@ spec:
           command: ["fluid-webhook", "start"]
           args:
             - --development=false
+            - --pprof-addr=:6060
           env:
             - name: MY_POD_NAMESPACE
               valueFrom:
