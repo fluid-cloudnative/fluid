@@ -166,6 +166,44 @@ func TestJuiceFSEngine_getMountPoint(t *testing.T) {
 	}
 }
 
+func TestJuiceFSEngine_getHostMountPoint(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+		MountRoot string
+	}
+	var tests = []struct {
+		name          string
+		fields        fields
+		wantMountPath string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "juicefs",
+				namespace: "default",
+				Log:       log.NullLogger{},
+				MountRoot: "/tmp",
+			},
+			wantMountPath: "/tmp/juicefs/default/juicefs",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			if gotMountPath := j.getHostMountPoint(); gotMountPath != tt.wantMountPath {
+				t.Errorf("getHostMountPoint() = %v, want %v", gotMountPath, tt.wantMountPath)
+			}
+		})
+	}
+}
+
 func TestJuiceFSEngine_getRuntime(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.JuiceFSRuntime

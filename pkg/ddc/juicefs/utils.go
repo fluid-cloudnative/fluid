@@ -187,7 +187,7 @@ func (j *JuiceFSEngine) parseFuseImage(image string, tag string, imagePullPolicy
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+		tag = docker.GetImageTagFromEnv(common.JuiceFSFuseImageEnv)
 		if len(tag) == 0 {
 			fuseImageInfo := strings.Split(common.DefaultJuiceFSFuseImage, ":")
 			if len(fuseImageInfo) < 2 {
@@ -205,6 +205,12 @@ func (j *JuiceFSEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
 	j.Log.Info("mountRoot", "path", mountRoot)
 	return fmt.Sprintf("%s/%s/%s/juicefs-fuse", mountRoot, j.namespace, j.name)
+}
+
+func (j *JuiceFSEngine) getHostMountPoint() (mountPath string) {
+	mountRoot := getMountRoot()
+	j.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s", mountRoot, j.namespace, j.name)
 }
 
 // getMountRoot returns the default path, if it's not set
