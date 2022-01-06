@@ -95,7 +95,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	value.Fuse.Image, value.Fuse.ImageTag, value.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Fuse.NodeSelector = map[string]string{}
-	value.Fuse.HostMountPath = j.getMountPoint()
+	value.Fuse.HostMountPath = j.getHostMountPoint()
 	value.Fuse.Prepare.SubPath = subPath
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
