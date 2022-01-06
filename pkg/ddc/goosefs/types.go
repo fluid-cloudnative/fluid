@@ -134,6 +134,7 @@ type Worker struct {
 	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
 	Resources    common.Resources  `yaml:"resources,omitempty"`
 	Ports        Ports             `yaml:"ports,omitempty"`
+	Annotations  map[string]string `json:"annotations,omitempty"`
 }
 
 type Master struct {
@@ -148,6 +149,7 @@ type Master struct {
 	Ports        Ports             `yaml:"ports,omitempty"`
 	BackupPath   string            `yaml:"backupPath,omitempty"`
 	Restore      Restore           `yaml:"restore,omitempty"`
+	Annotations  map[string]string `json:"annotations,omitempty"`
 }
 
 type Restore struct {
@@ -172,6 +174,7 @@ type Fuse struct {
 	Resources          common.Resources  `yaml:"resources,omitempty"`
 	Global             bool              `yaml:"global,omitempty"`
 	CriticalPod        bool              `yaml:"criticalPod,omitempty"`
+	Annotations        map[string]string `json:"annotations,omitempty"`
 }
 
 type Tieredstore struct {
