@@ -58,6 +58,13 @@ type GooseFSCompTemplateSpec struct {
 	// NodeSelector is a selector which must be true for the master to fit on a node
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Annotations is an unstructured key value map stored with a resource that may be
+	// set by external tools to store and retrieve arbitrary metadata. They are not
+	// queryable and should be preserved when modifying objects.
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // GooseFSFuseSpec is a description of the GooseFS Fuse
@@ -109,6 +116,13 @@ type GooseFSFuseSpec struct {
 	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
+	// Annotations is an unstructured key value map stored with a resource that may be
+	// set by external tools to store and retrieve arbitrary metadata. They are not
+	// queryable and should be preserved when modifying objects.
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // GooseFSRuntimeSpec defines the desired state of GooseFSRuntime

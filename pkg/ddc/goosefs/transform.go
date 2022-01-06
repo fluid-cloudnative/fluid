@@ -309,6 +309,9 @@ func (e *GooseFSEngine) transformMasters(runtime *datav1alpha1.GooseFSRuntime,
 	}
 
 	e.transformResourcesForMaster(runtime, value)
+
+	// transform the annotation for goosefs master.
+	value.Master.Annotations = runtime.Spec.Master.Annotations
 	return
 }
 
@@ -344,6 +347,9 @@ func (e *GooseFSEngine) transformWorkers(runtime *datav1alpha1.GooseFSRuntime, v
 	value.Worker.HostNetwork = true
 
 	e.transformResourcesForWorker(runtime, value)
+
+	// transform the annotation for goosefs worker.
+	value.Worker.Annotations = runtime.Spec.Worker.Annotations
 
 	return
 }

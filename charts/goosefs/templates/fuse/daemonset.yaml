@@ -22,6 +22,10 @@ spec:
       role: goosefs-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+{{ toYaml .Values.fuse.annotations | trim | indent 8  }}
+      {{- end }}
       labels:
         app: {{ template "goosefs.name" . }}
         chart: {{ template "goosefs.chart" . }}

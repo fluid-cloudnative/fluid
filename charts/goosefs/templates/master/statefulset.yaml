@@ -31,6 +31,10 @@ spec:
   replicas: {{ $masterCount }}
   template:
     metadata:
+      {{- if .Values.master.annotations }}
+      annotations:
+{{ toYaml .Values.master.annotations | trim | indent 8  }}
+      {{- end }}
       labels:
         name: {{ $fullName }}-master
         app: {{ $name }}

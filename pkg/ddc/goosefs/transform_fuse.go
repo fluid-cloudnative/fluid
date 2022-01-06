@@ -94,6 +94,9 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
+	// transform the annotation for goosefs fuse.
+	value.Fuse.Annotations = runtime.Spec.Fuse.Annotations
+
 	return
 
 }
