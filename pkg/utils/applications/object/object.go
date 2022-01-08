@@ -105,6 +105,6 @@ func (u *RuntimeApplication) LocateRuntimeSpec() (anchors []common.Anchor, err e
 	return
 }
 
-func (u *RuntimeApplication) LocatePodSpec() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
 	return
 }

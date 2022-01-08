@@ -186,7 +186,7 @@ func (u *UnstructuredApplication) LocateVolumeMounts() (anchors []common.Anchor,
 	return u.locate(volumeMountsMatchStr, volumeMountssEndStr)
 }
 
-func (u *UnstructuredApplication) LocatePodSpec() (anchors []common.Anchor, err error) {
+func (u *UnstructuredApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
 	return
 }
 

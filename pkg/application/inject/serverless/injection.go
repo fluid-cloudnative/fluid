@@ -21,8 +21,8 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
-	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,31 +77,27 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		objectMeta = pod.ObjectMeta
 		application = object.NewRuntimeApplication(pod)
 	case *unstructuredtype.Unstructured:
-		unstructuredObj := v
-		application = unstructured.NewUnstructuredApplication(unstructuredObj)
+		obj := v
+		application = unstructured.NewUnstructuredApplication(obj)
+		typeMeta = metav1.TypeMeta{
+			Kind:       obj.GetKind(),
+			APIVersion: obj.GetAPIVersion(),
+		}
+		objectMeta = metav1.ObjectMeta{
+			Name:        obj.GetName(),
+			Namespace:   obj.GetNamespace(),
+			Annotations: obj.GetAnnotations(),
+		}
+	case runtime.Object:
+		obj := v
+		outValue := reflect.ValueOf(obj).Elem()
+		application = object.NewRuntimeApplication(obj)
+		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
+		objectMeta = outValue.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
 
 	default:
 		log.Info("No supported K8s Type", "v", v)
-		outValue := reflect.ValueOf(out).Elem()
-
-		containersReferenceName, containersValue, err := reflectutil.ContainersValueFromObject(out, "", []string{"init"})
-		if err != nil {
-			return out, fmt.Errorf("get container references failed for K8s Type %v with error %v", v, err)
-		}
-
-		log.Info("ContainersValueFromObject", "containersReferenceName", containersReferenceName)
-
-		volumesReferenceName, volumesValue, err := reflectutil.VolumesValueFromObject(out, "", []string{})
-		if err != nil {
-			return out, fmt.Errorf("get volume Reference volume for K8s Type %v with error %v", v, err)
-		}
-
-		log.Info("VolumesValueFromObject", "volumesReferenceName", volumesReferenceName)
-
-		containersPtr = containersValue.Addr().Interface().(*[]corev1.Container)
-		volumesPtr = volumesValue.Addr().Interface().(*[]corev1.Volume)
-		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
-		objectMeta = outValue.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
+		return out, fmt.Errorf("No supported K8s Type", "v", v)
 	}
 
 	isServerless := ServerlessEnabled(objectMeta.Annotations)
@@ -114,6 +110,15 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
+
+	locs, err := application.LocatePodSpecs()
+	if err != nil {
+		return
+	}
+
+	for _, loc := range locs {
+
+	}
 
 	// Skip injection for injected container
 	if len(*containersPtr) > 0 {

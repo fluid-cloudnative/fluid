@@ -100,6 +100,6 @@ func (u *PodApplication) LocateVolumeMounts() (anchors []common.Anchor, err erro
 	return
 }
 
-func (u *PodApplication) LocatePodSpec() (anchors []common.Anchor, err error) {
+func (u *PodApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
 	return
 }
