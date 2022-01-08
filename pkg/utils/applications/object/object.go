@@ -104,3 +104,7 @@ func (u *RuntimeApplication) LocateVolumeMounts() (anchors []common.Anchor, err 
 func (u *RuntimeApplication) LocateRuntimeSpec() (anchors []common.Anchor, err error) {
 	return
 }
+
+func (u *RuntimeApplication) LocatePodSpec() (anchors []common.Anchor, err error) {
+	return
+}
