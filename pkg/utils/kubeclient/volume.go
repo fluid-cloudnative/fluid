@@ -26,6 +26,8 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 const (
@@ -345,5 +347,20 @@ func IsDatasetPVC(client client.Client, name string, namespace string) (find boo
 		return
 	}
 	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+	return
+}
+
+func GetDatasetFromPVC(client client.Client, name, namespace string) (dataset *datav1alpha1.Dataset, err error) {
+	dataset = &datav1alpha1.Dataset{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, dataset)
+	if err != nil {
+		if apierrs.IsNotFound(err) {
+			dataset = nil
+		}
+	}
+
 	return
 }

@@ -18,7 +18,9 @@ type ApplicationPodSpec interface {
 
 // The Application which is concerned by Fluid
 type Application interface {
-	GetPodSpec() (spec ApplicationPodSpec, err error)
+	GetPodSpecs() (specs []ApplicationPodSpec, err error)
+
+	SetPodSpecs(specs []ApplicationPodSpec) (err error)
 
 	GetObject() (obj runtime.Object)
 

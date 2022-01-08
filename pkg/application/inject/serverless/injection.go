@@ -1,19 +1,3 @@
-/*
-Copyright 2021 The Fluid Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package serverless
 
 import (
@@ -23,27 +7,31 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
-	"gopkg.in/yaml.v2"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	unstructuredtype "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	injectScheme      = runtime.NewScheme()
-	fuseContainerName = "fluid-fuse"
-)
+type Injector struct {
+	client           client.Client
+	defaultNamespace string
+}
 
-// InjectObject injects sidecar into
-func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionTemplate) (out runtime.Object, err error) {
+func (s *Injector) createTemplate(datasetName, namespace string) (template *serverlessInjectionTemplate, err error) {
+	return &serverlessInjectionTemplate{}, nil
+}
+
+func (s *Injector) InjectObject(in runtime.Object) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
 	var application common.Application
 	var objectMeta metav1.ObjectMeta
 	var typeMeta metav1.TypeMeta
+	var namespace string
 
 	// Handle Lists
 	if list, ok := out.(*corev1.List); ok {
@@ -58,7 +46,7 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 				return nil, err
 			}
 
-			r, err := InjectObject(obj, sidecarTemplate)
+			r, err := s.InjectObject(obj)
 			if err != nil {
 				return nil, err
 			}
@@ -105,88 +93,104 @@ func InjectObject(in runtime.Object, sidecarTemplate common.ServerlessInjectionT
 		return out, nil
 	}
 
+	if len(objectMeta.Namespace) == 0 {
+		namespace = s.defaultNamespace
+	}
+
 	name := types.NamespacedName{
-		Namespace: objectMeta.Namespace,
+		Namespace: namespace,
 		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
 
-	locs, err := application.LocatePodSpecs()
+	pods, err := application.GetPodSpecs()
 	if err != nil {
 		return
 	}
 
-	for _, loc := range locs {
+	for _, pod := range pods {
+		volumes, err := pod.GetVolumes()
+		if err != nil {
+			return out, err
+		}
+		for _, volume := range volumes {
 
-	}
+			dataset, err := kubeclient.GetDatasetFromPVC(s.client, volume.PersistentVolumeClaim.ClaimName, namespace)
+			if err != nil {
+				return out, err
+			}
 
-	// Skip injection for injected container
-	if len(*containersPtr) > 0 {
-		for _, c := range *containersPtr {
-			if c.Name == fuseContainerName {
-				warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
-					name, fuseContainerName)
-				if len(kind) != 0 {
-					warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
-						kind, name, fuseContainerName)
+			if dataset != nil {
+				template, err := s.createTemplate(dataset.Name, dataset.Namespace)
+				if err != nil {
+					return out, err
 				}
-				log.Info(warningStr)
-				return out, nil
+
+				containers, err := pod.GetContainers()
+				if err != nil {
+					return out, err
+				}
+
+				// Skip injection for injected container
+				for _, c := range containers {
+					if c.Name == fuseContainerName {
+						warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
+							name, fuseContainerName)
+						if len(kind) != 0 {
+							warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
+								kind, name, fuseContainerName)
+						}
+						log.Info(warningStr)
+						return out, nil
+					}
+				}
+
+				// 1.Modify the volumes
+				volumes, err := pod.GetVolumes()
+				if err != nil {
+					return out, err
+				}
+
+				for i, v := range volumes {
+					for _, toUpdate := range template.VolumesToUpdate {
+						if v.Name == toUpdate.Name {
+							log.V(1).Info("Update volume", "original", v, "updated", toUpdate)
+							volumes[i] = toUpdate
+							// break
+						}
+					}
+				}
+
+				// 2.Add the volumes
+				if len(template.VolumesToAdd) > 0 {
+					log.V(1).Info("Before append volume", "original", volumes)
+					volumes = append(volumes, template.VolumesToAdd...)
+					log.V(1).Info("After append volume", "original", volumes)
+				}
+
+				// 3.Add sidecar as the first container
+				containers = append([]corev1.Container{template.FuseContainer}, containers...)
+
+				err = pod.SetContainers(containers)
+				if err != nil {
+					return out, err
+				}
+
+				err = pod.SetVolumes(volumes)
+				if err != nil {
+					return out, err
+				}
+
 			}
 		}
+
 	}
 
-	// 1.Modify the volumes
-	for i, v := range *volumesPtr {
-		for _, toUpdate := range sidecarTemplate.VolumesToUpdate {
-			if v.Name == toUpdate.Name {
-				log.V(1).Info("Update volume", "original", v, "updated", toUpdate)
-				(*volumesPtr)[i] = toUpdate
-				// break
-			}
-		}
-	}
-
-	// 2.Add the volumes
-	if len(sidecarTemplate.VolumesToAdd) > 0 {
-		log.V(1).Info("Before append volume", "original", (*volumesPtr))
-		(*volumesPtr) = append((*volumesPtr), sidecarTemplate.VolumesToAdd...)
-		log.V(1).Info("After append volume", "original", (*volumesPtr))
-	}
-
-	// 3.Add sidecar as the first container
-	*containersPtr = append([]corev1.Container{sidecarTemplate.FuseContainer}, *containersPtr...)
-
-	log.V(1).Info("Updated resource", "containers", *containersPtr, "volumes", *volumesPtr)
-
-	return out, err
-}
-
-// fromRawToObject is used to convert from raw to the runtime object
-func fromRawToObject(raw []byte) (runtime.Object, error) {
-	var typeMeta metav1.TypeMeta
-	if err := yaml.Unmarshal(raw, &typeMeta); err != nil {
-		return nil, err
-	}
-
-	gvk := schema.FromAPIVersionAndKind(typeMeta.APIVersion, typeMeta.Kind)
-	obj, err := injectScheme.New(gvk)
+	err = application.SetPodSpecs(pods)
 	if err != nil {
-		return nil, err
-	}
-	if err = yaml.Unmarshal(raw, obj); err != nil {
-		return nil, err
+		return out, err
 	}
 
-	return obj, nil
-}
-
-func ServerlessEnabled(annotions map[string]string) (match bool) {
-	for key, value := range annotions {
-		if key == common.Serverless && value == common.True {
-			match = true
-			break
-		}
-	}
-	return
+	out = application.GetObject()
+	return out, err
 }
