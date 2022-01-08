@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
 	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v2"
