@@ -80,12 +80,11 @@ $ kubectl get po |grep demo
 demo-app             1/1     Running   0          96s
 jfsdemo-fuse-g9pvp   1/1     Running   0          95s
 jfsdemo-worker-0     1/1     Running   0          4m25s
-$  kubectl get po demo-app -oyaml |grep volumeMounts -A 4
+$ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
     volumeMounts:
     - mountPath: /data
       mountPropagation: HostToContainer
       name: demo
-      subPath: subpath
 ```
 
 ## 测试 FUSE 挂载点自动恢复
@@ -102,8 +101,6 @@ NAME                 READY   STATUS    RESTARTS   AGE
 demo-app             1/1     Running   0          5m7s
 jfsdemo-fuse-bdsdt   1/1     Running   0          6s
 jfsdemo-worker-0     1/1     Running   0          7m56s
-minio-server-0       1/1     Running   0          3d8h
-redis-server-0       1/1     Running   0          3d8h
 ````
 
 新的 FUSE pod 创建后，再查看 demo pod 中的挂载点情况：
