@@ -52,6 +52,43 @@ type UnstructuredAnchor struct {
 	fields []string
 }
 
+type UnstructuredApplicationPodSpec struct {
+	selfObj *unstructured.Unstructured
+	// absolute Ptr
+	selfPtr common.Anchor
+	// relative Ptr
+	selfContainersPtr common.Anchor
+	selfVolumesPtr    common.Anchor
+}
+
+func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, err error) {
+
+	return
+}
+
+func (u *UnstructuredApplicationPodSpec) SetVolumes(volumes []corev1.Volume) (err error) {
+
+	return
+}
+
+func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Container, err error) {
+	field, found, err := unstructured.NestedFieldNoCopy(u.selfObj.Object, u.selfContainersPtr.Path()...)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+
+		return nil, fmt.Errorf("failed to find the containers ")
+	}
+
+	return
+}
+
+func (u *UnstructuredApplicationPodSpec) SetContainers(containers []corev1.Container) (err error) {
+	return
+}
+
 func NewUnstructuredAnchor(fields []string, end string) common.Anchor {
 	fieldsToAdd := []string{}
 	if len(end) > 0 {
@@ -86,6 +123,14 @@ func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Applicati
 	return &UnstructuredApplication{
 		obj: obj,
 	}
+}
+
+func (u *UnstructuredApplication) GetPodSpecs() (specs []common.ApplicationPodSpec, err error) {
+
+}
+
+func (u *UnstructuredApplication) SetPodSpecs(specs []common.ApplicationPodSpec) (err error) {
+
 }
 
 func (u *UnstructuredApplication) GetObject() (obj *unstructured.Unstructured) {
