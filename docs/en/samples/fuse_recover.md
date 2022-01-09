@@ -1,4 +1,4 @@
-# Demo - How to use FUSE auto-recovery in Fluid
+# Demo - How to enable FUSE auto-recovery
 
 ## Installation
 
