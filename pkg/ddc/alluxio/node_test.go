@@ -200,8 +200,8 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "alluxiofs",
-								"role":             "alluxiofs-worker",
+								"app":              "alluxio",
+								"role":             "alluxio-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -245,8 +245,8 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "alluxiofs",
-								"role":             "alluxiofs-worker",
+								"app":              "alluxio",
+								"role":             "alluxio-worker",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -290,8 +290,8 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Name:      "hbase-a-worker-0",
 							Namespace: "big-data",
 							Labels: map[string]string{
-								"app":              "alluxiofs",
-								"role":             "alluxiofs-worker",
+								"app":              "alluxio",
+								"role":             "alluxio-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
@@ -340,8 +340,8 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Name:      "deprecated-worker-0",
 							Namespace: "big-data",
 							Labels: map[string]string{
-								"app":              "alluxiofs",
-								"role":             "alluxiofs-worker",
+								"app":              "alluxio",
+								"role":             "alluxio-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
