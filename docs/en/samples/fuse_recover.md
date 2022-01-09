@@ -81,19 +81,18 @@ $ kubectl get po |grep demo
 demo-app             1/1     Running   0          96s
 jfsdemo-fuse-g9pvp   1/1     Running   0          95s
 jfsdemo-worker-0     1/1     Running   0          4m25s
-$  kubectl get po demo-app -oyaml |grep volumeMounts -A 4
+$ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
     volumeMounts:
     - mountPath: /data
       mountPropagation: HostToContainer
       name: demo
-      subPath: subpath
 ```
 
 ## Test FUSE mount point auto recovery
 
 **Delete FUSE pod**
 
-Delete thFUSE pod, and waiting for it to restart:
+Delete the FUSE pod, and waiting for it to restart:
 
 ```shell
 $ kubectl delete po jfsdemo-fuse-g9pvp
@@ -103,8 +102,6 @@ NAME                 READY   STATUS    RESTARTS   AGE
 demo-app             1/1     Running   0          5m7s
 jfsdemo-fuse-bdsdt   1/1     Running   0          6s
 jfsdemo-worker-0     1/1     Running   0          7m56s
-minio-server-0       1/1     Running   0          3d8h
-redis-server-0       1/1     Running   0          3d8h
 ````
 
 After the new FUSE pod is created, check the mount points in the demo pod:
