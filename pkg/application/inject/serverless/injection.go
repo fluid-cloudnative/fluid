@@ -21,6 +21,13 @@ type Injector struct {
 	defaultNamespace string
 }
 
+func CreateInjector(client client.Client, namespace string) *Injector {
+	return &Injector{
+		client:           client,
+		defaultNamespace: namespace,
+	}
+}
+
 func (s *Injector) createTemplate(datasetName, namespace string) (template *serverlessInjectionTemplate, err error) {
 	return &serverlessInjectionTemplate{}, nil
 }

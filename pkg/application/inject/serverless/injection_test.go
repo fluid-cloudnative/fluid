@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	reflectutil "github.com/fluid-cloudnative/fluid/pkg/utils/reflect"
 	"gopkg.in/yaml.v3"
 	utilpointer "k8s.io/utils/pointer"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8syaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestInjectObject(t *testing.T) {
@@ -31,6 +34,12 @@ func TestInjectObject(t *testing.T) {
 
 	hostPathCharDev := corev1.HostPathCharDev
 	bTrue := true
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
+	_ = appsv1.AddToScheme(s)
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
 	testcases := []testCase{
 		{
@@ -279,7 +288,9 @@ func TestInjectObject(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		out, err := InjectObject(testcase.in, testcase.template)
+		injector := NewInjector(fakeClient, "default")
+
+		out, err := injector.InjectObject(testcase.in)
 		if testcase.wantErr == (err == nil) {
 			t.Errorf("testcase %s failed, wantErr %v, Got error %v", testcase.name, testcase.wantErr, err)
 		}
@@ -377,8 +388,8 @@ spec:
 func TestInjectObjectForUnstructed(t *testing.T) {
 
 	obj := &unstructured.Unstructured{}
-	hostPathCharDev := corev1.HostPathCharDev
-	bTrue := true
+	// hostPathCharDev := corev1.HostPathCharDev
+	// bTrue := true
 
 	dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	_, gvk, err := dec.Decode([]byte(inputYaml), nil, obj)
@@ -389,40 +400,46 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 	// Get the common metadata, and show GVK
 	fmt.Println(obj.GetName(), gvk.String())
 
-	template := common.ServerlessInjectionTemplate{
-		FuseContainer: corev1.Container{Name: "fuse",
-			Args: []string{
-				"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-			},
-			Command: []string{"/entrypoint.sh"},
-			Image:   "test",
-			SecurityContext: &corev1.SecurityContext{
-				Privileged: &bTrue,
-			}},
-		VolumesToUpdate: []corev1.Volume{
-			{
-				Name: "dataset1",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/runtime_mnt/dataset1",
-					},
-				},
-			},
-		},
-		VolumesToAdd: []corev1.Volume{
-			{
-				Name: "fuse-device",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/dev/fuse",
-						Type: &hostPathCharDev,
-					},
-				},
-			},
-		},
-	}
-
-	out, err := InjectObject(obj, template)
+	// template := common.ServerlessInjectionTemplate{
+	// 	FuseContainer: corev1.Container{Name: "fuse",
+	// 		Args: []string{
+	// 			"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+	// 		},
+	// 		Command: []string{"/entrypoint.sh"},
+	// 		Image:   "test",
+	// 		SecurityContext: &corev1.SecurityContext{
+	// 			Privileged: &bTrue,
+	// 		}},
+	// 	VolumesToUpdate: []corev1.Volume{
+	// 		{
+	// 			Name: "dataset1",
+	// 			VolumeSource: corev1.VolumeSource{
+	// 				HostPath: &corev1.HostPathVolumeSource{
+	// 					Path: "/runtime_mnt/dataset1",
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// 	VolumesToAdd: []corev1.Volume{
+	// 		{
+	// 			Name: "fuse-device",
+	// 			VolumeSource: corev1.VolumeSource{
+	// 				HostPath: &corev1.HostPathVolumeSource{
+	// 					Path: "/dev/fuse",
+	// 					Type: &hostPathCharDev,
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// }
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
+	_ = appsv1.AddToScheme(s)
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+	injector := NewInjector(fakeClient, "default")
+	out, err := injector.InjectObject(obj)
 	if err != nil {
 		t.Errorf("Failed to InjectObject due to %v", err)
 	}
