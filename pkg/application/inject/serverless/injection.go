@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/object"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -21,7 +22,7 @@ type Injector struct {
 	defaultNamespace string
 }
 
-func CreateInjector(client client.Client, namespace string) *Injector {
+func NewInjector(client client.Client, namespace string) *Injector {
 	return &Injector{
 		client:           client,
 		defaultNamespace: namespace,
@@ -45,7 +46,7 @@ func (s *Injector) InjectObject(in runtime.Object) (out runtime.Object, err erro
 		result := list
 
 		for i, item := range list.Items {
-			obj, err := fromRawToObject(item.Raw)
+			obj, err := utils.FromRawToObject(item.Raw)
 			if runtime.IsNotRegisteredError(err) {
 				continue
 			}
