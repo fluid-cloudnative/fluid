@@ -72,7 +72,7 @@ func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		return err
 	}
 
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=alluxiofs,role=alluxiofs-worker", e.namespace, e.name))
+	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=alluxio,role=alluxio-worker", e.namespace, e.name))
 	if err != nil {
 		return err
 	}
