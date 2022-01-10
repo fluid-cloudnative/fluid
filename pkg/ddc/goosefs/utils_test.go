@@ -697,6 +697,43 @@ func TestGetMountPoint(t *testing.T) {
 	}
 }
 
+func TestGetHostMountPoint(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+		MountRoot string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+				Log:       log.NullLogger{},
+				MountRoot: "/tmp",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &GooseFSEngine{
+				Log:       tt.fields.Log,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			wantHostMountPath := fmt.Sprintf("%s/%s/%s", tt.fields.MountRoot+"/goosefs", tt.fields.namespace, e.name)
+			if gotHostMountPath := e.getHostMountPoint(); gotHostMountPath != wantHostMountPath {
+				t.Errorf("GooseFSEngine.getMountPoint() = %v, want %v", gotHostMountPath, wantHostMountPath)
+			}
+		})
+	}
+}
+
 func TestGetInitTierPathsEnv(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.GooseFSRuntime
