@@ -61,7 +61,31 @@ type UnstructuredApplicationPodSpec struct {
 	selfVolumesPtr    common.Anchor
 }
 
+func NewUnstructuredApplicationPodSpec() (spec *UnstructuredApplicationPodSpec) {
+	return
+}
+
 func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, err error) {
+	field, found, err := unstructured.NestedFieldNoCopy(u.selfObj.Object, u.selfVolumesPtr.Path()...)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("failed to find the volumes from %v", u.selfVolumesPtr.Path())
+	}
+	original, ok := field.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to parse %v", field)
+	}
+	ret := make([]corev1.Volume, 0, len(original))
+	for _, obj := range original {
+		o, ok := obj.(map[string]interface{})
+		if !ok {
+			// expected map[string]interface{}, got something else
+			return nil, fmt.Errorf("failed to parse %v", obj)
+		}
+		ret = append(ret, extractContainer(o))
+	}
 
 	return
 }
@@ -76,10 +100,21 @@ func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Co
 	if err != nil {
 		return nil, err
 	}
-
 	if !found {
-
-		return nil, fmt.Errorf("failed to find the containers ")
+		return nil, fmt.Errorf("failed to find the containers from %v", u.selfContainersPtr.Path())
+	}
+	original, ok := field.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("failed to parse %v", field)
+	}
+	ret := make([]corev1.Container, 0, len(original))
+	for _, obj := range original {
+		o, ok := obj.(map[string]interface{})
+		if !ok {
+			// expected map[string]interface{}, got something else
+			return nil, fmt.Errorf("failed to parse %v", obj)
+		}
+		ret = append(ret, extractContainer(o))
 	}
 
 	return

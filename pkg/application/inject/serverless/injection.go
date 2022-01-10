@@ -74,7 +74,6 @@ func (s *Injector) InjectObject(in runtime.Object) (out runtime.Object, err erro
 		application = object.NewRuntimeApplication(pod)
 	case *unstructuredtype.Unstructured:
 		obj := v
-		application = unstructured.NewUnstructuredApplication(obj)
 		typeMeta = metav1.TypeMeta{
 			Kind:       obj.GetKind(),
 			APIVersion: obj.GetAPIVersion(),
@@ -84,16 +83,16 @@ func (s *Injector) InjectObject(in runtime.Object) (out runtime.Object, err erro
 			Namespace:   obj.GetNamespace(),
 			Annotations: obj.GetAnnotations(),
 		}
+		application = unstructured.NewUnstructuredApplication(obj)
 	case runtime.Object:
 		obj := v
 		outValue := reflect.ValueOf(obj).Elem()
-		application = object.NewRuntimeApplication(obj)
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
 		objectMeta = outValue.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
-
+		application = object.NewRuntimeApplication(obj)
 	default:
 		log.Info("No supported K8s Type", "v", v)
-		return out, fmt.Errorf("No supported K8s Type", "v", v)
+		return out, fmt.Errorf("no supported K8s Type", "v", v)
 	}
 
 	isServerless := ServerlessEnabled(objectMeta.Annotations)

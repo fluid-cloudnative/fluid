@@ -21,8 +21,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ExtractContainer(v map[string]interface{}) (container corev1.Container) {
+func extractContainer(v map[string]interface{}) (container corev1.Container) {
 	container = corev1.Container{}
 	mapstructure.Decode(v, &container)
 	return container
+}
+
+func extractVolumes(v map[string]interface{}) (volume corev1.Volume) {
+	volume = corev1.Volume{}
+	mapstructure.Decode(v, &volume)
+	return volume
 }
