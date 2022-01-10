@@ -21,14 +21,30 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func extractContainer(v map[string]interface{}) (container corev1.Container) {
+func extractToContainer(input map[string]interface{}) (container corev1.Container, err error) {
 	container = corev1.Container{}
-	mapstructure.Decode(v, &container)
-	return container
+	err = mapstructure.Decode(input, &container)
+	return
 }
 
-func extractVolumes(v map[string]interface{}) (volume corev1.Volume) {
+func extractToVolume(input map[string]interface{}) (volume corev1.Volume, err error) {
 	volume = corev1.Volume{}
-	mapstructure.Decode(v, &volume)
-	return volume
+	err = mapstructure.Decode(input, &volume)
+	return
+}
+
+func convertContainerToMap(container *corev1.Container) (output map[string]interface{}, err error) {
+	output = map[string]interface{}{}
+	if container != nil {
+		err = mapstructure.Decode(container, &output)
+	}
+	return
+}
+
+func convertVolumeToMap(volume *corev1.Volume) (output map[string]interface{}, err error) {
+	output = map[string]interface{}{}
+	if volume != nil {
+		err = mapstructure.Decode(volume, &output)
+	}
+	return
 }

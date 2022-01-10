@@ -84,7 +84,12 @@ func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, 
 			// expected map[string]interface{}, got something else
 			return nil, fmt.Errorf("failed to parse %v", obj)
 		}
-		ret = append(ret, extractContainer(o))
+
+		volume, err := extractToVolume(o)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, volume)
 	}
 
 	return
@@ -114,7 +119,11 @@ func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Co
 			// expected map[string]interface{}, got something else
 			return nil, fmt.Errorf("failed to parse %v", obj)
 		}
-		ret = append(ret, extractContainer(o))
+		container, err := extractToContainer(o)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, container)
 	}
 
 	return
