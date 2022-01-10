@@ -19,32 +19,35 @@ package unstructured
 import (
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func extractToContainer(input map[string]interface{}) (container corev1.Container, err error) {
+func convertMapToContainer(input map[string]interface{}) (container corev1.Container, err error) {
 	container = corev1.Container{}
 	err = mapstructure.Decode(input, &container)
 	return
 }
 
-func extractToVolume(input map[string]interface{}) (volume corev1.Volume, err error) {
+func convertMapToVolume(input map[string]interface{}) (volume corev1.Volume, err error) {
 	volume = corev1.Volume{}
 	err = mapstructure.Decode(input, &volume)
 	return
 }
 
-func convertContainerToMap(container *corev1.Container) (output map[string]interface{}, err error) {
-	output = map[string]interface{}{}
+func convertContainerToMap(container *corev1.Container) (out map[string]interface{}, err error) {
+	out = map[string]interface{}{}
 	if container != nil {
-		err = mapstructure.Decode(container, &output)
+		// err = mapstructure.Decode(container, &out)
+		out, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&container)
 	}
 	return
 }
 
-func convertVolumeToMap(volume *corev1.Volume) (output map[string]interface{}, err error) {
-	output = map[string]interface{}{}
+func convertVolumeToMap(volume *corev1.Volume) (out map[string]interface{}, err error) {
+	out = map[string]interface{}{}
 	if volume != nil {
-		err = mapstructure.Decode(volume, &output)
+		// err = mapstructure.Decode(volume, &out)
+		out, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&volume)
 	}
 	return
 }

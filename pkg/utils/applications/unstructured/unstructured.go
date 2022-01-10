@@ -85,7 +85,7 @@ func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, 
 			return nil, fmt.Errorf("failed to parse %v", obj)
 		}
 
-		volume, err := extractToVolume(o)
+		volume, err := convertMapToVolume(o)
 		if err != nil {
 			return nil, err
 		}
@@ -96,6 +96,19 @@ func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, 
 }
 
 func (u *UnstructuredApplicationPodSpec) SetVolumes(volumes []corev1.Volume) (err error) {
+	if len(volumes) == 0 {
+		unstructured.RemoveNestedField(u.selfObj.Object, u.selfVolumesPtr.Path()...)
+		return
+	}
+
+	newVolumes := make([]interface{}, 0, len(volumes))
+	for _, volume := range volumes {
+		out, err := convertVolumeToMap(&volume)
+		if err != nil {
+			return err
+		}
+		newVolumes = append(newVolumes, out)
+	}
 
 	return
 }
@@ -119,7 +132,7 @@ func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Co
 			// expected map[string]interface{}, got something else
 			return nil, fmt.Errorf("failed to parse %v", obj)
 		}
-		container, err := extractToContainer(o)
+		container, err := convertMapToContainer(o)
 		if err != nil {
 			return nil, err
 		}
@@ -130,6 +143,20 @@ func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Co
 }
 
 func (u *UnstructuredApplicationPodSpec) SetContainers(containers []corev1.Container) (err error) {
+	if len(containers) == 0 {
+		unstructured.RemoveNestedField(u.selfObj.Object, u.selfContainersPtr.Path()...)
+		return
+	}
+
+	newContainers := make([]interface{}, 0, len(containers))
+	for _, container := range containers {
+		out, err := convertContainerToMap(&container)
+		if err != nil {
+			return err
+		}
+		newContainers = append(newContainers, out)
+	}
+
 	return
 }
 
