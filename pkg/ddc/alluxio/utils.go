@@ -139,6 +139,12 @@ func (e *AlluxioEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/alluxio-fuse", mountRoot, e.namespace, e.name)
 }
 
+func (e *AlluxioEngine) getHostMountPoint() (mountPath string) {
+	mountRoot := getMountRoot()
+	e.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s", mountRoot, e.namespace, e.name)
+}
+
 func (e *AlluxioEngine) getInitUserDir() string {
 	dir := fmt.Sprintf("/tmp/fluid/%s/%s", e.namespace, e.name)
 	e.Log.Info("Generate InitUser dir")

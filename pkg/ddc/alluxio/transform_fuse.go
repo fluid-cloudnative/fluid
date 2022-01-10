@@ -17,8 +17,9 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -50,6 +51,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	// }
 
 	value.Fuse.MountPath = e.getMountPoint()
+	value.Fuse.HostMountPath = e.getHostMountPoint()
 	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
 	// if len(runtime.Spec.Fuse.Args) > 0 {

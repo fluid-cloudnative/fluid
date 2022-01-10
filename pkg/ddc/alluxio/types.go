@@ -172,6 +172,7 @@ type Fuse struct {
 	Resources          common.Resources  `yaml:"resources,omitempty"`
 	Global             bool              `yaml:"global,omitempty"`
 	CriticalPod        bool              `yaml:"criticalPod,omitempty"`
+	HostMountPath      string            `yaml:"hostMountPath,omitempty"`
 }
 
 type TieredStore struct {
