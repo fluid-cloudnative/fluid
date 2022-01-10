@@ -110,14 +110,26 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		"test build and sync ca case 2": {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
+			svc:         "fluid-deployment-admission-webhook",
+			clientIsNil: false,
+		},
+		"test build and sync ca case 3": {
+			lengthCheck: 1000,
+			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
 			clientIsNil: true,
 		},
+		"test build and sync ca case 4": {
+			lengthCheck: 1000,
+			ns:          "fluid-system",
+			svc:         "fluid-statefulSet-admission-webhook",
+			clientIsNil: true,
+		},
 	}
-	testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
-	client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
-	cb := NewCertificateBuilder(client, log)
 	for index, item := range testCases {
+		testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
+		client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
+		cb := NewCertificateBuilder(client, log)
 		if item.clientIsNil {
 			cb.Client = nil
 		}
@@ -146,7 +158,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 				continue
 			}
 			if len(mc.Webhooks[i].ClientConfig.CABundle) == len(caBundles[i]) {
-				t.Errorf("%s cannot paas because have not pathced MutatingWebhookConfiguration", index)
+				t.Errorf("%s cannot paas because have not patched MutatingWebhookConfiguration", index)
 			}
 
 		}
