@@ -45,7 +45,7 @@ type Application interface {
 	LocateVolumes() (ptrs []Pointer, err error)
 
 	// LocatePodSpecs locates the pod spec or similar part in the CRD spec
-	LocatePodSpecs() (ptrs []Pointer, err error)
+	// LocatePodSpecs() (ptrs []Pointer, err error)
 
 	LocateVolumeMounts() (ptrs []Pointer, err error)
 }

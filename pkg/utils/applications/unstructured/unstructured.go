@@ -150,7 +150,7 @@ func (u *UnstructuredApplication) locate(matchStr, endStr string) (pointers []co
 	if err != nil {
 		return pointers, err
 	}
-	for key, _ := range out {
+	for key := range out {
 		if strings.Contains(key, matchStr) {
 			anchor := NewUnstructuredPointer(strings.Split(key, ":"), endStr)
 			if _, found := pointersMap[anchor.Key()]; !found {

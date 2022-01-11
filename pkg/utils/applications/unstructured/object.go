@@ -62,7 +62,7 @@ func (u *unstructuredObject) GetVolumes() (volumes []corev1.Volume, err error) {
 		return nil, fmt.Errorf("failed to parse %v", field)
 	}
 
-	ret := make([]corev1.Volume, 0, len(original))
+	volumes = make([]corev1.Volume, 0, len(original))
 	for _, obj := range original {
 		o, ok := obj.(map[string]interface{})
 		if !ok {
@@ -74,7 +74,7 @@ func (u *unstructuredObject) GetVolumes() (volumes []corev1.Volume, err error) {
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, volume)
+		volumes = append(volumes, volume)
 	}
 
 	return
@@ -122,7 +122,7 @@ func (u *unstructuredObject) GetContainers() (containers []corev1.Container, err
 	if !ok {
 		return nil, fmt.Errorf("failed to parse %v", field)
 	}
-	ret := make([]corev1.Container, 0, len(original))
+	containers = make([]corev1.Container, 0, len(original))
 	for _, obj := range original {
 		o, ok := obj.(map[string]interface{})
 		if !ok {
@@ -133,7 +133,7 @@ func (u *unstructuredObject) GetContainers() (containers []corev1.Container, err
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, container)
+		containers = append(containers, container)
 	}
 
 	return
