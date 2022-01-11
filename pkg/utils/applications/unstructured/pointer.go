@@ -70,7 +70,7 @@ func (a UnstructuredPointer) Parent() (p common.Pointer, err error) {
 	return
 }
 
-func (a *UnstructuredPointer) Child(name string) (p common.Pointer) {
+func (a UnstructuredPointer) Child(name string) (p common.Pointer) {
 	fields := append(a.fields, name)
 	return NewUnstructuredPointer(fields, "")
 }

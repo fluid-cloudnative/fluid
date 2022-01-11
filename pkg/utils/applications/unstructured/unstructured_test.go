@@ -307,7 +307,7 @@ func differences(source, target []common.Pointer) []common.Pointer {
 		}
 		// Swap the slices, only if it was the first loop
 		if i == 0 {
-			source, target = source, target
+			source, target = target, source
 		}
 	}
 
