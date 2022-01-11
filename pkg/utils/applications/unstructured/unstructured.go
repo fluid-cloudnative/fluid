@@ -38,6 +38,11 @@ const (
 	volumeMountssEndStr  string = "volumeMounts"
 )
 
+var (
+	defaultContainersName string = "containers"
+	defaultVolumessName   string = "volumes"
+)
+
 // UnstructuredApp allows objects that do not have Golang structs registered to be manipulated
 // generically. This can be used to deal with the API objects from a plug-in. UnstructuredApp
 // objects can handle the common object like Container, Volume
@@ -71,11 +76,11 @@ func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr comm
 	newRoot := unstructured.Unstructured{Object: original}
 
 	if containersName == nil {
-		*containersName = "containers"
+		containersName = &defaultContainersName
 	}
 
 	if volumesName == nil {
-		*volumesName = "volumes"
+		volumesName = &defaultVolumessName
 	}
 
 	spec = &UnstructuredApplicationPodSpec{

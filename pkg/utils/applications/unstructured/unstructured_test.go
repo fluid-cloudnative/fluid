@@ -313,3 +313,81 @@ func differences(source, target []common.Pointer) []common.Pointer {
 
 	return diff
 }
+
+func TestGetPodSpecs(t *testing.T) {
+	type testCase struct {
+		name    string
+		content string
+		expect  []common.Pointer
+	}
+
+	testcases := []testCase{
+		{
+			name:    "statefulset",
+			content: stsYaml,
+			expect: []common.Pointer{
+				UnstructuredPointer{
+					fields: []string{"spec", "template", "spec", "volumes"},
+				},
+			},
+		},
+		{
+			name:    "tfjob",
+			content: tfjobYaml,
+			expect: []common.Pointer{
+				UnstructuredPointer{
+					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "volumes"},
+				}, UnstructuredPointer{
+					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "volumes"},
+				},
+			},
+		}, {
+			name:    "pytorch",
+			content: pytorchYaml,
+			expect: []common.Pointer{
+				UnstructuredPointer{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"},
+				}, UnstructuredPointer{
+					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "volumes"},
+				},
+			},
+		}, {
+			name:    "argo",
+			content: argoYaml,
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "volumes"}},
+			},
+		}, {
+			name:    "spark",
+			content: sparkYaml,
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "volumes"}},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		obj := &unstructured.Unstructured{}
+
+		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
+		if err != nil {
+			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
+		}
+
+		app := NewUnstructuredApplication(obj)
+		got, err := app.GetPodSpecs()
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+
+		if got == nil {
+			t.Errorf("testcase %s failed to create obj %v", testcase.name, got)
+		}
+
+		// if len(differences(got, testcase.expect)) > 0 {
+		// 	t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		// }
+
+	}
+}
