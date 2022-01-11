@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -288,6 +289,279 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 
 }
 
+func TestGetPodSpecs(t *testing.T) {
+	type testCase struct {
+		name    string
+		content string
+		expect  []common.Object
+	}
+
+	testcases := []testCase{
+		{
+			name:    "statefulset",
+			content: stsYaml,
+			expect: []common.Object{
+				&UnstructuredApplicationPodSpec{
+					root: &unstructured.Unstructured{
+						Object: map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "nginx",
+										"image": "nginx",
+										"volumeMounts": []interface{}{
+											map[string]interface{}{
+												"mountPath": "/data",
+												"name":      "hbase-vol",
+											},
+										},
+									},
+								},
+								"volumes": []interface{}{
+									map[string]interface{}{
+										"name": "hbase-vol",
+										"persistentVolumeClaim": map[string]interface{}{
+											"claimName": "shared-data",
+										},
+									},
+								},
+							},
+						},
+					},
+					ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
+					containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
+					volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+					// fields: []string{"spec", "template", "spec", "volumes"},
+				},
+			},
+		},
+		{
+			name:    "tfjob",
+			content: tfjobYaml,
+			expect: []common.Object{
+				&UnstructuredApplicationPodSpec{
+					root: &unstructured.Unstructured{
+						Object: map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name":  "nginx",
+										"image": "nginx",
+										"volumeMounts": []interface{}{
+											map[string]interface{}{
+												"mountPath": "/data",
+												"name":      "hbase-vol",
+											},
+										},
+									},
+								},
+								"volumes": []interface{}{
+									map[string]interface{}{
+										"name": "hbase-vol",
+										"persistentVolumeClaim": map[string]interface{}{
+											"claimName": "shared-data",
+										},
+									},
+								},
+							},
+						},
+					},
+					ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
+					containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
+					volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+					// fields: []string{"spec", "template", "spec", "volumes"},
+				},
+			},
+		}, {
+			name:    "pytorch",
+			content: pytorchYaml,
+			expect: []common.Object{&UnstructuredApplicationPodSpec{
+				root: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name":  "nginx",
+									"image": "nginx",
+									"volumeMounts": []interface{}{
+										map[string]interface{}{
+											"mountPath": "/data",
+											"name":      "hbase-vol",
+										},
+									},
+								},
+							},
+							"volumes": []interface{}{
+								map[string]interface{}{
+									"name": "hbase-vol",
+									"persistentVolumeClaim": map[string]interface{}{
+										"claimName": "shared-data",
+									},
+								},
+							},
+						},
+					},
+				},
+				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}},
+		}, {
+			name:    "argo",
+			content: argoYaml,
+			expect: []common.Object{&UnstructuredApplicationPodSpec{
+				root: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name":  "nginx",
+									"image": "nginx",
+									"volumeMounts": []interface{}{
+										map[string]interface{}{
+											"mountPath": "/data",
+											"name":      "hbase-vol",
+										},
+									},
+								},
+							},
+							"volumes": []interface{}{
+								map[string]interface{}{
+									"name": "hbase-vol",
+									"persistentVolumeClaim": map[string]interface{}{
+										"claimName": "shared-data",
+									},
+								},
+							},
+						},
+					},
+				},
+				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}},
+		}, {
+			name:    "spark",
+			content: sparkYaml,
+			expect: []common.Object{&UnstructuredApplicationPodSpec{
+				root: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name":  "nginx",
+									"image": "nginx",
+									"volumeMounts": []interface{}{
+										map[string]interface{}{
+											"mountPath": "/data",
+											"name":      "hbase-vol",
+										},
+									},
+								},
+							},
+							"volumes": []interface{}{
+								map[string]interface{}{
+									"name": "hbase-vol",
+									"persistentVolumeClaim": map[string]interface{}{
+										"claimName": "shared-data",
+									},
+								},
+							},
+						},
+					},
+				},
+				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}},
+		},
+	}
+
+	for _, testcase := range testcases {
+		obj := &unstructured.Unstructured{}
+
+		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
+		if err != nil {
+			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
+		}
+
+		app := NewUnstructuredApplication(obj)
+		got, err := app.GetPodSpecs()
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+
+		if got == nil {
+			t.Errorf("testcase %s failed to create obj %v", testcase.name, got)
+		}
+
+		if len(differenceObjects(got, testcase.expect)) > 0 {
+			// t.Errorf("testcase %s failed due to expected %+v, but got %+v", testcase.name, testcase.expect, got)
+
+			errMsg := fmt.Sprintf("testcase %s failed due to ", testcase.name)
+
+			for _, gotItem := range got {
+				// gotObj := gotItem.(*UnstructuredApplicationPodSpec)
+				errMsg += fmt.Sprintf("got %+v", gotItem)
+				// t.Errorf("testcase %s failed due to expected %+v, but got %+v", testcase.name, testcase.expect, got)
+			}
+
+			for _, expect := range testcase.expect {
+				errMsg += fmt.Sprintf("expect %+v", expect)
+			}
+
+			t.Errorf(errMsg)
+		}
+
+		// if reflect.DeepEqual()
+
+		// if len(differences(got, testcase.expect)) > 0 {
+		// 	t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		// }
+
+	}
+}
+
+func differenceObjects(source, target []common.Object) []common.Object {
+	var diff []common.Object
+	for i := 0; i < 2; i++ {
+		for _, s1 := range source {
+			found := false
+			for _, s2 := range target {
+
+				objS1 := s1.(*UnstructuredApplicationPodSpec)
+				objS2 := s2.(*UnstructuredApplicationPodSpec)
+				if objS1.ptr.Key() == objS2.ptr.Key() {
+					if objS1.containersPtr.Key() == objS2.containersPtr.Key() {
+						if objS1.volumesPtr.Key() == objS2.volumesPtr.Key() {
+							if reflect.DeepEqual(objS1.root, objS2.root) {
+								found = true
+								break
+							}
+						}
+
+					}
+
+				}
+			}
+			// String not found. We add it to return slice
+			if !found {
+				diff = append(diff, s1)
+			}
+		}
+		// Swap the slices, only if it was the first loop
+		if i == 0 {
+			source, target = target, source
+		}
+	}
+
+	return diff
+}
+
 func differences(source, target []common.Pointer) []common.Pointer {
 	var diff []common.Pointer
 
@@ -312,82 +586,4 @@ func differences(source, target []common.Pointer) []common.Pointer {
 	}
 
 	return diff
-}
-
-func TestGetPodSpecs(t *testing.T) {
-	type testCase struct {
-		name    string
-		content string
-		expect  []common.Pointer
-	}
-
-	testcases := []testCase{
-		{
-			name:    "statefulset",
-			content: stsYaml,
-			expect: []common.Pointer{
-				UnstructuredPointer{
-					fields: []string{"spec", "template", "spec", "volumes"},
-				},
-			},
-		},
-		{
-			name:    "tfjob",
-			content: tfjobYaml,
-			expect: []common.Pointer{
-				UnstructuredPointer{
-					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "volumes"},
-				}, UnstructuredPointer{
-					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "volumes"},
-				},
-			},
-		}, {
-			name:    "pytorch",
-			content: pytorchYaml,
-			expect: []common.Pointer{
-				UnstructuredPointer{
-					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"},
-				}, UnstructuredPointer{
-					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "volumes"},
-				},
-			},
-		}, {
-			name:    "argo",
-			content: argoYaml,
-			expect: []common.Pointer{
-				UnstructuredPointer{fields: []string{"spec", "volumes"}},
-			},
-		}, {
-			name:    "spark",
-			content: sparkYaml,
-			expect: []common.Pointer{
-				UnstructuredPointer{fields: []string{"spec", "volumes"}},
-			},
-		},
-	}
-
-	for _, testcase := range testcases {
-		obj := &unstructured.Unstructured{}
-
-		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
-		if err != nil {
-			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
-		}
-
-		app := NewUnstructuredApplication(obj)
-		got, err := app.GetPodSpecs()
-		if err != nil {
-			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
-		}
-
-		if got == nil {
-			t.Errorf("testcase %s failed to create obj %v", testcase.name, got)
-		}
-
-		// if len(differences(got, testcase.expect)) > 0 {
-		// 	t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
-		// }
-
-	}
 }

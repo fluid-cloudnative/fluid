@@ -115,8 +115,8 @@ func (u *UnstructuredApplication) GetPodSpecs() (specs []common.Object, err erro
 		spec, err := NewUnstructuredApplicationPodSpec(
 			u.root,
 			ptr,
-			nil,
-			nil,
+			"",
+			"",
 		)
 		if err != nil {
 			return nil, err
