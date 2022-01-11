@@ -29,16 +29,13 @@ import (
 )
 
 const (
-	delimiter            string = ":"
-	containersMatchStr   string = "containers:0:volumeMounts:0"
-	containersEndStr     string = "containers"
-	volumesMatchStr      string = "volumes:0"
-	volumesEndStr        string = "volumes"
-	volumeMountsMatchStr string = "volumeMounts:0"
-	volumeMountssEndStr  string = "volumeMounts"
-)
-
-var (
+	delimiter             string = ":"
+	containersMatchStr    string = "containers:0:volumeMounts:0"
+	containersEndStr      string = "containers"
+	volumesMatchStr       string = "volumes:0"
+	volumesEndStr         string = "volumes"
+	volumeMountsMatchStr  string = "volumeMounts:0"
+	volumeMountssEndStr   string = "volumeMounts"
 	defaultContainersName string = "containers"
 	defaultVolumessName   string = "volumes"
 )
@@ -60,18 +57,18 @@ type UnstructuredApplicationPodSpec struct {
 	volumesPtr    common.Pointer
 }
 
-func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec *UnstructuredApplicationPodSpec, err error) {
+func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec UnstructuredApplicationPodSpec, err error) {
 	field, found, err := unstructured.NestedFieldCopy(root.Object, ptr.Paths()...)
 	if err != nil {
-		return nil, err
+		return spec, err
 	}
 	if !found {
-		return nil, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
+		return spec, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
 	}
 
 	original, ok := field.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to parse %v", field)
+		return spec, fmt.Errorf("failed to parse %v", field)
 	}
 	newRoot := unstructured.Unstructured{Object: original}
 
@@ -83,7 +80,7 @@ func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr comm
 		volumesName = defaultVolumessName
 	}
 
-	spec = &UnstructuredApplicationPodSpec{
+	spec = UnstructuredApplicationPodSpec{
 		root:               &newRoot,
 		ptr:                ptr,
 		containersPtr:      ptr.Child(containersName),

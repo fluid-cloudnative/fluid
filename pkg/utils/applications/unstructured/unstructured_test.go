@@ -301,7 +301,7 @@ func TestGetPodSpecs(t *testing.T) {
 			name:    "statefulset",
 			content: stsYaml,
 			expect: []common.Object{
-				&UnstructuredApplicationPodSpec{
+				UnstructuredApplicationPodSpec{
 					root: &unstructured.Unstructured{
 						Object: map[string]interface{}{
 							"spec": map[string]interface{}{
@@ -339,7 +339,7 @@ func TestGetPodSpecs(t *testing.T) {
 			name:    "tfjob",
 			content: tfjobYaml,
 			expect: []common.Object{
-				&UnstructuredApplicationPodSpec{
+				UnstructuredApplicationPodSpec{
 					root: &unstructured.Unstructured{
 						Object: map[string]interface{}{
 							"spec": map[string]interface{}{
@@ -375,7 +375,7 @@ func TestGetPodSpecs(t *testing.T) {
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
-			expect: []common.Object{&UnstructuredApplicationPodSpec{
+			expect: []common.Object{UnstructuredApplicationPodSpec{
 				root: &unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"spec": map[string]interface{}{
@@ -410,7 +410,7 @@ func TestGetPodSpecs(t *testing.T) {
 		}, {
 			name:    "argo",
 			content: argoYaml,
-			expect: []common.Object{&UnstructuredApplicationPodSpec{
+			expect: []common.Object{UnstructuredApplicationPodSpec{
 				root: &unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"spec": map[string]interface{}{
@@ -445,7 +445,7 @@ func TestGetPodSpecs(t *testing.T) {
 		}, {
 			name:    "spark",
 			content: sparkYaml,
-			expect: []common.Object{&UnstructuredApplicationPodSpec{
+			expect: []common.Object{UnstructuredApplicationPodSpec{
 				root: &unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"spec": map[string]interface{}{
@@ -533,8 +533,8 @@ func differenceObjects(source, target []common.Object) []common.Object {
 			found := false
 			for _, s2 := range target {
 
-				objS1 := s1.(*UnstructuredApplicationPodSpec)
-				objS2 := s2.(*UnstructuredApplicationPodSpec)
+				objS1 := s1.(UnstructuredApplicationPodSpec)
+				objS2 := s2.(UnstructuredApplicationPodSpec)
 				if objS1.ptr.Key() == objS2.ptr.Key() {
 					if objS1.containersPtr.Key() == objS2.containersPtr.Key() {
 						if objS1.volumesPtr.Key() == objS2.volumesPtr.Key() {

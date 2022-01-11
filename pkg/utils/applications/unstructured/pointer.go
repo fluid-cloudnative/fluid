@@ -42,7 +42,7 @@ func NewUnstructuredPointer(fields []string, end string) common.Pointer {
 		fieldsToAdd = fields
 	}
 
-	return &UnstructuredPointer{
+	return UnstructuredPointer{
 		fields: fieldsToAdd,
 	}
 }
@@ -71,6 +71,7 @@ func (a UnstructuredPointer) Parent() (p common.Pointer, err error) {
 }
 
 func (a UnstructuredPointer) Child(name string) (p common.Pointer) {
-	fields := append(a.fields, name)
-	return NewUnstructuredPointer(fields, "")
+	fields := []string{}
+	fields = append(fields, a.fields...)
+	return NewUnstructuredPointer(append(fields, name), "")
 }
