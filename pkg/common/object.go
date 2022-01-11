@@ -22,7 +22,8 @@ type Object interface {
 	SetContainers(containers []corev1.Container) (err error)
 }
 
-// The Application which is concerned by Fluid
+// The Application which is using Fluid,
+// and it has serveral PodSpecs.
 type Application interface {
 	GetPodSpecs() (specs []Object, err error)
 
@@ -30,13 +31,13 @@ type Application interface {
 
 	GetObject() (obj runtime.Object)
 
-	SetContainers(containers []corev1.Container, fields ...string)
+	// SetContainers(containers []corev1.Container, fields ...string)
 
-	SetVolumes(volumes []corev1.Volume, fields ...string)
+	// SetVolumes(volumes []corev1.Volume, fields ...string)
 
-	GetVolumes(fields ...string) (volumes []corev1.Volume)
+	// GetVolumes(fields ...string) (volumes []corev1.Volume)
 
-	GetContainers(fields ...string) (containers []corev1.Container)
+	// GetContainers(fields ...string) (containers []corev1.Container)
 
 	LocateContainers() (ptrs []Pointer, err error)
 

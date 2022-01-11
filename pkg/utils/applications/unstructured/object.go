@@ -29,11 +29,11 @@ type Object interface {
 	common.Object
 }
 
-type UnstructuredObject struct {
+type unstructuredObject struct {
 	Object
 }
 
-func (u *UnstructuredObject) getRoot() (root *unstructured.Unstructured, err error) {
+func (u *unstructuredObject) getRoot() (root *unstructured.Unstructured, err error) {
 	original := u.GetRoot()
 
 	root, ok := original.(*unstructured.Unstructured)
@@ -44,7 +44,7 @@ func (u *UnstructuredObject) getRoot() (root *unstructured.Unstructured, err err
 	return
 }
 
-func (u *UnstructuredObject) GetVolumes() (volumes []corev1.Volume, err error) {
+func (u *unstructuredObject) GetVolumes() (volumes []corev1.Volume, err error) {
 	root, err := u.getRoot()
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (u *UnstructuredObject) GetVolumes() (volumes []corev1.Volume, err error) {
 	return
 }
 
-func (u *UnstructuredObject) SetVolumes(volumes []corev1.Volume) (err error) {
+func (u *unstructuredObject) SetVolumes(volumes []corev1.Volume) (err error) {
 	root, err := u.getRoot()
 	if err != nil {
 		return err
@@ -100,10 +100,12 @@ func (u *UnstructuredObject) SetVolumes(volumes []corev1.Volume) (err error) {
 		newVolumes = append(newVolumes, out)
 	}
 
+	unstructured.SetNestedSlice(root.Object, newVolumes, u.GetVolumesPtr().Paths()...)
+
 	return
 }
 
-func (u *UnstructuredObject) GetContainers() (containers []corev1.Container, err error) {
+func (u *unstructuredObject) GetContainers() (containers []corev1.Container, err error) {
 	root, err := u.getRoot()
 	if err != nil {
 		return nil, err
@@ -137,7 +139,7 @@ func (u *UnstructuredObject) GetContainers() (containers []corev1.Container, err
 	return
 }
 
-func (u *UnstructuredObject) SetContainers(containers []corev1.Container) (err error) {
+func (u *unstructuredObject) SetContainers(containers []corev1.Container) (err error) {
 	root, err := u.getRoot()
 	if err != nil {
 		return err
@@ -157,5 +159,6 @@ func (u *UnstructuredObject) SetContainers(containers []corev1.Container) (err e
 		newContainers = append(newContainers, out)
 	}
 
+	unstructured.SetNestedSlice(root.Object, newContainers, u.GetContainersPtr().Paths()...)
 	return
 }
