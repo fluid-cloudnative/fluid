@@ -60,7 +60,7 @@ type UnstructuredApplicationPodSpec struct {
 	volumesPtr    common.Pointer
 }
 
-func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName *string) (spec *UnstructuredApplicationPodSpec, err error) {
+func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec *UnstructuredApplicationPodSpec, err error) {
 	field, found, err := unstructured.NestedFieldCopy(root.Object, ptr.Paths()...)
 	if err != nil {
 		return nil, err
@@ -75,19 +75,19 @@ func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr comm
 	}
 	newRoot := unstructured.Unstructured{Object: original}
 
-	if containersName == nil {
-		containersName = &defaultContainersName
+	if len(containersName) == 0 {
+		containersName = defaultContainersName
 	}
 
-	if volumesName == nil {
-		volumesName = &defaultVolumessName
+	if len(volumesName) == 0 {
+		volumesName = defaultVolumessName
 	}
 
 	spec = &UnstructuredApplicationPodSpec{
 		root:               &newRoot,
 		ptr:                ptr,
-		containersPtr:      ptr.Child(*containersName),
-		volumesPtr:         ptr.Child(*volumesName),
+		containersPtr:      ptr.Child(containersName),
+		volumesPtr:         ptr.Child(volumesName),
 		unstructuredObject: &unstructuredObject{},
 	}
 
