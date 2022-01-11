@@ -45,150 +45,56 @@ const (
 // generically. This can be used to deal with the API objects from a plug-in. UnstructuredApp
 // objects can handle the common object like Container, Volume
 type UnstructuredApplication struct {
-	obj *unstructured.Unstructured
+	root *unstructured.Unstructured
 }
 
-type UnstructuredAnchor struct {
-	fields []string
-}
+
 
 type UnstructuredApplicationPodSpec struct {
-	selfObj *unstructured.Unstructured
+	root *unstructured.Unstructured
 	// absolute Ptr
-	selfPtr common.Anchor
+	ptr common.Pointer
 	// relative Ptr
-	selfContainersPtr common.Anchor
-	selfVolumesPtr    common.Anchor
+	containersPtr common.Pointer
+	volumesPtr    common.Pointer
 }
 
-func NewUnstructuredApplicationPodSpec() (spec *UnstructuredApplicationPodSpec) {
-	return
-}
-
-func (u *UnstructuredApplicationPodSpec) GetVolumes() (volumes []corev1.Volume, err error) {
-	field, found, err := unstructured.NestedFieldNoCopy(u.selfObj.Object, u.selfVolumesPtr.Path()...)
+func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec *UnstructuredApplicationPodSpec, err error) {
+	field, found, err := unstructured.NestedFieldCopy(root.Object, ptr.Paths()...)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("failed to find the volumes from %v", u.selfVolumesPtr.Path())
+		return nil, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
 	}
-	original, ok := field.([]interface{})
+
+	original, ok := field.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("failed to parse %v", field)
 	}
-	ret := make([]corev1.Volume, 0, len(original))
-	for _, obj := range original {
-		o, ok := obj.(map[string]interface{})
-		if !ok {
-			// expected map[string]interface{}, got something else
-			return nil, fmt.Errorf("failed to parse %v", obj)
-		}
+	newRoot := unstructured.Unstructured{Object: original}
 
-		volume, err := convertMapToVolume(o)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, volume)
+	if containersName == "" {
+		containersName = "containers"
+	}
+
+	if volumesName == "" {
+		volumesName = "volumes"
+	}
+
+	spec = &UnstructuredApplicationPodSpec{
+		root:          &newRoot,
+		ptr:           ptr,
+		containersPtr: ptr.Child(containersName),
+		volumesPtr:    ptr.Child(volumesName),
 	}
 
 	return
 }
 
-func (u *UnstructuredApplicationPodSpec) SetVolumes(volumes []corev1.Volume) (err error) {
-	if len(volumes) == 0 {
-		unstructured.RemoveNestedField(u.selfObj.Object, u.selfVolumesPtr.Path()...)
-		return
-	}
 
-	newVolumes := make([]interface{}, 0, len(volumes))
-	for _, volume := range volumes {
-		out, err := convertVolumeToMap(&volume)
-		if err != nil {
-			return err
-		}
-		newVolumes = append(newVolumes, out)
-	}
 
-	return
-}
 
-func (u *UnstructuredApplicationPodSpec) GetContainers() (containers []corev1.Container, err error) {
-	field, found, err := unstructured.NestedFieldNoCopy(u.selfObj.Object, u.selfContainersPtr.Path()...)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, fmt.Errorf("failed to find the containers from %v", u.selfContainersPtr.Path())
-	}
-	original, ok := field.([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("failed to parse %v", field)
-	}
-	ret := make([]corev1.Container, 0, len(original))
-	for _, obj := range original {
-		o, ok := obj.(map[string]interface{})
-		if !ok {
-			// expected map[string]interface{}, got something else
-			return nil, fmt.Errorf("failed to parse %v", obj)
-		}
-		container, err := convertMapToContainer(o)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, container)
-	}
-
-	return
-}
-
-func (u *UnstructuredApplicationPodSpec) SetContainers(containers []corev1.Container) (err error) {
-	if len(containers) == 0 {
-		unstructured.RemoveNestedField(u.selfObj.Object, u.selfContainersPtr.Path()...)
-		return
-	}
-
-	newContainers := make([]interface{}, 0, len(containers))
-	for _, container := range containers {
-		out, err := convertContainerToMap(&container)
-		if err != nil {
-			return err
-		}
-		newContainers = append(newContainers, out)
-	}
-
-	return
-}
-
-func NewUnstructuredAnchor(fields []string, end string) common.Anchor {
-	fieldsToAdd := []string{}
-	if len(end) > 0 {
-		for _, field := range fields {
-			fieldsToAdd = append(fieldsToAdd, field)
-			if field == end {
-				break
-			}
-		}
-	} else {
-		fieldsToAdd = fields
-	}
-
-	return &UnstructuredAnchor{
-		fields: fieldsToAdd,
-	}
-}
-
-func (a UnstructuredAnchor) Key() (id string) {
-	return strings.Join(a.fields, "/")
-}
-
-func (a UnstructuredAnchor) Path() (paths []string) {
-	return a.fields
-}
-
-func (a UnstructuredAnchor) String() string {
-	return a.Key()
-}
 
 func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Application {
 	return &UnstructuredApplication{
@@ -197,20 +103,34 @@ func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Applicati
 }
 
 func (u *UnstructuredApplication) GetPodSpecs() (specs []common.ApplicationPodSpec, err error) {
+	volumePtrs, err := u.LocateVolumes()
+	if err != nil {
+		return
+	}
 
+	specs = make([]common.ApplicationPodSpec, 0, len(volumePtrs))
+	for _, volumePtr := range volumePtrs {
+		ptr, err := volumePtr.Parent()
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return
 }
 
 func (u *UnstructuredApplication) SetPodSpecs(specs []common.ApplicationPodSpec) (err error) {
-
+	return
 }
 
 func (u *UnstructuredApplication) GetObject() (obj *unstructured.Unstructured) {
-	return u.obj
+	return u.root
 }
 
 func (u *UnstructuredApplication) SetContainers(containers []corev1.Container, fields ...string) {
 	if len(containers) == 0 {
-		unstructured.RemoveNestedField(u.obj.Object, fields...)
+		unstructured.RemoveNestedField(u.root.Object, fields...)
 		return
 	}
 
@@ -223,12 +143,12 @@ func (u *UnstructuredApplication) SetContainers(containers []corev1.Container, f
 		}
 		newContainers = append(newContainers, out)
 	}
-	unstructured.SetNestedSlice(u.obj.Object, newContainers, fields...)
+	unstructured.SetNestedSlice(u.root.Object, newContainers, fields...)
 }
 
 func (u *UnstructuredApplication) SetVolumes(volumes []corev1.Volume, fields ...string) {
 	if len(volumes) == 0 {
-		unstructured.RemoveNestedField(u.obj.Object, fields...)
+		unstructured.RemoveNestedField(u.root.Object, fields...)
 		return
 	}
 
@@ -241,11 +161,11 @@ func (u *UnstructuredApplication) SetVolumes(volumes []corev1.Volume, fields ...
 		}
 		newVolumes = append(newVolumes, out)
 	}
-	unstructured.SetNestedSlice(u.obj.Object, newVolumes, fields...)
+	unstructured.SetNestedSlice(u.root.Object, newVolumes, fields...)
 }
 
 func (u *UnstructuredApplication) GetVolumes(fields ...string) (volumes []corev1.Volume) {
-	field, found, err := unstructured.NestedFieldNoCopy(u.obj.Object, fields...)
+	field, found, err := unstructured.NestedFieldNoCopy(u.root.Object, fields...)
 	if !found || err != nil {
 		return nil
 	}
@@ -268,7 +188,7 @@ func (u *UnstructuredApplication) GetVolumes(fields ...string) (volumes []corev1
 }
 
 func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []corev1.Container) {
-	field, found, err := unstructured.NestedFieldNoCopy(u.obj.Object, fields...)
+	field, found, err := unstructured.NestedFieldNoCopy(u.root.Object, fields...)
 	if !found || err != nil {
 		return nil
 	}
@@ -290,38 +210,57 @@ func (u *UnstructuredApplication) GetContainers(fields ...string) (containers []
 	return vol
 }
 
-func (u *UnstructuredApplication) LocateContainers() (anchors []common.Anchor, err error) {
+func (u *UnstructuredApplication) LocateContainers() (pointers []common.Pointer, err error) {
 	return u.locate(containersMatchStr, containersEndStr)
 }
 
-func (u *UnstructuredApplication) LocateVolumes() (anchors []common.Anchor, err error) {
+func (u *UnstructuredApplication) LocateVolumes() (pointers []common.Pointer, err error) {
 	return u.locate(volumesMatchStr, volumesEndStr)
 }
 
-func (u *UnstructuredApplication) LocateVolumeMounts() (anchors []common.Anchor, err error) {
+func (u *UnstructuredApplication) LocateVolumeMounts() (pointers []common.Pointer, err error) {
 	return u.locate(volumeMountsMatchStr, volumeMountssEndStr)
 }
 
-func (u *UnstructuredApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
+func (u *UnstructuredApplication) locatePodSpecs() (ptrs []common.Pointer, err error) {
+	volumePtrs, err := u.LocateVolumes()
+	if err != nil {
+		return
+	}
+
+	ptrs = make([]common.Pointer, 0, len(volumePtrs))
+
+	for _, volumePtr := range volumePtrs {
+
+		// ptr := NewUnstructuredPointer(volumePtr.Paths())
+		if len(volumePtr.Paths()) > 0 {
+			paths := volumePtr.Paths()
+			ptr := NewUnstructuredPointer(paths[:len(paths)-1], "")
+			ptrs = append(ptrs, ptr)
+		} else {
+			return nil, fmt.Errorf("failed to find podspec from %v", volumePtr.Paths())
+		}
+
+	}
 	return
 }
 
-func (u *UnstructuredApplication) locate(matchStr, endStr string) (anchors []common.Anchor, err error) {
-	anchorsMap := map[string]bool{}
-	out, err := flat.Flatten(u.obj.Object, &flat.Options{
+func (u *UnstructuredApplication) locate(matchStr, endStr string) (pointers []common.Pointer, err error) {
+	pointersMap := map[string]bool{}
+	out, err := flat.Flatten(u.root.Object, &flat.Options{
 		Delimiter: delimiter,
 	})
 	if err != nil {
-		return anchors, err
+		return pointers, err
 	}
 	for key, _ := range out {
 		if strings.Contains(key, matchStr) {
-			anchor := NewUnstructuredAnchor(strings.Split(key, ":"), endStr)
-			if _, found := anchorsMap[anchor.Key()]; !found {
-				anchors = append(anchors, anchor)
-				anchorsMap[anchor.Key()] = true
+			anchor := NewUnstructuredPointer(strings.Split(key, ":"), endStr)
+			if _, found := pointersMap[anchor.Key()]; !found {
+				pointers = append(pointers, anchor)
+				pointersMap[anchor.Key()] = true
 			}
 		}
 	}
-	return anchors, err
+	return pointers, err
 }

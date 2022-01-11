@@ -31,15 +31,15 @@ func TestLocateContainers(t *testing.T) {
 	type testCase struct {
 		name    string
 		content string
-		expect  []common.Anchor
+		expect  []common.Pointer
 	}
 
 	testcases := []testCase{
 		{
 			name:    "statefulset",
 			content: stsYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "template", "spec", "containers"},
 				},
 			},
@@ -47,34 +47,34 @@ func TestLocateContainers(t *testing.T) {
 		{
 			name:    "tfjob",
 			content: tfjobYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "containers"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "containers"},
 				},
 			},
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "containers"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "containers"},
 				},
 			},
 		}, {
 			name:    "argo",
 			content: argoYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{},
+			expect: []common.Pointer{
+				UnstructuredPointer{},
 			},
 		}, {
 			name:    "spark",
 			content: sparkYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{},
+			expect: []common.Pointer{
+				UnstructuredPointer{},
 			},
 		},
 	}
@@ -106,15 +106,15 @@ func TestLocateVolumes(t *testing.T) {
 	type testCase struct {
 		name    string
 		content string
-		expect  []common.Anchor
+		expect  []common.Pointer
 	}
 
 	testcases := []testCase{
 		{
 			name:    "statefulset",
 			content: stsYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "template", "spec", "volumes"},
 				},
 			},
@@ -122,34 +122,34 @@ func TestLocateVolumes(t *testing.T) {
 		{
 			name:    "tfjob",
 			content: tfjobYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "volumes"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "volumes"},
 				},
 			},
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "volumes"},
 				},
 			},
 		}, {
 			name:    "argo",
 			content: argoYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{fields: []string{"spec", "volumes"}},
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "volumes"}},
 			},
 		}, {
 			name:    "spark",
 			content: sparkYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{fields: []string{"spec", "volumes"}},
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "volumes"}},
 			},
 		},
 	}
@@ -181,15 +181,15 @@ func TestLocateVolumeMounts(t *testing.T) {
 	type testCase struct {
 		name    string
 		content string
-		expect  []common.Anchor
+		expect  []common.Pointer
 	}
 
 	testcases := []testCase{
 		{
 			name:    "statefulset",
 			content: stsYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "template", "spec", "containers", "0", "volumeMounts"},
 				},
 			},
@@ -197,35 +197,35 @@ func TestLocateVolumeMounts(t *testing.T) {
 		{
 			name:    "tfjob",
 			content: tfjobYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "containers", "0", "volumeMounts"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "containers", "0", "volumeMounts"},
 				},
 			},
 		}, {
 			name:    "pytorch",
 			content: pytorchYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{
+			expect: []common.Pointer{
+				UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "containers", "0", "volumeMounts"},
-				}, UnstructuredAnchor{
+				}, UnstructuredPointer{
 					fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "containers", "0", "volumeMounts"},
 				},
 			},
 		}, {
 			name:    "argo",
 			content: argoYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{fields: []string{"spec", "templates", "0", "container", "volumeMounts"}},
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "templates", "0", "container", "volumeMounts"}},
 			},
 		}, {
 			name:    "spark",
 			content: sparkYaml,
-			expect: []common.Anchor{
-				UnstructuredAnchor{fields: []string{"spec", "executor", "volumeMounts"}},
-				UnstructuredAnchor{fields: []string{"spec", "driver", "volumeMounts"}},
+			expect: []common.Pointer{
+				UnstructuredPointer{fields: []string{"spec", "executor", "volumeMounts"}},
+				UnstructuredPointer{fields: []string{"spec", "driver", "volumeMounts"}},
 			},
 		},
 	}
@@ -288,8 +288,8 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 
 }
 
-func differences(source, target []common.Anchor) []common.Anchor {
-	var diff []common.Anchor
+func differences(source, target []common.Pointer) []common.Pointer {
+	var diff []common.Pointer
 
 	for i := 0; i < 2; i++ {
 		for _, s1 := range source {

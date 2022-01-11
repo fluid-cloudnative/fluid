@@ -32,7 +32,7 @@ type PodAnchor struct {
 	fields []string
 }
 
-func NewPodAnchor(fields []string, end string) common.Anchor {
+func NewPodAnchor(fields []string, end string) common.Pointer {
 	fieldsToAdd := []string{}
 	if len(end) > 0 {
 		for _, field := range fields {
@@ -88,18 +88,18 @@ func (u *PodApplication) GetContainers(fields ...string) (containers []corev1.Co
 	return
 }
 
-func (u *PodApplication) LocateContainers() (anchors []common.Anchor, err error) {
+func (u *PodApplication) LocateContainers() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *PodApplication) LocateVolumes() (anchors []common.Anchor, err error) {
+func (u *PodApplication) LocateVolumes() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *PodApplication) LocateVolumeMounts() (anchors []common.Anchor, err error) {
+func (u *PodApplication) LocateVolumeMounts() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *PodApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
+func (u *PodApplication) LocatePodSpecs() (anchors []common.Pointer, err error) {
 	return
 }

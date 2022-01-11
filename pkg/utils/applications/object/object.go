@@ -33,7 +33,7 @@ type RuntimeAnchor struct {
 	fields []string
 }
 
-func NewRuntimeAnchor(fields []string, end string) common.Anchor {
+func NewRuntimeAnchor(fields []string, end string) common.Pointer {
 	fieldsToAdd := []string{}
 	if len(end) > 0 {
 		for _, field := range fields {
@@ -89,22 +89,22 @@ func (u *RuntimeApplication) GetContainers(fields ...string) (containers []corev
 	return
 }
 
-func (u *RuntimeApplication) LocateContainers() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocateContainers() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *RuntimeApplication) LocateVolumes() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocateVolumes() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *RuntimeApplication) LocateVolumeMounts() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocateVolumeMounts() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *RuntimeApplication) LocateRuntimeSpec() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocateRuntimeSpec() (anchors []common.Pointer, err error) {
 	return
 }
 
-func (u *RuntimeApplication) LocatePodSpecs() (anchors []common.Anchor, err error) {
+func (u *RuntimeApplication) LocatePodSpecs() (anchors []common.Pointer, err error) {
 	return
 }

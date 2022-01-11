@@ -5,8 +5,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ApplicationPodSpec simulates the V1 Pod Spec, it has v1.volumes, v1.containers
-type ApplicationPodSpec interface {
+// Object simulates the V1 Pod Spec, it has v1.volumes, v1.containers inside
+type Object interface {
+	GetRoot() runtime.Object
+
+	GetVolumesPtr() Pointer
+
+	GetContainersPtr() Pointer
+
 	GetVolumes() (volumes []corev1.Volume, err error)
 
 	SetVolumes(volumes []corev1.Volume) (err error)
@@ -18,9 +24,9 @@ type ApplicationPodSpec interface {
 
 // The Application which is concerned by Fluid
 type Application interface {
-	GetPodSpecs() (specs []ApplicationPodSpec, err error)
+	GetPodSpecs() (specs []Object, err error)
 
-	SetPodSpecs(specs []ApplicationPodSpec) (err error)
+	SetPodSpecs(specs []Object) (err error)
 
 	GetObject() (obj runtime.Object)
 
@@ -32,19 +38,23 @@ type Application interface {
 
 	GetContainers(fields ...string) (containers []corev1.Container)
 
-	LocateContainers() (anchors []Anchor, err error)
+	LocateContainers() (ptrs []Pointer, err error)
 
 	// LocateVolumes locates the volumes spec
-	LocateVolumes() (anchors []Anchor, err error)
+	LocateVolumes() (ptrs []Pointer, err error)
 
 	// LocatePodSpecs locates the pod spec or similar part in the CRD spec
-	LocatePodSpecs() (anchors []Anchor, err error)
+	LocatePodSpecs() (ptrs []Pointer, err error)
 
-	LocateVolumeMounts() (anchors []Anchor, err error)
+	LocateVolumeMounts() (ptrs []Pointer, err error)
 }
 
-type Anchor interface {
+type Pointer interface {
 	Key() (id string)
 
-	Path() (paths []string)
+	Paths() (paths []string)
+
+	Parent() (p Pointer, err error)
+
+	Child(name string) (p Pointer)
 }
