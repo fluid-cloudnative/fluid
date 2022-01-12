@@ -58,7 +58,7 @@ type UnstructuredApplicationPodSpec struct {
 	volumesPtr    common.Pointer
 }
 
-func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec UnstructuredApplicationPodSpec, err error) {
+func DefaultUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr common.Pointer, containersName, volumesName string) (spec UnstructuredApplicationPodSpec, err error) {
 	field, found, err := unstructured.NestedFieldCopy(root.Object, ptr.Paths()...)
 	if err != nil {
 		return spec, err
@@ -93,6 +93,33 @@ func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr comm
 	return
 }
 
+func CustomizedUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr, containersPtr, volumesPtr common.Pointer) (spec UnstructuredApplicationPodSpec, err error) {
+	field, found, err := unstructured.NestedFieldCopy(root.Object, ptr.Paths()...)
+	if err != nil {
+		return spec, err
+	}
+	if !found {
+		return spec, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
+	}
+
+	original, ok := field.(map[string]interface{})
+	if !ok {
+		return spec, fmt.Errorf("failed to parse %v", field)
+	}
+	newRoot := unstructured.Unstructured{Object: original}
+
+	spec = UnstructuredApplicationPodSpec{
+		root:               &newRoot,
+		ptr:                ptr,
+		containersPtr:      containersPtr,
+		volumesPtr:         volumesPtr,
+		unstructuredObject: &unstructuredObject{},
+		key:                ptr.Key(),
+	}
+
+	return
+}
+
 func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Application {
 	return &UnstructuredApplication{
 		root: obj,
@@ -111,7 +138,7 @@ func (u *UnstructuredApplication) GetPodSpecs() (specs []common.Object, err erro
 		if err != nil {
 			return nil, err
 		}
-		spec, err := NewUnstructuredApplicationPodSpec(
+		spec, err := DefaultUnstructuredApplicationPodSpec(
 			u.root,
 			ptr,
 			"",

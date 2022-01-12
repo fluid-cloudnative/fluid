@@ -354,67 +354,20 @@ func TestGetPodSpecs(t *testing.T) {
 			name:    "pytorch",
 			content: pytorchYaml,
 			expect: []common.Object{UnstructuredApplicationPodSpec{
-				root: &unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"spec": map[string]interface{}{
-							"containers": []interface{}{
-								map[string]interface{}{
-									"name":  "nginx",
-									"image": "nginx",
-									"volumeMounts": []interface{}{
-										map[string]interface{}{
-											"mountPath": "/data",
-											"name":      "hbase-vol",
-										},
-									},
-								},
-							},
-							"volumes": []interface{}{
-								map[string]interface{}{
-									"name": "hbase-vol",
-									"persistentVolumeClaim": map[string]interface{}{
-										"claimName": "shared-data",
-									},
-								},
-							},
-						},
-					},
-				},
-				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
-				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
-				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
+				ptr:           UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Master", "template", "spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}, UnstructuredApplicationPodSpec{
+				ptr:           UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"}},
 				// fields: []string{"spec", "template", "spec", "volumes"},
 			}},
 		}, {
 			name:    "argo",
 			content: argoYaml,
 			expect: []common.Object{UnstructuredApplicationPodSpec{
-				root: &unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"spec": map[string]interface{}{
-							"containers": []interface{}{
-								map[string]interface{}{
-									"name":  "nginx",
-									"image": "nginx",
-									"volumeMounts": []interface{}{
-										map[string]interface{}{
-											"mountPath": "/data",
-											"name":      "hbase-vol",
-										},
-									},
-								},
-							},
-							"volumes": []interface{}{
-								map[string]interface{}{
-									"name": "hbase-vol",
-									"persistentVolumeClaim": map[string]interface{}{
-										"claimName": "shared-data",
-									},
-								},
-							},
-						},
-					},
-				},
 				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
 				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
 				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
@@ -424,32 +377,6 @@ func TestGetPodSpecs(t *testing.T) {
 			name:    "spark",
 			content: sparkYaml,
 			expect: []common.Object{UnstructuredApplicationPodSpec{
-				root: &unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"spec": map[string]interface{}{
-							"containers": []interface{}{
-								map[string]interface{}{
-									"name":  "nginx",
-									"image": "nginx",
-									"volumeMounts": []interface{}{
-										map[string]interface{}{
-											"mountPath": "/data",
-											"name":      "hbase-vol",
-										},
-									},
-								},
-							},
-							"volumes": []interface{}{
-								map[string]interface{}{
-									"name": "hbase-vol",
-									"persistentVolumeClaim": map[string]interface{}{
-										"claimName": "shared-data",
-									},
-								},
-							},
-						},
-					},
-				},
 				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
 				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
 				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
