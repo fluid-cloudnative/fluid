@@ -45,6 +45,22 @@ const (
 // objects can handle the common object like Container, Volume
 type UnstructuredApplication struct {
 	root *unstructured.Unstructured
+
+	customizedPathsForPodSpec []PathsForPodSpec
+}
+
+func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Application {
+	return &UnstructuredApplication{
+		root: obj,
+	}
+}
+
+// NewUnstructuredApplicationWithPaths needs to specify customized paths
+func NewUnstructuredApplicationWithPaths(obj *unstructured.Unstructured, paths []PathsForPodSpec) common.Application {
+	return &UnstructuredApplication{
+		root:                      obj,
+		customizedPathsForPodSpec: paths,
+	}
 }
 
 type UnstructuredApplicationPodSpec struct {
@@ -64,7 +80,7 @@ func DefaultUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr 
 		return spec, err
 	}
 	if !found {
-		return spec, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
+		return spec, fmt.Errorf("failed to find the path from %v", ptr.Paths())
 	}
 
 	original, ok := field.(map[string]interface{})
@@ -99,7 +115,8 @@ func CustomizedUnstructuredApplicationPodSpec(root *unstructured.Unstructured, p
 		return spec, err
 	}
 	if !found {
-		return spec, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
+		
+		// return spec, fmt.Errorf("failed to find the volumes from %v", ptr.Paths())
 	}
 
 	original, ok := field.(map[string]interface{})
@@ -120,13 +137,32 @@ func CustomizedUnstructuredApplicationPodSpec(root *unstructured.Unstructured, p
 	return
 }
 
-func NewUnstructuredApplication(obj *unstructured.Unstructured) common.Application {
-	return &UnstructuredApplication{
-		root: obj,
+func (u *UnstructuredApplication) GetPodSpecs() (specs []common.Object, err error) {
+	if len(u.customizedPathsForPodSpec) > 0 {
+		return u.getCustomizedPodSpecs()
 	}
+
+	return u.getDefaultPodSpecs()
 }
 
-func (u *UnstructuredApplication) GetPodSpecs() (specs []common.Object, err error) {
+func (u *UnstructuredApplication) getCustomizedPodSpecs() (specs []common.Object, err error) {
+	specs = []common.Object{}
+	for _, path := range u.customizedPathsForPodSpec {
+		spec, err := CustomizedUnstructuredApplicationPodSpec(u.root,
+			NewUnstructuredPointerFromPath(path.rootPath),
+			NewUnstructuredPointerFromPath(path.containersPath),
+			NewUnstructuredPointerFromPath(path.volumesPath))
+
+		if err != nil {
+			return nil, err
+		}
+		specs = append(specs, spec)
+	}
+
+	return
+}
+
+func (u *UnstructuredApplication) getDefaultPodSpecs() (specs []common.Object, err error) {
 	volumePtrs, err := u.LocateVolumes()
 	if err != nil {
 		return

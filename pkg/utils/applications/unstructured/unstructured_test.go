@@ -288,7 +288,7 @@ func TestInjectObjectForUnstructed(t *testing.T) {
 
 }
 
-func TestGetPodSpecs(t *testing.T) {
+func TestDefaultUnstructuredApplicationPodSpec(t *testing.T) {
 	type testCase struct {
 		name    string
 		content string
@@ -364,24 +364,6 @@ func TestGetPodSpecs(t *testing.T) {
 				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "pytorchReplicaSpecs", "Worker", "template", "spec", "volumes"}},
 				// fields: []string{"spec", "template", "spec", "volumes"},
 			}},
-		}, {
-			name:    "argo",
-			content: argoYaml,
-			expect: []common.Object{UnstructuredApplicationPodSpec{
-				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
-				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
-				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
-				// fields: []string{"spec", "template", "spec", "volumes"},
-			}},
-		}, {
-			name:    "spark",
-			content: sparkYaml,
-			expect: []common.Object{UnstructuredApplicationPodSpec{
-				ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
-				containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
-				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
-				// fields: []string{"spec", "template", "spec", "volumes"},
-			}},
 		},
 	}
 
@@ -395,6 +377,107 @@ func TestGetPodSpecs(t *testing.T) {
 		}
 
 		app := NewUnstructuredApplication(obj)
+		got, err := app.GetPodSpecs()
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+
+		if got == nil {
+			t.Errorf("testcase %s failed to create obj %v", testcase.name, got)
+		}
+
+		if len(differenceObjects(got, testcase.expect)) > 0 {
+			// t.Errorf("testcase %s failed due to expected %+v, but got %+v", testcase.name, testcase.expect, got)
+
+			errMsg := fmt.Sprintf("testcase %s failed due to ", testcase.name)
+
+			differences := differenceObjects(got, testcase.expect)
+			errMsg += fmt.Sprintf("differences is %v, ", differences)
+
+			for _, gotItem := range got {
+				// gotObj := gotItem.(*UnstructuredApplicationPodSpec)
+				errMsg += fmt.Sprintf("got %+v", gotItem)
+				// t.Errorf("testcase %s failed due to expected %+v, but got %+v", testcase.name, testcase.expect, got)
+			}
+
+			for _, expect := range testcase.expect {
+				errMsg += fmt.Sprintf("expect %+v", expect)
+			}
+
+			t.Errorf(errMsg)
+		}
+
+		// if reflect.DeepEqual()
+
+		// if len(differences(got, testcase.expect)) > 0 {
+		// 	t.Errorf("testcase %s failed due to expected %v, but got %v", testcase.name, testcase.expect, got)
+		// }
+
+	}
+}
+
+func TestCustomizedUnstructuredApplicationPodSpec(t *testing.T) {
+	type testCase struct {
+		name    string
+		content string
+		paths   []PathsForPodSpec
+		expect  []common.Object
+	}
+
+	testcases := []testCase{
+		{
+			name:    "argo",
+			content: argoYaml,
+			expect: []common.Object{UnstructuredApplicationPodSpec{
+				ptr:           UnstructuredPointer{fields: []string{"spec", "templates"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "templates", "0", "sidecars"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "templates", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}},
+			paths: []PathsForPodSpec{
+				{
+					rootPath:       "spec/templates",
+					containersPath: "spec/templates/0/sidecars",
+					volumesPath:    "spec/templates/volumes",
+				},
+			},
+		}, {
+			name:    "spark",
+			content: sparkYaml,
+			expect: []common.Object{UnstructuredApplicationPodSpec{
+				ptr:           UnstructuredPointer{fields: []string{"spec", "driver"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "driver", "spec", "containers"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}, UnstructuredApplicationPodSpec{
+				ptr:           UnstructuredPointer{fields: []string{"spec", "executor"}},
+				containersPtr: UnstructuredPointer{fields: []string{"spec", "executor", "spec", "sidecars"}},
+				volumesPtr:    UnstructuredPointer{fields: []string{"spec", "volumes"}},
+				// fields: []string{"spec", "template", "spec", "volumes"},
+			}}, paths: []PathsForPodSpec{
+				{
+					rootPath:       "spec/driver/spec",
+					containersPath: "spec/driver/0/sidecars",
+					volumesPath:    "spec/volumes",
+				}, {
+					rootPath:       "spec/executor/spec",
+					containersPath: "spec/executor/0/sidecars",
+					volumesPath:    "spec/volumes",
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		obj := &unstructured.Unstructured{}
+
+		dec := k8syaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		_, gvk, err := dec.Decode([]byte(testcase.content), nil, obj)
+		if err != nil {
+			t.Errorf("Failed to decode due to %v and gvk is %v", err, gvk)
+		}
+
+		app := NewUnstructuredApplicationWithPaths(obj, testcase.paths)
 		got, err := app.GetPodSpecs()
 		if err != nil {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)

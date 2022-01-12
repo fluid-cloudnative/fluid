@@ -29,6 +29,11 @@ type UnstructuredPointer struct {
 	fields []string
 }
 
+func NewUnstructuredPointerFromPath(path string) common.Pointer {
+	fields := strings.Split(path, "/")
+	return NewUnstructuredPointer(fields, "")
+}
+
 func NewUnstructuredPointer(fields []string, end string) common.Pointer {
 	fieldsToAdd := []string{}
 	if len(end) > 0 {

@@ -22,6 +22,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type PathsForPodSpec struct {
+	rootPath       string
+	containersPath string
+	volumesPath    string
+}
+
 func convertMapToContainer(input map[string]interface{}) (container corev1.Container, err error) {
 	container = corev1.Container{}
 	err = mapstructure.Decode(input, &container)
