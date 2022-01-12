@@ -49,6 +49,7 @@ type UnstructuredApplication struct {
 
 type UnstructuredApplicationPodSpec struct {
 	*unstructuredObject
+	key  string
 	root *unstructured.Unstructured
 	// absolute Ptr
 	ptr common.Pointer
@@ -86,6 +87,7 @@ func NewUnstructuredApplicationPodSpec(root *unstructured.Unstructured, ptr comm
 		containersPtr:      ptr.Child(containersName),
 		volumesPtr:         ptr.Child(volumesName),
 		unstructuredObject: &unstructuredObject{},
+		key:                ptr.Key(),
 	}
 
 	return

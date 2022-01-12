@@ -71,7 +71,7 @@ func (a UnstructuredPointer) Parent() (p common.Pointer, err error) {
 }
 
 func (a UnstructuredPointer) Child(name string) (p common.Pointer) {
-	fields := []string{}
-	fields = append(fields, a.fields...)
+	// fields := []string{}
+	fields := append([]string{}, a.fields...)
 	return NewUnstructuredPointer(append(fields, name), "")
 }

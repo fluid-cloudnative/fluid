@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -340,36 +339,15 @@ func TestGetPodSpecs(t *testing.T) {
 			content: tfjobYaml,
 			expect: []common.Object{
 				UnstructuredApplicationPodSpec{
-					root: &unstructured.Unstructured{
-						Object: map[string]interface{}{
-							"spec": map[string]interface{}{
-								"containers": []interface{}{
-									map[string]interface{}{
-										"name":  "nginx",
-										"image": "nginx",
-										"volumeMounts": []interface{}{
-											map[string]interface{}{
-												"mountPath": "/data",
-												"name":      "hbase-vol",
-											},
-										},
-									},
-								},
-								"volumes": []interface{}{
-									map[string]interface{}{
-										"name": "hbase-vol",
-										"persistentVolumeClaim": map[string]interface{}{
-											"claimName": "shared-data",
-										},
-									},
-								},
-							},
-						},
-					},
-					ptr:           UnstructuredPointer{fields: []string{"spec", "template", "spec"}},
-					containersPtr: UnstructuredPointer{fields: []string{"spec", "template", "spec", "containers"}},
-					volumesPtr:    UnstructuredPointer{fields: []string{"spec", "template", "spec", "volumes"}},
-					// fields: []string{"spec", "template", "spec", "volumes"},
+					key:           UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec"}}.Key(),
+					ptr:           UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec"}},
+					containersPtr: UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "containers"}},
+					volumesPtr:    UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "Worker", "template", "spec", "volumes"}},
+				}, UnstructuredApplicationPodSpec{
+					key:           UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec"}}.Key(),
+					ptr:           UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec"}},
+					containersPtr: UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "containers"}},
+					volumesPtr:    UnstructuredPointer{fields: []string{"spec", "tfReplicaSpecs", "PS", "template", "spec", "volumes"}},
 				},
 			},
 		}, {
@@ -504,6 +482,9 @@ func TestGetPodSpecs(t *testing.T) {
 
 			errMsg := fmt.Sprintf("testcase %s failed due to ", testcase.name)
 
+			differences := differenceObjects(got, testcase.expect)
+			errMsg += fmt.Sprintf("differences is %v, ", differences)
+
 			for _, gotItem := range got {
 				// gotObj := gotItem.(*UnstructuredApplicationPodSpec)
 				errMsg += fmt.Sprintf("got %+v", gotItem)
@@ -538,10 +519,10 @@ func differenceObjects(source, target []common.Object) []common.Object {
 				if objS1.ptr.Key() == objS2.ptr.Key() {
 					if objS1.containersPtr.Key() == objS2.containersPtr.Key() {
 						if objS1.volumesPtr.Key() == objS2.volumesPtr.Key() {
-							if reflect.DeepEqual(objS1.root, objS2.root) {
-								found = true
-								break
-							}
+							// if reflect.DeepEqual(objS1.root, objS2.root) {
+							found = true
+							break
+							// }
 						}
 
 					}
