@@ -14,6 +14,10 @@ package jindo
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -23,10 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
-	"os"
-	"strings"
 )
 
 // CreateDataLoadJob creates the job to load data
@@ -51,7 +52,7 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JINDO_RUNTIME
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JindoRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")

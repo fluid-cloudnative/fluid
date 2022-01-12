@@ -1,13 +1,17 @@
 package common
 
 const (
-	FLUID_PATH = "fluid_path"
+	FluidPath = "fluid_path"
 
-	Mount_TYPE = "mount_type"
+	MountType = "mount_type"
 
-	CSI_DRIVER = "fuse.csi.fluid.io"
+	CSIDriver = "fuse.csi.fluid.io"
+
+	Fluid = "fluid"
 )
 
 var (
-	FLUID_STORAGECLASS = "fluid"
+	FluidStorageClass = Fluid
+
+	FuseContainerName = "fluid-fuse"
 )

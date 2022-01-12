@@ -71,3 +71,55 @@ func TestRandomAlphaNumberString(t *testing.T) {
 		}
 	}
 }
+
+func TestRandomReplace(t *testing.T) {
+	testCases := map[string]struct {
+		input   string
+		len     int
+		wantLen int
+	}{
+		"test RandomReplace case 1": {
+			input:   "a",
+			len:     5,
+			wantLen: 5,
+		},
+		"test RandomReplace case 2": {
+			input:   "abcdef",
+			len:     3,
+			wantLen: len("abcdef"),
+		},
+	}
+
+	for k, item := range testCases {
+		got := RandomReplacePrefix(item.input, item.len)
+		if len(got) != item.wantLen || item.input == got {
+			t.Errorf("%s check failure,want length is:%d,got:%d", k, item.wantLen, len(got))
+		}
+	}
+}
+
+func TestReplacePrefix(t *testing.T) {
+	testCases := map[string]struct {
+		input   string
+		replace string
+		want    string
+	}{
+		"test RandomReplace case 1": {
+			input:   "a",
+			replace: "abc",
+			want:    "abc",
+		},
+		"test RandomReplace case 2": {
+			input:   "abcdef",
+			replace: "efg",
+			want:    "efg-ef",
+		},
+	}
+
+	for k, item := range testCases {
+		got := ReplacePrefix(item.input, item.replace)
+		if item.want != got {
+			t.Errorf("%s check failure,want is:%s,got:%s", k, item.want, got)
+		}
+	}
+}

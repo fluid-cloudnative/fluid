@@ -14,21 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
-
-// Runtime for JindoFS
-const (
-	JindoRuntime = "jindo"
-
-	JindoChartName = "jindofs"
-
-	JindoMountType = "fuse.jindofs-fuse"
-
-	JINDO_SMARTDATA_IMAGE_ENV = "JINDO_SMARTDATA_IMAGE_ENV"
-
-	JINDO_FUSE_IMAGE_ENV = "JINDO_FUSE_IMAGE_ENV"
-
-	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
-
-	JINDO_DNS_SERVER = "JINDO_DNS_SERVER_ENV"
-)
+package fusesidecar

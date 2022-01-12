@@ -17,6 +17,7 @@ package common
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type RuntimeRole string
@@ -137,4 +138,41 @@ type OwnerReference struct {
 	// If true, AND if the owner has the "foregroundDeletion" finalizer, then
 	// +optional
 	BlockOwnerDeletion bool `yaml:"blockOwnerDeletion"`
+}
+
+// FuseInjectionTemplate for injecting fuse container into the pod
+type FuseInjectionTemplate struct {
+	PVCName              string
+	SubPath              string
+	FuseContainer        corev1.Container
+	VolumeMountsToUpdate []corev1.VolumeMount
+	VolumeMountsToAdd    []corev1.VolumeMount
+	VolumesToUpdate      []corev1.Volume
+	VolumesToAdd         []corev1.Volume
+}
+
+// The Application which is using Fluid,
+// and it has serveral PodSpecs.
+type FluidApplication interface {
+	GetPodSpecs() (specs []FluidObject, err error)
+
+	SetPodSpecs(specs []FluidObject) (err error)
+
+	// GetObject gets K8s object which can be consumed by K8s API
+	GetObject() runtime.Object
+}
+
+// FluidObject simulates the V1 Pod Spec, it has v1.volumes, v1.containers inside
+type FluidObject interface {
+	GetRoot() runtime.Object
+
+	GetVolumes() (volumes []corev1.Volume, err error)
+
+	SetVolumes(volumes []corev1.Volume) (err error)
+
+	GetContainers() (containers []corev1.Container, err error)
+
+	SetContainers(containers []corev1.Container) (err error)
+
+	GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error)
 }

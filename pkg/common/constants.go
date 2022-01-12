@@ -111,4 +111,7 @@ const (
 	MyPodNamespace         = "MY_POD_NAMESPACE"
 	True                   = "true"
 	False                  = "false"
+	Serverless             = "serverless.fluid.io/inject"
+	FuseSidecar            = "fuse.sidecar.fluid.io/inject"
+	WorkerSidecar          = "worker.sidecar.fluid.io/inject"
 )

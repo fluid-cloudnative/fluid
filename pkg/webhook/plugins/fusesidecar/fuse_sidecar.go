@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,57 +14,56 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mountpropagationinjector
+package fusesidecar
 
 import (
-	"fmt"
+	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject"
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const NAME = "MountPropagationInjector"
+/*
+   This plugin is for pods without a mounted dataset.
+   They should prefer nods without cache workers on them.
 
-var (
-	log = ctrl.Log.WithName(NAME)
-)
+*/
 
-type MountPropagationInjector struct {
+const Name string = "serverless"
+
+type FuseSidecar struct {
 	client client.Client
 	name   string
 }
 
-func NewPlugin(c client.Client) *MountPropagationInjector {
-	return &MountPropagationInjector{
+func NewPlugin(c client.Client) *FuseSidecar {
+	return &FuseSidecar{
 		client: c,
-		name:   NAME,
+		name:   Name,
 	}
 }
 
-func (p *MountPropagationInjector) GetName() string {
+func (p *FuseSidecar) GetName() string {
 	return p.name
 }
 
-func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
+func (p *FuseSidecar) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
+	defer utils.TimeTrack(time.Now(), "FuseSidecar.Mutate",
+		"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
 	}
-	runtimeNames := make([]string, len(runtimeInfos))
-	for _, runtimeInfo := range runtimeInfos {
-		if runtimeInfo == nil {
-			err = fmt.Errorf("RuntimeInfo is nil")
-			shouldStop = true
-			return
-		}
-		runtimeNames = append(runtimeNames, runtimeInfo.GetName())
-	}
-	log.V(1).Info("InjectMountPropagation", "runtimeNames", runtimeNames)
-	utils.InjectMountPropagation(runtimeNames, pod)
 
+	var injector inject.Injector = fuse.NewInjector(p.client)
+	out, err := injector.InjectPod(pod, runtimeInfos)
+	if err != nil {
+		return shouldStop, err
+	}
+	out.DeepCopyInto(pod)
 	return
 }

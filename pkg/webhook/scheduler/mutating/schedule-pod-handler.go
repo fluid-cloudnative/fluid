@@ -19,10 +19,12 @@ package mutating
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	corev1 "k8s.io/api/core/v1"
@@ -87,32 +89,53 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
+	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	var runtimeInfos []base.RuntimeInfoInterface
+	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
 		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
 		if err != nil {
 			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
-			return err
+			errPVCs[pvcName] = err
+			continue
 		}
 		if isDatasetPVC {
 			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
 			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, will ignore it", "runtime", pvcName)
-				return err
+				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName)
+				errPVCs[pvcName] = err
+				continue
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
-			runtimeInfos = append(runtimeInfos, runtimeInfo)
+			// runtimeInfos = append(runtimeInfos, runtimeInfo)
+			runtimeInfos[pvcName] = runtimeInfo
 		}
 	}
 
 	// get plugins Registry and get the need plugins list from it
 	pluginsRegistry := plugins.Registry(a.Client)
 	var pluginsList []plugins.MutatingHandler
+	// if the serverlessEnabled, it will raise the errors
+	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetAnnotations()) {
+		info := fmt.Sprintf("the pod %s in namespace %s is configured with fluid.io/serverless but without dataset enabling, and with errors %v",
+			pod.Name,
+			pod.Namespace,
+			errPVCs)
+		setupLog.Info(info)
+		err = fmt.Errorf("failed with errs %v", errPVCs)
+		return err
+	}
+
+	// handle the pods interact with fluid
 	if len(runtimeInfos) == 0 {
 		pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 	} else {
-		pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
+		if utils.ServerlessEnabled(pod.GetAnnotations()) {
+			pluginsList = pluginsRegistry.GetServerlessPodHandler()
+		} else {
+			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
+		}
+
 	}
 
 	// call every plugin in the plugins list in the defined order
