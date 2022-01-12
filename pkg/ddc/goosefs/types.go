@@ -175,7 +175,6 @@ type Fuse struct {
 	Global             bool              `yaml:"global,omitempty"`
 	CriticalPod        bool              `yaml:"criticalPod,omitempty"`
 	Annotations        map[string]string `json:"annotations,omitempty"`
-	HostMountPath      string            `yaml:"hostMountPath,omitempty"`
 }
 
 type Tieredstore struct {
