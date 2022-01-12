@@ -140,12 +140,6 @@ func (e *GooseFSEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/goosefs-fuse", mountRoot, e.namespace, e.name)
 }
 
-func (e *GooseFSEngine) getHostMountPoint() (mountPath string) {
-	mountRoot := getMountRoot()
-	e.Log.Info("mountRoot", "path", mountRoot)
-	return fmt.Sprintf("%s/%s/%s", mountRoot, e.namespace, e.name)
-}
-
 func (e *GooseFSEngine) getInitUserDir() string {
 	dir := fmt.Sprintf("/tmp/fluid/%s/%s", e.namespace, e.name)
 	e.Log.Info("Generate InitUser dir")

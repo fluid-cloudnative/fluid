@@ -50,7 +50,6 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 	// }
 
 	value.Fuse.MountPath = e.getMountPoint()
-	value.Fuse.HostMountPath = e.getHostMountPoint()
 	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
 	// if len(runtime.Spec.Fuse.Args) > 0 {
