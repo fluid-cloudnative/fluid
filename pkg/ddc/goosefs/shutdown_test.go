@@ -6,6 +6,7 @@ import (
 
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -359,6 +360,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 		namespace   string
 		cm          *corev1.ConfigMap
 		runtimeType string
+		log         logr.Logger
 	}
 	tests := []struct {
 		name    string
@@ -378,6 +380,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
+				log: log.NullLogger{},
 			},
 			wantErr: false,
 		},
@@ -387,10 +390,16 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 			testObjs := []runtime.Object{}
 			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
 			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			helper := &ctrl.Helper{}
+			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+				return 0, nil
+			})
+			defer patch1.Reset()
 			e := &GooseFSEngine{
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
+				Log:       tt.fields.log,
 			}
 			if err := e.cleanAll(); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
