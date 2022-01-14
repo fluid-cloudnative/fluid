@@ -461,7 +461,7 @@ func TestCleanUpFuse(t *testing.T) {
 			testNodes = append(testNodes, nodeInput.DeepCopy())
 		}
 
-		fake_client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
 		nodeList := &v1.NodeList{}
 		runtimeInfo, err := base.BuildRuntimeInfo(
@@ -475,7 +475,7 @@ func TestCleanUpFuse(t *testing.T) {
 		}
 		h := &Helper{
 			runtimeInfo: runtimeInfo,
-			client:      fake_client,
+			client:      fakeClient,
 			log:         test.log,
 		}
 
@@ -487,7 +487,7 @@ func TestCleanUpFuse(t *testing.T) {
 			t.Errorf("with the wrong number of the fuse ,count %v", count)
 		}
 
-		err = fake_client.List(context.TODO(), nodeList, &client.ListOptions{})
+		err = fakeClient.List(context.TODO(), nodeList, &client.ListOptions{})
 		if err != nil {
 			t.Errorf("testcase %s: fail to get the node with the error %v  ", test.name, err)
 		}
