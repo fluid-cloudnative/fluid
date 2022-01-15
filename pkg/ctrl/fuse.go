@@ -22,13 +22,17 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CheckFuseHealthy checks the ds healthy with role
@@ -96,6 +100,50 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 	status := *statusToUpdate
 	if !reflect.DeepEqual(status, currentStatus) {
 		return e.client.Status().Update(context.TODO(), runtime)
+	}
+
+	return
+}
+
+// CleanUpFuse will cleanup node label for Fuse.
+func (e *Helper) CleanUpFuse() (count int, err error) {
+	var (
+		nodeList     = &corev1.NodeList{}
+		fuseLabelKey = common.LabelAnnotationFusePrefix + e.runtimeInfo.GetNamespace() + "-" + e.runtimeInfo.GetName()
+	)
+
+	labelNames := []string{fuseLabelKey}
+	e.log.Info("check node labels", "labelNames", labelNames)
+	fuseLabelSelector, err := labels.Parse(fmt.Sprintf("%s=true", fuseLabelKey))
+	if err != nil {
+		return
+	}
+
+	err = e.client.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: fuseLabelSelector,
+	})
+	if err != nil {
+		return count, err
+	}
+
+	nodes := nodeList.Items
+	if len(nodes) == 0 {
+		e.log.Info("No node with fuse label need to be delete")
+		return
+	} else {
+		e.log.Info("Try to clean the fuse label for nodes", "len", len(nodes))
+	}
+
+	var labelsToModify common.LabelsToModify
+	labelsToModify.Delete(fuseLabelKey)
+
+	for _, node := range nodes {
+		_, err = utils.ChangeNodeLabelWithPatchMode(e.client, &node, labelsToModify)
+		if err != nil {
+			e.log.Error(err, "Error when patching labels on node", "nodeName", node.Name)
+			return count, errors.Wrapf(err, "error when patching labels on node %s", node.Name)
+		}
+		count++
 	}
 
 	return

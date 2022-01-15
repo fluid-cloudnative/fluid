@@ -177,6 +177,13 @@ func (e *GooseFSEngine) releasePorts() (err error) {
 
 // cleanAll cleans up the all
 func (e *GooseFSEngine) cleanAll() (err error) {
+	count, err := e.Helper.CleanUpFuse()
+	if err != nil {
+		e.Log.Error(err, "Err in cleaning fuse")
+		return err
+	}
+	e.Log.Info("clean up fuse count", "n", count)
+
 	var (
 		valueConfigmapName = e.name + "-" + e.runtimeType + "-values"
 		configmapName      = e.name + "-config"
