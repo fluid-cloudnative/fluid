@@ -92,9 +92,9 @@ func (e *JindoEngine) releasePorts() (err error) {
 
 // cleanAll cleans up the all
 func (e *JindoEngine) cleanAll() (err error) {
-	count, err := e.cleanupFuse()
+	count, err := e.Helper.CleanUpFuse()
 	if err != nil {
-		e.Log.Error(err, "Err in cleaning configMap")
+		e.Log.Error(err, "Err in cleaning fuse")
 		return err
 	}
 	e.Log.Info("clean up fuse count", "n", count)
