@@ -266,6 +266,13 @@ func (j *JuiceFSEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGl
 }
 
 func (j *JuiceFSEngine) cleanAll() (err error) {
+	count, err := j.Helper.CleanUpFuse()
+	if err != nil {
+		j.Log.Error(err, "Err in cleaning fuse")
+		return err
+	}
+	j.Log.Info("clean up fuse count", "n", count)
+
 	var (
 		valueConfigmapName = j.name + "-" + j.runtimeType + "-values"
 		configmapName      = j.name + "-config"
