@@ -18,6 +18,8 @@ package juicefs
 
 import (
 	"errors"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -508,6 +510,7 @@ func TestJuiceFSEngine_cleanAll(t *testing.T) {
 		name      string
 		namespace string
 		Client    client.Client
+		log       logr.Logger
 	}
 	tests := []struct {
 		name    string
@@ -520,16 +523,23 @@ func TestJuiceFSEngine_cleanAll(t *testing.T) {
 				name:      "test",
 				namespace: "fluid",
 				Client:    fakeClient,
+				log:       log.NullLogger{},
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			helper := &ctrl.Helper{}
+			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+				return 0, nil
+			})
+			defer patch1.Reset()
 			j := &JuiceFSEngine{
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    fakeClient,
+				Log:       tt.fields.log,
 			}
 			if err := j.cleanAll(); (err != nil) != tt.wantErr {
 				t.Errorf("cleanAll() error = %v, wantErr %v", err, tt.wantErr)
