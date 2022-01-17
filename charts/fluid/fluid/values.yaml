@@ -26,7 +26,7 @@ runtime:
   alluxio:
     runtimeWorkers: 3
     portRange: 20000-26000
-    enabled: false
+    enabled: true
     init:
       image: fluidcloudnative/init-users:v0.7.0-3ce62a9
     controller:
@@ -38,7 +38,7 @@ runtime:
   jindo:
     runtimeWorkers: 3
     portRange: 18000-19999
-    enabled: true
+    enabled: false
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0
     fuse:
