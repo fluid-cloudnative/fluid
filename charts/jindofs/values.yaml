@@ -30,6 +30,9 @@ properties:
   logDir: /mnt/disk1/bigboot/log
 
 master:
+  ports:
+    rpc: 8101
+  dnsServer: ""
   labels: {}
   replicaCount: 1
   properties:
@@ -39,6 +42,8 @@ master:
     namespace.backend.type: rocksdb
 
 worker:
+  ports:
+    rpc: 6101
   labels: {}
   nodeSelector: {}
   replicaCount: 0
