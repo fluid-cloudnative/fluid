@@ -1,7 +1,8 @@
 0.7.0
-Support logConfig
-Support fuse lazy start
-Support fuse critical pod
+
+Support logConfig <br/>
+Support fuse lazy start <br/>
+Support fuse critical pod <br/>
 
 0.8.0
 
@@ -22,5 +23,10 @@ Add owner Reference
 0.8.4
 
 Support more Posix
+
+0.8.5
+
+Add mountPropagation for registrar <br/>
+Add auto fuse recovery
  
 
