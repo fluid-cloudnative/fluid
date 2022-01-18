@@ -10,7 +10,6 @@
 + Get Started
   - [Quick Start](userguide/get_started.md)
   - [Installation](userguide/install.md)
-  - [Troubleshooting](userguide/troubleshooting.md)
 + Dataset
   + Creation
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
@@ -29,6 +28,8 @@
 + Advanced   
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
++ Troubleshooting
+  - [Collecting logs](userguide/troubleshooting.md)
 + Developer Guide
   - [How to develop](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
