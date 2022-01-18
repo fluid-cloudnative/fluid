@@ -35,12 +35,15 @@ jobs:
         curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_${os}_${arch}.tar.gz | tar -xz -C /tmp/
         sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
         export PATH=$PATH:/usr/local/kubebuilder/bin
+        curl -L https://get.helm.sh/helm-v3.7.2-${os}-${arch}.tar.gz | tar -xz -C /tmp
+        chmod u+x /tmp/${os}-${arch}/helm && sudo mv /tmp/${os}-${arch}/helm /usr/local/bin/helm
     
     - name: CI script
       run: |
         make manifests
         make build
         golangci-lint run --timeout=10m ./...
+        find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
         test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
         make test
         bash <(curl -s https://codecov.io/bash)
