@@ -42,7 +42,7 @@
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)
 + 问题诊断
   - [日志收集](userguide/troubleshooting.md)
-  - [数据卷挂载](troubleshooting/debug-fuse.md)
+  - [数据卷挂载问题](troubleshooting/debug-fuse.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
