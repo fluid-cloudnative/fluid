@@ -169,6 +169,4 @@ func (e *AlluxioEngine) remountOnMasterRestart(ufsToUpdate *utils.UFSToUpdate) {
 			e.updateMountTime()
 		}
 	}
-
-	return
 }
