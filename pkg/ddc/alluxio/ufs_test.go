@@ -25,6 +25,7 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -416,7 +417,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 }
 
 func TestUpdateMountTime(t *testing.T) {
-	snapshotNow:= time.Now()
+	yesterday := time.Now().AddDate( 0, 0, -1)
 
 	type fields struct {
 		runtime          *datav1alpha1.AlluxioRuntime
@@ -425,18 +426,13 @@ func TestUpdateMountTime(t *testing.T) {
 	tests := []fields {
 		{
 			runtime: &datav1alpha1.AlluxioRuntime{
-				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
-						Time: snapshotNow,
-					},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test",
+					Namespace: "default",
 				},
-			},
-		},
-		{
-			runtime: &datav1alpha1.AlluxioRuntime{
 				Status: datav1alpha1.RuntimeStatus{
 					MountTime: v1.Time{
-						Time: snapshotNow.AddDate(-1, 0, 0),
+						Time: yesterday,
 					},
 				},
 			},
@@ -460,10 +456,148 @@ func TestUpdateMountTime(t *testing.T) {
 			}
 
 			e.updateMountTime()
-			if e.runtime.Status.MountTime.Time.After(snapshotNow) {
-				t.Errorf("%d check failure, got: %v", index, test.runtime.Status.MountTime.Time)
+			runtime, _ := e.getRuntime()
+			if runtime.Status.MountTime.Time.Equal(yesterday) {
+				t.Errorf("%d check failure, got: %v, unexpected: %v", index, runtime.Status.MountTime.Time, yesterday)
 				return
 		}
+		})
+	}
+}
+
+func TestRemountOnMasterRestart(t *testing.T) {
+	yesterday := time.Now().AddDate( 0, 0, -1)
+
+	type fields struct {
+		runtime          *datav1alpha1.AlluxioRuntime
+		pod              *corev1.Pod
+		wanted           []string
+	}
+	
+	tests := []fields {
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test",
+					Namespace: "default",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: yesterday,
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test-master-0",
+					Namespace: "default",
+				},
+				Status:  corev1.PodStatus{
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "alluxio-master",
+								State: corev1.ContainerState{
+									Running: &corev1.ContainerStateRunning{
+										StartedAt: v1.Time{
+											Time: yesterday.AddDate(0, 0, 1),
+										},
+									},
+								},
+							},
+						},
+					},
+			},
+			wanted: []string {
+				"/path",
+			},
+		},
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test",
+					Namespace: "default",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: yesterday,
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test-master-0",
+					Namespace: "default",
+				},
+				Status:  corev1.PodStatus{
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "alluxio-master",
+								State: corev1.ContainerState{
+									Running: &corev1.ContainerStateRunning{
+										StartedAt: v1.Time{
+											Time: yesterday.AddDate(0, 0, -1),
+										},
+									},
+								},
+							},
+						},
+					},
+			},
+			wanted: []string {},
+		},
+	}
+
+	dataset := datav1alpha1.Dataset{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path: "/path",
+				},
+			},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
+			s.AddKnownTypes(corev1.SchemeGroupVersion, test.pod)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, test.runtime, &dataset, test.pod)
+
+			e := &AlluxioEngine{
+				runtime:            test.runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			var afsUtils operations.AlluxioFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+				return true
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+				return alluxioPaths, nil
+			})
+			defer patch2.Reset()
+
+			ufsToUpdate := utils.NewUFSToUpdate(&dataset)
+			e.remountOnMasterRestart(ufsToUpdate)
+			if (len(ufsToUpdate.ToAdd()) != 0 || len(test.wanted) != 0 ) && 
+				!reflect.DeepEqual(ufsToUpdate.ToAdd(),test.wanted)  {
+				t.Errorf("%d check failure, got: %v, expected: %s", index, ufsToUpdate.ToAdd(),test.wanted)
+				return
+			}
 		})
 	}
 }
