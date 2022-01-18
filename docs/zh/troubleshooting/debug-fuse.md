@@ -2,7 +2,7 @@
 
 ## 概要
 
-如果应用Pod由于CSI Plugin的问题处于长时间处于`ContainerCreating`或者`Pending`的状态无法创建，这通常是由Fuse Pod导致的。可以按照以下步骤进行排查
+如果应用Pod由于CSI Plugin的问题处于长时间处于`ContainerCreating`或者`Pending`的状态无法创建，这通常是由同一个节点Fuse Pod状态不正常导致的。可以按照以下步骤进行排查
 
 ###  查看应用Pods事件
 
