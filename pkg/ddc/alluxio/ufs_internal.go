@@ -19,12 +19,15 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
+
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -149,6 +152,7 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		return fmt.Errorf("the UFS is not ready, namespace:%s,name:%s", e.namespace, e.name)
 	}
 
+	everMounted := false
 	// Iterate all the mount points, do mount if the mount point is in added array
 	// TODO: not allow to edit FluidNativeScheme MountPoint
 	for _, mount := range dataset.Spec.Mounts {
@@ -190,6 +194,8 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			if err != nil {
 				return err
 			}
+
+			everMounted = true
 		}
 	}
 
@@ -219,6 +225,10 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		return nil
 	}
 
+	if everMounted {
+		e.updateMountTime()
+	}
+
 	return nil
 }
 
@@ -237,6 +247,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 		return fmt.Errorf("the UFS is not ready")
 	}
 
+	everMounted := false
 	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. Hostpath or PVC)
 	for _, mount := range dataset.Spec.Mounts {
 		mount := mount
@@ -262,9 +273,15 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			if err != nil {
 				return err
 			}
-		}
 
+			everMounted = true
+		}
 	}
+
+	if everMounted {
+		e.updateMountTime()
+	}
+
 	return nil
 }
 
@@ -295,4 +312,28 @@ func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]str
 	}
 
 	return mOptions, nil
+}
+
+func (e *AlluxioEngine) updateMountTime() {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		runtimeToUpdate := runtime.DeepCopy()
+		runtimeToUpdate.Status.MountTime.Time = time.Now()
+
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		} else {
+			e.Log.Info("Do nothing because the runtime status is not changed.")
+		}
+
+		return err
+	})
+
+	if err != nil {
+		e.Log.Error(err, "UpdateMountTime", "", e.name)
+	}
 }

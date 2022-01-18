@@ -18,6 +18,7 @@ package alluxio
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"reflect"
 
@@ -408,6 +409,59 @@ func TestFindUnmountedUFS(t *testing.T) {
 			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0 ) && 
 			       !reflect.DeepEqual(unmountedPaths,test.wantedUnmountedPaths) {
 				t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
+				return
+		}
+		})
+	}
+}
+
+func TestUpdateMountTime(t *testing.T) {
+	snapshotNow:= time.Now()
+
+	type fields struct {
+		runtime          *datav1alpha1.AlluxioRuntime
+	}
+	
+	tests := []fields {
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: snapshotNow,
+					},
+				},
+			},
+		},
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: snapshotNow.AddDate(-1, 0, 0),
+					},
+				},
+			},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, test.runtime)
+
+			e := &AlluxioEngine{
+				runtime:            test.runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			e.updateMountTime()
+			if e.runtime.Status.MountTime.Time.After(snapshotNow) {
+				t.Errorf("%d check failure, got: %v", index, test.runtime.Status.MountTime.Time)
 				return
 		}
 		})

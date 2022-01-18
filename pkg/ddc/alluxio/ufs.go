@@ -16,10 +16,11 @@ limitations under the License.
 package alluxio
 
 import (
-	"os"
+	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // UsedStorageBytes returns used storage size of Alluxio in bytes
@@ -93,17 +94,7 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	ufsToUpdate.AnalyzePathsDelta()
 
 	// 3. for hostpath ufs mount, check if all mountpoints have been mounted
-	const envVar = "FLUID_ENABLE_REMOUNT_DURING_SYNC"
-	if os.Getenv(envVar) != ""{
-		unmountedPaths, err := e.FindUnmountedUFS()
-		if err != nil {
-			e.Log.Error(err, "Failed in finding unmounted ufs")
-			return
-		}
-		if len(unmountedPaths) != 0{
-			ufsToUpdate.AddMountPaths(unmountedPaths)
-		}
-	}
+	e.remountOnMasterRestart(ufsToUpdate)
 
 	return
 }
@@ -131,5 +122,53 @@ func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updat
 		return
 	}
 	updateReady = true
+	return
+}
+
+func (e *AlluxioEngine) remountOnMasterRestart(ufsToUpdate *utils.UFSToUpdate) {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		e.Log.Error(err, "remountOnMasterRestart", "runtime", e.name)
+		return
+	}
+
+	masterPodName, masterContainerName := e.getMasterPodInfo()
+	masterPod, err := e.getMasterPod(masterPodName, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "remountOnMasterRestart", "master pod", e.name)
+		return
+	}
+
+	var startedAt *v1.Time 
+	for _, containerStatus := range masterPod.Status.ContainerStatuses {
+		if containerStatus.Name == masterContainerName {
+			if containerStatus.State.Running == nil{
+				e.Log.Error(fmt.Errorf("Container is not running"), "remountOnMasterRestart", "master pod", masterPodName)
+				return
+			} else {
+				startedAt = &containerStatus.State.Running.StartedAt
+				break
+			}
+		}
+	}
+
+	// If mounttime is earlier than master container starttime, remount is necessary
+	if startedAt != nil && runtime.Status.MountTime.Before(startedAt) {
+		e.Log.Info("remount on master restart", "alluxioruntime", e.name)
+
+		unmountedPaths, err := e.FindUnmountedUFS()
+		if err != nil {
+			e.Log.Error(err, "Failed in finding unmounted ufs")
+			return
+		}
+
+		if len(unmountedPaths) != 0 {
+			ufsToUpdate.AddMountPaths(unmountedPaths)
+		} else {
+			// if no path can be mounted, set mountTime to be now 
+			e.updateMountTime()
+		}
+	}
+
 	return
 }
