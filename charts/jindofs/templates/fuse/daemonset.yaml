@@ -106,6 +106,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: FLUID_FUSE_MOUNTPOINT
+            value: {{ .Values.fuse.mountPath }}
           securityContext:
             privileged: true
             capabilities:

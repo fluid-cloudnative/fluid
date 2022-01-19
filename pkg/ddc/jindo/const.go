@@ -31,4 +31,6 @@ const (
 	WOKRER_POD_ROLE = "jindo-worker"
 
 	runtimeFSType = "jindofs"
+
+	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
 )

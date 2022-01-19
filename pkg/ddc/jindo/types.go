@@ -78,6 +78,7 @@ type Fuse struct {
 	Labels         map[string]string `yaml:"labels,omitempty"`
 	CriticalPod    bool              `yaml:"criticalPod,omitempty"`
 	Resources      Resources         `yaml:"resources,omitempty"`
+	MountPath      string            `yaml:"mountPath,omitempty"`
 }
 
 type Mounts struct {
