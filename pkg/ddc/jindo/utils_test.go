@@ -16,7 +16,9 @@ limitations under the License.
 package jindo
 
 import (
+	"github.com/go-logr/logr"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -77,5 +79,43 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
 		}
+	}
+}
+
+func TestJindoFSEngine_getHostMountPoint(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+		MountRoot string
+	}
+	var tests = []struct {
+		name          string
+		fields        fields
+		wantMountPath string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "jindofs",
+				namespace: "default",
+				Log:       log.NullLogger{},
+				MountRoot: "/tmp",
+			},
+			wantMountPath: "/tmp/jindo/default/jindofs",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JindoEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+			}
+			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			if gotMountPath := j.getHostMountPoint(); gotMountPath != tt.wantMountPath {
+				t.Errorf("getHostMountPoint() = %v, want %v", gotMountPath, tt.wantMountPath)
+			}
+		})
 	}
 }
