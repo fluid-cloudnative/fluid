@@ -548,3 +548,45 @@ func TestUfsToUpdate(t *testing.T) {
 
 	}
 }
+
+func TestAddMountPaths(t *testing.T) {
+	testCases := []struct {
+		originAdd    []string
+		toAdd        []string
+		result       []string
+	}{
+		{
+			originAdd: []string{"/path1"},
+			toAdd:     []string{"/path2"},
+			result:    []string{"/path1", "/path2"},
+		},
+		{
+			originAdd: []string{"/path1"},
+			toAdd:     []string{"/path1"},
+			result:    []string{"/path1"},
+		},
+		{
+			originAdd: []string{},
+			toAdd:     []string{"/path1"},
+			result:    []string{"/path1"},
+		},
+		{
+			originAdd: []string{"/path1"},
+			toAdd:     []string{},
+			result:    []string{"/path1"},
+		},
+	}
+
+	for k, item := range testCases {
+		ufsToUpdate := NewUFSToUpdate(&datav1alpha1.Dataset{})
+		ufsToUpdate.toAdd = item.originAdd
+
+		ufsToUpdate.AddMountPaths(item.toAdd)
+
+		if len(item.result) != 0 || len(ufsToUpdate.ToAdd()) != 0 {
+			if !reflect.DeepEqual(item.result, ufsToUpdate.ToAdd()) {
+				t.Errorf("%d check fail, expected mountpath is %s, get %s", k, item.result, ufsToUpdate.ToAdd())
+			}
+		}
+	}
+}

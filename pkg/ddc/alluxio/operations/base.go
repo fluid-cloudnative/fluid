@@ -26,6 +26,8 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 type AlluxioFileUtils struct {
@@ -291,6 +293,28 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	// }
 
 	return mounted, err
+}
+
+func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string,  error) {
+	var (
+		command = []string{"alluxio", "fs", "mount"}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err := a.exec(command, true)
+	if err != nil {
+		return []string{}, fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+	}
+
+	results := strings.Split(stdout, "\n")
+	var mountedPaths []string
+	for _, line := range results {
+		fields := strings.Fields(line)
+		mountedPaths = append(mountedPaths, fields[2])
+	}
+
+	return utils.SubtractString(alluxioPaths, mountedPaths), err
 }
 
 // Check if the Alluxio is ready by running `alluxio fsadmin report` command

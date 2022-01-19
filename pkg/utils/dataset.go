@@ -184,3 +184,22 @@ func (u *UFSToUpdate) ToAdd() []string {
 func (u *UFSToUpdate) ToRemove() []string {
 	return u.toRemove
 }
+
+// AddMountPaths add mounted path to ToAdd
+func (u *UFSToUpdate) AddMountPaths(mountPaths []string) {
+	if len(u.toAdd) == 0{
+		u.toAdd = mountPaths
+		return
+	}
+
+	set := make(map[string]struct{}, len(u.toAdd))
+	for _, i := range u.toAdd {
+		set[i] = struct{}{}
+	}
+
+	for _, mountPath := range mountPaths{
+		_, ok := set[mountPath]; if !ok{
+			u.toAdd = append(u.toAdd, mountPath)
+		}
+	}
+}

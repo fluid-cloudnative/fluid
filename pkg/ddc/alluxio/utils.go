@@ -54,6 +54,16 @@ func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
 	return &runtime, nil
 }
 
+func (e *AlluxioEngine) getMasterPod(name string, namespace string) (pod *v1.Pod, err error) {
+	pod = &v1.Pod{}
+	err = e.Client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, pod)
+
+	return pod, err
+}
+
 func (e *AlluxioEngine) getMasterStatefulset(name string, namespace string) (master *appsv1.StatefulSet, err error) {
 	master = &appsv1.StatefulSet{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{
