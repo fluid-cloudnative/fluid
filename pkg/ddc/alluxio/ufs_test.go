@@ -460,12 +460,12 @@ func TestUpdateMountTime(t *testing.T) {
 			if runtime.Status.MountTime.Time.Equal(yesterday) {
 				t.Errorf("%d check failure, got: %v, unexpected: %v", index, runtime.Status.MountTime.Time, yesterday)
 				return
-		}
+			}
 		})
 	}
 }
 
-func TestRemountOnMasterRestart(t *testing.T) {
+func TestCheckIfRemountRequired(t *testing.T) {
 	yesterday := time.Now().AddDate( 0, 0, -1)
 
 	type fields struct {
@@ -592,7 +592,7 @@ func TestRemountOnMasterRestart(t *testing.T) {
 			defer patch2.Reset()
 
 			ufsToUpdate := utils.NewUFSToUpdate(&dataset)
-			e.remountOnMasterRestart(ufsToUpdate)
+			e.checkIfRemountRequired(ufsToUpdate)
 			if (len(ufsToUpdate.ToAdd()) != 0 || len(test.wanted) != 0 ) && 
 				!reflect.DeepEqual(ufsToUpdate.ToAdd(),test.wanted)  {
 				t.Errorf("%d check failure, got: %v, expected: %s", index, ufsToUpdate.ToAdd(),test.wanted)

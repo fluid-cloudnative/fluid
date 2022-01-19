@@ -94,7 +94,7 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	ufsToUpdate.AnalyzePathsDelta()
 
 	// 3. for hostpath ufs mount, check if all mountpoints have been mounted
-	e.remountOnMasterRestart(ufsToUpdate)
+	e.checkIfRemountRequired(ufsToUpdate)
 
 	return
 }
@@ -125,17 +125,17 @@ func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updat
 	return
 }
 
-func (e *AlluxioEngine) remountOnMasterRestart(ufsToUpdate *utils.UFSToUpdate) {
+func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	runtime, err := e.getRuntime()
 	if err != nil {
-		e.Log.Error(err, "remountOnMasterRestart", "runtime", e.name)
+		e.Log.Error(err, "checkIfRemountRequired", "runtime", e.name)
 		return
 	}
 
 	masterPodName, masterContainerName := e.getMasterPodInfo()
 	masterPod, err := e.getMasterPod(masterPodName, e.namespace)
 	if err != nil {
-		e.Log.Error(err, "remountOnMasterRestart", "master pod", e.name)
+		e.Log.Error(err, "checkIfRemountRequired", "master pod", e.name)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (e *AlluxioEngine) remountOnMasterRestart(ufsToUpdate *utils.UFSToUpdate) {
 	for _, containerStatus := range masterPod.Status.ContainerStatuses {
 		if containerStatus.Name == masterContainerName {
 			if containerStatus.State.Running == nil{
-				e.Log.Error(fmt.Errorf("Container is not running"), "remountOnMasterRestart", "master pod", masterPodName)
+				e.Log.Error(fmt.Errorf("Container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
 				return
 			} else {
 				startedAt = &containerStatus.State.Running.StartedAt
