@@ -14,19 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package app
 
-import (
-	"fmt"
-	"os"
+import "github.com/spf13/cobra"
 
-	"github.com/fluid-cloudnative/fluid/cmd/dataset/app"
-)
-
-func main() {
-	command := app.NewDatasetCommand()
-	if err := command.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
+func NewAlluxioFSCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "alluxioruntime-controller",
+		Short: "Controller for alluxioruntime",
 	}
+	cmd.AddCommand(versionCmd, alluxioCmd)
+
+	return cmd
 }
