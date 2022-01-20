@@ -146,13 +146,15 @@ func handle() {
 	}
 
 	// Register Fuse Recover
-	fuseRecover, err := initializeFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"))
-	if err != nil {
-		panic(fmt.Sprintf("csi: unable to create fuse recover due to error %v", err))
-	}
+	if recoverFusePeriod > 0 {
+		fuseRecover, err := initializeFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"))
+		if err != nil {
+			panic(fmt.Sprintf("csi: unable to create fuse recover due to error %v", err))
+		}
 
-	if err = mgr.Add(fuseRecover); err != nil {
-		panic(fmt.Sprintf("csi: unable to add fuse recover to manager due to error %v", err))
+		if err = mgr.Add(fuseRecover); err != nil {
+			panic(fmt.Sprintf("csi: unable to add fuse recover to manager due to error %v", err))
+		}
 	}
 
 	// Register CSI Driver
