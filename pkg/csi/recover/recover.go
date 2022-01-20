@@ -17,6 +17,7 @@ limitations under the License.
 package recover
 
 import (
+	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
@@ -32,9 +33,12 @@ import (
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 	"time"
 )
+
+var _ manager.Runnable = &FuseRecover{}
 
 type FuseRecover struct {
 	mount.SafeFormatAndMount
@@ -43,6 +47,8 @@ type FuseRecover struct {
 	Recorder      record.EventRecorder
 
 	containers map[string]*containerStat // key: <containerName>-<daemonSetName>-<namespace>
+
+	recoverFusePeriod int
 }
 
 type containerStat struct {
@@ -53,17 +59,27 @@ type containerStat struct {
 	startAt       metav1.Time
 }
 
-func NewFuseRecoder(kubeClient client.Client, kubeletClient *kubelet.KubeletClient, recorder record.EventRecorder) *FuseRecover {
+func NewFuseRecover(kubeClient client.Client, kubeletClient *kubelet.KubeletClient, recorder record.EventRecorder, recoverFusePeriod int) *FuseRecover {
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
 			Exec:      k8sexec.New(),
 		},
-		KubeClient:    kubeClient,
-		KubeletClient: kubeletClient,
-		Recorder:      recorder,
-		containers:    make(map[string]*containerStat),
+		KubeClient:        kubeClient,
+		KubeletClient:     kubeletClient,
+		Recorder:          recorder,
+		containers:        make(map[string]*containerStat),
+		recoverFusePeriod: recoverFusePeriod,
 	}
+}
+
+func (r *FuseRecover) Start(ctx context.Context) error {
+	// do recovering at beginning
+	// recover set containerStat in memory, it's none when start
+	r.Recover()
+	r.Run(r.recoverFusePeriod, wait.NeverStop)
+
+	return nil
 }
 
 func (r *FuseRecover) Run(period int, stopCh <-chan struct{}) {

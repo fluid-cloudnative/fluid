@@ -31,10 +31,12 @@ limitations under the License.
 package csi
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -53,6 +55,8 @@ type driver struct {
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
+
+var _ manager.Runnable = &driver{}
 
 func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
@@ -105,4 +109,9 @@ func (d *driver) Run() {
 		d.newNodeServer(),
 	)
 	s.Wait()
+}
+
+func (d *driver) Start(ctx context.Context) error {
+	d.Run()
+	return nil
 }

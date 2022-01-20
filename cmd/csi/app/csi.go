@@ -31,7 +31,6 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -146,28 +145,34 @@ func handle() {
 		panic(fmt.Sprintf("csi: unable to create controller recover due to error %v", err))
 	}
 
-	ctx := ctrl.SetupSignalHandler()
-	go func() {
-		if err := mgr.Start(ctx); err != nil {
-			panic(fmt.Sprintf("unable to start controller recover due to error %v", err))
-		}
-	}()
-
-	if recoverFusePeriod > 0 {
-		if err := recoverStart(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover")); err != nil {
-			panic(fmt.Sprintf("unable to start recover due to error %v", err))
-		}
+	// Register Fuse Recover
+	fuseRecover, err := initializeFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"))
+	if err != nil {
+		panic(fmt.Sprintf("csi: unable to create fuse recover due to error %v", err))
 	}
 
-	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
-	d.Run()
+	if err = mgr.Add(fuseRecover); err != nil {
+		panic(fmt.Sprintf("csi: unable to add fuse recover to manager due to error %v", err))
+	}
+
+	// Register CSI Driver
+	csiDriver := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
+
+	if err = mgr.Add(csiDriver); err != nil {
+		panic(fmt.Sprintf("csi: unable to add csi driver to manager due to error %v", err))
+	}
+
+	ctx := ctrl.SetupSignalHandler()
+	if err = mgr.Start(ctx); err != nil {
+		panic(fmt.Sprintf("unable to start controller recover due to error %v", err))
+	}
 }
 
-func recoverStart(kubeClient client.Client, recorder record.EventRecorder) (err error) {
+func initializeFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (fuseRecover *recover.FuseRecover, err error) {
 	glog.V(3).Infoln("start csi recover")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
-		return
+		return nil, err
 	}
 	glog.V(3).Infof("Get mount root: %s", mountRoot)
 
@@ -186,7 +191,7 @@ func recoverStart(kubeClient client.Client, recorder record.EventRecorder) (err 
 	if os.Getenv("KUBELET_TIMEOUT") != "" {
 		if kubeletTimeout, err = strconv.Atoi(os.Getenv("KUBELET_TIMEOUT")); err != nil {
 			glog.Errorf("parse kubelet timeout error: %v", err)
-			return
+			return nil, err
 		}
 	} else {
 		kubeletTimeout = defaultKubeletTimeout
@@ -205,12 +210,9 @@ func recoverStart(kubeClient client.Client, recorder record.EventRecorder) (err 
 	})
 	if err != nil {
 		glog.Error(err)
-		return
+		return nil, err
 	}
-	m := recover.NewFuseRecoder(kubeClient, kubeletClient, recorder)
-	// do recovering at beginning
-	// recover set containerStat in memory, it's none when start
-	m.Recover()
-	go m.Run(recoverFusePeriod, wait.NeverStop)
-	return
+	m := recover.NewFuseRecover(kubeClient, kubeletClient, recorder, recoverFusePeriod)
+
+	return m, nil
 }

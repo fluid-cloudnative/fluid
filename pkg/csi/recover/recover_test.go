@@ -35,6 +35,8 @@ import (
 	"time"
 )
 
+const testfuseRecoverPeriod = 30
+
 var mockPod = v1.Pod{
 	ObjectMeta: metav1.ObjectMeta{
 		Labels:    map[string]string{"role": "juicefs-fuse"},
@@ -80,7 +82,7 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1))
+			r := NewFuseRecover(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
 			r.SafeFormatAndMount = mount.SafeFormatAndMount{
 				Interface: &mount.FakeMounter{},
 			}
@@ -116,7 +118,7 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1))
+			r := NewFuseRecover(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
 			r.containers = map[string]*containerStat{
 				"test-container-test-juicefs-fuse-default": {
 					name:          "test-container",
@@ -246,7 +248,7 @@ func TestFuseRecover_compareOrRecordContainerStat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kubeletClient := &kubelet.KubeletClient{}
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeletClient, record.NewFakeRecorder(1))
+			r := NewFuseRecover(fake.NewFakeClient(), kubeletClient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
 			if tt.fields.container != nil {
 				r.containers[tt.fields.key] = tt.fields.container
 			}
