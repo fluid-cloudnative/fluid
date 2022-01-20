@@ -295,7 +295,7 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
-func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string,  error) {
+func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}
 		stdout  string
