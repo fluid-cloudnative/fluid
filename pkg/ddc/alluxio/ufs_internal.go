@@ -132,8 +132,8 @@ func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) 
 	}
 
 	// For fluid native schema, skip mount check to avoid unnecessary system call
-	if len(alluxioPaths) == 0{
-		return 
+	if len(alluxioPaths) == 0 {
+		return
 	}
 
 	return fileUtils.FindUnmountedAlluxioPaths(alluxioPaths)

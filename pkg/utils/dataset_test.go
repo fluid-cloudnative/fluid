@@ -551,9 +551,9 @@ func TestUfsToUpdate(t *testing.T) {
 
 func TestAddMountPaths(t *testing.T) {
 	testCases := []struct {
-		originAdd    []string
-		toAdd        []string
-		result       []string
+		originAdd []string
+		toAdd     []string
+		result    []string
 	}{
 		{
 			originAdd: []string{"/path1"},

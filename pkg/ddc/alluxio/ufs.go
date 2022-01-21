@@ -139,10 +139,10 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 		return
 	}
 
-	var startedAt *v1.Time 
+	var startedAt *v1.Time
 	for _, containerStatus := range masterPod.Status.ContainerStatuses {
 		if containerStatus.Name == masterContainerName {
-			if containerStatus.State.Running == nil{
+			if containerStatus.State.Running == nil {
 				e.Log.Error(fmt.Errorf("Container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
 				return
 			} else {
@@ -165,7 +165,7 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 		if len(unmountedPaths) != 0 {
 			ufsToUpdate.AddMountPaths(unmountedPaths)
 		} else {
-			// if no path can be mounted, set mountTime to be now 
+			// if no path can be mounted, set mountTime to be now
 			e.updateMountTime()
 		}
 	}

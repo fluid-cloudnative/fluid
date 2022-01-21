@@ -121,7 +121,7 @@ type RuntimeStatus struct {
 	// APIGatewayStatus represents rest api gateway status
 	APIGatewayStatus *APIGatewayStatus `json:"apiGateway,omitempty"`
 
-	// MountTime represents time last mount happened 
+	// MountTime represents time last mount happened
 	// if Mounttime is early than master starting time, remount will be required
 	MountTime metav1.Time `json:"mountTime,omitempty"`
 }

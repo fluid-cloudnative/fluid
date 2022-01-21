@@ -319,47 +319,47 @@ func TestPrepareUFS(t *testing.T) {
 }
 
 func TestFindUnmountedUFS(t *testing.T) {
-	
+
 	type fields struct {
 		mountPoints          []datav1alpha1.Mount
 		wantedUnmountedPaths []string
 	}
-	
-	tests := []fields {
+
+	tests := []fields{
 		{
-			mountPoints:           []datav1alpha1.Mount{
+			mountPoints: []datav1alpha1.Mount{
 				{
 					MountPoint: "s3://bucket/path/train",
-					Path: "/path1",
+					Path:       "/path1",
 				},
 			},
-			wantedUnmountedPaths:  []string{"/path1"},
+			wantedUnmountedPaths: []string{"/path1"},
 		},
 		{
-			mountPoints:           []datav1alpha1.Mount{
+			mountPoints: []datav1alpha1.Mount{
 				{
 					MountPoint: "local://mnt/test",
-					Path: "/path2",
+					Path:       "/path2",
 				},
 			},
-			wantedUnmountedPaths:  []string{},
+			wantedUnmountedPaths: []string{},
 		},
 		{
-			mountPoints:          []datav1alpha1.Mount{
+			mountPoints: []datav1alpha1.Mount{
 				{
 					MountPoint: "s3://bucket/path/train",
-					Path: "/path1",
+					Path:       "/path1",
 				},
 				{
 					MountPoint: "local://mnt/test",
-					Path: "/path2",
+					Path:       "/path2",
 				},
 				{
 					MountPoint: "hdfs://endpoint/path/train",
-					Path: "/path3",
+					Path:       "/path3",
 				},
 			},
-			wantedUnmountedPaths:  []string{"/path1", "/path3"},
+			wantedUnmountedPaths: []string{"/path1", "/path3"},
 		},
 	}
 
@@ -403,31 +403,31 @@ func TestFindUnmountedUFS(t *testing.T) {
 			}
 
 			unmountedPaths, err := e.FindUnmountedUFS()
-			if err != nil{
+			if err != nil {
 				t.Errorf("AlluxioEngine.FindUnmountedUFS() error = %v", err)
 				return
 			}
-			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0 ) && 
-			       !reflect.DeepEqual(unmountedPaths,test.wantedUnmountedPaths) {
+			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0) &&
+				!reflect.DeepEqual(unmountedPaths, test.wantedUnmountedPaths) {
 				t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
 				return
-		}
+			}
 		})
 	}
 }
 
 func TestUpdateMountTime(t *testing.T) {
-	yesterday := time.Now().AddDate( 0, 0, -1)
+	yesterday := time.Now().AddDate(0, 0, -1)
 
 	type fields struct {
-		runtime          *datav1alpha1.AlluxioRuntime
+		runtime *datav1alpha1.AlluxioRuntime
 	}
-	
-	tests := []fields {
+
+	tests := []fields{
 		{
 			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test",
+					Name:      "test",
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
@@ -466,19 +466,19 @@ func TestUpdateMountTime(t *testing.T) {
 }
 
 func TestCheckIfRemountRequired(t *testing.T) {
-	yesterday := time.Now().AddDate( 0, 0, -1)
+	yesterday := time.Now().AddDate(0, 0, -1)
 
 	type fields struct {
-		runtime          *datav1alpha1.AlluxioRuntime
-		pod              *corev1.Pod
-		wanted           []string
+		runtime *datav1alpha1.AlluxioRuntime
+		pod     *corev1.Pod
+		wanted  []string
 	}
-	
-	tests := []fields {
+
+	tests := []fields{
 		{
 			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test",
+					Name:      "test",
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
@@ -492,29 +492,29 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Name:      "test-master-0",
 					Namespace: "default",
 				},
-				Status:  corev1.PodStatus{
-						ContainerStatuses: []corev1.ContainerStatus{
-							{
-								Name: "alluxio-master",
-								State: corev1.ContainerState{
-									Running: &corev1.ContainerStateRunning{
-										StartedAt: v1.Time{
-											Time: yesterday.AddDate(0, 0, 1),
-										},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "alluxio-master",
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: v1.Time{
+										Time: yesterday.AddDate(0, 0, 1),
 									},
 								},
 							},
 						},
 					},
+				},
 			},
-			wanted: []string {
+			wanted: []string{
 				"/path",
 			},
 		},
 		{
 			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test",
+					Name:      "test",
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
@@ -528,22 +528,22 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Name:      "test-master-0",
 					Namespace: "default",
 				},
-				Status:  corev1.PodStatus{
-						ContainerStatuses: []corev1.ContainerStatus{
-							{
-								Name: "alluxio-master",
-								State: corev1.ContainerState{
-									Running: &corev1.ContainerStateRunning{
-										StartedAt: v1.Time{
-											Time: yesterday.AddDate(0, 0, -1),
-										},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "alluxio-master",
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: v1.Time{
+										Time: yesterday.AddDate(0, 0, -1),
 									},
 								},
 							},
 						},
 					},
+				},
 			},
-			wanted: []string {},
+			wanted: []string{},
 		},
 	}
 
@@ -556,7 +556,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 			Mounts: []datav1alpha1.Mount{
 				{
 					MountPoint: "s3://bucket/path/train",
-					Path: "/path",
+					Path:       "/path",
 				},
 			},
 		},
@@ -593,9 +593,9 @@ func TestCheckIfRemountRequired(t *testing.T) {
 
 			ufsToUpdate := utils.NewUFSToUpdate(&dataset)
 			e.checkIfRemountRequired(ufsToUpdate)
-			if (len(ufsToUpdate.ToAdd()) != 0 || len(test.wanted) != 0 ) && 
-				!reflect.DeepEqual(ufsToUpdate.ToAdd(),test.wanted)  {
-				t.Errorf("%d check failure, got: %v, expected: %s", index, ufsToUpdate.ToAdd(),test.wanted)
+			if (len(ufsToUpdate.ToAdd()) != 0 || len(test.wanted) != 0) &&
+				!reflect.DeepEqual(ufsToUpdate.ToAdd(), test.wanted) {
+				t.Errorf("%d check failure, got: %v, expected: %s", index, ufsToUpdate.ToAdd(), test.wanted)
 				return
 			}
 		})
