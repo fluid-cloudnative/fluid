@@ -13,19 +13,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin
+package plugins
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func Register(mgr manager.Manager, config config.Config) error {
-	csiDriver := NewDriver(config.NodeId, config.Endpoint, mgr.GetClient())
+// Register initializes the csi driver and registers it to the controller manager.
+func Register(mgr manager.Manager, cfg config.Config) error {
+	csiDriver := NewDriver(cfg.NodeId, cfg.Endpoint, mgr.GetClient())
 
 	if err := mgr.Add(csiDriver); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Enabled checks if the csi driver should be enabled.
+func Enabled(cfg config.Config) bool {
+	return true
 }

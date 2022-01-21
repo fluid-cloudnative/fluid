@@ -17,22 +17,37 @@ package csi
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/plugin"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/plugins"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/recover"
+	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var csiRegisterFuncs []func(manager manager.Manager, config config.Config) error
-
-func init() {
-	csiRegisterFuncs = append(csiRegisterFuncs, plugin.Register)
-	csiRegisterFuncs = append(csiRegisterFuncs, recover.Register)
+type registrationFuncs struct {
+	enabled  func(cfg config.Config) bool
+	register func(mgr manager.Manager, cfg config.Config) error
 }
 
-func SetupWithManager(m manager.Manager, config config.Config) error {
-	for _, f := range csiRegisterFuncs {
-		if err := f(m, config); err != nil {
-			return err
+var registraions map[string]registrationFuncs
+
+func init() {
+	registraions = map[string]registrationFuncs{}
+
+	registraions["plugins"] = registrationFuncs{enabled: plugins.Enabled, register: plugins.Register}
+	registraions["recover"] = registrationFuncs{enabled: recover.Enabled, register: recover.Register}
+}
+
+// SetupWithManager registers all the enabled components defined in registrations to the controller manager.
+func SetupWithManager(mgr manager.Manager, cfg config.Config) error {
+	for rName, r := range registraions {
+		if r.enabled(cfg) {
+			glog.Infof("Registering %s to controller manager", rName)
+			if err := r.register(mgr, cfg); err != nil {
+				glog.Errorf("Got error when registering %s, error: %v", rName, err)
+				return err
+			}
+		} else {
+			glog.Infof("%s is not enabled", rName)
 		}
 	}
 

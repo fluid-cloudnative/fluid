@@ -17,23 +17,24 @@ package recover
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
-	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// Register initializes the fuse recover and registers it to the controller manager.
 func Register(mgr manager.Manager, config config.Config) error {
-	if config.RecoverFusePeriod > 0 {
-		fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"), config.RecoverFusePeriod)
-		if err != nil {
-			return err
-		}
+	fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"), config.RecoverFusePeriod)
+	if err != nil {
+		return err
+	}
 
-		if err = mgr.Add(fuseRecover); err != nil {
-			return err
-		}
-	} else {
-		glog.Infoln("fuse recover not enabled because recover fuse period < 0")
+	if err = mgr.Add(fuseRecover); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+// Enabled checks if the fuse recover should be enabled.
+func Enabled(cfg config.Config) bool {
+	return cfg.RecoverFusePeriod > 0
 }
