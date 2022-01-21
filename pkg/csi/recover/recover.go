@@ -126,13 +126,13 @@ func (r *FuseRecover) Start(ctx context.Context) error {
 	// do recovering at beginning
 	// recover set containerStat in memory, it's none when start
 	r.recover()
-	r.run(r.recoverFusePeriod, wait.NeverStop)
+	r.run(wait.NeverStop)
 
 	return nil
 }
 
-func (r *FuseRecover) run(period int, stopCh <-chan struct{}) {
-	go wait.Until(r.runOnce, time.Duration(period)*time.Second, stopCh)
+func (r *FuseRecover) run(stopCh <-chan struct{}) {
+	go wait.Until(r.runOnce, time.Duration(r.recoverFusePeriod)*time.Second, stopCh)
 	<-stopCh
 	glog.V(3).Info("Shutdown CSI recover.")
 }
