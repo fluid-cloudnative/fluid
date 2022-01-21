@@ -21,9 +21,9 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,11 +82,17 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecover(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
-			r.SafeFormatAndMount = mount.SafeFormatAndMount{
-				Interface: &mount.FakeMounter{},
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeclient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
 			}
-			r.run()
+			r.runOnce()
 		})
 		Convey("GetNodeRunningPods error", func() {
 			kubeclient := &kubelet.KubeletClient{}
@@ -105,7 +111,7 @@ func TestRecover_run(t *testing.T) {
 				KubeletClient:      &kubelet.KubeletClient{},
 				Recorder:           record.NewFakeRecorder(1),
 			}
-			r.run()
+			r.runOnce()
 		})
 		Convey("container restart", func() {
 			kubeclient := &kubelet.KubeletClient{}
@@ -118,7 +124,17 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecover(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeclient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
+			}
+
 			r.containers = map[string]*containerStat{
 				"test-container-test-juicefs-fuse-default": {
 					name:          "test-container",
@@ -130,7 +146,7 @@ func TestRecover_run(t *testing.T) {
 					},
 				},
 			}
-			r.run()
+			r.runOnce()
 		})
 	})
 }
@@ -248,7 +264,16 @@ func TestFuseRecover_compareOrRecordContainerStat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kubeletClient := &kubelet.KubeletClient{}
-			r := NewFuseRecover(fake.NewFakeClient(), kubeletClient, record.NewFakeRecorder(1), testfuseRecoverPeriod)
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeletClient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
+			}
 			if tt.fields.container != nil {
 				r.containers[tt.fields.key] = tt.fields.container
 			}
