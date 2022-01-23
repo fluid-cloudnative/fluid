@@ -21,6 +21,7 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
@@ -30,9 +31,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"os"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 )
@@ -455,6 +458,67 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 				containers:    tt.fields.containers,
 			}
 			r.eventRecord(tt.args.point, tt.args.eventType, tt.args.eventReason)
+		})
+	}
+}
+
+func TestNewFuseRecover(t *testing.T) {
+	type args struct {
+		kubeClient        client.Client
+		recorder          record.EventRecorder
+		recoverFusePeriod int
+	}
+
+	fakeClient := fake.NewFakeClient()
+	fakeRecorder := record.NewFakeRecorder(1)
+	fakeKubeletClient := &kubelet.KubeletClient{}
+	fakeContainersMap := make(map[string]*containerStat)
+	fakeRecoverFusePeriod := 20
+
+	tests := []struct {
+		name    string
+		args    args
+		want    *FuseRecover
+		wantErr bool
+	}{
+		{
+			name: "test_newFuseRecover",
+			args: args{
+				kubeClient:        fakeClient,
+				recorder:          fakeRecorder,
+				recoverFusePeriod: fakeRecoverFusePeriod,
+			},
+			want: &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: mount.New(""),
+					Exec:      k8sexec.New(),
+				},
+				KubeClient:        fakeClient,
+				KubeletClient:     fakeKubeletClient,
+				Recorder:          fakeRecorder,
+				containers:        fakeContainersMap,
+				recoverFusePeriod: fakeRecoverFusePeriod,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv(utils.MountRoot, "/runtime-mnt")
+
+			patch := ApplyFunc(initializeKubeletClient, func() (*kubelet.KubeletClient, error) {
+				return fakeKubeletClient, nil
+			})
+			defer patch.Reset()
+
+			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.recoverFusePeriod)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewFuseRecover() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewFuseRecover() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
