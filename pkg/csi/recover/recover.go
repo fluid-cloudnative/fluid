@@ -66,14 +66,7 @@ type containerStat struct {
 	startAt       metav1.Time
 }
 
-func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, recoverFusePeriod int) (*FuseRecover, error) {
-	glog.V(3).Infoln("start csi recover")
-	mountRoot, err := utils.GetMountRoot()
-	if err != nil {
-		return nil, errors.Wrap(err, "got err when getting mount root")
-	}
-	glog.V(3).Infof("Get mount root: %s", mountRoot)
-
+func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	// get CSI sa token
 	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
@@ -105,8 +98,29 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, rec
 		BearerToken: token,
 		HTTPTimeout: time.Duration(kubeletTimeout) * time.Second,
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return kubeletClient, nil
+}
+
+func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, recoverFusePeriod int) (*FuseRecover, error) {
+	glog.V(3).Infoln("start csi recover")
+	mountRoot, err := utils.GetMountRoot()
+	if err != nil {
+		return nil, errors.Wrap(err, "got err when getting mount root")
+	}
+	glog.V(3).Infof("Get mount root: %s", mountRoot)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "got error when creating kubelet client")
+	}
+
+	kubeletClient, err := initializeKubeletClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize kubelet")
 	}
 
 	return &FuseRecover{

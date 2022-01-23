@@ -25,11 +25,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/mount"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -60,6 +62,33 @@ var mockPod = v1.Pod{
 			}},
 		}},
 	},
+}
+
+func Test_initializeKubeletClient(t *testing.T) {
+	Convey("Test_initializeKubeletClient", t, func() {
+		Convey("initialize success with non-default kubelet timeout", func() {
+			const (
+				fakeToken          = "fakeToken"
+				fakeNodeIP         = "fakeNodeIP"
+				fakeClientCert     = ""
+				fakeClientKey      = ""
+				fakeKubeletTimeout = "120"
+			)
+			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte(fakeToken), nil
+			})
+			defer patch1.Reset()
+
+			os.Setenv("NODE_IP", fakeNodeIP)
+			os.Setenv("KUBELET_CLIENT_CERT", fakeClientCert)
+			os.Setenv("KUBELET_CLIENT_KEY", fakeClientKey)
+			os.Setenv("KUBELET_TIMEOUT", fakeKubeletTimeout)
+
+			kubeletClient, err := initializeKubeletClient()
+			So(err, ShouldBeNil)
+			So(kubeletClient, ShouldNotBeNil)
+		})
+	})
 }
 
 func TestRecover_run(t *testing.T) {
