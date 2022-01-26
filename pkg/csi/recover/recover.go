@@ -43,7 +43,10 @@ import (
 	"time"
 )
 
-const defaultKubeletTimeout = 10
+const (
+	defaultKubeletTimeout   = 10
+	serviceAccountTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+)
 
 var _ manager.Runnable = &FuseRecover{}
 
@@ -68,7 +71,7 @@ type containerStat struct {
 
 func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	// get CSI sa token
-	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	tokenByte, err := ioutil.ReadFile(serviceAccountTokenFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "in cluster mode, find token failed")
 	}
