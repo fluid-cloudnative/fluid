@@ -13,28 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-package csi
+package plugins
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -53,6 +40,8 @@ type driver struct {
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
+
+var _ manager.Runnable = &driver{}
 
 func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
@@ -88,6 +77,7 @@ func (d *driver) newControllerServer() *controllerServer {
 		DefaultControllerServer: csicommon.NewDefaultControllerServer(d.csiDriver),
 	}
 }
+
 func (d *driver) newNodeServer() *nodeServer {
 	return &nodeServer{
 		nodeId:            d.nodeId,
@@ -96,7 +86,7 @@ func (d *driver) newNodeServer() *nodeServer {
 	}
 }
 
-func (d *driver) Run() {
+func (d *driver) run() {
 	s := csicommon.NewNonBlockingGRPCServer()
 	s.Start(
 		d.endpoint,
@@ -105,4 +95,9 @@ func (d *driver) Run() {
 		d.newNodeServer(),
 	)
 	s.Wait()
+}
+
+func (d *driver) Start(ctx context.Context) error {
+	d.run()
+	return nil
 }
