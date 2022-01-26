@@ -17,24 +17,38 @@ limitations under the License.
 package recover
 
 import (
+	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"strconv"
 	"strings"
 	"time"
 )
+
+const (
+	defaultKubeletTimeout   = 10
+	serviceAccountTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+)
+
+var _ manager.Runnable = &FuseRecover{}
 
 type FuseRecover struct {
 	mount.SafeFormatAndMount
@@ -43,6 +57,8 @@ type FuseRecover struct {
 	Recorder      record.EventRecorder
 
 	containers map[string]*containerStat // key: <containerName>-<daemonSetName>-<namespace>
+
+	recoverFusePeriod int
 }
 
 type containerStat struct {
@@ -53,26 +69,92 @@ type containerStat struct {
 	startAt       metav1.Time
 }
 
-func NewFuseRecoder(kubeClient client.Client, kubeletClient *kubelet.KubeletClient, recorder record.EventRecorder) *FuseRecover {
+func initializeKubeletClient() (*kubelet.KubeletClient, error) {
+	// get CSI sa token
+	tokenByte, err := ioutil.ReadFile(serviceAccountTokenFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "in cluster mode, find token failed")
+	}
+	token := string(tokenByte)
+
+	glog.V(3).Infoln("start kubelet client")
+	nodeIp := os.Getenv("NODE_IP")
+	kubeletClientCert := os.Getenv("KUBELET_CLIENT_CERT")
+	kubeletClientKey := os.Getenv("KUBELET_CLIENT_KEY")
+	var kubeletTimeout int
+	if os.Getenv("KUBELET_TIMEOUT") != "" {
+		if kubeletTimeout, err = strconv.Atoi(os.Getenv("KUBELET_TIMEOUT")); err != nil {
+			return nil, errors.Wrap(err, "got error when parsing kubelet timeout")
+		}
+	} else {
+		kubeletTimeout = defaultKubeletTimeout
+	}
+	glog.V(3).Infof("get node ip: %s", nodeIp)
+	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
+		Address: nodeIp,
+		Port:    10250,
+		TLSClientConfig: rest.TLSClientConfig{
+			ServerName: "kubelet",
+			CertFile:   kubeletClientCert,
+			KeyFile:    kubeletClientKey,
+		},
+		BearerToken: token,
+		HTTPTimeout: time.Duration(kubeletTimeout) * time.Second,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return kubeletClient, nil
+}
+
+func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, recoverFusePeriod int) (*FuseRecover, error) {
+	glog.V(3).Infoln("start csi recover")
+	mountRoot, err := utils.GetMountRoot()
+	if err != nil {
+		return nil, errors.Wrap(err, "got err when getting mount root")
+	}
+	glog.V(3).Infof("Get mount root: %s", mountRoot)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "got error when creating kubelet client")
+	}
+
+	kubeletClient, err := initializeKubeletClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize kubelet")
+	}
+
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
 			Exec:      k8sexec.New(),
 		},
-		KubeClient:    kubeClient,
-		KubeletClient: kubeletClient,
-		Recorder:      recorder,
-		containers:    make(map[string]*containerStat),
-	}
+		KubeClient:        kubeClient,
+		KubeletClient:     kubeletClient,
+		Recorder:          recorder,
+		containers:        make(map[string]*containerStat),
+		recoverFusePeriod: recoverFusePeriod,
+	}, nil
 }
 
-func (r *FuseRecover) Run(period int, stopCh <-chan struct{}) {
-	go wait.Until(r.run, time.Duration(period)*time.Second, stopCh)
+func (r *FuseRecover) Start(ctx context.Context) error {
+	// do recovering at beginning
+	// recover set containerStat in memory, it's none when start
+	r.recover()
+	r.run(wait.NeverStop)
+
+	return nil
+}
+
+func (r *FuseRecover) run(stopCh <-chan struct{}) {
+	go wait.Until(r.runOnce, time.Duration(r.recoverFusePeriod)*time.Second, stopCh)
 	<-stopCh
 	glog.V(3).Info("Shutdown CSI recover.")
 }
 
-func (r *FuseRecover) run() {
+func (r *FuseRecover) runOnce() {
 	pods, err := r.KubeletClient.GetNodeRunningPods()
 	glog.V(6).Info("get pods from kubelet")
 	if err != nil {
@@ -90,13 +172,13 @@ func (r *FuseRecover) run() {
 		glog.V(6).Infof("get fluid fuse pod: %s, namespace: %s", pod.Name, pod.Namespace)
 		if isRestarted := r.compareOrRecordContainerStat(pod); isRestarted {
 			glog.V(3).Infof("fuse pod restarted: %s, namespace: %s", pod.Name, pod.Namespace)
-			r.Recover()
+			r.recover()
 			return
 		}
 	}
 }
 
-func (r FuseRecover) Recover() {
+func (r FuseRecover) recover() {
 	brokenMounts, err := mountinfo.GetBrokenMountPoints()
 	if err != nil {
 		glog.Error(err)
