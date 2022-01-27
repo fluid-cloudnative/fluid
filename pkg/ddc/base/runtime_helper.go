@@ -69,7 +69,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string) (template *c
 	if err != nil {
 		return
 	}
-	mountPathInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer.VolumeMounts)
+	mountPathInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
 	if err != nil {
 		return
 	}
@@ -126,8 +126,6 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	default:
 		chartName = info.runtimeType
 	}
-
 	fuseName := info.name + "-" + chartName + "-fuse"
-	ds, err = kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
-	return
+	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
 }

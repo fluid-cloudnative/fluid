@@ -121,6 +121,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			Name:        obj.GetName(),
 			Namespace:   obj.GetNamespace(),
 			Annotations: obj.GetAnnotations(),
+			Labels:      obj.GetLabels(),
 		}
 		application = unstructured.NewApplication(obj)
 	case runtime.Object:
@@ -134,12 +135,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		return out, fmt.Errorf("no supported K8s Type %v", v)
 	}
 
-	isServerlessEnabled := utils.ServerlessEnabled(objectMeta.Annotations)
-	if !isServerlessEnabled {
-		return out, nil
-	}
-
-	name := types.NamespacedName{
+	namespacedName := types.NamespacedName{
 		Namespace: objectMeta.Namespace,
 		Name:      objectMeta.Name,
 	}
@@ -151,6 +147,16 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 	}
 
 	for _, pod := range pods {
+		metaObj, err := pod.GetMetaObject()
+		if err != nil {
+			return out, err
+		}
+
+		// if it's not serverless enable or injection is done, skip
+		if !utils.ServerlessEnabled(metaObj.Labels) || utils.SidecarInjectDone(metaObj.Labels) {
+			continue
+		}
+
 		// 1. check if the pod spec has fluid volume claim
 		injectFuseContainer := true
 		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName)
@@ -182,11 +188,13 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		volumeNames := []string{}
+		datasetVolumeNames := []string{}
 		for i, volume := range volumes {
 			if volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == pvcName {
 				name := volume.Name
 				volumes[i] = template.VolumesToUpdate[0]
 				volumes[i].Name = name
+				datasetVolumeNames = append(datasetVolumeNames, name)
 			}
 			volumeNames = append(volumeNames, volume.Name)
 		}
@@ -253,10 +261,10 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		for _, c := range containers {
 			if c.Name == common.FuseContainerName {
 				warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
-					name, common.FuseContainerName)
+					namespacedName, common.FuseContainerName)
 				if len(kind) != 0 {
 					warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
-						kind, name, common.FuseContainerName)
+						kind, namespacedName, common.FuseContainerName)
 				}
 				log.Info(warningStr)
 				injectFuseContainer = false
@@ -273,12 +281,34 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 		if injectFuseContainer {
 			containers = append([]corev1.Container{fuseContainer}, containers...)
-			err = pod.SetContainers(containers)
-			if err != nil {
-				return out, err
+		}
+
+		// 6. Set mountPropagationHostToContainer to the dataset volume mount point
+		mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
+		for _, container := range containers {
+			if container.Name != common.FuseContainerName {
+				for i, volumeMount := range container.VolumeMounts {
+					if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
+						container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
+					}
+				}
 			}
 		}
+
+		err = pod.SetContainers(containers)
+		if err != nil {
+			return out, err
+		}
+
+		// 7. Set the injection phase done to avoid re-injection
+		metaObj.Labels[common.InjectSidecarDone] = common.True
+		err = pod.SetMetaObject(metaObj)
+		if err != nil {
+			return out, err
+		}
 	}
+
+	// kubeclient.IsVolumeMountForPVC(pvcName, )
 
 	err = application.SetPodSpecs(pods)
 	if err != nil {

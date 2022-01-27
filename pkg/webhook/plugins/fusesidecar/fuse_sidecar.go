@@ -33,7 +33,7 @@ import (
 
 */
 
-const Name string = "serverless"
+const Name string = "FuseSidecar"
 
 type FuseSidecar struct {
 	client client.Client

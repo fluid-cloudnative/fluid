@@ -18,6 +18,7 @@ package kubeclient
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
@@ -51,6 +52,10 @@ func GetMountInfoFromVolumeClaim(client client.Client, name, namespace string) (
 	if pv.Spec.CSI != nil && len(pv.Spec.CSI.VolumeAttributes) > 0 {
 		path = pv.Spec.CSI.VolumeAttributes[common.FluidPath]
 		mountType = pv.Spec.CSI.VolumeAttributes[common.MountType]
+	} else {
+		err = fmt.Errorf("the pvc %s in %s is not created by fluid",
+			name,
+			namespace)
 	}
 
 	return

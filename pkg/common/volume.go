@@ -14,4 +14,6 @@ var (
 	FluidStorageClass = Fluid
 
 	FuseContainerName = "fluid-fuse"
+
+	FuseMountEnv = "FLUID_FUSE_MOUNTPOINT"
 )

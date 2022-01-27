@@ -1142,7 +1142,3 @@ func TestPermitSync(t *testing.T) {
 		t.Errorf("expect permit, but got %v", permit)
 	}
 }
-
-func TestGetTemplateToInjectForFuse(t *testing.T) {
-
-}

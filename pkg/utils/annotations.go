@@ -18,15 +18,19 @@ package utils
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.Serverless) || enabled(infos, common.FuseSidecar)
+	return enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
 func FuseSidecarEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.FuseSidecar)
+	return enabled(infos, common.InjectFuseSidecar)
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.WorkerSidecar)
+	return enabled(infos, common.InjectWorkerSidecar)
+}
+
+func SidecarInjectDone(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectSidecarDone)
 }
 
 func enabled(infos map[string]string, name string) (match bool) {

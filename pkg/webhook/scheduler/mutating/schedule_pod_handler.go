@@ -63,6 +63,10 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}
+	if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
+		setupLog.Info("skip mutating the pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because injection is done")
+	}
 
 	// inject affinity info into pod
 	err = a.AddScheduleInfoToPod(pod)
@@ -103,8 +107,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
 			if err != nil {
 				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName)
-				errPVCs[pvcName] = err
-				continue
+				return err
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
 			// runtimeInfos = append(runtimeInfos, runtimeInfo)
@@ -116,10 +119,12 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	pluginsRegistry := plugins.Registry(a.Client)
 	var pluginsList []plugins.MutatingHandler
 	// if the serverlessEnabled, it will raise the errors
-	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetAnnotations()) {
-		info := fmt.Sprintf("the pod %s in namespace %s is configured with fluid.io/serverless but without dataset enabling, and with errors %v",
+	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
+		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
 			pod.Name,
 			pod.Namespace,
+			common.InjectServerless,
+			common.InjectFuseSidecar,
 			errPVCs)
 		setupLog.Info(info)
 		err = fmt.Errorf("failed with errs %v", errPVCs)
@@ -130,7 +135,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	if len(runtimeInfos) == 0 {
 		pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 	} else {
-		if utils.ServerlessEnabled(pod.GetAnnotations()) {
+		if utils.ServerlessEnabled(pod.GetLabels()) {
 			pluginsList = pluginsRegistry.GetServerlessPodHandler()
 		} else {
 			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()

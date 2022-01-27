@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -94,4 +95,14 @@ func (o *PodObject) GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err er
 	}
 
 	return
+}
+
+func (o *PodObject) SetMetaObject(metaObject metav1.ObjectMeta) (err error) {
+	// o.pod.ObjectMeta = metaObject
+	metaObject.DeepCopyInto(&o.pod.ObjectMeta)
+	return
+}
+
+func (o *PodObject) GetMetaObject() (metaObject metav1.ObjectMeta, err error) {
+	return o.pod.ObjectMeta, nil
 }

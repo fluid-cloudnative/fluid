@@ -66,13 +66,13 @@ func TestWorkerSidecarEnabled(t *testing.T) {
 		{
 			name: "enable_worker",
 			annotations: map[string]string{
-				common.WorkerSidecar: "true",
+				common.InjectWorkerSidecar: "true",
 			},
 			expect: true,
 		}, {
 			name: "disable_worker",
 			annotations: map[string]string{
-				common.WorkerSidecar: "false",
+				common.InjectWorkerSidecar: "false",
 			},
 			expect: false,
 		}, {
@@ -103,13 +103,13 @@ func TestFuseSidecarEnabled(t *testing.T) {
 		{
 			name: "enable_fuse",
 			annotations: map[string]string{
-				common.FuseSidecar: "true",
+				common.InjectFuseSidecar: "true",
 			},
 			expect: true,
 		}, {
 			name: "disable_fuse",
 			annotations: map[string]string{
-				common.FuseSidecar: "false",
+				common.InjectFuseSidecar: "false",
 			},
 			expect: false,
 		}, {
@@ -123,6 +123,86 @@ func TestFuseSidecarEnabled(t *testing.T) {
 
 	for _, testcase := range testcases {
 		got := FuseSidecarEnabled(testcase.annotations)
+		if got != testcase.expect {
+			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
+		}
+	}
+}
+
+func TestServerlessEnabled(t *testing.T) {
+	type testCase struct {
+		name        string
+		annotations map[string]string
+		expect      bool
+	}
+
+	testcases := []testCase{
+		{
+			name: "enable_Serverless",
+			annotations: map[string]string{
+				common.InjectServerless: "true",
+			},
+			expect: true,
+		}, {
+			name: "enable_Serverless_2",
+			annotations: map[string]string{
+				common.InjectFuseSidecar: "true",
+			},
+			expect: true,
+		}, {
+			name: "disable_Serverless",
+			annotations: map[string]string{
+				common.InjectServerless: "false",
+			},
+			expect: false,
+		}, {
+			name: "no_Serverless",
+			annotations: map[string]string{
+				"test": "false",
+			},
+			expect: false,
+		},
+	}
+
+	for _, testcase := range testcases {
+		got := ServerlessEnabled(testcase.annotations)
+		if got != testcase.expect {
+			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
+		}
+	}
+}
+
+func TestInjectionEnabled(t *testing.T) {
+	type testCase struct {
+		name        string
+		annotations map[string]string
+		expect      bool
+	}
+
+	testcases := []testCase{
+		{
+			name: "enable_Injection_done",
+			annotations: map[string]string{
+				common.InjectSidecarDone: "true",
+			},
+			expect: true,
+		}, {
+			name: "disable_Injection_done",
+			annotations: map[string]string{
+				common.InjectSidecarDone: "false",
+			},
+			expect: false,
+		}, {
+			name: "no_Injection",
+			annotations: map[string]string{
+				"test": "false",
+			},
+			expect: false,
+		},
+	}
+
+	for _, testcase := range testcases {
+		got := SidecarInjectDone(testcase.annotations)
 		if got != testcase.expect {
 			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
 		}

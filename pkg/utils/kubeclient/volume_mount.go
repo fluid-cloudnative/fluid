@@ -69,7 +69,7 @@ func pvcNamesFromVolumes(knownVolumeNames []string, volumes []corev1.Volume) (pv
 	return
 }
 
-func GetFuseMountInContainer(mountType string, volumeMounts []corev1.VolumeMount) (volumeMount corev1.VolumeMount, err error) {
+func GetFuseMountInContainer(mountType string, container corev1.Container) (volumeMount corev1.VolumeMount, err error) {
 	kv := map[string]string{
 		common.JindoMountType:     common.JindoChartName,
 		common.JindoRuntime:       common.JindoChartName,
@@ -91,13 +91,23 @@ func GetFuseMountInContainer(mountType string, volumeMounts []corev1.VolumeMount
 		}
 	}
 
-	for _, vm := range volumeMounts {
+	for _, vm := range container.VolumeMounts {
 		if vm.Name == volumeMountName {
 			volumeMount = vm
+			// If it's JindoRuntime, should consider the env FLUID_FUSE_MOUNTPOINT
+			// if vm.Name == common.JindoFuseMountVolumeName {
+			if len(container.Env) > 0 {
+				for _, env := range container.Env {
+					if env.Name == common.FuseMountEnv {
+						volumeMount.MountPath = env.Value
+					}
+				}
+			}
+			// }
 			return
 		}
 	}
 
-	err = fmt.Errorf("failed to find the volumeMount from slice %v by the name %s", volumeMounts, volumeMountName)
+	err = fmt.Errorf("failed to find the volumeMount from slice %v by the name %s", container.VolumeMounts, volumeMountName)
 	return
 }

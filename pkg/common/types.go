@@ -17,6 +17,7 @@ package common
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -175,4 +176,8 @@ type FluidObject interface {
 	SetContainers(containers []corev1.Container) (err error)
 
 	GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error)
+
+	SetMetaObject(metaObject metav1.ObjectMeta) (err error)
+
+	GetMetaObject() (metaObject metav1.ObjectMeta, err error)
 }

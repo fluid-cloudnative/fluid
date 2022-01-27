@@ -55,6 +55,7 @@ func TestInjectPod(t *testing.T) {
 
 	hostPathCharDev := corev1.HostPathCharDev
 	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+	mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
 	bTrue := true
 	var mode int32 = 0755
 
@@ -94,9 +95,9 @@ func TestInjectPod(t *testing.T) {
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "duplicate-pvc-name",
-					Namespace: "duplicate-pvc-name",
-					Annotations: map[string]string{
-						common.FuseSidecar: common.True,
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -198,9 +199,11 @@ func TestInjectPod(t *testing.T) {
 			},
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "duplicate-pvc-name",
-					Annotations: map[string]string{
-						common.FuseSidecar: common.True,
+					Name:      "duplicate-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -214,9 +217,12 @@ func TestInjectPod(t *testing.T) {
 								PostStart: &corev1.Handler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
-											"/check-mount.sh",
-											"/jfs",
-											"jindo",
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh /jfs jindo >> /proc/1/fd/1",
 										},
 									},
 								},
@@ -247,8 +253,9 @@ func TestInjectPod(t *testing.T) {
 							Name:  "duplicate-pvc-name",
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "duplicate",
-									MountPath: "/data",
+									Name:             "duplicate",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
 								},
 							},
 						},
@@ -314,9 +321,9 @@ func TestInjectPod(t *testing.T) {
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: "test",
-					Annotations: map[string]string{
-						common.FuseSidecar: common.True,
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -441,9 +448,11 @@ func TestInjectPod(t *testing.T) {
 			},
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-					Annotations: map[string]string{
-						common.FuseSidecar: common.True,
+					Name:      "test",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -477,9 +486,12 @@ func TestInjectPod(t *testing.T) {
 								PostStart: &corev1.Handler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
-											"/check-mount.sh",
-											"/jfs",
-											"jindo",
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh /jfs jindo >> /proc/1/fd/1",
 										},
 									},
 								},
@@ -489,8 +501,9 @@ func TestInjectPod(t *testing.T) {
 							Name:  "test",
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "dataset",
-									MountPath: "/data",
+									Name:             "dataset",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
 								},
 							},
 						},
@@ -542,6 +555,469 @@ func TestInjectPod(t *testing.T) {
 				},
 			},
 			wantErr: nil,
+		}, {
+			name: "inject_pod_with_customizedenv_volumemount_name",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv",
+					Namespace: "big-data",
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-customizedenv",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.FluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								common.MountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-customizedenv",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "customizedenv-pvc-name",
+							Name:  "customizedenv-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "customizedenv",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "customizedenv",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "customizedenv",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "customizedenv-pvc-name",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "FLUID_FUSE_MOUNTPOINT",
+											Value: "/jfs/jindofs-fuse",
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "customizedenv",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "customizedenv",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/mnt/disk1",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									}},
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/customizedenv",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"customizedenv": {
+					name:        "customizedenv",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
+				},
+			},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: common.FuseContainerName,
+							Args: []string{
+								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.Handler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh /jfs/jindofs-fuse jindo >> /proc/1/fd/1",
+										},
+									},
+								},
+							},
+							Command: []string{"/entrypoint.sh"},
+							Image:   "customizedenv-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_FUSE_MOUNTPOINT",
+									Value: "/jfs/jindofs-fuse",
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bTrue,
+							}, VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "fluid-izedenv",
+									MountPath: "/mnt/disk1",
+								}, {
+									Name:      "fuse-device",
+									MountPath: "/dev/fuse",
+								}, {
+									Name:      "jindofs-fuse-mount",
+									MountPath: "/jfs",
+								}, {
+									Name:      "check-mount",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							},
+						}, {
+							Image: "customizedenv-pvc-name",
+							Name:  "customizedenv-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "customizedenv",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "customizedenv",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "fuse-device",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/dev/fuse",
+									Type: &hostPathCharDev,
+								},
+							},
+						},
+						{
+							Name: "jindofs-fuse-mount",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/customizedenv",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						}, {
+							Name: "fluid-izedenv",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/mnt/disk1",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						}, {
+							Name: "check-mount",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "customizedenv-jindo-check-mount",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		}, {
+			name: "inject_pod_with_fuse_sidecar",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar",
+					Namespace: "big-data",
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-fuse-sidecar",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.FluidPath: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
+								common.MountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-fuse-sidecar",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fuse-sidecar-pvc-name",
+							Name:  common.FuseContainerName,
+						}, {
+							Image: "fuse-sidecar-pvc-name",
+							Name:  "fuse-sidecar-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "fuse-sidecar",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "fuse-sidecar",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "fuse-sidecar",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "fuse-sidecar-pvc-name",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "FLUID_FUSE_MOUNTPOINT",
+											Value: "/jfs/jindofs-fuse",
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/fuse-sidecar",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"fuse-sidecar": {
+					name:        "fuse-sidecar",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
+				},
+			},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fuse-sidecar-pvc-name",
+							Name:  common.FuseContainerName,
+						}, {
+							Image: "fuse-sidecar-pvc-name",
+							Name:  "fuse-sidecar-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "fuse-sidecar",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "fuse-sidecar",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "fuse-device",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/dev/fuse",
+									Type: &hostPathCharDev,
+								},
+							},
+						},
+						{
+							Name: "jindofs-fuse-mount",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						}, {
+							Name: "check-mount",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "fuse-sidecar-jindo-check-mount",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: nil,
 		},
 	}
 
@@ -576,6 +1052,24 @@ func TestInjectPod(t *testing.T) {
 			} else {
 				continue
 			}
+		}
+
+		gotMetaObj := out.ObjectMeta
+		wantMetaObj := testcase.want.ObjectMeta
+
+		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
+
+			want, err := yaml.Marshal(wantMetaObj)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			outYaml, err := yaml.Marshal(gotMetaObj)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
 		}
 
 		gotContainers := out.Spec.Containers

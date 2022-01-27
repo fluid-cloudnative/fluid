@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -81,6 +82,16 @@ func (o *DefaultObject) SetContainers(containers []corev1.Container) (err error)
 }
 
 func (o *DefaultApplication) GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error) {
+	err = fmt.Errorf("not implemented")
+	return
+}
+
+func (o *DefaultApplication) SetMetaObject(metaObject metav1.ObjectMeta) (err error) {
+	err = fmt.Errorf("not implemented")
+	return
+}
+
+func (o *DefaultApplication) GetMetaObject() (metaObject metav1.ObjectMeta, err error) {
 	err = fmt.Errorf("not implemented")
 	return
 }

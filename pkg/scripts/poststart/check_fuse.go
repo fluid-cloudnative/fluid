@@ -93,7 +93,7 @@ func (f *ScriptGeneratorForFuse) getConfigmapName() string {
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.Handler) {
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	var cmd []string = []string{"/bin/bash", "-c", fmt.Sprintf("%s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
+	var cmd []string = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
 	// var cmd []string = []string{scriptPath, f.mountPath, f.mountType}
 	handler = &corev1.Handler{
 		Exec: &corev1.ExecAction{Command: cmd},
