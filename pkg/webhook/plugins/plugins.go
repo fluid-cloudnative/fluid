@@ -18,6 +18,7 @@ package plugins
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/fusesidecar"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/mountpropagationinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
@@ -29,7 +30,8 @@ import (
 type MutatingHandler interface {
 	// Mutate injects affinity info into pod
 	// if a plugin return true, it means that no need to call other plugins
-	Mutate(*corev1.Pod, []base.RuntimeInfoInterface) (shouldStop bool, err error)
+	// map[string]base.RuntimeInfoInterface's key is pvcName
+	Mutate(*corev1.Pod, map[string]base.RuntimeInfoInterface) (shouldStop bool, err error)
 	// GetName returns the name of plugin
 	GetName() string
 }
@@ -39,6 +41,7 @@ type MutatingHandler interface {
 type plugins struct {
 	podWithoutDatasetHandler []MutatingHandler
 	podWithDatasetHandler    []MutatingHandler
+	serverlessPodHandler     []MutatingHandler
 }
 
 func (p *plugins) GetPodWithoutDatasetHandler() []MutatingHandler {
@@ -47,6 +50,10 @@ func (p *plugins) GetPodWithoutDatasetHandler() []MutatingHandler {
 
 func (p *plugins) GetPodWithDatasetHandler() []MutatingHandler {
 	return p.podWithDatasetHandler
+}
+
+func (p *plugins) GetServerlessPodHandler() []MutatingHandler {
+	return p.serverlessPodHandler
 }
 
 // Registry return active plugins in a defined order
@@ -59,6 +66,8 @@ func Registry(client client.Client) plugins {
 			requirenodewithfuse.NewPlugin(client),
 			prefernodeswithcache.NewPlugin(client),
 			mountpropagationinjector.NewPlugin(client),
+		}, serverlessPodHandler: []MutatingHandler{
+			fusesidecar.NewPlugin(client),
 		},
 	}
 }

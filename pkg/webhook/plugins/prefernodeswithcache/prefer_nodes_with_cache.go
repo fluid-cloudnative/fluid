@@ -49,7 +49,7 @@ func (p *PreferNodesWithCache) GetName() string {
 	return p.name
 }
 
-func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
+func (p *PreferNodesWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return

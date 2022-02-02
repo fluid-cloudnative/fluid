@@ -76,6 +76,10 @@ type RuntimeInfoInterface interface {
 	SetDeprecatedPVName(deprecated bool)
 
 	IsDeprecatedPVName() bool
+
+	GetTemplateToInjectForFuse(pvcName string) (*common.FuseInjectionTemplate, error)
+
+	SetClient(client client.Client)
 }
 
 // The real Runtime Info should implement
@@ -99,6 +103,8 @@ type RuntimeInfo struct {
 
 	// Check if the deprecated PV naming style is used
 	deprecatedPVName bool
+
+	client client.Client
 }
 
 type Fuse struct {
@@ -229,6 +235,10 @@ func (info *RuntimeInfo) IsDeprecatedPVName() bool {
 	return info.deprecatedPVName
 }
 
+func (info *RuntimeInfo) SetClient(client client.Client) {
+	info.client = client
+}
+
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
 	if len(tieredstore.Levels) == 0 {
 		return TieredStoreInfo{}, nil
@@ -288,10 +298,10 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 }
 
 // GetRuntimeInfo gets the RuntimeInfo according to name and namespace of it
-func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoInterface, error) {
+func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
 	dataset, err := utils.GetDataset(client, name, namespace)
 	if err != nil {
-		return &RuntimeInfo{}, err
+		return runtimeInfo, err
 	}
 
 	var runtimeType string
@@ -299,11 +309,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		runtimeType = dataset.Status.Runtimes[0].Type
 	}
 	switch runtimeType {
-	case "":
-		err = fmt.Errorf("fail to get runtime type")
-		return &RuntimeInfo{}, err
 	case common.ALLUXIO_RUNTIME:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.ALLUXIO_RUNTIME, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ALLUXIO_RUNTIME, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -313,9 +320,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
-		return runtimeInfo, nil
-	case common.JINDO_RUNTIME:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JINDO_RUNTIME, datav1alpha1.TieredStore{})
+	case common.JindoRuntime:
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -325,9 +331,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
-		return runtimeInfo, nil
 	case common.GooseFSRuntime:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -337,9 +342,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
-		return runtimeInfo, nil
 	case common.JuiceFSRuntime:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -349,9 +353,13 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 		}
 		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
-		return runtimeInfo, nil
 	default:
-		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
-		return runtimeInfo, err
+		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
+		return
 	}
+
+	if runtimeInfo != nil {
+		runtimeInfo.SetClient(client)
+	}
+	return runtimeInfo, err
 }

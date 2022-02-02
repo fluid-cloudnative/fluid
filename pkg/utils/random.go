@@ -20,3 +20,25 @@ func RandomAlphaNumberString(l int32) string {
 	source := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	return RandomString(source, l)
 }
+
+func RandomReplacePrefix(input string, l int) (output string) {
+	length := len(input)
+	prefix := RandomAlphaNumberString(int32(l))
+	if length <= l {
+		output = prefix
+	} else {
+		output = prefix + input[l:]
+	}
+
+	return
+}
+
+// ReplacePrefix replaces the  input with suffix string
+func ReplacePrefix(input, suffix string) (output string) {
+	if len(input)+1 <= len(suffix) {
+		output = suffix
+	} else {
+		output = suffix + "-" + input[len(suffix)+1:]
+	}
+	return
+}

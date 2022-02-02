@@ -46,14 +46,15 @@ func TestPods(t *testing.T) {
 	)
 
 	// build slice of RuntimeInfos
-	var nilRuntimeInfos []base.RuntimeInfoInterface
+	var nilRuntimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Error("fail to build runtimeInfo because of err", err)
 	}
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 	runtimeInfo.SetDeprecatedNodeLabel(false)
-	runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
+	// runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
+	runtimeInfos := map[string]base.RuntimeInfoInterface{"hbase": runtimeInfo}
 
 	// test all plugins for 3 turns
 	for i := 0; i < 3; i++ {
@@ -191,6 +192,10 @@ func TestRegistry(t *testing.T) {
 
 	if len(plugins.GetPodWithoutDatasetHandler()) != 1 {
 		t.Errorf("expect GetPodWithoutDatasetHandler len=1 got %v", plugins.GetPodWithoutDatasetHandler())
+	}
+
+	if len(plugins.GetServerlessPodHandler()) != 1 {
+		t.Errorf("expect GetServerlessPodHandler len=1 got %v", plugins.GetServerlessPodHandler())
 	}
 
 }

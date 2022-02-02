@@ -97,7 +97,7 @@ func (e *JindoEngine) UpdateCacheOfDataset() (err error) {
 		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
 			e.namespace,
 			common.AccelerateCategory,
-			common.JINDO_RUNTIME,
+			common.JindoRuntime,
 			e.runtime.Spec.Master.Replicas))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
