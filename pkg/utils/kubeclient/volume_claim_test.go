@@ -415,3 +415,133 @@ func TestRemoveProtectionFinalizer(t *testing.T) {
 	}
 
 }
+
+func TestGetMountInfoFromVolumeClaim(t *testing.T) {
+	namespace := "default"
+	testPVCInputs := []*v1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "fluidpvc",
+			Namespace: namespace},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "fluidpv",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpvc",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "nonfluidpv",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nopv",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "nopv",
+		},
+	}}
+
+	objs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		objs = append(objs, pvc.DeepCopy())
+	}
+
+	testPVInputs := []*v1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "fluidpv"},
+		Spec: v1.PersistentVolumeSpec{
+			PersistentVolumeSource: v1.PersistentVolumeSource{
+				CSI: &v1.CSIPersistentVolumeSource{
+					Driver: "fuse.csi.fluid.io",
+					VolumeAttributes: map[string]string{
+						common.FluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+						common.MountType: common.JindoRuntime,
+					},
+				},
+			},
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       v1.PersistentVolumeSpec{},
+	}}
+
+	for _, pv := range testPVInputs {
+		objs = append(objs, pv.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, objs...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantError bool
+		wantPath  string
+		wantType  string
+	}{{
+		name: "volumeClaim doesn't exist",
+		args: args{
+			name:      "notExist",
+			namespace: namespace,
+		},
+		wantError: true,
+	}, {
+		name: "non fluid pv",
+		args: args{
+			name:      "nonfluidpvc",
+			namespace: namespace,
+		},
+		wantError: true,
+	}, {
+		name: " fluid pv",
+		args: args{
+			name:      "fluidpvc",
+			namespace: namespace,
+		},
+		wantError: false,
+		wantPath:  "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+		wantType:  common.JindoRuntime,
+	}, {
+		name: "no pv",
+		args: args{
+			name:      "nopv",
+			namespace: namespace,
+		},
+		wantError: true,
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path, mountType, err := GetMountInfoFromVolumeClaim(client, tt.args.name, tt.args.namespace)
+			got := err != nil
+
+			if got != tt.wantError {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v = %v, err = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					got,
+					err)
+			}
+
+			if path != tt.wantPath {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got path  %v, want path = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					path,
+					tt.wantPath)
+			}
+
+			if mountType != tt.wantType {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got mountType  %v, want mountType = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					mountType,
+					tt.wantType)
+			}
+
+		})
+	}
+
+}

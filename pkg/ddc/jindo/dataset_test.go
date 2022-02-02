@@ -79,7 +79,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 					Name:           "hbase",
 					Namespace:      "fluid",
 					Category:       common.AccelerateCategory,
-					Type:           common.JINDO_RUNTIME,
+					Type:           common.JindoRuntime,
 					MasterReplicas: 1,
 				},
 			},

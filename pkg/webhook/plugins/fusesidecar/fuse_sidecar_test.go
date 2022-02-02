@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mountpropagationinjector
+package fusesidecar
 
 import (
 	"testing"
@@ -32,8 +33,8 @@ func TestMutate(t *testing.T) {
 	)
 
 	plugin := NewPlugin(client)
-	if plugin.GetName() != NAME {
-		t.Errorf("GetName expect %v, got %v", NAME, plugin.GetName())
+	if plugin.GetName() != Name {
+		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
 
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
@@ -63,7 +64,7 @@ func TestMutate(t *testing.T) {
 	}
 
 	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
-	if err == nil {
-		t.Errorf("expect error is not nil")
+	if err != nil {
+		t.Errorf("expect error is nil")
 	}
 }

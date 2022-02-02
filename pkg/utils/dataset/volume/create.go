@@ -19,7 +19,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -63,14 +63,14 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				Capacity: v1.ResourceList{
 					v1.ResourceName(v1.ResourceStorage): resource.MustParse("100Gi"),
 				},
-				StorageClassName: common.FLUID_STORAGECLASS,
+				StorageClassName: common.FluidStorageClass,
 				PersistentVolumeSource: v1.PersistentVolumeSource{
 					CSI: &v1.CSIPersistentVolumeSource{
-						Driver:       common.CSI_DRIVER,
+						Driver:       common.CSIDriver,
 						VolumeHandle: pvName,
 						VolumeAttributes: map[string]string{
-							common.FLUID_PATH: mountPath,
-							common.Mount_TYPE: mountType,
+							common.FluidPath: mountPath,
+							common.MountType: mountType,
 						},
 					},
 				},
@@ -174,7 +174,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 						runtime.GetCommonLabelName(): "true",
 					},
 				},
-				StorageClassName: &common.FLUID_STORAGECLASS,
+				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
 				Resources: v1.ResourceRequirements{
 					Requests: v1.ResourceList{
