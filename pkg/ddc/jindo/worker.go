@@ -110,7 +110,7 @@ func (e *JindoEngine) getWorkerSelectors() string {
 	labels := map[string]string{
 		"release":     e.name,
 		POD_ROLE_TYPE: WOKRER_POD_ROLE,
-		"app":         common.JINDO_RUNTIME,
+		"app":         common.JindoRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

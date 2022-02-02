@@ -81,7 +81,7 @@ func TestBuild(t *testing.T) {
 		},
 		Client:      client,
 		Log:         log.NullLogger{},
-		RuntimeType: common.JINDO_RUNTIME,
+		RuntimeType: common.JindoRuntime,
 		Runtime:     &runtime,
 	}
 

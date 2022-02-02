@@ -37,9 +37,9 @@ func (j *JindoEngine) getHostMountPoint() (mountPath string) {
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
 	if err != nil {
-		path = "/" + common.JINDO_RUNTIME
+		path = "/" + common.JindoRuntime
 	} else {
-		path = path + "/" + common.JINDO_RUNTIME
+		path = path + "/" + common.JindoRuntime
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return

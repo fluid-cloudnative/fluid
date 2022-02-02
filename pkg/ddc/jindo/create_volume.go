@@ -39,7 +39,7 @@ func (e *JindoEngine) createFusePersistentVolume() (err error) {
 	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
 		runtimeInfo,
 		e.getMountPoint(),
-		common.JINDO_RUNTIME,
+		common.JindoRuntime,
 		e.Log)
 }
 

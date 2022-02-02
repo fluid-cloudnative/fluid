@@ -333,7 +333,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "default_policy_jindo",
 					Namespace: "default",
-					Type:      common.JINDO_RUNTIME,
+					Type:      common.JindoRuntime,
 				},
 			},
 		},
@@ -361,7 +361,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "on_demand_policy_jindo",
 					Namespace: "default",
-					Type:      common.JINDO_RUNTIME,
+					Type:      common.JindoRuntime,
 				},
 			},
 		},
@@ -389,7 +389,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "on_runtime_deleted_policy_jindo",
 					Namespace: "default",
-					Type:      common.JINDO_RUNTIME,
+					Type:      common.JindoRuntime,
 				},
 			},
 		},
@@ -654,7 +654,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "default_policy_jindo",
 				namespace:   "default",
-				runtimeType: common.JINDO_RUNTIME,
+				runtimeType: common.JindoRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -673,7 +673,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "on_demand_policy_jindo",
 				namespace:   "default",
-				runtimeType: common.JINDO_RUNTIME,
+				runtimeType: common.JindoRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -692,7 +692,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "on_runtime_deleted_policy_jindo",
 				namespace:   "default",
-				runtimeType: common.JINDO_RUNTIME,
+				runtimeType: common.JindoRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -898,7 +898,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				{
 					Name:      "jindo",
 					Namespace: "default",
-					Type:      common.JINDO_RUNTIME,
+					Type:      common.JindoRuntime,
 				},
 			},
 		},
@@ -1018,7 +1018,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "jindo",
 				namespace:   "default",
-				runtimeType: common.JINDO_RUNTIME,
+				runtimeType: common.JindoRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -1073,6 +1073,14 @@ func TestGetRuntimeInfo(t *testing.T) {
 				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if got != nil {
+				got.SetClient(nil)
+			}
+
+			if tt.want != nil {
+				tt.want.SetClient(nil)
+			}
+
 			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
 			}

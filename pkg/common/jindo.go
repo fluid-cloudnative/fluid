@@ -16,11 +16,13 @@ limitations under the License.
 
 package common
 
-// Runtime for Alluxio
+// Runtime for JindoFS
 const (
-	JINDO_RUNTIME = "jindo"
+	JindoRuntime = "jindo"
 
-	JINDO_MOUNT_TYPE = "fuse.jindofs-fuse"
+	JindoChartName = "jindofs"
+
+	JindoMountType = "fuse.jindofs-fuse"
 
 	JINDO_SMARTDATA_IMAGE_ENV = "JINDO_SMARTDATA_IMAGE_ENV"
 
@@ -29,4 +31,6 @@ const (
 	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
 
 	JINDO_DNS_SERVER = "JINDO_DNS_SERVER_ENV"
+
+	JindoFuseMountVolumeName = "jindofs-fuse-mount"
 )
