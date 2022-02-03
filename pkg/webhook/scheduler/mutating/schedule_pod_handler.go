@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -92,19 +93,24 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
+	namespace := pod.Namespace
+	if len(namespace) == 0 {
+		setupLog.Info("The pod's namespace is empty", "pod", pod)
+		namespace = metav1.NamespaceDefault
+	}
+	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
-		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
+		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
 		if err != nil {
 			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
 			errPVCs[pvcName] = err
 			continue
 		}
 		if isDatasetPVC {
-			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
+			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {
 				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName)
 				return err
@@ -122,7 +128,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
 		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
 			pod.Name,
-			pod.Namespace,
+			namespace,
 			common.InjectServerless,
 			common.InjectFuseSidecar,
 			errPVCs)
