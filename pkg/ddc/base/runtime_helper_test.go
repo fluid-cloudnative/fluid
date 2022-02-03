@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -497,6 +498,85 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
+		}
+	}
+}
+
+func TestGetFuseDaemonset(t *testing.T) {
+	type testCase struct {
+		name        string
+		namespace   string
+		runtimeType string
+		ds          *appsv1.DaemonSet
+		setClient   bool
+		wantErr     bool
+	}
+
+	tests := []testCase{
+		{
+			name:        "alluxio",
+			namespace:   "default",
+			runtimeType: common.ALLUXIO_RUNTIME,
+			ds: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "alluxio-fuse",
+					Namespace: "default",
+				},
+			},
+			setClient: true,
+			wantErr:   false,
+		}, {
+			name:        "jindo",
+			namespace:   "default",
+			runtimeType: common.JindoRuntime,
+			ds: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "jindo-jindofs-fuse",
+					Namespace: "default",
+				},
+			},
+			setClient: true,
+			wantErr:   false,
+		}, {
+			name:        "noclient",
+			namespace:   "default",
+			runtimeType: common.JindoRuntime,
+			ds: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "jindo-jindofs-fuse",
+					Namespace: "default",
+				},
+			},
+			setClient: false,
+			wantErr:   true,
+		},
+	}
+
+	for _, test := range tests {
+		var fakeClient client.Client
+		if test.setClient {
+			objs := []runtime.Object{}
+			s := runtime.NewScheme()
+			_ = corev1.AddToScheme(s)
+			_ = datav1alpha1.AddToScheme(s)
+			_ = appsv1.AddToScheme(s)
+			objs = append(objs, test.ds)
+			fakeClient = fake.NewFakeClientWithScheme(s, objs...)
+		}
+
+		runtimeInfo := RuntimeInfo{
+			name:        test.name,
+			namespace:   test.namespace,
+			runtimeType: test.runtimeType,
+		}
+
+		if fakeClient != nil {
+			runtimeInfo.SetClient(fakeClient)
+		}
+
+		_, err := runtimeInfo.getFuseDaemonset()
+		if (err == nil) == test.wantErr {
+			t.Errorf("testcase %s is failed, want err %v, got err %v", test.name, test.wantErr, err)
 		}
 	}
 }
