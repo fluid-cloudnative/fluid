@@ -603,7 +603,7 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.AddScheduleInfoToPod(testcase.in)
+		err := handler.AddScheduleInfoToPod(testcase.in, testcase.in.Namespace)
 		if !((err != nil) == testcase.wantErr) {
 			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
 		}

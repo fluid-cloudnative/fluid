@@ -28,7 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -55,8 +54,10 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if len(pod.Namespace) == 0 {
-		setupLog.Info("failed to get namespace from pod", "req", req)
+	namespace := pod.Namespace
+	if len(namespace) == 0 {
+		setupLog.Info("failed to get namespace from pod, set the req's namespace", "req", req, "namespace", req.Namespace)
+		namespace = req.Namespace
 	}
 
 	// check whether should inject
@@ -74,7 +75,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// inject affinity info into pod
-	err = a.AddScheduleInfoToPod(pod)
+	err = a.AddScheduleInfoToPod(pod, namespace)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -95,14 +96,8 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 }
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
+func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	namespace := pod.Namespace
-	if len(namespace) == 0 {
-		msg := fmt.Sprintf("The pod's namespace is empty, pod is %v", pod)
-		setupLog.Info(msg, "pod", pod)
-		namespace = metav1.NamespaceDefault
-	}
 	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
