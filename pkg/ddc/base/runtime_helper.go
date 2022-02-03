@@ -119,13 +119,12 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 		return
 	}
 
-	chartName := ""
+	var fuseName string
 	switch info.runtimeType {
 	case common.JindoRuntime:
-		chartName = common.JindoChartName
+		fuseName = info.name + "-" + common.JindoChartName + "-fuse"
 	default:
-		chartName = info.runtimeType
+		fuseName = info.name + "-fuse"
 	}
-	fuseName := info.name + "-" + chartName + "-fuse"
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
 }
