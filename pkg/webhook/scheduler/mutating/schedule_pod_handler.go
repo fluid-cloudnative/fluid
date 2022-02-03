@@ -55,6 +55,10 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if len(pod.Namespace) == 0 {
+		setupLog.Info("failed to get namespace from pod", "req", req)
+	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -95,7 +99,8 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	namespace := pod.Namespace
 	if len(namespace) == 0 {
-		setupLog.Info("The pod's namespace is empty", "pod", pod)
+		msg := fmt.Sprintf("The pod's namespace is empty, pod is %v", pod)
+		setupLog.Info(msg, "pod", pod)
 		namespace = metav1.NamespaceDefault
 	}
 	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
