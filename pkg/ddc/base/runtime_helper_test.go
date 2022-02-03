@@ -196,7 +196,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			},
 			fuse: &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dataset1-alluxio-fuse",
+					Name:      "dataset1-fuse",
 					Namespace: "big-data",
 				},
 				Spec: appsv1.DaemonSetSpec{
