@@ -614,33 +614,71 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 	}
 }
 
-func TestHandleWithNamespace(t *testing.T) {
+func TestHandle(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	if err != nil {
 		t.Errorf("test failed due to err %v", err)
 	}
 
-	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Raw: []byte(
-					`{
-						"apiVersion": "v1",
-						"kind": "Pod",
-						"metadata": {
-							"name": "foo",
-							"namespace": "default"
-						},
-						"spec": {
-							"containers": [
-								{
-									"image": "bar:v2",
-									"name": "bar"
+	type testCase struct {
+		name string
+		req  admission.Request
+		want bool
+	}
+
+	tests := []testCase{
+		{
+			name: "namespace_in_pod",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Namespace: "default",
+					Object: runtime.RawExtension{
+						Raw: []byte(
+							`{
+								"apiVersion": "v1",
+								"kind": "Pod",
+								"metadata": {
+									"name": "foo"
+								},
+								"spec": {
+									"containers": [
+										{
+											"image": "bar:v2",
+											"name": "bar"
+										}
+									]
 								}
-							]
-						}
-					}`),
+							}`),
+					},
+				},
 			},
+			want: true,
+		}, {
+			name: "namespace_not_in_pod",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Namespace: "default",
+					Object: runtime.RawExtension{
+						Raw: []byte(
+							`{
+								"apiVersion": "v1",
+								"kind": "Pod",
+								"metadata": {
+									"name": "foo"
+								},
+								"spec": {
+									"containers": [
+										{
+											"image": "bar:v2",
+											"name": "bar"
+										}
+									]
+								}
+							}`),
+					},
+				},
+			},
+			want: true,
 		},
 	}
 
@@ -648,60 +686,16 @@ func TestHandleWithNamespace(t *testing.T) {
 	s := runtime.NewScheme()
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	handler := &CreateUpdatePodForSchedulingHandler{
-		decoder: decoder,
-	}
-	handler.Setup(fakeClient)
+	for _, test := range tests {
+		handler := &CreateUpdatePodForSchedulingHandler{
+			decoder: decoder,
+		}
+		handler.Setup(fakeClient)
 
-	resp := handler.Handle(context.TODO(), req)
+		resp := handler.Handle(context.TODO(), test.req)
 
-	if !resp.AdmissionResponse.Allowed {
-		t.Errorf("failed to get resp %v", resp)
-	}
-}
-
-func TestHandleWitouthNamespace(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		t.Errorf("test failed due to err %v", err)
-	}
-
-	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Namespace: "default",
-			Object: runtime.RawExtension{
-				Raw: []byte(
-					`{
-						"apiVersion": "v1",
-						"kind": "Pod",
-						"metadata": {
-							"name": "foo"
-						},
-						"spec": {
-							"containers": [
-								{
-									"image": "bar:v2",
-									"name": "bar"
-								}
-							]
-						}
-					}`),
-			},
-		},
-	}
-
-	objs := []runtime.Object{}
-	s := runtime.NewScheme()
-	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-
-	handler := &CreateUpdatePodForSchedulingHandler{
-		decoder: decoder,
-	}
-	handler.Setup(fakeClient)
-
-	resp := handler.Handle(context.TODO(), req)
-
-	if !resp.AdmissionResponse.Allowed {
-		t.Errorf("failed to get resp %v", resp)
+		if resp.AdmissionResponse.Allowed == test.want {
+			t.Errorf("test %s failed to get resp %v, want %v", test.name, resp, test.want)
+		}
 	}
 }
