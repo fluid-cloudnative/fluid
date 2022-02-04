@@ -104,14 +104,14 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	for _, pvcName := range pvcNames {
 		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
 		if err != nil {
-			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
+			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName, "namespace", namespace)
 			errPVCs[pvcName] = err
 			continue
 		}
 		if isDatasetPVC {
 			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName)
+				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName, "namespace", namespace)
 				return err
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
