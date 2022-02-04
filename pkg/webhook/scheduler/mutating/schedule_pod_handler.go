@@ -56,8 +56,6 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 
 	namespace := pod.Namespace
 	if len(namespace) == 0 {
-		setupLog.V(1).Info("Show the request when namespace is ''", "req", req)
-		setupLog.Info("the pod's namespace is '', set it with the req's namespace", "namespace", req.Namespace)
 		namespace = req.Namespace
 	}
 
