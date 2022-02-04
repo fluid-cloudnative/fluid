@@ -54,6 +54,11 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	namespace := pod.Namespace
+	if len(namespace) == 0 {
+		namespace = req.Namespace
+	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -69,7 +74,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// inject affinity info into pod
-	err = a.AddScheduleInfoToPod(pod)
+	err = a.AddScheduleInfoToPod(pod, namespace)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -90,23 +95,23 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 }
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
+func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
+	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
-		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
+		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
 		if err != nil {
-			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
+			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName, "namespace", namespace)
 			errPVCs[pvcName] = err
 			continue
 		}
 		if isDatasetPVC {
-			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
+			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName)
+				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName, "namespace", namespace)
 				return err
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
@@ -122,7 +127,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
 		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
 			pod.Name,
-			pod.Namespace,
+			namespace,
 			common.InjectServerless,
 			common.InjectFuseSidecar,
 			errPVCs)
