@@ -694,7 +694,7 @@ func TestHandle(t *testing.T) {
 
 		resp := handler.Handle(context.TODO(), test.req)
 
-		if resp.AdmissionResponse.Allowed == test.want {
+		if resp.AdmissionResponse.Allowed != test.want {
 			t.Errorf("test %s failed to get resp %v, want %v", test.name, resp, test.want)
 		}
 	}
