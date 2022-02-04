@@ -17,12 +17,16 @@ limitations under the License.
 package mutating
 
 import (
+	"context"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -603,9 +607,95 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.AddScheduleInfoToPod(testcase.in)
+		err := handler.AddScheduleInfoToPod(testcase.in, testcase.in.Namespace)
 		if !((err != nil) == testcase.wantErr) {
 			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
+		}
+	}
+}
+
+func TestHandle(t *testing.T) {
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	if err != nil {
+		t.Errorf("test failed due to err %v", err)
+	}
+
+	type testCase struct {
+		name string
+		req  admission.Request
+		want bool
+	}
+
+	tests := []testCase{
+		{
+			name: "namespace_in_pod",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Namespace: "default",
+					Object: runtime.RawExtension{
+						Raw: []byte(
+							`{
+								"apiVersion": "v1",
+								"kind": "Pod",
+								"metadata": {
+									"name": "foo"
+								},
+								"spec": {
+									"containers": [
+										{
+											"image": "bar:v2",
+											"name": "bar"
+										}
+									]
+								}
+							}`),
+					},
+				},
+			},
+			want: true,
+		}, {
+			name: "namespace_not_in_pod",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Namespace: "default",
+					Object: runtime.RawExtension{
+						Raw: []byte(
+							`{
+								"apiVersion": "v1",
+								"kind": "Pod",
+								"metadata": {
+									"name": "foo"
+								},
+								"spec": {
+									"containers": [
+										{
+											"image": "bar:v2",
+											"name": "bar"
+										}
+									]
+								}
+							}`),
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+
+	for _, test := range tests {
+		handler := &CreateUpdatePodForSchedulingHandler{
+			decoder: decoder,
+		}
+		handler.Setup(fakeClient)
+
+		resp := handler.Handle(context.TODO(), test.req)
+
+		if resp.AdmissionResponse.Allowed != test.want {
+			t.Errorf("test %s failed to get resp %v, want %v", test.name, resp, test.want)
 		}
 	}
 }
