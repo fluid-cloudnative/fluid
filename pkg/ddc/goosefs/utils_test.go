@@ -714,10 +714,10 @@ func TestGetInitTierPathsEnv(t *testing.T) {
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						TieredStore: datav1alpha1.TieredStore{
 							Levels: []datav1alpha1.Level{
-								datav1alpha1.Level{
+								{
 									Path: "/mnt/goosefs0",
 								},
-								datav1alpha1.Level{
+								{
 									Path: "/mnt/goosefs1",
 								},
 							},

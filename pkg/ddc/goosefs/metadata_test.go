@@ -370,7 +370,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 			},
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
-					datav1alpha1.Mount{
+					{
 						MountPoint: "cosn://imagenet-1234567/",
 					},
 				},
