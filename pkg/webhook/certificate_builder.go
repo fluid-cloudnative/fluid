@@ -19,16 +19,21 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 type CertificateBuilder struct {
@@ -87,17 +92,57 @@ func (c *CertificateBuilder) genCA(ns, svc, certPath string) (*generator.Artifac
 	return certs, nil
 }
 
-// PatchCABundle patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error {
+// PatchCABundle watch the MutatingWebhookConfiguration and keep patching it
+func (c *CertificateBuilder) PatchCABundle(webhookName string, ca []byte) error {
 
+	err := c.PatchCABundleOnce(webhookName, ca)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		stopCH := make(chan struct{})
+		defer close(stopCH)
+
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			c.log.Error(err, "unable to watch MutatingWebhookConfigurations")
+			return
+		}
+		clientSet, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			c.log.Error(err, "unable to watch MutatingWebhookConfigurations")
+			return
+		}
+
+		// start to watch the MutatingWebhookConfigurations
+		sharedInformers := informers.NewSharedInformerFactory(clientSet, time.Minute)
+		informer := sharedInformers.Admissionregistration().V1().MutatingWebhookConfigurations().Informer()
+		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				_ = c.PatchCABundleOnce(webhookName, ca)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				_ = c.PatchCABundleOnce(webhookName, ca)
+			},
+		})
+		informer.Run(stopCH)
+
+	}()
+	return nil
+
+}
+
+// PatchCABundleOnce patch the caBundle to MutatingWebhookConfiguration
+func (c *CertificateBuilder) PatchCABundleOnce(webhookName string, ca []byte) error {
 	var m v1.MutatingWebhookConfiguration
 
-	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webHookName)
+	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webhookName)
 
 	ctx := context.Background()
 
-	if err := c.Get(ctx, client.ObjectKey{Name: webHookName}, &m); err != nil {
-		c.log.Error(err, "fail to get mutatingWebHook", "name", webHookName)
+	if err := c.Get(ctx, client.ObjectKey{Name: webhookName}, &m); err != nil {
+		c.log.Error(err, "fail to get mutatingWebHook", "name", webhookName)
 		return err
 	}
 
@@ -106,12 +151,18 @@ func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error 
 		m.Webhooks[i].ClientConfig.CABundle = ca
 	}
 
+	if reflect.DeepEqual(m.Webhooks, current.Webhooks) {
+		c.log.Info("no need to patch the MutatingWebhookConfiguration", "name", webhookName)
+		return nil
+	}
+
 	if err := c.Patch(ctx, &m, client.MergeFrom(current)); err != nil {
-		c.log.Error(err, "fail to patch CABundle to mutatingWebHook", "name", webHookName)
+		c.log.Error(err, "fail to patch CABundle to mutatingWebHook", "name", webhookName)
 		return err
 	}
 
-	c.log.Info("finished patch MutatingWebhookConfiguration caBundle", "name", webHookName)
+	c.log.Info("finished patch MutatingWebhookConfiguration caBundle", "name", webhookName)
 
 	return nil
+
 }
