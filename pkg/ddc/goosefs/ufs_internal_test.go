@@ -393,12 +393,12 @@ func TestGetMounts(t *testing.T) {
 					},
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/spec",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/spec",
@@ -407,12 +407,12 @@ func TestGetMounts(t *testing.T) {
 					},
 					Status: datav1alpha1.DatasetStatus{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/status",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/status",
@@ -520,12 +520,12 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/spec",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/spec",
@@ -534,12 +534,12 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Status: datav1alpha1.DatasetStatus{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/status",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/status",
@@ -569,7 +569,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/spec",
@@ -602,7 +602,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 									},
 								},
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/spec",
@@ -611,7 +611,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Status: datav1alpha1.DatasetStatus{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/status",
@@ -641,7 +641,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/spec",
@@ -674,7 +674,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 									},
 								},
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/spec",
@@ -683,17 +683,17 @@ func TestProcessUpdatingUFS(t *testing.T) {
 					},
 					Status: datav1alpha1.DatasetStatus{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/status",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test1",
 								MountPoint: "cos://test1",
 								Path:       "/status",
 							},
-							datav1alpha1.Mount{
+							{
 								Name:       "test2",
 								MountPoint: "cos://test2",
 								Path:       "/status",
@@ -794,7 +794,7 @@ func TestMountUFS(t *testing.T) {
 					},
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/spec",
@@ -803,7 +803,7 @@ func TestMountUFS(t *testing.T) {
 					},
 					Status: datav1alpha1.DatasetStatus{
 						Mounts: []datav1alpha1.Mount{
-							datav1alpha1.Mount{
+							{
 								Name:       "test0",
 								MountPoint: "cos://test0",
 								Path:       "/status",
@@ -885,7 +885,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 						"fs.AbstractFileSystem.cosn.impl": "org.apache.hadoop.fs.CosN",
 						"fs.cos.app.id":                   "1251707795"},
 					EncryptOptions: []datav1alpha1.EncryptOption{
-						datav1alpha1.EncryptOption{
+						{
 							Name: "fs.cosn.userinfo.secretKey",
 							ValueFrom: datav1alpha1.EncryptOptionSource{
 								SecretKeyRef: datav1alpha1.SecretKeySelector{
@@ -894,7 +894,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 								},
 							},
 						},
-						datav1alpha1.EncryptOption{
+						{
 							Name: "fs.cosn.userinfo.secretId",
 							ValueFrom: datav1alpha1.EncryptOptionSource{
 								SecretKeyRef: datav1alpha1.SecretKeySelector{

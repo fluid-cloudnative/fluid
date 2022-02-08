@@ -15,7 +15,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -358,7 +357,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 	type fields struct {
 		name        string
 		namespace   string
-		cm          *corev1.ConfigMap
+		cm          *v1.ConfigMap
 		runtimeType string
 		log         logr.Logger
 	}
@@ -414,7 +413,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 		name        string
 		namespace   string
 		runtimeType string
-		cm          *corev1.ConfigMap
+		cm          *v1.ConfigMap
 	}
 	tests := []struct {
 		name    string
