@@ -37,7 +37,14 @@ func TestOptimizeDefaultProperties(t *testing.T) {
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Properties: map[string]string{},
 			},
-		}, &GooseFS{}, "goosefs.fuse.jnifuse.enabled", "true"},
+		}, &GooseFS{}, "goosefs.master.journal.type", "UFS"},
+		{&datav1alpha1.GooseFSRuntime{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				Properties: map[string]string{},
+			},
+		}, &GooseFS{Master: Master{
+			Replicas: 3,
+		}}, "goosefs.master.journal.type", "EMBEDDED"},
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{}

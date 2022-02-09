@@ -45,7 +45,7 @@ func (e *GooseFSEngine) transformHadoopConfig(runtime *datav1alpha1.GooseFSRunti
 
 	// Neither hdfs-site.xml nor core-site.xml is found in the configMap
 	if !value.HadoopConfig.IncludeCoreSite && !value.HadoopConfig.IncludeHdfsSite {
-		err = fmt.Errorf("Neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HADOOP_CONF_HDFS_SITE_FILENAME, HADOOP_CONF_CORE_SITE_FILENAME, runtime.Spec.HadoopConfig)
+		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HADOOP_CONF_HDFS_SITE_FILENAME, HADOOP_CONF_CORE_SITE_FILENAME, runtime.Spec.HadoopConfig)
 		return err
 	}
 

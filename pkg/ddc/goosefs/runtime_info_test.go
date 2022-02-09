@@ -15,7 +15,6 @@ package goosefs
 import (
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -28,7 +27,7 @@ import (
 )
 
 func newGooseEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *GooseFSEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", datav1alpha1.TieredStore{})
 	engine := &GooseFSEngine{
 		runtime:     &datav1alpha1.GooseFSRuntime{},
 		name:        name,
@@ -46,14 +45,14 @@ func newGooseEngineRT(client client.Client, name string, namespace string, withR
 }
 
 func TestGetRuntimeInfo(t *testing.T) {
-	runtimeInputs := []*v1alpha1.GooseFSRuntime{
+	runtimeInputs := []*datav1alpha1.GooseFSRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: v1alpha1.GooseFSRuntimeSpec{
-				Fuse: v1alpha1.GooseFSFuseSpec{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				Fuse: datav1alpha1.GooseFSFuseSpec{
 					Global: true,
 				},
 			},
@@ -63,8 +62,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Name:      "hadoop",
 				Namespace: "fluid",
 			},
-			Spec: v1alpha1.GooseFSRuntimeSpec{
-				Fuse: v1alpha1.GooseFSFuseSpec{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				Fuse: datav1alpha1.GooseFSFuseSpec{
 					Global: false,
 				},
 			},
@@ -94,7 +93,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 			},
 		},
 	}
-	dataSetInputs := []*v1alpha1.Dataset{
+	dataSetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop",

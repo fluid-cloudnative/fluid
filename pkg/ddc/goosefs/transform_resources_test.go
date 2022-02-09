@@ -201,7 +201,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 					Resources: resources,
 				},
 				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{datav1alpha1.Level{
+					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
 						Quota:      &result,
 					}},
@@ -261,7 +261,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 					Resources: resources,
 				},
 				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{datav1alpha1.Level{
+					Levels: []datav1alpha1.Level{{
 						MediumType: common.Memory,
 						Quota:      &result,
 					}},
