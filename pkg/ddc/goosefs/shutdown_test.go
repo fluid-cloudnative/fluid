@@ -15,7 +15,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -181,7 +181,7 @@ placement: Exclusive`
 
 func init() {
 	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 }
@@ -209,7 +209,7 @@ func TestDestroyWorker(t *testing.T) {
 	}
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
-	var nodeInputs = []*v1.Node{
+	var nodeInputs = []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",
@@ -357,7 +357,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 	type fields struct {
 		name        string
 		namespace   string
-		cm          *v1.ConfigMap
+		cm          *corev1.ConfigMap
 		runtimeType string
 		log         logr.Logger
 	}
@@ -372,7 +372,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "goosefs",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-goosefs-values",
 						Namespace: "fluid",
@@ -413,7 +413,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 		name        string
 		namespace   string
 		runtimeType string
-		cm          *v1.ConfigMap
+		cm          *corev1.ConfigMap
 	}
 	tests := []struct {
 		name    string
@@ -426,7 +426,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "goosefs",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-goosefs-values",
 						Namespace: "fluid",
