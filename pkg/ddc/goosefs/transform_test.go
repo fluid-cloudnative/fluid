@@ -42,7 +42,7 @@ func TestTransformFuse(t *testing.T) {
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{datav1alpha1.Mount{
+				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
@@ -51,7 +51,7 @@ func TestTransformFuse(t *testing.T) {
 					GID: &x,
 				},
 			},
-		}, &GooseFS{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,uid=1000,gid=1000,allow_other"}},
+		}, &GooseFS{}, []string{"fuse", "--fuse-opts=rw,direct_io,uid=1000,gid=1000,allow_other"}},
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{}
