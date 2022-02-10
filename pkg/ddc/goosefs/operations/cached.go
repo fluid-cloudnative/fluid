@@ -61,10 +61,26 @@ func (a GooseFSFileUtils) CachedState() (cached int64, err error) {
 // clean cache with a preset timeout of 60s
 func (a GooseFSFileUtils) CleanCache(path string) (err error) {
 	var (
-		command = []string{"timeout", "-k", "60", "60", "goosefs", "fs", "free", "-f", path}
-		stdout  string
-		stderr  string
+		releaseVersion = []string{"cat", "/etc/issue"}
+		command        = []string{"60", "goosefs", "fs", "free", "-f", path}
+		stdout         string
+		stderr         string
 	)
+
+	stdout, stderr, err = a.exec(releaseVersion, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", releaseVersion, err, stdout, stderr)
+		return
+	}
+
+	if strings.Contains(stdout, "Ubuntu") {
+		command = append([]string{"timeout"}, command...)
+	} else if strings.Contains(stdout, "Alpine") {
+		command = append([]string{"timeout", "-t"}, command...)
+	} else {
+		err = fmt.Errorf("unknow release version for linux")
+		return
+	}
 
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
