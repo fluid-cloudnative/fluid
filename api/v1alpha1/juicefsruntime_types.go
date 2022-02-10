@@ -96,10 +96,10 @@ type JuiceFSFuseSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// Image for JuiceFS fuse
-	ImageTag string `json:"image_tag,omitempty"`
+	ImageTag string `json:"imageTag,omitempty"`
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
-	ImagePullPolicy string `json:"image_pull_policy,omitempty"`
+	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 
 	// Environment variables that will be used by JuiceFS Fuse
 	Env []corev1.EnvVar `json:"env,omitempty"`
@@ -115,7 +115,7 @@ type JuiceFSFuseSpec struct {
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled
 	// +optional
-	NodeSelector map[string]string `json:"node_selector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// CleanPolicy decides when to clean Juicefs Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
