@@ -47,7 +47,13 @@ type Worker struct {
 }
 
 type Fuse struct {
-	Prepare         Prepare           `yaml:"prepare,omitempty"`
+	SubPath         string            `yaml:"subPath,omitempty"`
+	Name            string            `yaml:"name"`
+	AccessKeySecret string            `yaml:"accesskeySecret,omitempty"`
+	SecretKeySecret string            `yaml:"secretkeySecret,omitempty"`
+	Bucket          string            `yaml:"bucket,omitempty"`
+	MetaUrlSecret   string            `yaml:"metaurlSecret,omitempty"`
+	Storage         string            `yaml:"storage,omitempty"`
 	Image           string            `yaml:"image,omitempty"`
 	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
 	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
@@ -61,16 +67,6 @@ type Fuse struct {
 	Enabled         bool              `yaml:"enabled,omitempty"`
 	Resources       common.Resources  `yaml:"resources,omitempty"`
 	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
-}
-
-type Prepare struct {
-	SubPath         string `yaml:"subPath,omitempty"`
-	Name            string `yaml:"name"`
-	AccessKeySecret string `yaml:"accesskeySecret,omitempty"`
-	SecretKeySecret string `yaml:"secretkeySecret,omitempty"`
-	Bucket          string `yaml:"bucket,omitempty"`
-	MetaUrlSecret   string `yaml:"metaurlSecret,omitempty"`
-	Storage         string `yaml:"storage,omitempty"`
 }
 
 type TieredStore struct {

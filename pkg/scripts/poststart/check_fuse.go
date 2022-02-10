@@ -88,7 +88,7 @@ func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerRefer
 }
 
 func (f *ScriptGeneratorForFuse) getConfigmapName() string {
-	return f.name + "-" + f.mountType + "-" + configMapName
+	return f.name + "-" + strings.ToLower(f.mountType) + "-" + configMapName
 }
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.Handler) {

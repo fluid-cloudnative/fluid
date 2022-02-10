@@ -64,7 +64,7 @@ func TestGetFuseMountInContainer(t *testing.T) {
 			container: corev1.Container{
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "jfs-dir",
+						Name:      "juicefs-fuse-mount",
 						MountPath: "/runtime_mnt/jfs",
 					},
 				},
