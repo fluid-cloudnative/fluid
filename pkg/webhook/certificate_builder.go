@@ -19,21 +19,17 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
+	"k8s.io/apimachinery/pkg/types"
+	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CertificateBuilder struct {
@@ -48,24 +44,24 @@ func NewCertificateBuilder(c client.Client, log logr.Logger) *CertificateBuilder
 
 // BuildAndSyncCABundle use service name and namespace generate webhook caBundle
 // and patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) error {
+func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) (error, []byte) {
 
 	ns, err := utils.GetEnvByKey(common.MyPodNamespace)
 	if err != nil {
-		return errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace)
+		return errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace), []byte{}
 	}
 	c.log.Info("start generate certificate", "service", svcName, "namespace", ns, "cert dir", cerPath)
 
 	certs, err := c.genCA(ns, svcName, cerPath)
 	if err != nil {
-		return err
+		return err, []byte{}
 	}
 
 	err = c.PatchCABundle(webhookName, certs.CACert)
 	if err != nil {
-		return err
+		return err, []byte{}
 	}
-	return nil
+	return nil, certs.CACert
 }
 
 // genCA generate the caBundle and store it in secret and local path
@@ -92,49 +88,9 @@ func (c *CertificateBuilder) genCA(ns, svc, certPath string) (*generator.Artifac
 	return certs, nil
 }
 
-// PatchCABundle watch the MutatingWebhookConfiguration and keep patching it
+// PatchCABundle patch the caBundle to MutatingWebhookConfiguration
 func (c *CertificateBuilder) PatchCABundle(webhookName string, ca []byte) error {
 
-	err := c.PatchCABundleOnce(webhookName, ca)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		stopCH := make(chan struct{})
-		defer close(stopCH)
-
-		config, err := rest.InClusterConfig()
-		if err != nil {
-			c.log.Error(err, "unable to watch MutatingWebhookConfigurations")
-			return
-		}
-		clientSet, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			c.log.Error(err, "unable to watch MutatingWebhookConfigurations")
-			return
-		}
-
-		// start to watch the MutatingWebhookConfigurations
-		sharedInformers := informers.NewSharedInformerFactory(clientSet, time.Minute)
-		informer := sharedInformers.Admissionregistration().V1().MutatingWebhookConfigurations().Informer()
-		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				_ = c.PatchCABundleOnce(webhookName, ca)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				_ = c.PatchCABundleOnce(webhookName, ca)
-			},
-		})
-		informer.Run(stopCH)
-
-	}()
-	return nil
-
-}
-
-// PatchCABundleOnce patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) PatchCABundleOnce(webhookName string, ca []byte) error {
 	var m v1.MutatingWebhookConfiguration
 
 	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webhookName)
@@ -164,5 +120,4 @@ func (c *CertificateBuilder) PatchCABundleOnce(webhookName string, ca []byte) er
 	c.log.Info("finished patch MutatingWebhookConfiguration caBundle", "name", webhookName)
 
 	return nil
-
 }

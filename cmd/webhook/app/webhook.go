@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
@@ -120,10 +121,16 @@ func handle() {
 		os.Exit(1)
 	}
 
-	// patch adminssion web hook  ca bundle
+	// patch admission webhook ca bundle
 	certBuilder := fluidwebhook.NewCertificateBuilder(client, setupLog)
-	if err := certBuilder.BuildAndSyncCABundle(common.WebhookServiceName, common.WebhookName, certDir); err != nil {
+	err, caCert := certBuilder.BuildAndSyncCABundle(common.WebhookServiceName, common.WebhookName, certDir)
+	if err != nil || len(caCert) == 0 {
 		setupLog.Error(err, "patch webhook CABundle failed")
+		os.Exit(1)
+	}
+
+	if err = watch.SetupWatcherForWebhook(mgr, certBuilder, common.WebhookName, caCert); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "webhook")
 		os.Exit(1)
 	}
 

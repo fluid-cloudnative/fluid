@@ -18,6 +18,8 @@ package watch
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -114,4 +116,32 @@ func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 	apiVersion, kind := target.GetObjectKind().GroupVersionKind().ToAPIVersionAndKind()
 
 	return kind == controllerRef.Kind && apiVersion == controllerRef.APIVersion
+}
+
+func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBuilder, webhookName string, caCert []byte) (err error) {
+	options := controller.Options{}
+	options.Reconciler = &MockReconcile{}
+	webhookController, err := controller.New("webhook-controller", mgr, options)
+	if err != nil {
+		return err
+	}
+
+	mutatingWebhookConfigurationEventHandler := &mutatingWebhookConfigurationEventHandler{}
+	err = webhookController.Watch(&source.Kind{
+		Type: &admissionregistrationv1.MutatingWebhookConfiguration{},
+	}, &EventHandlerForMutatingWebhookConfiguration{
+		certBuilder: certBuilder,
+		caCert:      caCert,
+		webhookName: webhookName,
+	}, predicate.Funcs{
+		CreateFunc: mutatingWebhookConfigurationEventHandler.onCreateFunc(webhookName),
+		UpdateFunc: mutatingWebhookConfigurationEventHandler.onUpdateFunc(webhookName),
+		DeleteFunc: mutatingWebhookConfigurationEventHandler.onDeleteFunc(webhookName),
+	})
+	if err != nil {
+		log.Error(err, "Failed to watch mutatingWebhookConfiguration")
+		return err
+	}
+
+	return
 }
