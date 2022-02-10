@@ -42,14 +42,13 @@ worker:
 ## FUSE ##
 
 fuse:
-  prepare:
-    name: ""
-    accesskeySecret: ""
-    secretkeySecret: ""
-    bucket: ""
-    metaurlSecret: ""
-    storage: ""
-    subPath: ""
+  name: ""
+  accesskeySecret: ""
+  secretkeySecret: ""
+  bucket: ""
+  metaurlSecret: ""
+  storage: ""
+  subPath: ""
   criticalPod: false
   enabled: true
   image: juicedata/juicefs-csi-driver

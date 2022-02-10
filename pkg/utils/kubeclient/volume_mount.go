@@ -76,19 +76,16 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 		common.ALLUXIO_MOUNT_TYPE: common.ALLUXIO_CHART,
 		common.ALLUXIO_RUNTIME:    common.ALLUXIO_CHART,
 		common.GooseFSMountType:   common.GooseFSChart,
+		common.JuiceFSMountType:   common.JuiceFSChart,
+		common.JuiceFSRuntime:     common.JuiceFSChart,
 	}
 
 	volumeMountName := ""
-	switch mountType {
-	case common.JuiceFSMountType, common.JuiceFSRuntime:
-		volumeMountName = "jfs-dir"
-	default:
-		if prefix, found := kv[mountType]; found {
-			volumeMountName = prefix + "-fuse-mount"
-		} else {
-			err = fmt.Errorf("failed to find the prefix by mountType %s", mountType)
-			return
-		}
+	if prefix, found := kv[mountType]; found {
+		volumeMountName = prefix + "-fuse-mount"
+	} else {
+		err = fmt.Errorf("failed to find the prefix by mountType %s", mountType)
+		return
 	}
 
 	for _, vm := range container.VolumeMounts {
