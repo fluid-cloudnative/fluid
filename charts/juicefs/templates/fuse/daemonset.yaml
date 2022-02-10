@@ -40,47 +40,6 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
-      initContainers:
-        - name: prepare
-          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
-          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
-          command:
-            - sh
-            - -c
-            - "sh /root/prepare/prepare-subpath.sh"
-          securityContext:
-            privileged: true
-          env:
-          {{- if .Values.fuse.envs }}
-{{ toYaml .Values.fuse.envs | trim | indent 10  }}
-          {{- end }}
-          {{- if .Values.fuse.prepare.metaurlSecret }}
-          - name: METAURL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.fuse.prepare.metaurlSecret }}
-                key: metaurl
-          {{- end }}
-          {{- if .Values.fuse.prepare.accesskeySecret }}
-          - name: ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.fuse.prepare.accesskeySecret }}
-                key: access-key
-          {{- end }}
-          {{- if .Values.fuse.prepare.secretkeySecret }}
-          - name: SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.fuse.prepare.secretkeySecret }}
-                key: secret-key
-          {{- end }}
-          volumeMounts:
-          - mountPath: /root/.juicefs
-            mountPropagation: Bidirectional
-            name: jfs-root-dir
-          - mountPath: /root/prepare
-            name: prepare
       containers:
         - name: juicefs-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -98,14 +57,33 @@ spec:
               memory: {{ .Values.fuse.resources.requests.memory }}
             {{- end }}
           {{- end }}
-          {{- if .Values.fuse.command }}
-          command: ["sh", "-c", "{{ .Values.fuse.command }}"]
-          {{- end }}
+          command: ["sh", "/root/script/script.sh"]
           env:
           - name: JFS_FOREGROUND
             value: "1"
           {{- if .Values.fuse.envs }}
 {{ toYaml .Values.fuse.envs | trim | indent 10  }}
+          {{- end }}
+          {{- if .Values.fuse.metaurlSecret }}
+          - name: METAURL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.metaurlSecret }}
+                key: metaurl
+          {{- end }}
+          {{- if .Values.fuse.accesskeySecret }}
+          - name: ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.accesskeySecret }}
+                key: access-key
+          {{- end }}
+          {{- if .Values.fuse.secretkeySecret }}
+          - name: SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.secretkeySecret }}
+                key: secret-key
           {{- end }}
           readinessProbe:
             exec:
@@ -129,19 +107,18 @@ spec:
               exec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
-          - name: jfs-dir
+          - name: juicefs-fuse-mount
             mountPath: {{ .Values.fuse.hostMountPath }}
             mountPropagation: Bidirectional
-          - mountPath: /root/.juicefs
-            mountPropagation: Bidirectional
-            name: jfs-root-dir
+          - mountPath: /root/script
+            name: script
           {{- if .Values.fuse.cacheDir }}
           - name: cache-dir
             mountPath: {{ .Values.fuse.cacheDir }}
           {{- end }}
       restartPolicy: Always
       volumes:
-        - name: jfs-dir
+        - name: juicefs-fuse-mount
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
@@ -151,36 +128,30 @@ spec:
             path: {{ .Values.fuse.cacheDir }}
             type: DirectoryOrCreate
         {{- end }}
-        - name: jfs-root-dir
-          emptyDir: {}
-        - name: prepare
+        - name: script
           configMap:
-            name: {{ template "juicefs.fullname" . }}-prepare
+            name: {{ template "juicefs.fullname" . }}-script
             defaultMode: 0777
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "juicefs.fullname" . }}-prepare
+  name: {{ template "juicefs.fullname" . }}-script
   labels:
     app: {{ template "juicefs.name" . }}
     chart: {{ template "juicefs.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  prepare-subpath.sh: |
+  script.sh: |
     #!/bin/bash
 
-    {{- if and .Values.fuse.prepare.storage .Values.fuse.prepare.bucket .Values.fuse.prepare.accesskeySecret .Values.fuse.prepare.secretkeySecret }}
-    /usr/local/bin/juicefs format --storage={{ .Values.fuse.prepare.storage }} --bucket={{ .Values.fuse.prepare.bucket }} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} ${METAURL} {{ .Values.fuse.prepare.name }}
+    {{- if and .Values.fuse.storage .Values.fuse.bucket .Values.fuse.accesskeySecret .Values.fuse.secretkeySecret }}
+    /usr/local/bin/juicefs format --storage={{ .Values.fuse.storage }} --bucket={{ .Values.fuse.bucket }} --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} ${METAURL} {{ .Values.fuse.name }}
     {{- else }}
-    /usr/local/bin/juicefs format ${METAURL} {{ .Values.fuse.prepare.name }} --no-update
+    /usr/local/bin/juicefs format ${METAURL} {{ .Values.fuse.name }} --no-update
     {{- end }}
 
-    /usr/local/bin/juicefs mount -d ${METAURL} /mnt/jfs
-    if [ ! -d /mnt/jfs{{ .Values.fuse.prepare.subPath }} ]; then
-      mkdir /mnt/jfs{{ .Values.fuse.prepare.subPath }}
-    fi;
-    umount /mnt/jfs
+    {{ .Values.fuse.command }}
 
 {{- end }}

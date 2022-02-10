@@ -28,23 +28,22 @@ import (
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
 	value.Fuse = Fuse{}
-	value.Fuse.Prepare = Prepare{}
 
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
 	}
 	mount := dataset.Spec.Mounts[0]
 
-	value.Fuse.Prepare.Name = mount.Name
+	value.Fuse.Name = mount.Name
 	opts := make(map[string]string)
 	source := ""
 	for k, v := range mount.Options {
 		switch k {
 		case JuiceStorage:
-			value.Fuse.Prepare.Storage = v
+			value.Fuse.Storage = v
 			continue
 		case JuiceBucket:
-			value.Fuse.Prepare.Bucket = v
+			value.Fuse.Bucket = v
 			continue
 		default:
 			opts[k] = v
@@ -64,16 +63,16 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 
 		switch key {
 		case JuiceMetaUrl:
-			value.Fuse.Prepare.MetaUrlSecret = secretKeyRef.Name
+			value.Fuse.MetaUrlSecret = secretKeyRef.Name
 			v, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
 				return fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
 			source = string(v)
 		case JuiceAccessKey:
-			value.Fuse.Prepare.AccessKeySecret = secretKeyRef.Name
+			value.Fuse.AccessKeySecret = secretKeyRef.Name
 		case JuiceSecretKey:
-			value.Fuse.Prepare.SecretKeySecret = secretKeyRef.Name
+			value.Fuse.SecretKeySecret = secretKeyRef.Name
 		}
 	}
 
@@ -96,7 +95,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Fuse.NodeSelector = map[string]string{}
 	value.Fuse.HostMountPath = j.getHostMountPoint()
-	value.Fuse.Prepare.SubPath = subPath
+	value.Fuse.SubPath = subPath
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
 	mountArgs := []string{common.JuiceFSMountPath, source, value.Fuse.MountPath}
