@@ -74,9 +74,9 @@ func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 	}
 
 	if strings.Contains(stdout, "Ubuntu") {
-		command = append([]string{"timeout"}, command...)
+		command = append([]string{"timeout", "-k"}, command...)
 	} else if strings.Contains(stdout, "Alpine") {
-		command = append([]string{"timeout", "-t"}, command...)
+		command = append([]string{"timeout"}, command...)
 	} else {
 		err = fmt.Errorf("unknow release version for linux")
 		return
