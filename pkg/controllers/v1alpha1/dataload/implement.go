@@ -223,7 +223,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 		// Update DataLoad's phase to Failed, and no requeue
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
 			if err != nil {
 				return err
 			}
