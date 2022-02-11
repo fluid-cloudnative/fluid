@@ -28,7 +28,7 @@ var (
 	mockConfigMapData = `----
 fullnameOverride: mnist
 image: ccr.ccs.tencentyun.com/qcloud/goosefs
-imageTag: v1.1.0
+imageTag: v1.2.0
 imagePullPolicy: IfNotPresent
 user: 0
 group: 0
@@ -135,7 +135,7 @@ fuse:
   image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse
   nodeSelector:
     fluid.io/f-yijiupi-mnist: "true"
-  imageTag: v1.1.0
+  imageTag: v1.2.0
   env:
     MOUNT_POINT: /runtime-mnt/goosefs/yijiupi/mnist/goosefs-fuse
   jvmOptions:

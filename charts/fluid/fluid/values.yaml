@@ -58,9 +58,9 @@ runtime:
     controller:
       image: fluidcloudnative/goosefsruntime-controller:v0.7.0-d31052c
     runtime:
-      image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.1.0-kona_jdk11 
+      image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
-      image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.1.0-kona_jdk11 
+      image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
   juicefs:
     enabled: false
     controller:
