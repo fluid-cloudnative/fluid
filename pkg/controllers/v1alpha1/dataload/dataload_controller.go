@@ -99,7 +99,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 	targetDataset, err := utils.GetDataset(r.Client, targetDataload.Spec.Dataset.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
+			ctx.Log.Info("The dataset is not found", "dataset", req.Namespace+"/"+targetDataload.Spec.Dataset.Name)
 			// no datset means no metadata, not necessary to ReconcileDataLoad
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
