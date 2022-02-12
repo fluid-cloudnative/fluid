@@ -148,7 +148,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 		// Update DataLoad's phase to Failed, and no requeue
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
 			if err != nil {
 				return err
 			}
@@ -223,7 +223,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 
 		// Update DataLoad's phase to Failed, and no requeue
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			dataload, err := utils.GetDataLoad(r.Client, ctx.Name, ctx.Namespace)
+			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
 			if err != nil {
 				return err
 			}
@@ -364,7 +364,7 @@ func (r *DataLoadReconcilerImplement) reconcileLoadedDataLoad(ctx cruntime.Recon
 
 	// 2. record event and no requeue
 	log.Info("DataLoad Loaded, no need to requeue")
-	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(ctx.Name))
+	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
 	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobComplete, "DataLoad job %s succeeded", jobName)
 	return utils.NoRequeue()
 }
