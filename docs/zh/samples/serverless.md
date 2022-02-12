@@ -73,21 +73,31 @@ jfsdemo   [Calculating]    N/A                       N/A                 Bound  
 
 ```yaml
 $ cat<<EOF >sample.yaml
-apiVersion: v1
-kind: Pod
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
 metadata:
-  name: demo-app
+  name: shared-data
 spec:
-  containers:
-    - name: demo
-      image: nginx
-      volumeMounts:
-        - mountPath: /data
-          name: demo
-  volumes:
-    - name: demo
-      persistentVolumeClaim:
-        claimName: jfsdemo
+  mounts:
+    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
+      name: hbase
+      path: "/"
+  accessModes:
+    - ReadOnlyMany
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: shared-data
+spec:
+  replicas: 2
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"
   EOF
 $ kubectl create -f sample.yaml
 pod/demo-app created
