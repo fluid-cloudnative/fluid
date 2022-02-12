@@ -1,11 +1,24 @@
-# 示例 - 如何运行在Serverless
+# 示例 - 如何运行在Serverless环境中
+
+本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有已经支持的Runtime运行在Serverless环境。
+
 
 ## 安装
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
+1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.podspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
 
-在 Fluid 的安装 chart values.yaml 中将 `csi.recoverFusePeriod` 设置为 `5` 或其他正数，表示 CSI 后端轮询 kubelet 的周期，单位为秒，小于 0 表示关闭该功能，
-再参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行（这里以 JuiceFSRuntime 为例）：
+> 注：本文只是作为演示目的，关于Knative的生产系统安装请参考Knative文档最佳实践。
+
+2.下载、安装Fluid最新版
+
+```
+git clone https://github.com/fluid-cloudnative/fluid.git
+cd fluid/charts
+kubectl create ns fluid-system
+helm install --set webhook.enabled=true  fluid fluid
+```
+
+检查 Fluid 各组件正常运行（这里以 AlluxioRuntime 为例）：
 
 ```shell
 $ kubectl -n fluid-system get po
@@ -15,11 +28,11 @@ csi-nodeplugin-fluid-2h79g                  2/2     Running   0          20m
 csi-nodeplugin-fluid-sc459                  2/2     Running   0          20m
 dataset-controller-57fb4569cd-k2jb7         1/1     Running   0          20m
 fluid-webhook-844dcb995f-nfmjl              1/1     Running   0          20m
-juicefsruntime-controller-7d9c964b4-jnbtf   1/1     Running   0          20m
+AlluxioRuntime-controller-7d9c964b4-jnbtf   1/1     Running   0          20m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `juicefsruntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
-和多个名为 `csi-nodeplugin` 的 Pod 正在运行。其中，`csi-nodeplugin` 这些 Pod 的数量取决于你的 Kubernetes 集群中结点的数量。
+通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `AlluxioRuntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
+和多个名为 `csi-nodeplugin` 的 Pod 正在运行。其中，`csi-nodeplugin` 这些 Pod 的数量取决于你的 Kubernetes 集群中节点的数量。
 
 ## 运行示例
 
@@ -38,10 +51,10 @@ default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata
 
 **创建 dataset 和 runtime**
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
+针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
 
 ```shell
-$ kubectl get juicefsruntime
+$ kubectl get AlluxioRuntime
 NAME      WORKER PHASE   FUSE PHASE   AGE
 jfsdemo   Ready          Ready        2m58s
 $ kubectl get dataset
