@@ -5,12 +5,12 @@
 
 ## 安装
 
-1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.podspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
+1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
 
 检查 Knative的组件是否正常运行
 
 ```
-kubectl get pods -n knative-serving
+kubectl get Deployments -n knative-serving
 ```
 
 > 注：本文只是作为演示目的，关于Knative的生产系统安装请参考Knative文档最佳实践进行部署。另外由于Knative的容器镜像都在gcr.io镜像仓库，请确保镜像可达。
@@ -28,25 +28,22 @@ helm install --set webhook.enabled=true  fluid fluid
 检查 Fluid 各组件正常运行（这里以 AlluxioRuntime 为例）：
 
 ```shell
-$ kubectl -n fluid-system get po
-NAME                                        READY   STATUS    RESTARTS   AGE
-csi-nodeplugin-fluid-2gtsz                  2/2     Running   0          20m
-csi-nodeplugin-fluid-2h79g                  2/2     Running   0          20m
-csi-nodeplugin-fluid-sc459                  2/2     Running   0          20m
-dataset-controller-57fb4569cd-k2jb7         1/1     Running   0          20m
-fluid-webhook-844dcb995f-nfmjl              1/1     Running   0          20m
-AlluxioRuntime-controller-7d9c964b4-jnbtf   1/1     Running   0          20m
+$ kubectl get deploy -n fluid-system
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+alluxioruntime-controller   1/1     1            1           18m
+dataset-controller          1/1     1            1           18m
+fluid-webhook               1/1     1            1           18m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `AlluxioRuntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
-和多个名为 `csi-nodeplugin` 的 Pod 正在运行。其中，`csi-nodeplugin` 这些 Pod 的数量取决于你的 Kubernetes 集群中节点的数量。
+通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `AlluxioRuntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment
+和多个名为 `csi-nodeplugin` 的 Deployment 正在运行。其中，`csi-nodeplugin` 这些 Deployment 的数量取决于你的 Kubernetes 集群中节点的数量。
 
 ## 运行示例
 
 **为 namespace 开启 webhook**
 
-FUSE 挂载点自动恢复功能需要 pod 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
-Fluid webhook 提供了自动将 pod 的 mountPropagation 设置为 `HostToContainer`，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
+FUSE 挂载点自动恢复功能需要 Deployment 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
+Fluid webhook 提供了自动将 Deployment 的 mountPropagation 设置为 `HostToContainer`，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
 
 ```shell
 $ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
@@ -69,7 +66,7 @@ NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE  
 jfsdemo   [Calculating]    N/A                       N/A                 Bound   2m55s
 ```
 
-**创建 Pod 资源对象**
+**创建 Deployment 资源对象**
 
 ```yaml
 $ cat<<EOF >sample.yaml
@@ -100,10 +97,10 @@ spec:
         low: "0.7"
   EOF
 $ kubectl create -f sample.yaml
-pod/demo-app created
+Deployment/demo-app created
 ```
 
-**查看 Pod 是否创建，并检查其 mountPropagation**
+**查看 Deployment 是否创建，并检查其 mountPropagation**
 
 ```shell
 $ kubectl get po |grep demo
@@ -119,13 +116,13 @@ $ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
 
 ## 测试 FUSE 挂载点自动恢复
 
-**删除 FUSE pod**
+**删除 FUSE Deployment**
 
-删除 FUSE pod 后，并等待其重启：
+删除 FUSE Deployment 后，并等待其重启：
 
 ```shell
 $ kubectl delete po jfsdemo-fuse-g9pvp
-pod "jfsdemo-fuse-g9pvp" deleted
+Deployment "jfsdemo-fuse-g9pvp" deleted
 $ kubectl get po
 NAME                 READY   STATUS    RESTARTS   AGE
 demo-app             1/1     Running   0          5m7s
@@ -133,11 +130,11 @@ jfsdemo-fuse-bdsdt   1/1     Running   0          6s
 jfsdemo-worker-0     1/1     Running   0          7m56s
 ````
 
-新的 FUSE pod 创建后，再查看 demo pod 中的挂载点情况：
+新的 FUSE Deployment 创建后，再查看 demo Deployment 中的挂载点情况：
 
 ```shell
 $ kubectl exec -it demo-app bash
-kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+kubectl exec [Deployment] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [Deployment] -- [COMMAND] instead.
 [root@demo-app /]# df -h
 Filesystem      Size  Used Avail Use% Mounted on
 overlay         100G  9.4G   91G  10% /
@@ -164,12 +161,12 @@ Namespace:    default
 Events:
   Type    Reason              Age                  From         Message
   ----    ------              ----                 ----         -------
-  Normal  FuseRecoverSucceed  2m34s (x5 over 11m)  FuseRecover  Fuse recover /var/lib/kubelet/pods/6c1e0318-858b-4ead-976b-37ccce26edfe/volumes/kubernetes.io~csi/default-jfsdemo/mount succeed
+  Normal  FuseRecoverSucceed  2m34s (x5 over 11m)  FuseRecover  Fuse recover /var/lib/kubelet/Deployments/6c1e0318-858b-4ead-976b-37ccce26edfe/volumes/kubernetes.io~csi/default-jfsdemo/mount succeed
 ```
 
 可以看到 Dataset 的 event 有一条 `FuseRecover` 的事件，表明 Fluid 已经对挂载做过一次恢复操作。
 
 ## 注意
 
-在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 `recoverFusePeriod` 的大小，在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
-另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE pod crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。
+在 FUSE Deployment crash 的时候，挂载点恢复的时间依赖 FUSE Deployment 自身的恢复以及 `recoverFusePeriod` 的大小，在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
+另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE Deployment crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。
