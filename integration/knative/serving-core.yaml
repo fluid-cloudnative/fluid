@@ -4245,7 +4245,7 @@ data:
     # Controls whether persistent volume claim support is enabled or not.
     # 1. Enabled: enabling persistent volume claim support
     # 2. Disabled: disabling persistent volume claim support
-    kubernetes.podspec-persistent-volume-claim: "disabled"
+    kubernetes.podspec-persistent-volume-claim: "enabled"
 
     # Controls whether write access for persistent volumes is enabled or not.
     # 1. Enabled: enabling write access for persistent volumes
