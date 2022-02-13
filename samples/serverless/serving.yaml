@@ -15,14 +15,7 @@ spec:
         autoscaling.knative.dev/minScale: "1"
     spec:
       containers:
-        - image: registry.cn-hangzhou.aliyuncs.com/knative-sample/helloworld-go:160e4dc8
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                - /bin/bash
-                - -c
-                - time cp /data/hbase-2.4.9-client-bin.tar.gz /tmp/ >> /proc/1/fd/1
+        - image: fluidcloudnative/serving
           ports:
             - name: http1
               containerPort: 8080
@@ -36,5 +29,5 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: serverless-data
+            claimName: shared-data
             readOnly: true
