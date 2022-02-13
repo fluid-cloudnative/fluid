@@ -4250,7 +4250,7 @@ data:
     # Controls whether write access for persistent volumes is enabled or not.
     # 1. Enabled: enabling write access for persistent volumes
     # 2. Disabled: disabling write access for persistent volumes
-    kubernetes.podspec-persistent-volume-write: "enabled"
+    kubernetes.podspec-persistent-volume-write: "disabled"
 
 ---
 # Copyright 2018 The Knative Authors
