@@ -35,8 +35,18 @@ dataset-controller          1/1     1            1           18m
 fluid-webhook               1/1     1            1           18m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `AlluxioRuntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment
-和多个名为 `csi-nodeplugin` 的 Deployment 正在运行。其中，`csi-nodeplugin` 这些 Deployment 的数量取决于你的 Kubernetes 集群中节点的数量。
+通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `AlluxioRuntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment。
+
+## 配置
+
+**为namespace添加标签**
+
+为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
+
+```bash
+$ kubectl label namespace default fluid.io/enable-injection=true
+```
+
 
 ## 运行示例
 
