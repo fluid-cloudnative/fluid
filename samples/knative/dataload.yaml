@@ -4,5 +4,5 @@ metadata:
   name: serverless-dataload
 spec:
   dataset:
-    name: serverless-dataload
+    name: serverless-data
     namespace: default
