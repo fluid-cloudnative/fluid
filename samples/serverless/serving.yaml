@@ -37,3 +37,4 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: serverless-data
+            readOnly: true
