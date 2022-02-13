@@ -29,5 +29,5 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: shared-data
+            claimName: serverless-data
             readOnly: true
