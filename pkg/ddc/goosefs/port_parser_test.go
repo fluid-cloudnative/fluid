@@ -38,7 +38,6 @@ properties:
   goosefs.fuse.debug.enabled: "false"
   goosefs.fuse.jnifuse.enabled: "true"
   goosefs.fuse.logging.threshold: 1000ms
-  goosefs.fuse.shared.caching.reader.enabled: "true"
   goosefs.fuse.user.group.translation.enabled: "true"
   goosefs.job.master.finished.job.retention.time: 30sec
   goosefs.job.master.rpc.port: "20004"

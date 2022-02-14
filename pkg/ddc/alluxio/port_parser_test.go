@@ -40,7 +40,6 @@ properties:
   alluxio.fuse.debug.enabled: "false"
   alluxio.fuse.jnifuse.enabled: "true"
   alluxio.fuse.logging.threshold: 1000ms
-  alluxio.fuse.shared.caching.reader.enabled: "true"
   alluxio.fuse.user.group.translation.enabled: "true"
   alluxio.job.master.finished.job.retention.time: 30sec
   alluxio.job.master.rpc.port: "20004"
