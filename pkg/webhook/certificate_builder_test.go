@@ -135,7 +135,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		if item.clientIsNil {
 			cb.Client = nil
 		}
-		err := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
+		err, caCert := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
 		if err != nil {
 			if item.clientIsNil {
 				continue
@@ -149,7 +149,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 			continue
 		}
 		for i := range mc.Webhooks {
-			if len(mc.Webhooks[i].ClientConfig.CABundle) < item.lengthCheck {
+			if len(mc.Webhooks[i].ClientConfig.CABundle) < item.lengthCheck || len(mc.Webhooks[i].ClientConfig.CABundle) != len(caCert) {
 				t.Errorf("%s generate certification failed, ns:%s,svc:%s,want greater than %v,got:%v",
 					index,
 					item.ns,
@@ -159,10 +159,15 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 				)
 				continue
 			}
-			if len(mc.Webhooks[i].ClientConfig.CABundle) == len(caBundles[i]) {
-				t.Errorf("%s cannot paas because have not patched MutatingWebhookConfiguration", index)
+			for j := range caCert {
+				if mc.Webhooks[i].ClientConfig.CABundle[j] != caCert[j] {
+					t.Errorf("%s generate certification failed, ns:%s,svc:%s, the return result is not consistent with the patch",
+						index,
+						item.ns,
+						item.svc,
+					)
+				}
 			}
-
 		}
 
 	}
