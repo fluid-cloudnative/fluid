@@ -82,7 +82,8 @@ func (e *GooseFSEngine) optimizeDefaultProperties(runtime *datav1alpha1.GooseFSR
 	setDefaultProperties(runtime, value, "goosefs.user.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "goosefs.fuse.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "goosefs.worker.block.master.client.pool.size", "1024")
-	setDefaultProperties(runtime, value, "goosefs.fuse.shared.caching.reader.enabled", "true")
+	// Disable this optimization since it will cause availbilty issue. see https://github.com/Alluxio/alluxio/issues/14909
+	// setDefaultProperties(runtime, value, "goosefs.fuse.shared.caching.reader.enabled", "true")
 	setDefaultProperties(runtime, value, "goosefs.job.master.finished.job.retention.time", "30sec")
 	setDefaultProperties(runtime, value, "goosefs.underfs.object.store.breadcrumbs.enabled", "false")
 
