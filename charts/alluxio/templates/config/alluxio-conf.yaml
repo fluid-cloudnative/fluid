@@ -47,12 +47,6 @@
     {{- if .quota }}
       {{- $alluxioJavaOpts = printf "%v.dirs.quota=%v" $tierName .quota | append $alluxioJavaOpts }}
     {{- end}}
-    {{- if .high }}
-      {{- $alluxioJavaOpts = printf "%v.watermark.high.ratio=%v" $tierName .high | append $alluxioJavaOpts }}
-    {{- end}}
-    {{- if .low }}
-      {{- $alluxioJavaOpts = printf "%v.watermark.low.ratio=%v" $tierName .low | append $alluxioJavaOpts }}
-    {{- end}}
   {{- end}}
 {{- end }}
 
