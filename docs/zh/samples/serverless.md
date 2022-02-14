@@ -5,7 +5,7 @@
 
 ## 安装
 
-1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)和[kubernetes.podspec-persistent-volume-write](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L161)。
+1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
 
 检查 Knative的组件是否正常运行
 
