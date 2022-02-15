@@ -1,6 +1,6 @@
 # 示例 - 如何运行在以Knative为例的Serverless环境中
 
-本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有已经支持的Runtime运行在Serverless环境。
+本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有的Runtime运行在Serverless环境。
 
 
 ## 安装
@@ -107,7 +107,7 @@ serverless-data   566.22MiB        0.00B    4.00GiB          0.0%               
 **创建 Knative Serving 资源对象**
 
 ```yaml
-$ cat<<EOF >sample.yaml
+$ cat<<EOF >serving.yaml
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
@@ -168,7 +168,7 @@ $ kubectl get po helloworld-go-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
 
 
 ```shell
-kubectl logs helloworld-go-00001-deployment-64d674d75f-46vvf -c user-container
+$ kubectl logs helloworld-go-00001-deployment-64d674d75f-46vvf -c user-container
 Begin loading models at 16:29:02
 
 real  0m43.480s
@@ -182,7 +182,7 @@ Finish loading models at 16:29:45
 清理knative serving实例
 
 ```
-
+$ kubectl delete -f serving.yaml
 ```
 
 **执行数据预热**
@@ -215,43 +215,22 @@ NAME              UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAG
 serverless-data   566.22MiB        566.22MiB   4.00GiB          100.0%              Bound   33m
 ```
 
-新的 FUSE Deployment 创建后，再查看 demo Deployment 中的挂载点情况：
+再次创建Knative服务：
 
 ```shell
-$ kubectl exec -it demo-app bash
-kubectl exec [Deployment] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [Deployment] -- [COMMAND] instead.
-[root@demo-app /]# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-overlay         100G  9.4G   91G  10% /
-tmpfs            64M     0   64M   0% /dev
-tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
-JuiceFS:minio   1.0P   64K  1.0P   1% /data
-/dev/sdb1       100G  9.4G   91G  10% /etc/hosts
-shm              64M     0   64M   0% /dev/shm
-tmpfs           3.8G   12K  3.8G   1% /run/secrets/kubernetes.io/serviceaccount
-tmpfs           2.0G     0  2.0G   0% /proc/acpi
-tmpfs           2.0G     0  2.0G   0% /proc/scsi
-tmpfs           2.0G     0  2.0G   0% /sys/firmware
+$ kubectl create -f serving.yaml
+service.serving.knative.dev/helloworld-go created
 ```
 
-可以看到，容器中没有出现 `Transport endpoint is not connected` 的报错，表明挂载点已经恢复。
+此时查看启动时间发现当前启动加载模型的时间是**2.19s**, 变成没有预热的情况下性能的**1/20**
 
-**查看 dataset 的 event**
-
-```shell
-$ kubectl describe dataset jfsdemo
-Name:         jfsdemo
-Namespace:    default
-...
-Events:
-  Type    Reason              Age                  From         Message
-  ----    ------              ----                 ----         -------
-  Normal  FuseRecoverSucceed  2m34s (x5 over 11m)  FuseRecover  Fuse recover /var/lib/kubelet/Deployments/6c1e0318-858b-4ead-976b-37ccce26edfe/volumes/kubernetes.io~csi/default-jfsdemo/mount succeed
 ```
+kubectl logs helloworld-go-00001-deployment-6cb54f94d7-dbgxf -c user-container
+Begin loading models at 18:38:23
 
-可以看到 Dataset 的 event 有一条 `FuseRecover` 的事件，表明 Fluid 已经对挂载做过一次恢复操作。
-
-## 注意
-
-在 FUSE Deployment crash 的时候，挂载点恢复的时间依赖 FUSE Deployment 自身的恢复以及 `recoverFusePeriod` 的大小，在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
-另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE Deployment crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。
+real  0m2.190s
+user  0m0.000s
+sys 0m0.899s
+Finish loading models at 18:38:25
+2022-02-15 18:38:25 INFO Hello world sample started.
+```
