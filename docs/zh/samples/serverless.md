@@ -1,11 +1,11 @@
-# 示例 - 如何运行在Serverless环境中
+# 示例 - 如何运行在以Knative为例的Serverless环境中
 
 本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有已经支持的Runtime运行在Serverless环境。
 
 
 ## 安装
 
-1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
+1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)和[kubernetes.podspec-persistent-volume-write](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L161)。
 
 检查 Knative的组件是否正常运行
 
@@ -50,40 +50,17 @@ $ kubectl label namespace default fluid.io/enable-injection=true
 
 ## 运行示例
 
-**为 namespace 开启 webhook**
-
-FUSE 挂载点自动恢复功能需要 Deployment 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
-Fluid webhook 提供了自动将 Deployment 的 mountPropagation 设置为 `HostToContainer`，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
-
-```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
-```
 
 **创建 dataset 和 runtime**
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
-
-```shell
-$ kubectl get AlluxioRuntime
-NAME      WORKER PHASE   FUSE PHASE   AGE
-jfsdemo   Ready          Ready        2m58s
-$ kubectl get dataset
-NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   [Calculating]    N/A                       N/A                 Bound   2m55s
-```
-
-**创建 Deployment 资源对象**
+针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例, 以下为Dataset内容
 
 ```yaml
-$ cat<<EOF >sample.yaml
+$ cat<<EOF >dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
-  name: shared-data
+  name: serverless-data
 spec:
   mounts:
     - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
@@ -95,7 +72,7 @@ spec:
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
-  name: shared-data
+  name: serverless-data
 spec:
   replicas: 2
   tieredstore:
@@ -105,12 +82,73 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
+EOF
+```
+
+执行创建Dataset操作
+
+```
+$ kubectl create -f dataset.yaml
+```
+
+查看Dataset状态
+
+
+```shell
+$ kubectl get alluxio
+kubectl get alluxioruntime
+NAME              MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
+serverless-data   Ready          Ready          Ready        4m52s
+$ kubectl get dataset
+NAME              UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+serverless-data   566.22MiB        0.00B    4.00GiB          0.0%                Bound   4m52s
+```
+
+**创建 Knative Serving 资源对象**
+
+```yaml
+$ cat<<EOF >sample.yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: helloworld-go
+spec:
+  template:
+    metadata:
+      labels:
+        app: helloworld-go
+        serverless.fluid.io/inject: "true"
+      annotations:
+        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/scaleDownDelay: "30m"
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: fluidcloudnative/serving
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: serverless-data
+            readOnly: true
   EOF
 $ kubectl create -f sample.yaml
 Deployment/demo-app created
 ```
 
-**查看 Deployment 是否创建，并检查其 mountPropagation**
+请在label中配置`serverless.fluid.io/inject: "true"`
+
+
+**查看 Knative Serving 是否创建，并检查 fuse-container 是否注入**
 
 ```shell
 $ kubectl get po |grep demo
