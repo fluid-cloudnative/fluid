@@ -141,8 +141,8 @@ spec:
             claimName: serverless-data
             readOnly: true
   EOF
-$ kubectl create -f sample.yaml
-Deployment/demo-app created
+$ kubectl create -f serving.yaml
+service.serving.knative.dev/helloworld-go created
 ```
 
 请在label中配置`serverless.fluid.io/inject: "true"`
@@ -151,32 +151,69 @@ Deployment/demo-app created
 **查看 Knative Serving 是否创建，并检查 fuse-container 是否注入**
 
 ```shell
-$ kubectl get po |grep demo
-demo-app             1/1     Running   0          96s
-jfsdemo-fuse-g9pvp   1/1     Running   0          95s
-jfsdemo-worker-0     1/1     Running   0          4m25s
-$ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
-    volumeMounts:
-    - mountPath: /data
-      mountPropagation: HostToContainer
-      name: demo
+$ kubectl get po
+NAME                                              READY   STATUS    RESTARTS   AGE
+helloworld-go-00001-deployment-64d674d75f-46vvf   3/3     Running   0          76s
+serverless-data-master-0                          2/2     Running   0          16m
+serverless-data-worker-0                          2/2     Running   0          16m
+serverless-data-worker-1                          2/2     Running   0          16m
+$ kubectl get po helloworld-go-00001-deployment-64d674d75f-46vvf -oyaml| grep -i fluid-fuse -B 3
+          - /opt/alluxio/integration/fuse/bin/alluxio-fuse
+          - unmount
+          - /runtime-mnt/alluxio/default/serverless-data/alluxio-fuse
+    name: fluid-fuse
 ```
 
-## 测试 FUSE 挂载点自动恢复
+查看 Knative Serving 启动速度,可以看到启动加载模型的时间是**43s**
 
-**删除 FUSE Deployment**
-
-删除 FUSE Deployment 后，并等待其重启：
 
 ```shell
-$ kubectl delete po jfsdemo-fuse-g9pvp
-Deployment "jfsdemo-fuse-g9pvp" deleted
-$ kubectl get po
-NAME                 READY   STATUS    RESTARTS   AGE
-demo-app             1/1     Running   0          5m7s
-jfsdemo-fuse-bdsdt   1/1     Running   0          6s
-jfsdemo-worker-0     1/1     Running   0          7m56s
-````
+kubectl logs helloworld-go-00001-deployment-64d674d75f-46vvf -c user-container
+Begin loading models at 16:29:02
+
+real  0m43.480s
+user  0m0.001s
+sys 0m0.956s
+Finish loading models at 16:29:45
+2022-02-15 16:29:45 INFO Hello world sample started.
+```
+
+
+清理knative serving实例
+
+```
+
+```
+
+**执行数据预热**
+
+创建dataload对象，并查看状态：
+
+```yaml
+$ cat<<EOF >dataload.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: serverless-dataload
+spec:
+  dataset:
+    name: serverless-data
+    namespace: default
+  EOF
+$ kubectl create -f dataload.yaml
+dataload.data.fluid.io/serverless-dataload created
+$ kubectl get dataload
+NAME                  DATASET           PHASE      AGE     DURATION
+serverless-dataload   serverless-data   Complete   2m43s   34s
+```
+
+检查此时的缓存状态, 目前已经将数据完全缓存到集群中
+
+```
+$ kubectl get dataset
+NAME              UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+serverless-data   566.22MiB        566.22MiB   4.00GiB          100.0%              Bound   33m
+```
 
 新的 FUSE Deployment 创建后，再查看 demo Deployment 中的挂载点情况：
 
