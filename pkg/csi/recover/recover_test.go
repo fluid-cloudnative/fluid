@@ -464,16 +464,14 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 
 func TestNewFuseRecover(t *testing.T) {
 	type args struct {
-		kubeClient        client.Client
-		recorder          record.EventRecorder
-		recoverFusePeriod int
+		kubeClient client.Client
+		recorder   record.EventRecorder
 	}
 
 	fakeClient := fake.NewFakeClient()
 	fakeRecorder := record.NewFakeRecorder(1)
 	fakeKubeletClient := &kubelet.KubeletClient{}
 	fakeContainersMap := make(map[string]*containerStat)
-	fakeRecoverFusePeriod := 20
 
 	tests := []struct {
 		name    string
@@ -484,9 +482,8 @@ func TestNewFuseRecover(t *testing.T) {
 		{
 			name: "test_newFuseRecover",
 			args: args{
-				kubeClient:        fakeClient,
-				recorder:          fakeRecorder,
-				recoverFusePeriod: fakeRecoverFusePeriod,
+				kubeClient: fakeClient,
+				recorder:   fakeRecorder,
 			},
 			want: &FuseRecover{
 				SafeFormatAndMount: mount.SafeFormatAndMount{
@@ -497,7 +494,7 @@ func TestNewFuseRecover(t *testing.T) {
 				KubeletClient:     fakeKubeletClient,
 				Recorder:          fakeRecorder,
 				containers:        fakeContainersMap,
-				recoverFusePeriod: fakeRecoverFusePeriod,
+				recoverFusePeriod: defaultFuseRecoveryPeriod,
 			},
 			wantErr: false,
 		},
@@ -511,7 +508,7 @@ func TestNewFuseRecover(t *testing.T) {
 			})
 			defer patch.Reset()
 
-			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.recoverFusePeriod)
+			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewFuseRecover() error = %v, wantErr %v", err, tt.wantErr)
 				return

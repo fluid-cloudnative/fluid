@@ -44,8 +44,9 @@ import (
 )
 
 const (
-	defaultKubeletTimeout   = 10
-	serviceAccountTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	defaultKubeletTimeout     = 10
+	defaultFuseRecoveryPeriod = 5
+	serviceAccountTokenFile   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -109,7 +110,7 @@ func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	return kubeletClient, nil
 }
 
-func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, recoverFusePeriod int) (*FuseRecover, error) {
+func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (*FuseRecover, error) {
 	glog.V(3).Infoln("start csi recover")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
@@ -126,6 +127,13 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, rec
 		return nil, errors.Wrap(err, "failed to initialize kubelet")
 	}
 
+	recoverFusePeriod := defaultFuseRecoveryPeriod
+	if os.Getenv("RECOVER_FUSE_PERIOD") != "" {
+		recoverFusePeriod, err = strconv.Atoi(os.Getenv("RECOVER_FUSE_PERIOD"))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse period to int")
+		}
+	}
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),

@@ -71,15 +71,17 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v1.1.1
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023
 	google.golang.org/grpc v1.38.0
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.20.12
 	k8s.io/client-go v0.22.0
-	k8s.io/component-base v0.22.0 // indirect
+	k8s.io/component-base v0.22.0
 	k8s.io/component-helpers v0.20.12
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd

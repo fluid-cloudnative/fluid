@@ -18,12 +18,14 @@ package recover
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/features"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // Register initializes the fuse recover and registers it to the controller manager.
 func Register(mgr manager.Manager, config config.Config) error {
-	fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"), config.RecoverFusePeriod)
+	fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"))
 	if err != nil {
 		return err
 	}
@@ -36,6 +38,6 @@ func Register(mgr manager.Manager, config config.Config) error {
 }
 
 // Enabled checks if the fuse recover should be enabled.
-func Enabled(cfg config.Config) bool {
-	return cfg.RecoverFusePeriod > 0
+func Enabled() bool {
+	return utilfeature.DefaultFeatureGate.Enabled(features.FuseRecovery)
 }
