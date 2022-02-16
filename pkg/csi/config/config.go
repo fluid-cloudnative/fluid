@@ -17,7 +17,6 @@ limitations under the License.
 package config
 
 type Config struct {
-	NodeId            string
-	Endpoint          string
-	RecoverFusePeriod int
+	NodeId   string
+	Endpoint string
 }

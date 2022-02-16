@@ -184,6 +184,7 @@ github.com/smartystreets/goconvey/convey/reporting
 ## explicit
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
+## explicit
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.7.0
 ## explicit
@@ -354,6 +355,7 @@ gopkg.in/tomb.v1
 ## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+## explicit
 gopkg.in/yaml.v3
 # k8s.io/api v0.22.0 => k8s.io/api v0.20.12
 ## explicit

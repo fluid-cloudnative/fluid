@@ -9,7 +9,7 @@ dataset:
     image: fluidcloudnative/dataset-controller:v0.7.0-8288303
 
 csi:
-  recoverFusePeriod: -1
+  featureGates: "FuseRecovery=true"
   config:
     hostNetwork: false
   registrar:
