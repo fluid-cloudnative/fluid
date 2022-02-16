@@ -44,8 +44,10 @@ import (
 )
 
 const (
-	defaultKubeletTimeout   = 10
-	serviceAccountTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	defaultKubeletTimeout     = 10
+	defaultFuseRecoveryPeriod = 5 * time.Second
+	serviceAccountTokenFile   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	FuseRecoveryPeriod        = "RECOVER_FUSE_PERIOD"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -58,7 +60,7 @@ type FuseRecover struct {
 
 	containers map[string]*containerStat // key: <containerName>-<daemonSetName>-<namespace>
 
-	recoverFusePeriod int
+	recoverFusePeriod time.Duration
 }
 
 type containerStat struct {
@@ -109,7 +111,7 @@ func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	return kubeletClient, nil
 }
 
-func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, recoverFusePeriod int) (*FuseRecover, error) {
+func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (*FuseRecover, error) {
 	glog.V(3).Infoln("start csi recover")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
@@ -126,6 +128,13 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, rec
 		return nil, errors.Wrap(err, "failed to initialize kubelet")
 	}
 
+	recoverFusePeriod := defaultFuseRecoveryPeriod
+	if os.Getenv(FuseRecoveryPeriod) != "" {
+		recoverFusePeriod, err = time.ParseDuration(os.Getenv(FuseRecoveryPeriod))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse time period")
+		}
+	}
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
@@ -149,7 +158,7 @@ func (r *FuseRecover) Start(ctx context.Context) error {
 }
 
 func (r *FuseRecover) run(stopCh <-chan struct{}) {
-	go wait.Until(r.runOnce, time.Duration(r.recoverFusePeriod)*time.Second, stopCh)
+	go wait.Until(r.runOnce, r.recoverFusePeriod, stopCh)
 	<-stopCh
 	glog.V(3).Info("Shutdown CSI recover.")
 }

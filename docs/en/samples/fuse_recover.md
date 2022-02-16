@@ -4,7 +4,7 @@
 
 You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases).
 
-In Fluid chart values.yaml, set `csi.recoverFusePeriod` to `5` or other positive number, indicating the period of the CSI backend polling the kubelet, in seconds, less than 0 to disable the function.
+In Fluid chart values.yaml, set `csi.featureGates` to `FuseRecovery=true`, indicating enable FUSE auto-recovery.
 Refer to the [Installation Documentation](../userguide/install.md) to complete the installation. And check that the components of Fluid are running normally (here takes JuiceFSRuntime as an example):
 
 ```shell
@@ -142,7 +142,7 @@ You can see that there is a `FuseRecover` event in the Dataset event, indicating
 
 ## Notice
 
-When the FUSE pod crashes, the recovery time of the mount point depends on the recovery of the FUSE pod itself and the size of `recoverFusePeriod`. 
+When the FUSE pod crashes, the recovery time of the mount point depends on the recovery of the FUSE pod itself and the period of the csi polling kubelet (env `RECOVER_FUSE_PERIOD`).
 Before the recovery, the mount point will still have a `Transport endpoint is not connected` error, which is expected.
 In addition, the mount point recovery is accomplished by bind mount repeatedly. For the file descriptors that have been opened by the application before the FUSE pod crash,
 cannot be recovered even after the mount point recovered. The application itself needs to retry when an error occurs and enhance its robustness.

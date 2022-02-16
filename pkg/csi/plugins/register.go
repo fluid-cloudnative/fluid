@@ -33,6 +33,6 @@ func Register(mgr manager.Manager, cfg config.Config) error {
 }
 
 // Enabled checks if the csi driver should be enabled.
-func Enabled(cfg config.Config) bool {
+func Enabled() bool {
 	return true
 }

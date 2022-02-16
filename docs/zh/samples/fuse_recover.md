@@ -4,7 +4,7 @@
 
 您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
 
-在 Fluid 的安装 chart values.yaml 中将 `csi.recoverFusePeriod` 设置为 `5` 或其他正数，表示 CSI 后端轮询 kubelet 的周期，单位为秒，小于 0 表示关闭该功能，
+在 Fluid 的安装 chart values.yaml 中将 `csi.featureGates` 设置为 `FuseRecovery=true`，表示开启 FUSE 自动恢复功能。
 再参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行（这里以 JuiceFSRuntime 为例）：
 
 ```shell
@@ -141,5 +141,5 @@ Events:
 
 ## 注意
 
-在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 `recoverFusePeriod` 的大小，在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
+在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 csi 轮询 kubelet 的周期大小（环境变量 `RECOVER_FUSE_PERIOD`），在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
 另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE pod crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。

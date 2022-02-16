@@ -25,6 +25,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/csi"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,11 +38,10 @@ import (
 )
 
 var (
-	endpoint          string
-	nodeID            string
-	metricsAddr       string
-	pprofAddr         string
-	recoverFusePeriod int
+	endpoint    string
+	nodeID      string
+	metricsAddr string
+	pprofAddr   string
 )
 
 var scheme = runtime.NewScheme()
@@ -76,10 +76,8 @@ func init() {
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
-
-	// start csi recover
-	startCmd.Flags().IntVar(&recoverFusePeriod, "recover-fuse-period", -1, "CSI recover sync pods period, in seconds")
 }
 
 func ErrorAndExit(err error) {
@@ -137,9 +135,8 @@ func handle() {
 	}
 
 	config := config.Config{
-		NodeId:            nodeID,
-		Endpoint:          endpoint,
-		RecoverFusePeriod: recoverFusePeriod,
+		NodeId:   nodeID,
+		Endpoint: endpoint,
 	}
 
 	if err = csi.SetupWithManager(mgr, config); err != nil {

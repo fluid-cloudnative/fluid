@@ -67,7 +67,9 @@ spec:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - --v=5
-            - --recover-fuse-period={{ .Values.csi.recoverFusePeriod }}
+            {{- if .Values.csi.featureGates }}
+            - --feature-gates={{ .Values.csi.featureGates }}}
+            {{- end }}
             - "--pprof-addr=:6060"
           env:
             - name: NODE_ID
