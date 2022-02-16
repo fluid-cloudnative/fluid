@@ -14,6 +14,7 @@ package alluxio
 
 import (
 	"fmt"
+	"k8s.io/client-go/tools/record"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -42,6 +43,7 @@ type AlluxioEngine struct {
 	UnitTest               bool
 	lastCacheHitStates     *cacheHitStates
 	*ctrl.Helper
+	Recorder record.EventRecorder
 }
 
 // Build function builds the Alluxio Engine
@@ -50,6 +52,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Client:                 ctx.Client,
+		Recorder:               ctx.Recorder,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,
