@@ -35,7 +35,7 @@ dataset-controller          1/1     1            1           18m
 fluid-webhook               1/1     1            1           18m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `AlluxioRuntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment。
+通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `alluxioruntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment。
 
 ## 配置
 
@@ -95,7 +95,6 @@ $ kubectl create -f dataset.yaml
 
 ```shell
 $ kubectl get alluxio
-kubectl get alluxioruntime
 NAME              MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
 serverless-data   Ready          Ready          Ready        4m52s
 $ kubectl get dataset
