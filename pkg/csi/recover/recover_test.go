@@ -464,8 +464,9 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 
 func TestNewFuseRecover(t *testing.T) {
 	type args struct {
-		kubeClient client.Client
-		recorder   record.EventRecorder
+		kubeClient        client.Client
+		recorder          record.EventRecorder
+		recoverFusePeriod string
 	}
 
 	fakeClient := fake.NewFakeClient()
@@ -482,8 +483,9 @@ func TestNewFuseRecover(t *testing.T) {
 		{
 			name: "test_newFuseRecover",
 			args: args{
-				kubeClient: fakeClient,
-				recorder:   fakeRecorder,
+				kubeClient:        fakeClient,
+				recorder:          fakeRecorder,
+				recoverFusePeriod: "5s",
 			},
 			want: &FuseRecover{
 				SafeFormatAndMount: mount.SafeFormatAndMount{
@@ -502,6 +504,7 @@ func TestNewFuseRecover(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv(utils.MountRoot, "/runtime-mnt")
+			os.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
 
 			patch := ApplyFunc(initializeKubeletClient, func() (*kubelet.KubeletClient, error) {
 				return fakeKubeletClient, nil

@@ -45,8 +45,9 @@ import (
 
 const (
 	defaultKubeletTimeout     = 10
-	defaultFuseRecoveryPeriod = 5
+	defaultFuseRecoveryPeriod = 5 * time.Second
 	serviceAccountTokenFile   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	FuseRecoveryPeriod        = "RECOVER_FUSE_PERIOD"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -59,7 +60,7 @@ type FuseRecover struct {
 
 	containers map[string]*containerStat // key: <containerName>-<daemonSetName>-<namespace>
 
-	recoverFusePeriod int
+	recoverFusePeriod time.Duration
 }
 
 type containerStat struct {
@@ -128,10 +129,10 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (*F
 	}
 
 	recoverFusePeriod := defaultFuseRecoveryPeriod
-	if os.Getenv("RECOVER_FUSE_PERIOD") != "" {
-		recoverFusePeriod, err = strconv.Atoi(os.Getenv("RECOVER_FUSE_PERIOD"))
+	if os.Getenv(FuseRecoveryPeriod) != "" {
+		recoverFusePeriod, err = time.ParseDuration(os.Getenv(FuseRecoveryPeriod))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse period to int")
+			return nil, errors.Wrap(err, "failed to parse time period")
 		}
 	}
 	return &FuseRecover{
@@ -157,7 +158,7 @@ func (r *FuseRecover) Start(ctx context.Context) error {
 }
 
 func (r *FuseRecover) run(stopCh <-chan struct{}) {
-	go wait.Until(r.runOnce, time.Duration(r.recoverFusePeriod)*time.Second, stopCh)
+	go wait.Until(r.runOnce, r.recoverFusePeriod, stopCh)
 	<-stopCh
 	glog.V(3).Info("Shutdown CSI recover.")
 }
