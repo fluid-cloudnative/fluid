@@ -47,7 +47,6 @@ fluid-webhook               1/1     1            1           18m
 $ kubectl label namespace default fluid.io/enable-injection=true
 ```
 
-
 ## 运行示例
 
 
@@ -145,7 +144,7 @@ $ kubectl create -f serving.yaml
 service.serving.knative.dev/helloworld-go created
 ```
 
-请在label中配置`serverless.fluid.io/inject: "true"`
+请在podSpec或者podTemplateSpec中的label中配置`serverless.fluid.io/inject: "true"`
 
 
 **查看 Knative Serving 是否创建，并检查 fuse-container 是否注入**
