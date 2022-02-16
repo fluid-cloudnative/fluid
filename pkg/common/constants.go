@@ -54,6 +54,8 @@ const (
 	FuseRecoverFailed = "FuseRecoverFailed"
 
 	FuseRecoverSucceed = "FuseRecoverSucceed"
+
+	RuntimeDeprecated = "RuntimeDeprecated"
 )
 
 type CacheStoreType string

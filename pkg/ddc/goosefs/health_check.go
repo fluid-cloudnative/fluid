@@ -18,12 +18,16 @@ package goosefs
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -94,7 +98,7 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is not ready.",
-				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), v1.ConditionFalse)
+				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), corev1.ConditionFalse)
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {
@@ -107,7 +111,7 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 			return err
 		} else {
 			cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is ready.",
-				"The master is ready.", v1.ConditionTrue)
+				"The master is ready.", corev1.ConditionTrue)
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {
@@ -149,12 +153,16 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
-	workerName := e.getWorkerName()
-
 	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, e.namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
-		return err
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
+			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "The runtime is created by controllers before v0.7.0, to fully enable latest capabilities, please delete the runtime and create a new one")
+			return nil
+		}
+		return
 	}
 
 	healthy := false
@@ -176,7 +184,7 @@ func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
-					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
+					*workers.Spec.Replicas-workers.Status.ReadyReplicas), corev1.ConditionFalse)
 
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
@@ -195,7 +203,7 @@ func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 		} else {
 			healthy = true
 			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
-				"The workers are ready", v1.ConditionTrue)
+				"The workers are ready", corev1.ConditionTrue)
 
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
@@ -264,7 +272,7 @@ func (e *GooseFSEngine) checkFuseHealthy() (err error) {
 				fmt.Sprintf("The daemonset %s in %s are not ready, the unhealthy number %d",
 					fuses.Name,
 					fuses.Namespace,
-					fuses.Status.UpdatedNumberScheduled), v1.ConditionFalse)
+					fuses.Status.UpdatedNumberScheduled), corev1.ConditionFalse)
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {
@@ -279,7 +287,7 @@ func (e *GooseFSEngine) checkFuseHealthy() (err error) {
 			healthy = true
 			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
 			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are ready.",
-				"The fuses are ready", v1.ConditionFalse)
+				"The fuses are ready", corev1.ConditionFalse)
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {

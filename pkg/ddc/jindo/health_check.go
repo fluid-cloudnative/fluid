@@ -2,9 +2,11 @@ package jindo
 
 import (
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
@@ -80,8 +82,9 @@ func (e *JindoEngine) checkWorkersHealthy() (err error) {
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return
+			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
+			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "The runtime is created by controllers before v0.7.0, to fully enable latest capabilities, please delete the runtime and create a new one")
+			return nil
 		}
 		return
 	}
