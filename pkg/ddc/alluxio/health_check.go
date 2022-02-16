@@ -159,8 +159,8 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "Detected deprecated runtime, the status might not be up-to-date")
+			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
+			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "The runtime is created by controllers before v0.7.0, to fully enable latest capabilities, please delete the runtime and create a new one")
 			return nil
 		}
 		return err
