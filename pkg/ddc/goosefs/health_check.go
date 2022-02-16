@@ -18,6 +18,9 @@ package goosefs
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -149,12 +152,15 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
-	workerName := e.getWorkerName()
-
 	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(e.Client, workerName, e.namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
-		return err
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
+		return
 	}
 
 	healthy := false

@@ -18,6 +18,9 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -151,8 +154,13 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 // checkWorkersHealthy check workers number changed
 func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(e.Client, e.getWorkerName(), e.namespace)
+	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
 		return err
 	}
 

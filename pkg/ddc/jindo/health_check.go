@@ -81,7 +81,7 @@ func (e *JindoEngine) checkWorkersHealthy() (err error) {
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return
+			return nil
 		}
 		return
 	}
