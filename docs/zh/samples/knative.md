@@ -153,7 +153,7 @@ $ kubectl get po helloworld-go-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
     name: fluid-fuse
 ```
 
-查看 Knative Serving 启动速度,可以看到启动加载模型的时间是**43s**
+查看 Knative Serving 启动速度,可以看到启动加载数据的时间是**43s**
 
 
 ```shell
@@ -211,7 +211,7 @@ $ kubectl create -f serving.yaml
 service.serving.knative.dev/helloworld-go created
 ```
 
-此时查看启动时间发现当前启动加载模型的时间是**2.19s**, 变成没有预热的情况下性能的**1/20**
+此时查看启动时间发现当前启动加载数据的时间是**2.19s**, 变成没有预热的情况下性能的**1/20**
 
 ```
 kubectl logs helloworld-go-00001-deployment-6cb54f94d7-dbgxf -c user-container
