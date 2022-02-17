@@ -5,7 +5,7 @@
 
 ## 安装
 
-1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)和[kubernetes.podspec-persistent-volume-write](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L161)。
+1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
 
 检查 Knative的组件是否正常运行
 
@@ -100,12 +100,12 @@ $ cat<<EOF >serving.yaml
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: helloworld-go
+  name: model-serving
 spec:
   template:
     metadata:
       labels:
-        app: helloworld-go
+        app: model-serving
         serverless.fluid.io/inject: "true"
       annotations:
         autoscaling.knative.dev/target: "10"
@@ -131,7 +131,7 @@ spec:
             readOnly: true
   EOF
 $ kubectl create -f serving.yaml
-service.serving.knative.dev/helloworld-go created
+service.serving.knative.dev/model-serving created
 ```
 
 请在podSpec或者podTemplateSpec中的label中配置`serverless.fluid.io/inject: "true"`
@@ -142,11 +142,11 @@ service.serving.knative.dev/helloworld-go created
 ```shell
 $ kubectl get po
 NAME                                              READY   STATUS    RESTARTS   AGE
-helloworld-go-00001-deployment-64d674d75f-46vvf   3/3     Running   0          76s
+model-serving-00001-deployment-64d674d75f-46vvf   3/3     Running   0          76s
 serverless-data-master-0                          2/2     Running   0          16m
 serverless-data-worker-0                          2/2     Running   0          16m
 serverless-data-worker-1                          2/2     Running   0          16m
-$ kubectl get po helloworld-go-00001-deployment-64d674d75f-46vvf -oyaml| grep -i fluid-fuse -B 3
+$ kubectl get po model-serving-00001-deployment-64d674d75f-46vvf -oyaml| grep -i fluid-fuse -B 3
           - /opt/alluxio/integration/fuse/bin/alluxio-fuse
           - unmount
           - /runtime-mnt/alluxio/default/serverless-data/alluxio-fuse
@@ -157,7 +157,7 @@ $ kubectl get po helloworld-go-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
 
 
 ```shell
-$ kubectl logs helloworld-go-00001-deployment-64d674d75f-46vvf -c user-container
+$ kubectl logs model-serving-00001-deployment-64d674d75f-46vvf -c user-container
 Begin loading models at 16:29:02
 
 real  0m43.480s
@@ -208,13 +208,13 @@ serverless-data   566.22MiB        566.22MiB   4.00GiB          100.0%          
 
 ```shell
 $ kubectl create -f serving.yaml
-service.serving.knative.dev/helloworld-go created
+service.serving.knative.dev/model-serving created
 ```
 
 此时查看启动时间发现当前启动加载数据的时间是**2.19s**, 变成没有预热的情况下性能的**1/20**
 
 ```
-kubectl logs helloworld-go-00001-deployment-6cb54f94d7-dbgxf -c user-container
+kubectl logs model-serving-00001-deployment-6cb54f94d7-dbgxf -c user-container
 Begin loading models at 18:38:23
 
 real  0m2.190s
@@ -222,4 +222,43 @@ user  0m0.000s
 sys 0m0.899s
 Finish loading models at 18:38:25
 2022-02-15 18:38:25 INFO Hello world sample started.
+```
+
+> 注： 本例子使用的是Knative serving，如果您没有Knative环境，也可以使用Deployment进行实验。
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-serving
+spec:
+  selector:
+    matchLabels:
+      app: model-serving
+  template:
+    metadata:
+      labels:
+        app: model-serving
+        serverless.fluid.io/inject: "true"
+      annotations:
+        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/scaleDownDelay: "30m"
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: fluidcloudnative/serving
+          name: serving
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: serverless-data
 ```
