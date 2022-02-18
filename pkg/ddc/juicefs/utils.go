@@ -19,9 +19,10 @@ package juicefs
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"strconv"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

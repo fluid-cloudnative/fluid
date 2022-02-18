@@ -128,6 +128,8 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 		fluidRuntime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.GooseFSRuntime:
 		fluidRuntime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+	case common.JuiceFSRuntime:
+		fluidRuntime, err = utils.GetJuiceFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	default:
 		ctx.Log.Error(fmt.Errorf("RuntimeNotSupported"), "The runtime is not supported yet", "runtime", boundedRuntime)
 		r.Recorder.Eventf(&targetDataload,

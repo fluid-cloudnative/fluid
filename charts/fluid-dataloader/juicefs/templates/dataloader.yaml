@@ -1,0 +1,133 @@
+# .Release.Name will be used to decide which dataset will be preload
+# .Release.Name should be like `<pvc-name>-load`(e.g. hbase-load for a PersistentVolumeClaim named `hbase`)
+# TODO: the length of .Release.Name won't exceed 53(limited by Helm), which means length of `<pvc-name>` can't exceed 48. This might be a problem.
+  {{/*  {{  $datasetName := "" -}}*/}}
+  {{/*  {{- $randomSuffix := "" -}}*/}}
+  {{/*  {{- if regexMatch "^[A-Za-z0-9._-]+-load-[A-Za-z0-9]{5}$" .Release.Name -}}*/}}
+  {{/*    {{- $arr := regexSplit "-load-" .Release.Name -1 -}}*/}}
+  {{/*    {{- $datasetName = first $arr -}}*/}}
+  {{/*    {{- $randomSuffix = last $arr -}}*/}}
+  {{/*  {{- else -}}*/}}
+  {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
+  {{/*  {{- end }}*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+    targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+spec:
+  backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ printf "%s-loader" .Release.Name }}
+      labels:
+        release: {{ .Release.Name }}
+        role: dataload-pod
+        targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: dataloader
+          image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: ["/scripts/juicefs_env_init.sh && /scripts/juicefs_dataload.sh"]
+          {{- $targetPaths := "" }}
+          {{- range .Values.dataloader.targetPaths }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+          {{- end }}
+          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+
+          {{- $pathReplicas := ""}}
+          {{- range .Values.dataloader.targetPaths }}
+          {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+          {{- end }}
+          {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+          env:
+            - name: STORAGE_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CACHEDIR2
+              value: /test
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "cachedir" }}
+            - name: CACHEDIR
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "mountpath" }}
+            - name: MOUNTPATH
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "command" }}
+            - name: COMMAND
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+            - name: DATA_PATH
+              value: {{ $targetPaths | quote }}
+            - name: PATH_REPLICAS
+              value: {{ $pathReplicas | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /scripts
+              name: data-load-script
+            {{- range .Values.dataloader.targetPaths }}
+            {{- if .fluidNative }}
+            - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
+              name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+            {{- end }}
+            {{- end }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "cachedir" }}
+            - mountPath: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+              name: cachedir
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "mountpath" }}
+            - mountPath: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+              name: mountpath1
+      volumes:
+        - name: data-load-script
+          configMap:
+            name: {{ printf "%s-data-load-script" .Release.Name }}
+            items:
+              - key: dataloader.juicefs.init
+                path: juicefs_env_init.sh
+                mode: 365
+              - key: dataloader.distributedLoad
+                path: juicefs_dataload.sh
+                mode: 365
+        {{- range .Values.dataloader.targetPaths }}
+        {{- if .fluidNative }}
+        - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+          hostPath:
+            path: {{ .path }}
+        {{- end }}
+        {{- end }}
+        - name: cachedir
+        {{- range $key, $val := .Values.dataloader.options }}
+        {{- if eq $key "cachedir" }}
+          hostPath:
+            path: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
+        - name: mountpath1
+        {{- range $key, $val := .Values.dataloader.options }}
+        {{- if eq $key "mountpath" }}
+          hostPath:
+            path: {{ $val | quote }}
+        {{- end }}
+        {{- end }}

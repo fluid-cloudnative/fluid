@@ -38,4 +38,8 @@ const (
 	JuiceMetaUrl   = "metaurl"
 	JuiceAccessKey = "access-key"
 	JuiceSecretKey = "secret-key"
+
+	CACHEDIR  = "cachedir"
+	MOUNTPATH = "mountpath"
+	COMMAND   = "command"
 )

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-data-load-script" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+data:
+  dataloader.juicefs.init: |
+    #!/bin/bash
+    main() {
+      $COMMAND
+    }
+    main
+  dataloader.distributedLoad: |
+    #!/usr/bin/env bash
+    set -xe
+
+    function distributedLoad() {
+        local path=$1
+
+        time juicefs warmup $path
+        #echo -e "distributedLoad and sleep start now"
+        #sleep 10m
+    }
+
+    function main() {
+        paths="$DATA_PATH"
+        paths=(${paths//:/ })
+        for((i=0;i<${#paths[@]};i++)) do
+            local path="${paths[i]}"
+            echo -e "juicefs warmup on $path starts"
+            distributedLoad "$MOUNTPATH${paths[i]}" 
+            #echo -e "juicefs warmup on $path ends"
+        done
+        sleep 2d
+    }
+    main "$@"
+
+
+
+
+
