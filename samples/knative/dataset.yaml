@@ -1,0 +1,25 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: serverless-data
+spec:
+  mounts:
+    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
+      name: hbase
+      path: "/"
+  accessModes:
+    - ReadOnlyMany
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: serverless-data
+spec:
+  replicas: 2
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"

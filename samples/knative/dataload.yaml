@@ -1,0 +1,8 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: serverless-dataload
+spec:
+  dataset:
+    name: serverless-data
+    namespace: default
