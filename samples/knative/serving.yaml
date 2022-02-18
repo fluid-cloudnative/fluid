@@ -1,0 +1,33 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: helloworld-go
+  #namespace: test
+spec:
+  template:
+    metadata:
+      labels:
+        app: helloworld-go
+        serverless.fluid.io/inject: "true"
+      annotations:
+        autoscaling.knative.dev/target: "10"
+        autoscaling.knative.dev/scaleDownDelay: "30m"
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: fluidcloudnative/serving
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: serverless-data
+            readOnly: true
