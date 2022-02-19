@@ -77,7 +77,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	// set the default max size of metadata cache
 	setDefaultProperties(runtime, value, "alluxio.user.metadata.cache.max.size", "6000000")
 	setDefaultProperties(runtime, value, "alluxio.fuse.cached.paths.max", "1000000")
-	setDefaultProperties(runtime, value, "alluxio.job.worker.threadpool.size", "164")
+	setDefaultProperties(runtime, value, "alluxio.job.worker.threadpool.size", "32")
 	setDefaultProperties(runtime, value, "alluxio.user.worker.list.refresh.interval", "2min")
 	setDefaultProperties(runtime, value, "alluxio.user.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "alluxio.fuse.logging.threshold", "1000ms")
