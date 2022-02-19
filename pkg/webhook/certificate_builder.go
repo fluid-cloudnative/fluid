@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +19,9 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os/exec"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -27,10 +29,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	genCertFormat = "%s --service %s --namespace %s --certDir %s"
 )
 
 type CertificateBuilder struct {
@@ -53,37 +51,40 @@ func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath 
 	}
 	c.log.Info("start generate certificate", "service", svcName, "namespace", ns, "cert dir", cerPath)
 
-	ca, err := c.genCA(ns, svcName, common.CertificationGenerateFile, cerPath)
+	certs, err := c.genCA(ns, svcName, cerPath)
 	if err != nil {
 		return err
 	}
 
-	return c.PatchCABundle(webhookName, ca)
+	err = c.PatchCABundle(webhookName, certs.CACert)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// genCA use shell script to generate the caBundle
-func (c *CertificateBuilder) genCA(ns, svc, certFile, certPath string) ([]byte, error) {
+// genCA generate the caBundle and store it in secret and local path
+func (c *CertificateBuilder) genCA(ns, svc, certPath string) (*generator.Artifacts, error) {
 
-	genCertCmd := fmt.Sprintf(genCertFormat, certFile, svc, ns, certPath)
-
-	c.log.Info("generate certification file", "commands", genCertCmd)
-
-	cmd := exec.Command("/bin/sh", "-c", genCertCmd)
-	stdout, err := cmd.Output()
+	certWriter, err := writer.NewSecretCertWriter(writer.SecretCertWriterOptions{
+		Client: c.Client,
+		Secret: &types.NamespacedName{Namespace: ns, Name: common.CertSecretName},
+	})
 	if err != nil {
-		c.log.Error(err, "fail to generate certificate", "output", stdout)
-		return nil, err
+		return nil, fmt.Errorf("failed to new certWriter: %v", err)
 	}
 
-	ca, err := ioutil.ReadFile(certPath + "/ca.crt")
+	dnsName := generator.ServiceToCommonName(ns, svc)
 
+	certs, _, err := certWriter.EnsureCert(dnsName)
 	if err != nil {
-		c.log.Error(err, "fail to load certificate ca.crt file", "path", certPath)
-		return nil, err
+		return certs, fmt.Errorf("failed to ensure certs: %v", err)
 	}
 
-	c.log.Info("generate and load certification ca.crt file success")
-	return ca, nil
+	if err := writer.WriteCertsToDir(certPath, certs); err != nil {
+		return certs, fmt.Errorf("failed to WriteCertsToDir: %v", err)
+	}
+	return certs, nil
 }
 
 // PatchCABundle patch the caBundle to MutatingWebhookConfiguration

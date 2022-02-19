@@ -61,9 +61,13 @@ type RuntimeInfoInterface interface {
 
 	SetupFuseDeployMode(global bool, nodeSelector map[string]string)
 
+	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
+
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
 	GetFuseDeployMode() (global bool, nodeSelector map[string]string)
+
+	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
 	SetDeprecatedNodeLabel(deprecated bool)
 
@@ -102,6 +106,9 @@ type Fuse struct {
 	Global bool
 
 	NodeSelector map[string]string
+
+	// CleanPolicy decides when to clean fuse pods.
+	CleanPolicy datav1alpha1.FuseCleanPolicy
 }
 
 type TieredStoreInfo struct {
@@ -189,6 +196,19 @@ func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[stri
 	global = info.fuse.Global
 	nodeSelector = info.fuse.NodeSelector
 	return
+}
+
+func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy) {
+	if policy == datav1alpha1.NoneCleanPolicy {
+		// Default to set the fuse clean policy to OnRuntimeDeleted
+		info.fuse.CleanPolicy = datav1alpha1.OnRuntimeDeletedCleanPolicy
+		return
+	}
+	info.fuse.CleanPolicy = policy
+}
+
+func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
+	return info.fuse.CleanPolicy
 }
 
 // SetDeprecatedNodeLabel set the DeprecatedNodeLabel
@@ -292,6 +312,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.JINDO_RUNTIME:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JINDO_RUNTIME, datav1alpha1.TieredStore{})
@@ -303,6 +324,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.GooseFSRuntime:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{})
@@ -314,6 +336,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	case common.JuiceFSRuntime:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
@@ -325,6 +348,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (RuntimeInfoIn
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 		return runtimeInfo, nil
 	default:
 		runtimeInfo, err := BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})

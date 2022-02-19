@@ -28,6 +28,7 @@
   - [Machine Learning](samples/machinelearning.md)
 + Advanced   
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
+  - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
 + Developer Guide
   - [How to develop](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)

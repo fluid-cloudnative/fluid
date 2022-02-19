@@ -25,6 +25,10 @@ spec:
   replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+{{ toYaml .Values.worker.annotations | trim | indent 8  }}
+      {{- end }}
       labels:
         app: {{ template "goosefs.name" . }}
         chart: {{ template "goosefs.chart" . }}

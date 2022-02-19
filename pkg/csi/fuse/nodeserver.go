@@ -17,8 +17,11 @@ package csi
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	"os"
@@ -49,7 +52,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
 
-	isMount, err := isMounted(targetPath)
+	isMount, err := utils.IsMounted(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -104,7 +107,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	// 1. Wait the runtime fuse ready
-	err = checkMountReady(fluidPath, mountType)
+	err = utils.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -142,17 +145,31 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
 
-	command := exec.Command("umount",
-		targetPath,
-	)
-	glog.V(4).Infoln(command)
-	stdoutStderr, err := command.CombinedOutput()
-	if err != nil {
-		glog.V(3).Infoln(err)
-	}
-	glog.V(4).Infoln(string(stdoutStderr))
+	// targetPath may be mount bind many times when mount point recovered.
+	// umount until it's not mounted.
+	mounter := mount.New("")
+	for {
+		notMount, err := mounter.IsLikelyNotMountPoint(targetPath)
+		if err != nil {
+			glog.V(3).Infoln(err)
+			if corrupted := mount.IsCorruptedMnt(err); !corrupted {
+				return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
+			}
+		}
+		if notMount {
+			glog.V(3).Infof("umount:%s success", targetPath)
+			break
+		}
 
-	err = mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
+		glog.V(3).Infof("umount:%s", targetPath)
+		err = mounter.Unmount(targetPath)
+		if err != nil {
+			glog.V(3).Infoln(err)
+			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s error %v", targetPath, err)
+		}
+	}
+
+	err := mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
 	if err != nil {
 		glog.V(3).Infoln(err)
 	} else {
@@ -172,13 +189,36 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
 	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
 	// can be used to indicate a specific dataset.
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
-	// 2. check if the path is mounted
+	// 2. Check fuse clean policy. If clean policy is set to OnRuntimeDeleted, there is no
+	// need to clean fuse eagerly.
+	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get fuse clean policy")
+	}
+
+	var shouldCleanFuse bool
+	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
+	glog.Infof("Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+	switch cleanPolicy {
+	case v1alpha1.OnDemandCleanPolicy:
+		shouldCleanFuse = true
+	case v1alpha1.OnRuntimeDeletedCleanPolicy:
+		shouldCleanFuse = false
+	default:
+		return nil, errors.Errorf("Unknown Fuse clean policy: %s", cleanPolicy)
+	}
+
+	if !shouldCleanFuse {
+		return &csi.NodeUnstageVolumeResponse{}, nil
+	}
+
+	// 3. check if the path is mounted
 	inUse, err := checkMountInUse(req.GetVolumeId())
 	if err != nil {
 		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
@@ -187,7 +227,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
 	}
 
-	// 3. remove label on node.
+	// 4. remove label on node
 	// Once the label is removed, fuse pod on corresponding node will be terminated
 	// since node selector in the fuse daemonSet no longer matches.
 	// TODO: move all the label keys into a util func
@@ -216,7 +256,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	defer ns.mutex.Unlock()
 
 	// 1. get dataset namespace and name by volume id
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
@@ -233,17 +273,21 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
 	}
 
-	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
-	if err != nil {
-		glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
-		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
+	if _, ok := node.Labels[fuseLabelKey]; !ok {
+		_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+		if err != nil {
+			glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+			return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
+		}
+	} else {
+		glog.Info("NodeStageVolume: label already exists on node", "label", fuseLabelKey, "node", node)
 	}
 
 	fluidPath := req.GetVolumeContext()["fluid_path"]
 	mountType := req.GetVolumeContext()["mount_type"]
 
 	// checkMountReady checks the fuse mount path every 3 second for 30 seconds in total.
-	err = checkMountReady(fluidPath, mountType)
+	err = utils.CheckMountReady(fluidPath, mountType)
 	if err != nil {
 		return nil, errors.Errorf("fuse pod on node %s is not ready", ns.nodeId)
 	}
@@ -305,29 +349,4 @@ func checkMountInUse(volumeName string) (bool, error) {
 	}
 
 	return inUse, err
-}
-
-func getNamespacedNameByVolumeId(client client.Client, volumeId string) (namespace, name string, err error) {
-	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
-	if err != nil {
-		return "", "", err
-	}
-
-	if pv.Spec.ClaimRef == nil {
-		return "", "", errors.Errorf("pv %s has unexpected nil claimRef", volumeId)
-	}
-
-	namespace = pv.Spec.ClaimRef.Namespace
-	name = pv.Spec.ClaimRef.Name
-
-	ok, err := kubeclient.IsDatasetPVC(client, name, namespace)
-	if err != nil {
-		return "", "", err
-	}
-
-	if !ok {
-		return "", "", errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
-	}
-
-	return
 }

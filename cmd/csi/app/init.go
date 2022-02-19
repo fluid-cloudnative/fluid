@@ -1,4 +1,8 @@
 /*
+<<<<<<< HEAD
+=======
+Copyright 2021 The Fluid Authors.
+>>>>>>> master
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,10 +16,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 package app
 
 import "github.com/spf13/cobra"
 
+<<<<<<< HEAD
 func NewFluidCSICommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fluid-csi",
@@ -24,5 +33,14 @@ func NewFluidCSICommand() *cobra.Command {
 
 	cmd.AddCommand(versionCmd, csiCmd)
 
+=======
+func NewCSICommand() *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:   "fluid-csi",
+		Short: "CSI based fluid driver for Fuse",
+	}
+	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
+>>>>>>> master
 	return cmd
 }

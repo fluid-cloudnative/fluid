@@ -130,7 +130,7 @@ spec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
           - name: jfs-dir
-            mountPath: {{ .Values.fuse.mountPath }}
+            mountPath: {{ .Values.fuse.hostMountPath }}
             mountPropagation: Bidirectional
           - mountPath: /root/.juicefs
             mountPropagation: Bidirectional

@@ -49,14 +49,14 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		return
 	}
 
-	// 1. Check healthy
-	err = t.Implement.CheckRuntimeHealthy()
+	// 1. Sync replicas
+	err = t.Implement.SyncReplicas(ctx)
 	if err != nil {
 		return
 	}
 
-	// 2. Sync replicas
-	err = t.Implement.SyncReplicas(ctx)
+	// 2. Check healthy
+	err = t.Implement.CheckRuntimeHealthy()
 	if err != nil {
 		return
 	}

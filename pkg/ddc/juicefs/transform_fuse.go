@@ -23,7 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
@@ -53,7 +53,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := utils.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+		secret, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
 		if err != nil {
 			j.Log.Info("can't get the secret",
 				"namespace", j.namespace,
@@ -95,7 +95,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	value.Fuse.Image, value.Fuse.ImageTag, value.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Fuse.NodeSelector = map[string]string{}
-	value.Fuse.HostMountPath = j.getMountPoint()
+	value.Fuse.HostMountPath = j.getHostMountPoint()
 	value.Fuse.Prepare.SubPath = subPath
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 

@@ -36,3 +36,16 @@ const (
 	// DefaultMode is exclusive
 	DefaultMode PlacementMode = ""
 )
+
+type FuseCleanPolicy string
+
+const (
+	// NoneCleanPolicy is the default clean policy. It will be transformed to OnRuntimeDeletedCleanPolicy automatically.
+	NoneCleanPolicy FuseCleanPolicy = ""
+
+	// OnDemandCleanPolicy cleans fuse pod once th fuse pod on some node is not needed
+	OnDemandCleanPolicy FuseCleanPolicy = "OnDemand"
+
+	// OnRuntimeDeletedCleanPolicy cleans fuse pod only when the cache runtime is deleted
+	OnRuntimeDeletedCleanPolicy FuseCleanPolicy = "OnRuntimeDeleted"
+)

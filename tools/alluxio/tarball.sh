@@ -9,4 +9,4 @@ set -x -e
 
 export PATH=$PATH:/usr/local/go/bin
 
-/alluxio/dev/scripts/generate-tarballs single -target /tmp/alluxio-release-2.7.0-SNAPSHOT-bin.tar.gz
+/alluxio/dev/scripts/generate-tarballs single -target /tmp/alluxio-release-2.7.2-SNAPSHOT-bin.tar.gz

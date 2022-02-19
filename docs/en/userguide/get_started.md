@@ -127,9 +127,9 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
 4. Dive into the container to access data, the first access will take longer.
     ```
     $ kubectl exec -it demo-app -- bash
-    $ du -sh /data/spark/spark-3.0.1-bin-without-hadoop.tgz
-    150M	/data/spark/spark-3.0.1-bin-without-hadoop.tgz
-    $ time cp /data/spark/spark-3.0.1-bin-without-hadoop.tgz /dev/null
+    $ du -sh /data/spark/spark-3.0.3/spark-3.0.3-bin-without-hadoop.tgz
+    150M	/data/spark/spark-3.0.3/spark-3.0.3-bin-without-hadoop.tgz
+    $ time cp /data/spark/spark-3.0.3/spark-3.0.3-bin-without-hadoop.tgz /dev/null
     real	0m13.171s
     user	0m0.002s
     sys	0m0.028s
@@ -139,7 +139,7 @@ Fluid provides cloud-native data acceleration and management capabilities, and u
     ```
     $ kubectl delete -f app.yaml && kubectl create -f app.yaml
     $ kubectl exec -it demo-app -- bash
-    $ time cp /data/spark/spark-3.0.1-bin-without-hadoop.tgz /dev/null
+    $ time cp /data/spark/spark-3.0.3/spark-3.0.3-bin-without-hadoop.tgz /dev/null
     real	0m0.344s
     user	0m0.002s
     sys	0m0.020s

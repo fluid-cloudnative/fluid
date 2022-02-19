@@ -13,9 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//TODO(TrafalgarZZZ): Move secret.go to pkg/utils/kubeclient
-
-package utils
+package kubeclient
 
 import (
 	"context"
@@ -37,4 +35,18 @@ func GetSecret(client client.Client, name, namespace string) (*v1.Secret, error)
 		return nil, err
 	}
 	return &secret, nil
+}
+
+func CreateSecret(client client.Client, secret *v1.Secret) error {
+	if err := client.Create(context.TODO(), secret); err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateSecret(client client.Client, secret *v1.Secret) error {
+	if err := client.Update(context.TODO(), secret); err != nil {
+		return err
+	}
+	return nil
 }

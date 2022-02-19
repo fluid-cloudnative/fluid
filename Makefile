@@ -13,6 +13,7 @@ CSI_IMG ?= ${IMG_REPO}/fluid-csi
 LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
+GO_MODULE ?= off
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -32,6 +33,36 @@ GIT_SHA=$(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION=${VERSION}-${GIT_SHA}
 PACKAGE=github.com/fluid-cloudnative/fluid
 
+# Build binaries
+BINARY_BUILD := dataset-controller-build
+BINARY_BUILD += alluxioruntime-controller-build
+BINARY_BUILD += jindoruntime-controller-build
+BINARY_BUILD += juicefsruntime-controller-build
+BINARY_BUILD += csi-build
+BINARY_BUILD += webhook-build
+
+# Build docker images
+DOCKER_BUILD := docker-build-dataset-controller
+DOCKER_BUILD += docker-build-alluxioruntime-controller
+DOCKER_BUILD += docker-build-jindoruntime-controller
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-csi
+DOCKER_BUILD += docker-build-init-users
+DOCKER_BUILD += docker-build-webhook
+DOCKER_BUILD += docker-build-goosefsruntime-controller
+DOCKER_BUILD += docker-build-juicefsruntime-controller
+
+# Push docker images
+DOCKER_PUSH := docker-push-dataset-controller
+DOCKER_PUSH += docker-push-alluxioruntime-controller
+DOCKER_PUSH += docker-push-jindoruntime-controller
+DOCKER_PUSH += docker-push-jindoruntime-controller
+DOCKER_PUSH += docker-push-csi
+DOCKER_PUSH += docker-push-init-users
+DOCKER_PUSH += docker-push-webhook
+DOCKER_PUSH += docker-push-goosefsruntime-controller
+DOCKER_PUSH += docker-push-juicefsruntime-controller
+
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
   -X ${PACKAGE}.buildDate=${BUILD_DATE} \
@@ -43,49 +74,49 @@ all: build
 
 # Run tests
 test: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
 unit-test: generate fmt vet
-	GO111MODULE=off go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
+	GO111MODULE=${GO_MODULE} go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # Build binary
 
-build: dataset-controller-build alluxioruntime-controller-build jindoruntime-controller-build juicefsruntime-controller-build csi-build webhook-build
+build: ${BINARY_BUILD}
 
 csi-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 dataset-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
 
 alluxioruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
 
 jindoruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
 goosefsruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
 
 juicefsruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
 
 webhook-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug-csi: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off  go run cmd/controller/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go run cmd/controller/main.go
 
 # Install CRDs into a cluster
 install: manifests
@@ -98,19 +129,19 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	GO111MODULE=off $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against codecsi-node-driver-registrar
 fmt:
-	GO111MODULE=off go fmt ./...
+	GO111MODULE=${GO_MODULE} go fmt ./...
 
 # Run go vet against code
 vet:
-	GO111MODULE=off go list ./... | grep -v "vendor" | xargs go vet
+	GO111MODULE=${GO_MODULE} go list ./... | grep -v "vendor" | xargs go vet
 
 # Generate code
 generate: controller-gen
-	GO111MODULE=off $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
+	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Update fluid helm chart
 update-crd: manifests
@@ -175,8 +206,10 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
-docker-build-all: docker-build-dataset-controller docker-build-alluxioruntime-controller docker-build-jindoruntime-controller docker-build-goosefsruntime-controller docker-build-csi docker-build-init-users docker-build-webhook docker-build-goosefsruntime-controller
-docker-push-all: docker-push-dataset-controller docker-push-alluxioruntime-controller docker-push-jindoruntime-controller docker-push-jindoruntime-controller docker-push-csi docker-push-init-users docker-push-webhook docker-push-goosefsruntime-controller
+
+
+docker-build-all: ${DOCKER_BUILD}
+docker-push-all: ${DOCKER_PUSH}
 
 # find or download controller-gen
 # download controller-gen if necessary

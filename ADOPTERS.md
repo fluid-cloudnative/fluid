@@ -14,9 +14,11 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](zhoupeijie@kanzhun.com) | Staging | Alsenal AI Platform |
 | [China Telecom](https://www.chinatelecom-h.com/en/global/home.php) | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
 | [HAOMO](http://haomo.ai/)  | [@tongyan](tongyan@haomo.ai) | Testing | HAOMO Auto Machine Learning Platform |
-| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Staging  | PAI Deep Learning Containers |
+| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Production  | PAI Deep Learning Containers |
 | [Qihoo 360](http://www.360.cn/)  | [@yuchang](https://github.com/70data) | Production | BigData platform |
 | [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](chrisydxie@tencent.com) | Testing | Tencent Kubernetes Engine |
 | [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
 | [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Production | weibo deep learning platform |
-| [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Staging | bilibili AI platform |
+| [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Production | bilibili AI platform |
+| [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Staging | LakeCache Containers |
+

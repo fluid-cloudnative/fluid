@@ -1211,6 +1211,20 @@ map[string]string
 <em>(Optional)</em>
 </td>
 </tr>
+<tr>
+<td>
+<code>networkmode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1717,6 +1731,24 @@ map[string]string
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
 this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean Alluxio Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
 </td>
 </tr>
 </tbody>
@@ -2883,6 +2915,17 @@ SecretKeySelector
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.FuseCleanPolicy">FuseCleanPolicy
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>)
+</p>
+<p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.GooseFSCompTemplateSpec">GooseFSCompTemplateSpec
 </h3>
 <p>
@@ -3000,6 +3043,21 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the master to fit on a node</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotations</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Annotations is an unstructured key value map stored with a resource that may be
+set by external tools to store and retrieve arbitrary metadata. They are not
+queryable and should be preserved when modifying objects.
+More info: <a href="http://kubernetes.io/docs/user-guide/annotations">http://kubernetes.io/docs/user-guide/annotations</a></p>
 </td>
 </tr>
 </tbody>
@@ -3140,6 +3198,39 @@ map[string]string
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
 this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean GooseFS Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotations</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Annotations is an unstructured key value map stored with a resource that may be
+set by external tools to store and retrieve arbitrary metadata. They are not
+queryable and should be preserved when modifying objects.
+More info: <a href="http://kubernetes.io/docs/user-guide/annotations">http://kubernetes.io/docs/user-guide/annotations</a></p>
 </td>
 </tr>
 </tbody>
@@ -3769,6 +3860,24 @@ map[string]string
 Any label already existed will be overriden</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean JindoFS Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec
@@ -3944,6 +4053,20 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkmode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
 </td>
 </tr>
 </tbody>
@@ -4145,6 +4268,24 @@ map[string]string
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
 this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean Juicefs Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnDemand</p>
 </td>
 </tr>
 </tbody>
@@ -4502,6 +4643,14 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.NetworkMode">NetworkMode
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+</p>
+<p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.PlacementMode">PlacementMode
 (<code>string</code> alias)</p></h3>
 <p>
@@ -5290,5 +5439,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>dc26f4b4</code>.
+on git commit <code>4dd8c8ee</code>.
 </em></p>
