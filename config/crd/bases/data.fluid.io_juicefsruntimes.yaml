@@ -197,14 +197,14 @@ spec:
                   image:
                     description: Image for JuiceFS fuse
                     type: string
-                  image_pull_policy:
+                  imagePullPolicy:
                     description: 'One of the three policies: `Always`, `IfNotPresent`,
                       `Never`'
                     type: string
-                  image_tag:
+                  imageTag:
                     description: Image for JuiceFS fuse
                     type: string
-                  node_selector:
+                  nodeSelector:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector which must be true for
@@ -1078,6 +1078,11 @@ spec:
                 type: string
               masterReason:
                 description: Reason for Master's condition transition
+                type: string
+              mountTime:
+                description: MountTime represents time last mount happened if Mounttime
+                  is early than master starting time, remount will be required
+                format: date-time
                 type: string
               selector:
                 description: Selector is used for auto-scaling

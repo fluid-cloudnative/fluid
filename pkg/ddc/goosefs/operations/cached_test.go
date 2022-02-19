@@ -16,6 +16,7 @@ package operations
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -68,6 +69,9 @@ func TestGooseFSFIlUtils_CleanCache(t *testing.T) {
 	ExecCommonAlpine := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alpine", "", nil
 	}
+	ExecCommonCentos := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", fmt.Errorf("unknow release version for linux")
+	}
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
@@ -106,6 +110,16 @@ func TestGooseFSFIlUtils_CleanCache(t *testing.T) {
 	err = a.CleanCache("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommonCentos, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.CleanCache("/")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 }

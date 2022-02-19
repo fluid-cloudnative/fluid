@@ -54,6 +54,8 @@ const (
 	FuseRecoverFailed = "FuseRecoverFailed"
 
 	FuseRecoverSucceed = "FuseRecoverSucceed"
+
+	RuntimeDeprecated = "RuntimeDeprecated"
 )
 
 type CacheStoreType string
@@ -111,4 +113,10 @@ const (
 	MyPodNamespace         = "MY_POD_NAMESPACE"
 	True                   = "true"
 	False                  = "false"
+	inject                 = ".fluid.io/inject"
+	injectSidecar          = ".sidecar" + inject
+	InjectServerless       = "serverless" + inject
+	InjectFuseSidecar      = "fuse" + injectSidecar
+	InjectWorkerSidecar    = "worker" + injectSidecar
+	InjectSidecarDone      = "done" + injectSidecar
 )

@@ -412,6 +412,68 @@ func TestGetRuntime(t *testing.T) {
 	}
 }
 
+func TestGetMasterPod(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.AlluxioRuntime
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    *corev1.Pod
+		wantErr bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark-master",
+						Namespace: "default",
+					},
+				},
+				name:      "spark-master",
+				namespace: "default",
+			},
+			want: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "spark-master",
+					Namespace: "default",
+				},
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(corev1.SchemeGroupVersion, &corev1.Pod{})
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.want)
+			e := &AlluxioEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    mockClient,
+			}
+			gotMaster, err := e.getMasterPod(tt.fields.name, tt.fields.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.getMasterPod() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotMaster, tt.want) {
+				t.Errorf("AlluxioEngine.getMasterPod() = %#v, want %#v", gotMaster, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetMasterStatefulset(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime

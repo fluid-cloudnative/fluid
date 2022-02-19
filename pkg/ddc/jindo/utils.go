@@ -27,13 +27,19 @@ func (e *JindoEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/jindofs-fuse", mountRoot, e.namespace, e.name)
 }
 
+func (j *JindoEngine) getHostMountPoint() (mountPath string) {
+	mountRoot := getMountRoot()
+	j.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s", mountRoot, j.namespace, j.name)
+}
+
 // getMountRoot returns the default path, if it's not set
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
 	if err != nil {
-		path = "/" + common.JINDO_RUNTIME
+		path = "/" + common.JindoRuntime
 	} else {
-		path = path + "/" + common.JINDO_RUNTIME
+		path = path + "/" + common.JindoRuntime
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return

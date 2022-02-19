@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,6 +35,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -49,6 +51,7 @@ var (
 	eventDriven             bool
 	portRange               string
 	maxConcurrentReconciles int
+	pprofAddr               string
 )
 
 var jindoCmd = &cobra.Command{
@@ -69,7 +72,7 @@ func init() {
 	jindoCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
 	jindoCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JindoRuntime controller")
 	jindoCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
-
+	jindoCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 }
 
 func handle() {
@@ -87,6 +90,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

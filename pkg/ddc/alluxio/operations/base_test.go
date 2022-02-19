@@ -490,6 +490,55 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
+func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
+	const returnMessage = `s3://bucket/path/train on /cache (s3, capacity=-1B, used=-1B, not read-only, not shared, properties={alluxio.underfs.s3.inherit.acl=false, alluxio.underfs.s3.endpoint=s3endpoint, aws.secretKey=, aws.accessKeyId=})
+/underFSStorage on / (local, capacity=0B, used=0B, not read-only, not shared, properties={})`
+
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return returnMessage, "", nil
+	}
+	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	var testCases = []struct {
+		alluxioPaths           []string
+		expectedUnmountedPaths []string
+	}{
+		{
+			alluxioPaths:           []string{"/cache"},
+			expectedUnmountedPaths: []string{},
+		},
+		{
+			alluxioPaths:           []string{"/cache", "/cache2"},
+			expectedUnmountedPaths: []string{"/cache2"},
+		},
+		{
+			alluxioPaths:           []string{},
+			expectedUnmountedPaths: []string{},
+		},
+		{
+			alluxioPaths:           []string{"/cache2"},
+			expectedUnmountedPaths: []string{"/cache2"},
+		},
+	}
+	for index, test := range testCases {
+		unmountedPaths, err := a.FindUnmountedAlluxioPaths(test.alluxioPaths)
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+
+		if (len(unmountedPaths) != 0 || len(test.expectedUnmountedPaths) != 0) &&
+			!reflect.DeepEqual(unmountedPaths, test.expectedUnmountedPaths) {
+			t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.expectedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
+			return
+		}
+	}
+}
+
 func TestAlluxioFileUtils_Ready(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary: ", "", nil

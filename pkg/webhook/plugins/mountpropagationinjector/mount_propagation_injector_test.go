@@ -16,12 +16,13 @@ limitations under the License.
 package mountpropagationinjector
 
 import (
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestMutate(t *testing.T) {
@@ -47,7 +48,7 @@ func TestMutate(t *testing.T) {
 		},
 	}
 
-	shouldStop, err := plugin.Mutate(pod, []base.RuntimeInfoInterface{runtimeInfo})
+	shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
 	if err != nil {
 		t.Errorf("fail to mutate pod with error %v", err)
 	}
@@ -56,12 +57,12 @@ func TestMutate(t *testing.T) {
 		t.Errorf("expect shouldStop as false, but got %v", shouldStop)
 	}
 
-	_, err = plugin.Mutate(pod, []base.RuntimeInfoInterface{})
+	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
 	if err != nil {
 		t.Errorf("fail to mutate pod with error %v", err)
 	}
 
-	_, err = plugin.Mutate(pod, []base.RuntimeInfoInterface{nil})
+	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
 	if err == nil {
 		t.Errorf("expect error is not nil")
 	}

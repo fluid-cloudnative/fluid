@@ -16,13 +16,16 @@ limitations under the License.
 package alluxio
 
 import (
+	"strings"
 	"testing"
+	"time"
 
 	"reflect"
 
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -310,6 +313,290 @@ func TestPrepareUFS(t *testing.T) {
 			}
 			if err := e.PrepareUFS(); (err != nil) != tt.wantErr {
 				t.Errorf("AlluxioEngine.PrepareUFS() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestFindUnmountedUFS(t *testing.T) {
+
+	type fields struct {
+		mountPoints          []datav1alpha1.Mount
+		wantedUnmountedPaths []string
+	}
+
+	tests := []fields{
+		{
+			mountPoints: []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path:       "/path1",
+				},
+			},
+			wantedUnmountedPaths: []string{"/path1"},
+		},
+		{
+			mountPoints: []datav1alpha1.Mount{
+				{
+					MountPoint: "local://mnt/test",
+					Path:       "/path2",
+				},
+			},
+			wantedUnmountedPaths: []string{},
+		},
+		{
+			mountPoints: []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path:       "/path1",
+				},
+				{
+					MountPoint: "local://mnt/test",
+					Path:       "/path2",
+				},
+				{
+					MountPoint: "hdfs://endpoint/path/train",
+					Path:       "/path3",
+				},
+			},
+			wantedUnmountedPaths: []string{"/path1", "/path3"},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			runtime := datav1alpha1.AlluxioRuntime{}
+			dataset := datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: test.mountPoints,
+				},
+			}
+
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
+
+			var afsUtils operations.AlluxioFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+				return true
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+				return alluxioPaths, nil
+			})
+			defer patch2.Reset()
+
+			e := &AlluxioEngine{
+				runtime:            &runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			unmountedPaths, err := e.FindUnmountedUFS()
+			if err != nil {
+				t.Errorf("AlluxioEngine.FindUnmountedUFS() error = %v", err)
+				return
+			}
+			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0) &&
+				!reflect.DeepEqual(unmountedPaths, test.wantedUnmountedPaths) {
+				t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
+				return
+			}
+		})
+	}
+}
+
+func TestUpdateMountTime(t *testing.T) {
+	yesterday := time.Now().AddDate(0, 0, -1)
+
+	type fields struct {
+		runtime *datav1alpha1.AlluxioRuntime
+	}
+
+	tests := []fields{
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: yesterday,
+					},
+				},
+			},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, test.runtime)
+
+			e := &AlluxioEngine{
+				runtime:            test.runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			e.updateMountTime()
+			runtime, _ := e.getRuntime()
+			if runtime.Status.MountTime.Time.Equal(yesterday) {
+				t.Errorf("%d check failure, got: %v, unexpected: %v", index, runtime.Status.MountTime.Time, yesterday)
+				return
+			}
+		})
+	}
+}
+
+func TestCheckIfRemountRequired(t *testing.T) {
+	yesterday := time.Now().AddDate(0, 0, -1)
+
+	type fields struct {
+		runtime *datav1alpha1.AlluxioRuntime
+		pod     *corev1.Pod
+		wanted  []string
+	}
+
+	tests := []fields{
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: yesterday,
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test-master-0",
+					Namespace: "default",
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "alluxio-master",
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: v1.Time{
+										Time: yesterday.AddDate(0, 0, 1),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wanted: []string{
+				"/path",
+			},
+		},
+		{
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					MountTime: v1.Time{
+						Time: yesterday,
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "test-master-0",
+					Namespace: "default",
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "alluxio-master",
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: v1.Time{
+										Time: yesterday.AddDate(0, 0, -1),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wanted: []string{},
+		},
+	}
+
+	dataset := datav1alpha1.Dataset{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path/train",
+					Path:       "/path",
+				},
+			},
+		},
+	}
+
+	for index, test := range tests {
+		t.Run("test", func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
+			s.AddKnownTypes(corev1.SchemeGroupVersion, test.pod)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, test.runtime, &dataset, test.pod)
+
+			e := &AlluxioEngine{
+				runtime:            test.runtime,
+				name:               "test",
+				namespace:          "default",
+				Log:                log.NullLogger{},
+				Client:             mockClient,
+				MetadataSyncDoneCh: nil,
+			}
+
+			var afsUtils operations.AlluxioFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+				return true
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+				return alluxioPaths, nil
+			})
+			defer patch2.Reset()
+
+			ufsToUpdate := utils.NewUFSToUpdate(&dataset)
+			e.checkIfRemountRequired(ufsToUpdate)
+			if (len(ufsToUpdate.ToAdd()) != 0 || len(test.wanted) != 0) &&
+				!reflect.DeepEqual(ufsToUpdate.ToAdd(), test.wanted) {
+				t.Errorf("%d check failure, got: %v, expected: %s", index, ufsToUpdate.ToAdd(), test.wanted)
+				return
 			}
 		})
 	}

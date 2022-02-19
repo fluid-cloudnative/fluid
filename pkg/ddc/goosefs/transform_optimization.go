@@ -66,7 +66,6 @@ func (e *GooseFSEngine) optimizeDefaultProperties(runtime *datav1alpha1.GooseFSR
 	setDefaultProperties(runtime, value, "goosefs.user.file.passive.cache.enabled", "false")
 	setDefaultProperties(runtime, value, "goosefs.user.block.avoid.eviction.policy.reserved.size.bytes", "2GB")
 	setDefaultProperties(runtime, value, "goosefs.master.journal.folder", "/journal")
-	setDefaultProperties(runtime, value, "goosefs.master.journal.type", "UFS")
 	setDefaultProperties(runtime, value, "goosefs.user.block.master.client.pool.gc.threshold", "2day")
 	setDefaultProperties(runtime, value, "goosefs.user.file.master.client.threads", "1024")
 	setDefaultProperties(runtime, value, "goosefs.user.block.master.client.threads", "1024")
@@ -83,9 +82,16 @@ func (e *GooseFSEngine) optimizeDefaultProperties(runtime *datav1alpha1.GooseFSR
 	setDefaultProperties(runtime, value, "goosefs.user.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "goosefs.fuse.logging.threshold", "1000ms")
 	setDefaultProperties(runtime, value, "goosefs.worker.block.master.client.pool.size", "1024")
-	setDefaultProperties(runtime, value, "goosefs.fuse.shared.caching.reader.enabled", "true")
+	// Disable this optimization since it will cause availbilty issue. see https://github.com/Alluxio/alluxio/issues/14909
+	// setDefaultProperties(runtime, value, "goosefs.fuse.shared.caching.reader.enabled", "true")
 	setDefaultProperties(runtime, value, "goosefs.job.master.finished.job.retention.time", "30sec")
 	setDefaultProperties(runtime, value, "goosefs.underfs.object.store.breadcrumbs.enabled", "false")
+
+	if value.Master.Replicas > 1 {
+		setDefaultProperties(runtime, value, "goosefs.master.journal.type", "EMBEDDED")
+	} else {
+		setDefaultProperties(runtime, value, "goosefs.master.journal.type", "UFS")
+	}
 
 	// "goosefs.user.direct.memory.io.enabled" is only safe when the workload is read only and the
 	// worker has only one tier and one storage directory in this tier.
@@ -240,9 +246,11 @@ func (e *GooseFSEngine) optimizeDefaultFuse(runtime *datav1alpha1.GooseFSRuntime
 		value.Fuse.Args = runtime.Spec.Fuse.Args
 	} else {
 		if readOnly {
-			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			// value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			value.Fuse.Args = []string{"fuse", "--fuse-opts=ro,direct_io"}
 		} else {
-			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			// value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			value.Fuse.Args = []string{"fuse", "--fuse-opts=rw,direct_io"}
 		}
 
 	}

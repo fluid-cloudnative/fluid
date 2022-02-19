@@ -37,7 +37,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &GooseFS{}, "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,allow_other"},
+			}}, &GooseFS{}, "--fuse-opts=rw,direct_io,allow_other"},
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{Log: log.NullLogger{}}

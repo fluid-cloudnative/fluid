@@ -30,6 +30,7 @@
 + 进阶使用
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule.md)
+  - [如何在Knative环境运行](samples/knative.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
 + 工作负载
   - [机器学习](samples/machinelearning.md)
@@ -40,6 +41,9 @@
   - [JVM性能分析](dev/profiling.md)
   - [自动弹性伸缩](operation/dataset_auto_scaling.md)
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)
++ 问题诊断
+  - [日志收集](userguide/troubleshooting.md)
+  - [数据卷挂载问题](troubleshooting/debug-fuse.md)
 + 开发者指南
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)

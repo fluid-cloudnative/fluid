@@ -6,6 +6,7 @@ import (
 
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -28,7 +28,7 @@ var (
 	mockConfigMapData = `----
 fullnameOverride: mnist
 image: ccr.ccs.tencentyun.com/qcloud/goosefs
-imageTag: v1.1.0
+imageTag: v1.2.0
 imagePullPolicy: IfNotPresent
 user: 0
 group: 0
@@ -38,7 +38,6 @@ properties:
   goosefs.fuse.debug.enabled: "true"
   goosefs.fuse.jnifuse.enabled: "true"
   goosefs.fuse.logging.threshold: 1000ms
-  goosefs.fuse.shared.caching.reader.enabled: "true"
   goosefs.fuse.user.group.translation.enabled: "true"
   goosefs.job.master.finished.job.retention.time: 30sec
   goosefs.job.master.rpc.port: "28362"
@@ -135,7 +134,7 @@ fuse:
   image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse
   nodeSelector:
     fluid.io/f-yijiupi-mnist: "true"
-  imageTag: v1.1.0
+  imageTag: v1.2.0
   env:
     MOUNT_POINT: /runtime-mnt/goosefs/yijiupi/mnist/goosefs-fuse
   jvmOptions:
@@ -181,7 +180,7 @@ placement: Exclusive`
 
 func init() {
 	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 }
@@ -209,7 +208,7 @@ func TestDestroyWorker(t *testing.T) {
 	}
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
-	var nodeInputs = []*v1.Node{
+	var nodeInputs = []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",
@@ -359,6 +358,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 		namespace   string
 		cm          *corev1.ConfigMap
 		runtimeType string
+		log         logr.Logger
 	}
 	tests := []struct {
 		name    string
@@ -371,13 +371,14 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "goosefs",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-goosefs-values",
 						Namespace: "fluid",
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
+				log: log.NullLogger{},
 			},
 			wantErr: false,
 		},
@@ -387,10 +388,16 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 			testObjs := []runtime.Object{}
 			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
 			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			helper := &ctrl.Helper{}
+			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+				return 0, nil
+			})
+			defer patch1.Reset()
 			e := &GooseFSEngine{
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
+				Log:       tt.fields.log,
 			}
 			if err := e.cleanAll(); (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
@@ -418,7 +425,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 				name:        "spark",
 				namespace:   "fluid",
 				runtimeType: "goosefs",
-				cm: &v1.ConfigMap{
+				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-goosefs-values",
 						Namespace: "fluid",

@@ -18,18 +18,27 @@ package ctrl
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var (
+	testScheme *runtime.Scheme
 )
 
 func TestCheckFuseHealthy(t *testing.T) {
@@ -263,6 +272,233 @@ func TestCheckFuseHealthy(t *testing.T) {
 			t.Errorf("testcase %s is failed, expect phase %v, got %v", testCase.caseName,
 				testCase.Phase,
 				runtime.Status.FusePhase)
+		}
+
+	}
+}
+
+func TestCleanUpFuse(t *testing.T) {
+	var testCase = []struct {
+		name             string
+		namespace        string
+		wantedNodeLabels map[string]map[string]string
+		wantedCount      int
+		context          cruntime.ReconcileRequestContext
+		log              logr.Logger
+		runtimeType      string
+		nodeInputs       []*v1.Node
+	}{
+		{
+			wantedCount: 1,
+			name:        "hbase",
+			namespace:   "fluid",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"multiple-fuse": {
+					"fluid.io/f-fluid-hadoop":          "true",
+					"node-select":                      "true",
+					"fluid.io/s-fluid-hbase":           "true",
+					"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+					"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+					"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
+				},
+				"fuse": {
+					"fluid.io/dataset-num":    "1",
+					"fluid.io/f-fluid-hadoop": "true",
+					"node-select":             "true",
+				},
+			},
+			log:         log.NullLogger{},
+			runtimeType: "jindo",
+			nodeInputs: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "no-fuse",
+						Labels: map[string]string{},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiple-fuse",
+						Labels: map[string]string{
+							"fluid.io/f-fluid-hadoop":          "true",
+							"node-select":                      "true",
+							"fluid.io/f-fluid-hbase":           "true",
+							"fluid.io/s-fluid-hbase":           "true",
+							"fluid.io/s-h-jindo-d-fluid-hbase": "5B",
+							"fluid.io/s-h-jindo-m-fluid-hbase": "1B",
+							"fluid.io/s-h-jindo-t-fluid-hbase": "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "fuse",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":    "1",
+							"fluid.io/f-fluid-hadoop": "true",
+							"node-select":             "true",
+						},
+					},
+				},
+			},
+		},
+		{
+			wantedCount: 2,
+			name:        "spark",
+			namespace:   "fluid",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"multiple-fuse": {
+					"node-select":                        "true",
+					"fluid.io/s-fluid-hbase":             "true",
+					"fluid.io/f-fluid-hbase":             "true",
+					"fluid.io/s-h-alluxio-d-fluid-hbase": "5B",
+					"fluid.io/s-h-alluxio-m-fluid-hbase": "1B",
+					"fluid.io/s-h-alluxio-t-fluid-hbase": "6B",
+				},
+				"fuse": {
+					"fluid.io/dataset-num": "1",
+					"node-select":          "true",
+				},
+			},
+			log:         log.NullLogger{},
+			runtimeType: "alluxio",
+			nodeInputs: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "no-fuse",
+						Labels: map[string]string{},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiple-fuse",
+						Labels: map[string]string{
+							"fluid.io/f-fluid-spark":             "true",
+							"node-select":                        "true",
+							"fluid.io/f-fluid-hbase":             "true",
+							"fluid.io/s-fluid-hbase":             "true",
+							"fluid.io/s-h-alluxio-d-fluid-hbase": "5B",
+							"fluid.io/s-h-alluxio-m-fluid-hbase": "1B",
+							"fluid.io/s-h-alluxio-t-fluid-hbase": "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "fuse",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":   "1",
+							"fluid.io/f-fluid-spark": "true",
+							"node-select":            "true",
+						},
+					},
+				},
+			},
+		},
+		{
+			wantedCount: 0,
+			name:        "hbase",
+			namespace:   "fluid",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"multiple-fuse": {
+					"fluid.io/f-fluid-spark":              "true",
+					"node-select":                         "true",
+					"fluid.io/s-fluid-hadoop":             "true",
+					"fluid.io/f-fluid-hadoop":             "true",
+					"fluid.io/s-h-goosefs-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-goosefs-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-goosefs-t-fluid-hadoop": "6B",
+				},
+				"fuse": {
+					"fluid.io/dataset-num":   "1",
+					"fluid.io/f-fluid-spark": "true",
+					"node-select":            "true",
+				},
+			},
+			log:         log.NullLogger{},
+			runtimeType: "goosefs",
+			nodeInputs: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "no-fuse",
+						Labels: map[string]string{},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiple-fuse",
+						Labels: map[string]string{
+							"fluid.io/f-fluid-spark":              "true",
+							"node-select":                         "true",
+							"fluid.io/f-fluid-hadoop":             "true",
+							"fluid.io/s-fluid-hadoop":             "true",
+							"fluid.io/s-h-goosefs-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-goosefs-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-goosefs-t-fluid-hadoop": "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "fuse",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":   "1",
+							"fluid.io/f-fluid-spark": "true",
+							"node-select":            "true",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range testCase {
+
+		testNodes := []runtime.Object{}
+		for _, nodeInput := range test.nodeInputs {
+			testNodes = append(testNodes, nodeInput.DeepCopy())
+		}
+
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+
+		nodeList := &v1.NodeList{}
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			test.name,
+			test.namespace,
+			test.runtimeType,
+			datav1alpha1.TieredStore{},
+		)
+		if err != nil {
+			t.Errorf("build runtime info error %v", err)
+		}
+		h := &Helper{
+			runtimeInfo: runtimeInfo,
+			client:      fakeClient,
+			log:         test.log,
+		}
+
+		count, err := h.CleanUpFuse()
+		if err != nil {
+			t.Errorf("fail to exec the function with the error %v", err)
+		}
+		if count != test.wantedCount {
+			t.Errorf("with the wrong number of the fuse ,count %v", count)
+		}
+
+		err = fakeClient.List(context.TODO(), nodeList, &client.ListOptions{})
+		if err != nil {
+			t.Errorf("testcase %s: fail to get the node with the error %v  ", test.name, err)
+		}
+
+		for _, node := range nodeList.Items {
+			if len(node.Labels) != len(test.wantedNodeLabels[node.Name]) {
+				t.Errorf("testcase %s: fail to clean up the labels for node %s  expected %v, got %v", test.name, node.Name, test.wantedNodeLabels[node.Name], node.Labels)
+			}
+			if len(node.Labels) != 0 && !reflect.DeepEqual(node.Labels, test.wantedNodeLabels[node.Name]) {
+				t.Errorf("testcase %s: fail to clean up the labels for node  %s  expected %v, got %v", test.name, node.Name, test.wantedNodeLabels[node.Name], node.Labels)
+			}
 		}
 
 	}

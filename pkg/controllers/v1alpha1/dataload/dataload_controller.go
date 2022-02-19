@@ -90,11 +90,16 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 	targetDataload := *dataload
 	ctx.Log.V(1).Info("DataLoad found", "detail", dataload)
 
-	// 2. get the dataset
+	// 2. Reconcile deletion of the object if necessary
+	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
+		return r.ReconcileDataLoadDeletion(ctx, targetDataload, r.engines, r.mutex)
+	}
+
+	// 3. get the dataset
 	targetDataset, err := utils.GetDataset(r.Client, targetDataload.Spec.Dataset.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
+			ctx.Log.Info("The dataset is not found", "dataset", req.Namespace+"/"+targetDataload.Spec.Dataset.Name)
 			// no datset means no metadata, not necessary to ReconcileDataLoad
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
@@ -108,7 +113,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 		Namespace: targetDataset.Namespace,
 	}
 
-	//3. get the runtime
+	// 4. get the runtime
 	index, boundedRuntime := utils.GetRuntimeByCategory(targetDataset.Status.Runtimes, common.AccelerateCategory)
 	if index == -1 {
 		ctx.Log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
@@ -124,7 +129,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 	switch ctx.RuntimeType {
 	case common.ALLUXIO_RUNTIME:
 		fluidRuntime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.JINDO_RUNTIME:
+	case common.JindoRuntime:
 		fluidRuntime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.GooseFSRuntime:
 		fluidRuntime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
@@ -148,26 +153,21 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 	ctx.Runtime = fluidRuntime
 	ctx.Log.V(1).Info("get the runtime", "runtime", ctx.Runtime)
 
-	// 4. add finalizer and requeue
-	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
-		return r.addFinalizerAndRequeue(ctx, targetDataload)
-	}
-
-	// 5. add owner and requeue
-	if !utils.ContainsOwners(targetDataload.GetOwnerReferences(), targetDataset) {
-		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
-	}
-
-	// 6. create or get engine
+	// 5. create or get engine
 	engine, err := r.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process DataLoad error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
 	}
 
-	// 7. Reconcile deletion of the object and engine if necessary
-	if utils.HasDeletionTimestamp(dataload.ObjectMeta) {
-		return r.ReconcileDataLoadDeletion(ctx, targetDataload, r.engines, r.mutex)
+	// 6. add finalizer and requeue
+	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
+		return r.addFinalizerAndRequeue(ctx, targetDataload)
+	}
+
+	// 7. add owner and requeue
+	if !utils.ContainsOwners(targetDataload.GetOwnerReferences(), targetDataset) {
+		return r.AddOwnerAndRequeue(ctx, targetDataload, targetDataset)
 	}
 
 	return r.ReconcileDataLoad(ctx, targetDataload, engine)

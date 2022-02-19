@@ -28,6 +28,7 @@ rules:
     resources:
       - namespaces
       - persistentvolumeclaims
+      - persistentvolumes
     verbs:
       - get
       - list
@@ -36,10 +37,22 @@ rules:
       - ""
     resources:
       - secrets
+      - configmaps
     verbs:
       - get
       - create
       - update
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

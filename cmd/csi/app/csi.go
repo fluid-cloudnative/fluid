@@ -1,8 +1,5 @@
 /*
-<<<<<<< HEAD
-=======
 Copyright 2021 The Fluid Authors.
->>>>>>> master
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,10 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-<<<<<<< HEAD
-=======
 
->>>>>>> master
 package app
 
 import (
@@ -27,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-<<<<<<< HEAD
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -41,58 +34,21 @@ import (
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	csi "github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
+	"github.com/fluid-cloudnative/fluid/pkg/csi"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 var (
-	endpoint string
-	nodeID   string
-
+	endpoint    string
+	nodeID      string
 	metricsAddr string
 	pprofAddr   string
 )
 
 var scheme = runtime.NewScheme()
 
-var csiCmd = &cobra.Command{
-=======
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	csi "github.com/fluid-cloudnative/fluid/pkg/csi/fuse"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/recover"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
-	"github.com/golang/glog"
-	"github.com/spf13/cobra"
-	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
-	"net/http"
-	"net/http/pprof"
-	"os"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"time"
-)
-
-var (
-	endpoint          string
-	nodeID            string
-	metricsAddr       string
-	pprofAddr         string
-	recoverFusePeriod int
-)
-
-const defaultKubeletTimeout = 10
-
-var scheme = runtime.NewScheme()
-
 var startCmd = &cobra.Command{
->>>>>>> master
 	Use:   "start",
 	Short: "start fluid driver on node",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -110,25 +66,6 @@ func init() {
 		os.Exit(1)
 	}
 
-<<<<<<< HEAD
-	csiCmd.Flags().StringVarP(&nodeID, "nodeid", "", "", "node id")
-	if err := csiCmd.MarkFlagRequired("nodeid"); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
-	}
-
-	csiCmd.Flags().StringVarP(&endpoint, "endpoint", "", "", "CSI endpoint")
-	if err := csiCmd.MarkFlagRequired("endpoint"); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-		os.Exit(1)
-	}
-
-	csiCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
-	csiCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
-
-	csiCmd.Flags().AddGoFlagSet(flag.CommandLine)
-
-=======
 	startCmd.Flags().StringVarP(&nodeID, "nodeid", "", "", "node id")
 	if err := startCmd.MarkFlagRequired("nodeid"); err != nil {
 		ErrorAndExit(err)
@@ -141,16 +78,13 @@ func init() {
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
-
-	// start csi recover
-	startCmd.Flags().IntVar(&recoverFusePeriod, "recover-fuse-period", -1, "CSI recover sync pods period, in seconds")
 }
 
 func ErrorAndExit(err error) {
 	fmt.Fprintf(os.Stderr, "%s", err.Error())
 	os.Exit(1)
->>>>>>> master
 }
 
 func handle() {
@@ -199,89 +133,20 @@ func handle() {
 	})
 
 	if err != nil {
-<<<<<<< HEAD
 		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
 	}
 
-	go func() {
-		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-			panic(fmt.Sprintf("unable to start controller manager due to error %v", err))
-		}
-	}()
+	config := config.Config{
+		NodeId:   nodeID,
+		Endpoint: endpoint,
+	}
 
-	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
-	d.Run()
-}
-=======
-		panic(fmt.Sprintf("csi: unable to create controller recover due to error %v", err))
+	if err = csi.SetupWithManager(mgr, config); err != nil {
+		panic(fmt.Sprintf("unable to set up manager due to error %v", err))
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go func() {
-		if err := mgr.Start(ctx); err != nil {
-			panic(fmt.Sprintf("unable to start controller recover due to error %v", err))
-		}
-	}()
-
-	if recoverFusePeriod > 0 {
-		if err := recoverStart(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover")); err != nil {
-			panic(fmt.Sprintf("unable to start recover due to error %v", err))
-		}
+	if err = mgr.Start(ctx); err != nil {
+		panic(fmt.Sprintf("unable to start controller recover due to error %v", err))
 	}
-
-	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
-	d.Run()
 }
-
-func recoverStart(kubeClient client.Client, recorder record.EventRecorder) (err error) {
-	glog.V(3).Infoln("start csi recover")
-	mountRoot, err := utils.GetMountRoot()
-	if err != nil {
-		return
-	}
-	glog.V(3).Infof("Get mount root: %s", mountRoot)
-
-	// get CSI sa token
-	tokenByte, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		panic(fmt.Errorf("in cluster mode, find token failed, error: %v", err))
-	}
-	token := string(tokenByte)
-
-	glog.V(3).Infoln("start kubelet client")
-	nodeIp := os.Getenv("NODE_IP")
-	kubeletClientCert := os.Getenv("KUBELET_CLIENT_CERT")
-	kubeletClientKey := os.Getenv("KUBELET_CLIENT_KEY")
-	var kubeletTimeout int
-	if os.Getenv("KUBELET_TIMEOUT") != "" {
-		if kubeletTimeout, err = strconv.Atoi(os.Getenv("KUBELET_TIMEOUT")); err != nil {
-			glog.Errorf("parse kubelet timeout error: %v", err)
-			return
-		}
-	} else {
-		kubeletTimeout = defaultKubeletTimeout
-	}
-	glog.V(3).Infof("get node ip: %s", nodeIp)
-	kubeletClient, err := kubelet.NewKubeletClient(&kubelet.KubeletClientConfig{
-		Address: nodeIp,
-		Port:    10250,
-		TLSClientConfig: rest.TLSClientConfig{
-			ServerName: "kubelet",
-			CertFile:   kubeletClientCert,
-			KeyFile:    kubeletClientKey,
-		},
-		BearerToken: token,
-		HTTPTimeout: time.Duration(kubeletTimeout) * time.Second,
-	})
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	m := recover.NewFuseRecoder(kubeClient, kubeletClient, recorder)
-	// do recovering at beginning
-	// recover set containerStat in memory, it's none when start
-	m.Recover()
-	go m.Run(recoverFusePeriod, wait.NeverStop)
-	return
-}
->>>>>>> master

@@ -21,19 +21,26 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/csi/mountinfo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
+	"os"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 )
+
+const testfuseRecoverPeriod = 30
 
 var mockPod = v1.Pod{
 	ObjectMeta: metav1.ObjectMeta{
@@ -60,6 +67,33 @@ var mockPod = v1.Pod{
 	},
 }
 
+func Test_initializeKubeletClient(t *testing.T) {
+	Convey("Test_initializeKubeletClient", t, func() {
+		Convey("initialize success with non-default kubelet timeout", func() {
+			const (
+				fakeToken          = "fakeToken"
+				fakeNodeIP         = "fakeNodeIP"
+				fakeClientCert     = ""
+				fakeClientKey      = ""
+				fakeKubeletTimeout = "120"
+			)
+			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+				return []byte(fakeToken), nil
+			})
+			defer patch1.Reset()
+
+			os.Setenv("NODE_IP", fakeNodeIP)
+			os.Setenv("KUBELET_CLIENT_CERT", fakeClientCert)
+			os.Setenv("KUBELET_CLIENT_KEY", fakeClientKey)
+			os.Setenv("KUBELET_TIMEOUT", fakeKubeletTimeout)
+
+			kubeletClient, err := initializeKubeletClient()
+			So(err, ShouldBeNil)
+			So(kubeletClient, ShouldNotBeNil)
+		})
+	})
+}
+
 func TestRecover_run(t *testing.T) {
 	Convey("TestRecover_run", t, func() {
 		Convey("run success", func() {
@@ -80,11 +114,17 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1))
-			r.SafeFormatAndMount = mount.SafeFormatAndMount{
-				Interface: &mount.FakeMounter{},
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeclient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
 			}
-			r.run()
+			r.runOnce()
 		})
 		Convey("GetNodeRunningPods error", func() {
 			kubeclient := &kubelet.KubeletClient{}
@@ -103,7 +143,7 @@ func TestRecover_run(t *testing.T) {
 				KubeletClient:      &kubelet.KubeletClient{},
 				Recorder:           record.NewFakeRecorder(1),
 			}
-			r.run()
+			r.runOnce()
 		})
 		Convey("container restart", func() {
 			kubeclient := &kubelet.KubeletClient{}
@@ -116,7 +156,17 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeclient, record.NewFakeRecorder(1))
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeclient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
+			}
+
 			r.containers = map[string]*containerStat{
 				"test-container-test-juicefs-fuse-default": {
 					name:          "test-container",
@@ -128,7 +178,7 @@ func TestRecover_run(t *testing.T) {
 					},
 				},
 			}
-			r.run()
+			r.runOnce()
 		})
 	})
 }
@@ -246,7 +296,16 @@ func TestFuseRecover_compareOrRecordContainerStat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kubeletClient := &kubelet.KubeletClient{}
-			r := NewFuseRecoder(fake.NewFakeClient(), kubeletClient, record.NewFakeRecorder(1))
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: &mount.FakeMounter{},
+				},
+				KubeClient:        fake.NewFakeClient(),
+				KubeletClient:     kubeletClient,
+				Recorder:          record.NewFakeRecorder(1),
+				containers:        make(map[string]*containerStat),
+				recoverFusePeriod: testfuseRecoverPeriod,
+			}
 			if tt.fields.container != nil {
 				r.containers[tt.fields.key] = tt.fields.container
 			}
@@ -399,6 +458,67 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 				containers:    tt.fields.containers,
 			}
 			r.eventRecord(tt.args.point, tt.args.eventType, tt.args.eventReason)
+		})
+	}
+}
+
+func TestNewFuseRecover(t *testing.T) {
+	type args struct {
+		kubeClient        client.Client
+		recorder          record.EventRecorder
+		recoverFusePeriod string
+	}
+
+	fakeClient := fake.NewFakeClient()
+	fakeRecorder := record.NewFakeRecorder(1)
+	fakeKubeletClient := &kubelet.KubeletClient{}
+	fakeContainersMap := make(map[string]*containerStat)
+
+	tests := []struct {
+		name    string
+		args    args
+		want    *FuseRecover
+		wantErr bool
+	}{
+		{
+			name: "test_newFuseRecover",
+			args: args{
+				kubeClient:        fakeClient,
+				recorder:          fakeRecorder,
+				recoverFusePeriod: "5s",
+			},
+			want: &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: mount.New(""),
+					Exec:      k8sexec.New(),
+				},
+				KubeClient:        fakeClient,
+				KubeletClient:     fakeKubeletClient,
+				Recorder:          fakeRecorder,
+				containers:        fakeContainersMap,
+				recoverFusePeriod: defaultFuseRecoveryPeriod,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv(utils.MountRoot, "/runtime-mnt")
+			os.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
+
+			patch := ApplyFunc(initializeKubeletClient, func() (*kubelet.KubeletClient, error) {
+				return fakeKubeletClient, nil
+			})
+			defer patch.Reset()
+
+			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewFuseRecover() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewFuseRecover() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

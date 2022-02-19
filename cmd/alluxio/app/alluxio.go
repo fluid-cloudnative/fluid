@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,6 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -48,6 +50,7 @@ var (
 	development             bool
 	portRange               string
 	maxConcurrentReconciles int
+	pprofAddr               string
 )
 
 var alluxioCmd = &cobra.Command{
@@ -67,8 +70,9 @@ func init() {
 	alluxioCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	alluxioCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
 	alluxioCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for AlluxioRuntime controller")
-
+	alluxioCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 }
+
 func handle() {
 	fluid.LogVersion()
 
@@ -84,6 +88,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

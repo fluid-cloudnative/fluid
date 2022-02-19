@@ -19,10 +19,12 @@ package mutating
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	corev1 "k8s.io/api/core/v1"
@@ -52,6 +54,11 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	namespace := pod.Namespace
+	if len(namespace) == 0 {
+		namespace = req.Namespace
+	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -61,9 +68,13 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}
+	if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
+		setupLog.Info("skip mutating the pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return admission.Allowed("skip mutating the pod because injection is done")
+	}
 
 	// inject affinity info into pod
-	err = a.AddScheduleInfoToPod(pod)
+	err = a.AddScheduleInfoToPod(pod, namespace)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -84,35 +95,57 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 }
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod) (err error) {
+func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
+	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	var runtimeInfos []base.RuntimeInfoInterface
+	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
-		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, pod.Namespace)
+		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
 		if err != nil {
-			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName)
-			return err
+			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName, "namespace", namespace)
+			errPVCs[pvcName] = err
+			continue
 		}
 		if isDatasetPVC {
-			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, pod.Namespace)
+			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, will ignore it", "runtime", pvcName)
+				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName, "namespace", namespace)
 				return err
 			}
 			runtimeInfo.SetDeprecatedNodeLabel(false)
-			runtimeInfos = append(runtimeInfos, runtimeInfo)
+			// runtimeInfos = append(runtimeInfos, runtimeInfo)
+			runtimeInfos[pvcName] = runtimeInfo
 		}
 	}
 
 	// get plugins Registry and get the need plugins list from it
 	pluginsRegistry := plugins.Registry(a.Client)
 	var pluginsList []plugins.MutatingHandler
+	// if the serverlessEnabled, it will raise the errors
+	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
+		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
+			pod.Name,
+			namespace,
+			common.InjectServerless,
+			common.InjectFuseSidecar,
+			errPVCs)
+		setupLog.Info(info)
+		err = fmt.Errorf("failed with errs %v", errPVCs)
+		return err
+	}
+
+	// handle the pods interact with fluid
 	if len(runtimeInfos) == 0 {
 		pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 	} else {
-		pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
+		if utils.ServerlessEnabled(pod.GetLabels()) {
+			pluginsList = pluginsRegistry.GetServerlessPodHandler()
+		} else {
+			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
+		}
+
 	}
 
 	// call every plugin in the plugins list in the defined order

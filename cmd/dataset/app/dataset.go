@@ -1,4 +1,5 @@
 /*
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,6 +35,7 @@ import (
 	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -45,6 +47,7 @@ var (
 	metricsAddr          string
 	enableLeaderElection bool
 	development          bool
+	pprofAddr            string
 )
 
 var datasetCmd = &cobra.Command{
@@ -62,7 +65,7 @@ func init() {
 	datasetCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	datasetCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	datasetCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
-
+	datasetCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 }
 
 func handle() {
@@ -80,6 +83,8 @@ func handle() {
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
+
+	utils.NewPprofServer(setupLog, pprofAddr)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

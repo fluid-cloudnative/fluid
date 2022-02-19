@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package csi
+package plugins
 
 import (
 	"fmt"
@@ -281,15 +281,6 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		}
 	} else {
 		glog.Info("NodeStageVolume: label already exists on node", "label", fuseLabelKey, "node", node)
-	}
-
-	fluidPath := req.GetVolumeContext()["fluid_path"]
-	mountType := req.GetVolumeContext()["mount_type"]
-
-	// checkMountReady checks the fuse mount path every 3 second for 30 seconds in total.
-	err = utils.CheckMountReady(fluidPath, mountType)
-	if err != nil {
-		return nil, errors.Errorf("fuse pod on node %s is not ready", ns.nodeId)
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil

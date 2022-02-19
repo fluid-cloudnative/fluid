@@ -49,7 +49,7 @@ func (p *RequireNodeWithFuse) GetName() string {
 }
 
 // Mutate mutates the pod based on runtimeInfo, this action shouldn't stop other handler
-func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
+func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
@@ -60,7 +60,7 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos []base.Runtim
 	for _, runtime := range runtimeInfos {
 		term, err := getRequiredSchedulingTerm(runtime)
 		if err != nil {
-			return true, fmt.Errorf("Should stop mutating pod %s in namespace %s due to %v",
+			return true, fmt.Errorf("should stop mutating pod %s in namespace %s due to %v",
 				pod.Name,
 				pod.Namespace,
 				err)

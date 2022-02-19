@@ -17,13 +17,20 @@ package mountpropagationinjector
 
 import (
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const NAME = "MountPropagationInjector"
+
+var (
+	log = ctrl.Log.WithName(NAME)
+)
 
 type MountPropagationInjector struct {
 	client client.Client
@@ -41,20 +48,21 @@ func (p *MountPropagationInjector) GetName() string {
 	return p.name
 }
 
-func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos []base.RuntimeInfoInterface) (shouldStop bool, err error) {
+func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
 	}
 	runtimeNames := make([]string, len(runtimeInfos))
-	for i, runtimeInfo := range runtimeInfos {
+	for _, runtimeInfo := range runtimeInfos {
 		if runtimeInfo == nil {
 			err = fmt.Errorf("RuntimeInfo is nil")
 			shouldStop = true
 			return
 		}
-		runtimeNames[i] = runtimeInfo.GetName()
+		runtimeNames = append(runtimeNames, runtimeInfo.GetName())
 	}
+	log.V(1).Info("InjectMountPropagation", "runtimeNames", runtimeNames)
 	utils.InjectMountPropagation(runtimeNames, pod)
 
 	return

@@ -4,7 +4,7 @@
 
 
 image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
-imageTag: "3.7.3"
+imageTag: "3.8.0"
 imagePullPolicy: Always
 
 initPortCheck:
@@ -15,7 +15,7 @@ initPortCheck:
   portsToCheck: ""
 
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
-fuseImageTag: "3.7.3"
+fuseImageTag: "3.8.0"
 
 user: 0
 group: 0
@@ -30,6 +30,9 @@ properties:
   logDir: /mnt/disk1/bigboot/log
 
 master:
+  ports:
+    rpc: 8101
+  dnsServer: ""
   labels: {}
   replicaCount: 1
   properties:
@@ -39,6 +42,8 @@ master:
     namespace.backend.type: rocksdb
 
 worker:
+  ports:
+    rpc: 6101
   labels: {}
   nodeSelector: {}
   replicaCount: 0
