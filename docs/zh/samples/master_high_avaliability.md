@@ -100,8 +100,6 @@ hbase   55s
 ```shell
 $ kubectl get pod
 NAME                 READY   STATUS              RESTARTS   AGE   IP          NODE        NOMINATED NODE   READINESS GATES
-hbase-fuse-74qws     1/1     Running             0          18s   10.0.1.15   10.0.1.15   <none>           <none>
-hbase-fuse-tpvs9     0/1     Running             0          18s   10.0.1.2    10.0.1.2    <none>           <none>
 hbase-master-0       2/2     Running             0          61s   10.0.1.10   10.0.1.10   <none>           <none>
 hbase-master-1       2/2     Running             0          58s   10.0.1.15   10.0.1.15   <none>           <none>
 hbase-master-2       2/2     Running             0          53s   10.0.1.2    10.0.1.2    <none>           <none>
@@ -122,7 +120,7 @@ hbase    550.82MiB        0.00B    4.00GiB          0.0%                Bound   
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   3               3                 Ready          2               2                 Ready          2             2               Ready        2m46s
+hbase   3               3                 Ready          2               2                 Ready          0             0               Ready        2m46s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 

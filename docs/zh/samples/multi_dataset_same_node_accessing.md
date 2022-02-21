@@ -138,7 +138,6 @@ alluxioruntime.data.fluid.io/hbase created
 # 注意等待 Dataset hbase 全部组件 Running 
 $ kubectl get pod -o wide | grep hbase
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
 hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 
@@ -160,10 +159,8 @@ spark   Ready          Ready          Ready        58s
 ```shell
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-jl2g2     1/1     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
 hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
-spark-fuse-5z49p     1/1     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 spark-master-0       2/2     Running   0          50s     192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
 spark-worker-96ksn   2/2     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 ```
@@ -182,8 +179,8 @@ spark   1.92GiB          0.00B    4.00GiB          0.0%                Bound   9
 ```shell
 $ kubectl get alluxioruntime -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        11m
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        9m52s
+hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        11m
+spark   1               1                 Ready          1               1                 Ready          0             0               Ready        9m52s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 
