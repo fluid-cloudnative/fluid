@@ -93,8 +93,6 @@ alluxioruntime.data.fluid.io/hadoop created
 ```shell
 $ hdfs kubectl get pods
 NAME                            READY   STATUS    RESTARTS   AGE
-hadoop-fuse-749fs               1/1     Running   0          64s
-hadoop-fuse-khdrb               1/1     Running   0          64s
 hadoop-master-0                 2/2     Running   0          106s
 hadoop-worker-cn9fg             2/2     Running   0          64s
 hadoop-worker-tlldq             2/2     Running   0          64s
