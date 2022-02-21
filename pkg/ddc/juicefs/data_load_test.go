@@ -122,7 +122,8 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 	testScheme.AddKnownTypes(v1.SchemeGroupVersion, configMap)
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := &JuiceFSEngine{
-		name: "hbase",
+		name:   "hbase",
+		Client: client,
 	}
 	ctx := cruntime.ReconcileRequestContext{
 		Log:      log.NullLogger{},
@@ -139,8 +140,8 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	err = engine.CreateDataLoadJob(ctx, targetDataLoad)
-	if err != nil {
-		t.Errorf("fail to catch the error")
+	if err == nil {
+		t.Errorf("fail to catch the error: %v", err)
 	}
 	wrappedUnhookInstallRelease()
 
@@ -232,7 +233,9 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		engine := JuiceFSEngine{}
+		engine := JuiceFSEngine{
+			Client: client,
+		}
 		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file")
 		}
