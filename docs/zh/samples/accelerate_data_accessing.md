@@ -98,8 +98,8 @@ hbase   55s
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
 hbase-master-0       2/2     Running   0          62s
-hbase-worker-92cln   2/2     Running   0          27s
-hbase-worker-rlb5w   2/2     Running   0          27s
+hbase-worker-0       2/2     Running   0          27s
+hbase-worker-1       2/2     Running   0          27s
 ```
 
 **再次查看Dataset资源对象状态**

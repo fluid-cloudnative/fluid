@@ -103,8 +103,8 @@ NAME                 READY   STATUS              RESTARTS   AGE   IP          NO
 hbase-master-0       2/2     Running             0          61s   10.0.1.10   10.0.1.10   <none>           <none>
 hbase-master-1       2/2     Running             0          58s   10.0.1.15   10.0.1.15   <none>           <none>
 hbase-master-2       2/2     Running             0          53s   10.0.1.2    10.0.1.2    <none>           <none>
-hbase-worker-8l6j5   2/2     Running             0          18s   10.0.1.2    10.0.1.2    <none>           <none>
-hbase-worker-kj7lw   2/2     Running             0          18s   10.0.1.15   10.0.1.15   <none>           <none>
+hbase-worker-0       2/2     Running             0          18s   10.0.1.2    10.0.1.2    <none>           <none>
+hbase-worker-1       2/2     Running             0          18s   10.0.1.15   10.0.1.15   <none>           <none>
 
 ```
 

@@ -56,7 +56,7 @@ Alluxio各组件运行状态：
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
 hbase-master-0       2/2     Running   0          3m50s
-hbase-worker-w9wxh   2/2     Running   0          3m15s
+hbase-worker-0       2/2     Running   0          3m15s
 ```
 
 Dataset状态：
@@ -86,8 +86,8 @@ alluxioruntime.data.fluid.io/hbase scaled
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
 hbase-master-0       2/2     Running   0          13m
-hbase-worker-l4c8n   2/2     Running   0          6m49s
-hbase-worker-w9wxh   2/2     Running   0          13m
+hbase-worker-1       2/2     Running   0          6m49s
+hbase-worker-0       2/2     Running   0          13m
 ```
 
 Dataset中的`Cache Capacity`从原来的`2.00GiB`变为`4.00GiB`，表明该Dataset的可用缓存容量增加：
@@ -137,8 +137,8 @@ alluxioruntime.data.fluid.io/hbase scaled
 ```
 NAME                 READY   STATUS        RESTARTS   AGE
 hbase-master-0       2/2     Running       0          22m
-hbase-worker-f92vv   2/2     Terminating   0          17m32s
-hbase-worker-l4c8n   2/2     Running       0          21m
+hbase-worker-1       2/2     Terminating   0          17m32s
+hbase-worker-0       2/2     Running       0          21m
 ```
 
 Dataset的缓存容量(`Cache Capacity`)恢复到`2.00GiB`:

@@ -45,7 +45,7 @@ EOF
 ```
 $  kubectl get alluxioruntimes.data.fluid.io  -owide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   API GATEWAY                    AGE
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        spark-master-0.default:20009   110s
+spark   1               1                 Ready          1               1                 Ready          0             0               Ready        spark-master-0.default:20009   110s
 ```
 
 可以看到API Gateway的访问地址为spark-master-0.default:20009。 您可以通过这个地址进行访问。
