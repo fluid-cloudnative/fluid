@@ -68,7 +68,7 @@ spec:
             - "--endpoint=$(CSI_ENDPOINT)"
             - --v=5
             {{- if .Values.csi.featureGates }}
-            - --feature-gates={{ .Values.csi.featureGates }}}
+            - --feature-gates={{ .Values.csi.featureGates }}
             {{- end }}
             - "--pprof-addr=:6060"
           env:
