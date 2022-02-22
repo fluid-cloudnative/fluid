@@ -142,7 +142,8 @@ alluxioruntime.data.fluid.io/hbase created
 $ kubectl get pod -o wide | grep hbase
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
 hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
-hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-worker-0       2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+
 $ kubectl create -f runtime1.yaml
 alluxioruntime.data.fluid.io/spark created
 ```
@@ -164,9 +165,9 @@ Wait for a while, and make sure all components defined in the `AlluxioRuntime` o
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE     IP              NODE                       NOMINATED NODE   READINESS GATES
 hbase-master-0       2/2     Running   0          2m55s   192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
-hbase-worker-g89p8   2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+hbase-worker-0       2/2     Running   0          2m24s   192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 spark-master-0       2/2     Running   0          50s     192.168.0.200   cn-beijing.192.168.0.200   <none>           <none>
-spark-worker-96ksn   2/2     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
+spark-worker-0       2/2     Running   0          19s     192.168.0.199   cn-beijing.192.168.0.199   <none>           <none>
 ```
 Note that the worker and fuse components of the different Datasets above can be dispatched to the same node `cn-beijing.192.168.0.199` normally .
 

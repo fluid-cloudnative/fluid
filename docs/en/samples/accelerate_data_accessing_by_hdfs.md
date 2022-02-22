@@ -90,8 +90,8 @@ Wait until each component in the AlluxioRuntime resource object starts successfu
 $ hdfs kubectl get pods
 NAME                            READY   STATUS    RESTARTS   AGE
 hadoop-master-0                 2/2     Running   0          106s
-hadoop-worker-cn9fg             2/2     Running   0          64s
-hadoop-worker-tlldq             2/2     Running   0          64s
+hadoop-worker-0                 2/2     Running   0          64s
+hadoop-worker-1                 2/2     Running   0          64s
 ```
 
 ```shell
@@ -269,5 +269,4 @@ This great acceleration effect is attributed to the powerful caching capability 
 ```shell
 $ kubectl delete -f .
 ```
-
 
