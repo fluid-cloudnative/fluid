@@ -105,7 +105,7 @@ spark   2.71GiB          0.00B    1.00GiB          0.0%                Bound   7
 ```shell
 kubectl get alluxioruntimes.data.fluid.io -owide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-spark   1               1                 Ready          1               1                 Ready          1             1               Ready        104s
+spark   1               1                 Ready          1               1                 Ready          0             0               Ready        104s
 ```
 
 7.创建cronHPA任务

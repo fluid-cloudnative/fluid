@@ -55,9 +55,8 @@ Alluxio各组件运行状态：
 ```
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
-hbase-fuse-6pcnc     1/1     Running   0          3m15s
 hbase-master-0       2/2     Running   0          3m50s
-hbase-worker-w9wxh   2/2     Running   0          3m15s
+hbase-worker-0       2/2     Running   0          3m15s
 ```
 
 Dataset状态：
@@ -71,7 +70,7 @@ AlluxioRuntime状态：
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        4m55s
+hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        4m55s
 ```
 
 **Dataset扩容**
@@ -86,11 +85,9 @@ alluxioruntime.data.fluid.io/hbase scaled
 ```
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
-hbase-fuse-6pcnc     1/1     Running   0          13m
-hbase-fuse-8qgww     1/1     Running   0          6m49s
 hbase-master-0       2/2     Running   0          13m
-hbase-worker-l4c8n   2/2     Running   0          6m49s
-hbase-worker-w9wxh   2/2     Running   0          13m
+hbase-worker-1       2/2     Running   0          6m49s
+hbase-worker-0       2/2     Running   0          13m
 ```
 
 Dataset中的`Cache Capacity`从原来的`2.00GiB`变为`4.00GiB`，表明该Dataset的可用缓存容量增加：
@@ -104,7 +101,7 @@ AlluxioRuntime中的`Ready Workers`以及`Ready Fuses`属性均变为2：
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        17m
+hbase   1               1                 Ready          2               2                 Ready          0             0               Ready        17m
 ```
 
 查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
@@ -118,18 +115,12 @@ $ kubectl describe alluxioruntime hbase
     Message:                        The workers are scale out.
     Reason:                         Workers scaled out
     Status:                         True
-    Type:                           Workers scaled out
-    Last Probe Time:                2021-04-23T07:54:03Z
-    Last Transition Time:           2021-04-23T07:54:03Z
-    Message:                        The fuses are scale out.
-    Reason:                         Fuses scaled out
-    Status:                         True
-    Type:                           FusesScaledOut
+    Type:                           WorkersScaledOut
 ...
 Events:
   Type    Reason   Age   From            Message
   ----    ------   ----  ----            -------
-  Normal  Succeed  2m2s  AlluxioRuntime  Alluxio runtime scaled out. current replicas: 2, desired replicas: 2.
+  Normal  Succeed  2m2s  AlluxioRuntime  Runtime scaled out. current replicas: 2, desired replicas: 2.
 ```
 
 **Dataset缩容**
@@ -145,11 +136,9 @@ alluxioruntime.data.fluid.io/hbase scaled
 超出指定`replicas`数量的Runtime Worker将会被停止：
 ```
 NAME                 READY   STATUS        RESTARTS   AGE
-hbase-fuse-8qgww     1/1     Running       0          21m
-hbase-fuse-zql96     1/1     Terminating   0          17m32s
 hbase-master-0       2/2     Running       0          22m
-hbase-worker-f92vv   2/2     Terminating   0          17m32s
-hbase-worker-l4c8n   2/2     Running       0          21m
+hbase-worker-1       2/2     Terminating   0          17m32s
+hbase-worker-0       2/2     Running       0          21m
 ```
 
 Dataset的缓存容量(`Cache Capacity`)恢复到`2.00GiB`:
@@ -165,7 +154,7 @@ AlluxioRuntime中的`Ready Workers`以及`Ready Fuses`字段同样变为`1`：
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          1               1                 Ready          1             1               Ready        30m
+hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        30m
 ```
 
 查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
@@ -180,12 +169,6 @@ $ kubectl describe alluxioruntime hbase
     Reason:                         Workers scaled in
     Status:                         True
     Type:                           WorkersScaledIn
-    Last Probe Time:                2021-04-23T08:00:55Z
-    Last Transition Time:           2021-04-23T08:00:55Z
-    Message:                        The fuses scaled in.
-    Reason:                         Fuses scaled in
-    Status:                         True
-    Type:                           FusesScaledIn
 ...
 Events:
   Type     Reason               Age    From            Message

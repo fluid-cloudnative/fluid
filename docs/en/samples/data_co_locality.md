@@ -105,7 +105,6 @@ alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-42csf     1/1     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 hbase-master-0       2/2     Running   0          3m3s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
@@ -115,7 +114,7 @@ While two running workers are expected, there's only one running on the node wit
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
-hbase   1               1                 Ready          1               2                 PartialReady   1             2               PartialReady   4m3s
+hbase   1               1                 Ready          1               2                 PartialReady   0             0               Ready          4m3s
 ```
 As expected, `Worker Phase` is `PartialReady` and `Ready Workers: 1` is less than `Desired Workers: 2`.
 

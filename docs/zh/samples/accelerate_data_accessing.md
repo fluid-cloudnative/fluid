@@ -97,11 +97,9 @@ hbase   55s
 ```shell
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
-hbase-fuse-hvxgh     1/1     Running   0          27s
-hbase-fuse-sjhxk     1/1     Running   0          27s
 hbase-master-0       2/2     Running   0          62s
-hbase-worker-92cln   2/2     Running   0          27s
-hbase-worker-rlb5w   2/2     Running   0          27s
+hbase-worker-0       2/2     Running   0          27s
+hbase-worker-1       2/2     Running   0          27s
 ```
 
 **再次查看Dataset资源对象状态**
@@ -116,7 +114,7 @@ hbase   443.5MiB         0B       4GiB             0%                  Bound   2
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        2m50s
+hbase   1               1                 Ready          2               2                 Ready          0             0               Ready        2m50s
 ```
 `AlluxioRuntime`资源对象的`status`中包含了更多更详细的信息
 
