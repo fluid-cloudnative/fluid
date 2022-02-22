@@ -51,22 +51,18 @@ EOF
 $ kubectl get pods
 NAME                   READY   STATUS        RESTARTS   AGE
 hbase-databackup-pod   1/1     Running       0          3s
-hbase-fuse-krxlb       1/1     Running       0          2m44s
-hbase-fuse-mtdmc       1/1     Running       0          2m44s
 hbase-master-0         2/2     Running       0          3m16s
-hbase-worker-sqrzc     2/2     Running       0          2m44s
-hbase-worker-whmnv     2/2     Running       0          2m44s
+hbase-worker-0         2/2     Running       0          2m44s
+hbase-worker-1         2/2     Running       0          2m44s
 ```
 片刻后，该Pod变为Completed状态：
 ```bash
 $ kubectl get pods
 NAME                   READY   STATUS        RESTARTS   AGE
 hbase-databackup-pod   0/1     Completed     0          23s
-hbase-fuse-krxlb       1/1     Running       0          3m4s
-hbase-fuse-mtdmc       1/1     Running       0          3m4s
 hbase-master-0         2/2     Running       0          3m36s
-hbase-worker-sqrzc     2/2     Running       0          3m4s
-hbase-worker-whmnv     2/2     Running       0          3m4s
+hbase-worker-0         2/2     Running       0          3m4s
+hbase-worker-1         2/2     Running       0          3m4s
 ```
 该DataBackup同样变为Complete状态：
 ```bash
