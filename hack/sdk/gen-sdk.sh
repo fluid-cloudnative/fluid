@@ -42,10 +42,10 @@ fi
 echo ">> Using ${OPENAPI_PKG}"
 
 echo "Building openapi-gen"
-go build -o openapi-gen ${OPENAPI_PKG}/cmd/openapi-gen
+go install k8s.io/kube-openapi/cmd/openapi-gen@${OPENAPI_VERSION}
 
 echo "Generating OpenAPI specification ..."
-./openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
+${GOPATH}/bin/openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
 
 echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
