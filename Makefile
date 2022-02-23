@@ -211,6 +211,9 @@ docker-push-webhook: docker-build-webhook
 docker-build-all: ${DOCKER_BUILD}
 docker-push-all: ${DOCKER_PUSH}
 
+gen-sdk:
+	./hack/sdk/gen-sdk.sh
+
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
