@@ -28,7 +28,7 @@
   - [数据卷加速](samples/accelerate_pvc.md)
 + 进阶使用
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
-  - [通过Webhook机制优化Pod调度](operation/pod_schedule.md)
+  - [通过Webhook机制优化Pod调度](operation/pod_schedule_global.md)
   - [如何在Knative环境运行](samples/knative.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
 + 工作负载
