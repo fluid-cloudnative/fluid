@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SWAGGER_JAR_URL="http://search.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.6/swagger-codegen-cli-2.4.6.jar"
+SWAGGER_JAR_URL="https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.26/swagger-codegen-cli-2.4.26.jar"
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
@@ -32,16 +32,8 @@ fi
 
 # Grab kube-openapi version from go.mod
 OPENAPI_VERSION=$(grep 'k8s.io/kube-openapi' go.mod | awk '{print $2}' | head -1)
-OPENAPI_PKG=$(echo `go env GOPATH`"/pkg/mod/k8s.io/kube-openapi@${OPENAPI_VERSION}")
 
-if [[ ! -d ${OPENAPI_PKG} ]]; then
-    echo "${OPENAPI_PKG} is missing. Running 'go mod download'."
-    go mod download
-fi
-
-echo ">> Using ${OPENAPI_PKG}"
-
-echo "Building openapi-gen"
+echo "Installing openapi-gen"
 go install k8s.io/kube-openapi/cmd/openapi-gen@${OPENAPI_VERSION}
 
 echo "Generating OpenAPI specification ..."
