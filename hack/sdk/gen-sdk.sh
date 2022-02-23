@@ -18,7 +18,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SWAGGER_JAR_URL="http://search.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.6/swagger-codegen-cli-2.4.6.jar"
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
@@ -32,26 +31,15 @@ fi
 
 # Grab kube-openapi version from go.mod
 OPENAPI_VERSION=$(grep 'k8s.io/kube-openapi' go.mod | awk '{print $2}' | head -1)
-OPENAPI_PKG=$(echo `go env GOPATH`"/pkg/mod/k8s.io/kube-openapi@${OPENAPI_VERSION}")
 
-if [[ ! -d ${OPENAPI_PKG} ]]; then
-    echo "${OPENAPI_PKG} is missing. Running 'go mod download'."
-    go mod download
-fi
-
-echo ">> Using ${OPENAPI_PKG}"
-
-echo "Building openapi-gen"
-go build -o openapi-gen ${OPENAPI_PKG}/cmd/openapi-gen
+echo "Installing openapi-gen"
+go install k8s.io/kube-openapi/cmd/openapi-gen@${OPENAPI_VERSION}
 
 echo "Generating OpenAPI specification ..."
-./openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
+${GOPATH}/bin/openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
 
 echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
-
-echo "Downloading the swagger-codegen JAR package ..."
-wget -O ${SWAGGER_CODEGEN_JAR} ${SWAGGER_JAR_URL}
 
 echo "Generating python SDK for Fluid ..."
 java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -l python -o ${PYTHON_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package com.github.fluid-cloudnative.fluid
