@@ -106,9 +106,10 @@ alluxioruntime.data.fluid.io/hbase created
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
 hbase-master-0       2/2     Running   0          3m3s   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-l62m4   2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-worker-0       2/2     Running   0          104s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-worker-1       0/2     Pending   0          104s   <none>          <none>                     <none>           <none>
 ```
-While two running workers are expected, there's only one running on the node with label `hbase-cache=true`. The `nodeSelectorTerm` stops another worker from being deployed.
+While two running workers are expected, only one Alluxio Worker Pod is successfully scheduled and runs on the node with label `hbase-cache=true`. The `nodeSelectorTerm` stops another worker from being deployed.
 
 **Check status of the `AlluxioRuntime` object**
 ```shell
@@ -118,86 +119,6 @@ hbase   1               1                 Ready          1               2      
 ```
 As expected, `Worker Phase` is `PartialReady` and `Ready Workers: 1` is less than `Desired Workers: 2`.
 
-**Check the workload to be created**
-
-A sample workload is provided to demonstrate how cache co-locality scheduling works. Let's check it out first:
-```shell
-$ cat<<EOF >app.yaml
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  replicas: 2
-  serviceName: "nginx"
-  podManagementPolicy: "Parallel"
-  selector: # define how the deployment finds the pods it manages
-    matchLabels:
-      app: nginx
-  template: # define the pods specifications
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      affinity:
-        # prevent two Nginx Pod from being scheduled at the same Node
-        # just for demonstrating co-locality demo
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - nginx
-            topologyKey: "kubernetes.io/hostname"
-      containers:
-        - name: nginx
-          image: nginx
-          volumeMounts:
-            - mountPath: /data
-              name: hbase-vol
-      volumes:
-        - name: hbase-vol
-          persistentVolumeClaim:
-            claimName: hbase
-EOF
-```
-The `podAntiAffinity` property might be a little confusing. 
-Here is the explanation: The `podAntiAffinity` property makes sure all pods created by the workload should be distributed across different nodes, which can provide us a clear view of how cache co-locality scheduling works. 
-In short, it's just a property for demonstration, you don't need to put much focus on that :)
-
-
-**Run the workload**
-
-```shell
-$ kubectl create -f app.yaml
-statefulset.apps/nginx created
-```
-
-**Check status of the workload**
-```shell
-$ kubectl get pod -o wide -l app=nginx
-NAME      READY   STATUS    RESTARTS   AGE    IP              NODE                       NOMINATED NODE   READINESS GATES
-nginx-0   1/1     Running   0          2m5s   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-nginx-1   0/1     Pending   0          2m5s   <none>          <none>                     <none>           <none>
-```
-Only one Pod is ready, and running on the only node that matches the `nodeSelectorTerm`
-
-**Check the reason why it's still not ready**
-```shell
-$ kubectl describe pod nginx-1
-...
-Events:
-  Type     Reason            Age        From               Message
-  ----     ------            ----       ----               -------
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
-  Warning  FailedScheduling  <unknown>  default-scheduler  0/2 nodes are available: 1 node(s) didn't match pod affinity/anti-affinity, 1 node(s) didn't satisfy existing pods anti-affinity rules, 1 node(s) had volume node affinity conflict.
-```
-As you may have seen, for one reason, `podAntiAffinity` prevents `nginx-1` Pod from being scheduled together with `nginx-0`. For another, there's only one node satisfying the given affinity condition.
-
 **Label another node**
 ```shell
 $ kubectl label node cn-beijing.192.168.1.147 hbase-cache=true
@@ -206,29 +127,19 @@ Now all of the two nodes hold the same label `hbase-cache=true`, re-check all th
 ```shell
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-42csf     1/1     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-fuse-kth4g     1/1     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 hbase-master-0       2/2     Running   0          46m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-hbase-worker-l62m4   2/2     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-worker-rvncl   2/2     Running   0          10m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
+hbase-worker-0       2/2     Running   0          44m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-worker-1       2/2     Running   0          44m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
 ```
 There're two running Alluxio workers now.
 
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
-hbase   1               1                 Ready          2               2                 Ready          2             2               Ready        46m43s
+hbase   1               1                 Ready          2               2                 Ready          0             0               Ready        46m43s
 ```
 
-```shell
-$ kubectl get pod -l app=nginx -o wide
-NAME      READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-nginx-0   1/1     Running   0          21m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-nginx-1   1/1     Running   0          21m   192.168.1.147   cn-beijing.192.168.1.147   <none>           <none>
-```
-Another nginx Pod is also no longer pending.
-
-In conclusion, schedulable data cache and cache co-locality scheduling for workloads are both supported by Fluid. Usually, they work together and offer a more flexible way to users who need some data management in Kubernetes.
+In conclusion, Fluid takes data cache as a schedulable resource in Kubernetes and allow users to define where to put their data cache. Usually, such policy can provide a more flexible way to users who need some data management in Kubernetes.
 
 ## Clean Up
 ```shell
