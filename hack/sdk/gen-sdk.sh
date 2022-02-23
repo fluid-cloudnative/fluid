@@ -18,7 +18,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SWAGGER_JAR_URL="https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.26/swagger-codegen-cli-2.4.26.jar"
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
@@ -41,9 +40,6 @@ ${GOPATH}/bin/openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1
 
 echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
-
-echo "Downloading the swagger-codegen JAR package ..."
-wget -O ${SWAGGER_CODEGEN_JAR} ${SWAGGER_JAR_URL}
 
 echo "Generating python SDK for Fluid ..."
 java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -l python -o ${PYTHON_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package com.github.fluid-cloudnative.fluid
