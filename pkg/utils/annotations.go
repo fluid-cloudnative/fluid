@@ -29,8 +29,12 @@ func WorkerSidecarEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectWorkerSidecar)
 }
 
-func SidecarInjectDone(infos map[string]string) (match bool) {
+func InjectSidecarDone(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectSidecarDone)
+}
+
+func InjectCacheDirEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectCacheDir)
 }
 
 func enabled(infos map[string]string, name string) (match bool) {

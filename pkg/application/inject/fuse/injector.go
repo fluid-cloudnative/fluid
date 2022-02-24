@@ -153,13 +153,13 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		// if it's not serverless enable or injection is done, skip
-		if !utils.ServerlessEnabled(metaObj.Labels) || utils.SidecarInjectDone(metaObj.Labels) {
+		if !utils.ServerlessEnabled(metaObj.Labels) || utils.InjectSidecarDone(metaObj.Labels) {
 			continue
 		}
 
 		// 1. check if the pod spec has fluid volume claim
 		injectFuseContainer := true
-		enableCacheDir := utils.FuseSidecarEnabled(metaObj.Labels)
+		enableCacheDir := utils.InjectCacheDirEnabled(metaObj.Labels)
 		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
 		if err != nil {
 			return out, err
