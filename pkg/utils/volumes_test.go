@@ -29,7 +29,7 @@ func TestTrimVolumes(t *testing.T) {
 		names   []string
 		wants   []string
 	}{
-		"no exlude": {
+		"no exclude": {
 			volumes: []corev1.Volume{
 				{
 					Name: "test-1",
@@ -57,7 +57,7 @@ func TestTrimVolumes(t *testing.T) {
 			},
 			names: []string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"},
 			wants: []string{"test-1", "fuse-device", "jindofs-fuse-mount"},
-		}, "exlude": {
+		}, "exclude": {
 			volumes: []corev1.Volume{
 				{
 					Name: "datavolume-1",
@@ -84,7 +84,7 @@ func TestTrimVolumes(t *testing.T) {
 				},
 			},
 			names: []string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"},
-			wants: []string{"datavolume-1", "fuse-device", "jindofs-fuse-mount"},
+			wants: []string{"fuse-device", "jindofs-fuse-mount"},
 		},
 	}
 
