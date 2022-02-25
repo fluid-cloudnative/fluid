@@ -31,8 +31,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+var (
+	// datavolume- for JindoFS
+	// mem, ssd, hdd for Alluxio and GooseFS
+	// cache-dir for JuiceFS
+	cacheDirNames = []string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"}
+)
+
 // GetTemplateToInjectForFuse gets template for fuse injection
-func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string) (template *common.FuseInjectionTemplate, err error) {
+func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheDir bool) (template *common.FuseInjectionTemplate, err error) {
 	// TODO: create fuse container
 	ds, err := info.getFuseDaemonset()
 	if err != nil {
@@ -51,15 +58,21 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string) (template *c
 		UID:        dataset.UID,
 	}
 
+	// 0. remove the cache dir if required
+	if len(ds.Spec.Template.Spec.Containers) != 1 {
+		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
+	}
+	if !enableCacheDir {
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, cacheDirNames)
+		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, cacheDirNames)
+	}
+
 	// 1. set the pvc name
 	template = &common.FuseInjectionTemplate{
 		PVCName: pvcName,
 	}
 
 	// 2. set the fuse container
-	if len(ds.Spec.Template.Spec.Containers) != 1 {
-		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
-	}
 	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
 	template.FuseContainer.Name = common.FuseContainerName
 

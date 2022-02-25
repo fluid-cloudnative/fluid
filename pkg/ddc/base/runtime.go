@@ -77,7 +77,7 @@ type RuntimeInfoInterface interface {
 
 	IsDeprecatedPVName() bool
 
-	GetTemplateToInjectForFuse(pvcName string) (*common.FuseInjectionTemplate, error)
+	GetTemplateToInjectForFuse(pvcName string, enableCache bool) (*common.FuseInjectionTemplate, error)
 
 	SetClient(client client.Client)
 }
