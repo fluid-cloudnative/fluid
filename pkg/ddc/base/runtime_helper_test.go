@@ -495,7 +495,372 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, true)
+		if (err == nil) == testcase.expectErr {
+			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
+		}
+	}
+}
+
+func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
+	type runtimeInfo struct {
+		name        string
+		namespace   string
+		runtimeType string
+	}
+	type testCase struct {
+		name           string
+		dataset        *datav1alpha1.Dataset
+		pvcName        string
+		enableCacheDir bool
+		info           runtimeInfo
+		pv             *corev1.PersistentVolume
+		pvc            *corev1.PersistentVolumeClaim
+		fuse           *appsv1.DaemonSet
+		expectErr      bool
+	}
+
+	hostPathCharDev := corev1.HostPathCharDev
+	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+	bTrue := true
+
+	testcases := []testCase{
+		{
+			name: "jindo",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata",
+					Namespace: "big-data",
+				},
+			},
+			info: runtimeInfo{
+				name:        "mydata",
+				namespace:   "big-data",
+				runtimeType: common.JindoRuntime,
+			},
+			pvcName: "mydata",
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-mydata",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.FluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
+								common.MountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			enableCacheDir: false,
+			expectErr:      false,
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-mydata",
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "mydata-pvc-name",
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "datavolume-1",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "datavolume-1",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/mnt/disk1",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									}},
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/mydata",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "alluxio",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset1",
+					Namespace: "big-data",
+				},
+			}, info: runtimeInfo{
+				name:        "dataset1",
+				namespace:   "big-data",
+				runtimeType: common.ALLUXIO_RUNTIME,
+			},
+			expectErr: false,
+			pvcName:   "dataset1",
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-dataset1",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.FluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								common.MountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset1",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-dataset1",
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset1-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "test",
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "data",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "data",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime_mnt/dataset1",
+										},
+									}},
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/dataset1",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			name: "custome_envs",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv",
+					Namespace: "big-data",
+				},
+			}, info: runtimeInfo{
+				name:        "customizedenv",
+				namespace:   "big-data",
+				runtimeType: common.JindoRuntime,
+			},
+			pvcName: "customizedenv",
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-customizedenv",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.FluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								common.MountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-customizedenv",
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "customizedenv-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "customizedenv-pvc-name",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "FLUID_FUSE_MOUNTPOINT",
+											Value: "/jfs/jindofs-fuse",
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "customizedenv",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "customizedenv",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/mnt/disk1",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									}},
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/customizedenv",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
+	_ = appsv1.AddToScheme(s)
+	for _, testcase := range testcases {
+		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset)
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+
+	for _, testcase := range testcases {
+		info := testcase.info
+		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+		runtimeInfo.SetClient(fakeClient)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
