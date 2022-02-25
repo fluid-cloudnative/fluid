@@ -32,10 +32,10 @@ import (
 )
 
 var (
-	// datavolume- for JindoFS
+	// datavolume-, volume-localtime for JindoFS
 	// mem, ssd, hdd for Alluxio and GooseFS
 	// cache-dir for JuiceFS
-	cacheDirNames = []string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"}
+	cacheDirNames = []string{"datavolume-", "volume-localtime", "cache-dir", "mem", "ssd", "hdd"}
 )
 
 // GetTemplateToInjectForFuse gets template for fuse injection
