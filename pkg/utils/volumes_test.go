@@ -102,5 +102,51 @@ func TestTrimVolumes(t *testing.T) {
 }
 
 func TestTrimVolumeMounts(t *testing.T) {
+	testCases := map[string]struct {
+		volumeMounts []corev1.VolumeMount
+		names        []string
+		wants        []string
+	}{
+		"no exclude": {
+			volumeMounts: []corev1.VolumeMount{
+				{
+					Name: "test-1",
+				},
+				{
+					Name: "fuse-device",
+				},
+				{
+					Name: "jindofs-fuse-mount",
+				},
+			},
+			names: []string{"datavolumeMount-", "cache-dir", "mem", "ssd", "hdd"},
+			wants: []string{"test-1", "fuse-device", "jindofs-fuse-mount"},
+		}, "exclude": {
+			volumeMounts: []corev1.VolumeMount{
+				{
+					Name: "datavolumeMount-1",
+				},
+				{
+					Name: "fuse-device",
+				},
+				{
+					Name: "jindofs-fuse-mount",
+				},
+			},
+			names: []string{"datavolumeMount-", "cache-dir", "mem", "ssd", "hdd"},
+			wants: []string{"fuse-device", "jindofs-fuse-mount"},
+		},
+	}
 
+	for name, testCase := range testCases {
+		got := TrimVolumeMounts(testCase.volumeMounts, testCase.names)
+		gotNames := []string{}
+		for _, name := range got {
+			gotNames = append(gotNames, name.Name)
+		}
+
+		if !reflect.DeepEqual(gotNames, testCase.wants) {
+			t.Errorf("%s check failure, want:%v, got:%v", name, testCase.names, gotNames)
+		}
+	}
 }
