@@ -262,3 +262,5 @@ spec:
           persistentVolumeClaim:
             claimName: serverless-data
 ```
+
+> 注：默认的sidecar注入模式是不会开启缓存目录短路读，如果您需要开启该能力，可以在labels中通过配置参数
