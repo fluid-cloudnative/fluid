@@ -240,10 +240,6 @@ spec:
       labels:
         app: model-serving
         serverless.fluid.io/inject: "true"
-      annotations:
-        autoscaling.knative.dev/target: "10"
-        autoscaling.knative.dev/scaleDownDelay: "30m"
-        autoscaling.knative.dev/minScale: "1"
     spec:
       containers:
         - image: fluidcloudnative/serving
@@ -263,4 +259,38 @@ spec:
             claimName: serverless-data
 ```
 
-> 注：默认的sidecar注入模式是不会开启缓存目录短路读，如果您需要开启该能力，可以在labels中通过配置参数
+> 注：默认的sidecar注入模式是不会开启缓存目录短路读，如果您需要开启该能力，可以在labels中通过配置参数`cachedir.sidecar.fluid.io/inject`为`true`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-serving
+spec:
+  selector:
+    matchLabels:
+      app: model-serving
+  template:
+    metadata:
+      labels:
+        app: model-serving
+        serverless.fluid.io/inject: "true"
+        cachedir.sidecar.fluid.io/inject: "true"
+    spec:
+      containers:
+        - image: fluidcloudnative/serving
+          name: serving
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: serverless-data
+```

@@ -11,10 +11,7 @@ spec:
       labels:
         app: model-serving
         serverless.fluid.io/inject: "true"
-      annotations:
-        autoscaling.knative.dev/target: "10"
-        autoscaling.knative.dev/scaleDownDelay: "30m"
-        autoscaling.knative.dev/minScale: "1"
+        cachedir.sidecar.fluid.io/inject: "true"
     spec:
       containers:
         - image: fluidcloudnative/serving
