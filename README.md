@@ -15,6 +15,10 @@
 ## What is Fluid?
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
 
+|<img src="https://user-images.githubusercontent.com/5708406/91202310-31eaab80-e734-11ea-84fc-c1b1882ae71c.png" height="24"/>&nbsp;Community Meeting|
+|------------------|
+| The Fluid project holds bi-weekly community online meeting. To join or watch previous meeting notes and recordings, please see [meeting schedule](https://github.com/fluid-cloudnative/community/wiki/Meeting-Schedule) and [meeting minutes](https://github.com/fluid-cloudnative/community/wiki/Meeting-Agenda-and-Notes). |
+
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
