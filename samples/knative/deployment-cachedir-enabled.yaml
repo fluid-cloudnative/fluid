@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-serving
+spec:
+  selector:
+    matchLabels:
+      app: model-serving
+  template:
+    metadata:
+      labels:
+        app: model-serving
+        serverless.fluid.io/inject: "true"
+        cachedir.sidecar.fluid.io/inject: "true"
+    spec:
+      containers:
+        - image: fluidcloudnative/serving
+          name: serving
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: serverless-data
