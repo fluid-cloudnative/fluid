@@ -48,14 +48,12 @@ DOCKER_BUILD += docker-build-jindoruntime-controller
 DOCKER_BUILD += docker-build-goosefsruntime-controller
 DOCKER_BUILD += docker-build-csi
 DOCKER_BUILD += docker-build-webhook
-DOCKER_BUILD += docker-build-goosefsruntime-controller
 DOCKER_BUILD += docker-build-juicefsruntime-controller
 DOCKER_BUILD += docker-build-init-users
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
 DOCKER_PUSH += docker-push-alluxioruntime-controller
-DOCKER_PUSH += docker-push-jindoruntime-controller
 DOCKER_PUSH += docker-push-jindoruntime-controller
 DOCKER_PUSH += docker-push-csi
 DOCKER_PUSH += docker-push-webhook
