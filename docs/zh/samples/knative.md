@@ -2,7 +2,6 @@
 
 本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有的Runtime运行在Serverless环境。
 
-
 ## 安装
 
 1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
@@ -16,7 +15,7 @@ kubectl get Deployments -n knative-serving
 > 注：本文只是作为演示目的，关于Knative的生产系统安装请参考Knative文档最佳实践进行部署。另外由于Knative的容器镜像都在gcr.io镜像仓库，请确保镜像可达。
 如果您使用的是阿里云，您也可以直接使用[阿里云ACK的托管服务](https://help.aliyun.com/document_detail/121508.html)降低配置Knative的复杂度。
 
-2. 请参考[安装文档](../userguide/install.md)安装Fluid最新版, 安装后检查 Fluid 各组件正常运行（这里以 AlluxioRuntime 为例）：
+2. 请参考[安装文档](../userguide/install.md)安装Fluid最新版, 安装后检查 Fluid 各组件正常运行（本文以 AlluxioRuntime 为例）：
 
 ```shell
 $ kubectl get deploy -n fluid-system
@@ -26,7 +25,7 @@ dataset-controller          1/1     1            1           18m
 fluid-webhook               1/1     1            1           18m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Deployment、一个名为 `alluxioruntime-controller` 的 Deployment、一个名为 `fluid-webhook` 的 Deployment。
+通常来说，可以看到一个名为 `dataset-controller` 的 Deployment、一个名为 `alluxioruntime-controller` 的 Deployment以及一个名为 `fluid-webhook` 的 Deployment。
 
 ## 配置
 
@@ -39,7 +38,6 @@ $ kubectl label namespace default fluid.io/enable-injection=true
 ```
 
 ## 运行示例
-
 
 **创建 dataset 和 runtime**
 
@@ -155,7 +153,6 @@ $ kubectl get po model-serving-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
 
 查看 Knative Serving 启动速度,可以看到启动加载数据的时间是**43s**
 
-
 ```shell
 $ kubectl logs model-serving-00001-deployment-64d674d75f-46vvf -c user-container
 Begin loading models at 16:29:02
@@ -166,7 +163,6 @@ sys 0m0.956s
 Finish loading models at 16:29:45
 2022-02-15 16:29:45 INFO Hello world sample started.
 ```
-
 
 清理knative serving实例
 
