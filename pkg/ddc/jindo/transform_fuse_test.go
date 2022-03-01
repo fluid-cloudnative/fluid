@@ -131,7 +131,7 @@ func TestTransformFuseArg(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, &Jindo{}, "-ocredential_provider=secrets:///token/ -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"},
+			}}, &Jindo{}, "-ocredential_provider=secrets:///token/ -oroot_ns=jindo -okernel_cache"},
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
