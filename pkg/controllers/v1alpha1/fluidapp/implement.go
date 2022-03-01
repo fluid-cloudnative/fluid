@@ -79,7 +79,7 @@ func (i *FluidAppReconcilerImplement) shouldReconcile(ctx reconcileRequestContex
 			}
 		}
 	}
-	return antiFuseExited == true && fuseExited == false
+	return antiFuseExited && fuseExited == false
 }
 
 func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err error) {
