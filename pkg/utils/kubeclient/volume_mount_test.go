@@ -234,3 +234,112 @@ func checkEqual(a, b []string) bool {
 	}
 	return true
 }
+
+func TestGetMountPathInContainer(t *testing.T) {
+	type args struct {
+		container corev1.Container
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test-juicefs",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "juicefs-fuse-mount",
+						MountPath: "/runtime-mnt/juicefs/default/test",
+					}},
+				},
+			},
+			want:    "/runtime-mnt/juicefs/default/test/juicefs-fuse",
+			wantErr: false,
+		},
+		{
+			name: "test-jindofs",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "jindo-fuse-mount",
+						MountPath: "/test",
+					}},
+					Env: []corev1.EnvVar{{
+						Name:  common.FuseMountEnv,
+						Value: "/test/jfs",
+					}},
+				},
+			},
+			want:    "/test/jfs",
+			wantErr: false,
+		},
+		{
+			name: "test-goosefs",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "goosefs-fuse-mount",
+						MountPath: "/runtime-mnt/goosefs/default/test",
+					}},
+				},
+			},
+			want:    "/runtime-mnt/goosefs/default/test/goosefs-fuse",
+			wantErr: false,
+		},
+		{
+			name: "test-alluxio",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "alluxio-fuse-mount",
+						MountPath: "/runtime-mnt/alluxio/default/test",
+					}},
+				},
+			},
+			want:    "/runtime-mnt/alluxio/default/test/alluxio-fuse",
+			wantErr: false,
+		},
+		{
+			name: "test-wrong",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "test-fuse-mount",
+						MountPath: "/runtime-mnt/juicefs/default/test",
+					}},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "test-no-mount",
+			args: args{
+				container: corev1.Container{
+					Name: "test",
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetMountPathInContainer(tt.args.container)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetMountPathInContainer() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetMountPathInContainer() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

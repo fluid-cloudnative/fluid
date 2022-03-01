@@ -73,3 +73,7 @@ webhook:
   image: fluidcloudnative/fluid-webhook:v0.7.0-394621b
   replicas: 1
 
+fluidapp:
+  enabled: false
+  controller:
+    image: fluidcloudnative/fluidapp-controller:v0.7.0-394621b
