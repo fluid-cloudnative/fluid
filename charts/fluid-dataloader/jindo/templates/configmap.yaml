@@ -70,7 +70,7 @@ data:
         fi
 
         if [[ $enbaleCacheListLocation == 'false' ]]; then
-            cmd="$cmd -R -replica $replica $default$path"
+            cmd="$cmd -s -R -replica $replica $default$path"
             echo -e "execute cmd $cmd"
             time $cmd
         else
@@ -80,7 +80,7 @@ data:
             chmod 755 ossutil64
             ./ossutil64 -e $cacheListEndpoint -i $cacheListAccessKeyId -k $cacheListAccessKeySecret cp $cacheListUrl /cachelist.txt
             echo -e "--- enable File List"
-            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
+            cmd="$cmd -s -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
             echo -e "execute cmd $cmd"
             time $cmd
         fi
