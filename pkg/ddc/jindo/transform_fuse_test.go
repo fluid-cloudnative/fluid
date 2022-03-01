@@ -37,7 +37,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Jindo{}, "1"},
+			}}, &Jindo{}, "true"},
 	}
 	for _, test := range tests {
 		engine := &JindoEngine{Log: log.NullLogger{}}
