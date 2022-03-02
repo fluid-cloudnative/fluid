@@ -40,7 +40,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-> 对于Kubernetes v1.17及以下环境，清使用`helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
+> 对于Kubernetes v1.17及以下环境，请使用`helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
 
 > `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
 
@@ -78,7 +78,7 @@ REVISION: 2
 TEST SUITE: None
 ```
 
-> 对于Kubernetes v1.17及以下环境，清使用`helm upgrade --set runtime.criticalFusePod=false fluid fluid/`
+> 对于Kubernetes v1.17及以下环境，请使用`helm upgrade --set runtime.criticalFusePod=false fluid fluid/`
 
 > 建议您从v0.6升级到最新版本v0.7。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
