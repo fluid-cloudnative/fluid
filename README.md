@@ -12,21 +12,21 @@
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffluid-cloudnative%2Ffluid?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
 
+|:date:&nbsp;Community Meeting|
+|------------------|
+|The Fluid project holds bi-weekly community online meeting. To join or watch previous meeting notes and recordings, please see [meeting schedule](https://github.com/fluid-cloudnative/community/wiki/Meeting-Schedule) and [meeting minutes](https://github.com/fluid-cloudnative/community/wiki/Meeting-Agenda-and-Notes). |
+
 ## What is Fluid?
 Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
-
-|<img src="https://user-images.githubusercontent.com/5708406/91202310-31eaab80-e734-11ea-84fc-c1b1882ae71c.png" height="24"/>&nbsp;Community Meeting|
-|------------------|
-| The Fluid project holds bi-weekly community online meeting. To join or watch previous meeting notes and recordings, please see [meeting schedule](https://github.com/fluid-cloudnative/community/wiki/Meeting-Schedule) and [meeting minutes](https://github.com/fluid-cloudnative/community/wiki/Meeting-Agenda-and-Notes). |
 
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
 |![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
 |------------------|
+|Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 |Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 |Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
-|Mar. 16th, 2021. Fluid v0.5.0 is **RELEASED**! It provides various new features, such as on-the-fly dataset scale out/in, metadata backup, support Fuse global mode and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 
 <div align="center">
     <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" height="60%" width="60%" alt="">
