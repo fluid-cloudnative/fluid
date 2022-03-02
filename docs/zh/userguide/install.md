@@ -3,9 +3,9 @@
 ## 前提条件
 
 - Git
-- Kubernetes集群（version >= 1.14）, 并且支持CSI功能
-- kubectl（version >= 1.14）
-- Helm（version >= 3.0）
+- Kubernetes集群（version >= 1.16）, 并且支持CSI功能
+- kubectl（version >= 1.16）
+- Helm（version >= 3.5）
 
 接下来的文档假设您已经配置好上述所有环境。
 
@@ -40,12 +40,14 @@ REVISION: 1
 TEST SUITE: None
 ```
 
+> 对于Kubernetes v1.17及以下环境，请使用`helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
+
 > `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
 
-### 使用Helm将Fluid更新到最新版本
+### 使用Helm将Fluid更新到最新版本(v0.7)
 
 如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
-更新前，建议确保AlluxioRuntime资源对象中的各个组件已经顺利启动完成，也就是类似以下状态：
+更新前，建议确保各Runtime资源对象中的各个组件已经顺利启动完成，也就是类似以下状态：
 
 ```shell
 $ kubectl get pod
@@ -60,7 +62,7 @@ hbase-worker-rznd5   2/2     Running   0          9h
 由于helm upgrade不会更新CRD，需要先对其手动进行更新：
 
 ```shell
-$ tar zxvf fluid-0.5.0.tgz ./
+$ tar zxvf fluid-0.7.0.tgz ./
 $ kubectl apply -f fluid/crds/.
 ```
 
@@ -75,24 +77,10 @@ STATUS: deployed
 REVISION: 2
 TEST SUITE: None
 ```
-此时，旧版本的controller不会自动结束，新版本的controller会停留在Pending状态：
-```shell
-$ kubectl -n fluid-system get pods
-NAME                                         READY   STATUS    RESTARTS   AGE
-alluxioruntime-controller-56687869f6-g9l9n   0/1     Pending   0          96s
-alluxioruntime-controller-5b64fdbbb-j9h6r    1/1     Running   0          3m55s
-csi-nodeplugin-fluid-r6crn                   2/2     Running   0          94s
-csi-nodeplugin-fluid-wvhdn                   2/2     Running   0          87s
-dataset-controller-5b7848dbbb-rjkl9          1/1     Running   0          3m55s
-dataset-controller-64bf45c497-w8ncb          0/1     Pending   0          96s
-```
-手动进行删除：
-```shell
-$ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r 
-$ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
-```
 
-> 建议您从v0.3和v0.4升级。如果您安装的是更旧版本的Fluid，建议重新进行安装。
+> 对于Kubernetes v1.17及以下环境，请使用`helm upgrade --set runtime.criticalFusePod=false fluid fluid/`
+
+> 建议您从v0.6升级到最新版本v0.7。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
 ### 检查各组件状态
 
@@ -100,12 +88,12 @@ $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 
 ```shell
 $ kubectl get crd | grep data.fluid.io
-alluxiodataloads.data.fluid.io          2021-03-12T00:00:47Z
-alluxioruntimes.data.fluid.io           2021-03-12T00:00:47Z
-databackups.data.fluid.io               2021-03-12T00:03:45Z
-dataloads.data.fluid.io                 2021-03-12T00:00:47Z
-datasets.data.fluid.io                  2021-03-12T00:00:47Z
-jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
+alluxioruntimes.data.fluid.io                          2022-02-28T08:14:45Z
+databackups.data.fluid.io                              2022-02-28T08:14:45Z
+dataloads.data.fluid.io                                2022-02-28T08:14:45Z
+datasets.data.fluid.io                                 2022-02-28T08:14:45Z
+goosefsruntimes.data.fluid.io                          2022-02-28T08:14:45Z
+jindoruntimes.data.fluid.io                            2022-02-28T08:14:45Z
 ```
 
 **查看各Pod的状态:**
@@ -113,10 +101,11 @@ jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                         READY   STATUS    RESTARTS   AGE
-alluxioruntime-controller-5dfb5c7966-mkgzb   1/1     Running   0          2d1h
-csi-nodeplugin-fluid-64h69                   2/2     Running   0          2d1h
-csi-nodeplugin-fluid-tc7fx                   2/2     Running   0          2d1h
-dataset-controller-7c4bc68b96-26mcb          1/1     Running   0          2d1h
+alluxioruntime-controller-66bf8cbdf4-k6cxt   1/1     Running   0          6m50s
+csi-nodeplugin-fluid-pq2zd                   2/2     Running   0          4m30s
+csi-nodeplugin-fluid-rkv7h                   2/2     Running   0          6m41s
+dataset-controller-558c5c7785-mtgfh          1/1     Running   0          6m50s
+fluid-webhook-7b6cbf558-lw6lq                1/1     Running   0          6m50s
 ```
 
 如果Pod状态如上所示，那么Fluid就可以正常使用了！
@@ -125,26 +114,22 @@ dataset-controller-7c4bc68b96-26mcb          1/1     Running   0          2d1h
 
 csi-nodeplugin、alluxioruntime-controller、dataset-controller在启动时，会将自身的版本信息打印到日志中。  
 如果您使用我们提供的charts进行安装，它们的版本应该是完全一致的。  
-如果您是手动安装部署，它们的版本可能不完全一致，可以分别依次查看：  
+
+可以执行下列命令查看版本： 
 ```bash
-$ kubectl logs csi-nodeplugin-fluid-tc7fx -c plugins  -n fluid-system | head -n 9 | tail -n 6
-$ kubectl logs alluxioruntime-controller-5dfb5c7966-mkgzb -n fluid-system | head -n 6
-$ kubectl logs dataset-controller-7c4bc68b96-26mcb  -n fluid-system | head -n 6
+$ kubectl exec csi-nodeplugin-fluid-pq2zd -n fluid-system -c plugins fluid-csi version
+$ kubectl exec alluxioruntime-controller-66bf8cbdf4-k6cxt -n fluid-system -- alluxioruntime-controller version
+$ kubectl exec dataset-controller-558c5c7785-mtgfh -n fluid-system -- dataset-controller version
 ```
-打印出的日志如下格式：
-```bash
-2020/10/27 10:16:02 BuildDate: 2020-10-26_14:04:22
-2020/10/27 10:16:02 GitCommit: f2c3a3fa1335cb0384e565f17a4f3284a6507cef
-2020/10/27 10:16:02 GitTreeState: dirty
-2020/10/27 10:16:02 GoVersion: go1.14.2
-2020/10/27 10:16:02 Compiler: gc
-2020/10/27 10:16:02 Platform: linux/amd64
+
+如果版本一致，您将看到如下信息：
 ```
-若Pod打印的日志已经被清理掉，可以执行下列命令查看版本： 
-```bash
-$ kubectl exec csi-nodeplugin-fluid-tc7fx -c plugins  fluid-csi version -n fluid-system
-$ kubectl exec alluxioruntime-controller-5dfb5c7966-mkgzb alluxioruntime-controller version -n fluid-system
-$ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n  fluid-system 
+BuildDate: 2022-02-20_09:43:43
+GitCommit: 808c72e3c5136152690599d187a76849d03ea448
+GitTreeState: dirty
+GoVersion: go1.16.8
+Compiler: gc
+Platform: linux/amd64
 ```
 
 ### Fluid使用示例

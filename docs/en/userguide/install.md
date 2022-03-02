@@ -3,9 +3,9 @@
 ## Prerequisites
 
 - Git
-- Kubernetes cluster（version >= 1.14）, and support CSI
-- kubectl（version >= 1.14）
-- [Helm](https://helm.sh/)（version >= 3.0）
+- Kubernetes cluster（version >= 1.16）, and support CSI
+- kubectl（version >= 1.16）
+- [Helm](https://helm.sh/)（version >= 3.5）
 
 The following documents assume that you have installed all the above requirements.
 
@@ -19,12 +19,6 @@ For the installation and configuration of Helm 3, please refer to [here](https:/
 
 You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases).
 
-Untar the Fluid package you just downloaded:
-
-```shell
-$ tar -zxf fluid.tgz
-```
-
 ### Install Fluid with Helm
 
 Create namespace:
@@ -36,7 +30,7 @@ $ kubectl create ns fluid-system
 Install Fluid with:
 
 ```shell
-$ helm install fluid fluid
+$ helm install fluid fluid.tgz
 NAME: fluid
 LAST DEPLOYED: Fri Jul 24 16:10:18 2020
 NAMESPACE: default
@@ -45,10 +39,12 @@ REVISION: 1
 TEST SUITE: None
 ```
 
+> For Kubernetes version lower than v1.17(included), please use `helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
+
 > The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
 
-### Upgrade Fluid to the latest version with Helm
+### Upgrade Fluid to the latest version(v0.7) with Helm
 
 If you have installed an older version of Fluid before, you can use Helm to upgrade it.
 Before upgrading, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
@@ -66,7 +62,7 @@ hbase-worker-rznd5   2/2     Running   0          9h
 The command "helm upgrade" will not upgrade CRDs，we need to upgrade them manually：
 
 ```shell
-$ tar zxvf fluid-0.5.0.tgz ./
+$ tar zxvf fluid-0.7.0.tgz ./
 $ kubectl apply -f fluid/crds/.
 ```
 
@@ -82,24 +78,9 @@ REVISION: 2
 TEST SUITE: None
 ```
 
-The old version of controller will not terminate automatically, the new version will stay in the Pending status：
-```shell
-$ kubectl -n fluid-system get pods
-NAME                                         READY   STATUS    RESTARTS   AGE
-alluxioruntime-controller-56687869f6-g9l9n   0/1     Pending   0          96s
-alluxioruntime-controller-5b64fdbbb-j9h6r    1/1     Running   0          3m55s
-csi-nodeplugin-fluid-r6crn                   2/2     Running   0          94s
-csi-nodeplugin-fluid-wvhdn                   2/2     Running   0          87s
-dataset-controller-5b7848dbbb-rjkl9          1/1     Running   0          3m55s
-dataset-controller-64bf45c497-w8ncb          0/1     Pending   0          96s
-```
-delete them manually：
-```shell
-$ kubectl -n fluid-system delete pod alluxioruntime-controller-5b64fdbbb-j9h6r 
-$ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
-```
+> For Kubernetes version lower than v1.17(included), please use `helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
 
-> We recommend you to update from v0.3 and v0.4. If you have an older version, you'd better to reinstall it.
+> We recommend you to update Fluid v0.7 from v0.6. If you have an older version, our suggestion is to reinstall it to ensure everything works fine.
 
 ### Check Status of Component
 
@@ -107,12 +88,12 @@ $ kubectl -n fluid-system delete pod dataset-controller-5b7848dbbb-rjkl9
 
 ```shell
 $ kubectl get crd | grep data.fluid.io
-alluxiodataloads.data.fluid.io          2020-07-24T06:54:50Z
-alluxioruntimes.data.fluid.io           2020-07-24T06:54:50Z
-datasets.data.fluid.io                  2020-07-24T06:54:50Z
-dataloads.data.fluid.io                 2021-03-12T00:00:47Z
-datasets.data.fluid.io                  2021-03-12T00:00:47Z
-jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
+alluxioruntimes.data.fluid.io                          2022-02-28T08:14:45Z
+databackups.data.fluid.io                              2022-02-28T08:14:45Z
+dataloads.data.fluid.io                                2022-02-28T08:14:45Z
+datasets.data.fluid.io                                 2022-02-28T08:14:45Z
+goosefsruntimes.data.fluid.io                          2022-02-28T08:14:45Z
+jindoruntimes.data.fluid.io                            2022-02-28T08:14:45Z
 ```
 
 **Check the status of pods:**
@@ -120,10 +101,11 @@ jindoruntimes.data.fluid.io             2021-03-12T00:03:45Z
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE
-alluxioruntime-controller-5dfb5c7966-mkgzb   1/1     Running   0          2d1h
-csi-nodeplugin-fluid-64h69                   2/2     Running   0          2d1h
-csi-nodeplugin-fluid-tc7fx                   2/2     Running   0          2d1h
-dataset-controller-7c4bc68b96-26mcb          1/1     Running   0          2d1h
+alluxioruntime-controller-66bf8cbdf4-k6cxt   1/1     Running   0          6m50s
+csi-nodeplugin-fluid-pq2zd                   2/2     Running   0          4m30s
+csi-nodeplugin-fluid-rkv7h                   2/2     Running   0          6m41s
+dataset-controller-558c5c7785-mtgfh          1/1     Running   0          6m50s
+fluid-webhook-7b6cbf558-lw6lq                1/1     Running   0          6m50s
 ```
 
 If the Pod status is as shown above, then Fluid is installed on your Kubernetes cluster successfully!
@@ -132,26 +114,22 @@ If the Pod status is as shown above, then Fluid is installed on your Kubernetes 
 
 When csi-nodeplugin, alluxioruntime-controller and dataset-controller start，they will print their own version info into logs.  
 If you installed with the charts provided by us，their version info will be fully consistent.  
-If you installed manually, their version info may be not consistent. You can view in turn:
+If you installed manually, their version info may be not consistent. You can check it with the following command:
+
 ```bash
-$ kubectl logs csi-nodeplugin-fluid-tc7fx -c plugins  -n fluid-system | head -n 9 | tail -n 6
-$ kubectl logs alluxioruntime-controller-5dfb5c7966-mkgzb -n fluid-system | head -n 6
-$ kubectl logs dataset-controller-7c4bc68b96-26mcb  -n fluid-system | head -n 6
+$ kubectl exec csi-nodeplugin-fluid-pq2zd -n fluid-system -c plugins fluid-csi version
+$ kubectl exec alluxioruntime-controller-66bf8cbdf4-k6cxt -n fluid-system -- alluxioruntime-controller version
+$ kubectl exec dataset-controller-558c5c7785-mtgfh -n fluid-system -- dataset-controller version
 ```
-The printed logs are in the following format:
-```bash
-2020/10/27 10:16:02 BuildDate: 2020-10-26_14:04:22
-2020/10/27 10:16:02 GitCommit: f2c3a3fa1335cb0384e565f17a4f3284a6507cef
-2020/10/27 10:16:02 GitTreeState: dirty
-2020/10/27 10:16:02 GoVersion: go1.14.2
-2020/10/27 10:16:02 Compiler: gc
-2020/10/27 10:16:02 Platform: linux/amd64
+
+The output should be like:
 ```
-If the logs printed by Pod have been cleaned up, you can run the following command to view the version:
-```bash
-$ kubectl exec csi-nodeplugin-fluid-tc7fx -c plugins  fluid-csi version -n fluid-system
-$ kubectl exec alluxioruntime-controller-5dfb5c7966-mkgzb alluxioruntime-controller version -n fluid-system
-$ kubectl exec dataset-controller-7c4bc68b96-26mcb dataset-controller version -n  fluid-system 
+BuildDate: 2022-02-20_09:43:43
+GitCommit: 808c72e3c5136152690599d187a76849d03ea448
+GitTreeState: dirty
+GoVersion: go1.16.8
+Compiler: gc
+Platform: linux/amd64
 ```
 
 ### Fluid use cases
@@ -162,7 +140,7 @@ For more use cases about Fluid, please refer to our demos:
 
 ### Uninstall Fluid
 
-For uninstalling fluid safely, we should check weather Custom Resource Objects about fluid have been deleted completely first:
+To uninstall fluid safely, we should check weather Custom Resource Objects about fluid have been deleted completely first:
 ```shell
 kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
 ```
