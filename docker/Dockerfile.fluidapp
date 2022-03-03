@@ -4,7 +4,7 @@ FROM golang:1.16.8 as builder
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
-RUN make fluidapp-controller-build && \
+RUN make fluid-app-controller-build && \
     cp bin/fluidapp-controller /go/bin/fluidapp-controller
 
 # Debug

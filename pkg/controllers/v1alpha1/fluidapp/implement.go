@@ -40,48 +40,6 @@ func NewFluidAppReconcilerImplement(client client.Client, log logr.Logger, recor
 	return r
 }
 
-func (i *FluidAppReconcilerImplement) shouldReconcile(ctx reconcileRequestContext) bool {
-	pod := ctx.pod
-	if pod == nil {
-		return false
-	}
-
-	// ignore if restartPolicy is Always
-	if pod.Spec.RestartPolicy == corev1.RestartPolicyAlways {
-		return false
-	}
-
-	// ignore if no fuse container
-	exist := false
-	for _, cn := range pod.Spec.Containers {
-		if cn.Name == common.FuseContainerName {
-			exist = true
-		}
-	}
-	if !exist {
-		i.Log.Info("There are no fluid fuse sidecar in pod.", "name", pod.Name, "namespace", pod.Namespace)
-		return false
-	}
-
-	// reconcile if app container exit 0 and fuse container not exit
-	antiFuseExited := false
-	fuseExited := false
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		//i.Log.Info("container status", "name", containerStatus.Name, "status", containerStatus.State)
-		if containerStatus.Name != common.FuseContainerName {
-			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
-				antiFuseExited = true
-			}
-		}
-		if containerStatus.Name == common.FuseContainerName {
-			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
-				fuseExited = true
-			}
-		}
-	}
-	return antiFuseExited && fuseExited == false
-}
-
 func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err error) {
 	var fuseContainer corev1.Container
 	for _, cn := range pod.Spec.Containers {

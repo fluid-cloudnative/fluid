@@ -28,6 +28,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -35,10 +36,11 @@ var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
-	pprofAddr            string
+	metricsAddr             string
+	enableLeaderElection    bool
+	development             bool
+	maxConcurrentReconciles int
+	pprofAddr               string
 )
 
 var fluidAppCmd = &cobra.Command{
@@ -56,6 +58,7 @@ func init() {
 	fluidAppCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	fluidAppCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	fluidAppCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	fluidAppCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for Fluid App controller")
 }
 
 func handle() {
@@ -84,14 +87,18 @@ func handle() {
 		Port:               9443,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start dataset manager")
+		setupLog.Error(err, "unable to start fluid app manager")
 		os.Exit(1)
+	}
+
+	controllerOptions := controller.Options{
+		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 	if err = (fluidapp.NewFluidAppReconciler(
 		mgr.GetClient(),
 		ctrl.Log.WithName("appctrl"),
 		mgr.GetEventRecorderFor("FluidApp"),
-	)).SetupWithManager(mgr); err != nil {
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FluidApp")
 		os.Exit(1)
 	}

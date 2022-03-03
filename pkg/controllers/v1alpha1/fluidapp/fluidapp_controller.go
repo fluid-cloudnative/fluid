@@ -18,7 +18,7 @@ package fluidapp
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,13 +26,24 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+const controllerName string = "FluidAppController"
 
 type FluidAppReconciler struct {
 	client.Client
 	Recorder record.EventRecorder
 	*FluidAppReconcilerImplement
+}
+
+func (f *FluidAppReconciler) ControllerName() string {
+	return controllerName
+}
+
+func (f *FluidAppReconciler) ManagedResource() client.Object {
+	return &corev1.Pod{}
 }
 
 type reconcileRequestContext struct {
@@ -77,10 +88,6 @@ func (f *FluidAppReconciler) Reconcile(ctx context.Context, request reconcile.Re
 
 func (f *FluidAppReconciler) internalReconcile(ctx reconcileRequestContext) (ctrl.Result, error) {
 	pod := ctx.pod
-	// check should be reconcile
-	if !f.shouldReconcile(ctx) {
-		return ctrl.Result{}, nil
-	}
 
 	// umount fuse sidecar
 	err := f.umountFuseSidecar(pod)
@@ -91,8 +98,8 @@ func (f *FluidAppReconciler) internalReconcile(ctx reconcileRequestContext) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (f *FluidAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}).Complete(f)
+func (f *FluidAppReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
+	return watch.SetupAppWatcherWithReconciler(mgr, options, f)
 }
 
 func (f *FluidAppReconciler) fetchFluidApp(name types.NamespacedName) (*corev1.Pod, error) {
@@ -102,10 +109,6 @@ func (f *FluidAppReconciler) fetchFluidApp(name types.NamespacedName) (*corev1.P
 			return nil, nil
 		}
 		return nil, err
-	}
-	// ignore if it's not fluid label pod
-	if !utils.ServerlessEnabled(pod.Labels) {
-		return nil, nil
 	}
 	return &pod, nil
 }

@@ -5,7 +5,7 @@ CRD_OPTIONS ?= "crd"
 # IMG_REPO ?= registry.aliyuncs.com/fluid
 IMG_REPO ?= fluidcloudnative
 DATASET_CONTROLLER_IMG ?= ${IMG_REPO}/dataset-controller
-FLUIDAPP_CONTROLLER_IMG ?= ${IMG_REPO}/fluidapp-controller
+fluid-app_CONTROLLER_IMG ?= ${IMG_REPO}/fluid-app-controller
 ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
 GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
@@ -36,7 +36,7 @@ PACKAGE=github.com/fluid-cloudnative/fluid
 
 # Build binaries
 BINARY_BUILD := dataset-controller-build
-BINARY_BUILD += fluidapp-controller-build
+BINARY_BUILD += fluid-app-controller-build
 BINARY_BUILD += alluxioruntime-controller-build
 BINARY_BUILD += jindoruntime-controller-build
 BINARY_BUILD += juicefsruntime-controller-build
@@ -45,7 +45,7 @@ BINARY_BUILD += webhook-build
 
 # Build docker images
 DOCKER_BUILD := docker-build-dataset-controller
-DOCKER_BUILD += docker-build-fluidapp-controller
+DOCKER_BUILD += docker-build-fluid-app-controller
 DOCKER_BUILD += docker-build-alluxioruntime-controller
 DOCKER_BUILD += docker-build-jindoruntime-controller
 DOCKER_BUILD += docker-build-goosefsruntime-controller
@@ -56,7 +56,7 @@ DOCKER_BUILD += docker-build-init-users
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
-DOCKER_PUSH += docker-push-fluidapp-controller
+DOCKER_PUSH += docker-push-fluid-app-controller
 DOCKER_PUSH += docker-push-alluxioruntime-controller
 DOCKER_PUSH += docker-push-jindoruntime-controller
 DOCKER_PUSH += docker-push-csi
@@ -108,8 +108,8 @@ juicefsruntime-controller-build: generate fmt vet
 webhook-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
 
-fluidapp-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
+fluid-app-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluid-app-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
@@ -159,8 +159,8 @@ update-api-doc:
 docker-build-dataset-controller: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-fluidapp-controller: generate fmt vet
-	docker build --no-cache . -f docker/Dockerfile.fluidapp -t ${FLUIDAPP_CONTROLLER_IMG}:${GIT_VERSION}
+docker-build-fluid-app-controller: generate fmt vet
+	docker build --no-cache . -f docker/Dockerfile.fluid-app -t ${fluid-app_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-alluxioruntime-controller: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
@@ -190,8 +190,8 @@ docker-build-webhook:
 docker-push-dataset-controller: docker-build-dataset-controller
 	docker push ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-push-fluidapp-controller: docker-build-fluidapp-controller
-	docker push ${FLUIDAPP_CONTROLLER_IMG}:${GIT_VERSION}
+docker-push-fluid-app-controller: docker-build-fluid-app-controller
+	docker push ${fluid-app_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 	docker push ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
