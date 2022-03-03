@@ -61,12 +61,12 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 // clean cache with a preset timeout of 60s
 func (a AlluxioFileUtils) CleanCache(path string) (err error) {
 	var (
-		command        = []string{"60", "alluxio", "fs", "free", "-f", path}
-		stdout         string
-		stderr         string
+		command = []string{"60", "alluxio", "fs", "free", "-f", path}
+		stdout  string
+		stderr  string
 	)
 
-//TODO : find solution to use "timeout" or "timeout -t" in different linux release
+	//TODO : find solution to use "timeout" or "timeout -t" in different linux release
 	command = append([]string{"timeout"}, command...)
 
 	stdout, stderr, err = a.exec(command, false)
