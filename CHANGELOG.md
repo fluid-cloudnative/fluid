@@ -1,5 +1,30 @@
 # Fluid Release Notes
 
+## v0.7.0
+
+### Breaking Changes
+
+- Update Kubernetes v1.20.12 dependencies and use Go 1.16
+- Update CustomResourceDefinition to apiextensions.k8s.io/v1
+- Update MutatingWebhookConfiguration to admissionregistration.k8s.io/v1
+- Update CSIDriver to storage.k8s.io/v1
+
+### Features
+
+- Support fuse sidecar auto injection for all the runtimes，it’s helpful for no CSI environment
+- Support fuse auto recovery and upgrade
+- Support lazy fuse mount mode
+- Support New cache runtime: JuiceFS
+
+### Refactorings
+
+- Change cache worker deployment mode from DaemonSet to StatefulSet to use K8s Native schedule mechanism
+
+### Bug Fix
+- Fix “[Failed to update status of dataload](https://github.com/fluid-cloudnative/fluid/issues/1436)”
+- Fix “[Failed to delete dataload when target dataset is removed](https://github.com/fluid-cloudnative/fluid/issues/1419)”
+- Fix “[node-driver-registrar will not receive any volume umount in subdirectories of kubelet-dir](https://github.com/fluid-cloudnative/fluid/issues/1048)”
+
 ## v0.6.0
 
 ### Features
