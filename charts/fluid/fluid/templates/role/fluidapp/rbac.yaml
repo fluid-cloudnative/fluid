@@ -11,13 +11,13 @@ rules:
       - pods
       - pods/exec
     verbs:
-      - '*'
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - '*'
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - create
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
