@@ -16,16 +16,12 @@ limitations under the License.
 
 package common
 
-import (
-	"github.com/pkg/errors"
-	"log"
-	"os"
-	"strconv"
+import(
+	runtimeOps "flui"
 )
 
 const (
-	DefaultInitImage    = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
-	EnvPortCheckEnabled = "INIT_PORT_CHECK_ENABLED"
+	DefaultInitImage = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
 )
 
 // The InitContainer to init the users for other Containers
@@ -44,19 +40,6 @@ type InitPortCheck struct {
 	PortsToCheck string `yaml:"portsToCheck,omitempty"`
 }
 
-var initPortCheckEnabled = false
-
-func init() {
-	if strVal, exist := os.LookupEnv(EnvPortCheckEnabled); exist {
-		if boolVal, err := strconv.ParseBool(strVal); err != nil {
-			panic(errors.Wrapf(err, "can't parse %s to bool", EnvPortCheckEnabled))
-		} else {
-			initPortCheckEnabled = boolVal
-		}
-	}
-	log.Printf("Using %s = %v\n", EnvPortCheckEnabled, initPortCheckEnabled)
-}
-
 func PortCheckEnabled() bool {
-	return initPortCheckEnabled
+	return runtimeOpts.PortCheckEnabled()
 }
