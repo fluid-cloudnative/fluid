@@ -16,8 +16,8 @@ limitations under the License.
 
 package common
 
-import(
-	runtimeOps "flui"
+import (
+	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
 )
 
 const (
