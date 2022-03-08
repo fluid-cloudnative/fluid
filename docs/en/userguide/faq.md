@@ -76,15 +76,25 @@ time alluxio fs  distributedLoad --replication 1 /
 
 **Answer**: Please check whether the kubelet configuration of the node on which the task is scheduled is the default value `/var/lib/kubelet`.
 
-First, check whether Fluid's CSI component is normal using the command.
+First, Please on the work node of Kubernetes execute`ps -ef | grep kubelet | grep -i root-dir`,Check whether Kubernetes's root-dir,If not `/var/lib/kubelet`, Please Modify`fluid/values.yaml`,
+```yaml
+csi:
+  plugins:
+    image: fluidcloudnative/fluid-csi:v0.7.0-3d66068
+  kubelet:
+    rootDir: you kubelet root dir
+```
+run again `helm uninstall fluid && heml install fluid [/opt/fluid]`，Check whether it is normal.
+
+Second，check whether Fluid's CSI component is normal using the command.
 
 The following command can find the Pod quickly. When using it, replace the `<node_name>` and `<fluid_namespace>` with yours:
 ```bash
-kubectl get pod -n <fluid_namespace> | grep <node_name>
+kubectl get pod -n <fluid_namespace> -o wide | grep <node_name> | grep csi-nodeplugin
 
 # <pod_name> the pod name of last step
-kubectl logs <pod_name> node-driver-registrar -n <fluid_namespace>
-kubectl logs <pod_name> plugins -n <fluid_namespace>
+kubectl logs -f <pod_name> node-driver-registrar -n <fluid_namespace>
+kubectl logs -f <pod_name> plugins -n <fluid_namespace>
 ```
 
 If there is no error in the Log of the above steps, check whether the csidriver object exists:
