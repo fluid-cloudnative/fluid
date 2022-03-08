@@ -79,15 +79,25 @@ time alluxio fs  distributedLoad --replication 1 /
 
 **回答**:请查看任务被调度节点所在的 kubelet 配置是否为默认`/var/lib/kubelet`。
 
-首先通过命令查看Fluid的CSI组件是否正常
+首先请在Kubernetes的node节点上执行`ps -ef | grep kubelet | grep -i root-dir`,查看Kubernetes的root-dir,如果不是`/var/lib/kubelet`,请修改`fluid/values.yaml`文件,
+```yaml
+csi:
+  plugins:
+    image: fluidcloudnative/fluid-csi:v0.7.0-3d66068
+  kubelet:
+    rootDir: you kubelet root dir
+```
+再次执行`helm uninstall fluid && heml install fluid [/opt/fluid]`，查看是否正常。
+
+其次通过命令查看Fluid的CSI组件是否正常
 
 如下的命令可以快速地找出Pod，使用时把`<node_name>`和`<fluid_namespace>`换成自己的即可：
 ```bash
-kubectl get pod -n <fluid_namespace> | grep <node_name>
+kubectl get pod -n <fluid_namespace> -o wide | grep <node_name> | grep csi-nodeplugin
 
 # <pod_name> 为上一步pod名
-kubectl logs <pod_name> node-driver-registrar -n <fluid_namespace>
-kubectl logs <pod_name> plugins -n <fluid_namespace>
+kubectl logs -f <pod_name> node-driver-registrar -n <fluid_namespace>
+kubectl logs -f <pod_name> plugins -n <fluid_namespace>
 ```
 
 如果上述步骤的Log无错误，请查看csidriver对象是否存在：
