@@ -22,3 +22,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Production | bilibili AI platform |
 | [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Staging | LakeCache Containers |
 | [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](chenhc@pxing.com) | Testing | Pxing AI training platform |
+| [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](xuzw@dmetasoul.com) | Testing | MetaSpore distributed multimodal AI platform |
