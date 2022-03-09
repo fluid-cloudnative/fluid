@@ -2,7 +2,7 @@
 
 如果选择AWS S3作为Alluxio的底层存储系统，Alluxio需要进行额外配置，以使得Alluxio能够正常访问挂载的S3存储系统。
 
-本文档展示了如何在Fluid中以声明式的方式完成Alluxio所需的特殊配置。更多信息请参考[在Amazon AWS S3上配置Alluxio](https://docs.alluxio.io/os/user/stable/cn/ufs/S3.html)
+本文档展示了如何在Fluid中以声明式的方式完成Alluxio所需的特殊配置。更多信息请参考[在Amazon AWS S3上配置Alluxio](https://docs.alluxio.io/os/user/stable/en/ufs/S3.html)
 
 ## 前提条件
 
@@ -44,6 +44,7 @@ spec:
               key: aws.secretKey
 EOF
 ```
+注意: 不同的云厂商对象存储，region的配置要替换为`alluxio.underfs.s3.endpoint.region=<S3_ENDPOINT_REGION>`,具体详细信息，参考[在Amazon AWS S3上配置Alluxio](https://docs.alluxio.io/os/user/stable/en/ufs/S3.html)
 
 ```
 $ kubectl create -f dataset.yaml
