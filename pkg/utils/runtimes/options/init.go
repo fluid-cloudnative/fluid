@@ -14,12 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package options
 
 import (
-	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
+	"github.com/go-logr/logr"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func CriticalFusePodEnabled() bool {
-	return runtimeOpts.CriticalFusePodEnabled()
+var (
+	log logr.Logger = ctrl.Log.WithName("options")
+)
+
+func init() {
+	setPortCheckOption()
+	setCriticalFusePodOption()
 }
