@@ -17,9 +17,23 @@ limitations under the License.
 package common
 
 import (
-	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
+	"testing"
 )
 
-func CriticalFusePodEnabled() bool {
-	return runtimeOpts.CriticalFusePodEnabled()
+func TestCriticalFusePodEnabled(t *testing.T) {
+	want := false
+	got := CriticalFusePodEnabled()
+
+	if got != want {
+		t.Errorf("want %v, got %v", want, got)
+	}
+}
+
+func TestPortCheckEnabled(t *testing.T) {
+	want := false
+	got := PortCheckEnabled()
+
+	if got != want {
+		t.Errorf("want %v, got %v", want, got)
+	}
 }
