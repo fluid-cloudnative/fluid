@@ -19,9 +19,10 @@ package fluidapp
 import (
 	"context"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -72,7 +73,7 @@ func (f *FluidAppReconciler) Reconcile(ctx context.Context, request reconcile.Re
 		Log:            f.Log.WithValues("fluidapp", request.NamespacedName),
 		NamespacedName: request.NamespacedName,
 	}
-	pod, err := f.fetchFluidApp(request.NamespacedName)
+	pod, err := kubeclient.GetPodByName(f.Client, request.Name, request.Namespace)
 	if err != nil {
 		requestCtx.Log.Error(err, "fetch pod error")
 		return reconcile.Result{}, err
@@ -93,22 +94,11 @@ func (f *FluidAppReconciler) internalReconcile(ctx reconcileRequestContext) (ctr
 	err := f.umountFuseSidecar(pod)
 	if err != nil {
 		ctx.Log.Error(err, "umount fuse sidecar error", "podName", pod.Name, "podNamespace", pod.Namespace)
-		return ctrl.Result{}, err
+		return utils.RequeueIfError(err)
 	}
-	return ctrl.Result{}, nil
+	return utils.NoRequeue()
 }
 
 func (f *FluidAppReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return watch.SetupAppWatcherWithReconciler(mgr, options, f)
-}
-
-func (f *FluidAppReconciler) fetchFluidApp(name types.NamespacedName) (*corev1.Pod, error) {
-	pod := corev1.Pod{}
-	if err := f.Get(context.TODO(), name, &pod); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &pod, nil
 }
