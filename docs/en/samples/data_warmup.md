@@ -99,7 +99,7 @@ EOF
 ```
 
 `spec.dataset` specifies the target dataset that needs to be preloaded. In this example, our target is the Dataset named `spark` under the `default` namespace. 
-Feel free to change the configuration above if it doesn't match your actual environment
+Feel free to change the configuration above if it doesn't match your actual environment. ** note ** The namespace of your DataLoad must be consistent with the namespace of your dataset.
 
 **By default, it'll preload all the data in the target dataset**. If you'd like to controll the data preloading behaviors in a more find-grained way(e.g. preload data under some specified path only),
 please refer to [DataLoad Advanced Configurations](#dataload-advanced-configurations)
