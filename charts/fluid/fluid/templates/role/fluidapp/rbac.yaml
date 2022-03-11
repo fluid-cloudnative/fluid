@@ -8,8 +8,6 @@ rules:
       - ""
     resources:
       - events
-      - pods
-      - pods/exec
     verbs:
       - get
       - list
@@ -18,6 +16,17 @@ rules:
       - watch
       - create
       - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/exec
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
