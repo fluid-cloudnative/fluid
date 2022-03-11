@@ -34,7 +34,7 @@
 + 工作负载
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现
-  - [使用 JindoRuntime](https://github.com/aliyun/alibabacloud-jindofs/blob/master/docs/jindo_fluid/jindo_fluid_overview.md)
+  - [使用 JindoRuntime](https://github.com/aliyun/alibabacloud-jindodata/blob/master/docs/user/3.x/jindo_fluid/jindo_fluid_overview.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
   - [JVM性能分析](dev/profiling.md)
