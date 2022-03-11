@@ -14,6 +14,6 @@ This file lists the maintainers and committers of the Fluid project. More descri
 ## Project Committer
 | Name | GitHub ID | Affiliation |
 | ---- | --------- | ----------- |
-| [Yuandong Xie](mailto: xieydd@gmail.com) | [xieydd](https://github.com/xieydd) | Tencent Cloud |
+| [Yuandong Xie](mailto:xieydd@gmail.com) | [xieydd](https://github.com/xieydd) | Tencent Cloud |
 | [Lingwei Qiu](mailto:qlw705706@gmail.com) | [yangyuliufeng](https://github.com/yangyuliufeng) | China Telecom |
 | [Tao Wang](mailto:wangtaod13@gmail.com) | [frankleaf](https://github.com/frankleaf) | Alibaba |
