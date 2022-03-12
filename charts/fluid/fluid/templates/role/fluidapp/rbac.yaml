@@ -10,12 +10,8 @@ rules:
       - events
     verbs:
       - get
-      - list
-      - patch
-      - update
       - watch
       - create
-      - delete
   - apiGroups:
       - ""
     resources:
