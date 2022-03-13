@@ -11,7 +11,7 @@ This file lists the maintainers and committers of the Fluid project. More descri
 | [Zhihao Xu](mailto:trafalgarz@outlook.com) | [TrafalgarZZZ](https://github.com/TrafalgarZZZ) | Nanjing University |
 | [Kai Zhang](mailto:wsxiaozhang@gmail.com) | [wsxiaozhang](https://github.com/wsxiaozhang) | Alibaba |
 
-## Project Committer
+## Project Committers
 | Name | GitHub ID | Affiliation |
 | ---- | --------- | ----------- |
 | [Yuandong Xie](mailto:xieydd@gmail.com) | [xieydd](https://github.com/xieydd) | Tencent Cloud |
