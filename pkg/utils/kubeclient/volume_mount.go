@@ -18,6 +18,8 @@ package kubeclient
 
 import (
 	"fmt"
+	"path"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
@@ -107,4 +109,34 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 
 	err = fmt.Errorf("failed to find the volumeMount from slice %v by the name %s", container.VolumeMounts, volumeMountName)
 	return
+}
+
+func GetMountPathInContainer(container corev1.Container) (string, error) {
+	kv := map[string]string{
+		common.JindoChartName: "jindofs-fuse",
+		common.ALLUXIO_CHART:  "alluxio-fuse",
+		common.GooseFSChart:   "goosefs-fuse",
+		common.JuiceFSChart:   "juicefs-fuse",
+	}
+	// consider the env FLUID_FUSE_MOUNTPOINT
+	if len(container.Env) > 0 {
+		for _, env := range container.Env {
+			if env.Name == common.FuseMountEnv {
+				return env.Value, nil
+			}
+		}
+	}
+	for _, vm := range container.VolumeMounts {
+		if strings.HasSuffix(vm.Name, "-fuse-mount") {
+			mountType := vm.Name[:len(vm.Name)-11]
+			volumePathSuffix := ""
+			if suffix, found := kv[mountType]; found {
+				volumePathSuffix = suffix
+			} else {
+				return "", fmt.Errorf("failed to find the suffix by mountType %s", mountType)
+			}
+			return path.Join(vm.MountPath, volumePathSuffix), nil
+		}
+	}
+	return "", fmt.Errorf("failed to find fluid fuse mount path in container")
 }
