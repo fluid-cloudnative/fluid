@@ -74,6 +74,6 @@ webhook:
   replicas: 1
 
 fluidapp:
-  enabled: false
+  enabled: true
   controller:
-    image: fluidcloudnative/application-controller:v0.8.0-da5d3a2
+    image: fluidcloudnative/application-controller:v0.8.0-44d032f
