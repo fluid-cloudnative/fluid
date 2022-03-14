@@ -22,6 +22,8 @@ This section outlines the mechanisms of collaboration within the project.
 
 **Committers**: Committers are community members who have shown that they are committed to the continued development of the project through ongoing engagement with the community. 
 
+**Current Committers:**  are  here: [https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS_COMMITTERS.md](https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS_COMMITTERS.md)
+
 Committers’ responsibility:
 * Are expected to work on public branches of the source repository and submit pull requests from that branch to the master branch.
 * Must submit pull requests for all changes.
@@ -42,7 +44,7 @@ Process for Becoming Committers
 
 **Maintainer**: Maintainers are expected to contribute increasingly complicated PRs/designs and review PRs/designs, under the guidance of the existing maintainers. One who wants to be a maintainer should have been working for this project for 3 months at least. New maintainers are nominated and elected by the project maintainers with 2/3 majority vote pass
 
-**Current Maintainers:**  are  here: [https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS.md](https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS.md)
+**Current Maintainers:**  are  here: [https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS_COMMITTERS.md](https://github.com/fluid-cloudnative/fluid/blob/master/MAINTAINERS_COMMITTERS.md)
 
 Maintainers’ responsibilities:
 
