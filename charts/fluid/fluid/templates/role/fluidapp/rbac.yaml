@@ -15,8 +15,18 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - pods
       - pods/exec
+    verbs:
+      - get
+      - create
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
     verbs:
       - get
       - list
