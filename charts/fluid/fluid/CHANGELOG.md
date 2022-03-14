@@ -42,3 +42,7 @@
 * Add mountPropagation for registrar
 * Add syncRetryDuration
 * Add auto fuse recovery
+
+### 0.8.0
+
+* Add application controller component
