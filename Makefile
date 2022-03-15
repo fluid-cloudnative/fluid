@@ -15,7 +15,7 @@ LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 GO_MODULE ?= off
-GCFLAGS ?= "all=-N -l"
+GCFLAGS ?= all=-N -l
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
