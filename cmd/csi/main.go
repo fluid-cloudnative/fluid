@@ -117,7 +117,7 @@ func handle() {
 		}
 	}()
 
-	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient())
+	d := csi.NewDriver(nodeID, endpoint, mgr.GetClient(), mgr.GetAPIReader())
 	d.Run()
 }
 

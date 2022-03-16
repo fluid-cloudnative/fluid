@@ -50,11 +50,12 @@ const (
 
 type driver struct {
 	client           client.Client
+	apiReader        client.Reader
 	csiDriver        *csicommon.CSIDriver
 	nodeId, endpoint string
 }
 
-func NewDriver(nodeID, endpoint string, client client.Client) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.Reader) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
@@ -80,6 +81,7 @@ func NewDriver(nodeID, endpoint string, client client.Client) *driver {
 		endpoint:  endpoint,
 		csiDriver: csiDriver,
 		client:    client,
+		apiReader: apiReader,
 	}
 }
 
@@ -93,6 +95,7 @@ func (d *driver) newNodeServer() *nodeServer {
 		nodeId:            d.nodeId,
 		DefaultNodeServer: csicommon.NewDefaultNodeServer(d.csiDriver),
 		client:            d.client,
+		apiReader:         d.apiReader,
 	}
 }
 

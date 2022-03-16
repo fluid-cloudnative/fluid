@@ -40,8 +40,9 @@ import (
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
-	client client.Client
-	mutex  sync.Mutex
+	client    client.Client
+	apiReader client.Reader
+	mutex     sync.Mutex
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -172,7 +173,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
 	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
 	// can be used to indicate a specific dataset.
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := getNamespacedNameByVolumeId(ns.apiReader, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
@@ -195,7 +196,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Delete(fuseLabelKey)
 
-	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+	node, err := kubeclient.GetNode(ns.apiReader, ns.nodeId)
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
@@ -216,7 +217,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	defer ns.mutex.Unlock()
 
 	// 1. get dataset namespace and name by volume id
-	namespace, name, err := getNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	namespace, name, err := getNamespacedNameByVolumeId(ns.apiReader, req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
@@ -227,7 +228,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
 
-	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+	node, err := kubeclient.GetNode(ns.apiReader, ns.nodeId)
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
@@ -307,7 +308,7 @@ func checkMountInUse(volumeName string) (bool, error) {
 	return inUse, err
 }
 
-func getNamespacedNameByVolumeId(client client.Client, volumeId string) (namespace, name string, err error) {
+func getNamespacedNameByVolumeId(client client.Reader, volumeId string) (namespace, name string, err error) {
 	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
 	if err != nil {
 		return "", "", err
