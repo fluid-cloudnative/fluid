@@ -15,6 +15,7 @@ LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 GO_MODULE ?= off
+GC_FLAGS ?= -gcflags="all=-N -l"
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -88,28 +89,28 @@ unit-test: generate fmt vet
 build: ${BINARY_BUILD}
 
 csi-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 dataset-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
 
 alluxioruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
 
 jindoruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
 goosefsruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
 
 juicefsruntime-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
 
 webhook-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
 
 application-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build -gcflags="-N -l" -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
 
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests

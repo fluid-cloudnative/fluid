@@ -158,9 +158,14 @@ $ kubectl delete ns fluid-system
 
 ### 高级配置
 
-在一些特定的云厂商实现下， 默认mount根目录`/runtime-mnt`是不可写的,因此需要修改目录位置
+1. 在一些特定的云厂商实现下， 默认mount根目录`/runtime-mnt`是不可写的,因此需要修改目录位置
 
 ```
 helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
 ```
 
+2. 默认Fuse Recovery的功能并没有打开，如果需要开放该功能，需要按照以下配置
+
+```
+helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
+```

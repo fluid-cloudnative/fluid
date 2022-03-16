@@ -157,8 +157,14 @@ $ kubectl delete ns fluid-system
 
 ### Advanced Configuration
 
-In some cloud vendors, the default mount root directory `/runtime-mnt` is not writable, so you have to modify the directory location
+1. In some cloud vendors, the default mount root directory `/runtime-mnt` is not writable, so you have to modify the directory location
 
 ```
 helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
+```
+
+2. The feature `Fuse Recovery` is not enable by default, to enable this:
+
+```
+helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
 ```
