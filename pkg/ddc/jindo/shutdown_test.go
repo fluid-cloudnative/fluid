@@ -1,6 +1,7 @@
 package jindo
 
 import (
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -162,7 +163,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &JindoEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{}), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -251,7 +252,7 @@ func TestCleanConfigmap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			engine := &JindoEngine{
-				Log:         log.NullLogger{},
+				Log:         logr.New(log.NullLogSink{}),
 				name:        tt.args.name,
 				namespace:   tt.args.namespace,
 				runtimeType: runtimeType,
@@ -312,7 +313,7 @@ func TestCleanAll(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	engine := &JindoEngine{Log: log.NullLogger{}}
+	engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 	engine.Client = client
 	engine.name = "fluid-hadoop"
 	engine.namespace = "default"

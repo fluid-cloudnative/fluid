@@ -16,6 +16,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestTransformInitUsersWithoutRunAs(t *testing.T) {
 		}, &GooseFS{}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)
 		if test.goosefsValue.InitUsers.Enabled {
 			t.Errorf("expected init users are disabled, but got %v", test.goosefsValue.InitUsers.Enabled)
@@ -63,7 +64,7 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)
@@ -103,7 +104,7 @@ func TestTransformInitUsersImageOverwrite(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)

@@ -2,6 +2,7 @@ package juicefs
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -75,7 +76,7 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      logr.New(log.NullLogSink{}),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -119,7 +120,7 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 	engine := JuiceFSEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecNotExist, nil)

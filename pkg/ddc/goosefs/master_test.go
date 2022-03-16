@@ -1,6 +1,7 @@
 package goosefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -99,19 +100,19 @@ func TestCheckMasterReady(t *testing.T) {
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -247,7 +248,7 @@ func TestSetupMaster(t *testing.T) {
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 

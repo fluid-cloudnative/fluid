@@ -1,6 +1,7 @@
 package jindo
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -29,7 +30,7 @@ func newJindoEngineREP(client client.Client, name string, namespace string) *Jin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
@@ -283,7 +284,7 @@ func TestSyncReplicas(t *testing.T) {
 	for _, testCase := range testCases {
 		engine := newJindoEngineREP(fakeClient, testCase.name, testCase.namespace)
 		err := engine.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      logr.New(log.NullLogSink{}),
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 	"testing"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestLoggingErrorExceptConflict(t *testing.T) {
-	logger := testLog.NullLogger{}
+	logger := logr.New(testLog.NullLogSink{})
 	result := LoggingErrorExceptConflict(logger,
 		apierrors.NewConflict(schema.GroupResource{},
 			"test",

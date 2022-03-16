@@ -1,6 +1,7 @@
 package goosefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -68,7 +69,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		RuntimeType: "goosefs",
 		Runtime:     &runtime,
 	}

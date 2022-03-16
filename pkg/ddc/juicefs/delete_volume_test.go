@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -52,7 +53,7 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	return engine
 }

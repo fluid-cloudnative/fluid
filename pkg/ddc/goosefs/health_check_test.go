@@ -2,6 +2,7 @@ package goosefs
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 	"reflect"
 	"testing"
@@ -113,7 +114,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	engines := []GooseFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &goosefsRuntimeInputs[0],
@@ -271,7 +272,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 	engines := []GooseFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -283,7 +284,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -420,7 +421,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	engines := []GooseFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -432,7 +433,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -444,7 +445,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "deprecated",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -596,7 +597,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	engines := []GooseFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.GooseFSRuntime{
@@ -608,7 +609,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.GooseFSRuntime{

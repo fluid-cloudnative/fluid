@@ -17,8 +17,10 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	. "github.com/agiledragon/gomonkey"
@@ -55,7 +57,7 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 				name:        "test",
 				namespace:   "default",
 				runtimeType: "JuiceFSRuntime",
-				Log:         nil,
+				Log:         logr.New(log.NullLogSink{}),
 				runtimeInfo: runtimeInfo,
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					ObjectMeta: metav1.ObjectMeta{
@@ -108,7 +110,7 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 				name:        "test",
 				namespace:   "default",
 				runtimeType: "JuiceFSRuntime",
-				Log:         nil,
+				Log:         logr.New(log.NullLogSink{}),
 				runtimeInfo: runtimeInfo,
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					ObjectMeta: metav1.ObjectMeta{

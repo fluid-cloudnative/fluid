@@ -19,6 +19,7 @@ package juicefs
 import (
 	"errors"
 	"fmt"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
@@ -128,7 +129,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
@@ -278,7 +279,7 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},

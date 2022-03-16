@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"encoding/base64"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -61,7 +62,7 @@ func TestTransformFuse(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},

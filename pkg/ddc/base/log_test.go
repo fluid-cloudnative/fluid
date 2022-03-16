@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -20,7 +21,7 @@ func TestLoggingErrorExceptConflict(t *testing.T) {
 			Namespace: "test",
 			Name:      "test",
 		},
-		Log: log.NullLogger{},
+		Log: logr.New(log.NullLogSink{}),
 	})
 
 	err := engine.loggingErrorExceptConflict(fluiderrs.NewDeprecated(schema.GroupResource{Group: "", Resource: "test"}, types.NamespacedName{}), "test")

@@ -145,7 +145,7 @@ func TestJuiceFSEngine_getMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "juicefs",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 				MountRoot: "/tmp",
 			},
 		},
@@ -183,7 +183,7 @@ func TestJuiceFSEngine_getHostMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "juicefs",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 				MountRoot: "/tmp",
 			},
 			wantMountPath: "/tmp/juicefs/default/juicefs",

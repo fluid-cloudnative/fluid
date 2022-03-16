@@ -214,7 +214,7 @@ func TestInjectPod(t *testing.T) {
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
 							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",
@@ -483,7 +483,7 @@ func TestInjectPod(t *testing.T) {
 									SubPath:   "check-mount.sh",
 								},
 							}, Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",
@@ -715,7 +715,7 @@ func TestInjectPod(t *testing.T) {
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
 							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",

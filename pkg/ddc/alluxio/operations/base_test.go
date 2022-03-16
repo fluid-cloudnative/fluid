@@ -18,6 +18,7 @@ package operations
 import (
 	"errors"
 	"fmt"
+	"github.com/go-logr/logr"
 	"reflect"
 	"strings"
 	"testing"
@@ -45,9 +46,9 @@ func TestNewAlluxioFileUtils(t *testing.T) {
 		podName:   "hbase",
 		namespace: "default",
 		container: "hbase-container",
-		log:       logf.NullLogger{},
+		log:       logr.New(logf.NullLogSink{}),
 	}
-	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", logf.NullLogger{})
+	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", logr.New(logf.NullLogSink{}))
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the AlluxioFileUtils, want: %v, got: %v", expectedResult, result)
 	}
@@ -111,7 +112,7 @@ func TestAlluxioFileUtils_IsExist(t *testing.T) {
 		{FINE, true, true},
 	}
 	for _, test := range tests {
-		found, err := AlluxioFileUtils{log: logf.NullLogger{}}.IsExist(test.in)
+		found, err := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}.IsExist(test.in)
 		if found != test.out {
 			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
 		}
@@ -164,7 +165,7 @@ func TestAlluxioFileUtils_Du(t *testing.T) {
 		{FINE, int64(out1), int64(out2), out3, true},
 	}
 	for _, test := range tests {
-		o1, o2, o3, err := AlluxioFileUtils{log: logf.NullLogger{}}.Du(test.in)
+		o1, o2, o3, err := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}.Du(test.in)
 		var noErr bool = (err == nil)
 		if test.noErr != noErr {
 			t.Errorf("input parameter is %s,expected noerr is %t", test.in, test.noErr)
@@ -231,7 +232,7 @@ func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := AlluxioFileUtils{log: logf.NullLogger{}}
+	a := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -267,7 +268,7 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := AlluxioFileUtils{log: logf.NullLogger{}}
+	a := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	err = a.LoadMetaData("/", true)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -303,7 +304,7 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := AlluxioFileUtils{log: logf.NullLogger{}}
+	a := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
 	for index, keySet := range keySets {
@@ -451,7 +452,7 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.IsMounted("/hbase")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -497,7 +498,7 @@ func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return returnMessage, "", nil
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 
 	err := gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
 	if err != nil {
@@ -557,7 +558,7 @@ func TestAlluxioFileUtils_Ready(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	ready := a.Ready()
 	if ready != false {
 		t.Errorf("check failure, want false, got %t", ready)
@@ -593,7 +594,7 @@ func TestAlluxioFIleUtils_Du(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, _, _, err = a.Du("/hbase")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -660,7 +661,7 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 		{FINE, int64(out1), int64(out2), int64(out3), true},
 	}
 	for _, test := range tests {
-		o1, o2, o3, err := AlluxioFileUtils{log: logf.NullLogger{}}.Count(test.in)
+		o1, o2, o3, err := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}.Count(test.in)
 		var noErr bool = (err == nil)
 		if test.noErr != noErr {
 			t.Errorf("input parameter is %s,expected noerr is %t", test.in, test.noErr)
@@ -691,7 +692,7 @@ func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.GetFileCount()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -731,7 +732,7 @@ func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 
 	_, err = a.ReportMetrics()
 	if err == nil {
@@ -769,7 +770,7 @@ func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.ReportCapacity()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -806,7 +807,7 @@ func TestAlluxioFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, _, err = a.exec([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -842,7 +843,7 @@ func TestAlluxioFileUtils_execWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, _, err = a.execWithoutTimeout([]string{"alluxio", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -878,7 +879,7 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.MasterPodName()
 	if err == nil {
 		t.Error("check failure, want err, got nil")

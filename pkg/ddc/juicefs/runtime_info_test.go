@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -40,7 +41,7 @@ func newJuiceFSEngineRT(client client.Client, name string, namespace string, wit
 		Client:      client,
 		runtimeInfo: nil,
 		UnitTest:    unittest,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 
 	if withRuntimeInfo {

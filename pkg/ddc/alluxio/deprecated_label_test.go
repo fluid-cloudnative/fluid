@@ -1,6 +1,7 @@
 package alluxio
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -23,7 +24,7 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	return engine
 }

@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -40,7 +41,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			}}, &Alluxio{}, "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty,allow_other"},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine := &AlluxioEngine{Log: logr.New(log.NullLogSink{})}
 		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -76,7 +77,7 @@ func TestTransformFuseWithArgs(t *testing.T) {
 			}}, &Alluxio{}, "--fuse-opts=kernel_cache,allow_other"},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine := &AlluxioEngine{Log: logr.New(log.NullLogSink{})}
 		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)

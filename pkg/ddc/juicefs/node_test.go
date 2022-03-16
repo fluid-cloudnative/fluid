@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -36,7 +37,7 @@ func getTestJuiceFSEngineNode(client client.Client, name string, namespace strin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	if withRunTime {
 		engine.runtime = &datav1alpha1.JuiceFSRuntime{}

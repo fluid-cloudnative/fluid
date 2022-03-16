@@ -17,6 +17,7 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
@@ -85,7 +86,7 @@ func TestTransformTolerations(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformTolerations(test.dataset, test.runtime, test.jindoValue)
 		if len(test.jindoValue.Master.Tolerations) != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Master.Tolerations)
@@ -120,7 +121,7 @@ func TestParseSmartDataImage(t *testing.T) {
 			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		imageR, tagR, _ := engine.getSmartDataConfigs()
 		registryVersion := imageR + ":" + tagR
 		if registryVersion != test.expect {
@@ -205,7 +206,7 @@ func TestTransformHostNetWork(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformNetworkMode(test.runtime, test.jindoValue)
 		if test.jindoValue.UseHostNetwork != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
@@ -241,7 +242,7 @@ func TestTransformHostNetWork(t *testing.T) {
 		},
 	}
 	for _, test := range errortests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformNetworkMode(test.runtime, test.jindoValue)
 		if test.jindoValue.UseHostNetwork != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
@@ -306,7 +307,7 @@ func TestTransformAllocatePorts(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformNetworkMode(test.runtime, test.jindoValue)
 		test.jindoValue.Master.ReplicaCount = 3
 		err := engine.allocatePorts(test.jindoValue)

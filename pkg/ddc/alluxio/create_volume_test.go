@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -54,7 +55,7 @@ func TestCreateVolume(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
@@ -117,7 +118,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
@@ -164,7 +165,7 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,

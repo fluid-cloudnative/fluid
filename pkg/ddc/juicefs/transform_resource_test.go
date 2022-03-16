@@ -20,6 +20,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -36,7 +37,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		}, &JuiceFS{}},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}}
+		engine := &JuiceFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
 		if result, found := test.juicefsValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
@@ -62,7 +63,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}, &JuiceFS{}},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}}
+		engine := &JuiceFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
@@ -82,7 +83,7 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 		}, &JuiceFS{}},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}}
+		engine := &JuiceFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformResourcesForFuse(test.runtime, test.juicefsValue)
 		if result, found := test.juicefsValue.Fuse.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
@@ -117,7 +118,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		}, &JuiceFS{}},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}}
+		engine := &JuiceFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime, test.juiceValue)

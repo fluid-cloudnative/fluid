@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"testing"
 	"time"
 
@@ -65,13 +66,13 @@ func TestShouldSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -156,13 +157,13 @@ func TestSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -177,7 +178,7 @@ func TestSyncMetadata(t *testing.T) {
 		name:      "hadoop",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(operations.JuiceFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
@@ -219,14 +220,14 @@ func TestJuiceFSEngine_syncMetadataInternal(t *testing.T) {
 			name:               "test1",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                log.NullLogger{},
+			Log:                logr.New(log.NullLogSink{}),
 			MetadataSyncDoneCh: make(chan MetadataSyncResult),
 		},
 		{
 			name:               "test2",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                log.NullLogger{},
+			Log:                logr.New(log.NullLogSink{}),
 			MetadataSyncDoneCh: nil,
 		},
 	}

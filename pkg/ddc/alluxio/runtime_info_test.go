@@ -1,6 +1,7 @@
 package alluxio
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -23,7 +24,7 @@ func newAlluxioEngineRT(client client.Client, name string, namespace string, wit
 		Client:      client,
 		runtimeInfo: nil,
 		UnitTest:    unittest,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 
 	if withRuntimeInfo {
