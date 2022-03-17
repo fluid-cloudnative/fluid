@@ -32,7 +32,7 @@ const (
 	persistentVolumeClaimProtectionFinalizerName = "kubernetes.io/pvc-protection"
 )
 
-func GetPersistentVolume(client client.Client, name string) (pv *v1.PersistentVolume, err error) {
+func GetPersistentVolume(client client.Reader, name string) (pv *v1.PersistentVolume, err error) {
 	pv = &v1.PersistentVolume{}
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name}, pv)
 	if err != nil {
@@ -335,7 +335,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 }
 
 // IsDatasetPVC check whether the PVC is a dataset PVC
-func IsDatasetPVC(client client.Client, name string, namespace string) (find bool, err error) {
+func IsDatasetPVC(client client.Reader, name string, namespace string) (find bool, err error) {
 	pvc := &v1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,

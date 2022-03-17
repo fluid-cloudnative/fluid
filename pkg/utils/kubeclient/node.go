@@ -25,7 +25,7 @@ import (
 )
 
 // GetNode gets the latest node info
-func GetNode(client client.Client, name string) (node *v1.Node, err error) {
+func GetNode(client client.Reader, name string) (node *v1.Node, err error) {
 	key := types.NamespacedName{
 		Name: name,
 	}

@@ -55,6 +55,7 @@ var _ manager.Runnable = &FuseRecover{}
 type FuseRecover struct {
 	mount.SafeFormatAndMount
 	KubeClient    client.Client
+	ApiReader     client.Reader
 	KubeletClient *kubelet.KubeletClient
 	Recorder      record.EventRecorder
 
@@ -111,7 +112,7 @@ func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	return kubeletClient, nil
 }
 
-func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (*FuseRecover, error) {
+func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, apiReader client.Reader) (*FuseRecover, error) {
 	glog.V(3).Infoln("start csi recover")
 	mountRoot, err := utils.GetMountRoot()
 	if err != nil {
@@ -141,6 +142,7 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder) (*F
 			Exec:      k8sexec.New(),
 		},
 		KubeClient:        kubeClient,
+		ApiReader:         apiReader,
 		KubeletClient:     kubeletClient,
 		Recorder:          recorder,
 		containers:        make(map[string]*containerStat),
@@ -281,7 +283,7 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		glog.V(3).Infof("can't parse dataset from namespacedName: %s", namespacedName)
 		return
 	}
-	namespace, datasetName, err := volume.GetNamespacedNameByVolumeId(r.KubeClient, namespacedName)
+	namespace, datasetName, err := volume.GetNamespacedNameByVolumeId(r.ApiReader, namespacedName)
 	if err != nil {
 		glog.Errorf("error get namespacedName by volume id %s: %v", namespacedName, err)
 		return
