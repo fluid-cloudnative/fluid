@@ -453,6 +453,7 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 			fakeClient := fake.NewFakeClientWithScheme(s, tt.fields.dataset)
 			r := &FuseRecover{
 				KubeClient:    fakeClient,
+				ApiReader:     fakeClient,
 				KubeletClient: nil,
 				Recorder:      record.NewFakeRecorder(1),
 				containers:    tt.fields.containers,
@@ -493,6 +494,7 @@ func TestNewFuseRecover(t *testing.T) {
 					Exec:      k8sexec.New(),
 				},
 				KubeClient:        fakeClient,
+				ApiReader:         fakeClient,
 				KubeletClient:     fakeKubeletClient,
 				Recorder:          fakeRecorder,
 				containers:        fakeContainersMap,
@@ -511,7 +513,7 @@ func TestNewFuseRecover(t *testing.T) {
 			})
 			defer patch.Reset()
 
-			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder)
+			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.kubeClient)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewFuseRecover() error = %v, wantErr %v", err, tt.wantErr)
 				return

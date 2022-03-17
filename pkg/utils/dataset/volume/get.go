@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetNamespacedNameByVolumeId(client client.Client, volumeId string) (namespace, name string, err error) {
+func GetNamespacedNameByVolumeId(client client.Reader, volumeId string) (namespace, name string, err error) {
 	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
 	if err != nil {
 		return "", "", err
