@@ -14,6 +14,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ printf "%s-job" .Release.Name }}
+  namespace: {{ .Values.namespace }}
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
@@ -31,12 +32,13 @@ spec:
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: {{ printf "%s-loader" .Release.Name }}
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
-          args: ["/scripts/juicefs_env_init.sh && /scripts/juicefs_dataload.sh"]
+          args: ["/scripts/juicefs_dataload.sh"]
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
           {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
@@ -48,6 +50,12 @@ spec:
           {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+
+          {{- $podNames:= "" }}
+          {{- range .Values.podNames }}
+          {{- $podNames = cat $podNames (required "Pod name must be set" . ) ":" }}
+          {{- end }}
+          {{- $podNames = $podNames | nospace | trimSuffix ":" }}
           env:
             - name: STORAGE_ADDRESS
               valueFrom:
@@ -73,6 +81,10 @@ spec:
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
+            - name: POD_NAMES
+              value: {{ $podNames | quote }}
+            - name: POD_NAMESPACE
+              value: {{ .Values.namespace }}
           envFrom:
             - configMapRef:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values

@@ -28,3 +28,7 @@ dataloader:
   # Required
   # Description: the image that the DataLoad job uses
   image: #<jindo-image>
+
+podNames:
+  - ""
+namespace: ""

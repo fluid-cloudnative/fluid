@@ -29,6 +29,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+type JuiceDataLoadValue struct {
+	DataLoadInfo cdataload.DataLoadInfo `yaml:"dataloader"`
+	PodNames     []string               `yaml:"podNames"`
+	Namespace    string                 `yaml:"namespace"`
+}
+
 // CreateDataLoadJob creates the job to load data
 func (e *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
@@ -70,6 +76,7 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if err != nil {
 		return "", err
 	}
+	e.Log.Info("target dataset", "dataset", targetDataset)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "juicefs", dataload.Spec.Dataset.Namespace)
 
@@ -130,11 +137,27 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	dataloadInfo.Options = options
 
-	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+	dsName := e.getFuseDaemonsetName()
+	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
+	if err != nil || len(pods) == 0 {
+		return
+	}
+	podNames := []string{}
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
+	}
+
+	dataLoadValue := JuiceDataLoadValue{
+		DataLoadInfo: dataloadInfo,
+		Namespace:    e.namespace,
+		PodNames:     podNames,
+	}
+
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
 		return
 	}
+	e.Log.Info("dataload value", "value", string(data))
 
 	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
 	if err != nil {

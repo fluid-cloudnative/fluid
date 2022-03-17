@@ -49,9 +49,12 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - events
+      - serviceaccounts
     verbs:
-      - '*'
+      - create
+      - list
+      - get
+      - delete
   - apiGroups:
       - apps
     resources:
@@ -61,6 +64,16 @@ rules:
       - statefulsets/status
     verbs:
       - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+    verbs:
+      - create
+      - list
+      - get
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
