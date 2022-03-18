@@ -116,9 +116,6 @@ spec:
           configMap:
             name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
-              - key: dataloader.juicefs.init
-                path: juicefs_env_init.sh
-                mode: 365
               - key: dataloader.distributedLoad
                 path: juicefs_dataload.sh
                 mode: 365
