@@ -18,6 +18,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
+    app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
 spec:
   backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}

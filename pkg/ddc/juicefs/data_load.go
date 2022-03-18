@@ -132,10 +132,8 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if err != nil {
 		return
 	}
-	if cacheinfo != nil {
-		for key, value := range cacheinfo {
-			options[key] = value
-		}
+	for key, value := range cacheinfo {
+		options[key] = value
 	}
 
 	dataloadInfo.Options = options
@@ -193,9 +191,9 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 	if err != nil {
 		return
 	}
-	mountPath := ""
-	if cacheinfo != nil {
-		mountPath = cacheinfo[MOUNTPATH]
+	mountPath := cacheinfo[MOUNTPATH]
+	if mountPath == "" {
+		return true, fmt.Errorf("fail to find mountpath in dataset %s %s", targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	}
 
 	// get fuse pod
