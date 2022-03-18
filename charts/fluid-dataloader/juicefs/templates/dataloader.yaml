@@ -29,6 +29,7 @@ spec:
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
+        app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
     spec:
       restartPolicy: OnFailure
