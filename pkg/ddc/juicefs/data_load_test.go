@@ -2,6 +2,7 @@ package juicefs
 
 import (
 	"errors"
+	appsv1 "k8s.io/api/apps/v1"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,16 +115,44 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 			},
 		},
 	}
+	daemonsetInputs := []appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juicefs-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"a": "b"},
+				},
+			},
+		},
+	}
+	podListInputs := []v1.PodList{{
+		Items: []v1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{"a": "b"},
+			},
+		}},
+	}}
 	testObjs := []runtime.Object{}
 	testObjs = append(testObjs, configMap)
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	for _, daemonsetInput := range daemonsetInputs {
+		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	}
+	for _, podInput := range podListInputs {
+		testObjs = append(testObjs, podInput.DeepCopy())
+	}
 	testScheme.AddKnownTypes(v1.SchemeGroupVersion, configMap)
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := &JuiceFSEngine{
-		name:   "hbase",
-		Client: client,
+		name:      "juicefs",
+		namespace: "fluid",
+		Client:    client,
+		Log:       log.NullLogger{},
 	}
 	ctx := cruntime.ReconcileRequestContext{
 		Log:      log.NullLogger{},
@@ -177,10 +206,44 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 		},
 	}
 
+	daemonsetInputs := []appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juicefs-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"a": "b"},
+				},
+			},
+		},
+	}
+	podListInputs := []v1.PodList{{
+		Items: []v1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "fluid",
+				Labels:    map[string]string{"a": "b"},
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+				Conditions: []v1.PodCondition{{
+					Type:   v1.PodReady,
+					Status: v1.ConditionTrue,
+				}},
+			},
+		}},
+	}}
 	testObjs := []runtime.Object{}
 	testObjs = append(testObjs, configMap)
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, daemonsetInput := range daemonsetInputs {
+		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	}
+	for _, podInput := range podListInputs {
+		testObjs = append(testObjs, podInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -234,17 +297,84 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 
 	for _, test := range testCases {
 		engine := JuiceFSEngine{
-			Client: client,
+			name:      "juicefs",
+			namespace: "fluid",
+			Client:    client,
+			Log:       log.NullLogger{},
 		}
-		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
-			t.Errorf("fail to generate the dataload value file")
+		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
+			t.Errorf("fail to generate the dataload value file: %v", err)
 		}
 	}
 }
 
 func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset-juicefs-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": valuesConfigMapData,
+		},
+	}
+
+	datasetInputs := []datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+		},
+	}
+
+	daemonsetInputs := []appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juicefs-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"a": "b"},
+				},
+			},
+		},
+	}
+	podListInputs := []v1.PodList{{
+		Items: []v1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "fluid",
+				Labels:    map[string]string{"a": "b"},
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+				Conditions: []v1.PodCondition{{
+					Type:   v1.PodReady,
+					Status: v1.ConditionTrue,
+				}},
+			},
+		}},
+	}}
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, configMap)
+	for _, datasetInput := range datasetInputs {
+		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, daemonsetInput := range daemonsetInputs {
+		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	}
+	for _, podInput := range podListInputs {
+		testObjs = append(testObjs, podInput.DeepCopy())
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
 	mockExecNotExist := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "does not exist", "", errors.New("other error")
+	}
+	mockExec := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+		return "", "", nil
 	}
 	wrappedUnhook := func() {
 		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
@@ -255,8 +385,9 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 
 	engine := JuiceFSEngine{
 		namespace: "fluid",
-		name:      "hbase",
+		name:      "juicefs",
 		Log:       log.NullLogger{},
+		Client:    client,
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecNotExist, nil)
@@ -265,6 +396,10 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 	}
 	targetDataload := datav1alpha1.DataLoad{
 		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
 			Target: []datav1alpha1.TargetPath{
 				{
 					Path:     "/tmp",
@@ -274,7 +409,15 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 		},
 	}
 	notExist, err := engine.CheckExistenceOfPath(targetDataload)
-	if !(err == nil && notExist == true) {
+	if !(err != nil && notExist == true) {
+		t.Errorf("fail to exec the function")
+	}
+	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	notExist, err = engine.CheckExistenceOfPath(targetDataload)
+	if !(err == nil && notExist == false) {
 		t.Errorf("fail to exec the function")
 	}
 	wrappedUnhook()

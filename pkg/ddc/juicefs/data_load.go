@@ -14,8 +14,11 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"io/ioutil"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"os"
+	"path/filepath"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -171,35 +174,50 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 }
 
 func (e *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
-	/*podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewJuiceFileUtils(podName, containerName, e.namespace, e.Log)
-	ready = fileUtils.Ready()
-	if !ready {
-		e.Log.Info("runtime not ready", "runtime", ready)
+	dsName := e.getFuseDaemonsetName()
+	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
+	if err != nil || len(pods) == 0 {
 		return false
-	}*/
+	}
+	for _, pod := range pods {
+		if !podutil.IsPodReady(&pod) {
+			return false
+		}
+	}
 	return true
 }
 
 func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	/*podName, containerName := e.getMasterPodInfo()
+	// get mount path
+	cacheinfo, err := GetCacheInfoFromConfigmap(e.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
+	if err != nil {
+		return
+	}
+	mountPath := ""
+	if cacheinfo != nil {
+		mountPath = cacheinfo[MOUNTPATH]
+	}
+
+	// get fuse pod
 	dsName := e.getFuseDaemonsetName()
-	pods, err := e.GetRunningPodsOfDaemonset(dsName, j.namespace)
+	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
 	if err != nil || len(pods) == 0 {
 		return true, err
 	}
+
+	// check path exist
 	for _, pod := range pods {
-		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSFuseContainer, j.namespace, j.Log)
+		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSFuseContainer, e.namespace, e.Log)
+		for _, target := range targetDataload.Spec.Target {
+			targetPath := filepath.Join(mountPath, target.Path)
+			isExist, err := fileUtils.IsExist(targetPath)
+			if err != nil {
+				return true, err
+			}
+			if !isExist {
+				return true, nil
+			}
+		}
 	}
-	fileUtils := operations.NewJuiceFileUtils(podName, containerName, e.namespace, e.Log)
-	for _, target := range targetDataload.Spec.Target {
-		isExist, err := fileUtils.IsExist(target.Path)
-		if err != nil {
-			return true, err
-		}
-		if !isExist {
-			return true, nil
-		}
-	}*/
 	return false, nil
 }
