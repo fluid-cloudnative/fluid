@@ -35,7 +35,7 @@ import (
 type JuiceDataLoadValue struct {
 	DataLoadInfo cdataload.DataLoadInfo `yaml:"dataloader"`
 	PodNames     []string               `yaml:"podNames"`
-	Namespace    string                 `yaml:"namespace"`
+	RuntimeName  string                 `yaml:"runtimeName"`
 }
 
 // CreateDataLoadJob creates the job to load data
@@ -150,7 +150,7 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	dataLoadValue := JuiceDataLoadValue{
 		DataLoadInfo: dataloadInfo,
-		Namespace:    e.namespace,
+		RuntimeName:  e.name,
 		PodNames:     podNames,
 	}
 

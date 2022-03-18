@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// G
+// GetCacheInfoFromConfigmap get cache info from configmap
 func GetCacheInfoFromConfigmap(client client.Client, name string, namespace string) (cacheinfo map[string]string, err error) {
 
 	configMapName := fmt.Sprintf("%s-juicefs-values", name)

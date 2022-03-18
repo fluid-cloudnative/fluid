@@ -25,10 +25,10 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ printf "%s-loader" .Release.Name }}
-    namespace: {{ .Values.namespace }}
+    namespace: {{ .Release.Namespace | quote }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace | quote }}

@@ -31,4 +31,4 @@ dataloader:
 
 podNames:
   - ""
-namespace: ""
+runtimeName: ""
