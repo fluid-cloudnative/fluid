@@ -52,7 +52,7 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 			return nil, err
 		}
 		configmapinfo[CACHEDIR] = value.Fuse.CacheDir
-		configmapinfo[COMMAND] = value.Fuse.Command
+		configmapinfo[COMMAND] = "/root/script/script.sh"
 		configmapinfo[MOUNTPATH] = value.Fuse.MountPath
 	}
 	return configmapinfo, nil

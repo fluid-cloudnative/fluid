@@ -115,13 +115,13 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 			},
 		},
 	}
-	daemonsetInputs := []appsv1.DaemonSet{
+	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-fuse",
+				Name:      "juicefs-worker",
 				Namespace: "fluid",
 			},
-			Spec: appsv1.DaemonSetSpec{
+			Spec: appsv1.StatefulSetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"a": "b"},
 				},
@@ -140,8 +140,8 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
-	for _, daemonsetInput := range daemonsetInputs {
-		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	for _, statefulsetInput := range statefulsetInputs {
+		testObjs = append(testObjs, statefulsetInput.DeepCopy())
 	}
 	for _, podInput := range podListInputs {
 		testObjs = append(testObjs, podInput.DeepCopy())
@@ -180,7 +180,7 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 	}
 	err = engine.CreateDataLoadJob(ctx, targetDataLoad)
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("fail to exec the function: %v", err)
 	}
 	wrappedUnhookCheckRelease()
 }
@@ -206,13 +206,13 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 		},
 	}
 
-	daemonsetInputs := []appsv1.DaemonSet{
+	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-fuse",
+				Name:      "juicefs-worker",
 				Namespace: "fluid",
 			},
-			Spec: appsv1.DaemonSetSpec{
+			Spec: appsv1.StatefulSetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"a": "b"},
 				},
@@ -239,8 +239,8 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
-	for _, daemonsetInput := range daemonsetInputs {
-		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	for _, statefulsetInput := range statefulsetInputs {
+		testObjs = append(testObjs, statefulsetInput.DeepCopy())
 	}
 	for _, podInput := range podListInputs {
 		testObjs = append(testObjs, podInput.DeepCopy())
@@ -329,13 +329,13 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 		},
 	}
 
-	daemonsetInputs := []appsv1.DaemonSet{
+	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-fuse",
+				Name:      "juicefs-worker",
 				Namespace: "fluid",
 			},
-			Spec: appsv1.DaemonSetSpec{
+			Spec: appsv1.StatefulSetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"a": "b"},
 				},
@@ -362,8 +362,8 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
-	for _, daemonsetInput := range daemonsetInputs {
-		testObjs = append(testObjs, daemonsetInput.DeepCopy())
+	for _, statefulsetInput := range statefulsetInputs {
+		testObjs = append(testObjs, statefulsetInput.DeepCopy())
 	}
 	for _, podInput := range podListInputs {
 		testObjs = append(testObjs, podInput.DeepCopy())

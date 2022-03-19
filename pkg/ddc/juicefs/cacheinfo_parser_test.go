@@ -56,7 +56,7 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	wantCacheInfo := map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/bin/mount.juicefs redis://xx.xx.xx.xx:6379/1 /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse -o metrics=0.0.0.0:9567,subdir=/dir1,cache-size=4096,free-space-ratio=0.1,cache-dir=/tmp/jfs-cache"}
+	wantCacheInfo := map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/root/script/script.sh"}
 	cacheinfo, err := GetCacheInfoFromConfigmap(fakeClient, dataSet.Name, dataSet.Namespace)
 	if err != nil {
 		t.Errorf("GetCacheInfoFromConfigmap failed.")
@@ -84,7 +84,7 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 					"data": valuesConfigMapData,
 				},
 			}},
-			wantCacheInfo: map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/bin/mount.juicefs redis://xx.xx.xx.xx:6379/1 /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse -o metrics=0.0.0.0:9567,subdir=/dir1,cache-size=4096,free-space-ratio=0.1,cache-dir=/tmp/jfs-cache"},
+			wantCacheInfo: map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/root/script/script.sh"},
 			wantErr:       false,
 		},
 	}

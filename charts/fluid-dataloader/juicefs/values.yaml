@@ -29,6 +29,6 @@ dataloader:
   # Description: the image that the DataLoad job uses
   image: #<juicefs-image>
 
-podNames:
-  - ""
-runtimeName: ""
+  # Optional
+  # Description: optional parameter DataLoad job uses
+  options:

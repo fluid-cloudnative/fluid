@@ -33,7 +33,11 @@ spec:
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: {{ printf "%s-loader" .Values.runtimeName }}
+      {{- range $key, $val := .Values.dataloader.options }}
+      {{- if eq $key "runtimeName" }}
+      serviceAccountName: {{ printf "%s-loader" $val | quote }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
@@ -52,11 +56,6 @@ spec:
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
 
-          {{- $podNames:= "" }}
-          {{- range .Values.podNames }}
-          {{- $podNames = cat $podNames (required "Pod name must be set" . ) ":" }}
-          {{- end }}
-          {{- $podNames = $podNames | nospace | trimSuffix ":" }}
           env:
             - name: STORAGE_ADDRESS
               valueFrom:
@@ -82,8 +81,12 @@ spec:
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "podNames" }}
             - name: POD_NAMES
-              value: {{ $podNames | quote }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
             - name: POD_NAMESPACE
               value: {{ .Release.Namespace | quote }}
           envFrom:

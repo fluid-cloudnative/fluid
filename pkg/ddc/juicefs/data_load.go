@@ -32,12 +32,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-type JuiceDataLoadValue struct {
-	DataLoadInfo cdataload.DataLoadInfo `yaml:"dataloader"`
-	PodNames     []string               `yaml:"podNames"`
-	RuntimeName  string                 `yaml:"runtimeName"`
-}
-
 // CreateDataLoadJob creates the job to load data
 func (e *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
@@ -136,10 +130,8 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		options[key] = value
 	}
 
-	dataloadInfo.Options = options
-
-	dsName := e.getFuseDaemonsetName()
-	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
+	stsName := e.getWorkerName()
+	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
@@ -147,11 +139,13 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
 	}
+	options["podNames"] = strings.Join(podNames, ":")
+	options["runtimeName"] = e.name
 
-	dataLoadValue := JuiceDataLoadValue{
+	dataloadInfo.Options = options
+
+	dataLoadValue := cdataload.DataLoadValue{
 		DataLoadInfo: dataloadInfo,
-		RuntimeName:  e.name,
-		PodNames:     podNames,
 	}
 
 	data, err := yaml.Marshal(dataLoadValue)
@@ -172,8 +166,8 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 }
 
 func (e *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
-	dsName := e.getFuseDaemonsetName()
-	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
+	stsName := e.getWorkerName()
+	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
 	if err != nil || len(pods) == 0 {
 		return false
 	}
@@ -192,30 +186,35 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 		return
 	}
 	mountPath := cacheinfo[MOUNTPATH]
+	mountCommand := cacheinfo[COMMAND]
 	if mountPath == "" {
 		return true, fmt.Errorf("fail to find mountpath in dataset %s %s", targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	}
 
-	// get fuse pod
-	dsName := e.getFuseDaemonsetName()
-	pods, err := e.GetRunningPodsOfDaemonset(dsName, e.namespace)
+	// get worker pod
+	stsName := e.getWorkerName()
+	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
 	if err != nil || len(pods) == 0 {
 		return true, err
 	}
 
 	// check path exist
-	for _, pod := range pods {
-		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSFuseContainer, e.namespace, e.Log)
-		for _, target := range targetDataload.Spec.Target {
-			targetPath := filepath.Join(mountPath, target.Path)
-			isExist, err := fileUtils.IsExist(targetPath)
-			if err != nil {
-				return true, err
-			}
-			if !isExist {
-				return true, nil
-			}
+	pod := pods[0]
+	fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, e.namespace, e.Log)
+	err = fileUtils.Run([]string{"sh", mountCommand})
+	if err != nil {
+		return true, err
+	}
+	defer fileUtils.UnMount(mountPath)
+	for _, target := range targetDataload.Spec.Target {
+		targetPath := filepath.Join(mountPath, target.Path)
+		isExist, err := fileUtils.IsExist(targetPath)
+		if err != nil {
+			return true, err
+		}
+		if !isExist {
+			return true, nil
 		}
 	}
-	return false, nil
+	return false, err
 }
