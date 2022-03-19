@@ -23,9 +23,9 @@ data:
 
           for((j=0;j<${#paths[@]};j++)) do
             echo -e "juicefs warmup on $pod ${paths[j]} starts"
-            /usr/local/bin/kubectl -n $ns exec -it $pod -- $COMMAND
-            /usr/local/bin/kubectl -n $ns exec -it $pod -- juicefs warmup $MOUNTPATH${paths[j]}
-            /usr/local/bin/kubectl -n $ns exec -it $pod -- umount $MOUNTPATH
+            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=10s -- $COMMAND
+            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=1m -- juicefs warmup $MOUNTPATH${paths[j]}
+            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=10s -- umount $MOUNTPATH
             echo -e "juicefs warmup on $pod ${paths[j]} ends"
           done
         done

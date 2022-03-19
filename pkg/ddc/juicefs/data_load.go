@@ -205,7 +205,10 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 	if err != nil {
 		return true, err
 	}
-	defer fileUtils.UnMount(mountPath)
+	defer func() {
+		err = fileUtils.UnMount(mountPath)
+		e.Log.Error(err, "umount", "error", err)
+	}()
 	for _, target := range targetDataload.Spec.Target {
 		targetPath := filepath.Join(mountPath, target.Path)
 		isExist, err := fileUtils.IsExist(targetPath)
