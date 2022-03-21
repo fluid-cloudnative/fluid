@@ -39,7 +39,7 @@ const (
 	JuiceAccessKey = "access-key"
 	JuiceSecretKey = "secret-key"
 
-	CACHEDIR  = "cachedir"
-	MOUNTPATH = "mountpath"
-	COMMAND   = "command"
+	CacheDir               = "cachedir"
+	MountPath              = "mountpath"
+	DefaultDataLoadTimeout = "30m"
 )

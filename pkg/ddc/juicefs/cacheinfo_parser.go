@@ -51,9 +51,8 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
 			return nil, err
 		}
-		configmapinfo[CACHEDIR] = value.Fuse.CacheDir
-		configmapinfo[COMMAND] = "/root/script/script.sh"
-		configmapinfo[MOUNTPATH] = value.Fuse.MountPath
+		configmapinfo[CacheDir] = value.Fuse.CacheDir
+		configmapinfo[MountPath] = value.Fuse.MountPath
 	}
 	return configmapinfo, nil
 }

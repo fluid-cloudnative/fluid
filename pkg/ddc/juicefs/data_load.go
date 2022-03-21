@@ -141,6 +141,9 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	}
 	options["podNames"] = strings.Join(podNames, ":")
 	options["runtimeName"] = e.name
+	if _, ok := options["timeout"]; !ok {
+		options["timeout"] = DefaultDataLoadTimeout
+	}
 
 	dataloadInfo.Options = options
 
@@ -185,8 +188,7 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 	if err != nil {
 		return
 	}
-	mountPath := cacheinfo[MOUNTPATH]
-	mountCommand := cacheinfo[COMMAND]
+	mountPath := cacheinfo[MountPath]
 	if mountPath == "" {
 		return true, fmt.Errorf("fail to find mountpath in dataset %s %s", targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	}
@@ -201,14 +203,6 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 	// check path exist
 	pod := pods[0]
 	fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, e.namespace, e.Log)
-	err = fileUtils.Run([]string{"sh", mountCommand})
-	if err != nil {
-		return true, err
-	}
-	defer func() {
-		err = fileUtils.UnMount(mountPath)
-		e.Log.Error(err, "umount", "error", err)
-	}()
 	for _, target := range targetDataload.Spec.Target {
 		targetPath := filepath.Join(mountPath, target.Path)
 		isExist, err := fileUtils.IsExist(targetPath)

@@ -72,8 +72,12 @@ spec:
             - name: MOUNTPATH
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "command" }}
-            - name: COMMAND
+            {{- if eq $key "podNames" }}
+            - name: POD_NAMES
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "timeout" }}
+            - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
             {{- end }}
@@ -81,12 +85,6 @@ spec:
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
-            {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "podNames" }}
-            - name: POD_NAMES
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- end }}
             - name: POD_NAMESPACE
               value: {{ .Release.Namespace | quote }}
           envFrom:

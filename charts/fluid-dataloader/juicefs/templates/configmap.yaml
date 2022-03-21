@@ -14,6 +14,11 @@ data:
         paths="$DATA_PATH"
         paths=(${paths//:/ })
 
+        targetPath=""
+        for((j=0;j<${#paths[@]};j++)) do
+          targetPath="$targetPath $MOUNTPATH${paths[j]}"
+        done
+
         podNames="$POD_NAMES"
         podNames=(${podNames//:/ })
 
@@ -21,13 +26,9 @@ data:
         for((i=0;i<${#podNames[@]};i++)) do
           local pod="${podNames[i]}"
 
-          for((j=0;j<${#paths[@]};j++)) do
-            echo -e "juicefs warmup on $pod ${paths[j]} starts"
-            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=10s -- $COMMAND
-            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=1m -- juicefs warmup $MOUNTPATH${paths[j]}
-            /usr/local/bin/kubectl -n $ns exec -it $pod --request-timeout=10s -- umount $MOUNTPATH
-            echo -e "juicefs warmup on $pod ${paths[j]} ends"
-          done
+          echo -e "juicefs warmup on $pod $targetPath starts"
+          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT juicefs warmup $targetPath
+          echo -e "juicefs warmup on $pod $targetPath ends"
         done
     }
     main "$@"

@@ -56,7 +56,7 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	wantCacheInfo := map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/root/script/script.sh"}
+	wantCacheInfo := map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse"}
 	cacheinfo, err := GetCacheInfoFromConfigmap(fakeClient, dataSet.Name, dataSet.Namespace)
 	if err != nil {
 		t.Errorf("GetCacheInfoFromConfigmap failed.")
@@ -84,7 +84,7 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 					"data": valuesConfigMapData,
 				},
 			}},
-			wantCacheInfo: map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "command": "/root/script/script.sh"},
+			wantCacheInfo: map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse"},
 			wantErr:       false,
 		},
 	}

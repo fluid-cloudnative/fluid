@@ -58,7 +58,7 @@ spec:
               memory: {{ .Values.worker.resources.requests.memory }}
             {{- end }}
           {{- end }}
-          command: ["sh", "-c", "sleep infinity"]
+          command: ["sh", "/root/script/script.sh"]
           securityContext:
             privileged: true
           {{- if .Values.worker.ports }}
@@ -66,6 +66,8 @@ spec:
 {{ toYaml .Values.worker.ports | trim | indent 10  }}
           {{- end }}
           env:
+          - name: JFS_FOREGROUND
+            value: "1"
           {{- if .Values.worker.envs }}
 {{ toYaml .Values.worker.envs | trim | indent 10  }}
           {{- end }}
@@ -90,6 +92,21 @@ spec:
                 name: {{ .Values.fuse.secretkeySecret }}
                 key: secret-key
           {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'if [ x$({{ .Values.fuse.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
+            failureThreshold: 3
+            initialDelaySeconds: 1
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
             - mountPath: /root/script
               name: script

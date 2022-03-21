@@ -66,36 +66,6 @@ func (j JuiceFileUtils) LoadMetadataWithoutTimeout(juicefsPath string) (err erro
 	return
 }
 
-func (j JuiceFileUtils) Run(command []string) (err error) {
-	var (
-		stdout string
-		stderr string
-	)
-
-	stdout, stderr, err = j.exec(command, true)
-	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-		return err
-	}
-	return
-}
-
-// UnMount juicefs unmount
-func (j JuiceFileUtils) UnMount(mountPath string) (err error) {
-	var (
-		command = []string{"umount", mountPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = j.exec(command, true)
-	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-		return err
-	}
-	return
-}
-
 // IsExist checks if the juicePath exists
 func (j JuiceFileUtils) IsExist(juiceSubPath string) (found bool, err error) {
 	var (
