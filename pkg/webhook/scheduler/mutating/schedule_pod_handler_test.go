@@ -101,8 +101,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/noexist/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/noexist/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -232,8 +232,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/done/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/done/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -360,8 +360,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/pod-with-csi/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/pod-with-csi/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -497,8 +497,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/pod-with-fluid/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/pod-with-fluid/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},

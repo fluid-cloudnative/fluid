@@ -96,8 +96,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	   https://github.com/Alluxio/alluxio/blob/master/integration/fuse/bin/alluxio-fuse
 	*/
 
-	fluidPath := req.GetVolumeContext()["fluid_path"]
-	mountType := req.GetVolumeContext()["mount_type"]
+	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
+	mountType := req.GetVolumeContext()[common.VolumeAttrMountType]
 	if fluidPath == "" {
 		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
@@ -310,8 +310,8 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, volumeId string) (namespace string, name string, err error) {
 	// Fast path to check namespace && name in volume context
 	if len(volumeContext) != 0 {
-		runtimeName, nameFound := volumeContext["runtime_name"]
-		runtimeNamespace, nsFound := volumeContext["runtime_namespace"]
+		runtimeName, nameFound := volumeContext[common.VolumeAttrName]
+		runtimeNamespace, nsFound := volumeContext[common.VolumeAttrNamespace]
 		if nameFound && nsFound {
 			return runtimeNamespace, runtimeName, nil
 		}
