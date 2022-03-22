@@ -87,6 +87,16 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 			wantCacheInfo: map[string]string{"cachedir": "/tmp/jfs-cache", "mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse"},
 			wantErr:       false,
 		},
+		{
+			name: "parseCacheInfoFromConfigMap-err",
+			args: args{configMap: &v1.ConfigMap{
+				Data: map[string]string{
+					"data": `test`,
+				},
+			}},
+			wantCacheInfo: nil,
+			wantErr:       true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -32,7 +32,7 @@ func GetCacheInfoFromConfigmap(client client.Client, name string, namespace stri
 	configMapName := fmt.Sprintf("%s-juicefs-values", name)
 	configMap, err := kubeclient.GetConfigmapByName(client, configMapName, namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetConfigMapByName when GetCacheInfoFromConfigmap")
+		return nil, errors.Wrap(err, "GetConfigMapByName error when GetCacheInfoFromConfigmap")
 	}
 
 	cacheinfo, err = parseCacheInfoFromConfigMap(configMap)

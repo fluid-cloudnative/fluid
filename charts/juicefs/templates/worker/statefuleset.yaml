@@ -125,4 +125,4 @@ spec:
         - name: script
           configMap:
             name: {{ template "juicefs.fullname" . }}-script
-            defaultMode: 0777
+            defaultMode: 0755

@@ -72,9 +72,9 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 	mockExecCheckReleaseCommon := func(name string, namespace string) (exist bool, err error) {
 		return false, nil
 	}
-	//mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
-	//	return false, errors.New("fail to check release")
-	//}
+	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
+		return false, errors.New("fail to check release")
+	}
 	mockExecInstallReleaseCommon := func(name string, namespace string, valueFile string, chartName string) error {
 		return nil
 	}
@@ -160,7 +160,17 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 		Recorder: record.NewFakeRecorder(1),
 	}
 
-	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommon, nil)
+	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = engine.CreateDataLoadJob(ctx, targetDataLoad)
+	if err == nil {
+		t.Errorf("fail to catch the error: %v", err)
+	}
+	wrappedUnhookCheckRelease()
+
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -261,6 +271,133 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 				Name:      "test-dataset",
 				Namespace: "fluid",
 			},
+		},
+	}
+	dataLoadWithTarget := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Target: []datav1alpha1.TargetPath{
+				{
+					Path: "/test",
+				},
+			},
+		},
+	}
+
+	var testCases = []struct {
+		dataLoad       datav1alpha1.DataLoad
+		expectFileName string
+	}{
+		{
+			dataLoad:       dataLoadNoTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+		},
+		{
+			dataLoad:       dataLoadWithTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+		},
+	}
+
+	for _, test := range testCases {
+		engine := JuiceFSEngine{
+			name:      "juicefs",
+			namespace: "fluid",
+			Client:    client,
+			Log:       log.NullLogger{},
+		}
+		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
+			t.Errorf("fail to generate the dataload value file: %v", err)
+		}
+	}
+}
+
+func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset-juicefs-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": ``,
+		},
+	}
+
+	datasetInputs := []datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+		},
+	}
+
+	statefulsetInputs := []appsv1.StatefulSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juicefs-worker",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"a": "b"},
+				},
+			},
+		},
+	}
+	podListInputs := []v1.PodList{{
+		Items: []v1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "fluid",
+				Labels:    map[string]string{"a": "b"},
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+				Conditions: []v1.PodCondition{{
+					Type:   v1.PodReady,
+					Status: v1.ConditionTrue,
+				}},
+			},
+		}},
+	}}
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, configMap)
+	for _, datasetInput := range datasetInputs {
+		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, statefulsetInput := range statefulsetInputs {
+		testObjs = append(testObjs, statefulsetInput.DeepCopy())
+	}
+	for _, podInput := range podListInputs {
+		testObjs = append(testObjs, podInput.DeepCopy())
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	context := cruntime.ReconcileRequestContext{
+		Client: client,
+	}
+
+	dataLoadNoTarget := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Target: []datav1alpha1.TargetPath{{
+				Path:     "/dir",
+				Replicas: 1,
+			}},
 		},
 	}
 	dataLoadWithTarget := datav1alpha1.DataLoad{
@@ -421,4 +558,104 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 		t.Errorf("fail to exec the function")
 	}
 	wrappedUnhook()
+}
+
+func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		sts       appsv1.StatefulSet
+		podList   v1.PodList
+		wantReady bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "juicefs-test",
+				namespace: "fluid",
+			},
+			sts: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "juicefs-test-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"a": "b"},
+					},
+				},
+			},
+			podList: v1.PodList{
+				Items: []v1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "fluid",
+						Labels:    map[string]string{"a": "b"},
+					},
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{{
+							Type:   v1.PodReady,
+							Status: v1.ConditionTrue,
+						}},
+					},
+				}},
+			},
+			wantReady: true,
+		},
+		{
+			name: "test-err",
+			fields: fields{
+				name:      "juicefs",
+				namespace: "fluid",
+			},
+			sts: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "juicefs-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"a": "b"},
+					},
+				},
+			},
+			podList: v1.PodList{
+				Items: []v1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "fluid",
+						Labels:    map[string]string{"a": "b"},
+					},
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{{
+							Type:   v1.PodReady,
+							Status: v1.ConditionFalse,
+						}},
+					},
+				}},
+			},
+			wantReady: false,
+		},
+	}
+	for _, tt := range tests {
+		testObjs := []runtime.Object{}
+		t.Run(tt.name, func(t *testing.T) {
+			testObjs = append(testObjs, tt.sts.DeepCopy())
+			testObjs = append(testObjs, tt.podList.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			e := &JuiceFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+				Log:       log.NullLogger{},
+			}
+			if gotReady := e.CheckRuntimeReady(); gotReady != tt.wantReady {
+				t.Errorf("CheckRuntimeReady() = %v, want %v", gotReady, tt.wantReady)
+			}
+		})
+	}
 }

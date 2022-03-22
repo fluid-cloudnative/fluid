@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"io/ioutil"
-	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"os"
 	"path/filepath"
 	"strings"
@@ -173,11 +172,6 @@ func (e *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
 	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
 	if err != nil || len(pods) == 0 {
 		return false
-	}
-	for _, pod := range pods {
-		if !podutil.IsPodReady(&pod) {
-			return false
-		}
 	}
 	return true
 }
