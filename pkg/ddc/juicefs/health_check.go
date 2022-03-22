@@ -19,8 +19,9 @@ package juicefs
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
@@ -217,9 +218,4 @@ func (j *JuiceFSEngine) checkFuseHealthy() (err error) {
 			fuses.Status.UpdatedNumberScheduled)
 	}
 	return err
-}
-
-func (j JuiceFSEngine) CheckRuntimeReady() (ready bool) {
-	// todo
-	return
 }
