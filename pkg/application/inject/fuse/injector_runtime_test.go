@@ -71,8 +71,8 @@ func TestInjectList(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},

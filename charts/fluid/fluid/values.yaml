@@ -6,7 +6,7 @@ workdir: /tmp
 
 dataset:
   controller:
-    image: fluidcloudnative/dataset-controller:v0.8.0-44d032f
+    image: fluidcloudnative/dataset-controller:v0.8.0-b491ba8
 
 csi:
   featureGates: "FuseRecovery=false"
@@ -15,7 +15,7 @@ csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.8.0-44d032f
+    image: fluidcloudnative/fluid-csi:v0.8.0-b491ba8
   kubelet:
     rootDir: /var/lib/kubelet
 
@@ -28,9 +28,9 @@ runtime:
     portRange: 20000-26000
     enabled: true
     init:
-      image: fluidcloudnative/init-users:v0.8.0-44d032f
+      image: fluidcloudnative/init-users:v0.8.0-b491ba8
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v0.8.0-44d032f
+      image: fluidcloudnative/alluxioruntime-controller:v0.8.0-b491ba8
     runtime:
       image: registry.aliyuncs.com/alluxio/alluxio:release-2.7.2-SNAPSHOT-3714f2b
     fuse:
@@ -44,19 +44,19 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.8.0
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v0.8.0-44d032f
+      image: fluidcloudnative/jindoruntime-controller:v0.8.0-b491ba8
     init:
       portCheck:
         enabled: false
-      image: fluidcloudnative/init-users:v0.8.0-44d032f
+      image: fluidcloudnative/init-users:v0.8.0-b491ba8
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000
     enabled: false
     init:
-      image: fluidcloudnative/init-users:v0.8.0-44d032f
+      image: fluidcloudnative/init-users:v0.8.0-b491ba8
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v0.8.0-44d032f
+      image: fluidcloudnative/goosefsruntime-controller:v0.8.0-b491ba8
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -64,16 +64,16 @@ runtime:
   juicefs:
     enabled: false
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v0.8.0-44d032f
+      image: fluidcloudnative/juicefsruntime-controller:v0.8.0-b491ba8
     fuse:
-      image: juicedata/juicefs-csi-driver:v0.11.0
+      image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0-beta2
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v0.8.0-44d032f
+  image: fluidcloudnative/fluid-webhook:v0.8.0-b491ba8
   replicas: 1
 
 fluidapp:
   enabled: true
   controller:
-    image: fluidcloudnative/application-controller:v0.8.0-44d032f
+    image: fluidcloudnative/application-controller:v0.8.0-b491ba8

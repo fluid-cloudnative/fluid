@@ -23,7 +23,7 @@ import (
 
 // Register initializes the csi driver and registers it to the controller manager.
 func Register(mgr manager.Manager, cfg config.Config) error {
-	csiDriver := NewDriver(cfg.NodeId, cfg.Endpoint, mgr.GetClient())
+	csiDriver := NewDriver(cfg.NodeId, cfg.Endpoint, mgr.GetClient(), mgr.GetAPIReader())
 
 	if err := mgr.Add(csiDriver); err != nil {
 		return err

@@ -47,12 +47,6 @@ rules:
     verbs:
       - '*'
   - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - '*'
-  - apiGroups:
       - apps
     resources:
       - daemonsets
