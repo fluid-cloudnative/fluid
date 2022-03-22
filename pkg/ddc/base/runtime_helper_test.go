@@ -76,8 +76,8 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -180,8 +180,8 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -281,8 +281,8 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -389,8 +389,8 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -548,8 +548,8 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -653,8 +653,8 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -754,8 +754,8 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
