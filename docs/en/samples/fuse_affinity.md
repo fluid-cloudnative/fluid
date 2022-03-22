@@ -44,7 +44,7 @@ $ kubectl label nodes cn-beijing.172.16.0.101 select-node=true
 node/cn-beijing.172.16.0.101 labeled
 ```
 
-In the next steps, we will use the `NodeSelector` to manage the deployment scope of the Fuse client, so mark the desired node here.
+In the next steps, we will use the `NodeSelector` to decide which node to deploy the Fuse client. Firstly, we label the desired node here.
 
 **Check nodes again**
 
@@ -55,7 +55,7 @@ cn-beijing.172.16.0.101   Ready    <none>   13h   v1.20.11-aliyun.1   true
 cn-beijing.172.16.0.99    Ready    <none>   23h   v1.20.11-aliyun.1 
 ```
 
-Currently, out of all 2 nodes, only one node has the `select-node=true` tag added, and next, we hope that the Fuse client will only be deployed on this node.
+Currently, out of all 2 nodes, only one node has the `select-node=true` label added, and next, we hope that the Fuse client will only be deployed on this node.
 
 **Check the `Dataset` object to be created**
 
@@ -102,7 +102,7 @@ spec:
 EOF
 ```
 
-In this configuration file fragment, use `spec.fuse.nodeSelector` to set AlluxioRuntime to the node just marked with `select-node=true`
+In this configuration snippet, use `spec.fuse.nodeSelector` to set AlluxioRuntime to the node just marked with `select-node=true`
 
 **Create `AlluxioRuntime` object **
 
@@ -192,11 +192,11 @@ nginx-766564fc7-rtmwh   1/1     Running   0          41m   10.73.0.135    cn-bei
 
 It can be seen that the Fuse client is only started on the node `cn-beijing.172.16.0.101` with the `select-node=true` label.
 
-One of the two pods (`nginx-766564fc7-rtmwh`) is started on node `cn-beijing.172.16.0.101` because of `PodAntiAffinity` between pods, the other pod (`nginx-766564fc7-8vz4s`) which should be started on another node `cn-beijing.172.16.0.99`, but due to the limitation of `spec.fuse.nodeSelector`, it cannot be scheduled and is in pending state.
+One of the two pods (`nginx-766564fc7-rtmwh`) is started on node `cn-beijing.172.16.0.101` . The other pod (`nginx-766564fc7-8vz4s`), which can only be scheduled on another node `cn-beijing.172.16.0.99` due to the `PodAntiAffinity` constraint,  is in pending state because of the `spec.fuse.nodeSelector` constraint.
 
 **start all pods**
 
-In order to prove that the pod is not scheduled because of the limitation of `spec.fuse.nodeSelector`, we also mark the node `cn-beijing.172.16.0.99` with `select-node=true`, you can find the Fuse Pod and Nginx Pod of this node All started.
+In order to prove that the pod is not scheduled because of the limitation of `spec.fuse.nodeSelector`, we also label the node `cn-beijing.172.16.0.99` with `select-node=true`, you can find the Fuse Pod and Nginx Pod of this node All started.
 
 ```
 $ kubectl label nodes cn-beijing.172.16.0.99 select-node=true
