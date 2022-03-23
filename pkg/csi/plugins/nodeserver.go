@@ -41,6 +41,10 @@ import (
 	"k8s.io/utils/mount"
 )
 
+const (
+	AllowPatchStaleNodeEnv = "ALLOW_PATCH_STALE_NODE"
+)
+
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
@@ -315,7 +319,7 @@ func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, 
 		runtimeName, nameFound := volumeContext[common.VolumeAttrName]
 		runtimeNamespace, nsFound := volumeContext[common.VolumeAttrNamespace]
 		if nameFound && nsFound {
-			glog.Infof("Get runtime namespace(%s) and name(%s) from volume context", runtimeNamespace, runtimeName)
+			glog.V(3).Infof("Get runtime namespace(%s) and name(%s) from volume context", runtimeNamespace, runtimeName)
 			return runtimeNamespace, runtimeName, nil
 		}
 	}
@@ -327,15 +331,18 @@ func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, 
 
 // getNode first checks cached node
 func (ns *nodeServer) getNode() (node *v1.Node, err error) {
-	if ns.node != nil {
-		glog.V(1).Infof("Found cached node %s", ns.node.Name)
-		return ns.node, nil
+	// Default to allow patch stale node info
+	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || "true" == envVar {
+		if ns.node != nil {
+			glog.V(3).Infof("Found cached node %s", ns.node.Name)
+			return ns.node, nil
+		}
 	}
 
 	if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
 		return nil, err
 	}
-	glog.Infof("Got node %s from api server", node.Name)
+	glog.V(1).Infof("Got node %s from api server", node.Name)
 	ns.node = node
 	return ns.node, nil
 }
