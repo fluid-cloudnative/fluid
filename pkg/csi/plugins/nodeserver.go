@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,12 +41,17 @@ import (
 	"k8s.io/utils/mount"
 )
 
+const (
+	AllowPatchStaleNodeEnv = "ALLOW_PATCH_STALE_NODE"
+)
+
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
 	client    client.Client
 	apiReader client.Reader
 	mutex     sync.Mutex
+	node      *v1.Node
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -234,7 +240,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Delete(fuseLabelKey)
 
-	node, err := kubeclient.GetNode(ns.apiReader, ns.nodeId)
+	node, err := ns.getNode()
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
@@ -266,7 +272,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
 
-	node, err := kubeclient.GetNode(ns.apiReader, ns.nodeId)
+	node, err := ns.getNode()
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
@@ -313,12 +319,32 @@ func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, 
 		runtimeName, nameFound := volumeContext[common.VolumeAttrName]
 		runtimeNamespace, nsFound := volumeContext[common.VolumeAttrNamespace]
 		if nameFound && nsFound {
+			glog.V(3).Infof("Get runtime namespace(%s) and name(%s) from volume context", runtimeNamespace, runtimeName)
 			return runtimeNamespace, runtimeName, nil
 		}
 	}
 
 	// Fallback: query API Server to get namespaced name
+	glog.Infof("Get runtime namespace and name directly from api server with volumeId %s", volumeId)
 	return volume.GetNamespacedNameByVolumeId(ns.apiReader, volumeId)
+}
+
+// getNode first checks cached node
+func (ns *nodeServer) getNode() (node *v1.Node, err error) {
+	// Default to allow patch stale node info
+	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || "true" == envVar {
+		if ns.node != nil {
+			glog.V(3).Infof("Found cached node %s", ns.node.Name)
+			return ns.node, nil
+		}
+	}
+
+	if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
+		return nil, err
+	}
+	glog.V(1).Infof("Got node %s from api server", node.Name)
+	ns.node = node
+	return ns.node, nil
 }
 
 func checkMountInUse(volumeName string) (bool, error) {
