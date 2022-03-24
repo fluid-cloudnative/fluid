@@ -431,7 +431,7 @@ func TestUpdateMountTime(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
@@ -482,7 +482,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
@@ -518,7 +518,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
