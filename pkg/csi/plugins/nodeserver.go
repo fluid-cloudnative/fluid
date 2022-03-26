@@ -278,14 +278,10 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
 	}
 
-	if _, ok := node.Labels[fuseLabelKey]; !ok {
-		_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
-		if err != nil {
-			glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
-			return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
-		}
-	} else {
-		glog.Info("NodeStageVolume: label already exists on node", "label", fuseLabelKey, "node", node)
+	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	if err != nil {
+		glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
