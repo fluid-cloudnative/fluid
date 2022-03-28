@@ -34,8 +34,7 @@ type controllerServer struct {
 }
 
 func (cs *controllerServer) ControllerGetVolume(ctx context.Context, request *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
