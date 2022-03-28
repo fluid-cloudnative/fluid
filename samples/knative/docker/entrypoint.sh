@@ -7,7 +7,7 @@ timestamp() {
 
 echo Begin loading models at $(timestamp)
 
-time cp /data/hbase-2.4.9-client-bin.tar.gz /tmp
+time cp -r /data/ /tmp
 
 echo Finish loading models at $(timestamp)
 

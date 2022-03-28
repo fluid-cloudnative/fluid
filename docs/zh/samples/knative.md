@@ -151,18 +151,18 @@ $ kubectl get po model-serving-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
     name: fluid-fuse
 ```
 
-查看 Knative Serving 启动速度,可以看到启动加载数据的时间是**43s**
+查看 Knative Serving 启动速度,可以看到启动加载数据的时间是**92s**
 
 ```shell
 $ kubectl logs model-serving-00001-deployment-64d674d75f-46vvf -c user-container
 Begin loading models at 16:29:02
 
-real  0m43.480s
+real  1m32.639s
 user  0m0.001s
-sys 0m0.956s
+sys 0m1.305s
 Finish loading models at 16:29:45
 2022-02-15 16:29:45 INFO Hello world sample started.
-```
+``****`
 
 清理knative serving实例
 
@@ -207,15 +207,15 @@ $ kubectl create -f serving.yaml
 service.serving.knative.dev/model-serving created
 ```
 
-此时查看启动时间发现当前启动加载数据的时间是**2.19s**, 变成没有预热的情况下性能的**1/20**
+此时查看启动时间发现当前启动加载数据的时间是**3.66s**, 变成没有预热的情况下性能的**1/20**
 
 ```
 kubectl logs model-serving-00001-deployment-6cb54f94d7-dbgxf -c user-container
 Begin loading models at 18:38:23
 
-real  0m2.190s
+real  0m3.666s
 user  0m0.000s
-sys 0m0.899s
+sys 0m1.367s
 Finish loading models at 18:38:25
 2022-02-15 18:38:25 INFO Hello world sample started.
 ```
