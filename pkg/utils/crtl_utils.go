@@ -17,6 +17,7 @@ package utils
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"strings"
 	"time"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -87,6 +88,17 @@ func Now() *metav1.Time {
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsSubString Determine whether the string array contains a sub string
+// return true if contains the string and return false if not.
+func ContainsSubString(slice []string, s string) bool {
+	for _, item := range slice {
+		if strings.Contains(item, s) {
 			return true
 		}
 	}

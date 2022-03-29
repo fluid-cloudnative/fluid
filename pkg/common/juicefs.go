@@ -32,7 +32,10 @@ const (
 
 	DefaultJuiceFSRuntimeImage = "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0-beta2"
 
-	JuiceFSMountPath = "/bin/mount.juicefs"
+	JuiceFSCeMountPath = "/bin/mount.juicefs"
+	JuiceFSMountPath   = "/sbin/mount.juicefs"
+	JuiceCeCliPath     = "/usr/local/bin/juicefs"
+	JuiceCliPath       = "/usr/bin/juicefs"
 
 	JuiceFSFuseContainer = "juicefs-fuse"
 

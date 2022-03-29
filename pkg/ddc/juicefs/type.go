@@ -24,6 +24,8 @@ import (
 // JuiceFS The value yaml file
 type JuiceFS struct {
 	FullnameOverride string `yaml:"fullnameOverride"`
+	IsCE             bool   `yaml:"isCe,omitempty"`
+	Source           string `yaml:"source,omitempty"`
 
 	common.ImageInfo `yaml:",inline"`
 	common.UserInfo  `yaml:",inline"`
@@ -42,6 +44,7 @@ type Worker struct {
 	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources       `yaml:"resources,omitempty"`
 	CacheDir        string                 `yaml:"cacheDir,omitempty"`
+	Command         string                 `yaml:"command,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 }
@@ -53,6 +56,7 @@ type Fuse struct {
 	SecretKeySecret string            `yaml:"secretkeySecret,omitempty"`
 	Bucket          string            `yaml:"bucket,omitempty"`
 	MetaUrlSecret   string            `yaml:"metaurlSecret,omitempty"`
+	TokenSecret     string            `yaml:"tokenSecret,omitempty"`
 	Storage         string            `yaml:"storage,omitempty"`
 	Image           string            `yaml:"image,omitempty"`
 	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
@@ -64,6 +68,7 @@ type Fuse struct {
 	HostMountPath   string            `yaml:"hostMountPath,omitempty"`
 	Command         string            `yaml:"command,omitempty"`
 	StatCmd         string            `yaml:"statCmd,omitempty"`
+	FormatCmd       string            `yaml:"formatCmd,omitempty"`
 	Enabled         bool              `yaml:"enabled,omitempty"`
 	Resources       common.Resources  `yaml:"resources,omitempty"`
 	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
