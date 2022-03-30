@@ -12,7 +12,7 @@ import (
 )
 
 func TestLoggingErrorExceptConflict(t *testing.T) {
-	logger := logr.New(testLog.NullLogSink{})
+	logger := fake.NullLogger()
 	result := LoggingErrorExceptConflict(logger,
 		apierrors.NewConflict(schema.GroupResource{},
 			"test",

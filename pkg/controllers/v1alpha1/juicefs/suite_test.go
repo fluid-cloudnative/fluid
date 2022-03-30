@@ -16,7 +16,6 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/go-logr/logr"
 	"path/filepath"
 	"testing"
 
@@ -30,6 +29,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,7 +49,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(logr.New(logf.NullLogSink{}))
+	logf.SetLogger(fake.NullLogger())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
