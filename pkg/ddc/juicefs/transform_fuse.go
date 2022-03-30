@@ -109,11 +109,10 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceMetaUrl:
 			source = "${METAURL}"
 			value.Fuse.MetaUrlSecret = secretKeyRef.Name
-			v, ok := secret.Data[secretKeyRef.Key]
+			_, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
 				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
-			source = string(v)
 			value.IsCE = true
 		case JuiceAccessKey:
 			value.Fuse.AccessKeySecret = secretKeyRef.Name
@@ -233,5 +232,4 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS) {
 		cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
 		value.Fuse.FormatCmd = strings.Join(cmd, " ")
 	}
-	return
 }
