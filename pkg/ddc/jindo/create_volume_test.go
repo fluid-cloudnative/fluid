@@ -10,7 +10,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCreateVolume(t *testing.T) {
@@ -38,7 +37,7 @@ func TestCreateVolume(t *testing.T) {
 
 	engine := &JindoEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
@@ -101,7 +100,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 
 	engine := &JindoEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
@@ -148,7 +147,7 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 
 	engine := &JindoEngine{
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,

@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -204,7 +203,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &AlluxioEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &AlluxioEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -261,7 +260,7 @@ func TestAlluxioEngineCleanAll(t *testing.T) {
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
-				log: log.NullLogger{},
+				log: fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -365,7 +364,7 @@ func TestAlluxioEngineCleanupCache(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "field",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},

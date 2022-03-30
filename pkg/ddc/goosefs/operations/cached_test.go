@@ -1,17 +1,19 @@
 /*
+Copyright 2022 The Fluid Authors.
 
-
-Copyright 2021 The Fluid Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package operations
 
 import (
@@ -20,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestGooseFSFileUtils_CachedState(t *testing.T) {
@@ -41,7 +43,7 @@ func TestGooseFSFileUtils_CachedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &GooseFSFileUtils{log: logf.NullLogger{}}
+	a := &GooseFSFileUtils{log: fake.NullLogger()}
 	_, err = a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -86,7 +88,7 @@ func TestGooseFSFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &GooseFSFileUtils{log: logf.NullLogger{}}
+	a := &GooseFSFileUtils{log: fake.NullLogger()}
 	err = a.CleanCache("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

@@ -33,7 +33,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestIsFluidNativeScheme(t *testing.T) {
@@ -82,7 +81,7 @@ func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{},
 				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
 				Status:     datav1alpha1.RuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: log.NullLogger{}},
+			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: fake.NullLogger()},
 			want: fmt.Sprintf("/tmp/fluid/%s/%s", "default", "test"),
 		},
 	}
@@ -317,7 +316,7 @@ func TestGetDataSetFileNum(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			want:    "1000",
 			wantErr: false,
@@ -738,7 +737,7 @@ func TestGetMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
 			},
 		},
@@ -1050,7 +1049,7 @@ func TestGetWorkerUsedCapacity(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			want:    map[string]int64{"192.168.1.146": 0, "192.168.1.147": 465452400},
 			wantErr: false,

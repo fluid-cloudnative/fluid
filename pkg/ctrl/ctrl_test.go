@@ -24,7 +24,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -44,7 +43,7 @@ func TestCheckWorkerAffinity(t *testing.T) {
 	if err != nil {
 		t.Errorf("testcase %s failed due to %v", name, err)
 	}
-	h := BuildHelper(runtimeInfo, mockClient, log.NullLogger{})
+	h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
 
 	tests := []struct {
 		name   string
@@ -363,7 +362,7 @@ func TestSetupWorkers(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, data)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
-			h := BuildHelper(tt.fields.runtimeInfo, mockClient, log.NullLogger{})
+			h := BuildHelper(tt.fields.runtimeInfo, mockClient, fake.NullLogger())
 
 			err := h.SetupWorkers(tt.fields.runtime, tt.fields.runtime.Status, &tt.fields.worker)
 
@@ -562,7 +561,7 @@ func TestCheckWorkersReady(t *testing.T) {
 			// 	name:      tt.fields.name,
 			// 	namespace: tt.fields.namespace,
 			// 	Client:    mockClient,
-			// 	Log:       log.NullLogger{},
+			// 	Log:       fake.NullLogger(),
 			// }
 
 			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "jindo", datav1alpha1.TieredStore{})
@@ -570,7 +569,7 @@ func TestCheckWorkersReady(t *testing.T) {
 				t.Errorf("testcase %s failed due to %v", tt.fields.name, err)
 			}
 
-			h := BuildHelper(runtimeInfo, mockClient, log.NullLogger{})
+			h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
 
 			gotReady, err := h.CheckWorkersReady(tt.fields.runtime, tt.fields.runtime.Status, tt.fields.worker)
 

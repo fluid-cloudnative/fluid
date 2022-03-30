@@ -30,7 +30,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -145,7 +144,7 @@ func TestJuiceFSEngine_getMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "juicefs",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
 			},
 		},
@@ -183,7 +182,7 @@ func TestJuiceFSEngine_getHostMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "juicefs",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
 			},
 			wantMountPath: "/tmp/juicefs/default/juicefs",

@@ -18,10 +18,11 @@ package juicefs
 
 import (
 	"errors"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/go-logr/logr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
@@ -38,7 +39,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -204,7 +204,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &JuiceFSEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -268,7 +268,7 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
-		Log:       log.NullLogger{},
+		Log:       fake.NullLogger(),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
@@ -388,7 +388,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntime,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -413,7 +413,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntime,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -438,7 +438,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -457,7 +457,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -476,7 +476,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -523,7 +523,7 @@ func TestJuiceFSEngine_cleanAll(t *testing.T) {
 				name:      "test",
 				namespace: "fluid",
 				Client:    fakeClient,
-				log:       log.NullLogger{},
+				log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},

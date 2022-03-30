@@ -24,7 +24,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func newJindoEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool) *JindoEngine {
@@ -35,7 +34,7 @@ func newJindoEngineRT(client client.Client, name string, namespace string, withR
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 	}
 
 	if withRuntimeInfo {

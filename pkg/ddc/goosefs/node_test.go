@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getTestGooseFSEngineNode(client client.Client, name string, namespace string, withRunTime bool) *GooseFSEngine {
@@ -26,7 +25,7 @@ func getTestGooseFSEngineNode(client client.Client, name string, namespace strin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.GooseFSRuntime{}

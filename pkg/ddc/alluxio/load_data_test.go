@@ -32,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCreateDataLoadJob(t *testing.T) {
@@ -92,7 +91,7 @@ func TestCreateDataLoadJob(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      fake.NullLogger(),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -219,7 +218,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 	engine := AlluxioEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       fake.NullLogger(),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
@@ -263,7 +262,7 @@ func TestCheckExistenceOfPath(t *testing.T) {
 	engine := AlluxioEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       fake.NullLogger(),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)

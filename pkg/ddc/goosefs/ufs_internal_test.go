@@ -28,7 +28,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func mockGooseFSFileUtilsCount() (value string, err error) {
@@ -206,7 +205,7 @@ func TestTotalStorageBytesInternal(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "defaut",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantTotal: 571808905,
 			wantErr:   false,
@@ -262,7 +261,7 @@ func TestTotalFileNumsInternal(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "defaut",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantFileCount: 6,
 			wantErr:       false,
@@ -326,7 +325,7 @@ func TestShouldMountUFS(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantShould: false,
 			wantErr:    false,
@@ -422,7 +421,7 @@ func TestGetMounts(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantResultInCtx:       []string{"/spec", "/spec"},
 			wantResultHaveMounted: []string{"/status", "/status"},
@@ -549,7 +548,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -621,7 +620,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 				},
 				name:      "hbase",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -703,7 +702,7 @@ func TestProcessUpdatingUFS(t *testing.T) {
 				},
 				name:      "hadoop",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -813,7 +812,7 @@ func TestMountUFS(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -876,7 +875,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			args: args{
 				m: datav1alpha1.Mount{

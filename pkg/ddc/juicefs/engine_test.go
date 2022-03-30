@@ -28,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestBuild(t *testing.T) {
@@ -97,7 +96,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     &runtime,
 	}
@@ -113,7 +112,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     nil,
 	}
@@ -129,7 +128,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     &runtime2,
 	}

@@ -22,7 +22,6 @@ import (
 	. "github.com/agiledragon/gomonkey"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -113,7 +112,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    fakeClient,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			}
 			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalStorageBytes()
@@ -200,7 +199,7 @@ func TestTotalFileNums(t *testing.T) {
 				runtime:   tt.fields.runtime,
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 				Client:    fakeClient,
 			}
 			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {

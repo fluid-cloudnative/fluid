@@ -37,8 +37,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	"testing"
 )
 
@@ -165,7 +163,7 @@ func TestSetupMasterInternal(t *testing.T) {
 
 		Client: client,
 
-		Log: log.NullLogger{},
+		Log: fake.NullLogger(),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 
@@ -381,7 +379,7 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 
 		Client: client,
 
-		Log: log.NullLogger{},
+		Log: fake.NullLogger(),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 

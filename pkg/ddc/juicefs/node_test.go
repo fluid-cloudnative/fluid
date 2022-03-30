@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getTestJuiceFSEngineNode(client client.Client, name string, namespace string, withRunTime bool) *JuiceFSEngine {
@@ -36,7 +35,7 @@ func getTestJuiceFSEngineNode(client client.Client, name string, namespace strin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
 		engine.runtime = &datav1alpha1.JuiceFSRuntime{}
