@@ -36,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -337,7 +336,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{}), runtimeInfo: test.runtimeInfo}
+		engine := &GooseFSEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -394,7 +393,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
-				log: logr.New(log.NullLogSink{}),
+				log: fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -497,7 +496,7 @@ func TestGooseFSEngineCleanupCache(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "field",
-				Log:       logr.New(log.NullLogSink{}),
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},

@@ -2,7 +2,6 @@ package goosefs
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestUpdateCacheOfDataset(t *testing.T) {
@@ -54,7 +52,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 
 	engine := &GooseFSEngine{
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],
@@ -145,7 +143,7 @@ func TestUpdateDatasetStatus(t *testing.T) {
 
 	engine := &GooseFSEngine{
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],
@@ -278,7 +276,7 @@ func TestBindToDataset(t *testing.T) {
 
 	engine := &GooseFSEngine{
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],

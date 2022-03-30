@@ -19,7 +19,6 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -32,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -44,7 +42,7 @@ func getTestAlluxioEngineNode(client client.Client, name string, namespace strin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.AlluxioRuntime{}

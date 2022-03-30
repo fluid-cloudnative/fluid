@@ -17,7 +17,6 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -50,7 +48,7 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},

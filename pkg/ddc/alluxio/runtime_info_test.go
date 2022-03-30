@@ -1,7 +1,6 @@
 package alluxio
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -12,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func newAlluxioEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *AlluxioEngine {
@@ -24,7 +22,7 @@ func newAlluxioEngineRT(client client.Client, name string, namespace string, wit
 		Client:      client,
 		runtimeInfo: nil,
 		UnitTest:    unittest,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 	}
 
 	if withRuntimeInfo {

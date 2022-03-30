@@ -17,16 +17,17 @@
 package fluidapp
 
 import (
+	"testing"
+
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func TestFluidAppReconcilerImplement_umountFuseSidecar(t *testing.T) {
@@ -124,7 +125,7 @@ func TestFluidAppReconcilerImplement_umountFuseSidecar(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			i := &FluidAppReconcilerImplement{
-				Log: logr.New(log.NullLogSink{}),
+				Log: fake.NullLogger(),
 			}
 			if err := i.umountFuseSidecar(tt.args.pod); (err != nil) != tt.wantErr {
 				t.Errorf("umountFuseSidecar() error = %v, wantErr %v", err, tt.wantErr)

@@ -19,7 +19,6 @@ package goosefs
 import (
 	"errors"
 	"fmt"
-	"github.com/go-logr/logr"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCreateDataLoadJob(t *testing.T) {
@@ -94,7 +92,7 @@ func TestCreateDataLoadJob(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      logr.New(log.NullLogSink{}),
+		Log:      fake.NullLogger(),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -248,7 +246,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 	engine := GooseFSEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
@@ -292,7 +290,7 @@ func TestCheckExistenceOfPath(t *testing.T) {
 	engine := GooseFSEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)

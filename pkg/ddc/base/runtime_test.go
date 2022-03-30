@@ -17,7 +17,6 @@ limitations under the License.
 package base
 
 import (
-	"github.com/go-logr/logr"
 	"os"
 	"reflect"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	fakeutils "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func Test_convertToTieredstoreInfo(t *testing.T) {
@@ -1120,7 +1119,7 @@ func TestPermitSync(t *testing.T) {
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Log: logr.New(log.NullLogSink{}),
+		Log: fake.NullLogger(),
 	}
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)

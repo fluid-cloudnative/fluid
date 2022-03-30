@@ -18,14 +18,12 @@ package juicefs
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -56,7 +54,7 @@ func TestJuiceFSEngine_CreateVolume(t *testing.T) {
 
 	engine := &JuiceFSEngine{
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "hbase",
 		runtimeInfo: runtimeInfo,
@@ -119,7 +117,7 @@ func TestJuiceFSEngine_createFusePersistentVolume(t *testing.T) {
 
 	engine := &JuiceFSEngine{
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "test",
 		runtimeInfo: runtimeInfo,
@@ -166,7 +164,7 @@ func TestJuiceFSEngine_createFusePersistentVolumeClaim(t *testing.T) {
 
 	engine := &JuiceFSEngine{
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		namespace:   "fluid",
 		name:        "test",
 		runtimeInfo: runtimeInfo,

@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -28,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -53,7 +51,7 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 	}
 	return engine
 }
