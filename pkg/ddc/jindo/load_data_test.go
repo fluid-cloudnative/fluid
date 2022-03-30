@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"path/filepath"
@@ -70,7 +71,7 @@ func TestCreateDataLoadJob(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      logr.New(log.NullLogSink{}),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -148,7 +149,7 @@ func TestCreateDataLoadJobWithOption(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      logr.New(log.NullLogSink{}),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -383,7 +384,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 	engine := JindoEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
@@ -422,7 +423,7 @@ func TestCheckExistenceOfPath(t *testing.T) {
 	engine := JindoEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)

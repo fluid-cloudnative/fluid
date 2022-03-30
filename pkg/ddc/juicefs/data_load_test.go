@@ -2,6 +2,7 @@ package juicefs
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"os"
 	"path/filepath"
@@ -152,10 +153,10 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 		name:      "juicefs",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      logr.New(log.NullLogSink{}),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -310,7 +311,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 			name:      "juicefs",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		}
 		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
@@ -437,7 +438,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 			name:      "juicefs",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		}
 		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
@@ -522,8 +523,8 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 
 	engine := JuiceFSEngine{
 		namespace: "fluid",
+		Log:       logr.New(log.NullLogSink{}),
 		name:      "juicefs",
-		Log:       log.NullLogger{},
 		Client:    client,
 	}
 
@@ -651,7 +652,7 @@ func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 			if gotReady := e.CheckRuntimeReady(); gotReady != tt.wantReady {
 				t.Errorf("CheckRuntimeReady() = %v, want %v", gotReady, tt.wantReady)

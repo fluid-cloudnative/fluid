@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -169,7 +170,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformResourcesForWorker(test.runtime, test.goosefsValue)
 		if result, found := test.goosefsValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
@@ -214,7 +215,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForWorker(test.runtime, test.goosefsValue)
@@ -236,7 +237,7 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformResourcesForFuse(test.runtime, test.goosefsValue)
 		if result, found := test.goosefsValue.Fuse.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
@@ -275,7 +276,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime, test.goosefsValue)

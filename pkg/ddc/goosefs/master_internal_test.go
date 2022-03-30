@@ -16,6 +16,7 @@ package goosefs
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 
 	"github.com/brahma-adshonor/gohook"
 
@@ -165,7 +166,7 @@ func TestSetupMasterInternal(t *testing.T) {
 
 		Client: client,
 
-		Log: log.NullLogger{},
+		Log: logr.New(log.NullLogSink{}),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 
@@ -381,7 +382,7 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 
 		Client: client,
 
-		Log: log.NullLogger{},
+		Log: logr.New(log.NullLogSink{}),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 

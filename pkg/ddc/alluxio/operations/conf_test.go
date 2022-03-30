@@ -18,6 +18,7 @@ package operations
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
@@ -56,7 +57,7 @@ func TestAlluxioFileUtils_GetConf(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		stdout, err := AlluxioFileUtils{log: logf.NullLogger{}}.GetConf(test.in)
+		stdout, err := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}.GetConf(test.in)
 		if stdout != test.out {
 			t.Errorf("input parameter is %s,expected %s, got %s", test.in, test.out, stdout)
 		}

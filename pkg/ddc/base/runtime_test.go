@@ -17,6 +17,7 @@ limitations under the License.
 package base
 
 import (
+	"github.com/go-logr/logr"
 	"os"
 	"reflect"
 	"testing"
@@ -1119,7 +1120,7 @@ func TestPermitSync(t *testing.T) {
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Log: log.NullLogger{},
+		Log: logr.New(log.NullLogSink{}),
 	}
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)

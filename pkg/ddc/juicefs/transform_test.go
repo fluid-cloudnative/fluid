@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +50,7 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},

@@ -20,6 +20,7 @@ package alluxio
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 	"reflect"
 	"testing"
@@ -130,7 +131,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &alluxioruntimeInputs[0],
@@ -288,7 +289,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -300,7 +301,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -437,7 +438,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -449,7 +450,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -461,7 +462,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "deprecated",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -613,7 +614,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -625,7 +626,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{

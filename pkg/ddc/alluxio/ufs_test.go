@@ -269,7 +269,7 @@ func TestPrepareUFS(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			},
 			wantErr: false,
 		},
@@ -397,7 +397,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 				runtime:            &runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                logr.New(log.NullLogSink{}),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}
@@ -450,7 +450,7 @@ func TestUpdateMountTime(t *testing.T) {
 				runtime:            test.runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                logr.New(log.NullLogSink{}),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}
@@ -575,7 +575,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 				runtime:            test.runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                logr.New(log.NullLogSink{}),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}

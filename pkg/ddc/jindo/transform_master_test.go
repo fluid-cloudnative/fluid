@@ -16,6 +16,7 @@ limitations under the License.
 package jindo
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -42,7 +43,7 @@ func TestTransformToken(t *testing.T) {
 			}}, &Jindo{}, "secrets:///token/"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		err := engine.transformToken(test.runtime, test.jindoValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -73,7 +74,7 @@ func TestTransformMasterMountPath(t *testing.T) {
 			}}, &Jindo{}, "/mnt/disk1"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: log.NullLogger{}}
+		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
 		properties := engine.transformMasterMountPath("/mnt/disk1")
 		if properties["1"] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, properties["1"])

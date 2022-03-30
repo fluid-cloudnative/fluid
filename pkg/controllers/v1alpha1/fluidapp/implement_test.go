@@ -92,7 +92,7 @@ func TestFluidAppReconcilerImplement_umountFuseSidecar(t *testing.T) {
 						Containers: []corev1.Container{{
 							Name: common.FuseContainerName,
 							Lifecycle: &corev1.Lifecycle{
-								PreStop: &corev1.Handler{
+								PreStop: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{Command: []string{"umount"}},
 								},
 							},
@@ -124,7 +124,7 @@ func TestFluidAppReconcilerImplement_umountFuseSidecar(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			i := &FluidAppReconcilerImplement{
-				Log: log.NullLogger{},
+				Log: logr.New(log.NullLogSink{}),
 			}
 			if err := i.umountFuseSidecar(tt.args.pod); (err != nil) != tt.wantErr {
 				t.Errorf("umountFuseSidecar() error = %v, wantErr %v", err, tt.wantErr)

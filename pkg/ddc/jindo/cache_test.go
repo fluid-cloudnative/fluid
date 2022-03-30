@@ -1,6 +1,7 @@
 package jindo
 
 import (
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -167,7 +168,7 @@ func TestInvokeCleanCache(t *testing.T) {
 			Client:    fakeClient,
 			namespace: testCase.namespace,
 			name:      testCase.name,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		}
 		err := engine.invokeCleanCache()
 		isErr := err != nil

@@ -18,6 +18,7 @@ package alluxio
 import (
 	"errors"
 	"fmt"
+	"github.com/go-logr/logr"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,7 +93,7 @@ func TestCreateDataLoadJob(t *testing.T) {
 		name: "hbase",
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      log.NullLogger{},
+		Log:      logr.New(log.NullLogSink{}),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -219,7 +220,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 	engine := AlluxioEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
@@ -263,7 +264,7 @@ func TestCheckExistenceOfPath(t *testing.T) {
 	engine := AlluxioEngine{
 		namespace: "fluid",
 		name:      "hbase",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)

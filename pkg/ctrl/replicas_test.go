@@ -18,6 +18,7 @@ package ctrl
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -42,7 +43,7 @@ import (
 // 		namespace:   namespace,
 // 		Client:      client,
 // 		runtimeInfo: runTimeInfo,
-// 		Log:         log.NullLogger{},
+// 		Log:         logr.New(log.NullLogSink{}),
 // 	}
 // 	return engine
 // }
@@ -276,9 +277,9 @@ func TestSyncReplicas(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
+		h := BuildHelper(runtimeInfo, fakeClient, logr.New(log.NullLogSink{}))
 		err = h.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      logr.New(log.NullLogSink{}),
 			Recorder: record.NewFakeRecorder(300),
 		}, runtime, runtime.Status, statefulset)
 

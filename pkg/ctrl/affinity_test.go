@@ -17,6 +17,7 @@ limitations under the License.
 package ctrl
 
 import (
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -268,7 +269,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to %v", tt.name, err)
 			}
-			h := BuildHelper(runtimeInfo, mockClient, log.NullLogger{})
+			h := BuildHelper(runtimeInfo, mockClient, logr.New(log.NullLogSink{}))
 
 			want := tt.fields.want
 			worker, err := h.BuildWorkersAffinity(tt.fields.worker)

@@ -17,6 +17,7 @@ package goosefs
 import (
 	"context"
 	"errors"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 	"time"
@@ -94,13 +95,13 @@ func TestSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -115,7 +116,7 @@ func TestSyncMetadata(t *testing.T) {
 		name:      "hadoop",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 	}
 
 	err := gohook.Hook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
@@ -161,13 +162,13 @@ func TestShouldSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -226,13 +227,13 @@ func TestShouldRestoreMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -310,13 +311,13 @@ func TestRestoreMetadataInternal(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 
@@ -402,14 +403,14 @@ func TestSyncMetadataInternal(t *testing.T) {
 			name:               "hbase",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                log.NullLogger{},
+			Log:                logr.New(log.NullLogSink{}),
 			MetadataSyncDoneCh: make(chan MetadataSyncResult),
 		},
 		{
 			name:               "hadoop",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                log.NullLogger{},
+			Log:                logr.New(log.NullLogSink{}),
 			MetadataSyncDoneCh: nil,
 		},
 	}

@@ -204,7 +204,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &JuiceFSEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &JuiceFSEngine{Log: logr.New(log.NullLogSink{}), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -268,7 +268,7 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
@@ -388,7 +388,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntime,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 
 			got := e.cleanupCache()
@@ -413,7 +413,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntime,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 
 			got := e.cleanupCache()
@@ -438,7 +438,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 
 			got := e.cleanupCache()
@@ -457,7 +457,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 
 			got := e.cleanupCache()
@@ -476,7 +476,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 				namespace: "fluid",
 				Client:    client,
 				runtime:   testRuntimeWithTiredStore,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 
 			got := e.cleanupCache()
@@ -523,7 +523,7 @@ func TestJuiceFSEngine_cleanAll(t *testing.T) {
 				name:      "test",
 				namespace: "fluid",
 				Client:    fakeClient,
-				log:       log.NullLogger{},
+				log:       logr.New(log.NullLogSink{}),
 			},
 			wantErr: false,
 		},

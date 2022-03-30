@@ -3,6 +3,7 @@ package goosefs
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -26,7 +27,7 @@ func getTestGooseFSEngineNode(client client.Client, name string, namespace strin
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.GooseFSRuntime{}
