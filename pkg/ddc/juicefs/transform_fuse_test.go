@@ -329,7 +329,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       fake.NullLogger(),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
@@ -498,7 +498,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			args: args{
 				value: &JuiceFS{
@@ -529,7 +529,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			args: args{
 				value: &JuiceFS{
@@ -598,7 +598,7 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			args: args{
 				value: &JuiceFS{
@@ -629,7 +629,7 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			args: args{
 				value: &JuiceFS{
