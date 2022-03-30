@@ -16,16 +16,15 @@ limitations under the License.
 package jindo
 
 import (
-	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestTransformWorker(t *testing.T) {
@@ -61,7 +60,7 @@ func TestTransformWorker(t *testing.T) {
 			}}, &Jindo{}, "1G"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		test.jindoValue.Worker.Port.Rpc = 8001
 		test.jindoValue.Worker.Port.Raft = 8002
 		metaPath := "/var/lib/docker/meta"
@@ -97,7 +96,7 @@ func TestTransformWorkerMountPath(t *testing.T) {
 			}}, &Jindo{}, "/mnt/disk2"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		stroagePath := "/mnt/disk1,/mnt/disk2"
 		originPath := strings.Split(stroagePath, ",")
 		properties := engine.transformWorkerMountPath(originPath)
@@ -119,7 +118,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		engine.transformResources(test.runtime, test.jindoValue)
 		if test.jindoValue.Worker.Resources.Requests.Memory != "" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
@@ -169,7 +168,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		engine.transformResources(test.runtime, test.jindoValue)
 		if test.jindoValue.Worker.Resources.Requests.Memory != "1Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)

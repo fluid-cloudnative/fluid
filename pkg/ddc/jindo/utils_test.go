@@ -17,13 +17,14 @@ limitations under the License.
 package jindo
 
 import (
-	"github.com/go-logr/logr"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
+
+	"github.com/go-logr/logr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestIsFluidNativeScheme(t *testing.T) {
@@ -100,7 +101,7 @@ func TestJindoFSEngine_getHostMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "jindofs",
 				namespace: "default",
-				Log:       logr.New(log.NullLogSink{}),
+				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
 			},
 			wantMountPath: "/tmp/jindo/default/jindofs",

@@ -17,14 +17,13 @@ limitations under the License.
 package goosefs
 
 import (
-	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestTransformInitUsersWithoutRunAs(t *testing.T) {
@@ -37,7 +36,7 @@ func TestTransformInitUsersWithoutRunAs(t *testing.T) {
 		}, &GooseFS{}},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &GooseFSEngine{Log: fake.NullLogger()}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)
 		if test.goosefsValue.InitUsers.Enabled {
 			t.Errorf("expected init users are disabled, but got %v", test.goosefsValue.InitUsers.Enabled)
@@ -65,7 +64,7 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)
@@ -105,7 +104,7 @@ func TestTransformInitUsersImageOverwrite(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.goosefsValue)

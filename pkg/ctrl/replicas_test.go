@@ -18,7 +18,6 @@ package ctrl
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -31,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // func newAlluxioEngineREP(client client.Client, name string, namespace string) *alluxio.AlluxioEngine {
@@ -43,7 +41,7 @@ import (
 // 		namespace:   namespace,
 // 		Client:      client,
 // 		runtimeInfo: runTimeInfo,
-// 		Log:         logr.New(log.NullLogSink{}),
+// 		Log:         fake.NullLogger(),
 // 	}
 // 	return engine
 // }
@@ -277,9 +275,9 @@ func TestSyncReplicas(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, logr.New(log.NullLogSink{}))
+		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 		err = h.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      logr.New(log.NullLogSink{}),
+			Log:      fake.NullLogger(),
 			Recorder: record.NewFakeRecorder(300),
 		}, runtime, runtime.Status, statefulset)
 

@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"testing"
 	"time"
 
@@ -28,7 +27,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
@@ -66,13 +64,13 @@ func TestShouldSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 	}
 
@@ -157,13 +155,13 @@ func TestSyncMetadata(t *testing.T) {
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 		{
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 	}
 
@@ -178,7 +176,7 @@ func TestSyncMetadata(t *testing.T) {
 		name:      "hadoop",
 		namespace: "fluid",
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 	}
 
 	err := gohook.Hook(operations.JuiceFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
@@ -220,14 +218,14 @@ func TestJuiceFSEngine_syncMetadataInternal(t *testing.T) {
 			name:               "test1",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                logr.New(log.NullLogSink{}),
+			Log:                fake.NullLogger(),
 			MetadataSyncDoneCh: make(chan MetadataSyncResult),
 		},
 		{
 			name:               "test2",
 			namespace:          "fluid",
 			Client:             client,
-			Log:                logr.New(log.NullLogSink{}),
+			Log:                fake.NullLogger(),
 			MetadataSyncDoneCh: nil,
 		},
 	}

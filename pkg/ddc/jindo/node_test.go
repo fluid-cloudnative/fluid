@@ -3,7 +3,6 @@ package jindo
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -16,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -28,7 +26,7 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: nil,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.JindoRuntime{}

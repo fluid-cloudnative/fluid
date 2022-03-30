@@ -1,7 +1,6 @@
 package jindo
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -9,7 +8,6 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCheckMasterReady(t *testing.T) {
@@ -97,19 +95,19 @@ func TestCheckMasterReady(t *testing.T) {
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 	}
 
@@ -245,7 +243,7 @@ func TestSetupMaster(t *testing.T) {
 			name:      "spark",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		},
 	}
 
