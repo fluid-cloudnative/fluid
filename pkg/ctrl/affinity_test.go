@@ -17,7 +17,6 @@ limitations under the License.
 package ctrl
 
 import (
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -25,7 +24,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -269,7 +267,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to %v", tt.name, err)
 			}
-			h := BuildHelper(runtimeInfo, mockClient, logr.New(log.NullLogSink{}))
+			h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
 
 			want := tt.fields.want
 			worker, err := h.BuildWorkersAffinity(tt.fields.worker)

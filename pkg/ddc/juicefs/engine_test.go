@@ -17,7 +17,6 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -29,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestBuild(t *testing.T) {
@@ -98,7 +96,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     &runtime,
 	}
@@ -114,7 +112,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     nil,
 	}
@@ -130,7 +128,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 		RuntimeType: "juicefs",
 		Runtime:     &runtime2,
 	}

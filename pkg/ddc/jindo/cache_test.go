@@ -1,7 +1,6 @@
 package jindo
 
 import (
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	. "github.com/agiledragon/gomonkey"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -168,7 +166,7 @@ func TestInvokeCleanCache(t *testing.T) {
 			Client:    fakeClient,
 			namespace: testCase.namespace,
 			name:      testCase.name,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		}
 		err := engine.invokeCleanCache()
 		isErr := err != nil

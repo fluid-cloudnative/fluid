@@ -18,11 +18,10 @@ package operations
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestAlluxioFileUtils_CachedState(t *testing.T) {
@@ -43,7 +42,7 @@ func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
+	a := &AlluxioFileUtils{log: fake.NullLogger()}
 	_, err = a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -85,7 +84,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
+	a := &AlluxioFileUtils{log: fake.NullLogger()}
 	err = a.CleanCache("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

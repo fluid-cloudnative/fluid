@@ -17,11 +17,10 @@ limitations under the License.
 package jindo
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestTransformFuseWithNoArgs(t *testing.T) {
@@ -42,7 +41,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			}}, &Jindo{}, "true"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		err := engine.transformFuse(test.runtime, test.jindoValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -73,7 +72,7 @@ func TestTransformRunAsUser(t *testing.T) {
 			}}, &Jindo{}, "user"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		err := engine.transformRunAsUser(test.runtime, test.jindoValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -104,7 +103,7 @@ func TestTransformSecret(t *testing.T) {
 			}}, &Jindo{}, "secret"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		err := engine.transformSecret(test.runtime, test.jindoValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -136,7 +135,7 @@ func TestTransformFuseArg(t *testing.T) {
 			}}, &Jindo{}, "-ocredential_provider=secrets:///token/ -oroot_ns=jindo -okernel_cache"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		properties := engine.transformFuseArg(test.runtime, test.dataset)
 		if properties[0] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
@@ -165,7 +164,7 @@ func TestParseFuseImage(t *testing.T) {
 			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.8.0"},
 	}
 	for _, test := range tests {
-		engine := &JindoEngine{Log: logr.New(log.NullLogSink{})}
+		engine := &JindoEngine{Log: fake.NullLogger()}
 		imageR, tagR := engine.parseFuseImage()
 		registryVersion := imageR + ":" + tagR
 		if registryVersion != test.expect {

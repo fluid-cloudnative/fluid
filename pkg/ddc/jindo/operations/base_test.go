@@ -14,12 +14,12 @@ package operations
 
 import (
 	"errors"
-	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func TestNewJindoFileUtils(t *testing.T) {
@@ -27,10 +27,10 @@ func TestNewJindoFileUtils(t *testing.T) {
 		podName:   "hadoop",
 		namespace: "default",
 		container: "hadoop",
-		log:       logr.New(log.NullLogSink{}),
+		log:       fake.NullLogger(),
 	}
 
-	result := NewJindoFileUtils("hadoop", "default", "hadoop", logr.New(log.NullLogSink{}))
+	result := NewJindoFileUtils("hadoop", "default", "hadoop", fake.NullLogger())
 	if reflect.DeepEqual(result, expectedResult) {
 		t.Errorf("check failure, expected %v, get %v", expectedResult, result)
 	}
@@ -55,7 +55,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JindoFileUtils{log: logr.New(log.NullLogSink{})}
+	a := &JindoFileUtils{log: fake.NullLogger()}
 	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -91,7 +91,7 @@ func TestJindoFileUtils_execWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JindoFileUtils{log: logr.New(log.NullLogSink{})}
+	a := &JindoFileUtils{log: fake.NullLogger()}
 	_, _, err = a.execWithoutTimeout([]string{"/sdk/bin/jindo", "jfs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -164,7 +164,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JindoFileUtils{log: logr.New(log.NullLogSink{})}
+	a := &JindoFileUtils{log: fake.NullLogger()}
 	_, err = a.GetUfsTotalSize("/tmpDictionary", false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -200,7 +200,7 @@ func TestJindoFileUtils_Ready(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JindoFileUtils{log: logr.New(log.NullLogSink{})}
+	a := &JindoFileUtils{log: fake.NullLogger()}
 	ready := a.Ready()
 	if ready != false {
 		t.Errorf("check failure, want false, got %t", ready)
@@ -272,7 +272,7 @@ func TestJindoFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := JindoFileUtils{log: logr.New(log.NullLogSink{})}
+	a := JindoFileUtils{log: fake.NullLogger()}
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

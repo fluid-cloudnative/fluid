@@ -2,12 +2,12 @@ package juicefs
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
-	appsv1 "k8s.io/api/apps/v1"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -153,10 +152,10 @@ func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {
 		name:      "juicefs",
 		namespace: "fluid",
 		Client:    client,
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 	}
 	ctx := cruntime.ReconcileRequestContext{
-		Log:      logr.New(log.NullLogSink{}),
+		Log:      fake.NullLogger(),
 		Client:   client,
 		Recorder: record.NewFakeRecorder(1),
 	}
@@ -311,7 +310,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 			name:      "juicefs",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		}
 		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
@@ -438,7 +437,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 			name:      "juicefs",
 			namespace: "fluid",
 			Client:    client,
-			Log:       logr.New(log.NullLogSink{}),
+			Log:       fake.NullLogger(),
 		}
 		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
@@ -523,7 +522,7 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 
 	engine := JuiceFSEngine{
 		namespace: "fluid",
-		Log:       logr.New(log.NullLogSink{}),
+		Log:       fake.NullLogger(),
 		name:      "juicefs",
 		Client:    client,
 	}
@@ -652,7 +651,7 @@ func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
-				Log:       logr.New(log.NullLogSink{}),
+				Log:       fake.NullLogger(),
 			}
 			if gotReady := e.CheckRuntimeReady(); gotReady != tt.wantReady {
 				t.Errorf("CheckRuntimeReady() = %v, want %v", gotReady, tt.wantReady)

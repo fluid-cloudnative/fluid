@@ -18,13 +18,12 @@ package operations
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestAlluxioFileUtils_GetConf(t *testing.T) {
@@ -57,7 +56,7 @@ func TestAlluxioFileUtils_GetConf(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		stdout, err := AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}.GetConf(test.in)
+		stdout, err := AlluxioFileUtils{log: fake.NullLogger()}.GetConf(test.in)
 		if stdout != test.out {
 			t.Errorf("input parameter is %s,expected %s, got %s", test.in, test.out, stdout)
 		}

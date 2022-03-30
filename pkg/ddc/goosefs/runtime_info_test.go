@@ -13,7 +13,6 @@ limitations under the License.
 package goosefs
 
 import (
-	"github.com/go-logr/logr"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -24,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func newGooseEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *GooseFSEngine {
@@ -36,7 +34,7 @@ func newGooseEngineRT(client client.Client, name string, namespace string, withR
 		Client:      client,
 		runtimeInfo: nil,
 		UnitTest:    unittest,
-		Log:         logr.New(log.NullLogSink{}),
+		Log:         fake.NullLogger(),
 	}
 
 	if withRuntimeInfo {

@@ -16,7 +16,6 @@ package goosefs
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
 
 	"github.com/brahma-adshonor/gohook"
 
@@ -37,8 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/net"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"testing"
 )
@@ -166,7 +163,7 @@ func TestSetupMasterInternal(t *testing.T) {
 
 		Client: client,
 
-		Log: logr.New(log.NullLogSink{}),
+		Log: fake.NullLogger(),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 
@@ -382,7 +379,7 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 
 		Client: client,
 
-		Log: logr.New(log.NullLogSink{}),
+		Log: fake.NullLogger(),
 
 		runtime: &datav1alpha1.GooseFSRuntime{
 
