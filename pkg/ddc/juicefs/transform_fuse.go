@@ -40,7 +40,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	tag := runtime.Spec.Fuse.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
 
-	value.Fuse.Image, value.Fuse.ImageTag, value.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
+	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
 	value.Fuse.NodeSelector = map[string]string{}
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
@@ -77,6 +77,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	value.Fuse.Name = mount.Name
 	opts := make(map[string]string)
 	source := ""
+	value.Edition = "enterprise"
 	for k, v := range mount.Options {
 		switch k {
 		case JuiceStorage:
@@ -91,7 +92,10 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	}
 	options := []string{}
 	for k, v := range opts {
-		options = append(options, fmt.Sprintf("%s=%s", k, v))
+		if v != "" {
+			k = fmt.Sprintf("%s=%s", k, v)
+		}
+		options = append(options, k)
 	}
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
@@ -113,7 +117,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			if !ok {
 				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
-			value.IsCE = true
+			value.Edition = "community"
 		case JuiceAccessKey:
 			value.Fuse.AccessKeySecret = secretKeyRef.Name
 		case JuiceSecretKey:
@@ -161,7 +165,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, options []string) (err error) {
 	if options == nil {
 		options = []string{}
 	}
-	if value.IsCE {
+	if value.Edition == "community" {
 		if !utils.ContainsSubString(options, "metrics") {
 			options = append(options, "metrics=0.0.0.0:9567")
 		}
@@ -192,7 +196,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, options []string) (err error) {
 
 func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS) {
 	args := make([]string, 0)
-	if value.IsCE {
+	if value.Edition == "community" {
 		// ce
 		if value.Fuse.AccessKeySecret != "" {
 			args = append(args, "--access-key=${ACCESS_KEY}")

@@ -138,7 +138,12 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
 	}
-	options["podNames"] = strings.Join(podNames, ":")
+	if cacheinfo[Edition] == "community" {
+		options["podNames"] = strings.Join(podNames, ":")
+	} else {
+		options["podNames"] = podNames[0]
+	}
+	options["edition"] = cacheinfo[Edition]
 	options["runtimeName"] = j.name
 	if _, ok := options["timeout"]; !ok {
 		options["timeout"] = DefaultDataLoadTimeout

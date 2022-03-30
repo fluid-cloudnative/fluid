@@ -24,7 +24,7 @@ import (
 // JuiceFS The value yaml file
 type JuiceFS struct {
 	FullnameOverride string `yaml:"fullnameOverride"`
-	IsCE             bool   `yaml:"isCe,omitempty"`
+	Edition          string `yaml:"edition,omitempty"`
 	Source           string `yaml:"source,omitempty"`
 
 	common.ImageInfo `yaml:",inline"`

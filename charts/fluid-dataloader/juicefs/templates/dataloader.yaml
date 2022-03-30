@@ -80,6 +80,10 @@ spec:
             - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
+            {{- if eq $key "edition" }}
+            - name: EDITION
+              value: {{ $val | quote }}
+            {{- end }}
             {{- end }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}

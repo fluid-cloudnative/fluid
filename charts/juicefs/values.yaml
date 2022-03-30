@@ -1,6 +1,6 @@
 # This should not be modified in the usual case.
 fullnameOverride: juicefs
-isCe: false
+edition: community
 
 ##
 ## Example:

@@ -25,6 +25,7 @@ import (
 
 var valuesConfigMapData = `
 fullnameOverride: test-dataset
+edition: community
 image: juicedata/juicefs-csi-driver
 imageTag: v0.11.0
 imagePullPolicy: IfNotPresent

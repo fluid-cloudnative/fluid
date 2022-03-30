@@ -42,5 +42,6 @@ const (
 
 	CacheDir               = "cachedir"
 	MountPath              = "mountpath"
+	Edition                = "edition"
 	DefaultDataLoadTimeout = "30m"
 )

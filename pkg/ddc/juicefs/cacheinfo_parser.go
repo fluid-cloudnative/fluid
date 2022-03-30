@@ -53,6 +53,7 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 		}
 		configmapinfo[CacheDir] = value.Fuse.CacheDir
 		configmapinfo[MountPath] = value.Fuse.MountPath
+		configmapinfo[Edition] = value.Edition
 	}
 	return configmapinfo, nil
 }

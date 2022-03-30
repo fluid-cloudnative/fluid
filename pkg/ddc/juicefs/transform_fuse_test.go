@@ -302,7 +302,7 @@ func TestTransformFuse(t *testing.T) {
 func TestJuiceFSEngine_genValue(t *testing.T) {
 	juicefsSecret1 := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-ce",
+			Name:      "test-community",
 			Namespace: "fluid",
 		},
 		Data: map[string][]byte{
@@ -313,7 +313,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 	}
 	juicefsSecret2 := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-ee",
+			Name:      "test-enterprise",
 			Namespace: "fluid",
 		},
 		Data: map[string][]byte{
@@ -372,7 +372,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 						Name: "token",
 						ValueFrom: datav1alpha1.EncryptOptionSource{
 							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "test-ee",
+								Name: "test-enterprise",
 								Key:  "token",
 							},
 						},
@@ -393,7 +393,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				FullnameOverride: "test",
 				Fuse: Fuse{
 					SubPath:       "/",
-					TokenSecret:   "test-ee",
+					TokenSecret:   "test-enterprise",
 					MountPath:     "/juicefs/fluid/test/juicefs-fuse",
 					CacheDir:      "/dev",
 					HostMountPath: "/juicefs/fluid/test",
@@ -407,9 +407,9 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 		},
 		{
-			name: "test-ce",
+			name: "test-community",
 			fields: fields{
-				name:        "test-ce",
+				name:        "test-community",
 				namespace:   "fluid",
 				runtimeType: common.JuiceFSRuntime,
 			},
@@ -417,21 +417,21 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				mount: datav1alpha1.Mount{
 					MountPoint: "juicefs:///",
 					Options:    map[string]string{},
-					Name:       "test-ce",
+					Name:       "test-community",
 					EncryptOptions: []datav1alpha1.EncryptOption{{
 						Name: JuiceMetaUrl,
 						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
-							Name: "test-ce",
+							Name: "test-community",
 							Key:  "metaurl",
 						}}}, {
 						Name: JuiceAccessKey,
 						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
-							Name: "test-ce",
+							Name: "test-community",
 							Key:  "access-key",
 						}}}, {
 						Name: JuiceSecretKey,
 						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
-							Name: "test-ce",
+							Name: "test-community",
 							Key:  "secret-key",
 						}}},
 					},
@@ -441,7 +441,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 					Path:       "/dev",
 				},
 				value: &JuiceFS{
-					FullnameOverride: "test-ce",
+					FullnameOverride: "test-community",
 					Fuse:             Fuse{},
 					Worker:           Worker{},
 				},
@@ -450,17 +450,12 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			wantValue: &JuiceFS{
 				Fuse: Fuse{
 					SubPath:       "/",
-					TokenSecret:   "test-ee",
+					TokenSecret:   "test-enterprise",
 					MountPath:     "/juicefs/fluid/test/juicefs-fuse",
 					CacheDir:      "/dev",
 					HostMountPath: "/juicefs/fluid/test",
-					//Command:       "/bin/mount.juicefs ${METAURL} /juicefs/fluid/test/juicefs-fuse -o subdir=/,cache-dir=/dev,metrics=0.0.0.0:9567",
-					//StatCmd:       "stat -c %i /juicefs/fluid/test/juicefs-fuse",
-					//FormatCmd:     "/usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --no-update ${METAURL} test-ce",
 				},
-				Worker: Worker{
-					//Command: "/bin/mount.juicefs test /juicefs/fluid/test/juicefs-fuse -o subdir=/,cache-dir=/dev,metrics=0.0.0.0:9567",
-				},
+				Worker: Worker{},
 			},
 		},
 	}
@@ -500,7 +495,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 		wantStatCmd       string
 	}{
 		{
-			name: "test-ce",
+			name: "test-community",
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
@@ -508,12 +503,12 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			},
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ce",
-					IsCE:             true,
+					FullnameOverride: "test-community",
+					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ce",
+						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -531,7 +526,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			wantStatCmd:       "stat -c %i /test",
 		},
 		{
-			name: "test-ee",
+			name: "test-enterprise",
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
@@ -539,12 +534,12 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			},
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ee",
-					IsCE:             false,
-					Source:           "test-ee",
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ee",
+						Name:            "test-enterprise",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -556,8 +551,8 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-ee /test -o foreground,cache-group=test-ee",
-			wantFuseCommand:   "/sbin/mount.juicefs test-ee /test -o foreground,cache-group=test-ee,no-sharing",
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise",
+			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise,no-sharing",
 			wantStatCmd:       "stat -c %i /test",
 		},
 	}
@@ -600,7 +595,7 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 		wantStatCmd       string
 	}{
 		{
-			name: "test-ce",
+			name: "test-community",
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
@@ -608,12 +603,12 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 			},
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ce",
-					IsCE:             true,
+					FullnameOverride: "test-community",
+					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ce",
+						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -631,7 +626,7 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 			wantStatCmd:       "stat -c %i /test",
 		},
 		{
-			name: "test-ee",
+			name: "test-enterprise",
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
@@ -639,12 +634,12 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 			},
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ee",
-					IsCE:             false,
-					Source:           "test-ee",
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ee",
+						Name:            "test-enterprise",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -656,8 +651,8 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 				},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-ee /test -o foreground,cache-group=test-ee",
-			wantFuseCommand:   "/sbin/mount.juicefs test-ee /test -o foreground,cache-group=test-ee,no-sharing",
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise",
+			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise,no-sharing",
 			wantStatCmd:       "stat -c %i /test",
 		},
 	}
@@ -690,15 +685,15 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 		wantFormatCmd string
 	}{
 		{
-			name: "test-ce",
+			name: "test-community",
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ce",
-					IsCE:             true,
+					FullnameOverride: "test-community",
+					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ce",
+						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -710,18 +705,18 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					},
 				},
 			},
-			wantFormatCmd: "/usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://127.0.0.1:9000/minio/test redis://127.0.0.1:6379 test-ce",
+			wantFormatCmd: "/usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://127.0.0.1:9000/minio/test redis://127.0.0.1:6379 test-community",
 		},
 		{
-			name: "test-ee",
+			name: "test-enterprise",
 			args: args{
 				value: &JuiceFS{
-					FullnameOverride: "test-ee",
-					IsCE:             false,
-					Source:           "test-ee",
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
 					Fuse: Fuse{
 						SubPath:         "/",
-						Name:            "test-ee",
+						Name:            "test-enterprise",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
@@ -732,7 +727,7 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					},
 				},
 			},
-			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test test-ee",
+			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test test-enterprise",
 		},
 	}
 	for _, tt := range tests {
