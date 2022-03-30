@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"strings"
 	"testing"
 
@@ -34,7 +35,7 @@ func TestTransformInitUsersWithoutRunAs(t *testing.T) {
 		}, &Alluxio{}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: log.NullLogger{}}
+		engine := &AlluxioEngine{Log: logr.New(log.NullLogSink{})}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
 		if test.alluxioValue.InitUsers.Enabled {
 			t.Errorf("expected init users are disabled, but got %v", test.alluxioValue.InitUsers.Enabled)
@@ -62,7 +63,7 @@ func TestTransformInitUsersWithRunAs(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)
@@ -102,7 +103,7 @@ func TestTransformInitUsersImageOverwrite(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			initImage: common.DefaultInitImage,
 		}
 		engine.transformInitUsers(test.runtime, test.alluxioValue)

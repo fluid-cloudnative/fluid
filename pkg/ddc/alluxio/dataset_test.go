@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -69,7 +70,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],
@@ -160,7 +161,7 @@ func TestUpdateDatasetStatus(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],
@@ -293,7 +294,7 @@ func TestBindToDataset(t *testing.T) {
 
 	engine := &AlluxioEngine{
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		name:      "hbase",
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],

@@ -250,7 +250,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
+		h := BuildHelper(runtimeInfo, fakeClient, logr.New(log.NullLogSink{}))
 
 		err = h.CheckFuseHealthy(record.NewFakeRecorder(300),
 			runtime, runtime.Status, ds)
@@ -308,7 +308,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":             "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         logr.New(log.NullLogSink{}),
 			runtimeType: "jindo",
 			nodeInputs: []*v1.Node{
 				{
@@ -362,7 +362,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":          "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         logr.New(log.NullLogSink{}),
 			runtimeType: "alluxio",
 			nodeInputs: []*v1.Node{
 				{
@@ -418,7 +418,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":            "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         logr.New(log.NullLogSink{}),
 			runtimeType: "goosefs",
 			nodeInputs: []*v1.Node{
 				{

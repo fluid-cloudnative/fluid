@@ -19,6 +19,7 @@ package operations
 import (
 	"errors"
 	"fmt"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -43,7 +44,7 @@ func TestGooseFSFileUtils_CachedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &GooseFSFileUtils{log: logf.NullLogger{}}
+	a := &GooseFSFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -88,7 +89,7 @@ func TestGooseFSFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &GooseFSFileUtils{log: logf.NullLogger{}}
+	a := &GooseFSFileUtils{log: logr.New(logf.NullLogSink{})}
 	err = a.CleanCache("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

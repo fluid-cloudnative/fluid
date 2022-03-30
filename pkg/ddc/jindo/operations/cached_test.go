@@ -15,6 +15,7 @@ package operations
 import (
 	"errors"
 	"github.com/brahma-adshonor/gohook"
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 )
@@ -37,7 +38,7 @@ func TestJindoFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &JindoFileUtils{log: log.NullLogger{}}
+	a := &JindoFileUtils{log: logr.New(log.NullLogSink{})}
 	err = a.CleanCache()
 	if err == nil {
 		t.Error("check failure, want err, got nil")

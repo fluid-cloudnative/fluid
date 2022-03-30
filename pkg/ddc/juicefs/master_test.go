@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -129,7 +130,7 @@ func TestJuiceFSEngine_SetupMaster(t *testing.T) {
 			name:      "test",
 			namespace: "fluid",
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 		},
 	}
 

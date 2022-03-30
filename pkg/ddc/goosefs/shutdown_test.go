@@ -337,7 +337,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &GooseFSEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &GooseFSEngine{Log: logr.New(log.NullLogSink{}), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -394,7 +394,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
-				log: log.NullLogger{},
+				log: logr.New(log.NullLogSink{}),
 			},
 			wantErr: false,
 		},
@@ -497,7 +497,7 @@ func TestGooseFSEngineCleanupCache(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "field",
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			},
 			wantErr: false,
 		},

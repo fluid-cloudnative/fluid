@@ -18,6 +18,7 @@ package goosefs
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -51,7 +52,7 @@ func newTestGooseFSEngine(client client.Client, name string, namespace string, w
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	return engine
 }

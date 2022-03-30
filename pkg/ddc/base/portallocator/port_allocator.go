@@ -63,7 +63,7 @@ func GetRuntimePortAllocator() (*RuntimePortAllocator, error) {
 
 // createAndRestorePortAllocator creates and restores port allocator with runtime-specific logic
 func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
-	alloc.pa, err = portallocator.NewPortAllocatorCustom(*alloc.pr, func(max int, rangeSpec string) (allocator.Interface, error) {
+	alloc.pa, err = portallocator.New(*alloc.pr, func(max int, rangeSpec string) (allocator.Interface, error) {
 		return allocator.NewAllocationMap(max, rangeSpec), nil
 	})
 	if err != nil {

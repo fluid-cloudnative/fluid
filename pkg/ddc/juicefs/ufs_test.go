@@ -16,6 +16,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -113,7 +114,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    fakeClient,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 			}
 			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalStorageBytes()
@@ -200,7 +201,7 @@ func TestTotalFileNums(t *testing.T) {
 				runtime:   tt.fields.runtime,
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 				Client:    fakeClient,
 			}
 			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {

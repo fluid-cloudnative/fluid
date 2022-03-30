@@ -18,6 +18,7 @@ package base_test
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"os"
 
 	"reflect"
@@ -67,7 +68,7 @@ var _ = Describe("TemplateEngine", func() {
 			Name:      mockDatasetName,
 		},
 		Client:        fakeClient,
-		Log:           log.NullLogger{},
+		Log:           logr.New(log.NullLogSink{}),
 		RuntimeType:   "test-runtime-type",
 		FinalizerName: "test-finalizer-name",
 		Runtime:       nil,
@@ -248,7 +249,7 @@ func TestNewTemplateEngine(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		RuntimeType: "alluxio",
 	}
 
@@ -273,7 +274,7 @@ func TestID(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Client:      client,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 		RuntimeType: "alluxio",
 	}
 

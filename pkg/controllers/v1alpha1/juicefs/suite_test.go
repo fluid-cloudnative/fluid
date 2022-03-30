@@ -16,6 +16,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"path/filepath"
 	"testing"
 
@@ -48,7 +49,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(logf.NullLogger{})
+	logf.SetLogger(logr.New(logf.NullLogSink{}))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{

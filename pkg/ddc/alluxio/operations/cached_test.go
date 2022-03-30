@@ -18,6 +18,7 @@ package operations
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -42,7 +43,7 @@ func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	_, err = a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -84,7 +85,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	a := &AlluxioFileUtils{log: logf.NullLogger{}}
+	a := &AlluxioFileUtils{log: logr.New(logf.NullLogSink{})}
 	err = a.CleanCache("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")

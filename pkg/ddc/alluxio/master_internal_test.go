@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -101,7 +102,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		name:      "hbase",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
@@ -226,7 +227,7 @@ func TestGenerateAlluxioValueFile(t *testing.T) {
 		name:      "hbase",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				APIGateway: datav1alpha1.AlluxioCompTemplateSpec{

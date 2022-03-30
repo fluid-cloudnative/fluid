@@ -100,7 +100,7 @@ func TestJindoFSEngine_getHostMountPoint(t *testing.T) {
 			fields: fields{
 				name:      "jindofs",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       logr.New(log.NullLogSink{}),
 				MountRoot: "/tmp",
 			},
 			wantMountPath: "/tmp/jindo/default/jindofs",

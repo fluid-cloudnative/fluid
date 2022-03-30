@@ -16,6 +16,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -45,7 +46,7 @@ func newJuiceFSEngineREP(client client.Client, name string, namespace string) *J
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	return engine
 }
@@ -271,7 +272,7 @@ func TestSyncReplicas(t *testing.T) {
 
 		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, fakeClient, engine.Log)
 		err = engine.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      logr.New(log.NullLogSink{}),
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {

@@ -17,6 +17,7 @@ package juicefs
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -153,14 +154,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	engines := []JuiceFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &juicefsruntimeInputs[0],
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "test",
 			runtime:   &juicefsruntimeInputs[1],
@@ -333,7 +334,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	engines := []JuiceFSEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.JuiceFSRuntime{
@@ -345,7 +346,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       logr.New(log.NullLogSink{}),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.JuiceFSRuntime{

@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 
@@ -44,7 +45,7 @@ func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	return engine
 }

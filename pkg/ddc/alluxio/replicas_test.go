@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/go-logr/logr"
 	"testing"
 
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -44,7 +45,7 @@ func newAlluxioEngineREP(client client.Client, name string, namespace string) *A
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         logr.New(log.NullLogSink{}),
 	}
 	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
@@ -299,7 +300,7 @@ func TestSyncReplicas(t *testing.T) {
 	for _, testCase := range testCases {
 		engine := newAlluxioEngineREP(fakeClient, testCase.name, testCase.namespace)
 		err := engine.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      logr.New(log.NullLogSink{}),
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {

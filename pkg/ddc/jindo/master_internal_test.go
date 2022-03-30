@@ -2,6 +2,7 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
@@ -86,7 +87,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		name:      "hbase",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
@@ -200,7 +201,7 @@ func TestGenerateJindoValueFile(t *testing.T) {
 		name:      "hbase",
 		namespace: "fluid",
 		Client:    client,
-		Log:       log.NullLogger{},
+		Log:       logr.New(log.NullLogSink{}),
 		runtime: &datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
