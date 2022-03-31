@@ -80,6 +80,10 @@ spec:
             - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
+            {{- if eq $key "edition" }}
+            - name: EDITION
+              value: {{ $val | quote }}
+            {{- end }}
             {{- end }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
@@ -107,12 +111,6 @@ spec:
             {{- end }}
             {{- end }}
               name: cachedir
-            {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "mountpath" }}
-            - mountPath: {{ $val | quote }}
-            {{- end }}
-            {{- end }}
-              name: mountpath1
       volumes:
         - name: data-load-script
           configMap:
@@ -131,13 +129,6 @@ spec:
         - name: cachedir
         {{- range $key, $val := .Values.dataloader.options }}
         {{- if eq $key "cachedir" }}
-          hostPath:
-            path: {{ $val | quote }}
-        {{- end }}
-        {{- end }}
-        - name: mountpath1
-        {{- range $key, $val := .Values.dataloader.options }}
-        {{- if eq $key "mountpath" }}
           hostPath:
             path: {{ $val | quote }}
         {{- end }}

@@ -32,7 +32,7 @@ import (
 )
 
 // CreateDataLoadJob creates the job to load data
-func (e *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
+func (j *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
@@ -48,7 +48,7 @@ func (e *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(ctx, targetDataload)
+		valueFileName, err := j.generateDataLoadValueFile(ctx, targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
@@ -67,12 +67,12 @@ func (e *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
 	}
-	e.Log.Info("target dataset", "dataset", targetDataset)
+	j.Log.Info("target dataset", "dataset", targetDataset)
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "juicefs", dataload.Spec.Dataset.Namespace)
 
@@ -121,7 +121,7 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 			options[key] = value
 		}
 	}
-	cacheinfo, err := GetCacheInfoFromConfigmap(e.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	cacheinfo, err := GetCacheInfoFromConfigmap(j.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return
 	}
@@ -129,8 +129,8 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		options[key] = value
 	}
 
-	stsName := e.getWorkerName()
-	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
+	stsName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
@@ -138,8 +138,13 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
 	}
-	options["podNames"] = strings.Join(podNames, ":")
-	options["runtimeName"] = e.name
+	if cacheinfo[Edition] == "community" {
+		options["podNames"] = strings.Join(podNames, ":")
+	} else {
+		options["podNames"] = podNames[0]
+	}
+	options["edition"] = cacheinfo[Edition]
+	options["runtimeName"] = j.name
 	if _, ok := options["timeout"]; !ok {
 		options["timeout"] = DefaultDataLoadTimeout
 	}
@@ -154,7 +159,7 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if err != nil {
 		return
 	}
-	e.Log.Info("dataload value", "value", string(data))
+	j.Log.Info("dataload value", "value", string(data))
 
 	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
 	if err != nil {
@@ -167,18 +172,18 @@ func (e *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
-func (e *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
-	stsName := e.getWorkerName()
-	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
+func (j *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
+	stsName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return false
 	}
 	return true
 }
 
-func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
+func (j *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
 	// get mount path
-	cacheinfo, err := GetCacheInfoFromConfigmap(e.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
+	cacheinfo, err := GetCacheInfoFromConfigmap(j.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return
 	}
@@ -188,15 +193,15 @@ func (e *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoa
 	}
 
 	// get worker pod
-	stsName := e.getWorkerName()
-	pods, err := e.GetRunningPodsOfStatefulSet(stsName, e.namespace)
+	stsName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return true, err
 	}
 
 	// check path exist
 	pod := pods[0]
-	fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, e.namespace, e.Log)
+	fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
 	for _, target := range targetDataload.Spec.Target {
 		targetPath := filepath.Join(mountPath, target.Path)
 		isExist, err := fileUtils.IsExist(targetPath)
