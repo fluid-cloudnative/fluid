@@ -91,7 +91,7 @@ func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRu
 	}
 
 	valueFileName = valueFile.Name()
-	j.Log.V(1).Info("Save the values file", "valueFile", valueFileName)
+	j.Log.Info("Save the values file", "valueFile", valueFileName)
 
 	err = ioutil.WriteFile(valueFileName, data, 0400)
 	if err != nil {

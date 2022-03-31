@@ -38,8 +38,10 @@ const (
 	JuiceMetaUrl   = "metaurl"
 	JuiceAccessKey = "access-key"
 	JuiceSecretKey = "secret-key"
+	JuiceToken     = "token"
 
 	CacheDir               = "cachedir"
 	MountPath              = "mountpath"
+	Edition                = "edition"
 	DefaultDataLoadTimeout = "30m"
 )

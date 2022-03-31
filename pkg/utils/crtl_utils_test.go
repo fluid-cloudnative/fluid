@@ -230,3 +230,39 @@ func TestCalculateDuration(t *testing.T) {
 
 	}
 }
+
+func TestContainsSubString(t *testing.T) {
+	type args struct {
+		slice []string
+		s     string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "test",
+			args: args{
+				slice: []string{"aaa"},
+				s:     "a",
+			},
+			want: true,
+		},
+		{
+			name: "test-b",
+			args: args{
+				slice: []string{"aaa"},
+				s:     "b",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ContainsSubString(tt.args.slice, tt.args.s); got != tt.want {
+				t.Errorf("ContainsSubString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

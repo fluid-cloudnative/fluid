@@ -27,7 +27,12 @@ data:
           local pod="${podNames[i]}"
 
           echo -e "juicefs warmup on $pod $targetPath starts"
-          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT juicefs warmup $targetPath
+          if [ $EDITION == 'community' ]
+          then
+          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT /usr/local/bin/juicefs warmup $targetPath
+          else
+          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT /usr/bin/juicefs warmup $targetPath
+          fi
           echo -e "juicefs warmup on $pod $targetPath ends"
         done
     }
