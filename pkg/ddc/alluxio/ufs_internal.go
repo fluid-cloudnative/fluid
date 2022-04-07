@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/client-go/util/retry"
 )
@@ -323,7 +324,7 @@ func (e *AlluxioEngine) updateMountTime() {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-		runtimeToUpdate.Status.MountTime.Time = time.Now()
+		runtimeToUpdate.Status.MountTime = &metav1.Time{Time: time.Now()}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
