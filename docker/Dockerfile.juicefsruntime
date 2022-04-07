@@ -8,7 +8,7 @@ RUN make juicefsruntime-controller-build && \
     cp bin/juicefsruntime-controller /go/bin/juicefsruntime-controller
 
 # Debug
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
