@@ -153,7 +153,7 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	}
 
 	// If mounttime is earlier than master container starttime, remount is necessary
-	if startedAt != nil && runtime.Status.MountTime.Before(startedAt) {
+	if startedAt != nil && runtime.Status.MountTime != nil && runtime.Status.MountTime.Before(startedAt) {
 		e.Log.Info("remount on master restart", "alluxioruntime", e.name)
 
 		unmountedPaths, err := e.FindUnmountedUFS()
