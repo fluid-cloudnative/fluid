@@ -165,6 +165,7 @@ func (e *AlluxioEngine) releasePorts() (err error) {
 
 	// The value configMap is not found
 	if cm == nil {
+		e.Log.Info("value configMap not found, there might be some unreleased ports", "valueConfigMapName", valueConfigMapName)
 		return nil
 	}
 

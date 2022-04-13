@@ -109,6 +109,7 @@ func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, 
 		}
 		// Allocated port may not be released as expect, restart to restore allocated ports.
 		alloc.log.Error(errors.Errorf("can't get enough available ports, only %d ports are available", len(ports)), "")
+		alloc.log.Info("Exit to restore port allocator...")
 		os.Exit(1)
 	}
 
