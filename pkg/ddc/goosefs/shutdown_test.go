@@ -464,6 +464,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
+				Log:       fake.NullLogger(),
 			}
 
 			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
