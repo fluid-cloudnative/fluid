@@ -85,6 +85,7 @@ func handle() {
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "4fa6ffa6.data.fluid.io",
 		Port:               9443,
+		NewCache:           fluidapp.NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start fluid app manager")
@@ -93,10 +94,11 @@ func handle() {
 
 	controllerOptions := controller.Options{
 		MaxConcurrentReconciles: maxConcurrentReconciles,
+		Log:                     ctrl.Log.WithName("appctrl"),
 	}
 	if err = (fluidapp.NewFluidAppReconciler(
 		mgr.GetClient(),
-		ctrl.Log.WithName("appctrl"),
+		controllerOptions.Log,
 		mgr.GetEventRecorderFor("FluidApp"),
 	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FluidApp")

@@ -57,7 +57,7 @@ func (h *podEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) b
 			return false
 		}
 
-		log.V(1).Info("podEventHandler.onUpdateFunc", "name", podNew.GetName(), "namespace", podNew.GetNamespace())
+		log.Info("podEventHandler.onUpdateFunc", "name", podNew.GetName(), "namespace", podNew.GetNamespace())
 		return true
 	}
 }
@@ -76,11 +76,13 @@ func shouldRequeue(pod *corev1.Pod) bool {
 
 	// ignore if it's not fluid label pod
 	if !utils.ServerlessEnabled(pod.Labels) {
+		log.Info("Serverless not enable.", "labels", pod.Labels)
 		return false
 	}
 
 	// ignore if restartPolicy is Always
 	if pod.Spec.RestartPolicy == corev1.RestartPolicyAlways {
+		log.Info("pod restart policy", "policy", pod.Spec.RestartPolicy)
 		return false
 	}
 
@@ -103,11 +105,13 @@ func shouldRequeue(pod *corev1.Pod) bool {
 		if containerStatus.Name != common.FuseContainerName {
 			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
 				appExited = true
+				log.Info("fluid app exited", "container", containerStatus.Name)
 			}
 		}
 		if containerStatus.Name == common.FuseContainerName {
 			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
 				fuseExited = true
+				log.Info("fluid fuse exited", "container", containerStatus.Name)
 			}
 		}
 	}
