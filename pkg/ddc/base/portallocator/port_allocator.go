@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/kubernetes/pkg/registry/core/service/allocator"
 	"k8s.io/kubernetes/pkg/registry/core/service/portallocator"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -106,7 +107,10 @@ func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, 
 		for _, reservedPort := range ports {
 			_ = alloc.pa.Release(reservedPort)
 		}
-		return nil, errors.Errorf("can't get enough available ports, only %d ports are available", len(ports))
+		// Allocated port may not be released as expect, restart to restore allocated ports.
+		alloc.log.Error(errors.Errorf("can't get enough available ports, only %d ports are available", len(ports)), "")
+		alloc.log.Info("Exit to restore port allocator...")
+		os.Exit(1)
 	}
 
 	alloc.log.Info("Successfully allocated ports", "expeceted port num", portNum, "allocated ports", ports)
