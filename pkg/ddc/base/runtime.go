@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -77,7 +78,7 @@ type RuntimeInfoInterface interface {
 
 	IsDeprecatedPVName() bool
 
-	GetTemplateToInjectForFuse(pvcName string) (*common.FuseInjectionTemplate, error)
+	GetTemplateToInjectForFuse(pvcName string, enableCache bool) (*common.FuseInjectionTemplate, error)
 
 	SetClient(client client.Client)
 }

@@ -1,5 +1,5 @@
 # Build the jindoruntime-controller manager binary
-FROM golang:1.16.8 as builder
+FROM golang:1.17.8 as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
@@ -8,7 +8,7 @@ RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
 
 # Debug
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
@@ -25,7 +25,7 @@ RUN curl -o helm-v3.0.3-linux-amd64.tar.gz http://aliacs-k8s-cn-hongkong.oss-cn-
 ENV K8S_VERSION v1.14.8
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
 
-add charts/jindofs /charts/jindofs
+ADD charts/jindofs /charts/jindofs
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
 COPY --from=builder /go/bin/dlv /usr/local/bin/dlv

@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCheckMasterHealthy(t *testing.T) {
@@ -261,7 +260,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
+		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 
 		err = h.CheckMasterHealthy(record.NewFakeRecorder(300),
 			runtime, runtime.Status, statefulset)

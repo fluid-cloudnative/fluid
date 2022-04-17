@@ -77,8 +77,8 @@ func TestInjectPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -214,7 +214,7 @@ func TestInjectPod(t *testing.T) {
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
 							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",
@@ -360,8 +360,8 @@ func TestInjectPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -483,7 +483,7 @@ func TestInjectPod(t *testing.T) {
 									SubPath:   "check-mount.sh",
 								},
 							}, Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",
@@ -572,8 +572,8 @@ func TestInjectPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},
@@ -715,7 +715,7 @@ func TestInjectPod(t *testing.T) {
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
 							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.Handler{
+								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											// "/check-mount.sh",
@@ -833,8 +833,8 @@ func TestInjectPod(t *testing.T) {
 						CSI: &corev1.CSIPersistentVolumeSource{
 							Driver: "fuse.csi.fluid.io",
 							VolumeAttributes: map[string]string{
-								common.FluidPath: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
-								common.MountType: common.JindoRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
 							},
 						},
 					},

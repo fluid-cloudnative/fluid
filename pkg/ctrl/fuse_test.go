@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -250,7 +249,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
+		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 
 		err = h.CheckFuseHealthy(record.NewFakeRecorder(300),
 			runtime, runtime.Status, ds)
@@ -308,7 +307,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":             "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         fake.NullLogger(),
 			runtimeType: "jindo",
 			nodeInputs: []*v1.Node{
 				{
@@ -362,7 +361,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":          "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         fake.NullLogger(),
 			runtimeType: "alluxio",
 			nodeInputs: []*v1.Node{
 				{
@@ -418,7 +417,7 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":            "true",
 				},
 			},
-			log:         log.NullLogger{},
+			log:         fake.NullLogger(),
 			runtimeType: "goosefs",
 			nodeInputs: []*v1.Node{
 				{

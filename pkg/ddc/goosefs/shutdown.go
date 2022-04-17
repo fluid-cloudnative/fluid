@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -163,6 +164,7 @@ func (e *GooseFSEngine) releasePorts() (err error) {
 
 	// The value configMap is not found
 	if cm == nil {
+		e.Log.Info("value configMap not found, there might be some unreleased ports", "valueConfigMapName", valueConfigMapName)
 		return nil
 	}
 

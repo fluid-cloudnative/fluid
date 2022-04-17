@@ -40,10 +40,11 @@ jobs:
     
     - name: CI script
       run: |
+        golangci-lint run --timeout=10m ./...
+        test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
+        go vet ./...
         make manifests
         make build
-        golangci-lint run --timeout=10m ./...
         find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
-        test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
         make test
         bash <(curl -s https://codecov.io/bash)

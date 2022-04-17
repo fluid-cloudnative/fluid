@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // func newAlluxioEngineREP(client client.Client, name string, namespace string) *alluxio.AlluxioEngine {
@@ -42,7 +41,7 @@ import (
 // 		namespace:   namespace,
 // 		Client:      client,
 // 		runtimeInfo: runTimeInfo,
-// 		Log:         log.NullLogger{},
+// 		Log:         fake.NullLogger(),
 // 	}
 // 	return engine
 // }
@@ -276,9 +275,9 @@ func TestSyncReplicas(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 
-		h := BuildHelper(runtimeInfo, fakeClient, log.NullLogger{})
+		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 		err = h.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      fake.NullLogger(),
 			Recorder: record.NewFakeRecorder(300),
 		}, runtime, runtime.Status, statefulset)
 

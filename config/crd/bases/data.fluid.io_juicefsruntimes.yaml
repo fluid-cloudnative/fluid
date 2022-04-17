@@ -1081,7 +1081,7 @@ spec:
                 type: string
               mountTime:
                 description: MountTime represents time last mount happened if Mounttime
-                  is early than master starting time, remount will be required
+                  is earlier than master starting time, remount will be required
                 format: date-time
                 type: string
               selector:

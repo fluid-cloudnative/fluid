@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package goosefs
 
 import (
@@ -20,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -321,7 +336,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &GooseFSEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &GooseFSEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -378,7 +393,7 @@ func TestGooseFSEngineCleanAll(t *testing.T) {
 					},
 					Data: map[string]string{"data": mockConfigMapData},
 				},
-				log: log.NullLogger{},
+				log: fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -449,6 +464,7 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Client:    client,
+				Log:       fake.NullLogger(),
 			}
 
 			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
@@ -481,7 +497,7 @@ func TestGooseFSEngineCleanupCache(t *testing.T) {
 			fields: fields{
 				name:      "spark",
 				namespace: "field",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},

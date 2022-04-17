@@ -99,9 +99,8 @@ alluxioruntime.data.fluid.io/hbase created
 
 $ kubectl get pod -o wide
 NAME                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES
-hbase-fuse-n4tnc     1/1     Running   0          63m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 hbase-master-0       2/2     Running   0          85m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
-hbase-worker-qs26l   2/2     Running   0          63m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
+hbase-worker-0       2/2     Running   0          63m   192.168.1.146   cn-beijing.192.168.1.146   <none>           <none>
 ```
 在此处可以看到，AlluxioWorker被启动，并且运行在具有污点的节点之上。
 
@@ -109,7 +108,7 @@ hbase-worker-qs26l   2/2     Running   0          63m   192.168.1.146   cn-beiji
 ```shell
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE     AGE
-hbase   1               1                 Ready          1               1                 Ready   1             1               Ready   4m3s
+hbase   1               1                 Ready          1               1                 Ready          0             0               Ready   4m3s
 ```
 
 **查看待创建的应用**

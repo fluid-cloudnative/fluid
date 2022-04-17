@@ -1,9 +1,13 @@
 package common
 
 const (
-	FluidPath = "fluid_path"
+	VolumeAttrFluidPath = "fluid_path"
 
-	MountType = "mount_type"
+	VolumeAttrMountType = "mount_type"
+
+	VolumeAttrNamespace = "runtime_namespace"
+
+	VolumeAttrName = "runtime_name"
 
 	CSIDriver = "fuse.csi.fluid.io"
 

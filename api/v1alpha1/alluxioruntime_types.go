@@ -127,6 +127,14 @@ type AlluxioFuseSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// CleanPolicy decides when to clean Alluxio Fuse pods.
+	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
+	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+	// Defaults to OnRuntimeDeleted
+	// +optional
+	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
 	// Whether to use hostnetwork or not
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional

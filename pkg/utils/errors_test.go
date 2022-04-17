@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	testLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestLoggingErrorExceptConflict(t *testing.T) {
-	logger := testLog.NullLogger{}
+	logger := fake.NullLogger()
 	result := LoggingErrorExceptConflict(logger,
 		apierrors.NewConflict(schema.GroupResource{},
 			"test",

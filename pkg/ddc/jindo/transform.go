@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package jindo
 
 import (
@@ -372,8 +388,8 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 		"client.oss.connection.timeout.millisecond": "3000",
 		"client.storage.connect.enable":             "true",
 		"jfs.cache.meta-cache.enable":               "0",
-		"jfs.cache.data-cache.enable":               "1",
-		"jfs.cache.data-cache.slicecache.enable":    "1",
+		"jfs.cache.data-cache.enable":               "true",
+		"jfs.cache.data-cache.slicecache.enable":    "true",
 	}
 
 	// "client.storage.rpc.port": "6101",
@@ -381,10 +397,10 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 
 	if e.getTieredStoreType(runtime) == 0 {
 		// MEM
-		properties["jfs.cache.ram-cache.enable"] = "1"
+		properties["jfs.cache.ram-cache.enable"] = "true"
 	} else if e.getTieredStoreType(runtime) == 1 || e.getTieredStoreType(runtime) == 2 {
 		// HDD and SSD
-		properties["jfs.cache.ram-cache.enable"] = "0"
+		properties["jfs.cache.ram-cache.enable"] = "false"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
@@ -469,7 +485,7 @@ func (e *JindoEngine) transformWorkerMountPath(originPath []string) map[string]s
 }
 
 func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset) []string {
-	var baseArg = "-okernel_cache -oattr_timeout=9000 -oentry_timeout=9000"
+	var baseArg = "-okernel_cache"
 	var rootArg = ""
 	var secretArg = ""
 	if len(dataset.Spec.Mounts) > 0 && dataset.Spec.Mounts[0].Path != "" {

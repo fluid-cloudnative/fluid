@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestTransformFuseWithNoArgs(t *testing.T) {
@@ -40,7 +41,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			}}, &GooseFS{}, "--fuse-opts=rw,direct_io,allow_other"},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: fake.NullLogger()}
 		err := engine.transformFuse(test.runtime, test.dataset, test.goosefsValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
@@ -76,7 +77,7 @@ func TestTransformFuseWithArgs(t *testing.T) {
 			}}, &GooseFS{}, "--fuse-opts=kernel_cache,allow_other"},
 	}
 	for _, test := range tests {
-		engine := &GooseFSEngine{Log: log.NullLogger{}}
+		engine := &GooseFSEngine{Log: fake.NullLogger()}
 		err := engine.transformFuse(test.runtime, test.dataset, test.goosefsValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)

@@ -68,7 +68,7 @@ spec:
             - "--endpoint=$(CSI_ENDPOINT)"
             - --v=5
             {{- if .Values.csi.featureGates }}
-            - --feature-gates={{ .Values.csi.featureGates }}}
+            - --feature-gates={{ .Values.csi.featureGates }}
             {{- end }}
             - "--pprof-addr=:6060"
           env:
@@ -84,6 +84,8 @@ spec:
             - name: MOUNT_ROOT
               value: {{ .Values.runtime.mountRoot | quote }}
             {{- end }}
+            - name: ALLOW_PATCH_STALE_NODE
+              value: "true"
             - name: KUBELET_ROOTDIR
               value: {{ .Values.csi.kubelet.rootDir }}
             - name: CSI_ENDPOINT

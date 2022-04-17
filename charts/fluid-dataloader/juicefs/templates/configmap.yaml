@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-data-load-script" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+data:
+  dataloader.distributedLoad: |
+    #!/usr/bin/env bash
+    set -xe
+
+    function main() {
+        paths="$DATA_PATH"
+        paths=(${paths//:/ })
+
+        targetPath=""
+        for((j=0;j<${#paths[@]};j++)) do
+          targetPath="$targetPath $MOUNTPATH${paths[j]}"
+        done
+
+        podNames="$POD_NAMES"
+        podNames=(${podNames//:/ })
+
+        ns="$POD_NAMESPACE"
+        for((i=0;i<${#podNames[@]};i++)) do
+          local pod="${podNames[i]}"
+
+          echo -e "juicefs warmup on $pod $targetPath starts"
+          if [ $EDITION == 'community' ]
+          then
+          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT /usr/local/bin/juicefs warmup $targetPath
+          else
+          /usr/local/bin/kubectl -n $ns exec -it $pod -- timeout $TIMEOUT /usr/bin/juicefs warmup $targetPath
+          fi
+          echo -e "juicefs warmup on $pod $targetPath ends"
+        done
+    }
+    main "$@"

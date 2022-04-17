@@ -1,5 +1,5 @@
 # Build the dataset-controller manager binary
-FROM golang:1.16.8 as builder
+FROM golang:1.17.8 as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
@@ -8,7 +8,7 @@ RUN make webhook-build && \
 	cp bin/fluid-webhook /go/bin/fluid-webhook
 
 # Debug
-RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 FROM alpine:3.10
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \

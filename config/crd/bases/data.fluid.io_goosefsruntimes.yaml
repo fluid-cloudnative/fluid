@@ -84,6 +84,14 @@ spec:
               apiGateway:
                 description: The component spec of GooseFS API Gateway
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   enabled:
                     description: Enabled or Disabled for the components. For now,
                       only  API Gateway is enabled or disabled.
@@ -174,6 +182,14 @@ spec:
               fuse:
                 description: The component spec of GooseFS Fuse
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   args:
                     description: Arguments that will be passed to GooseFS Fuse
                     items:
@@ -332,6 +348,14 @@ spec:
               jobMaster:
                 description: The component spec of GooseFS job master
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   enabled:
                     description: Enabled or Disabled for the components. For now,
                       only  API Gateway is enabled or disabled.
@@ -405,6 +429,14 @@ spec:
               jobWorker:
                 description: The component spec of GooseFS job Worker
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   enabled:
                     description: Enabled or Disabled for the components. For now,
                       only  API Gateway is enabled or disabled.
@@ -483,6 +515,14 @@ spec:
               master:
                 description: The component spec of GooseFS master
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   enabled:
                     description: Enabled or Disabled for the components. For now,
                       only  API Gateway is enabled or disabled.
@@ -649,6 +689,14 @@ spec:
               worker:
                 description: The component spec of GooseFS worker
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations is an unstructured key value map stored
+                      with a resource that may be set by external tools to store and
+                      retrieve arbitrary metadata. They are not queryable and should
+                      be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
                   enabled:
                     description: Enabled or Disabled for the components. For now,
                       only  API Gateway is enabled or disabled.
@@ -839,6 +887,11 @@ spec:
                 type: string
               masterReason:
                 description: Reason for Master's condition transition
+                type: string
+              mountTime:
+                description: MountTime represents time last mount happened if Mounttime
+                  is earlier than master starting time, remount will be required
+                format: date-time
                 type: string
               selector:
                 description: Selector is used for auto-scaling

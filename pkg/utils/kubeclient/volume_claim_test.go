@@ -453,8 +453,8 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 				CSI: &v1.CSIPersistentVolumeSource{
 					Driver: "fuse.csi.fluid.io",
 					VolumeAttributes: map[string]string{
-						common.FluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-						common.MountType: common.JindoRuntime,
+						common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+						common.VolumeAttrMountType: common.JindoRuntime,
 					},
 				},
 			},

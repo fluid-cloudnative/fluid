@@ -20,9 +20,10 @@ package alluxio
 
 import (
 	"context"
-	"k8s.io/client-go/tools/record"
 	"reflect"
 	"testing"
+
+	"k8s.io/client-go/tools/record"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -32,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
@@ -130,7 +130,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &alluxioruntimeInputs[0],
@@ -288,7 +288,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -300,7 +300,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -437,7 +437,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -449,7 +449,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -461,7 +461,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "deprecated",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -613,7 +613,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	engines := []AlluxioEngine{
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "hbase",
 			runtime: &datav1alpha1.AlluxioRuntime{
@@ -625,7 +625,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		},
 		{
 			Client:    client,
-			Log:       log.NullLogger{},
+			Log:       fake.NullLogger(),
 			namespace: "fluid",
 			name:      "spark",
 			runtime: &datav1alpha1.AlluxioRuntime{

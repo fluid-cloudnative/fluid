@@ -117,6 +117,7 @@ const (
 	injectSidecar          = ".sidecar" + inject
 	InjectServerless       = "serverless" + inject
 	InjectFuseSidecar      = "fuse" + injectSidecar
+	InjectCacheDir         = "cachedir" + injectSidecar
 	InjectWorkerSidecar    = "worker" + injectSidecar
 	InjectSidecarDone      = "done" + injectSidecar
 )

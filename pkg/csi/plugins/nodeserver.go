@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,11 +41,17 @@ import (
 	"k8s.io/utils/mount"
 )
 
+const (
+	AllowPatchStaleNodeEnv = "ALLOW_PATCH_STALE_NODE"
+)
+
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
-	client client.Client
-	mutex  sync.Mutex
+	client    client.Client
+	apiReader client.Reader
+	mutex     sync.Mutex
+	node      *v1.Node
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -95,8 +102,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	   https://github.com/Alluxio/alluxio/blob/master/integration/fuse/bin/alluxio-fuse
 	*/
 
-	fluidPath := req.GetVolumeContext()["fluid_path"]
-	mountType := req.GetVolumeContext()["mount_type"]
+	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
+	mountType := req.GetVolumeContext()[common.VolumeAttrMountType]
 	if fluidPath == "" {
 		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
@@ -184,14 +191,12 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	ns.mutex.Lock()
 	defer ns.mutex.Unlock()
 
-	// 1. get dataset namespace and name by volume id
-	// NodeUnstageVolumeRequest contains VolumeId info only. We cannot extract namespace and name of a dataset
-	// from the VolumeId information. So the solution is to get PV according to the VolumeId and to check the ClaimRef
-	// of the PV. Fluid creates PVC with the same namespace and name for any datasets so the namespace and name of the ClaimRef
-	// can be used to indicate a specific dataset.
-	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	// 1. get runtime namespace and name
+	// A nil volumeContext is passed because unlike csi.NodeStageVolumeRequest, csi.NodeUnstageVolumeRequest has
+	// no volume context attribute.
+	namespace, name, err := ns.getRuntimeNamespacedName(nil, req.GetVolumeId())
 	if err != nil {
-		glog.Errorf("NodeUnstageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
@@ -235,7 +240,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Delete(fuseLabelKey)
 
-	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+	node, err := ns.getNode()
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
@@ -255,10 +260,10 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	ns.mutex.Lock()
 	defer ns.mutex.Unlock()
 
-	// 1. get dataset namespace and name by volume id
-	namespace, name, err := volume.GetNamespacedNameByVolumeId(ns.client, req.GetVolumeId())
+	// 1. get runtime namespace and name
+	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), req.GetVolumeId())
 	if err != nil {
-		glog.Errorf("NodeStageVolume: can't get namespace and name by volume id %s: %v", req.GetVolumeId(), err)
+		glog.Errorf("NodeStageVolume: can't get runtime namespace and name given (volumeContext: %v, volumeId: %s): %v", req.GetVolumeContext(), req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
@@ -267,20 +272,16 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
 
-	node, err := kubeclient.GetNode(ns.client, ns.nodeId)
+	node, err := ns.getNode()
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
 	}
 
-	if _, ok := node.Labels[fuseLabelKey]; !ok {
-		_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
-		if err != nil {
-			glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
-			return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
-		}
-	} else {
-		glog.Info("NodeStageVolume: label already exists on node", "label", fuseLabelKey, "node", node)
+	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	if err != nil {
+		glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
@@ -304,6 +305,42 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 			},
 		},
 	}, nil
+}
+
+// getRuntimeNamespacedName first checks volume context for runtime's namespace and name as a fast path.
+// If not found, it takes a fallback to query API Server and to parse the PV information.
+func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, volumeId string) (namespace string, name string, err error) {
+	// Fast path to check namespace && name in volume context
+	if len(volumeContext) != 0 {
+		runtimeName, nameFound := volumeContext[common.VolumeAttrName]
+		runtimeNamespace, nsFound := volumeContext[common.VolumeAttrNamespace]
+		if nameFound && nsFound {
+			glog.V(3).Infof("Get runtime namespace(%s) and name(%s) from volume context", runtimeNamespace, runtimeName)
+			return runtimeNamespace, runtimeName, nil
+		}
+	}
+
+	// Fallback: query API Server to get namespaced name
+	glog.Infof("Get runtime namespace and name directly from api server with volumeId %s", volumeId)
+	return volume.GetNamespacedNameByVolumeId(ns.apiReader, volumeId)
+}
+
+// getNode first checks cached node
+func (ns *nodeServer) getNode() (node *v1.Node, err error) {
+	// Default to allow patch stale node info
+	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || "true" == envVar {
+		if ns.node != nil {
+			glog.V(3).Infof("Found cached node %s", ns.node.Name)
+			return ns.node, nil
+		}
+	}
+
+	if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
+		return nil, err
+	}
+	glog.V(1).Infof("Got node %s from api server", node.Name)
+	ns.node = node
+	return ns.node, nil
 }
 
 func checkMountInUse(volumeName string) (bool, error) {

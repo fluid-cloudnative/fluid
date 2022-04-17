@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
@@ -269,7 +268,7 @@ func TestPrepareUFS(t *testing.T) {
 				},
 				name:      "spark",
 				namespace: "default",
-				Log:       log.NullLogger{},
+				Log:       fake.NullLogger(),
 			},
 			wantErr: false,
 		},
@@ -397,7 +396,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 				runtime:            &runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                fake.NullLogger(),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}
@@ -431,7 +430,7 @@ func TestUpdateMountTime(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
@@ -450,7 +449,7 @@ func TestUpdateMountTime(t *testing.T) {
 				runtime:            test.runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                fake.NullLogger(),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}
@@ -482,7 +481,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
@@ -518,7 +517,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: v1.Time{
+					MountTime: &v1.Time{
 						Time: yesterday,
 					},
 				},
@@ -575,7 +574,7 @@ func TestCheckIfRemountRequired(t *testing.T) {
 				runtime:            test.runtime,
 				name:               "test",
 				namespace:          "default",
-				Log:                log.NullLogger{},
+				Log:                fake.NullLogger(),
 				Client:             mockClient,
 				MetadataSyncDoneCh: nil,
 			}

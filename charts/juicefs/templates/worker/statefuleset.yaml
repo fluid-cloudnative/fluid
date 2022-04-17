@@ -58,25 +58,98 @@ spec:
               memory: {{ .Values.worker.resources.requests.memory }}
             {{- end }}
           {{- end }}
-          command: ["sh", "-c", "sleep infinity"]
+          command: ["sh", "/root/script/script.sh"]
+          securityContext:
+            privileged: true
           {{- if .Values.worker.ports }}
           ports:
 {{ toYaml .Values.worker.ports | trim | indent 10  }}
           {{- end }}
-          {{- if .Values.worker.envs }}
           env:
+          - name: JFS_FOREGROUND
+            value: "1"
+          {{- if .Values.worker.envs }}
 {{ toYaml .Values.worker.envs | trim | indent 10  }}
           {{- end }}
-          {{- if .Values.worker.cacheDir }}
+          {{- if .Values.fuse.metaurlSecret }}
+          - name: METAURL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.metaurlSecret }}
+                key: metaurl
+          {{- end }}
+          {{- if .Values.fuse.accesskeySecret }}
+          - name: ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.accesskeySecret }}
+                key: access-key
+          {{- end }}
+          {{- if .Values.fuse.secretkeySecret }}
+          - name: SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.secretkeySecret }}
+                key: secret-key
+          {{- end }}
+          {{- if .Values.fuse.tokenSecret }}
+          - name: TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.fuse.tokenSecret }}
+                key: token
+          {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'if [ x$({{ .Values.fuse.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
+            failureThreshold: 3
+            initialDelaySeconds: 1
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
+            - mountPath: /root/script
+              name: script
+            {{- if .Values.worker.cacheDir }}
             - name: cache-dir
               mountPath: {{ .Values.worker.cacheDir }}
-          {{- end }}
+            {{- end }}
       restartPolicy: Always
-      {{- if .Values.worker.cacheDir }}
       volumes:
+        {{- if .Values.worker.cacheDir }}
         - name: cache-dir
           hostPath:
             path: {{ .Values.worker.cacheDir }}
             type: DirectoryOrCreate
-      {{- end }}
+        {{- end }}
+        - name: script
+          configMap:
+            name: {{ template "juicefs.fullname" . }}-worker-script
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "juicefs.fullname" . }}-worker-script
+  labels:
+    app: {{ template "juicefs.name" . }}
+    chart: {{ template "juicefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: juicefs-worker
+data:
+  script.sh: |
+    #!/bin/bash
+
+    {{- if .Values.fuse.formatCmd }}
+    {{ .Values.fuse.formatCmd }}
+    {{- end }}
+
+    {{ .Values.worker.command }}

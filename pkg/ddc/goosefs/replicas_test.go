@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package goosefs
 
 import (
@@ -30,7 +32,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func newGooseFSEngineREP(client client.Client, name string, namespace string) *GooseFSEngine {
@@ -42,7 +43,7 @@ func newGooseFSEngineREP(client client.Client, name string, namespace string) *G
 		namespace:   namespace,
 		Client:      client,
 		runtimeInfo: runTimeInfo,
-		Log:         log.NullLogger{},
+		Log:         fake.NullLogger(),
 	}
 	engine.Helper = ctrl.BuildHelper(runTimeInfo, client, engine.Log)
 	return engine
@@ -297,7 +298,7 @@ func TestSyncReplicas(t *testing.T) {
 	for _, testCase := range testCases {
 		engine := newGooseFSEngineREP(fakeClient, testCase.name, testCase.namespace)
 		err := engine.SyncReplicas(cruntime.ReconcileRequestContext{
-			Log:      log.NullLogger{},
+			Log:      fake.NullLogger(),
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {

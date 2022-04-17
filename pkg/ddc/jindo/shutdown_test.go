@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package jindo
 
 import (
@@ -14,7 +30,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -162,7 +177,7 @@ func TestDestroyWorker(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
-		engine := &JindoEngine{Log: log.NullLogger{}, runtimeInfo: test.runtimeInfo}
+		engine := &JindoEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
@@ -251,7 +266,7 @@ func TestCleanConfigmap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			engine := &JindoEngine{
-				Log:         log.NullLogger{},
+				Log:         fake.NullLogger(),
 				name:        tt.args.name,
 				namespace:   tt.args.namespace,
 				runtimeType: runtimeType,
@@ -312,7 +327,7 @@ func TestCleanAll(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	engine := &JindoEngine{Log: log.NullLogger{}}
+	engine := &JindoEngine{Log: fake.NullLogger()}
 	engine.Client = client
 	engine.name = "fluid-hadoop"
 	engine.namespace = "default"
