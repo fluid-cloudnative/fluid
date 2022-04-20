@@ -143,7 +143,7 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	for _, containerStatus := range masterPod.Status.ContainerStatuses {
 		if containerStatus.Name == masterContainerName {
 			if containerStatus.State.Running == nil {
-				e.Log.Error(fmt.Errorf("Container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
+				e.Log.Error(fmt.Errorf("container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
 				return
 			} else {
 				startedAt = &containerStatus.State.Running.StartedAt
