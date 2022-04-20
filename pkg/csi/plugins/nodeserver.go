@@ -17,6 +17,12 @@ package plugins
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"sync"
+	"syscall"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -25,12 +31,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	"os"
-	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"sync"
-	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
@@ -328,7 +329,7 @@ func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, 
 // getNode first checks cached node
 func (ns *nodeServer) getNode() (node *v1.Node, err error) {
 	// Default to allow patch stale node info
-	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || "true" == envVar {
+	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || envVar == "true" {
 		if ns.node != nil {
 			glog.V(3).Infof("Found cached node %s", ns.node.Name)
 			return ns.node, nil

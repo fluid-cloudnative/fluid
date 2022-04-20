@@ -27,7 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/apps/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -74,7 +74,7 @@ func TestTotalStorageBytes(t *testing.T) {
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSet, pod)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSet)
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, daemonSet)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
@@ -163,7 +163,7 @@ func TestTotalFileNums(t *testing.T) {
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSet, pod)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSet)
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, daemonSet)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
