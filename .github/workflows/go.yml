@@ -30,7 +30,7 @@ jobs:
     - name: Static Check
       uses: dominikh/staticcheck-action@v1.2.0
       with:
-        path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+        working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
     - name: CI Preparation
       run: |
