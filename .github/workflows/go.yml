@@ -16,7 +16,7 @@ jobs:
   build:
     env:
       GOPATH: ${{ github.workspace }}
-      GO111MODULE: off
+      GO111MODULE: auto
       CI_TEST_FLAGS: -race -coverprofile=coverage.txt -covermode=atomic
     defaults:
       run:
