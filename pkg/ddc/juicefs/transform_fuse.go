@@ -154,8 +154,10 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			options = append(options, fmt.Sprintf("free-space-ratio=%s", tiredStoreLevel.Low))
 		}
 	}
-	value.Fuse.CacheDir = cacheDir
 	options = append(options, fmt.Sprintf("cache-dir=%s", cacheDir))
+	if cacheDir != "memory" {
+		value.Fuse.CacheDir = cacheDir
+	}
 
 	return options, nil
 }
