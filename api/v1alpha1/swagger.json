@@ -1907,8 +1907,7 @@
           "type": "string"
         },
         "mountTime": {
-          "description": "MountTime represents time last mount happened if Mounttime is early than master starting time, remount will be required",
-          "default": {},
+          "description": "MountTime represents time last mount happened if Mounttime is earlier than master starting time, remount will be required",
           "$ref": "#/definitions/v1.Time"
         },
         "selector": {

@@ -91,19 +91,19 @@ build: ${BINARY_BUILD}
 csi-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
-dataset-controller-build: generate fmt vet
+dataset-controller-build: generate fmt vet gen-openapi
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
 
-alluxioruntime-controller-build: generate fmt vet
+alluxioruntime-controller-build: generate fmt vet gen-openapi
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
 
-jindoruntime-controller-build: generate fmt vet
+jindoruntime-controller-build: generate fmt vet gen-openapi
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
-goosefsruntime-controller-build: generate fmt vet
+goosefsruntime-controller-build: generate fmt vet gen-openapi
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
 
-juicefsruntime-controller-build: generate fmt vet
+juicefsruntime-controller-build: generate fmt vet gen-openapi
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
 
 webhook-build: generate fmt vet
@@ -157,22 +157,22 @@ update-api-doc:
 	bash tools/api-doc-gen/generate_api_doc.sh && mv tools/api-doc-gen/api_doc.md docs/zh/dev/api_doc.md && cp docs/zh/dev/api_doc.md docs/en/dev/api_doc.md
 
 # Build the docker image
-docker-build-dataset-controller: generate fmt vet
+docker-build-dataset-controller: generate fmt vet gen-openapi
 	docker build --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-application-controller: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-alluxioruntime-controller: generate fmt vet
+docker-build-alluxioruntime-controller: generate fmt vet gen-openapi
 	docker build --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-jindoruntime-controller: generate fmt vet
+docker-build-jindoruntime-controller: generate fmt vet gen-openapi
 	docker build --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-goosefsruntime-controller: generate fmt vet
+docker-build-goosefsruntime-controller: generate fmt vet gen-openapi
 	docker build --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-juicefsruntime-controller: generate fmt vet juicefsruntime-controller-build
+docker-build-juicefsruntime-controller: generate fmt vet juicefsruntime-controller-build gen-openapi
 	docker build --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi: generate fmt vet
@@ -225,6 +225,9 @@ docker-push-all: ${DOCKER_PUSH}
 
 gen-sdk:
 	./hack/sdk/gen-sdk.sh
+
+gen-openapi:
+	./hack/gen-openapi.sh
 
 # find or download controller-gen
 # download controller-gen if necessary
