@@ -27,6 +27,9 @@ jobs:
       with:
         path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
+    - name: Static Check
+      uses: dominikh/staticcheck-action@v1.2.0
+
     - name: CI Preparation
       run: |
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
