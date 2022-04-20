@@ -18,13 +18,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
-SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
-SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
-SDK_OUTPUT_PATH="sdk/python"
-PYTHON_SDK_OUTPUT_PATH="sdk/python"
-JAVA_SDK_OUTPUT_PATH="sdk/java"
-
 if [ -z "${GOPATH:-}" ]; then
     export GOPATH=$(go env GOPATH)
 fi
