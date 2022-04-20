@@ -17,6 +17,10 @@ package juicefs
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sync"
 	"time"
 
@@ -36,7 +40,11 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-var _ controllers.RuntimeReconcilerInterface = (*JuiceFSRuntimeReconciler)(nil)
+const controllerName string = "JuiceFSRuntimeController"
+
+var (
+	_ controllers.RuntimeReconcilerInterface = (*JuiceFSRuntimeReconciler)(nil)
+)
 
 // JuiceFSRuntimeReconciler reconciles a JuiceFSRuntime object
 type JuiceFSRuntimeReconciler struct {
@@ -44,6 +52,14 @@ type JuiceFSRuntimeReconciler struct {
 	engines map[string]base.Engine
 	mutex   *sync.Mutex
 	*controllers.RuntimeReconciler
+}
+
+func (r *JuiceFSRuntimeReconciler) ControllerName() string {
+	return controllerName
+}
+
+func (r *JuiceFSRuntimeReconciler) ManagedResource() client.Object {
+	return &datav1alpha1.JuiceFSRuntime{}
 }
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
@@ -97,9 +113,27 @@ func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.R
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *JuiceFSRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(options).
-		For(&datav1alpha1.JuiceFSRuntime{}).
-		Complete(r)
+func (r *JuiceFSRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
+	if eventDriven {
+		return watch.SetupWatcherWithReconciler(mgr, options, r)
+	} else {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.JuiceFSRuntime{}).
+			Complete(r)
+	}
+}
+
+func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		Scheme: scheme,
+		SelectorsByObject: cache.SelectorsByObject{
+			&appsv1.StatefulSet{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.App: common.JuiceFSRuntime,
+			})},
+			&appsv1.DaemonSet{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.App: common.JuiceFSRuntime,
+			})},
+		},
+	})
 }
