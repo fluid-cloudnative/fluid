@@ -27,7 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,7 +52,7 @@ func TestJuiceFSEngine_getDaemonset(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "runtime1",
 						Namespace: "default",
 					},
@@ -61,11 +61,11 @@ func TestJuiceFSEngine_getDaemonset(t *testing.T) {
 				namespace: "default",
 			},
 			wantDaemonset: &appsv1.DaemonSet{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "runtime1",
 					Namespace: "default",
 				},
-				TypeMeta: v1.TypeMeta{
+				TypeMeta: metav1.TypeMeta{
 					Kind:       "DaemonSet",
 					APIVersion: "apps/v1",
 				},
@@ -219,7 +219,7 @@ func TestJuiceFSEngine_getRuntime(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "juicefs",
 						Namespace: "default",
 					},
@@ -228,11 +228,11 @@ func TestJuiceFSEngine_getRuntime(t *testing.T) {
 				namespace: "default",
 			},
 			want: &datav1alpha1.JuiceFSRuntime{
-				TypeMeta: v1.TypeMeta{
+				TypeMeta: metav1.TypeMeta{
 					Kind:       "JuiceFSRuntime",
 					APIVersion: "data.fluid.io/v1alpha1",
 				},
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "juicefs",
 					Namespace: "default",
 				},
@@ -281,7 +281,7 @@ func TestJuiceFSEngine_getSecret(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "runtime",
 						Namespace: "default",
 					},
@@ -290,11 +290,11 @@ func TestJuiceFSEngine_getSecret(t *testing.T) {
 				namespace: "default",
 			},
 			wantSecret: &corev1.Secret{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
 				},
-				TypeMeta: v1.TypeMeta{
+				TypeMeta: metav1.TypeMeta{
 					Kind:       "Secret",
 					APIVersion: "v1",
 				},
@@ -610,7 +610,7 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 				namespace: "fluid",
 			},
 			sts: &appsv1.StatefulSet{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test1",
 					Namespace: "fluid",
 				},
@@ -623,7 +623,7 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 			podLists: &corev1.PodList{
 				Items: []corev1.Pod{
 					{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test1-pod",
 							Namespace: "fluid",
 							Labels:    map[string]string{"sts": "test1"},
@@ -640,7 +640,7 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 			},
 			wantPods: []corev1.Pod{
 				{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-pod",
 						Namespace: "fluid",
 						Labels:    map[string]string{"sts": "test1"},

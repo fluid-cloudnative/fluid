@@ -2,10 +2,11 @@ package helm
 
 import (
 	"errors"
-	"github.com/brahma-adshonor/gohook"
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
 )
 
 func TestGenerateValueFile(t *testing.T) {
@@ -191,7 +192,7 @@ func TestGetChartVersion(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-	if "v0.6.0" != version {
+	if version != "v0.6.0" {
 		t.Errorf("fail to get the version of the helm")
 	}
 	wrappedUnhookOutput()
