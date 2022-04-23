@@ -29,7 +29,28 @@ func (e *JindoFSxEngine) ShouldCheckUFS() (should bool, err error) {
 
 // PrepareUFS do all the UFS preparations
 func (e *JindoFSxEngine) PrepareUFS() (err error) {
-	// For Jindo Engine, not need to prepare UFS
+	// 1. Mount UFS (Synchronous Operation)
+	shouldMountUfs, err := e.shouldMountUFS()
+	if err != nil {
+		return
+	}
+	e.Log.Info("shouldMountUFS", "should", shouldMountUfs)
+
+	if shouldMountUfs {
+		err = e.mountUFS()
+		if err != nil {
+			return
+		}
+	}
+	e.Log.Info("mountUFS")
+
+	err = e.SyncMetadata()
+	if err != nil {
+		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
+		e.Log.Error(err, "SyncMetadata")
+		return nil
+	}
+
 	return
 }
 

@@ -30,7 +30,7 @@ import (
 
 func (e *JindoFSxEngine) setupMasterInernal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/jindofs"
+		chartName = utils.GetChartsDirectory() + "/jindofsx"
 	)
 	valuefileName, err := e.generateJindoValueFile()
 	if err != nil {

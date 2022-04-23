@@ -145,32 +145,7 @@ func (e *JindoFSxEngine) syncMetadataInternal() (err error) {
 				return
 			}
 
-			/*e.Log.Info("Metadata Sync starts", "dataset namespace", e.namespace, "dataset name", e.name)
-
-			podName, containerName := e.getMasterPodInfo()
-			fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-			// load metadata
-			err = fileUtils.LoadMetadataWithoutTimeout("/")
-			if err != nil {
-				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
-				result.Err = err
-				result.Done = false
-				resultChan <- result
-				return
-			}*/
 			result.Done = true
-
-			useStsSecret := false
-			if len(e.runtime.Spec.Secret) != 0 {
-				useStsSecret = true
-			}
-			datasetUFSTotalBytes, err := e.TotalJindoStorageBytes(useStsSecret)
-			if err != nil {
-				e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
-				result.Done = false
-			} else {
-				result.UfsTotal = utils.BytesSize(float64(datasetUFSTotalBytes))
-			}
 
 			if !result.Done {
 				result.Err = errors.New("GetMetadataInfoFailed")
