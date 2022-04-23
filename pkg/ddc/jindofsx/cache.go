@@ -36,7 +36,7 @@ func (e *JindoFSxEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 	totalCapacityLabel := ""
 	usedCapacityLabel := ""
-	if e.runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
+	if len(e.runtime.Spec.TieredStore.Levels) > 0 && e.runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
 		totalCapacityLabel = SUMMARY_PREFIX_TOTAL_MEM_CAPACITY
 		usedCapacityLabel = SUMMARY_PREFIX_USED_MEM_CAPACITY
 	} else {

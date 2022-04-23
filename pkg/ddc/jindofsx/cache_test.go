@@ -1,6 +1,7 @@
 package jindofsx
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
 
@@ -38,7 +39,18 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			e := &JindoFSxEngine{}
+			e := &JindoFSxEngine{
+				runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								Path:       "/mnt/jindo0",
+								MediumType: common.HDD,
+							},
+						},
+					}},
+				},
+			}
 			got, err := e.queryCacheStatus()
 			want := cacheStates{
 				cacheCapacity:    "250.38GiB",
@@ -70,7 +82,18 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			e := &JindoFSxEngine{}
+			e := &JindoFSxEngine{
+				runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								Path:       "/mnt/jindo0",
+								MediumType: common.HDD,
+							},
+						},
+					}},
+				},
+			}
 			got, err := e.queryCacheStatus()
 			want := cacheStates{
 				cacheCapacity: "250.38GiB",
@@ -101,7 +124,18 @@ func TestQueryCacheStatus(t *testing.T) {
 				})
 			defer patch2.Reset()
 
-			e := &JindoFSxEngine{}
+			e := &JindoFSxEngine{
+				runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								Path:       "/mnt/jindo0",
+								MediumType: common.HDD,
+							},
+						},
+					}},
+				},
+			}
 			got, err := e.queryCacheStatus()
 			want := cacheStates{
 				cacheCapacity: "250.38GiB",
@@ -187,8 +221,10 @@ func mockJindoReportSummary() string {
 	Live Nodes: 2
 	Decommission Nodes: 0
 	Mode: BLOCK
-	Total Capacity: 250.38GB
-	Used Capacity: 11.72GB
+	Total Disk Capacity: 250.38GB
+	Used Disk Capacity: 11.72GB
+    Total MEM Capacity: 250.38GB
+	Used MEM Capacity: 11.72GB
 	`
 	return s
 }

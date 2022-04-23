@@ -56,7 +56,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, false)
+	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -66,7 +66,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, true)
+	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestJindoFileUtils_execWithoutTimeout(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, _, err = a.execWithoutTimeout([]string{"/sdk/bin/jindo", "jfs", "-report"}, false)
+	_, _, err = a.execWithoutTimeout([]string{"jindo", "fs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -102,7 +102,7 @@ func TestJindoFileUtils_execWithoutTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, _, err = a.execWithoutTimeout([]string{"/sdk/bin/jindo", "jfs", "-report"}, true)
+	_, _, err = a.execWithoutTimeout([]string{"jindo", "fs", "-report"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}

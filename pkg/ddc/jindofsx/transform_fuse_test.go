@@ -121,6 +121,9 @@ func TestTransformFuseArg(t *testing.T) {
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Secret: "secret",
+				Fuse: datav1alpha1.JindoFuseSpec{
+					Args: []string{"-okernel_cache"},
+				},
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -129,7 +132,7 @@ func TestTransformFuseArg(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, &Jindo{}, "-ocredential_provider=secrets:///token/ -oroot_ns=jindo -okernel_cache"},
+			}}, &Jindo{}, "-okernel_cache"},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
@@ -158,7 +161,7 @@ func TestParseFuseImage(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:3.8.0"},
+			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.3.0"},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
