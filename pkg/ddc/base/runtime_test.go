@@ -25,7 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+
 	fakeutils "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1119,7 +1119,7 @@ func TestPermitSync(t *testing.T) {
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Log: fake.NullLogger(),
+		Log: fakeutils.NullLogger(),
 	}
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)

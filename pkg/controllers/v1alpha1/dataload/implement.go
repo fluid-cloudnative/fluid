@@ -17,7 +17,11 @@ package dataload
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+
+	"reflect"
+	"sync"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -31,11 +35,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
-	"time"
 )
 
 // DataLoadReconcilerImplement implements the actual reconciliation logic of DataLoadReconciler
@@ -121,7 +122,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx cruntime.Reconci
 	dataloadToUpdate := targetDataload.DeepCopy()
 	dataloadToUpdate.Status.Phase = common.PhasePending
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
-		dataloadToUpdate.Status.Conditions = []v1alpha1.Condition{}
+		dataloadToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
 	dataloadToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
@@ -316,7 +317,7 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 				}
 				dataloadToUpdate := dataload.DeepCopy()
 				jobCondition := job.Status.Conditions[0]
-				dataloadToUpdate.Status.Conditions = []v1alpha1.Condition{
+				dataloadToUpdate.Status.Conditions = []datav1alpha1.Condition{
 					{
 						Type:               common.ConditionType(jobCondition.Type),
 						Status:             jobCondition.Status,

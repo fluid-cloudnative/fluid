@@ -3481,8 +3481,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 					},
 					"mountTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountTime represents time last mount happened if Mounttime is early than master starting time, remount will be required",
-							Default:     map[string]interface{}{},
+							Description: "MountTime represents time last mount happened if Mounttime is earlier than master starting time, remount will be required",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
