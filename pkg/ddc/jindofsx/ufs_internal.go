@@ -22,22 +22,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func (e *JindoFSxEngine) usedStorageBytesInternal() (value int64, err error) {
-	return
-}
-
-func (e *JindoFSxEngine) freeStorageBytesInternal() (value int64, err error) {
-	return
-}
-
-func (e *JindoFSxEngine) totalStorageBytesInternal() (total int64, err error) {
-	return
-}
-
-func (e *JindoFSxEngine) totalFileNumsInternal() (fileCount int64, err error) {
-	return
-}
-
 // shouldMountUFS checks if there's any UFS that need to be mounted
 func (e *JindoFSxEngine) shouldMountUFS() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
