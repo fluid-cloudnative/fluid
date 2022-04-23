@@ -103,7 +103,7 @@ func TestJindoFileUtils_execWithoutTimeout(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	_, _, err = a.execWithoutTimeout([]string{"/sdk/bin/jindo", "jfs", "-report"}, true)
-	if err != nil {
+	if err == nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhook()
