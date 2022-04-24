@@ -140,7 +140,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	return value, err
 }
 
-func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) (err error) {
+func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -230,8 +230,6 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		}
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
-
-	return nil
 }
 
 func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPath string, userQuotas string, value *Jindo) {
@@ -397,7 +395,7 @@ func (e *JindoFSxEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, 
 	}
 }
 
-func (e *JindoFSxEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoFSxEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	} else {
@@ -406,8 +404,6 @@ func (e *JindoFSxEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRu
 
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
-
-	return nil
 }
 
 func (e *JindoFSxEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
@@ -504,11 +500,10 @@ func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	return
 }
 
-func (e *JindoFSxEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoFSxEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.Secret) != 0 {
 		value.Secret = runtime.Spec.Secret
 	}
-	return nil
 }
 
 func (e *JindoFSxEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
@@ -562,11 +557,11 @@ func (e *JindoFSxEngine) allocatePorts(value *Jindo) error {
 	return nil
 }
 
-func (e *JindoFSxEngine) transformInitPortCheck(value *Jindo) error {
+func (e *JindoFSxEngine) transformInitPortCheck(value *Jindo) {
 	// This function should be called after port allocation
 
 	if !common.PortCheckEnabled() {
-		return nil
+		return
 	}
 
 	e.Log.Info("Enabled port check")
@@ -586,15 +581,12 @@ func (e *JindoFSxEngine) transformInitPortCheck(value *Jindo) error {
 
 	// init container takes "PORT1:PORT2:PORT3..." as input
 	value.InitPortCheck.PortsToCheck = strings.Join(ports, ":")
-
-	return nil
 }
 
-func (e *JindoFSxEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
+func (e *JindoFSxEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.User) != 0 {
 		value.Fuse.RunAs = runtime.Spec.User
 	}
-	return nil
 }
 
 func (e *JindoFSxEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JindoRuntime, value *Jindo) {
@@ -633,7 +625,7 @@ func (e *JindoFSxEngine) transformTolerations(dataset *datav1alpha1.Dataset, run
 	}
 }
 
-func (e *JindoFSxEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+func (e *JindoFSxEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	// the labels will not be merged here because they will be sequentially added into yaml templates
 	// If two labels share the same label key, the last one in yaml templates overrides the former ones
 	// and takes effect.
@@ -641,8 +633,6 @@ func (e *JindoFSxEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, val
 	value.Master.Labels = runtime.Spec.Master.Labels
 	value.Worker.Labels = runtime.Spec.Worker.Labels
 	value.Fuse.Labels = runtime.Spec.Fuse.Labels
-
-	return nil
 }
 
 func (e *JindoFSxEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {

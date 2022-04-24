@@ -131,7 +131,7 @@ func (a JindoFileUtils) Mount(mountName string, ufsPath string) (err error) {
 		command = append(command, "/"+mountName, ufsPath)
 	}
 
-	a.exec(command, false)
+	_, _, _ = a.exec(command, false)
 	/*if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
