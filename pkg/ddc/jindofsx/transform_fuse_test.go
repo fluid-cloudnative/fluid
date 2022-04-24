@@ -70,10 +70,7 @@ func TestTransformRunAsUser(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		err := engine.transformRunAsUser(test.runtime, test.jindoValue)
-		if err != nil {
-			t.Errorf("Got err %v", err)
-		}
+		engine.transformRunAsUser(test.runtime, test.jindoValue)
 		if test.jindoValue.Fuse.RunAs != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
 		}
@@ -101,10 +98,7 @@ func TestTransformSecret(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		err := engine.transformSecret(test.runtime, test.jindoValue)
-		if err != nil {
-			t.Errorf("Got err %v", err)
-		}
+		engine.transformSecret(test.runtime, test.jindoValue)
 		if test.jindoValue.Secret != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
 		}

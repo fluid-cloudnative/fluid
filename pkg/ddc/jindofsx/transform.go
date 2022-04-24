@@ -124,7 +124,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
 	e.transformToken(runtime, value)
-	e.transformMaster(runtime, metaPath, value, dataset)
+	err = e.transformMaster(runtime, metaPath, value, dataset)
+	if err != nil {
+		return
+	}
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
 	e.transformInitPortCheck(value)
@@ -140,7 +143,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	return value, err
 }
 
-func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) {
+func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) (err error) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -230,6 +233,8 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		}
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
+
+	return nil
 }
 
 func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPath string, userQuotas string, value *Jindo) {
