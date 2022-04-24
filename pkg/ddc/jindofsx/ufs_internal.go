@@ -57,10 +57,6 @@ func (e *JindoFSxEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-func (e *JindoFSxEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {
-	return nil
-}
-
 // mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
 func (e *JindoFSxEngine) mountUFS() (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
