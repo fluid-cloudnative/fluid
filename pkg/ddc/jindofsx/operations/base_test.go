@@ -19,7 +19,6 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func TestNewJindoFileUtils(t *testing.T) {
@@ -71,42 +70,6 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
-}
-
-func TestJindoFileUtils_execWithoutTimeout(t *testing.T) {
-	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "conf", "", nil
-	}
-	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "err", "", errors.New("other error")
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, _, err = a.execWithoutTimeout([]string{"jindo", "fs", "-report"}, false)
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhook()
-
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, _, err = a.execWithoutTimeout([]string{"jindo", "fs", "-report"}, true)
-	if err == nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhook()
 }
 
 func TestJindoFileUtils_ReportSummary(t *testing.T) {

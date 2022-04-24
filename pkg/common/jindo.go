@@ -20,7 +20,7 @@ package common
 const (
 	JindoRuntime = "jindo"
 
-	JindoChartName = "jindofsx"
+	JindoChartName = "jindofs"
 
 	JindoMountType = "fuse.jindofs-fuse"
 
