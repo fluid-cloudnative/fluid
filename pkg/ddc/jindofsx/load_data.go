@@ -79,7 +79,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindo", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
-		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
 		if len(defaultImageInfo) < 1 {
 			panic("invalid default dataload image!")
 		} else {
@@ -88,7 +88,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	}
 
 	if len(imageTag) == 0 {
-		defaultImageInfo := strings.Split(common.DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
 		if len(defaultImageInfo) < 2 {
 			panic("invalid default dataload image!")
 		} else {

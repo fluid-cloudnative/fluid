@@ -18,6 +18,7 @@ package jindo
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -25,6 +26,7 @@ import (
 
 const (
 	runtimeType                  = "jindo"
+	engineType                   = "JINDO_ENGINE_TYPE"
 	runtimeResourceFinalizerName = "jindo-runtime-controller-finalizer"
 )
 
@@ -65,4 +67,12 @@ func (r *RuntimeReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
 	defer r.mutex.Unlock()
 	id := ddc.GenerateEngineID(ctx.NamespacedName)
 	delete(r.engines, id)
+}
+
+func (r *RuntimeReconciler) GetRuntimeType() string {
+	engine := "jindo"
+	if env := os.Getenv(engineType); env != "jindo" {
+		engine = env
+	}
+	return engine
 }
