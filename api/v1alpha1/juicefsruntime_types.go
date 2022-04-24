@@ -50,6 +50,9 @@ type JuiceFSRuntimeSpec struct {
 	// Tiered storage used by JuiceFS
 	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
+	// Configs of JuiceFS
+	Configs *[]string `json:"configs,omitempty"`
+
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
