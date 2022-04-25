@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	runtimeType                  = "jindo"
 	engineType                   = "JINDO_ENGINE_TYPE"
 	runtimeResourceFinalizerName = "jindo-runtime-controller-finalizer"
 )
