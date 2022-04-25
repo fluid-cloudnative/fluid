@@ -123,7 +123,7 @@ func handle() {
 
 	// patch admission webhook ca bundle
 	certBuilder := fluidwebhook.NewCertificateBuilder(client, setupLog)
-	err, caCert := certBuilder.BuildAndSyncCABundle(common.WebhookServiceName, common.WebhookName, certDir)
+	caCert, err := certBuilder.BuildAndSyncCABundle(common.WebhookServiceName, common.WebhookName, certDir)
 	if err != nil || len(caCert) == 0 {
 		setupLog.Error(err, "patch webhook CABundle failed")
 		os.Exit(1)
