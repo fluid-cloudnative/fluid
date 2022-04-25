@@ -17,7 +17,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,11 +30,10 @@ var buildFuncMap map[string]buildFunc
 
 func init() {
 	buildFuncMap = map[string]buildFunc{
-		"alluxio":  alluxio.Build,
-		"jindo":    jindo.Build,
-		"jindofsx": jindofsx.Build,
-		"goosefs":  goosefs.Build,
-		"juicefs":  juicefs.Build,
+		"alluxio": alluxio.Build,
+		"jindo":   jindo.Build,
+		"goosefs": goosefs.Build,
+		"juicefs": juicefs.Build,
 	}
 }
 

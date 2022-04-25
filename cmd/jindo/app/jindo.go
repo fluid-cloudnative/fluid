@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
@@ -43,7 +42,6 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
-	_ base.Implement = (*jindofsx.JindoFSxEngine)(nil)
 
 	metricsAddr          string
 	enableLeaderElection bool
