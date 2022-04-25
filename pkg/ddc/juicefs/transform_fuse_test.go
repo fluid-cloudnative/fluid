@@ -731,8 +731,12 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			j := &JuiceFSEngine{}
-			j.genFormatCmd(tt.args.value)
+			j := &JuiceFSEngine{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{},
+				},
+			}
+			j.genFormatCmd(tt.args.value, j.runtime.Spec.Configs)
 			if tt.args.value.Fuse.FormatCmd != tt.wantFormatCmd {
 				t.Errorf("genMount() value = %v", tt.args.value)
 			}

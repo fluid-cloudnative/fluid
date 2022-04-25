@@ -52,7 +52,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if err != nil {
 		return err
 	}
-	j.genFormatCmd(value)
+	j.genFormatCmd(value, runtime.Spec.Configs)
 	err = j.genMount(value, option)
 	if err != nil {
 		return err
@@ -196,8 +196,16 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, options []string) (err error) {
 	return nil
 }
 
-func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS) {
+func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	args := make([]string, 0)
+	if config != nil {
+		for _, option := range *config {
+			o := strings.TrimSpace(option)
+			if o != "" {
+				args = append(args, fmt.Sprintf("--%s", o))
+			}
+		}
+	}
 	if value.Edition == "community" {
 		// ce
 		if value.Fuse.AccessKeySecret != "" {

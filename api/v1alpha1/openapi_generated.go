@@ -2989,6 +2989,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
 						},
 					},
+					"configs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configs of JuiceFS",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The replicas of the worker, need to be specified",
