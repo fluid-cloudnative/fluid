@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package jindo
+package jindofsx
 
 const (
 	CSI_DRIVER = "fuse.csi.fluid.io"
@@ -23,9 +23,13 @@ const (
 
 	Mount_TYPE = "mount_type"
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Disk Capacity: "
 
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
+	SUMMARY_PREFIX_USED_CAPACITY = "Used Disk Capacity: "
+
+	SUMMARY_PREFIX_TOTAL_MEM_CAPACITY = "Total MEM Capacity: "
+
+	SUMMARY_PREFIX_USED_MEM_CAPACITY = "Used MEM Capacity: "
 
 	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
 
@@ -50,5 +54,5 @@ const (
 
 	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.0"
+	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.0"
 )

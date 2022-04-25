@@ -55,7 +55,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, false)
+	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -65,7 +65,43 @@ func TestJindoFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, true)
+	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, true)
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJindoFileUtils_ReportSummary(t *testing.T) {
+	ExecCommon := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Test stdout", "", nil
+	}
+	ExecErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JindoFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JindoFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := JindoFileUtils{}
+	_, err = a.ReportSummary()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JindoFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, err = a.ReportSummary()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
@@ -179,40 +215,4 @@ func TestJindoFileUtils_IsExist(t *testing.T) {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
 	wrappedUnhookExec()
-}
-
-func TestJindoFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "Test stdout", "", nil
-	}
-	ExecWithoutTimeoutErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "", "", errors.New("fail to run the command")
-	}
-	wrappedUnhookExecWithoutTimeout := func() {
-		err := gohook.UnHook(JindoFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := JindoFileUtils{log: fake.NullLogger()}
-	err = a.LoadMetadataWithoutTimeout("/")
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExecWithoutTimeout()
-
-	err = gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = a.LoadMetadataWithoutTimeout("/")
-	if err != nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhookExecWithoutTimeout()
 }

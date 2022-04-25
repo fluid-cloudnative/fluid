@@ -78,7 +78,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    runtimeType,
+		RuntimeType:    r.GetRuntimeType(),
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}

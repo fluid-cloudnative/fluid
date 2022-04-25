@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package jindo
+package jindofsx
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ import (
 )
 
 // CreateDataLoadJob creates the job to load data
-func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
+func (e *JindoFSxEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	log := ctx.Log.WithName("createDataLoadJob")
 
 	// 1. Check if the helm release already exists
@@ -70,7 +70,7 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
@@ -79,7 +79,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindo", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
-		defaultImageInfo := strings.Split(DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
 		if len(defaultImageInfo) < 1 {
 			panic("invalid default dataload image!")
 		} else {
@@ -88,7 +88,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 
 	if len(imageTag) == 0 {
-		defaultImageInfo := strings.Split(DEFAULT_JINDO_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
 		if len(defaultImageInfo) < 2 {
 			panic("invalid default dataload image!")
 		} else {
@@ -163,7 +163,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	return valueFile.Name(), nil
 }
 
-func (e *JindoEngine) CheckRuntimeReady() (ready bool) {
+func (e *JindoFSxEngine) CheckRuntimeReady() (ready bool) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	ready = fileUtils.Ready()
@@ -174,7 +174,7 @@ func (e *JindoEngine) CheckRuntimeReady() (ready bool) {
 	return true
 }
 
-func (e *JindoEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
+func (e *JindoFSxEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 	for _, target := range targetDataload.Spec.Target {
