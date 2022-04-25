@@ -44,24 +44,24 @@ func NewCertificateBuilder(c client.Client, log logr.Logger) *CertificateBuilder
 
 // BuildAndSyncCABundle use service name and namespace generate webhook caBundle
 // and patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) (error, []byte) {
+func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) ([]byte, error) {
 
 	ns, err := utils.GetEnvByKey(common.MyPodNamespace)
 	if err != nil {
-		return errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace), []byte{}
+		return []byte{}, errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace)
 	}
 	c.log.Info("start generate certificate", "service", svcName, "namespace", ns, "cert dir", cerPath)
 
 	certs, err := c.genCA(ns, svcName, cerPath)
 	if err != nil {
-		return err, []byte{}
+		return []byte{}, err
 	}
 
 	err = c.PatchCABundle(webhookName, certs.CACert)
 	if err != nil {
-		return err, []byte{}
+		return []byte{}, err
 	}
-	return nil, certs.CACert
+	return certs.CACert, nil
 }
 
 // genCA generate the caBundle and store it in secret and local path

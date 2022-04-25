@@ -18,7 +18,6 @@ package watch
 
 import (
 	"context"
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -41,25 +40,27 @@ type EventHandlerForMutatingWebhookConfiguration struct {
 
 // Create implements EventHandler
 func (e *EventHandlerForMutatingWebhookConfiguration) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	fmt.Println("create")
-	_ = e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
+	err := e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
+	if err != nil {
+		log.Error(err, "fail to patch CABundle of MutatingWebhookConfiguration on create")
+	}
 
 }
 
 // Update implements EventHandler
 func (e *EventHandlerForMutatingWebhookConfiguration) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	fmt.Println("update")
-	_ = e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
+	err := e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
+	if err != nil {
+		log.Error(err, "fail to patch CABundle of MutatingWebhookConfiguration on update")
+	}
 }
 
 // Delete implements EventHandler
 func (e *EventHandlerForMutatingWebhookConfiguration) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	return
 }
 
 // Generic implements EventHandler
 func (e *EventHandlerForMutatingWebhookConfiguration) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-	return
 }
 
 type mutatingWebhookConfigurationEventHandler struct{}

@@ -135,7 +135,7 @@ func TestBuildAndSyncCABundle(t *testing.T) {
 		if item.clientIsNil {
 			cb.Client = nil
 		}
-		err, caCert := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
+		caCert, err := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
 		if err != nil {
 			if item.clientIsNil {
 				continue
