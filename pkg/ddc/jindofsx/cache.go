@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )

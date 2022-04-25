@@ -71,8 +71,9 @@ func (r *RuntimeReconciler) RemoveEngine(ctx cruntime.ReconcileRequestContext) {
 
 func (r *RuntimeReconciler) GetRuntimeType() string {
 	engine := "jindo"
-	if env := os.Getenv(engineType); env != "jindo" {
+	if env := os.Getenv(engineType); env == "jindofsx" {
 		engine = env
 	}
+	r.Log.V(1).Info("Put Engine to engine map with engine type " + engine)
 	return engine
 }
