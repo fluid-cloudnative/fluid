@@ -1341,6 +1341,15 @@ func (in *JuiceFSRuntimeSpec) DeepCopyInto(out *JuiceFSRuntimeSpec) {
 	in.JobWorker.DeepCopyInto(&out.JobWorker)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	in.TieredStore.DeepCopyInto(&out.TieredStore)
+	if in.Configs != nil {
+		in, out := &in.Configs, &out.Configs
+		*out = new([]string)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		}
+	}
 	if in.RunAs != nil {
 		in, out := &in.RunAs, &out.RunAs
 		*out = new(User)
