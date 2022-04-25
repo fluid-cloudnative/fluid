@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Fluid Authors.
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,21 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package jindofsx
 
-// Runtime for JindoFS
-const (
-	JindoRuntime = "jindo"
+import "github.com/fluid-cloudnative/fluid/pkg/common"
 
-	JindoChartName = "jindofs"
+func (e *JindoFSxEngine) getCommonLabelname() string {
+	return common.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
+}
 
-	JindoMountType = "fuse.jindofs-fuse"
-
-	JINDO_SMARTDATA_IMAGE_ENV = "JINDO_SMARTDATA_IMAGE_ENV"
-
-	JINDO_FUSE_IMAGE_ENV = "JINDO_FUSE_IMAGE_ENV"
-
-	JINDO_DNS_SERVER = "JINDO_DNS_SERVER_ENV"
-
-	JindoFuseMountVolumeName = "jindofs-fuse-mount"
-)
+func (e *JindoFSxEngine) getFuseLabelname() string {
+	return common.LabelAnnotationFusePrefix + e.namespace + "-" + e.name
+}
