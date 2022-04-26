@@ -62,6 +62,10 @@ type JindoCompTemplateSpec struct {
 	// Any label already existed will be overriden
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// If disable JindoFS master or worker
+	// +optional
+	DISABLE bool `json:"disable,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -120,6 +124,10 @@ type JindoFuseSpec struct {
 	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
+	// If disable JindoFS fuse
+	// +optional
+	DISABLE bool `json:"disable,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime

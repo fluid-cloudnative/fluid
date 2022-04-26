@@ -39,18 +39,18 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		return
 	}
 
-	if len(runtime.Spec.TieredStore.Levels) == 0 {
-		err = fmt.Errorf("the TieredStore is null")
-		return
-	}
-
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return
 	}
 
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	stroagePath := runtime.Spec.TieredStore.Levels[0].Path
+	var stroagePath = ""
+	if len(runtime.Spec.TieredStore.Levels) == 0 {
+		stroagePath = "/dev/shm/"
+	} else {
+		stroagePath = runtime.Spec.TieredStore.Levels[0].Path
+	}
 	originPath := strings.Split(stroagePath, ",")
 	for _, value := range originPath {
 		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
@@ -60,11 +60,13 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	dataPath := strings.Join(cachePaths, ",")
 
 	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
-	if runtime.Spec.TieredStore.Levels[0].Quota != nil {
+	if len(runtime.Spec.TieredStore.Levels) == 0 {
+		userSetQuota = append(userSetQuota, "1Gi")
+	} else if runtime.Spec.TieredStore.Levels[0].Quota != nil {
 		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
 	}
 
-	if runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
+	if len(runtime.Spec.TieredStore.Levels) != 0 && runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
 		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
 		quotas := strings.Split(quotaList, ",")
 		if len(quotas) != len(originPath) {
@@ -137,6 +139,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformTolerations(dataset, runtime, value)
 	e.transformResources(runtime, value)
 	e.transformLogConfig(runtime, value)
+	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	value.Fuse.MountPath = JINDO_FUSE_MONNTPATH
@@ -459,6 +462,9 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		fuseArgs = runtime.Spec.Fuse.Args
 	}
+	if runtime.Spec.Master.DISABLE && runtime.Spec.Worker.DISABLE == true {
+		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
+	}
 	return fuseArgs
 }
 
@@ -657,5 +663,14 @@ func (e *JindoFSxEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, v
 	value.PlacementMode = string(dataset.Spec.PlacementMode)
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
+}
+
+func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	// to set fuseOnly
+	if runtime.Spec.Master.DISABLE && runtime.Spec.Worker.DISABLE == true {
+		value.Master.ReplicaCount = 0
+		value.Worker.ReplicaCount = 0
+		value.Fuse.Mode = FUSE_ONLY
 	}
 }
