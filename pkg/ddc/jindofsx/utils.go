@@ -23,7 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
