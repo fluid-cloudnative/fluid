@@ -36,6 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -78,7 +79,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    r.GetRuntimeType(),
+		RuntimeType:    jindoutils.GetRuntimeType(),
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}
