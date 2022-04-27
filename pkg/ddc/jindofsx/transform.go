@@ -669,6 +669,6 @@ func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime,
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		value.Master.ReplicaCount = 0
 		value.Worker.ReplicaCount = 0
-		value.Fuse.Mode = FUSE_ONLY
+		value.Fuse.Mode = FuseOnly
 	}
 }

@@ -58,5 +58,5 @@ const (
 
 	ENGINE_TYPE = "jindofsx"
 
-	FUSE_ONLY = "fuseOnly"
+	FuseOnly = "fuseOnly"
 )
