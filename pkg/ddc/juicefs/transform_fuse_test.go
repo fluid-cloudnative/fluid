@@ -753,7 +753,7 @@ func Test_genOption(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := genOption(tt.args.optionMap)
 			var keys []int
-			for k, _ := range got {
+			for k := range got {
 				keys = append(keys, k)
 			}
 			sort.Ints(keys)
