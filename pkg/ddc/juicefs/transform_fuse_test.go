@@ -18,9 +18,10 @@ package juicefs
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
-	"reflect"
+	"sort"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -750,8 +751,17 @@ func Test_genOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := genOption(tt.args.optionMap); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("genOption() = %v, want %v", got, tt.want)
+			got := genOption(tt.args.optionMap)
+			var keys []int
+			for k, _ := range got {
+				keys = append(keys, k)
+			}
+			sort.Ints(keys)
+			fmt.Println(keys)
+			for _, k := range keys {
+				if got[k] != tt.want[k] {
+					t.Errorf("genOption() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
