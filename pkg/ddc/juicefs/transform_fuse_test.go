@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
+	"reflect"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -348,11 +349,12 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 		value           *JuiceFS
 	}
 	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		wantErr   bool
-		wantValue *JuiceFS
+		name        string
+		fields      fields
+		args        args
+		wantErr     bool
+		wantValue   *JuiceFS
+		wantOptions map[string]string
 	}{
 		{
 			name: "test",
@@ -388,21 +390,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				},
 			},
 			wantErr: false,
-			wantValue: &JuiceFS{
-				FullnameOverride: "test",
-				Fuse: Fuse{
-					SubPath:       "/",
-					TokenSecret:   "test-enterprise",
-					MountPath:     "/juicefs/fluid/test/juicefs-fuse",
-					CacheDir:      "/dev",
-					HostMountPath: "/juicefs/fluid/test",
-					//Command:       "/sbin/mount.juicefs test /juicefs/fluid/test/juicefs-fuse -o subdir=/,cache-dir=/dev,foreground,cache-group=test,no-sharing",
-					//StatCmd:       "stat -c %i /juicefs/fluid/test/juicefs-fuse",
-					//FormatCmd:     "/usr/bin/juicefs auth --token=${TOKEN} test",
-				},
-				Worker: Worker{
-					//Command: "/sbin/mount.juicefs test /juicefs/fluid/test/juicefs-fuse -o subdir=/,cache-dir=/dev,foreground,cache-group=test",
-				},
+			wantOptions: map[string]string{
+				"cache-dir": "/dev",
 			},
 		},
 		{
@@ -414,7 +403,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			args: args{
 				mount: datav1alpha1.Mount{
-					MountPoint: "juicefs:///",
+					MountPoint: "juicefs:///test",
 					Options:    map[string]string{},
 					Name:       "test-community",
 					EncryptOptions: []datav1alpha1.EncryptOption{{
@@ -446,29 +435,20 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				},
 			},
 			wantErr: false,
-			wantValue: &JuiceFS{
-				Fuse: Fuse{
-					SubPath:       "/",
-					TokenSecret:   "test-enterprise",
-					MountPath:     "/juicefs/fluid/test/juicefs-fuse",
-					CacheDir:      "/dev",
-					HostMountPath: "/juicefs/fluid/test",
-				},
-				Worker: Worker{},
+			wantOptions: map[string]string{
+				"subdir":    "/test",
+				"cache-dir": "/dev",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value); (err != nil) != tt.wantErr {
-				t.Errorf("genMount() error = %v, wantErr %v", err, tt.wantErr)
+			opt, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("genValue() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantValue != nil {
-				if tt.wantValue.Fuse.Command != tt.args.value.Fuse.Command &&
-					tt.wantValue.Fuse.FormatCmd != tt.args.value.Fuse.FormatCmd &&
-					tt.wantValue.Worker.Command != tt.args.value.Worker.Command {
-					t.Errorf("genMount() got = %v, want = %v", tt.args.value, tt.wantValue)
-				}
+			if len(opt) != len(tt.wantOptions) {
+				t.Errorf("genValue() got = %v, wantOptions %v", opt, tt.wantOptions)
 			}
 		})
 	}
@@ -482,7 +462,8 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 	}
 	type args struct {
 		value   *JuiceFS
-		options []string
+		options map[string]string
+		runtime *datav1alpha1.JuiceFSRuntime
 	}
 	tests := []struct {
 		name              string
@@ -491,7 +472,8 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 		wantErr           bool
 		wantWorkerCommand string
 		wantFuseCommand   string
-		wantStatCmd       string
+		wantFuseStatCmd   string
+		wantWorkerStatCmd string
 	}{
 		{
 			name: "test-community",
@@ -505,96 +487,33 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					FullnameOverride: "test-community",
 					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
-					Fuse: Fuse{
-						SubPath:         "/",
+					Configs: Configs{
 						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
 						MetaUrlSecret:   "test",
 						Storage:         "minio",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
 					},
-				},
-			},
-			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
-			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
-			wantStatCmd:       "stat -c %i /test",
-		},
-		{
-			name: "test-enterprise",
-			fields: fields{
-				name:      "test",
-				namespace: "fluid",
-				Log:       fake.NullLogger(),
-			},
-			args: args{
-				value: &JuiceFS{
-					FullnameOverride: "test-enterprise",
-					Edition:          "enterprise",
-					Source:           "test-enterprise",
 					Fuse: Fuse{
-						SubPath:         "/",
-						Name:            "test-enterprise",
-						AccessKeySecret: "test",
-						SecretKeySecret: "test",
-						Bucket:          "http://127.0.0.1:9000/minio/test",
-						TokenSecret:     "test",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test-worker",
 					},
 				},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise",
-			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise,no-sharing",
-			wantStatCmd:       "stat -c %i /test",
+			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=0.0.0.0:9567",
+			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
+			wantFuseStatCmd:   "stat -c %i /test",
+			wantWorkerStatCmd: "stat -c %i /test-worker",
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			j := &JuiceFSEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       tt.fields.Log,
-			}
-			if err := j.genMount(tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
-				t.Errorf("genMount() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.args.value.Fuse.Command != tt.wantFuseCommand ||
-				tt.args.value.Fuse.StatCmd != tt.wantStatCmd ||
-				tt.args.value.Worker.Command != tt.wantWorkerCommand {
-				t.Errorf("genMount() value = %v", tt.args.value)
-			}
-		})
-	}
-}
-
-func TestJuiceFSEngine_genFormat(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-		Log       logr.Logger
-	}
-	type args struct {
-		value   *JuiceFS
-		options []string
-	}
-	tests := []struct {
-		name              string
-		fields            fields
-		args              args
-		wantErr           bool
-		wantWorkerCommand string
-		wantFuseCommand   string
-		wantStatCmd       string
-	}{
 		{
-			name: "test-community",
+			name: "test-community-options",
 			fields: fields{
 				name:      "test",
 				namespace: "fluid",
@@ -605,24 +524,34 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 					FullnameOverride: "test-community",
 					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
-					Fuse: Fuse{
-						SubPath:         "/",
+					Configs: Configs{
 						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
 						MetaUrlSecret:   "test",
 						Storage:         "minio",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test-worker",
 					},
 				},
+				options: map[string]string{"verbose": ""},
+				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+					Options: map[string]string{"metrics": "127.0.0.1:9567"},
+				}}},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
-			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
-			wantStatCmd:       "stat -c %i /test",
+			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o verbose,metrics=127.0.0.1:9567",
+			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
+			wantFuseStatCmd:   "stat -c %i /test",
+			wantWorkerStatCmd: "stat -c %i /test-worker",
 		},
 		{
 			name: "test-enterprise",
@@ -636,23 +565,69 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 					FullnameOverride: "test-enterprise",
 					Edition:          "enterprise",
 					Source:           "test-enterprise",
-					Fuse: Fuse{
-						SubPath:         "/",
+					Configs: Configs{
 						Name:            "test-enterprise",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
 						TokenSecret:     "test",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test",
 					},
 				},
 			},
 			wantErr:           false,
 			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise",
 			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=test-enterprise,no-sharing",
-			wantStatCmd:       "stat -c %i /test",
+			wantFuseStatCmd:   "stat -c %i /test",
+			wantWorkerStatCmd: "stat -c %i /test",
+		},
+		{
+			name: "test-enterprise-options",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
+					Configs: Configs{
+						Name:            "test-enterprise",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						TokenSecret:     "test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test",
+					},
+				},
+				options: map[string]string{"cache-group": "test", "verbose": ""},
+				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+					Options: map[string]string{"no-sharing": ""},
+				}}},
+			},
+			wantErr:           false,
+			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test,no-sharing",
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test",
+			wantFuseStatCmd:   "stat -c %i /test",
+			wantWorkerStatCmd: "stat -c %i /test",
 		},
 	}
 	for _, tt := range tests {
@@ -662,12 +637,13 @@ func TestJuiceFSEngine_genFormat(t *testing.T) {
 				namespace: tt.fields.namespace,
 				Log:       tt.fields.Log,
 			}
-			if err := j.genMount(tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
-				t.Errorf("genMount() error = %v, wantErr %v", err, tt.wantErr)
+			if err := j.genMount(tt.args.value, tt.args.runtime, tt.args.options); (err != nil) != tt.wantErr {
+				t.Errorf("genMount() error = %v\nwantErr %v", err, tt.wantErr)
 			}
-			if tt.args.value.Fuse.Command != tt.wantFuseCommand ||
-				tt.args.value.Fuse.StatCmd != tt.wantStatCmd ||
-				tt.args.value.Worker.Command != tt.wantWorkerCommand {
+			if len(tt.args.value.Fuse.Command) != len(tt.wantFuseCommand) ||
+				tt.args.value.Fuse.StatCmd != tt.wantFuseStatCmd ||
+				tt.args.value.Worker.StatCmd != tt.wantWorkerStatCmd ||
+				len(tt.args.value.Worker.Command) != len(tt.wantWorkerCommand) {
 				t.Errorf("genMount() value = %v", tt.args.value)
 			}
 		})
@@ -690,17 +666,19 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					FullnameOverride: "test-community",
 					Edition:          "community",
 					Source:           "redis://127.0.0.1:6379",
-					Fuse: Fuse{
-						SubPath:         "/",
+					Configs: Configs{
 						Name:            "test-community",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
 						MetaUrlSecret:   "test",
 						Storage:         "minio",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
 					},
 				},
 			},
@@ -713,16 +691,18 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					FullnameOverride: "test-enterprise",
 					Edition:          "enterprise",
 					Source:           "test-enterprise",
-					Fuse: Fuse{
-						SubPath:         "/",
+					Configs: Configs{
 						Name:            "test-enterprise",
 						AccessKeySecret: "test",
 						SecretKeySecret: "test",
 						Bucket:          "http://127.0.0.1:9000/minio/test",
 						TokenSecret:     "test",
-						MountPath:       "/test",
-						CacheDir:        "/cache",
-						HostMountPath:   "/test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						CacheDir:      "/cache",
+						HostMountPath: "/test",
 					},
 				},
 			},
@@ -737,8 +717,41 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 				},
 			}
 			j.genFormatCmd(tt.args.value, j.runtime.Spec.Configs)
-			if tt.args.value.Fuse.FormatCmd != tt.wantFormatCmd {
+			if tt.args.value.Configs.FormatCmd != tt.wantFormatCmd {
 				t.Errorf("genMount() value = %v", tt.args.value)
+			}
+		})
+	}
+}
+
+func Test_genOption(t *testing.T) {
+	type args struct {
+		optionMap map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "test",
+			args: args{
+				optionMap: map[string]string{"a": "b", "c": ""},
+			},
+			want: []string{"a=b", "c"},
+		},
+		{
+			name: "test-empty",
+			args: args{
+				optionMap: nil,
+			},
+			want: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := genOption(tt.args.optionMap); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("genOption() = %v, want %v", got, tt.want)
 			}
 		})
 	}
