@@ -416,6 +416,11 @@ spec:
                       type: string
                     description: NodeSelector is a selector
                     type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: Options
+                    type: object
                   ports:
                     description: Ports used by JuiceFS
                     items:
@@ -622,6 +627,11 @@ spec:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: Options
                     type: object
                   ports:
                     description: Ports used by JuiceFS
@@ -898,6 +908,11 @@ spec:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: Options
                     type: object
                   ports:
                     description: Ports used by JuiceFS

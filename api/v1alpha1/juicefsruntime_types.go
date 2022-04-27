@@ -82,6 +82,9 @@ type JuiceFSCompTemplateSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// Options
+	Options map[string]string `json:"options,omitempty"`
+
 	// Environment variables that will be used by JuiceFS component.
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
