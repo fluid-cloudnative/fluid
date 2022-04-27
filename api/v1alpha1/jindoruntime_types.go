@@ -65,7 +65,7 @@ type JindoCompTemplateSpec struct {
 
 	// If disable JindoFS master or worker
 	// +optional
-	DISABLE bool `json:"disable,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -127,7 +127,7 @@ type JindoFuseSpec struct {
 
 	// If disable JindoFS fuse
 	// +optional
-	DISABLE bool `json:"disable,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime

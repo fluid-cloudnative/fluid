@@ -21,7 +21,7 @@ import (
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *JindoFSxEngine) SetupWorkers() (err error) {
 
-	if e.runtime.Spec.Worker.DISABLE == true {
+	if e.runtime.Spec.Worker.Disabled {
 		err = nil
 		return
 	}
@@ -77,7 +77,7 @@ func (e *JindoFSxEngine) ShouldSetupWorkers() (should bool, err error) {
 // CheckWorkersReady checks if the workers are ready
 func (e *JindoFSxEngine) CheckWorkersReady() (ready bool, err error) {
 
-	if e.runtime.Spec.Worker.DISABLE == true {
+	if e.runtime.Spec.Worker.Disabled {
 		ready = true
 		err = nil
 		return

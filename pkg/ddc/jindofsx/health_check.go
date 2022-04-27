@@ -29,7 +29,7 @@ import (
 
 func (e *JindoFSxEngine) CheckRuntimeHealthy() (err error) {
 
-	if e.runtime.Spec.Master.DISABLE == true && e.runtime.Spec.Worker.DISABLE == true {
+	if e.runtime.Spec.Master.Disabled && e.runtime.Spec.Worker.Disabled {
 		err = nil
 		return
 	}

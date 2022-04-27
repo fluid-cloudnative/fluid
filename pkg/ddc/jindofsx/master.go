@@ -14,7 +14,7 @@ import (
 )
 
 func (e *JindoFSxEngine) CheckMasterReady() (ready bool, err error) {
-	if e.runtime.Spec.Master.DISABLE == true {
+	if e.runtime.Spec.Master.Disabled {
 		ready = true
 		err = nil
 		return
@@ -121,7 +121,7 @@ func (e *JindoFSxEngine) SetupMaster() (err error) {
 		e.Log.V(1).Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
 	}
 
-	if e.runtime.Spec.Master.DISABLE == true {
+	if e.runtime.Spec.Master.Disabled {
 		err = nil
 		return
 	}

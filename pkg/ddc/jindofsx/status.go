@@ -33,7 +33,7 @@ import (
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
-	if e.runtime.Spec.Master.DISABLE == true && e.runtime.Spec.Worker.DISABLE == true {
+	if e.runtime.Spec.Master.Disabled && e.runtime.Spec.Worker.Disabled {
 		ready = true
 		err = nil
 		return

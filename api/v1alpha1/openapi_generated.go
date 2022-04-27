@@ -2281,7 +2281,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref commo
 							},
 						},
 					},
-					"disable": {
+					"disabled": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If disable JindoFS master or worker",
 							Type:        []string{"boolean"},
@@ -2438,7 +2438,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 							Format:      "",
 						},
 					},
-					"disable": {
+					"disabled": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If disable JindoFS fuse",
 							Type:        []string{"boolean"},

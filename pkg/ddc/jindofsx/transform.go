@@ -45,10 +45,8 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	}
 
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	var stroagePath = ""
-	if len(runtime.Spec.TieredStore.Levels) == 0 {
-		stroagePath = "/dev/shm/"
-	} else {
+	var stroagePath = "/dev/shm/"
+	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		stroagePath = runtime.Spec.TieredStore.Levels[0].Path
 	}
 	originPath := strings.Split(stroagePath, ",")
@@ -462,7 +460,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		fuseArgs = runtime.Spec.Fuse.Args
 	}
-	if runtime.Spec.Master.DISABLE && runtime.Spec.Worker.DISABLE == true {
+	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
 	}
 	return fuseArgs
@@ -668,7 +666,7 @@ func (e *JindoFSxEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, v
 
 func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	// to set fuseOnly
-	if runtime.Spec.Master.DISABLE && runtime.Spec.Worker.DISABLE == true {
+	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		value.Master.ReplicaCount = 0
 		value.Worker.ReplicaCount = 0
 		value.Fuse.Mode = FUSE_ONLY

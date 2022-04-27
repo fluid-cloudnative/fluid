@@ -30,7 +30,7 @@ func (e *JindoFSxEngine) ShouldCheckUFS() (should bool, err error) {
 // PrepareUFS do all the UFS preparations
 func (e *JindoFSxEngine) PrepareUFS() (err error) {
 
-	if e.runtime.Spec.Master.DISABLE == true {
+	if e.runtime.Spec.Master.Disabled {
 		err = nil
 		return
 	}
