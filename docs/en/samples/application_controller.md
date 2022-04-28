@@ -2,11 +2,6 @@
 
 ## Background
 
-在 Serverless 场景中， Job 等 Workload，当 Pod 的 user container 完成任务并退出后，需要 Fuse Sidecar 也可以主动退出，
-从而使 Job Controller 能够正确判断 Pod 所处的完成状态。然而，fuse container 自身并没有退出机制，Fluid Application Controller 会检测集群中带 fluid label 的
-Pod，
-在 user container 退出后，将 fuse container 正常退出，以达到 Job 完成的状态。
-
 In the serverless scenario, Workload such as Job, when the user container of the Pod completes the task and exits, the
 Fuse Sidecar can also actively exit.
 This enables the Job Controller to correctly determine the completion status of the Pod. However, the fuse container
