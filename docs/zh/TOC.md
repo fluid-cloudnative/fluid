@@ -29,8 +29,10 @@
 + 进阶使用
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_global.md)
-  - [如何在Knative环境运行](samples/knative.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
+  + 无服务器场景
+    - [如何在Knative环境运行](samples/knative.md)
+    - [如何保障 erverless 任务顺利完成](samples/application_controller.md)
 + 工作负载
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现
