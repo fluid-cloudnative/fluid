@@ -70,6 +70,7 @@ type Master struct {
 }
 
 type Worker struct {
+	ReplicaCount     int               `yaml:"replicaCount"`
 	Resources        Resources         `yaml:"resources,omitempty"`
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	WorkerProperties map[string]string `yaml:"properties"`
@@ -96,6 +97,7 @@ type Fuse struct {
 	CriticalPod    bool              `yaml:"criticalPod,omitempty"`
 	Resources      Resources         `yaml:"resources,omitempty"`
 	MountPath      string            `yaml:"mountPath,omitempty"`
+	Mode           string            `yaml:"mode,omitempty"`
 }
 
 type Mounts struct {

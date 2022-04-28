@@ -29,6 +29,12 @@ func (e *JindoFSxEngine) ShouldCheckUFS() (should bool, err error) {
 
 // PrepareUFS do all the UFS preparations
 func (e *JindoFSxEngine) PrepareUFS() (err error) {
+
+	if e.runtime.Spec.Master.Disabled {
+		err = nil
+		return
+	}
+
 	// 1. Mount UFS (Synchronous Operation)
 	shouldMountUfs, err := e.shouldMountUFS()
 	if err != nil {
