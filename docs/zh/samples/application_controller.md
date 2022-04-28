@@ -1,4 +1,4 @@
-# 示例 - 如何使用 Fluid Application Controller
+# 示例 - 如何保障 Fluid 的 Serverless 任务顺利完成
 
 ## 背景介绍
 
