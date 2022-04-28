@@ -91,6 +91,9 @@ spec:
                       needed OnRuntimeDeleted cleans fuse pod only when the cache
                       runtime is deleted Defaults to OnRuntimeDeleted'
                     type: string
+                  disabled:
+                    description: If disable JindoFS fuse
+                    type: boolean
                   env:
                     additionalProperties:
                       type: string
@@ -234,6 +237,9 @@ spec:
               master:
                 description: The component spec of Jindo master
                 properties:
+                  disabled:
+                    description: If disable JindoFS master or worker
+                    type: boolean
                   env:
                     additionalProperties:
                       type: string
@@ -443,6 +449,9 @@ spec:
               worker:
                 description: The component spec of Jindo worker
                 properties:
+                  disabled:
+                    description: If disable JindoFS master or worker
+                    type: boolean
                   env:
                     additionalProperties:
                       type: string

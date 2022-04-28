@@ -28,37 +28,44 @@ import (
 )
 
 func (e *JindoFSxEngine) CheckRuntimeHealthy() (err error) {
+
 	// 1. Check the healthy of the master
-	err = e.checkMasterHealthy()
-	if err != nil {
-		e.Log.Error(err, "The master is not healthy")
-		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
-		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+	if !e.runtime.Spec.Master.Disabled {
+		err = e.checkMasterHealthy()
+		if err != nil {
+			e.Log.Error(err, "The master is not healthy")
+			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
+			if updateErr != nil {
+				e.Log.Error(updateErr, "Failed to update dataset")
+			}
+			return
 		}
-		return
 	}
 
 	// 2. Check the healthy of the workers
-	err = e.checkWorkersHealthy()
-	if err != nil {
-		e.Log.Error(err, "The worker is not healthy")
-		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
-		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+	if !e.runtime.Spec.Worker.Disabled {
+		err = e.checkWorkersHealthy()
+		if err != nil {
+			e.Log.Error(err, "The worker is not healthy")
+			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
+			if updateErr != nil {
+				e.Log.Error(updateErr, "Failed to update dataset")
+			}
+			return
 		}
-		return
 	}
 
 	// 3. Check the healthy of the fuse
-	err = e.checkFuseHealthy()
-	if err != nil {
-		e.Log.Error(err, "The fuse is not healthy")
-		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
-		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+	if !e.runtime.Spec.Fuse.Disabled {
+		err = e.checkFuseHealthy()
+		if err != nil {
+			e.Log.Error(err, "The fuse is not healthy")
+			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
+			if updateErr != nil {
+				e.Log.Error(updateErr, "Failed to update dataset")
+			}
+			return
 		}
-		return
 	}
 
 	// 4. Update the dataset as Bounded

@@ -96,18 +96,33 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: false,
+				}},
+			},
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: false,
+				}},
+			},
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: false,
+				}},
+			},
 		},
 	}
 

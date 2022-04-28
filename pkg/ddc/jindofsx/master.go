@@ -14,6 +14,11 @@ import (
 )
 
 func (e *JindoFSxEngine) CheckMasterReady() (ready bool, err error) {
+	if e.runtime.Spec.Master.Disabled {
+		ready = true
+		err = nil
+		return
+	}
 	masterName := e.getMasterName()
 	// 1. Check the status
 	runtime, err := e.getRuntime()
@@ -114,6 +119,11 @@ func (e *JindoFSxEngine) SetupMaster() (err error) {
 	} else {
 		//3.The master has been set up
 		e.Log.V(1).Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
+	}
+
+	if e.runtime.Spec.Master.Disabled {
+		err = nil
+		return
 	}
 
 	// 2. Update the status of the runtime

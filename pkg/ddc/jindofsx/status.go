@@ -33,6 +33,12 @@ import (
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
+	if e.runtime.Spec.Master.Disabled && e.runtime.Spec.Worker.Disabled {
+		ready = true
+		err = nil
+		return
+	}
+
 	defer utils.TimeTrack(time.Now(), "JindoFSxEngine.CheckAndUpdateRuntimeStatus", "name", e.name, "namespace", e.namespace)
 	var (
 		masterReady, workerReady bool
