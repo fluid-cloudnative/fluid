@@ -17,6 +17,7 @@ limitations under the License.
 package app
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -43,6 +44,7 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
+	_ base.Implement = (*jindofsx.JindoFSxEngine)(nil)
 
 	metricsAddr          string
 	enableLeaderElection bool

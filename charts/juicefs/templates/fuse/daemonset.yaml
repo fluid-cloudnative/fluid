@@ -64,32 +64,32 @@ spec:
           {{- if .Values.fuse.envs }}
 {{ toYaml .Values.fuse.envs | trim | indent 10  }}
           {{- end }}
-          {{- if .Values.fuse.metaurlSecret }}
+          {{- if .Values.configs.metaurlSecret }}
           - name: METAURL
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.fuse.metaurlSecret }}
+                name: {{ .Values.configs.metaurlSecret }}
                 key: metaurl
           {{- end }}
-          {{- if .Values.fuse.accesskeySecret }}
+          {{- if .Values.configs.accesskeySecret }}
           - name: ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.fuse.accesskeySecret }}
+                name: {{ .Values.configs.accesskeySecret }}
                 key: access-key
           {{- end }}
-          {{- if .Values.fuse.secretkeySecret }}
+          {{- if .Values.configs.secretkeySecret }}
           - name: SECRET_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.fuse.secretkeySecret }}
+                name: {{ .Values.configs.secretkeySecret }}
                 key: secret-key
           {{- end }}
-          {{- if .Values.fuse.tokenSecret }}
+          {{- if .Values.configs.tokenSecret }}
           - name: TOKEN
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.fuse.tokenSecret }}
+                name: {{ .Values.configs.tokenSecret }}
                 key: token
           {{- end }}
           readinessProbe:
@@ -154,8 +154,8 @@ data:
   script.sh: |
     #!/bin/bash
 
-    {{- if .Values.fuse.formatCmd }}
-    {{ .Values.fuse.formatCmd }}
+    {{- if .Values.configs.formatCmd }}
+    {{ .Values.configs.formatCmd }}
     {{- end }}
 
     {{ .Values.fuse.command }}
