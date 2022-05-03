@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ template "jindofs.fullname" . }}-config
+  labels:
+    name: {{ template "jindofs.fullname" . }}-config
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  jindofsx.cfg: |
+    [jindofsx-common]
+    logger.jnilogger=false
+    application.report.on=true
+    metric.report.on = true
+    logger.dir = /tmp/jindofsx-log
+    logger.sync = true
+    logger.verbose= 99
+    logger.cleanner.enable = true
+    logger.consolelogger = true
+    {{- range $key, $val := .Values.master.secretProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+    {{- range $key, $val := .Values.master.fileStoreProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+
+    [jindofsx-storage]
+    {{- range $key, $val := .Values.worker.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+
+    [jindofsx-namespace]
+    {{- range $key, $val := .Values.master.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+
+  core-site.xml: |
+    <?xml version="1.0"?>
+    <configuration>
+        <property>
+            <name>fs.oss.impl</name>
+            <value>com.aliyun.jindodata.oss.JindoOssFileSystem</value>
+        </property>
+
+        <property>
+            <name>fs.AbstractFileSystem.oss.impl</name>
+            <value>com.aliyun.jindodata.oss.OSS</value>
+        </property>
+
+        <property>
+            <name>fs.jindo.impl</name>
+            <value>com.aliyun.jindodata.jindo.JindoFileSystem</value>
+        </property>
+
+        <property>
+            <name>fs.AbstractFileSystem.jindo.impl</name>
+            <value>com.aliyun.jindodata.jindo.JINDO</value>
+        </property>
+
+        <property>
+            <name>fs.xengine</name>
+            <value>jindofsx</value>
+        </property>
+
+        <property>
+            <name>fs.jindofsx.namespace.rpc.address</name>
+            <value>{{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}</value>
+        </property>
+        {{- range $key, $val := .Values.fuse.properties }}
+        <property>
+            <name>{{ $key }}</name>
+            <value>{{ $val }}</value>
+        </property>
+        {{- end}}
+    </configuration>
+  jindosdk.cfg: |
+    [common]
+    logger.dir = /tmp/fuse-log
+    logger.sync = true
+    logger.consolelogger = true
+    logger.level = 2
+    logger.verbose = 0
+    logger.cleaner.enable = true
+    {{- range $key, $val := .Values.master.secretProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+
+    [jindosdk]
+    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+    {{- range $key, $val := .Values.fuse.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}

@@ -27,6 +27,8 @@
   - [Machine Learning](samples/machinelearning.md)
 + Advanced   
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
+  + Serverless
+    - [How to ensure the completion of serverless tasks](samples/application_controller.md)
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
 + Troubleshooting
   - [Collecting logs](userguide/troubleshooting.md)
