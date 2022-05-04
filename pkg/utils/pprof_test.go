@@ -29,7 +29,7 @@ func TestNewPprofServer(t *testing.T) {
 
 func TestNewPprofServerWithDevelopment(t *testing.T) {
 	setupLog := ctrl.Log.WithName("test")
-	pprofAddr := "127.0.0.1:6060"
+	pprofAddr := "127.0.0.1:6061"
 	NewPprofServer(setupLog, pprofAddr, true)
 	paths := []string{
 		"/debug/pprof/", "/debug/pprof/cmdline", "/debug/pprof/profile", "/debug/pprof/symbol", "/debug/pprof/trace", "/debug/fgprof",
