@@ -37,7 +37,7 @@ func NewPprofServer(setupLog logr.Logger, pprofAddr string, development bool) {
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		if development {
-			mux.HandleFunc("/debug/fgprof", fgprof.Handler())
+			mux.Handle("/debug/fgprof", fgprof.Handler())
 		}
 
 		pprofServer := http.Server{
