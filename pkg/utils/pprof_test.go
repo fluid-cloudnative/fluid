@@ -36,7 +36,7 @@ func TestNewPprofServerWithDevelopment(t *testing.T) {
 	}
 	time.Sleep(10 * time.Second)
 	for _, p := range paths {
-		resp, err := http.Get("http://127.0.0.1:6060" + p)
+		resp, err := http.Get("http://127.0.0.1:6061" + p)
 		if err != nil {
 			t.Error(err)
 		}
