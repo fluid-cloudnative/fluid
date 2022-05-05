@@ -17,8 +17,9 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -43,20 +44,9 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Env = map[string]string{}
 	}
 
-	// if runtime.Spec.Fuse.MountPath != "" {
-	// 	value.Fuse.MountPath = runtime.Spec.Fuse.MountPath
-	// } else {
-	// 	value.Fuse.MountPath = fmt.Sprintf("format", a)
-	// }
-
 	value.Fuse.MountPath = e.getMountPoint()
 	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
-	// if len(runtime.Spec.Fuse.Args) > 0 {
-	// 	value.Fuse.Args = runtime.Spec.Fuse.Args
-	// } else {
-	// 	value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
-	// }
 	e.optimizeDefaultFuse(runtime, value)
 
 	if dataset.Spec.Owner != nil {

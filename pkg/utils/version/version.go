@@ -17,9 +17,28 @@ limitations under the License.
 package version
 
 import (
+	"strings"
+
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 )
 
-func Parse(str string) (*versionutil.Version, error) {
-	return versionutil.ParseGeneric(str)
+const (
+	releasePrefix = "release-"
+)
+
+func RuntimeVersion(str string) (*versionutil.Version, error) {
+	// return versionutil.ParseGeneric(str)
+	return versionutil.ParseSemantic(strings.TrimPrefix(strings.ToLower(str), releasePrefix))
+}
+
+// Compare compares v against a version string (which will be parsed as either Semantic
+// or non-Semantic depending on v). On success it returns -1 if v is less than other, 1 if
+// it is greater than other, or 0 if they are equal.
+func Compare(current, other string) (compare int, err error) {
+	v1, err := RuntimeVersion(current)
+	if err != nil {
+		return
+	}
+
+	return v1.Compare(other)
 }
