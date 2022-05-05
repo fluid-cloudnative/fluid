@@ -17,9 +17,9 @@ limitations under the License.
 package version
 
 import (
-	utilVersion "k8s.io/apimachinery/pkg/util/version"
+	versionutil "k8s.io/apimachinery/pkg/util/version"
 )
 
-func Parse(str string) (*utilVersion.Version, error) {
-	return utilVersion.Parse(str)
+func Parse(str string) (*versionutil.Version, error) {
+	return versionutil.ParseGeneric(str)
 }
