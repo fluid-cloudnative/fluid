@@ -17,6 +17,8 @@ package app
 
 import (
 	"flag"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -28,7 +30,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -44,11 +45,12 @@ var (
 )
 
 var (
-	development bool
-	metricsAddr string
-	webhookPort int
-	certDir     string
-	pprofAddr   string
+	development   bool
+	fullGoProfile bool
+	metricsAddr   string
+	webhookPort   int
+	certDir       string
+	pprofAddr     string
 )
 
 var webhookCmd = &cobra.Command{
@@ -65,7 +67,8 @@ func init() {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	webhookCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
-	webhookCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
+	webhookCmd.Flags().BoolVarP(&development, "development", "", false, "Enable development mode for fluid controller.")
+	webhookCmd.Flags().BoolVarP(&fullGoProfile, "full-go-profile", "", false, "Enable full golang profile mode for fluid controller.")
 	webhookCmd.Flags().IntVar(&webhookPort, "webhook-port", 9443, "Admission webhook listen address.")
 	webhookCmd.Flags().StringVar(&certDir, "webhook-cert-dir", "/etc/k8s-webhook-server/certs", "Admission webhook cert/key dir.")
 	webhookCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
@@ -83,7 +86,7 @@ func handle() {
 		os.Exit(1)
 	}
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:             scheme,

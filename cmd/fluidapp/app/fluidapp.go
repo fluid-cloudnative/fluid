@@ -17,6 +17,8 @@
 package app
 
 import (
+	"os"
+
 	"github.com/fluid-cloudnative/fluid"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/fluidapp"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -77,7 +78,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

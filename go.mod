@@ -59,6 +59,7 @@ require (
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.5.0
 	github.com/docker/go-units v0.4.0
+	github.com/felixge/fgprof v0.9.2
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.5.0
@@ -105,6 +106,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect

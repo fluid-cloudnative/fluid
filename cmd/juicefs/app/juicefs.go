@@ -17,13 +17,14 @@ limitations under the License.
 package app
 
 import (
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -82,7 +83,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
