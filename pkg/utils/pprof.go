@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 )
 
-func NewPprofServer(setupLog logr.Logger, pprofAddr string, development bool) {
+func NewPprofServer(setupLog logr.Logger, pprofAddr string, enableFullGoProfile bool) {
 	if pprofAddr != "" {
 		setupLog.Info("Enabling pprof", "pprof address", pprofAddr)
 		mux := http.NewServeMux()
@@ -36,7 +36,7 @@ func NewPprofServer(setupLog logr.Logger, pprofAddr string, development bool) {
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		if development {
+		if enableFullGoProfile {
 			mux.Handle("/debug/fgprof", fgprof.Handler())
 		}
 
