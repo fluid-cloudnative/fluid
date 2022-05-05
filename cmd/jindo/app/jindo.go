@@ -17,8 +17,9 @@ limitations under the License.
 package app
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"os"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -92,7 +93,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

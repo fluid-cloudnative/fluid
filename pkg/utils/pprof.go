@@ -18,13 +18,16 @@ package utils
 import (
 	"context"
 	"errors"
-	"github.com/go-logr/logr"
 	"net/http"
 	"net/http/pprof"
 	"time"
+
+	"github.com/felixge/fgprof"
+
+	"github.com/go-logr/logr"
 )
 
-func NewPprofServer(setupLog logr.Logger, pprofAddr string) {
+func NewPprofServer(setupLog logr.Logger, pprofAddr string, enableFullGoProfile bool) {
 	if pprofAddr != "" {
 		setupLog.Info("Enabling pprof", "pprof address", pprofAddr)
 		mux := http.NewServeMux()
@@ -33,6 +36,9 @@ func NewPprofServer(setupLog logr.Logger, pprofAddr string) {
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		if enableFullGoProfile {
+			mux.Handle("/debug/fgprof", fgprof.Handler())
+		}
 
 		pprofServer := http.Server{
 			Addr:    pprofAddr,
