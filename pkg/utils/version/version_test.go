@@ -21,16 +21,40 @@ func TestParse(t *testing.T) {
 }
 
 func TestCompare(t *testing.T) {
-	v1 := "release-2.7.2-SNAPSHOT-3714f2b"
-	v2 := "2.8.0"
-	expect := -1
-	got, err := Compare(v1, v2)
-	if err != nil {
-		t.Errorf("Compare unexpected error for version %q: %v", v1, err)
+	tests := []struct {
+		name      string
+		current   string
+		other     string
+		wantError bool
+		want      int
+	}{
+		{
+			name:      "lessThan",
+			current:   "release-2.7.2-SNAPSHOT-3714f2b",
+			other:     "2.8.0",
+			wantError: false,
+			want:      -1,
+		},
+		{
+			name:      "error",
+			current:   "test-2.7.2-SNAPSHOT-3714f2b",
+			other:     "2.8.0",
+			wantError: true,
+			want:      0,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Compare(tt.current, tt.other)
+			gotErr := err != nil
+			if gotErr != tt.wantError {
+				t.Errorf("testcase %v compare()'s expected error is %v, result is %v", tt.name, tt.wantError, err)
+			}
 
-	if got != -1 {
-		t.Errorf("Expect %q, but got %q", expect, got)
+			if got != tt.want {
+				t.Errorf("testcase %v compare()'s expected value is %v, result is %v", tt.name, tt.want, got)
+			}
+
+		})
 	}
-
 }
