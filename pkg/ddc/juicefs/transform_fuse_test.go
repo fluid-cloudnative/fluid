@@ -18,11 +18,10 @@ package juicefs
 
 import (
 	"encoding/base64"
-	"fmt"
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
-	"sort"
-	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -752,17 +751,30 @@ func Test_genOption(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := genOption(tt.args.optionMap)
-			var keys []int
-			for k := range got {
-				keys = append(keys, k)
-			}
-			sort.Ints(keys)
-			fmt.Println(keys)
-			for _, k := range keys {
-				if got[k] != tt.want[k] {
-					t.Errorf("genOption() = %v, want %v", got, tt.want)
-				}
+			if !isSliceEqual(got, tt.want) {
+				t.Errorf("genOption() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func isSliceEqual(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+
+	diff := make(map[string]int, len(got))
+	for _, v := range got {
+		diff[v]++
+	}
+	for _, v := range want {
+		if _, ok := diff[v]; !ok {
+			return false
+		}
+		diff[v] -= 1
+		if diff[v] == 0 {
+			delete(diff, v)
+		}
+	}
+	return len(diff) == 0
 }
