@@ -17,10 +17,17 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
+)
+
+const (
+	// https://github.com/Alluxio/alluxio/pull/15318/files
+	newFuseArgsVersion = "2.8.0"
 )
 
 // 4. Transform the fuse
@@ -43,24 +50,25 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Env = map[string]string{}
 	}
 
-	// if runtime.Spec.Fuse.MountPath != "" {
-	// 	value.Fuse.MountPath = runtime.Spec.Fuse.MountPath
-	// } else {
-	// 	value.Fuse.MountPath = fmt.Sprintf("format", a)
-	// }
-
 	value.Fuse.MountPath = e.getMountPoint()
-	value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 
-	// if len(runtime.Spec.Fuse.Args) > 0 {
-	// 	value.Fuse.Args = runtime.Spec.Fuse.Args
-	// } else {
-	// 	value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache"}
-	// }
-	e.optimizeDefaultFuse(runtime, value)
+	// If the alluxio version is 2.8.0 or greater, the MOUNT_POINT env is not supported anymore.
+	// Instead, it will be put into the fuse args
+	// https://github.com/Alluxio/alluxio/pull/15318/files
+	isNewFuseArgVersion, err := checkIfNewFuseArgVersion(value.Fuse.ImageTag)
+	if err != nil {
+		e.Log.Error(err, "Failed to transform fuse")
+		return err
+	}
+
+	if !isNewFuseArgVersion {
+		value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
+	}
+
+	e.optimizeDefaultFuse(runtime, value, isNewFuseArgVersion)
 
 	if dataset.Spec.Owner != nil {
-		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
+		value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
 	} else {
 		if len(value.Properties) == 0 {
 			value.Properties = map[string]string{}
@@ -75,8 +83,8 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	//}
 
 	// Allow others: all users(including root) can access fuse
-	if !strings.Contains(value.Fuse.Args[len(value.Fuse.Args)-1], "allow_") {
-		value.Fuse.Args[len(value.Fuse.Args)-1] = strings.Join([]string{value.Fuse.Args[len(value.Fuse.Args)-1], "allow_other"}, ",")
+	if len(value.Fuse.Args) > 1 && !strings.Contains(value.Fuse.Args[1], "allow_") {
+		value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], "allow_other"}, ",")
 	}
 
 	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
@@ -95,4 +103,14 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 
 	return
 
+}
+
+func checkIfNewFuseArgVersion(version string) (newFuseVersion bool, err error) {
+	compare, err := versionutil.Compare(version, newFuseArgsVersion)
+	if err != nil {
+
+		return
+	}
+	newFuseVersion = compare >= 0
+	return newFuseVersion, err
 }
