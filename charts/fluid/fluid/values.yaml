@@ -32,9 +32,9 @@ runtime:
     controller:
       image: fluidcloudnative/alluxioruntime-controller:v0.8.0-6a5acd3
     runtime:
-      image: registry.aliyuncs.com/alluxio/alluxio:release-2.7.2-SNAPSHOT-3714f2b
+      image: registry.aliyuncs.com/alluxio/alluxio:release-2.7.3-SNAPSHOT-a7154f1
     fuse:
-      image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.7.2-SNAPSHOT-3714f2b
+      image: registry.aliyuncs.com/alluxio/alluxio-fuse:release-2.7.3-SNAPSHOT-a7154f1
   jindo:
     runtimeWorkers: 3
     portRange: 18000-19999
