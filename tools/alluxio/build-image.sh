@@ -108,8 +108,8 @@ build()
 
   # Use aluxio/alluxio-dev image for both Alluxio and Fuse, starting from Alluxio v2.6.2
   # Build Alluxio image
-  if test -f /alluxio/integration/docker/Dockerfile-dev; then
-    docker build -f Dockerfile-dev -t alluxio/alluxio-dev:release-2.8.0-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.8.0-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
+  if test -f /alluxio/integration/docker/Dockerfile; then
+    docker build -f Dockerfile -t alluxio/alluxio-dev:release-2.8.0-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.8.0-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
   else
     docker build -t alluxio/alluxio-dev:release-2.8.0-SNAPSHOT-$GIT_COMMIT --build-arg ALLUXIO_TARBALL=alluxio-release-2.8.0-SNAPSHOT-bin.tar.gz --build-arg ENABLE_DYNAMIC_USER="true" .
   fi
