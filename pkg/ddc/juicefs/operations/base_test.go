@@ -182,7 +182,7 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := JuiceFileUtils{}
-	_, err = a.GetMetric()
+	_, err = a.GetMetric("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -192,7 +192,7 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	m, err := a.GetMetric()
+	m, err := a.GetMetric("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
@@ -343,6 +343,45 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	fileCount, err := a.GetFileCount("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "JuiceFS:test   87687856128  87687856128            0 100% /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &JuiceFileUtils{log: fake.NullLogger()}
+	_, err = a.GetUsedSpace("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.GetUsedSpace("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
