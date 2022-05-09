@@ -65,6 +65,10 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.Env["MOUNT_POINT"] = value.Fuse.MountPath
 	}
 
+	e.Log.Info("Check if the alluxio version not less than 2.8",
+		"version", value.Fuse.ImageTag,
+		"isNewFuseArgVersion", isNewFuseArgVersion)
+
 	e.optimizeDefaultFuse(runtime, value, isNewFuseArgVersion)
 
 	if dataset.Spec.Owner != nil {
