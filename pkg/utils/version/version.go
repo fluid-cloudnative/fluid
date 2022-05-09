@@ -27,8 +27,8 @@ const (
 )
 
 func RuntimeVersion(str string) (*versionutil.Version, error) {
-	// return versionutil.ParseGeneric(str)
-	return versionutil.ParseSemantic(strings.TrimPrefix(strings.ToLower(str), releasePrefix))
+	// return versionutil.ParseSemantic(str)
+	return versionutil.ParseGeneric(strings.TrimPrefix(strings.ToLower(str), releasePrefix))
 }
 
 // Compare compares v against a version string (which will be parsed as either Semantic

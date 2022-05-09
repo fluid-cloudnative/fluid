@@ -106,6 +106,23 @@ func TestTransformFuseWithArgs(t *testing.T) {
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
+					ImageTag: "2.8.0-SNAPSHOT",
+					Args: []string{
+						"fuse",
+						"--fuse-opts=kernel_cache",
+					},
+				},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other"}, false},
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Fuse: datav1alpha1.AlluxioFuseSpec{
 					ImageTag: "v2.8.0",
 					Args: []string{
 						"fuse",
