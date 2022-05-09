@@ -47,9 +47,9 @@ kubectl create secret generic jfs-secret \
     --from-literal=secret-key=<secretkey>
 ```
 
-`metaurl`: Connection URL for metadata engine (e.g. Redis). Read [this document](https://juicefs.com/docs/community/databases_for_metadata/) for more information.
-`access-key`: Access key of object storage.
-`secret-key`: Secret key of object storage.
+- `metaurl`: Connection URL for metadata engine (e.g. Redis). Read [this document](https://juicefs.com/docs/community/databases_for_metadata/) for more information.
+- `access-key`: Access key of object storage.
+- `secret-key`: Secret key of object storage.
 
 **Check `Dataset` to be created**
 
@@ -85,9 +85,9 @@ spec:
 EOF
 ```
 
-`mountPoint`: Refers to the subdirectory of JuiceFS, which is the directory where users store data in the JuiceFS file system, starts with `juicefs://`. For example, `juicefs:///demo` is the `/demo` subdirectory of the juicefs file system.
-`bucket`: Bucket URL. For example, using s3 as object storage, bucket is `https://myjuicefs.s3.us-east-2.amazonaws.com`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) to learn how to setup different object storage.
-`storage`: Specify the type of storage to be used by the file system, e.g. --storage s3. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) for more details.
+- `mountPoint`: Refers to the subdirectory of JuiceFS, which is the directory where users store data in the JuiceFS file system, starts with `juicefs://`. For example, `juicefs:///demo` is the `/demo` subdirectory of the JuiceFS file system.
+- `bucket`: Bucket URL. For example, using S3 as object storage, bucket is `https://myjuicefs.s3.us-east-2.amazonaws.com`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) to learn how to setup different object storage.
+- `storage`: Specify the type of storage to be used by the file system, e.g. `s3`, `gs`, `oss`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) for more details.
 
 > **Attention**: Only `name` and `metaurl` are required. If the JuiceFS has been formatted, you only need to fill in the `name` and `metaurl`.
 
@@ -216,9 +216,9 @@ kubectl create secret generic jfs-secret \
     --from-literal=secret-key=<secretkey>
 ```
 
-`token`: JuiceFS managed token. Read [this document](https://juicefs.com/docs/cloud/metadata/#token-management) for more details.
-`access-key`: Access key of object storage.
-`secret-key`: Secret key of object storage.
+- `token`: JuiceFS managed token. Read [this document](https://juicefs.com/docs/cloud/metadata/#token-management) for more details.
+- `access-key`: Access key of object storage.
+- `secret-key`: Secret key of object storage.
 
 **Check `Dataset` to be created**
 
@@ -253,13 +253,11 @@ spec:
 EOF
 ```
 
-> **Note**: `/demo` refers to the subpath of JuiceFS, which is the directory of the JuiceFS file system where users store data in.
+- `name`: It needs to be the same as the volume name created in the JuiceFS console.
+- `mountPoint`: Refers to the subdirectory of JuiceFS, which is the directory where users store data in the JuiceFS file system, starts with `juicefs://`. For example, `juicefs:///demo` is the `/demo` subdirectory of the JuiceFS file system.
+- `bucket`: Bucket URL. For example, using S3 as object storage, bucket is `https://myjuicefs.s3.us-east-2.amazonaws.com`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) to learn how to setup different object storage.
 
-`name`: It needs to be the same as the volume name created in the JuiceFS console.
-`mountPoint`: Refers to the subdirectory of JuiceFS, which is the directory where users store data in the JuiceFS file system, starts with `juicefs://`. For example, `juicefs:///demo` is the `/demo` subdirectory of the juicefs file system.
-`bucket`: Bucket URL. For example, using s3 as object storage, bucket is `https://myjuicefs.s3.us-east-2.amazonaws.com`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) to learn how to setup different object storage.
-
-> **Attention**: `name` and `token` are required. 
+> **Attention**: `name` and `token` are required.
 
 Since JuiceFS uses local cache, the corresponding `Dataset` supports only one mount, and JuiceFS does not have UFS, you can specify subdirectory in `mountPoint` (`juicefs:///` represents root directory), and it will be mounted as the root directory into the container.
 

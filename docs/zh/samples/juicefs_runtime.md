@@ -48,9 +48,10 @@ kubectl create secret generic jfs-secret \
 ```
 
 其中：
-`metaurl`：元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/) 。
-`access-key`：对象存储的 access key。
-`secret-key`：对象存储的 secret key。
+
+- `metaurl`：元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/) 。
+- `access-key`：对象存储的 access key。
+- `secret-key`：对象存储的 secret key。
 
 **查看待创建的 `Dataset` 资源对象**
 
@@ -87,9 +88,10 @@ EOF
 ```
 
 其中：
-`mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 juicefs 文件系统的 `/demo` 子目录。
-`bucket`：Bucket URL。例如使用 s3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
-`storage`：对象存储类型，比如 s3，gs，oss。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+
+- `mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 JuiceFS 文件系统的 `/demo` 子目录。
+- `bucket`：Bucket URL。例如使用 S3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+- `storage`：对象存储类型，比如 `s3`，`gs`，`oss`。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
 
 > **注意**：只有 `name` 和 `metaurl` 为必填项，若 JuiceFS 已经格式化过，只需要填写 `name` 和 `metaurl` 即可。
 
@@ -209,7 +211,7 @@ jfsdemo-worker-0                                               1/1     Running  
 
 ### 云服务版
 
-在使用 JuiceFS 之前，您需要提供 JuiceFS 控制台管理的 Token（更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86) ），及对象存储服务（如 MinIO）的参数，并创建对应的 secret:
+在使用 JuiceFS 之前，您需要提供 JuiceFS 控制台管理的 Token（更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86)），及对象存储服务（如 MinIO）的参数，并创建对应的 secret：
 
 ```shell
 kubectl create secret generic jfs-secret \
@@ -219,9 +221,10 @@ kubectl create secret generic jfs-secret \
 ```
 
 其中：
-`token`：JuiceFS 管理 token。更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86)。
-`access-key`：对象存储的 access key。
-`secret-key`：对象存储的 secret key。
+
+- `token`：JuiceFS 管理 token。更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86)。
+- `access-key`：对象存储的 access key。
+- `secret-key`：对象存储的 secret key。
 
 **查看待创建的 `Dataset` 资源对象**
 
@@ -257,9 +260,10 @@ EOF
 ```
 
 其中：
-`name`：需要与在 JuiceFS 控制台创建的 volume 名一致。
-`mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 juicefs 文件系统的 `/demo` 子目录。
-`bucket`：Bucket URL。例如使用 s3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+
+- `name`：需要与在 JuiceFS 控制台创建的 volume 名一致。
+- `mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 JuiceFS 文件系统的 `/demo` 子目录。
+- `bucket`：Bucket URL。例如使用 S3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
 
 > **注意**：其中 `name` 和 `token` 为必填项。
 
