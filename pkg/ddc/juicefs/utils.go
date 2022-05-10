@@ -19,6 +19,7 @@ package juicefs
 import (
 	"context"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"strconv"
 	"strings"
 
@@ -212,6 +213,31 @@ func (j *JuiceFSEngine) getHostMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
 	j.Log.Info("mountRoot", "path", mountRoot)
 	return fmt.Sprintf("%s/%s/%s", mountRoot, j.namespace, j.name)
+}
+
+func (j *JuiceFSEngine) GetEdition() (edition string) {
+	jfsValues := j.getConfigmapName()
+
+	key := types.NamespacedName{
+		Name:      jfsValues,
+		Namespace: j.namespace,
+	}
+
+	cm := &corev1.ConfigMap{}
+	if err := j.Client.Get(context.TODO(), key, cm); err != nil {
+		return ""
+	}
+
+	data := []byte(cm.Data["data"])
+	fuseValues := make(map[string]interface{})
+	err := yaml.Unmarshal(data, &fuseValues)
+	if err != nil {
+		return ""
+	}
+
+	edition, _ = fuseValues["edition"].(string)
+
+	return edition
 }
 
 // getMountRoot returns the default path, if it's not set

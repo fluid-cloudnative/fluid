@@ -130,7 +130,7 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 func (j JuiceFileUtils) GetFileCount(juiceSubPath string) (fileCount int64, err error) {
 	var (
 		//strs    = "du -ah juiceSubPath |grep ^- |wc -l "
-		strs    = fmt.Sprintf("du -ah %s |grep ^- |wc -l ", juiceSubPath)
+		strs    = fmt.Sprintf("ls -lR %s |grep ^- |wc -l ", juiceSubPath)
 		command = []string{"bash", "-c", strs}
 		stdout  string
 		stderr  string
@@ -201,9 +201,9 @@ func (j JuiceFileUtils) DeleteDir(dir string) (err error) {
 }
 
 // GetMetric Get pod metrics
-func (j JuiceFileUtils) GetMetric() (metrics string, err error) {
+func (j JuiceFileUtils) GetMetric(juicefsPath string) (metrics string, err error) {
 	var (
-		command = []string{"curl", "0.0.0.0:9567/metrics"}
+		command = []string{"cat", fmt.Sprintf("%s/%s", juicefsPath, ".stats")}
 		stdout  string
 		stderr  string
 	)
@@ -215,6 +215,39 @@ func (j JuiceFileUtils) GetMetric() (metrics string, err error) {
 	}
 	metrics = stdout
 	return
+}
+
+// GetUsedSpace Get used space in byte
+// use "df --block-size=1 |grep <juicefsPath>'"
+func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err error) {
+	var (
+		strs    = fmt.Sprintf(`df --block-size=1 |grep %s`, juicefsPath)
+		command = []string{"bash", "-c", strs}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = j.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	// [<Filesystem>       <Size>  <Used> <Avail> <Use>% <Mounted on>]
+	str := strings.TrimSuffix(stdout, "\n")
+
+	data := strings.Fields(str)
+	if len(data) != 6 {
+		err = fmt.Errorf("failed to parse %s in GetUsedSpace method", data)
+		return
+	}
+
+	usedSpace, err = strconv.ParseInt(data[2], 10, 64)
+	if err != nil {
+		return
+	}
+
+	return usedSpace, err
 }
 
 // exec with timeout
