@@ -12,8 +12,8 @@ alluxio_git='https://github.com/Alluxio/alluxio.git'
 branch="release-2.8.0"
 tag=""
 commit=""
-alluxio_image_name="registry.aliyuncs.com/alluxio/alluxio"
-alluxio_fuse_image_name="registry.aliyuncs.com/alluxio/alluxio-fuse"
+alluxio_image_name="fluidcloudnative/alluxio"
+alluxio_fuse_image_name="fluidcloudnative/alluxio-fuse"
 
 dev_container_name="alluxio-dev-test"
 
