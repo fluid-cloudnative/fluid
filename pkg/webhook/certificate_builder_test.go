@@ -18,9 +18,11 @@ package webhook
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -179,21 +181,21 @@ func TestGenCA(t *testing.T) {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
-			certPath:    "/tmp/fluid/certs",
+			certPath:    "fluid_certs",
 			canMkDir:    true,
 		},
 		"test generate ca file case 2": {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
-			certPath:    "/tmp/fluid/certs",
+			certPath:    "TEST",
 			canMkDir:    true,
 		},
 		"test generate ca file case 3": {
 			lengthCheck: 1000,
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
-			certPath:    "////",
+			certPath:    "TEst",
 			canMkDir:    false,
 		},
 	}
@@ -202,7 +204,11 @@ func TestGenCA(t *testing.T) {
 	cb := NewCertificateBuilder(c, log)
 
 	for index, item := range testCases {
-		certs, err := cb.genCA(item.ns, item.svc, item.certPath)
+		certDir, err := ioutil.TempDir("/tmp", item.certPath)
+		if err != nil {
+			t.Errorf("MkdirTemp failed due to %v", err)
+		}
+		certs, err := cb.genCA(item.ns, item.svc, certDir)
 		if err != nil && !item.canMkDir {
 			continue
 		}
@@ -215,10 +221,6 @@ func TestGenCA(t *testing.T) {
 				item.lengthCheck,
 				gotLen,
 			)
-		}
-		// clean certificate files
-		if err := os.RemoveAll(item.certPath); err != nil {
-			t.Errorf("fail to recycle file, path:%s,err:%v", item.certPath, err)
 		}
 	}
 
