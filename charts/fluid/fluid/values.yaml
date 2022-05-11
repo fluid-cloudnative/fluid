@@ -32,9 +32,11 @@ runtime:
     controller:
       image: fluidcloudnative/alluxioruntime-controller:v0.8.0-518fce8
     runtime:
-      image: fluidcloudnative/alluxio:2.8.0-SNAPSHOT
+      # image: fluidcloudnative/alluxio:release-2.7.3-SNAPSHOT-a7154f1
+      image: fluidcloudnative/alluxio:release-2.8.1-SNAPSHOT-0433ade
     fuse:
-      image: fluidcloudnative/alluxio-fuse:2.8.0-SNAPSHOT
+      # image: fluidcloudnative/alluxio-fuse:release-2.7.3-SNAPSHOT-a7154f1
+      image: fluidcloudnative/alluxio-fuse:release-2.8.1-SNAPSHOT-0433ade
   jindo:
     runtimeWorkers: 3
     portRange: 18000-19999

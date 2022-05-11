@@ -44,7 +44,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
-					ImageTag: "v2.8.0",
+					ImageTag: "release-2.8.1-SNAPSHOT-0433ade",
 				},
 			},
 		}, &datav1alpha1.Dataset{
@@ -106,7 +106,7 @@ func TestTransformFuseWithArgs(t *testing.T) {
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
-					ImageTag: "2.8.0-SNAPSHOT",
+					ImageTag: "release-2.8.1-SNAPSHOT-0433ade",
 					Args: []string{
 						"fuse",
 						"--fuse-opts=kernel_cache",
