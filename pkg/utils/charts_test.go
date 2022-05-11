@@ -29,7 +29,6 @@ func TestPathExists(t *testing.T) {
 	if PathExists(path + "test/") {
 		t.Errorf("result of checking if the path exists is wrong")
 	}
-	_ = os.Remove(path)
 }
 
 func TestGetChartsDirectory(t *testing.T) {
@@ -40,7 +39,6 @@ func TestGetChartsDirectory(t *testing.T) {
 	testDir := f.Name()
 	home := os.Getenv("HOME")
 
-	defer os.RemoveAll(testDir)   // clean up
 	defer os.Setenv("HOME", home) // recover
 
 	os.Setenv("HOME", testDir)
