@@ -215,22 +215,27 @@ func (j *JuiceFSEngine) getHostMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s", mountRoot, j.namespace, j.name)
 }
 
-func (j *JuiceFSEngine) GetEdition() (edition string) {
+func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 	jfsValues := j.getConfigmapName()
 
-	key := types.NamespacedName{
+	cm = &corev1.ConfigMap{}
+	err = j.Client.Get(context.TODO(), types.NamespacedName{
 		Name:      jfsValues,
 		Namespace: j.namespace,
-	}
+	}, cm)
 
-	cm := &corev1.ConfigMap{}
-	if err := j.Client.Get(context.TODO(), key, cm); err != nil {
+	return cm, err
+}
+
+func (j *JuiceFSEngine) GetEdition() (edition string) {
+	cm, err := j.GetValuesConfigMap()
+	if err != nil {
 		return ""
 	}
 
 	data := []byte(cm.Data["data"])
 	fuseValues := make(map[string]interface{})
-	err := yaml.Unmarshal(data, &fuseValues)
+	err = yaml.Unmarshal(data, &fuseValues)
 	if err != nil {
 		return ""
 	}
