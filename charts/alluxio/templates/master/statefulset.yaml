@@ -242,6 +242,12 @@ spec:
             mountPath: "{{ .path }}"
             {{- end }}
           {{- end }}
+          {{- if .Values.master.volumeMounts }}
+            {{- range .Values.master.volumeMounts }}
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
+            {{- end }}
+          {{- end }}
         - name: alluxio-job-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -320,6 +326,12 @@ spec:
           {{- end }}
           {{- if .Values.mounts }}
             {{- range .Values.mounts }}
+          - name: "{{ .name }}"
+            mountPath: "{{ .path }}"
+            {{- end }}
+          {{- end }}
+          {{- if .Values.master.volumeMounts }}
+            {{- range .Values.master.volumeMounts }}
           - name: "{{ .name }}"
             mountPath: "{{ .path }}"
             {{- end }}
@@ -415,6 +427,13 @@ spec:
         {{- end }}
         {{- if .Values.ufsVolumes }}   
           {{- range .Values.ufsVolumes }}
+        - name: "{{ .name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .name }}"
+          {{- end }}
+        {{- end }}
+        {{- if .Values.volumes }}   
+          {{- range .Values.volumes }}
         - name: "{{ .name }}"
           persistentVolumeClaim:
             claimName: "{{ .name }}"
