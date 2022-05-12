@@ -178,7 +178,7 @@ spec:
 {{- include "alluxio.worker.tieredstoreVolumes" . }}
           {{- end }}
         {{- end }}
-        {{- if .Values.volumes }}
-{{ toYaml .Values.volumes | indent 8 }}
+        {{- if .Values.fuse.volumes }}
+{{ toYaml .Values.fuse.volumes | indent 8 }}
         {{- end }}
 {{- end }}

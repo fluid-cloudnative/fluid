@@ -123,6 +123,7 @@ master:
   #   mountPath: /data/secrets/mySecretVolume/
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
 
 jobMaster:
   args:
@@ -241,6 +242,7 @@ worker:
   #   mountPath: /data/secrets/mySecretVolume/
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
     
 
 jobWorker:
@@ -370,6 +372,15 @@ fuse:
     limits:
 #      cpu: "4"
 #      memory: "4G"
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
+    
+
 
 ## HDFS Configuraions ##
 # hadoopConfig:
@@ -389,7 +400,7 @@ fuse:
 ## Monitor ##
 # monitoring: "alluxio_runtime_metrics"
 
-volumes: []
+# volumes: []
 # volumes:
 # - name: mySecretVolume
 #   secret:

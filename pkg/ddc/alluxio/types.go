@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // The value yaml file
@@ -66,7 +66,7 @@ type Alluxio struct {
 
 	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
 
-	Tolerations []v1.Toleration `yaml:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `yaml:"tolerations,omitempty"`
 
 	PlacementMode string `yaml:"placement,omitempty"`
 }
@@ -127,27 +127,31 @@ type JobWorker struct {
 }
 
 type Worker struct {
-	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
-	Env          map[string]string `yaml:"env,omitempty"`
-	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
-	Properties   map[string]string `yaml:"properties,omitempty"`
-	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
-	Resources    common.Resources  `yaml:"resources,omitempty"`
-	Ports        Ports             `yaml:"ports,omitempty"`
+	JvmOptions   []string             `yaml:"jvmOptions,omitempty"`
+	Env          map[string]string    `yaml:"env,omitempty"`
+	NodeSelector map[string]string    `yaml:"nodeSelector,omitempty"`
+	Properties   map[string]string    `yaml:"properties,omitempty"`
+	HostNetwork  bool                 `yaml:"hostNetwork,omitempty"`
+	Resources    common.Resources     `yaml:"resources,omitempty"`
+	Ports        Ports                `yaml:"ports,omitempty"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Volumes      []corev1.Volume      `yaml:"volumes,omitempty"`
 }
 
 type Master struct {
-	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
-	Env          map[string]string `yaml:"env,omitempty"`
-	Affinity     Affinity          `yaml:"affinity"`
-	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
-	Properties   map[string]string `yaml:"properties,omitempty"`
-	Replicas     int32             `yaml:"replicaCount,omitempty"`
-	HostNetwork  bool              `yaml:"hostNetwork,omitempty"`
-	Resources    common.Resources  `yaml:"resources,omitempty"`
-	Ports        Ports             `yaml:"ports,omitempty"`
-	BackupPath   string            `yaml:"backupPath,omitempty"`
-	Restore      Restore           `yaml:"restore,omitempty"`
+	JvmOptions   []string             `yaml:"jvmOptions,omitempty"`
+	Env          map[string]string    `yaml:"env,omitempty"`
+	Affinity     Affinity             `yaml:"affinity"`
+	NodeSelector map[string]string    `yaml:"nodeSelector,omitempty"`
+	Properties   map[string]string    `yaml:"properties,omitempty"`
+	Replicas     int32                `yaml:"replicaCount,omitempty"`
+	HostNetwork  bool                 `yaml:"hostNetwork,omitempty"`
+	Resources    common.Resources     `yaml:"resources,omitempty"`
+	Ports        Ports                `yaml:"ports,omitempty"`
+	BackupPath   string               `yaml:"backupPath,omitempty"`
+	Restore      Restore              `yaml:"restore,omitempty"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Volumes      []corev1.Volume      `yaml:"volumes,omitempty"`
 }
 
 type Restore struct {
@@ -157,21 +161,23 @@ type Restore struct {
 }
 
 type Fuse struct {
-	Image              string            `yaml:"image,omitempty"`
-	NodeSelector       map[string]string `yaml:"nodeSelector,omitempty"`
-	ImageTag           string            `yaml:"imageTag,omitempty"`
-	ImagePullPolicy    string            `yaml:"imagePullPolicy,omitempty"`
-	Properties         map[string]string `yaml:"properties,omitempty"`
-	Env                map[string]string `yaml:"env,omitempty"`
-	JvmOptions         []string          `yaml:"jvmOptions,omitempty"`
-	MountPath          string            `yaml:"mountPath,omitempty"`
-	ShortCircuitPolicy string            `yaml:"shortCircuitPolicy,omitempty"`
-	Args               []string          `yaml:"args,omitempty"`
-	HostNetwork        bool              `yaml:"hostNetwork,omitempty"`
-	Enabled            bool              `yaml:"enabled,omitempty"`
-	Resources          common.Resources  `yaml:"resources,omitempty"`
-	Global             bool              `yaml:"global,omitempty"`
-	CriticalPod        bool              `yaml:"criticalPod,omitempty"`
+	Image              string               `yaml:"image,omitempty"`
+	NodeSelector       map[string]string    `yaml:"nodeSelector,omitempty"`
+	ImageTag           string               `yaml:"imageTag,omitempty"`
+	ImagePullPolicy    string               `yaml:"imagePullPolicy,omitempty"`
+	Properties         map[string]string    `yaml:"properties,omitempty"`
+	Env                map[string]string    `yaml:"env,omitempty"`
+	JvmOptions         []string             `yaml:"jvmOptions,omitempty"`
+	MountPath          string               `yaml:"mountPath,omitempty"`
+	ShortCircuitPolicy string               `yaml:"shortCircuitPolicy,omitempty"`
+	Args               []string             `yaml:"args,omitempty"`
+	HostNetwork        bool                 `yaml:"hostNetwork,omitempty"`
+	Enabled            bool                 `yaml:"enabled,omitempty"`
+	Resources          common.Resources     `yaml:"resources,omitempty"`
+	Global             bool                 `yaml:"global,omitempty"`
+	CriticalPod        bool                 `yaml:"criticalPod,omitempty"`
+	VolumeMounts       []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Volumes            []corev1.Volume      `yaml:"volumes,omitempty"`
 }
 
 type TieredStore struct {
