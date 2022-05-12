@@ -32,11 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
-	r := `6706560319    /tmp`
-	return r, "", nil
-}
-
 func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string, err error) {
 	r := `1331167`
 	return r, "", nil
