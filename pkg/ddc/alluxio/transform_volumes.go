@@ -11,18 +11,16 @@ import (
 func (e *AlluxioEngine) transformMasterVolumes(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	if len(runtime.Spec.Master.VolumeMounts) > 0 {
 		for _, volumeMount := range runtime.Spec.Master.VolumeMounts {
-			name := volumeMount.Name
-			volume := &corev1.Volume{}
-
+			var volume *corev1.Volume
 			for _, v := range runtime.Spec.Volumes {
-				if v.Name == name {
+				if v.Name == volumeMount.Name {
 					volume = &v
 					break
 				}
 			}
 
 			if volume == nil {
-				return fmt.Errorf("failed to find the volume for volumeMount %s", name)
+				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
 			}
 
 			if len(value.Master.VolumeMounts) == 0 {
@@ -44,18 +42,17 @@ func (e *AlluxioEngine) transformMasterVolumes(runtime *datav1alpha1.AlluxioRunt
 func (e *AlluxioEngine) transformWorkerVolumes(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	if len(runtime.Spec.Worker.VolumeMounts) > 0 {
 		for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
-			name := volumeMount.Name
-			volume := &corev1.Volume{}
+			var volume *corev1.Volume
 
 			for _, v := range runtime.Spec.Volumes {
-				if v.Name == name {
+				if v.Name == volumeMount.Name {
 					volume = &v
 					break
 				}
 			}
 
 			if volume == nil {
-				return fmt.Errorf("failed to find the volume for volumeMount %s", name)
+				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
 			}
 
 			if len(value.Worker.VolumeMounts) == 0 {
@@ -77,18 +74,16 @@ func (e *AlluxioEngine) transformWorkerVolumes(runtime *datav1alpha1.AlluxioRunt
 func (e *AlluxioEngine) transformFuseVolumes(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	if len(runtime.Spec.Fuse.VolumeMounts) > 0 {
 		for _, volumeMount := range runtime.Spec.Fuse.VolumeMounts {
-			name := volumeMount.Name
-			volume := &corev1.Volume{}
-
+			var volume *corev1.Volume
 			for _, v := range runtime.Spec.Volumes {
-				if v.Name == name {
+				if v.Name == volumeMount.Name {
 					volume = &v
 					break
 				}
 			}
 
 			if volume == nil {
-				return fmt.Errorf("failed to find the volume for volumeMount %s", name)
+				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
 			}
 
 			if len(value.Fuse.VolumeMounts) == 0 {
