@@ -18,11 +18,12 @@ package jindo
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
