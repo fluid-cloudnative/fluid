@@ -158,8 +158,8 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 
 			j.Log.Info("Metadata Sync starts", "dataset namespace", j.namespace, "dataset name", j.name)
 
-			dsName := j.getFuseDaemonsetName()
-			pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
+			stsName := j.getWorkerName()
+			pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
 			if err != nil || len(pods) == 0 {
 				result.UfsTotal = ""
 				result.FileNum = ""
@@ -168,7 +168,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				return
 			}
 			for _, pod := range pods {
-				fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSFuseContainer, j.namespace, j.Log)
+				fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
 
 				// load metadata
 				// ls -al /runtime-mnt/juicefs/namespace/name/juicefs-fuse/
