@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type FluidAppReconcilerImplement struct {
@@ -74,6 +75,10 @@ func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err er
 	stdout, stderr, err := kubeclient.ExecCommandInContainer(pod.Name, common.FuseContainerName, pod.Namespace, cmd)
 	if err != nil {
 		i.Log.Info("exec output", "stdout", stdout, "stderr", stderr)
+		if strings.Contains(stderr, "not mounted") {
+			// if mount point not mounted, do not retry
+			return nil
+		}
 		return err
 	}
 	return err
