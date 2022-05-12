@@ -171,6 +171,9 @@ spec:
             {{- if .Values.mounts -}}
 {{- include "alluxio.worker.otherVolumeMounts" . }}
             {{- end }}
+            {{- if .Values.worker.volumeMounts }}
+{{ toYaml .Values.worker.volumeMounts | indent 12 }}
+           {{- end }}
         - name: alluxio-job-worker
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           securityContext:
@@ -253,6 +256,9 @@ spec:
             {{- if .Values.mounts }}
 {{- include "alluxio.worker.otherVolumeMounts" . }}
             {{- end }}
+            {{- if .Values.worker.volumeMounts }}
+{{ toYaml .Values.worker.volumeMounts | indent 12 }}
+            {{- end }}
       restartPolicy: Always
       volumes:
         {{ if .Values.hadoopConfig -}}
@@ -317,4 +323,7 @@ spec:
           persistentVolumeClaim:
             claimName: "{{ .name }}"
           {{- end }}
+        {{- end }}
+        {{- if .Values.volumes }}
+{{ toYaml .Values.volumes | indent 8 }}
         {{- end }}

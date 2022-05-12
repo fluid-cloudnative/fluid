@@ -112,6 +112,17 @@ master:
     enabled: false
     # path: /subpath/
     # pvcName: pvc-local
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
 
 jobMaster:
   args:
@@ -224,6 +235,13 @@ worker:
   jvmOptions:
   nodeSelector: {}
   replicaCount: 0
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+    
 
 jobWorker:
   args:
@@ -370,3 +388,13 @@ fuse:
 
 ## Monitor ##
 # monitoring: "alluxio_runtime_metrics"
+
+volumes: []
+# volumes:
+# - name: mySecretVolume
+#   secret:
+#     secretName: mySecret
+# - name: myConfigMapVolume
+#   configMap:
+#     name: myConfigMap
+
