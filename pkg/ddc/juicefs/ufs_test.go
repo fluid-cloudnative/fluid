@@ -42,6 +42,11 @@ func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string,
 	return r, "", nil
 }
 
+func mockExecCommandInContainerForUsedStorageBytes() (stdout string, stderr string, err error) {
+	r := `JuiceFS:test 207300683100160  41460043776 207259223056384   1% /data`
+	return r, "", nil
+}
+
 func TestTotalStorageBytes(t *testing.T) {
 	daemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -362,30 +367,93 @@ func TestJuiceFSEngine_UpdateOnUFSChange(t *testing.T) {
 }
 
 func TestJuiceFSEngine_UsedStorageBytes(t *testing.T) {
-	type fields struct{}
+	statefulset := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-worker",
+			Namespace: "juicefs",
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"a": "b"},
+			},
+		},
+		Status: appsv1.StatefulSetStatus{
+			Replicas:      1,
+			ReadyReplicas: 1,
+		},
+	}
+
+	var pod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-worker-0",
+			Namespace: "juicefs",
+			Labels:    map[string]string{"a": "b"},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			Conditions: []corev1.PodCondition{{
+				Type:   corev1.PodReady,
+				Status: corev1.ConditionTrue,
+			}},
+		},
+	}
+	podList := &corev1.PodList{
+		Items: []corev1.Pod{*pod},
+	}
+	runtimeObjs := []runtime.Object{}
+	runtimeObjs = append(runtimeObjs, statefulset, pod)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, statefulset)
+	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
+	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
+	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
+	type fields struct {
+		runtime   *datav1alpha1.JuiceFSRuntime
+		name      string
+		namespace string
+	}
 	tests := []struct {
-		name    string
-		fields  fields
-		want    int64
-		wantErr bool
+		name      string
+		fields    fields
+		wantValue int64
+		wantErr   bool
 	}{
 		{
-			name:    "test",
-			fields:  fields{},
-			want:    0,
-			wantErr: false,
+			name: "test",
+			fields: fields{
+				name:      "test",
+				namespace: "juicefs",
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "spark",
+					},
+				},
+			},
+			wantValue: 41460043776,
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			j := JuiceFSEngine{}
-			got, err := j.UsedStorageBytes()
+			j := JuiceFSEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       fake.NullLogger(),
+				Client:    fakeClient,
+			}
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
+				return stdout, stderr, err
+			})
+			defer patch1.Reset()
+			gotValue, err := j.UsedStorageBytes()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("UsedStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("JuiceFSEngine.UsedStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("UsedStorageBytes() got = %v, want %v", got, tt.want)
+			if gotValue != tt.wantValue {
+				t.Errorf("JuiceFSEngine.UsedStorageBytes() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}

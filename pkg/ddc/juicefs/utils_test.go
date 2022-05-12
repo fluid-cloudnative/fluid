@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -687,6 +688,259 @@ func TestJuiceFSEngine_GetRunningPodsOfStatefulSet(t *testing.T) {
 				if !reflect.DeepEqual(gotPods[0].Status, tt.wantPods[0].Status) {
 					t.Errorf("testcase %s GetRunningPodsOfStatefulSet() gotPods = %v, want %v", tt.name, gotPods, tt.wantPods)
 				}
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_getValuesConfigMap(t *testing.T) {
+	type fields struct {
+		runtime     *datav1alpha1.JuiceFSRuntime
+		runtimeType string
+		name        string
+		namespace   string
+		Client      client.Client
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantCm  *corev1.ConfigMap
+		wantErr bool
+	}{
+		{
+			name: "test",
+			fields: fields{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "runtime",
+						Namespace: "default",
+					},
+				},
+				name:        "test",
+				namespace:   "default",
+				runtimeType: "juicefs",
+			},
+			wantCm: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-juicefs-values",
+					Namespace: "default",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(corev1.SchemeGroupVersion, &corev1.ConfigMap{})
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.wantCm)
+			e := &JuiceFSEngine{
+				runtime:     tt.fields.runtime,
+				runtimeType: tt.fields.runtimeType,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				Client:      mockClient,
+			}
+			gotCm, err := e.GetValuesConfigMap()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JuicefsEngine.getValuesConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotCm, tt.wantCm) {
+				t.Errorf("JuiceFSEngine.getValuesConfigMap() = %#v, want %#v", gotCm, tt.wantCm)
+			}
+		})
+	}
+}
+
+var (
+	communityValuesData = `    fullnameOverride: jfscedemo
+    edition: community
+    source: ${METAURL}
+    image: xxx/juicefs/juicefs-fuse
+    imageTag: v1.0.0-beta2
+    imagePullPolicy: IfNotPresent
+    user: 0
+    group: 0
+    fsGroup: 0
+    configs:
+      name: community
+      accesskeySecret: juicefs-ce-secret
+      secretkeySecret: juicefs-ce-secret
+      bucket: xxx
+      metaurlSecret: juicefs-ce-secret
+      formatCmd: /usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY}
+        --no-update --bucket=http://xxx ${METAURL} community
+    fuse:
+      enabled: true
+      image: xxx/juicefs/juicefs-fuse
+      nodeSelector:
+        fluid.io/f-kube-system-jfscedemo: "true"
+      imageTag: v1.0.0-beta2
+      imagePullPolicy: IfNotPresent
+      criticalPod: true
+      mountPath: /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+      cacheDir: /data/cachece
+      hostMountPath: /runtime-mnt/juicefs/kube-system/jfscedemo
+      command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+        -o max-uploads=80,cache-size=102400,free-space-ratio=0.1,cache-dir=/data/cachece,metrics=0.0.0.0:9567
+      statCmd: stat -c %i /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+    worker:
+      mountPath: /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+      cacheDir: /data/cachece
+      statCmd: stat -c %i /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+      command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/kube-system/jfscedemo/juicefs-fuse
+        -o max-uploads=80,cache-size=102400,free-space-ratio=0.1,cache-dir=/data/cachece,metrics=0.0.0.0:9567
+    placement: Exclusive`
+
+	enterpriseValuesData = `    fullnameOverride: jfsdemo
+    edition: enterprise
+    source: test
+    image: xxx/juicefs/juicefs-fuse
+    imageTag: v1.0.0-beta2
+    imagePullPolicy: IfNotPresent
+    user: 0
+    group: 0
+    fsGroup: 0
+    configs:
+      name: test
+      accesskeySecret: juicefs-secret
+      secretkeySecret: juicefs-secret
+      tokenSecret: juicefs-secret
+      formatCmd: /usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY}
+        test
+    fuse:
+      enabled: true
+      image: xxx/juicefs/juicefs-fuse
+      nodeSelector:
+        fluid.io/f-kube-system-jfsdemo: "true"
+      envs:
+      - name: BASE_URL
+        value: http://xxx/static
+        valuefrom: null
+      - name: CFG_URL
+        value: http://xxx/volume/%s/mount
+        valuefrom: null
+      imageTag: v1.0.0-beta2
+      imagePullPolicy: IfNotPresent
+      criticalPod: true
+      subPath: /dataset-bak
+      mountPath: /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+      cacheDir: /data/cache
+      hostMountPath: /runtime-mnt/juicefs/kube-system/jfsdemo
+      command: /sbin/mount.juicefs test /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+        -o cache-group=jfsdemo,no-sharing,subdir=/dataset-bak,cache-dir=/data/cache,max-uploads=80,free-space-ratio=0.1,foreground,cache-size=102400,max-cached-inodes=10000000
+      statCmd: stat -c %i /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+    worker:
+      envs:
+      - name: BASE_URL
+        value: http://xxx/static
+        valuefrom: null
+      - name: CFG_URL
+        value: http://xxx/volume/%s/mount
+        valuefrom: null
+      mountPath: /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+      cacheDir: /data/cache
+      statCmd: stat -c %i /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+      command: /sbin/mount.juicefs test /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse
+        -o foreground,cache-group=jfsdemo,free-space-ratio=0.1,cache-dir=/data/cache,cache-size=102400,max-cached-inodes=10000000,max-uploads=80,subdir=/dataset-bak
+    placement: Exclusive`
+)
+
+func TestJuiceFSEngine_GetEdition(t *testing.T) {
+	type args struct {
+		cmName    string
+		namespace string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		cm        *corev1.ConfigMap
+		wantValue string
+	}{
+		{
+			name: "test1",
+			args: args{
+				cmName:    "test1",
+				namespace: "fluid",
+			},
+			cm: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test1",
+					Namespace: "fluid",
+				},
+				Data: map[string]string{
+					"data": communityValuesData,
+				},
+			},
+			wantValue: "community",
+		},
+		{
+			name: "test2",
+			args: args{
+				cmName:    "test2",
+				namespace: "fluid",
+			},
+			cm: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test2",
+					Namespace: "fluid",
+				},
+				Data: map[string]string{
+					"data": enterpriseValuesData,
+				},
+			},
+			wantValue: "enterprise",
+		},
+		{
+			name: "test3",
+			args: args{
+				cmName:    "test3",
+				namespace: "fluid",
+			},
+			cm: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test3",
+					Namespace: "fluid",
+				},
+				Data: map[string]string{
+					"data": "test",
+				},
+			},
+			wantValue: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var engine *JuiceFSEngine
+			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetValuesConfigMap",
+				func(_ *JuiceFSEngine) (*corev1.ConfigMap, error) {
+					return tt.cm, nil
+				})
+			defer patch1.Reset()
+
+			j := JuiceFSEngine{
+				name:      "test",
+				namespace: tt.args.namespace,
+				Log:       fake.NullLogger(),
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "fluid",
+					},
+				},
+			}
+			gotValue := j.GetEdition()
+			if gotValue != tt.wantValue {
+				t.Errorf("JuiceFSEngine.GetEdition() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}

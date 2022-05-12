@@ -48,10 +48,21 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 				})
 			defer patch1.Reset()
 			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetPodMetrics",
-				func(_ *JuiceFSEngine, podName string) (string, error) {
+				func(_ *JuiceFSEngine, podName, containerName string) (string, error) {
 					return mockJuiceFSMetric(), nil
 				})
 			defer patch2.Reset()
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
+				func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfStatefulSet()
+					return r, nil
+				})
+			defer patch3.Reset()
+			patch4 := ApplyMethod(reflect.TypeOf(engine), "GetEdition",
+				func(_ *JuiceFSEngine) string {
+					return "enterprise"
+				})
+			defer patch4.Reset()
 
 			a := &JuiceFSEngine{
 				name:        "test",
@@ -68,8 +79,8 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 			}
 			want := cacheStates{
 				cacheCapacity:        "",
-				cached:               "387.17KiB",
-				cachedPercentage:     "151.2%",
+				cached:               "37.96GiB",
+				cachedPercentage:     "0.0%",
 				cacheHitRatio:        "100.0%",
 				cacheThroughputRatio: "100.0%",
 			}
@@ -101,10 +112,21 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 				})
 			defer patch1.Reset()
 			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetPodMetrics",
-				func(_ *JuiceFSEngine, podName string) (string, error) {
+				func(_ *JuiceFSEngine, podName, containerName string) (string, error) {
 					return mockJuiceFSMetric(), nil
 				})
 			defer patch2.Reset()
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
+				func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfStatefulSet()
+					return r, nil
+				})
+			defer patch3.Reset()
+			patch4 := ApplyMethod(reflect.TypeOf(engine), "GetEdition",
+				func(_ *JuiceFSEngine) string {
+					return "enterprise"
+				})
+			defer patch4.Reset()
 
 			a := &JuiceFSEngine{
 				name:        "test",
@@ -121,8 +143,8 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 			}
 			want := cacheStates{
 				cacheCapacity:        "",
-				cached:               "387.17KiB",
-				cachedPercentage:     "151.2%",
+				cached:               "37.96GiB",
+				cachedPercentage:     "0.0%",
 				cacheHitRatio:        "100.0%",
 				cacheThroughputRatio: "100.0%",
 			}

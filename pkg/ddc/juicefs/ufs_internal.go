@@ -50,3 +50,18 @@ func (j *JuiceFSEngine) totalFileNumsInternal() (fileCount int64, err error) {
 
 	return
 }
+
+func (j *JuiceFSEngine) usedSpaceInternal() (usedSpace int64, err error) {
+	stsName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	if err != nil || len(pods) == 0 {
+		return
+	}
+	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
+	usedSpace, err = fileUtils.GetUsedSpace(j.getMountPoint())
+	if err != nil {
+		return
+	}
+
+	return
+}

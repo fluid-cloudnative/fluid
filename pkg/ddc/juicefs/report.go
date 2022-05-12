@@ -20,14 +20,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
 // GetPodMetrics get juicefs pod metrics
-func (j *JuiceFSEngine) GetPodMetrics(podName string) (metrics string, err error) {
-	fileUtils := operations.NewJuiceFileUtils(podName, common.JuiceFSFuseContainer, j.namespace, j.Log)
-	metrics, err = fileUtils.GetMetric()
+func (j *JuiceFSEngine) GetPodMetrics(podName, containerName string) (metrics string, err error) {
+	fileUtils := operations.NewJuiceFileUtils(podName, containerName, j.namespace, j.Log)
+	metrics, err = fileUtils.GetMetric(j.getMountPoint())
 	if err != nil {
 		return "", err
 	}
@@ -35,31 +34,45 @@ func (j *JuiceFSEngine) GetPodMetrics(podName string) (metrics string, err error
 }
 
 // parseMetric parse juicefs report metric to cache
-func (j JuiceFSEngine) parseMetric(metrics string) (podMetric fuseMetrics) {
+func (j JuiceFSEngine) parseMetric(metrics, edition string) (podMetric fuseMetrics) {
+	var blockCacheBytes, blockCacheHits, blockCacheMiss, blockCacheHitBytes, blockCacheMissBytes string
+
+	if edition == "enterprise" {
+		blockCacheBytes = BlockCacheBytesOfEnterprise
+		blockCacheHits = BlockCacheHitsOfEnterprise
+		blockCacheMiss = BlockCacheMissOfEnterprise
+		blockCacheHitBytes = BlockCacheHitBytesOfEnterprise
+		blockCacheMissBytes = BlockCacheMissBytesOfEnterprise
+	} else {
+		blockCacheBytes = BlockCacheBytesOfCommunity
+		blockCacheHits = BlockCacheHitsOfCommunity
+		blockCacheMiss = BlockCacheMissOfCommunity
+		blockCacheHitBytes = BlockCacheHitBytesOfCommunity
+		blockCacheMissBytes = BlockCacheMissBytesOfCommunity
+	}
+
+	counterPattern := regexp.MustCompile(`([^:\s]*):?\s?(.*)`)
 	strs := strings.Split(metrics, "\n")
 	for _, str := range strs {
-		if strings.HasPrefix(str, "#") {
+
+		result := counterPattern.FindStringSubmatch(str)
+		if len(result) != 3 {
 			continue
 		}
-		counterPattern := regexp.MustCompile(`}\s(.*)`)
 
-		if strings.HasPrefix(str, BlockCacheBytes) {
-			podMetric.blockCacheBytes, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
-		}
-		if strings.HasPrefix(str, BlockCacheHits) {
-			podMetric.blockCacheHits, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
-		}
-		if strings.HasPrefix(str, BlockCacheMiss) {
-			podMetric.blockCacheMiss, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
-		}
-		if strings.HasPrefix(str, BlockCacheHitBytes) {
-			podMetric.blockCacheHitsBytes, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
-		}
-		if strings.HasPrefix(str, BlockCacheMissBytes) {
-			podMetric.blockCacheMissBytes, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
-		}
-		if strings.HasPrefix(str, UsedSpace) {
-			podMetric.usedSpace, _ = parseInt64Size(counterPattern.FindStringSubmatch(str)[1])
+		switch result[1] {
+		case blockCacheBytes:
+			podMetric.blockCacheBytes, _ = parseInt64Size(result[2])
+		case blockCacheHits:
+			podMetric.blockCacheHits, _ = parseInt64Size(result[2])
+		case blockCacheMiss:
+			podMetric.blockCacheMiss, _ = parseInt64Size(result[2])
+		case blockCacheHitBytes:
+			podMetric.blockCacheHitsBytes, _ = parseInt64Size(result[2])
+		case blockCacheMissBytes:
+			podMetric.blockCacheMissBytes, _ = parseInt64Size(result[2])
+		default:
+
 		}
 	}
 	return
