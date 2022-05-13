@@ -102,7 +102,7 @@ func TestTransformMasterVolumes(t *testing.T) {
 		got := &Alluxio{}
 		err := engine.transformMasterVolumes(testCase.runtime, got)
 		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v", err)
+			t.Errorf("Got unexpected error %v for testcase %s", err, testCase.name)
 		}
 
 		if testCase.expectErr {
@@ -110,7 +110,7 @@ func TestTransformMasterVolumes(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v", testCase.expect, got)
+			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
 		}
 
 	}
@@ -219,7 +219,7 @@ func TestTransformWorkerVolumes(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v", testCase.expect, got)
+			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
 		}
 
 	}
@@ -320,7 +320,7 @@ func TestTransformFuseVolumes(t *testing.T) {
 		got := &Alluxio{}
 		err := engine.transformFuseVolumes(testCase.runtime, got)
 		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v", err)
+			t.Errorf("Got unexpected error %v for testcase %s", err, testCase.name)
 		}
 
 		if testCase.expectErr {
@@ -328,7 +328,7 @@ func TestTransformFuseVolumes(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v", testCase.expect, got)
+			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
 		}
 
 	}
