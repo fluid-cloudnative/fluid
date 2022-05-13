@@ -32,11 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
-	r := `6706560319    /tmp`
-	return r, "", nil
-}
-
 func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string, err error) {
 	r := `1331167`
 	return r, "", nil
@@ -48,12 +43,12 @@ func mockExecCommandInContainerForUsedStorageBytes() (stdout string, stderr stri
 }
 
 func TestTotalStorageBytes(t *testing.T) {
-	daemonSet := &appsv1.DaemonSet{
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-fuse",
+			Name:      "test-worker",
 			Namespace: "fluid",
 		},
-		Spec: appsv1.DaemonSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"a": "b"},
 			},
@@ -61,7 +56,7 @@ func TestTotalStorageBytes(t *testing.T) {
 	}
 	var pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-fuse-xxx",
+			Name:      "test-work-0",
 			Namespace: "fluid",
 			Labels:    map[string]string{"a": "b"},
 		},
@@ -77,9 +72,9 @@ func TestTotalStorageBytes(t *testing.T) {
 		Items: []corev1.Pod{*pod},
 	}
 	runtimeObjs := []runtime.Object{}
-	runtimeObjs = append(runtimeObjs, daemonSet, pod)
+	runtimeObjs = append(runtimeObjs, statefulSet, pod)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, daemonSet)
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, statefulSet)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
@@ -106,7 +101,7 @@ func TestTotalStorageBytes(t *testing.T) {
 					},
 				},
 			},
-			wantValue: 6706560319,
+			wantValue: 41460043776,
 			wantErr:   false,
 		},
 	}
@@ -120,7 +115,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				Log:       fake.NullLogger(),
 			}
 			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-				stdout, stderr, err := mockExecCommandInContainerForTotalStorageBytes()
+				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
 				return stdout, stderr, err
 			})
 			defer patch1.Reset()
@@ -137,12 +132,12 @@ func TestTotalStorageBytes(t *testing.T) {
 }
 
 func TestTotalFileNums(t *testing.T) {
-	daemonSet := &appsv1.DaemonSet{
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-fuse",
+			Name:      "test-worker",
 			Namespace: "fluid",
 		},
-		Spec: appsv1.DaemonSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"a": "b"},
 			},
@@ -150,7 +145,7 @@ func TestTotalFileNums(t *testing.T) {
 	}
 	var pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-fuse-xxx",
+			Name:      "test-worker-0",
 			Namespace: "fluid",
 			Labels:    map[string]string{"a": "b"},
 		},
@@ -166,9 +161,9 @@ func TestTotalFileNums(t *testing.T) {
 		Items: []corev1.Pod{*pod},
 	}
 	runtimeObjs := []runtime.Object{}
-	runtimeObjs = append(runtimeObjs, daemonSet, pod)
+	runtimeObjs = append(runtimeObjs, statefulSet, pod)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, daemonSet)
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, statefulSet)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
