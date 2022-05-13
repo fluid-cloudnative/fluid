@@ -53,9 +53,27 @@ spec:
         quota: 2Gi
         high: "0.95"
         low: "0.7"
+  master:
+  	volumeMounts:
+      - name: secret-volume
+        readOnly: true
+        mountPath: "/etc/secret-volume"
   volumes:
     - name: secret-volume
       secret:
         secretName: fluid-secret
 EOF
+```
+
+4.登陆到master节点中查看文件
+
+
+```bash
+# kubectl exec -it hbase-master-0 bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+Defaulted container "alluxio-master" out of: alluxio-master, alluxio-job-master
+# mount |grep secret-volume
+tmpfs on /etc/secret-volume type tmpfs (ro,relatime,size=28147972k)
+# cat /etc/secret-volume/username
+test
 ```
