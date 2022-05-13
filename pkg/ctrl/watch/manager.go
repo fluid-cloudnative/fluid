@@ -18,6 +18,8 @@ package watch
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	webhookReconcile "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/webhook"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 
@@ -118,9 +120,14 @@ func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 	return kind == controllerRef.Kind && apiVersion == controllerRef.APIVersion
 }
 
-func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBuilder, webhookName string, caCert []byte) (err error) {
+func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBuilder, caCert []byte) (err error) {
 	options := controller.Options{}
-	options.Reconciler = &MockReconcile{}
+	webhookName := common.WebhookName
+	options.Reconciler = &webhookReconcile.WebhookReconciler{
+		CertBuilder: certBuilder,
+		WebhookName: webhookName,
+		CaCert:      caCert,
+	}
 	webhookController, err := controller.New("webhook-controller", mgr, options)
 	if err != nil {
 		return err
@@ -129,15 +136,12 @@ func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBu
 	mutatingWebhookConfigurationEventHandler := &mutatingWebhookConfigurationEventHandler{}
 	err = webhookController.Watch(&source.Kind{
 		Type: &admissionregistrationv1.MutatingWebhookConfiguration{},
-	}, &EventHandlerForMutatingWebhookConfiguration{
-		certBuilder: certBuilder,
-		caCert:      caCert,
-		webhookName: webhookName,
-	}, predicate.Funcs{
-		CreateFunc: mutatingWebhookConfigurationEventHandler.onCreateFunc(webhookName),
-		UpdateFunc: mutatingWebhookConfigurationEventHandler.onUpdateFunc(webhookName),
-		DeleteFunc: mutatingWebhookConfigurationEventHandler.onDeleteFunc(webhookName),
-	})
+	}, &handler.EnqueueRequestForObject{},
+		predicate.Funcs{
+			CreateFunc: mutatingWebhookConfigurationEventHandler.onCreateFunc(webhookName),
+			UpdateFunc: mutatingWebhookConfigurationEventHandler.onUpdateFunc(webhookName),
+			DeleteFunc: mutatingWebhookConfigurationEventHandler.onDeleteFunc(webhookName),
+		})
 	if err != nil {
 		log.Error(err, "Failed to watch mutatingWebhookConfiguration")
 		return err

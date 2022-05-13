@@ -17,51 +17,10 @@ limitations under the License.
 package watch
 
 import (
-	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/client-go/util/workqueue"
 	"reflect"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
-
-type MockReconcile struct{}
-
-func (r *MockReconcile) Reconcile(context.Context, ctrl.Request) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-type EventHandlerForMutatingWebhookConfiguration struct {
-	certBuilder *webhook.CertificateBuilder
-	caCert      []byte
-	webhookName string
-}
-
-// Create implements EventHandler
-func (e *EventHandlerForMutatingWebhookConfiguration) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	err := e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
-	if err != nil {
-		log.Error(err, "fail to patch CABundle of MutatingWebhookConfiguration on create")
-	}
-
-}
-
-// Update implements EventHandler
-func (e *EventHandlerForMutatingWebhookConfiguration) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	err := e.certBuilder.PatchCABundle(e.webhookName, e.caCert)
-	if err != nil {
-		log.Error(err, "fail to patch CABundle of MutatingWebhookConfiguration on update")
-	}
-}
-
-// Delete implements EventHandler
-func (e *EventHandlerForMutatingWebhookConfiguration) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-}
-
-// Generic implements EventHandler
-func (e *EventHandlerForMutatingWebhookConfiguration) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-}
 
 type mutatingWebhookConfigurationEventHandler struct{}
 

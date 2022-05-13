@@ -42,9 +42,9 @@ func NewCertificateBuilder(c client.Client, log logr.Logger) *CertificateBuilder
 	return ch
 }
 
-// BuildAndSyncCABundle use service name and namespace generate webhook caBundle
-// and patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) ([]byte, error) {
+// BuildOrSyncCABundle use service name and namespace to generate webhook certs
+// or sync the certs from the secret
+func (c *CertificateBuilder) BuildOrSyncCABundle(svcName, cerPath string) ([]byte, error) {
 
 	ns, err := utils.GetEnvByKey(common.MyPodNamespace)
 	if err != nil {
@@ -57,10 +57,6 @@ func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath 
 		return []byte{}, err
 	}
 
-	err = c.PatchCABundle(webhookName, certs.CACert)
-	if err != nil {
-		return []byte{}, err
-	}
 	return certs.CACert, nil
 }
 
