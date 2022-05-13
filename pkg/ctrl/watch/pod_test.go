@@ -218,10 +218,8 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
-						Labels: map[string]string{
-							common.InjectServerless: common.True,
-						},
+						Name:   "test",
+						Labels: map[string]string{common.InjectServerless: common.True},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -251,10 +249,8 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
-						Labels: map[string]string{
-							common.InjectServerless: common.True,
-						},
+						Name:   "test",
+						Labels: map[string]string{common.InjectServerless: common.True},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -286,10 +282,8 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
-						Labels: map[string]string{
-							common.InjectServerless: common.True,
-						},
+						Name:   "test",
+						Labels: map[string]string{common.InjectServerless: common.True},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -314,6 +308,81 @@ func Test_shouldRequeue(t *testing.T) {
 				},
 			},
 			want: true,
+		},
+		{
+			name: "multi-cn-exit",
+			args: args{
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "test",
+						Labels: map[string]string{common.InjectServerless: common.True},
+					},
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: "app2"}, {Name: common.FuseContainerName}}},
+					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "app",
+							State: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{
+								StartedAt: metav1.Time{Time: time.Now()},
+								ExitCode:  0,
+							}},
+						},
+						{
+							Name: "app2",
+							State: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{
+								StartedAt: metav1.Time{Time: time.Now()},
+								ExitCode:  0,
+							}},
+						},
+						{
+							Name: common.FuseContainerName,
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.Time{Time: time.Now()},
+								},
+							},
+						}}},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "multi-cn-not-exit",
+			args: args{
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "test",
+						Labels: map[string]string{common.InjectServerless: common.True},
+					},
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: "app2"}, {Name: common.FuseContainerName}}},
+					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "app",
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									StartedAt: metav1.Time{Time: time.Now()},
+									ExitCode:  0,
+								},
+							},
+						},
+						{
+							Name: "app2",
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.Time{Time: time.Now()},
+								},
+							},
+						},
+						{
+							Name: common.FuseContainerName,
+							State: corev1.ContainerState{
+								Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.Time{Time: time.Now()},
+								},
+							},
+						}}},
+				},
+			},
+			want: false,
 		},
 	}
 	for _, tt := range tests {

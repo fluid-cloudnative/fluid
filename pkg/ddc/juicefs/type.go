@@ -31,10 +31,22 @@ type JuiceFS struct {
 	common.UserInfo  `yaml:",inline"`
 
 	NodeSelector  map[string]string `yaml:"nodeSelector,omitempty"`
+	Configs       Configs           `yaml:"configs,omitempty"`
 	Fuse          Fuse              `yaml:"fuse,omitempty"`
 	Worker        Worker            `yaml:"worker,omitempty"`
 	TieredStore   TieredStore       `yaml:"tieredstore,omitempty"`
 	PlacementMode string            `yaml:"placement,omitempty"`
+}
+
+type Configs struct {
+	Name            string `yaml:"name"`
+	AccessKeySecret string `yaml:"accesskeySecret,omitempty"`
+	SecretKeySecret string `yaml:"secretkeySecret,omitempty"`
+	Bucket          string `yaml:"bucket,omitempty"`
+	MetaUrlSecret   string `yaml:"metaurlSecret,omitempty"`
+	TokenSecret     string `yaml:"tokenSecret,omitempty"`
+	Storage         string `yaml:"storage,omitempty"`
+	FormatCmd       string `yaml:"formatCmd,omitempty"`
 }
 
 type Worker struct {
@@ -43,35 +55,31 @@ type Worker struct {
 	ImageTag        string                 `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources       `yaml:"resources,omitempty"`
-	CacheDir        string                 `yaml:"cacheDir,omitempty"`
-	Command         string                 `yaml:"command,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
+
+	MountPath string `yaml:"mountPath,omitempty"`
+	CacheDir  string `yaml:"cacheDir,omitempty"`
+	StatCmd   string `yaml:"statCmd,omitempty"`
+	Command   string `yaml:"command,omitempty"`
 }
 
 type Fuse struct {
-	SubPath         string            `yaml:"subPath,omitempty"`
-	Name            string            `yaml:"name"`
-	AccessKeySecret string            `yaml:"accesskeySecret,omitempty"`
-	SecretKeySecret string            `yaml:"secretkeySecret,omitempty"`
-	Bucket          string            `yaml:"bucket,omitempty"`
-	MetaUrlSecret   string            `yaml:"metaurlSecret,omitempty"`
-	TokenSecret     string            `yaml:"tokenSecret,omitempty"`
-	Storage         string            `yaml:"storage,omitempty"`
+	Enabled         bool              `yaml:"enabled,omitempty"`
 	Image           string            `yaml:"image,omitempty"`
 	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
 	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
 	ImageTag        string            `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
-	MountPath       string            `yaml:"mountPath,omitempty"`
-	CacheDir        string            `yaml:"cacheDir,omitempty"`
-	HostMountPath   string            `yaml:"hostMountPath,omitempty"`
-	Command         string            `yaml:"command,omitempty"`
-	StatCmd         string            `yaml:"statCmd,omitempty"`
-	FormatCmd       string            `yaml:"formatCmd,omitempty"`
-	Enabled         bool              `yaml:"enabled,omitempty"`
 	Resources       common.Resources  `yaml:"resources,omitempty"`
 	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
+
+	SubPath       string `yaml:"subPath,omitempty"`
+	MountPath     string `yaml:"mountPath,omitempty"`
+	CacheDir      string `yaml:"cacheDir,omitempty"`
+	HostMountPath string `yaml:"hostMountPath,omitempty"`
+	Command       string `yaml:"command,omitempty"`
+	StatCmd       string `yaml:"statCmd,omitempty"`
 }
 
 type TieredStore struct {

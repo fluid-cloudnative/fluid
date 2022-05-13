@@ -19,7 +19,6 @@ package alluxio
 import (
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -196,7 +195,7 @@ func TestSetupWorkers(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
 
 			s := runtime.NewScheme()
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -328,7 +327,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,
@@ -500,7 +499,7 @@ func TestCheckWorkersReady(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runtimeObjs := []runtime.Object{}
-			data := &v1alpha1.Dataset{
+			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tt.fields.name,
 					Namespace: tt.fields.namespace,

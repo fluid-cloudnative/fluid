@@ -1216,6 +1216,13 @@ func (in *JuiceFSCompTemplateSpec) DeepCopyInto(out *JuiceFSCompTemplateSpec) {
 		copy(*out, *in)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Options != nil {
+		in, out := &in.Options, &out.Options
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
@@ -1341,6 +1348,15 @@ func (in *JuiceFSRuntimeSpec) DeepCopyInto(out *JuiceFSRuntimeSpec) {
 	in.JobWorker.DeepCopyInto(&out.JobWorker)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	in.TieredStore.DeepCopyInto(&out.TieredStore)
+	if in.Configs != nil {
+		in, out := &in.Configs, &out.Configs
+		*out = new([]string)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		}
+	}
 	if in.RunAs != nil {
 		in, out := &in.RunAs, &out.RunAs
 		*out = new(User)

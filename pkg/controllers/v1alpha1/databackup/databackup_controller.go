@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
@@ -170,7 +169,7 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
 	databackupToUpdate.Status.Phase = common.PhasePending
 	if len(databackupToUpdate.Status.Conditions) == 0 {
-		databackupToUpdate.Status.Conditions = []v1alpha1.Condition{}
+		databackupToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
 	databackupToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {

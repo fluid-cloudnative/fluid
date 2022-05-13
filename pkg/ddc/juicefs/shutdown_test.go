@@ -36,7 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -52,8 +52,8 @@ func mockRunningPodsOfDaemonSet() (pods []corev1.Pod) {
 			Name:      "test",
 			Namespace: "fluid",
 		},
-		Spec:   v1.PodSpec{},
-		Status: v1.PodStatus{},
+		Spec:   corev1.PodSpec{},
+		Status: corev1.PodStatus{},
 	}}
 }
 
@@ -63,8 +63,8 @@ func mockRunningPodsOfStatefulSet() (pods []corev1.Pod) {
 			Name:      "test",
 			Namespace: "fluid",
 		},
-		Spec:   v1.PodSpec{},
-		Status: v1.PodStatus{},
+		Spec:   corev1.PodSpec{},
+		Status: corev1.PodStatus{},
 	}}
 }
 
@@ -91,7 +91,7 @@ func TestDestroyWorker(t *testing.T) {
 	}
 	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
 
-	var nodeInputs = []*v1.Node{
+	var nodeInputs = []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-node-spark",

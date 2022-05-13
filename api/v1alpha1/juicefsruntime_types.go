@@ -50,6 +50,9 @@ type JuiceFSRuntimeSpec struct {
 	// Tiered storage used by JuiceFS
 	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
+	// Configs of JuiceFS
+	Configs *[]string `json:"configs,omitempty"`
+
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
@@ -78,6 +81,9 @@ type JuiceFSCompTemplateSpec struct {
 	// Resources that will be requested by the JuiceFS component.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Options
+	Options map[string]string `json:"options,omitempty"`
 
 	// Environment variables that will be used by JuiceFS component.
 	Env []corev1.EnvVar `json:"env,omitempty"`

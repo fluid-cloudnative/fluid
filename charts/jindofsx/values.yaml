@@ -1,0 +1,69 @@
+# Default values for JindoFS.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
+imageTag: "4.3.0"
+imagePullPolicy: Always
+
+initPortCheck:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  portsToCheck: ""
+
+fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
+fuseImageTag: "4.3.0"
+
+user: 0
+group: 0
+fsGroup: 0
+
+useHostNetwork: true
+useHostPID: true
+
+labels: {}
+
+properties:
+  logDir: /mnt/disk1/bigboot/log
+
+master:
+  ports:
+    rpc: 8101
+  dnsServer: ""
+  labels: {}
+  replicaCount: 1
+  properties:
+    namespace.rpc.port: 8101
+    namespace.filelet.cache.size: 100000
+    namespace.blocklet.cache.size: 1000000
+    namespace.backend.type: rocksdb
+
+worker:
+  ports:
+    rpc: 6101
+  labels: {}
+  nodeSelector: {}
+  replicaCount: 0
+  podManagementPolicy: Parallel
+  properties:
+    storage.rpc.port: 6101
+
+fuse:
+  criticalPod: false
+  labels: {}
+  properties:
+    fs.jindofsx.request.user: root,
+
+mounts:
+  master:
+  # 1: /mnt/disk1
+  workersAndClients:
+  # 1: /mnt/disk1
+  # 2: /mnt/disk2
+  # 3: /mnt/disk3
+
+owner:
+  enabled: false

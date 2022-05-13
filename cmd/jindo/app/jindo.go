@@ -19,6 +19,8 @@ package app
 import (
 	"os"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
+
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	jindoctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/jindo"
@@ -42,6 +44,7 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
+	_ base.Implement = (*jindofsx.JindoFSxEngine)(nil)
 
 	metricsAddr          string
 	enableLeaderElection bool
@@ -90,7 +93,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

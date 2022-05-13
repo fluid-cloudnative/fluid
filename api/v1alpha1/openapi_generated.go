@@ -2281,6 +2281,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref commo
 							},
 						},
 					},
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If disable JindoFS master or worker",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -2428,6 +2435,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 						SchemaProps: spec.SchemaProps{
 							Description: "CleanPolicy decides when to clean JindoFS Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
 							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If disable JindoFS fuse",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
@@ -2704,6 +2718,22 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref com
 							Description: "Resources that will be requested by the JuiceFS component.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"env": {
@@ -2987,6 +3017,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Description: "Tiered storage used by JuiceFS",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
+						},
+					},
+					"configs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configs of JuiceFS",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"replicas": {
@@ -3481,8 +3526,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 					},
 					"mountTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountTime represents time last mount happened if Mounttime is early than master starting time, remount will be required",
-							Default:     map[string]interface{}{},
+							Description: "MountTime represents time last mount happened if Mounttime is earlier than master starting time, remount will be required",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},

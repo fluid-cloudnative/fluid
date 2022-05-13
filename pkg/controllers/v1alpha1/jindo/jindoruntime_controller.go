@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -37,6 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,7 +79,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    runtimeType,
+		RuntimeType:    jindoutils.GetRuntimeType(),
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}
@@ -124,7 +124,7 @@ func (r *RuntimeReconciler) ControllerName() string {
 func (r *RuntimeReconciler) ManagedResource() client.Object {
 	return &datav1alpha1.JindoRuntime{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.JindoRuntimeKind,
+			Kind:       datav1alpha1.JindoRuntimeKind,
 			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 		},
 	}

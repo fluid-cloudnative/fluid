@@ -16,10 +16,12 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	corev1 "k8s.io/api/core/v1"
+	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/go-logr/logr"
@@ -162,16 +164,24 @@ func TestSetDefaultPropertiesWithSet(t *testing.T) {
 
 func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime
-		alluxioValue *Alluxio
-		expect       []string
+		runtime           *datav1alpha1.AlluxioRuntime
+		alluxioValue      *Alluxio
+		expect            []string
+		foundMountPathEnv bool
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{},
 		}, &Alluxio{
 			Properties: map[string]string{},
 		}, []string{"-Xmx6G",
-			"-XX:+UnlockExperimentalVMOptions"}},
+			"-XX:+UnlockExperimentalVMOptions"}, true},
+
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, []string{"-Xmx6G",
+			"-XX:+UnlockExperimentalVMOptions"}, false},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
@@ -179,6 +189,7 @@ func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
 		if test.alluxioValue.Master.JvmOptions[1] != test.expect[1] {
 			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.JvmOptions)
 		}
+
 	}
 }
 
@@ -258,34 +269,67 @@ func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
 
 func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime
-		alluxioValue *Alluxio
-		expect       []string
+		runtime             *datav1alpha1.AlluxioRuntime
+		alluxioValue        *Alluxio
+		isNewFuseArgVersion bool
+		expect              []string
+		expectArgs          []string
+		foundMountPathEnv   bool
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{},
 		}, &Alluxio{
 			Properties: map[string]string{},
-		}, []string{"-Xmx16G",
+			Fuse: Fuse{
+				MountPath: "/mnt/runtime",
+			},
+		}, true, []string{"-Xmx16G",
 			"-Xms16G",
 			"-XX:+UseG1GC",
 			"-XX:MaxDirectMemorySize=32g",
-			"-XX:+UnlockExperimentalVMOptions"}},
+			"-XX:+UnlockExperimentalVMOptions"},
+			[]string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072", "/mnt/runtime", "/"},
+			false},
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Fuse: Fuse{
+				MountPath: "/mnt/runtime",
+			},
+		}, false, []string{"-Xmx16G",
+			"-Xms16G",
+			"-XX:+UseG1GC",
+			"-XX:MaxDirectMemorySize=32g",
+			"-XX:+UnlockExperimentalVMOptions"},
+			[]string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"},
+			true},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
-		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue)
-		if test.alluxioValue.Fuse.JvmOptions[1] != test.expect[1] {
+
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue, test.isNewFuseArgVersion)
+		if !reflect.DeepEqual(test.alluxioValue.Fuse.JvmOptions, test.expect) {
 			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
 		}
+
+		if !reflect.DeepEqual(test.alluxioValue.Fuse.Args, test.expectArgs) {
+			t.Errorf("expected fuse arg %v, got fuse arg %v", test.expectArgs, test.alluxioValue.Fuse.Args)
+		}
+
+		// _, found := test.alluxioValue.Fuse.Env["MOUNT_PATH"]
+		// if found != test.foundMountPathEnv {
+		// 	t.Errorf("expected fuse env %v, got fuse env %v", test.foundMountPathEnv, test.alluxioValue.Fuse.Env)
+		// }
 	}
 }
 
 func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime
-		alluxioValue *Alluxio
-		expect       []string
+		runtime             *datav1alpha1.AlluxioRuntime
+		alluxioValue        *Alluxio
+		isNewFuseArgVersion bool
+		expect              []string
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
@@ -295,11 +339,11 @@ func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
 			},
 		}, &Alluxio{
 			Properties: map[string]string{},
-		}, []string{"-Xmx4G"}},
+		}, true, []string{"-Xmx4G"}},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
-		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue)
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue, test.isNewFuseArgVersion)
 		if test.alluxioValue.Fuse.JvmOptions[0] != test.expect[0] {
 			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
 		}

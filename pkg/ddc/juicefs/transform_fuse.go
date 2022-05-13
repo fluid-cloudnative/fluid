@@ -21,7 +21,6 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"strings"
 )
@@ -34,7 +33,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 	mount := dataset.Spec.Mounts[0]
 
-	value.Fuse.Name = mount.Name
+	value.Configs.Name = mount.Name
 
 	image := runtime.Spec.Fuse.Image
 	tag := runtime.Spec.Fuse.ImageTag
@@ -52,8 +51,8 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if err != nil {
 		return err
 	}
-	j.genFormatCmd(value)
-	err = j.genMount(value, option)
+	j.genFormatCmd(value, runtime.Spec.Configs)
+	err = j.genMount(value, runtime, option)
 	if err != nil {
 		return err
 	}
@@ -73,29 +72,22 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	return
 }
 
-func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS) ([]string, error) {
-	value.Fuse.Name = mount.Name
-	opts := make(map[string]string)
+func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS) (map[string]string, error) {
+	value.Configs.Name = mount.Name
+	options := make(map[string]string)
 	source := ""
 	value.Edition = "enterprise"
 	for k, v := range mount.Options {
 		switch k {
 		case JuiceStorage:
-			value.Fuse.Storage = v
+			value.Configs.Storage = v
 			continue
 		case JuiceBucket:
-			value.Fuse.Bucket = v
+			value.Configs.Bucket = v
 			continue
 		default:
-			opts[k] = v
+			options[k] = v
 		}
-	}
-	options := []string{}
-	for k, v := range opts {
-		if v != "" {
-			k = fmt.Sprintf("%s=%s", k, v)
-		}
-		options = append(options, k)
 	}
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
@@ -112,18 +104,18 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		switch key {
 		case JuiceMetaUrl:
 			source = "${METAURL}"
-			value.Fuse.MetaUrlSecret = secretKeyRef.Name
+			value.Configs.MetaUrlSecret = secretKeyRef.Name
 			_, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
 				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
 			value.Edition = "community"
 		case JuiceAccessKey:
-			value.Fuse.AccessKeySecret = secretKeyRef.Name
+			value.Configs.AccessKeySecret = secretKeyRef.Name
 		case JuiceSecretKey:
-			value.Fuse.SecretKeySecret = secretKeyRef.Name
+			value.Configs.SecretKeySecret = secretKeyRef.Name
 		case JuiceToken:
-			value.Fuse.TokenSecret = secretKeyRef.Name
+			value.Configs.TokenSecret = secretKeyRef.Name
 		}
 	}
 
@@ -137,9 +129,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		return nil, err
 	}
 	value.Fuse.MountPath = j.getMountPoint()
+	value.Worker.MountPath = j.getMountPoint()
 	value.Fuse.HostMountPath = j.getHostMountPoint()
-	value.Fuse.SubPath = subPath
-	options = append(options, fmt.Sprintf("subdir=%s", subPath))
+	if subPath != "/" {
+		value.Fuse.SubPath = subPath
+		options["subdir"] = subPath
+	}
 
 	var cacheDir = DefaultCacheDir
 	if tiredStoreLevel != nil {
@@ -148,92 +143,130 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			cacheDir = "memory"
 		}
 		if tiredStoreLevel.Quota != nil {
-			options = append(options, fmt.Sprintf("cache-size=%s", tiredStoreLevel.Quota.String()))
+			options["cache-size"] = tiredStoreLevel.Quota.String()
 		}
 		if tiredStoreLevel.Low != "" {
-			options = append(options, fmt.Sprintf("free-space-ratio=%s", tiredStoreLevel.Low))
+			options["free-space-ratio"] = tiredStoreLevel.Low
 		}
 	}
-	value.Fuse.CacheDir = cacheDir
-	options = append(options, fmt.Sprintf("cache-dir=%s", cacheDir))
+	options["cache-dir"] = cacheDir
+	if cacheDir != "memory" {
+		value.Fuse.CacheDir = cacheDir
+	}
 
 	return options, nil
 }
 
-func (j *JuiceFSEngine) genMount(value *JuiceFS, options []string) (err error) {
+func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, optionMap map[string]string) (err error) {
 	var mountArgs, mountArgsWorker []string
-	if options == nil {
-		options = []string{}
+	workerOptionMap := make(map[string]string)
+	if optionMap == nil {
+		optionMap = map[string]string{}
+	}
+	// gen worker option
+	for k, v := range optionMap {
+		workerOptionMap[k] = v
+	}
+	if runtime != nil {
+		// if runtime.worker option is set, take it
+		for k, v := range runtime.Spec.Worker.Options {
+			workerOptionMap[k] = v
+		}
 	}
 	if value.Edition == "community" {
-		if !utils.ContainsSubString(options, "metrics") {
-			options = append(options, "metrics=0.0.0.0:9567")
+		if _, ok := optionMap["metrics"]; !ok {
+			optionMap["metrics"] = "0.0.0.0:9567"
 		}
-		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(options, ",")}
-		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(options, ",")}
+		if _, ok := workerOptionMap["metrics"]; !ok {
+			workerOptionMap["metrics"] = "0.0.0.0:9567"
+		}
+		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
+		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}
 	} else {
-		if !utils.ContainsString(options, "foreground") {
-			options = append(options, "foreground")
+		optionMap["foreground"] = ""
+		workerOptionMap["foreground"] = ""
+
+		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
+		// fuse and worker use the same cache-group, fuse use no-sharing
+		cacheGroup := value.FullnameOverride
+		if _, ok := optionMap["cache-group"]; ok {
+			cacheGroup = optionMap["cache-group"]
 		}
-		fuseOption := make([]string, len(options))
-		copy(fuseOption, options)
-		if !utils.ContainsSubString(options, "cache-group") {
-			// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
-			// fuse and worker use the same cache-group, fuse use no-sharing
-			options = append(options, fmt.Sprintf("cache-group=%s", value.FullnameOverride))
-			fuseOption = append(fuseOption, fmt.Sprintf("cache-group=%s", value.FullnameOverride))
-			fuseOption = append(fuseOption, "no-sharing")
-		}
-		mountArgs = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(fuseOption, ",")}
-		mountArgsWorker = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(options, ",")}
+		optionMap["cache-group"] = cacheGroup
+		workerOptionMap["cache-group"] = cacheGroup
+		optionMap["no-sharing"] = ""
+		delete(workerOptionMap, "no-sharing")
+
+		mountArgs = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
+		mountArgsWorker = []string{common.JuiceFSMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}
 	}
 
 	value.Worker.Command = strings.Join(mountArgsWorker, " ")
 	value.Fuse.Command = strings.Join(mountArgs, " ")
 	value.Fuse.StatCmd = "stat -c %i " + value.Fuse.MountPath
+	value.Worker.StatCmd = "stat -c %i " + value.Worker.MountPath
 	return nil
 }
 
-func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS) {
+func genOption(optionMap map[string]string) []string {
+	options := []string{}
+	for k, v := range optionMap {
+		if v != "" {
+			k = fmt.Sprintf("%s=%s", k, v)
+		}
+		options = append(options, k)
+	}
+	return options
+}
+
+func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	args := make([]string, 0)
+	if config != nil {
+		for _, option := range *config {
+			o := strings.TrimSpace(option)
+			if o != "" {
+				args = append(args, fmt.Sprintf("--%s", o))
+			}
+		}
+	}
 	if value.Edition == "community" {
 		// ce
-		if value.Fuse.AccessKeySecret != "" {
+		if value.Configs.AccessKeySecret != "" {
 			args = append(args, "--access-key=${ACCESS_KEY}")
 		}
-		if value.Fuse.SecretKeySecret != "" {
+		if value.Configs.SecretKeySecret != "" {
 			args = append(args, "--secret-key=${SECRET_KEY}")
 		}
-		if value.Fuse.Storage == "" || value.Fuse.Bucket == "" {
+		if value.Configs.Storage == "" || value.Configs.Bucket == "" {
 			args = append(args, "--no-update")
 		}
-		if value.Fuse.Storage != "" {
-			args = append(args, fmt.Sprintf("--storage=%s", value.Fuse.Storage))
+		if value.Configs.Storage != "" {
+			args = append(args, fmt.Sprintf("--storage=%s", value.Configs.Storage))
 		}
-		if value.Fuse.Bucket != "" {
-			args = append(args, fmt.Sprintf("--bucket=%s", value.Fuse.Bucket))
+		if value.Configs.Bucket != "" {
+			args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 		}
-		args = append(args, value.Source, value.Fuse.Name)
+		args = append(args, value.Source, value.Configs.Name)
 		cmd := append([]string{common.JuiceCeCliPath, "format"}, args...)
-		value.Fuse.FormatCmd = strings.Join(cmd, " ")
-	} else {
-		// ee
-		if value.Fuse.TokenSecret == "" {
-			// skip juicefs auth
-			return
-		}
-		args = append(args, "--token=${TOKEN}")
-		if value.Fuse.AccessKeySecret != "" {
-			args = append(args, "--accesskey=${ACCESS_KEY}")
-		}
-		if value.Fuse.SecretKeySecret != "" {
-			args = append(args, "--secretkey=${SECRET_KEY}")
-		}
-		if value.Fuse.Bucket != "" {
-			args = append(args, fmt.Sprintf("--bucket=%s", value.Fuse.Bucket))
-		}
-		args = append(args, value.Source)
-		cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
-		value.Fuse.FormatCmd = strings.Join(cmd, " ")
+		value.Configs.FormatCmd = strings.Join(cmd, " ")
+		return
 	}
+	// ee
+	if value.Configs.TokenSecret == "" {
+		// skip juicefs auth
+		return
+	}
+	args = append(args, "--token=${TOKEN}")
+	if value.Configs.AccessKeySecret != "" {
+		args = append(args, "--accesskey=${ACCESS_KEY}")
+	}
+	if value.Configs.SecretKeySecret != "" {
+		args = append(args, "--secretkey=${SECRET_KEY}")
+	}
+	if value.Configs.Bucket != "" {
+		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
+	}
+	args = append(args, value.Source)
+	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
+	value.Configs.FormatCmd = strings.Join(cmd, " ")
 }

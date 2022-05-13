@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -173,6 +174,8 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			// If encryptOptions have the same key with options, it will overwrite the corresponding value
 			for _, encryptOption := range mount.EncryptOptions {
 				key := encryptOption.Name
+				// Add senstive key filter
+				securityutil.UpdateSensitiveKey(key)
 				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 
 				secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
