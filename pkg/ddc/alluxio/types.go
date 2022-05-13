@@ -25,178 +25,178 @@ import (
 
 // The value yaml file
 type Alluxio struct {
-	FullnameOverride string `yaml:"fullnameOverride"`
+	FullnameOverride string `json:"fullnameOverride"`
 
-	common.ImageInfo `yaml:",inline"`
-	common.UserInfo  `yaml:",inline"`
+	common.ImageInfo `json:",inline"`
+	common.UserInfo  `json:",inline"`
 
-	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
-	JvmOptions   []string          `yaml:"jvmOptions,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	JvmOptions   []string          `json:"jvmOptions,omitempty"`
 
-	Properties map[string]string `yaml:"properties,omitempty"`
+	Properties map[string]string `json:"properties,omitempty"`
 
-	Master Master `yaml:"master,omitempty"`
+	Master Master `json:"master,omitempty"`
 
-	JobMaster JobMaster `yaml:"jobMaster,omitempty"`
+	JobMaster JobMaster `json:"jobMaster,omitempty"`
 
-	Worker Worker `yaml:"worker,omitempty"`
+	Worker Worker `json:"worker,omitempty"`
 
-	JobWorker JobWorker `yaml:"jobWorker,omitempty"`
+	JobWorker JobWorker `json:"jobWorker,omitempty"`
 
-	Fuse Fuse `yaml:"fuse,omitempty"`
+	Fuse Fuse `json:"fuse,omitempty"`
 
-	APIGateway APIGateway `yaml:"apiGateway,omitempty"`
+	APIGateway APIGateway `json:"apiGateway,omitempty"`
 
-	TieredStore TieredStore `yaml:"tieredstore,omitempty"`
+	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
-	Metastore Metastore `yaml:"metastore,omitempty"`
+	Metastore Metastore `json:"metastore,omitempty"`
 
-	Journal Journal `yaml:"journal,omitempty"`
+	Journal Journal `json:"journal,omitempty"`
 
-	ShortCircuit ShortCircuit `yaml:"shortCircuit,omitempty"`
-	// Enablefluid bool `yaml:"enablefluid,omitempty"`
+	ShortCircuit ShortCircuit `json:"shortCircuit,omitempty"`
+	// Enablefluid bool `json:"enablefluid,omitempty"`
 
-	UFSPaths []UFSPath `yaml:"ufsPaths,omitempty"`
+	UFSPaths []UFSPath `json:"ufsPaths,omitempty"`
 
-	UFSVolumes []UFSVolume `yaml:"ufsVolumes,omitempty"`
+	UFSVolumes []UFSVolume `json:"ufsVolumes,omitempty"`
 
-	InitUsers common.InitUsers `yaml:"initUsers,omitempty"`
+	InitUsers common.InitUsers `json:"initUsers,omitempty"`
 
-	Monitoring string `yaml:"monitoring,omitempty"`
+	Monitoring string `json:"monitoring,omitempty"`
 
-	HadoopConfig HadoopConfig `yaml:"hadoopConfig,omitempty"`
+	HadoopConfig HadoopConfig `json:"hadoopConfig,omitempty"`
 
-	Tolerations []corev1.Toleration `yaml:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	PlacementMode string `yaml:"placement,omitempty"`
+	PlacementMode string `json:"placement,omitempty"`
 }
 
 type HadoopConfig struct {
-	ConfigMap       string `yaml:"configMap"`
-	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
-	IncludeCoreSite bool   `yaml:"includeCoreSite"`
+	ConfigMap       string `json:"configMap"`
+	IncludeHdfsSite bool   `json:"includeHdfsSite"`
+	IncludeCoreSite bool   `json:"includeCoreSite"`
 }
 
 type UFSPath struct {
-	HostPath  string `yaml:"hostPath"`
-	UFSVolume `yaml:",inline"`
+	HostPath  string `json:"hostPath"`
+	UFSVolume `json:",inline"`
 }
 
 type UFSVolume struct {
-	Name          string `yaml:"name"`
-	ContainerPath string `yaml:"containerPath"`
+	Name          string `json:"name"`
+	ContainerPath string `json:"containerPath"`
 }
 
 type Metastore struct {
-	VolumeType string `yaml:"volumeType,omitempty"`
-	Size       string `yaml:"size,omitempty"`
+	VolumeType string `json:"volumeType,omitempty"`
+	Size       string `json:"size,omitempty"`
 }
 
 type Journal struct {
-	VolumeType string `yaml:"volumeType,omitempty"`
-	Size       string `yaml:"size,omitempty"`
+	VolumeType string `json:"volumeType,omitempty"`
+	Size       string `json:"size,omitempty"`
 }
 
 type ShortCircuit struct {
-	Enable     bool   `yaml:"enable,omitempty"`
-	Policy     string `yaml:"policy,omitempty"`
-	VolumeType string `yaml:"volumeType,omitempty"`
+	Enable     bool   `json:"enable,omitempty"`
+	Policy     string `json:"policy,omitempty"`
+	VolumeType string `json:"volumeType,omitempty"`
 }
 
 type Ports struct {
-	Rpc      int `yaml:"rpc,omitempty"`
-	Web      int `yaml:"web,omitempty"`
-	Embedded int `yaml:"embedded,omitempty"`
-	Data     int `yaml:"data,omitempty"`
-	Rest     int `yaml:"rest,omitempty"`
+	Rpc      int `json:"rpc,omitempty"`
+	Web      int `json:"web,omitempty"`
+	Embedded int `json:"embedded,omitempty"`
+	Data     int `json:"data,omitempty"`
+	Rest     int `json:"rest,omitempty"`
 }
 
 type APIGateway struct {
-	Enabled bool  `yaml:"enabled,omitempty"`
-	Ports   Ports `yaml:"ports,omitempty"`
+	Enabled bool  `json:"enabled,omitempty"`
+	Ports   Ports `json:"ports,omitempty"`
 }
 
 type JobMaster struct {
-	Ports     Ports            `yaml:"ports,omitempty"`
-	Resources common.Resources `yaml:"resources,omitempty"`
+	Ports     Ports            `json:"ports,omitempty"`
+	Resources common.Resources `json:"resources,omitempty"`
 }
 
 type JobWorker struct {
-	Ports     Ports            `yaml:"ports,omitempty"`
-	Resources common.Resources `yaml:"resources,omitempty"`
+	Ports     Ports            `json:"ports,omitempty"`
+	Resources common.Resources `json:"resources,omitempty"`
 }
 
 type Worker struct {
-	JvmOptions   []string             `yaml:"jvmOptions,omitempty"`
-	Env          map[string]string    `yaml:"env,omitempty"`
-	NodeSelector map[string]string    `yaml:"nodeSelector,omitempty"`
-	Properties   map[string]string    `yaml:"properties,omitempty"`
-	HostNetwork  bool                 `yaml:"hostNetwork,omitempty"`
-	Resources    common.Resources     `yaml:"resources,omitempty"`
-	Ports        Ports                `yaml:"ports,omitempty"`
+	JvmOptions   []string             `json:"jvmOptions,omitempty"`
+	Env          map[string]string    `json:"env,omitempty"`
+	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
+	Properties   map[string]string    `json:"properties,omitempty"`
+	HostNetwork  bool                 `json:"hostNetwork,omitempty"`
+	Resources    common.Resources     `json:"resources,omitempty"`
+	Ports        Ports                `json:"ports,omitempty"`
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes      []corev1.Volume      `yaml:"volumes,omitempty"`
+	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 type Master struct {
-	JvmOptions   []string             `yaml:"jvmOptions,omitempty"`
-	Env          map[string]string    `yaml:"env,omitempty"`
-	Affinity     Affinity             `yaml:"affinity"`
-	NodeSelector map[string]string    `yaml:"nodeSelector,omitempty"`
-	Properties   map[string]string    `yaml:"properties,omitempty"`
-	Replicas     int32                `yaml:"replicaCount,omitempty"`
-	HostNetwork  bool                 `yaml:"hostNetwork,omitempty"`
-	Resources    common.Resources     `yaml:"resources,omitempty"`
-	Ports        Ports                `yaml:"ports,omitempty"`
-	BackupPath   string               `yaml:"backupPath,omitempty"`
-	Restore      Restore              `yaml:"restore,omitempty"`
+	JvmOptions   []string             `json:"jvmOptions,omitempty"`
+	Env          map[string]string    `json:"env,omitempty"`
+	Affinity     Affinity             `json:"affinity"`
+	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
+	Properties   map[string]string    `json:"properties,omitempty"`
+	Replicas     int32                `json:"replicaCount,omitempty"`
+	HostNetwork  bool                 `json:"hostNetwork,omitempty"`
+	Resources    common.Resources     `json:"resources,omitempty"`
+	Ports        Ports                `json:"ports,omitempty"`
+	BackupPath   string               `json:"backupPath,omitempty"`
+	Restore      Restore              `json:"restore,omitempty"`
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes      []corev1.Volume      `yaml:"volumes,omitempty"`
+	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 type Restore struct {
-	Enabled bool   `yaml:"enabled,omitempty"`
-	Path    string `yaml:"path,omitempty"`
-	PVCName string `yaml:"pvcName,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
+	Path    string `json:"path,omitempty"`
+	PVCName string `json:"pvcName,omitempty"`
 }
 
 type Fuse struct {
-	Image              string               `yaml:"image,omitempty"`
-	NodeSelector       map[string]string    `yaml:"nodeSelector,omitempty"`
-	ImageTag           string               `yaml:"imageTag,omitempty"`
-	ImagePullPolicy    string               `yaml:"imagePullPolicy,omitempty"`
-	Properties         map[string]string    `yaml:"properties,omitempty"`
-	Env                map[string]string    `yaml:"env,omitempty"`
-	JvmOptions         []string             `yaml:"jvmOptions,omitempty"`
-	MountPath          string               `yaml:"mountPath,omitempty"`
-	ShortCircuitPolicy string               `yaml:"shortCircuitPolicy,omitempty"`
-	Args               []string             `yaml:"args,omitempty"`
-	HostNetwork        bool                 `yaml:"hostNetwork,omitempty"`
-	Enabled            bool                 `yaml:"enabled,omitempty"`
-	Resources          common.Resources     `yaml:"resources,omitempty"`
-	Global             bool                 `yaml:"global,omitempty"`
-	CriticalPod        bool                 `yaml:"criticalPod,omitempty"`
+	Image              string               `json:"image,omitempty"`
+	NodeSelector       map[string]string    `json:"nodeSelector,omitempty"`
+	ImageTag           string               `json:"imageTag,omitempty"`
+	ImagePullPolicy    string               `json:"imagePullPolicy,omitempty"`
+	Properties         map[string]string    `json:"properties,omitempty"`
+	Env                map[string]string    `json:"env,omitempty"`
+	JvmOptions         []string             `json:"jvmOptions,omitempty"`
+	MountPath          string               `json:"mountPath,omitempty"`
+	ShortCircuitPolicy string               `json:"shortCircuitPolicy,omitempty"`
+	Args               []string             `json:"args,omitempty"`
+	HostNetwork        bool                 `json:"hostNetwork,omitempty"`
+	Enabled            bool                 `json:"enabled,omitempty"`
+	Resources          common.Resources     `json:"resources,omitempty"`
+	Global             bool                 `json:"global,omitempty"`
+	CriticalPod        bool                 `json:"criticalPod,omitempty"`
 	VolumeMounts       []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes            []corev1.Volume      `yaml:"volumes,omitempty"`
+	Volumes            []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 type TieredStore struct {
-	Levels []Level `yaml:"levels,omitempty"`
+	Levels []Level `json:"levels,omitempty"`
 }
 
 type Level struct {
-	Alias      string `yaml:"alias,omitempty"`
-	Level      int    `yaml:"level"`
-	MediumType string `yaml:"mediumtype,omitempty"`
-	Type       string `yaml:"type,omitempty"`
-	Path       string `yaml:"path,omitempty"`
-	Quota      string `yaml:"quota,omitempty"`
-	High       string `yaml:"high,omitempty"`
-	Low        string `yaml:"low,omitempty"`
+	Alias      string `json:"alias,omitempty"`
+	Level      int    `json:"level"`
+	MediumType string `json:"mediumtype,omitempty"`
+	Type       string `json:"type,omitempty"`
+	Path       string `json:"path,omitempty"`
+	Quota      string `json:"quota,omitempty"`
+	High       string `json:"high,omitempty"`
+	Low        string `json:"low,omitempty"`
 }
 
 type Affinity struct {
-	NodeAffinity *NodeAffinity `yaml:"nodeAffinity"`
+	NodeAffinity *NodeAffinity `json:"nodeAffinity"`
 }
 
 type cacheHitStates struct {
