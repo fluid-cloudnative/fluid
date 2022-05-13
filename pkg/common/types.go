@@ -73,8 +73,8 @@ const (
 type ResourceList map[corev1.ResourceName]string
 
 type Resources struct {
-	Requests ResourceList `yaml:"requests,omitempty"`
-	Limits   ResourceList `yaml:"limits,omitempty"`
+	Requests ResourceList `json:"requests,omitempty" yaml:"requests,omitempty"`
+	Limits   ResourceList `json:"limits,omitempty" yaml:"limits,omitempty"`
 }
 
 const (
@@ -85,19 +85,19 @@ const (
 
 // UserInfo to run a Container
 type UserInfo struct {
-	User    int `yaml:"user"`
-	Group   int `yaml:"group"`
-	FSGroup int `yaml:"fsGroup"`
+	User    int `json:"user" yaml:"user"`
+	Group   int `json:"group" yaml:"group"`
+	FSGroup int `json:"fsGroup" yaml:"fsGroup"`
 }
 
 // ImageInfo to run a Container
 type ImageInfo struct {
 	// Image of a Container
-	Image string `yaml:"image"`
+	Image string `json:"image" yaml:"image"`
 	// ImageTag of a Container
-	ImageTag string `yaml:"imageTag"`
+	ImageTag string `json:"imageTag" yaml:"imageTag"`
 	// ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`
-	ImagePullPolicy string `yaml:"imagePullPolicy"`
+	ImagePullPolicy string `json:"imagePullPolicy" yaml:"imagePullPolicy"`
 }
 
 // Phase is a valid value of a task stage
@@ -124,21 +124,21 @@ const (
 )
 
 type OwnerReference struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled bool `json:"enabled" yaml:"enabled"`
 	// API version of the referent.
-	APIVersion string `yaml:"apiVersion"`
+	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
 	// Kind of the referent.
-	Kind string `yaml:"kind"`
+	Kind string `json:"kind" yaml:"kind"`
 	// Name of the referent.
-	Name string `yaml:"name"`
+	Name string `json:"name" yaml:"name"`
 	// UID of the referent.
-	UID string `yaml:"uid"`
+	UID string `json:"uid" yaml:"uid"`
 	// If true, this reference points to the managing controller.
 	// +optional
-	Controller bool `yaml:"controller"`
+	Controller bool `json:"controller" yaml:"controller"`
 	// If true, AND if the owner has the "foregroundDeletion" finalizer, then
 	// +optional
-	BlockOwnerDeletion bool `yaml:"blockOwnerDeletion"`
+	BlockOwnerDeletion bool `json:"blockOwnerDeletion" yaml:"blockOwnerDeletion"`
 }
 
 // FuseInjectionTemplate for injecting fuse container into the pod
