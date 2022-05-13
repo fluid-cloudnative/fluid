@@ -26,7 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-	"sigs.k8s.io/yaml"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // setup the cache master
