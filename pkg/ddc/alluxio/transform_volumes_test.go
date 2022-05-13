@@ -248,7 +248,7 @@ func TestTransformFuseVolumes(t *testing.T) {
 								},
 							},
 						},
-					}, Fuse: datav1alpha1.AlluxioCompTemplateSpec{
+					}, Fuse: datav1alpha1.AlluxioFuseSpec{
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "test",
@@ -282,7 +282,7 @@ func TestTransformFuseVolumes(t *testing.T) {
 			name: "onlyVolumeMounts",
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Fuse: datav1alpha1.AlluxioCompTemplateSpec{
+					Fuse: datav1alpha1.AlluxioFuseSpec{
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "test",
