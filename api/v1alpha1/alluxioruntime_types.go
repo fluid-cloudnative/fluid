@@ -76,6 +76,10 @@ type AlluxioCompTemplateSpec struct {
 	// NodeSelector is a selector which must be true for the master to fit on a node
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -129,6 +133,10 @@ type AlluxioFuseSpec struct {
 	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 // Level describes configurations a tier needs. <br>
@@ -246,6 +254,10 @@ type AlluxioRuntimeSpec struct {
 	// of the file as the value.
 	// +optional
 	HadoopConfig string `json:"hadoopConfig,omitempty"`
+
+	// Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 // +kubebuilder:object:root=true

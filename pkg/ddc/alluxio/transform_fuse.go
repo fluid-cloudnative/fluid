@@ -105,6 +105,12 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
+	// transform volumes for worker
+	err = e.transformFuseVolumes(runtime, value)
+	if err != nil {
+		e.Log.Error(err, "failed to transform volumes for fuse")
+	}
+
 	return
 
 }

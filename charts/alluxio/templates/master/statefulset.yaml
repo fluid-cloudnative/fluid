@@ -242,6 +242,9 @@ spec:
             mountPath: "{{ .path }}"
             {{- end }}
           {{- end }}
+          {{- if .Values.master.volumeMounts }}
+{{ toYaml .Values.master.volumeMounts | indent 10 }}
+          {{- end }}
         - name: alluxio-job-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -323,6 +326,9 @@ spec:
           - name: "{{ .name }}"
             mountPath: "{{ .path }}"
             {{- end }}
+          {{- end }}
+          {{- if .Values.master.volumeMounts }}
+{{ toYaml .Values.master.volumeMounts | indent 10 }}
           {{- end }}
       restartPolicy: Always
       volumes:
@@ -419,6 +425,9 @@ spec:
           persistentVolumeClaim:
             claimName: "{{ .name }}"
           {{- end }}
+        {{- end }}
+        {{- if .Values.master.volumes }}   
+{{ toYaml .Values.master.volumes | indent 8 }}
         {{- end }}
   volumeClaimTemplates:
   {{- if and $needJournalVolume (eq .Values.journal.volumeType "persistentVolumeClaim") }}
