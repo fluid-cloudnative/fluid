@@ -310,6 +310,11 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 
 	e.transformResourcesForMaster(runtime, value)
 
+	// transform volumes for master
+	err = e.transformMasterVolumes(runtime, value)
+	if err != nil {
+		e.Log.Error(err, "failed to transform volumes for master")
+	}
 	return
 }
 
@@ -345,6 +350,12 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	value.Worker.HostNetwork = true
 
 	e.transformResourcesForWorker(runtime, value)
+
+	// transform volumes for worker
+	err = e.transformWorkerVolumes(runtime, value)
+	if err != nil {
+		e.Log.Error(err, "failed to transform volumes for worker")
+	}
 
 	return
 }

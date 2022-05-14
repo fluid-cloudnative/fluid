@@ -147,6 +147,9 @@ spec:
 {{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
               {{- end }}
             {{- end }}
+            {{- if .Values.fuse.volumeMounts }}
+{{ toYaml .Values.fuse.volumeMounts | indent 12 }}
+            {{- end }}
       restartPolicy: Always
       volumes:
         {{ if .Values.initUsers.enabled -}}
@@ -174,5 +177,8 @@ spec:
           {{- if eq .Values.shortCircuit.policy "local" }}
 {{- include "alluxio.worker.tieredstoreVolumes" . }}
           {{- end }}
+        {{- end }}
+        {{- if .Values.fuse.volumes }}
+{{ toYaml .Values.fuse.volumes | indent 8 }}
         {{- end }}
 {{- end }}

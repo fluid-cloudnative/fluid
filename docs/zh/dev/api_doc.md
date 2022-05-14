@@ -281,6 +281,20 @@ For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are su
 of the file as the value.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1392,6 +1406,17 @@ TieredStore
 </tr>
 <tr>
 <td>
+<code>configs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Configs of JuiceFS</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>replicas</code></br>
 <em>
 int32
@@ -1593,6 +1618,20 @@ map[string]string
 <p>NodeSelector is a selector which must be true for the master to fit on a node</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec
@@ -1749,6 +1788,20 @@ Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
 </td>
 </tr>
 </tbody>
@@ -1977,6 +2030,20 @@ string
 must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it.
 For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are supported. It must take the filename of the conf file as the key and content
 of the file as the value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
 </td>
 </tr>
 </tbody>
@@ -3705,6 +3772,18 @@ map[string]string
 Any label already existed will be overriden</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>disabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If disable JindoFS master or worker</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec
@@ -3876,6 +3955,18 @@ Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If disable JindoFS fuse</p>
 </td>
 </tr>
 </tbody>
@@ -4132,6 +4223,17 @@ Kubernetes core/v1.ResourceRequirements
 </tr>
 <tr>
 <td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>env</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
@@ -4198,7 +4300,7 @@ string
 </tr>
 <tr>
 <td>
-<code>image_tag</code></br>
+<code>imageTag</code></br>
 <em>
 string
 </em>
@@ -4209,7 +4311,7 @@ string
 </tr>
 <tr>
 <td>
-<code>image_pull_policy</code></br>
+<code>imagePullPolicy</code></br>
 <em>
 string
 </em>
@@ -4259,7 +4361,7 @@ otherwise the affinity should be considered</p>
 </tr>
 <tr>
 <td>
-<code>node_selector</code></br>
+<code>nodeSelector</code></br>
 <em>
 map[string]string
 </em>
@@ -4396,6 +4498,17 @@ TieredStore
 </td>
 <td>
 <p>Tiered storage used by JuiceFS</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configs</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Configs of JuiceFS</p>
 </td>
 </tr>
 <tr>
@@ -5153,6 +5266,20 @@ APIGatewayStatus
 <p>APIGatewayStatus represents rest api gateway status</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>mountTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>MountTime represents time last mount happened
+if Mounttime is earlier than master starting time, remount will be required</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.SecretKeySelector">SecretKeySelector
@@ -5439,5 +5566,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4dd8c8ee</code>.
+on git commit <code>deeeb68</code>.
 </em></p>
