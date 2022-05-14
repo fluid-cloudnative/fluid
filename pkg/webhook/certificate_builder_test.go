@@ -20,6 +20,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -88,10 +89,21 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 			certPath:    "fluid_certs4",
 			clientIsNil: true,
 		},
+		"test build and sync ca case 5": {
+			ns:          "",
+			svc:         "fluid-pod-admission-webhook",
+			certPath:    "fluid_certs3",
+			clientIsNil: false,
+		},
 	}
 	for _, item := range testCases {
-		if err := os.Setenv(common.MyPodNamespace, item.ns); err != nil {
-			t.Errorf("fail to set env of ns, ns:%s, err:%v", item.ns, err)
+		if err := os.Unsetenv(common.MyPodNamespace); err != nil {
+			t.Errorf("fail to unset env of ns, ns:%s, err:%v", item.ns, err)
+		}
+		if item.ns != "" {
+			if err := os.Setenv(common.MyPodNamespace, item.ns); err != nil {
+				t.Errorf("fail to set env of ns, ns:%s, err:%v", item.ns, err)
+			}
 		}
 
 		certDir, err := ioutil.TempDir("/tmp", item.certPath)
@@ -106,7 +118,7 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 		}
 		caCert, err := cb.BuildOrSyncCABundle(item.svc, certDir)
 		if err != nil {
-			if item.clientIsNil {
+			if item.clientIsNil || item.ns == "" {
 				continue
 			}
 			t.Errorf("fail to build or sync ca, err:%v", err)
@@ -252,11 +264,21 @@ func TestPatchCABundle(t *testing.T) {
 			}
 			for j := range item.ca {
 				if mc.Webhooks[i].ClientConfig.CABundle[j] != item.ca[j] {
-					t.Errorf("%s cannot paas because fail to mutate CABundle ofmMutatingWebhookConfiguration", index)
+					t.Errorf("%s cannot paas because fail to mutate CABundle of MutatingWebhookConfiguration", index)
 					continue
 				}
 			}
 
+		}
+
+		err = cb.PatchCABundle(item.webhookName, item.ca)
+		if err != nil {
+			t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
+		}
+		var mc2 admissionregistrationv1.MutatingWebhookConfiguration
+		err = client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &mc2)
+		if !reflect.DeepEqual(mc, mc2) {
+			t.Errorf("should not patch MutatingWebhookConfiguration if not change")
 		}
 	}
 

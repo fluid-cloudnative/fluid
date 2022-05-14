@@ -80,7 +80,16 @@ func TestMutatingWebhookConfigurationEventHandler_OnUpdateFunc(t *testing.T) {
 
 	// 1. the Object is not mutatingWebhookConfiguration
 	updateEvent := event.UpdateEvent{
-		ObjectOld: &appsv1.DaemonSet{},
+		ObjectOld: &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					Name: "old",
+				},
+			},
+		},
 		ObjectNew: &appsv1.DaemonSet{},
 	}
 	mutatingWebhookConfigurationEventHandler := &mutatingWebhookConfigurationEventHandler{}
@@ -91,7 +100,27 @@ func TestMutatingWebhookConfigurationEventHandler_OnUpdateFunc(t *testing.T) {
 		t.Errorf("The event %v should not be reconciled, but skip.", updateEvent)
 	}
 
-	// 2. the Object is mutatingWebhookConfiguration
+	updateEvent = event.UpdateEvent{
+		ObjectOld: &appsv1.DaemonSet{},
+		ObjectNew: &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					Name: "new",
+				},
+			},
+		},
+	}
+	f = mutatingWebhookConfigurationEventHandler.onUpdateFunc(webhookName)
+	predicate = f(updateEvent)
+
+	if predicate {
+		t.Errorf("The event %v should not be reconciled, but skip.", updateEvent)
+	}
+
+	// 2. the Object is mutatingWebhookConfiguration and name is respect
 	updateEvent = event.UpdateEvent{
 		ObjectOld: &admissionregistrationv1.MutatingWebhookConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
@@ -122,7 +151,7 @@ func TestMutatingWebhookConfigurationEventHandler_OnUpdateFunc(t *testing.T) {
 		t.Errorf("The event %v should be reconciled, but skip.", updateEvent)
 	}
 
-	// 3. the Object is mutatingWebhookConfiguration
+	// 3. the Object is mutatingWebhookConfiguration and name is not respecr
 	updateEvent = event.UpdateEvent{
 		ObjectOld: &admissionregistrationv1.MutatingWebhookConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
@@ -151,6 +180,59 @@ func TestMutatingWebhookConfigurationEventHandler_OnUpdateFunc(t *testing.T) {
 
 	if predicate {
 		t.Errorf("The event %v should not be reconciled, but skip.", updateEvent)
+	}
+
+	// 4. the Object is mutatingWebhookConfiguration but not change
+	updateEvent = event.UpdateEvent{
+		ObjectOld: &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					Name: "old",
+				},
+			},
+		},
+		ObjectNew: &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					Name: "old",
+				},
+			},
+		},
+	}
+
+	f = mutatingWebhookConfigurationEventHandler.onUpdateFunc(webhookName)
+	predicate = f(updateEvent)
+
+	if predicate {
+		t.Errorf("The event %v should not be reconciled, but skip.", updateEvent)
+	}
+
+}
+
+func TestMutatingWebhookConfigurationEventHandler_OnDeleteFunc(t *testing.T) {
+	var webhookName = "test"
+
+	mutatingWebhookConfigurationEventHandler := &mutatingWebhookConfigurationEventHandler{}
+	f := mutatingWebhookConfigurationEventHandler.onDeleteFunc(webhookName)
+
+	deleteEvent := event.DeleteEvent{
+		Object: &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhookName,
+			},
+		},
+	}
+
+	predicate := f(deleteEvent)
+
+	if predicate {
+		t.Errorf("The event %v should not be skip, but not.", deleteEvent)
 	}
 
 }
