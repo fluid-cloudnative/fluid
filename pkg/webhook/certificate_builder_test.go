@@ -94,7 +94,7 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 			t.Errorf("fail to set env of ns, ns:%s, err:%v", item.ns, err)
 		}
 
-		certPath, err := ioutil.TempDir("/tmp/fluid", item.certPath)
+		certDir, err := ioutil.TempDir("/tmp", item.certPath)
 		if err != nil {
 			t.Errorf("MkdirTemp failed due to %v", err)
 		}
@@ -104,7 +104,7 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 		if item.clientIsNil {
 			cb.Client = nil
 		}
-		caCert, err := cb.BuildOrSyncCABundle(item.svc, certPath)
+		caCert, err := cb.BuildOrSyncCABundle(item.svc, certDir)
 		if err != nil {
 			if item.clientIsNil {
 				continue
@@ -113,51 +113,51 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 		}
 
 		// check if the cert files are generated correctly
-		_, err = os.Stat(certPath + "/ca-key.pem")
+		_, err = os.Stat(certDir + "/ca-key.pem")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("ca-key.pem not exist in certpath %v", certPath)
+			t.Errorf("ca-key.pem not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if ca-key.pem exist because of err %v", err)
 		}
-		_, err = os.Stat(certPath + "/ca-cert.pem")
+		_, err = os.Stat(certDir + "/ca-cert.pem")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("ca-cert.pem not exist in certpath %v", certPath)
+			t.Errorf("ca-cert.pem not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if ca-cert.pem exist because of err %v", err)
 		}
-		_, err = os.Stat(certPath + "/cert.pem")
+		_, err = os.Stat(certDir + "/cert.pem")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("cert.pem not exist in certpath %v", certPath)
+			t.Errorf("cert.pem not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if cert.pem exist because of err %v", err)
 		}
-		_, err = os.Stat(certPath + "/key.pem")
+		_, err = os.Stat(certDir + "/key.pem")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("key.pem not exist in certpath %v", certPath)
+			t.Errorf("key.pem not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if key.pem exist because of err %v", err)
 		}
-		_, err = os.Stat(certPath + "/tls.crt")
+		_, err = os.Stat(certDir + "/tls.crt")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("tls.crt not exist in certpath %v", certPath)
+			t.Errorf("tls.crt not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if tls.crt exist because of err %v", err)
 		}
-		_, err = os.Stat(certPath + "/tls.key")
+		_, err = os.Stat(certDir + "/tls.key")
 		switch {
 		case os.IsNotExist(err):
-			t.Errorf("tls.key not exist in certpath %v", certPath)
+			t.Errorf("tls.key not exist in certpath %v", certDir)
 		case err != nil:
 			t.Errorf("fail to check if tls.key exist because of err %v", err)
 		}
 
 		// check if the ca-cert.pem file is the same as the return value of the function
-		content, err := os.ReadFile(certPath + "/ca-cert.pem")
+		content, err := os.ReadFile(certDir + "/ca-cert.pem")
 		if err != nil {
 			t.Errorf("fail to read ca-cert.pem because of err %v", err)
 		}
