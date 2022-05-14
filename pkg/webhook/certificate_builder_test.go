@@ -277,6 +277,9 @@ func TestPatchCABundle(t *testing.T) {
 		}
 		var mc2 admissionregistrationv1.MutatingWebhookConfiguration
 		err = client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &mc2)
+		if err != nil {
+			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
+		}
 		if !reflect.DeepEqual(mc, mc2) {
 			t.Errorf("should not patch MutatingWebhookConfiguration if not change")
 		}
