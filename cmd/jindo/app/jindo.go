@@ -17,7 +17,6 @@ limitations under the License.
 package app
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -36,6 +35,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
@@ -93,7 +93,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

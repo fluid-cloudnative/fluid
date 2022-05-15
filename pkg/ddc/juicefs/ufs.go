@@ -21,7 +21,7 @@ import (
 )
 
 func (j JuiceFSEngine) UsedStorageBytes() (int64, error) {
-	return 0, nil
+	return j.usedSpaceInternal()
 }
 
 func (j JuiceFSEngine) FreeStorageBytes() (int64, error) {

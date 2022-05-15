@@ -98,20 +98,22 @@ func shouldRequeue(pod *corev1.Pod) bool {
 		return false
 	}
 
-	// reconcile if app container exit 0 and fuse container not exit
-	appExited := false
+	// reconcile if all app containers exit 0 and fuse container not exit
+	appExited := true
 	fuseExited := false
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.Name != common.FuseContainerName {
 			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
-				appExited = true
-				log.Info("fluid app exited", "container", containerStatus.Name)
+				log.Info("fluid app exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
+			} else {
+				// container not exist
+				appExited = false
 			}
 		}
 		if containerStatus.Name == common.FuseContainerName {
 			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
 				fuseExited = true
-				log.Info("fluid fuse exited", "container", containerStatus.Name)
+				log.Info("fluid fuse exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
 			}
 		}
 	}

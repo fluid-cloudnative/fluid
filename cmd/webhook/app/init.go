@@ -23,6 +23,6 @@ func NewWebHookCommand() *cobra.Command {
 		Use:   "fluid-webhook",
 		Short: "fluid admission webhook",
 	}
-	cmd.AddCommand(versionCmd, webhookCmd)
+	cmd.AddCommand(versionCmd, cmd)
 	return cmd
 }

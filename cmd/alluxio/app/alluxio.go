@@ -89,7 +89,7 @@ func handle() {
 		}
 	}))
 
-	utils.NewPprofServer(setupLog, pprofAddr)
+	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,

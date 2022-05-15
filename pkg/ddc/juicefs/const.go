@@ -17,12 +17,17 @@ limitations under the License.
 package juicefs
 
 const (
-	BlockCacheBytes     = "juicefs_blockcache_bytes"
-	BlockCacheHits      = "juicefs_blockcache_hits"
-	BlockCacheMiss      = "juicefs_blockcache_miss"
-	BlockCacheHitBytes  = "juicefs_blockcache_hit_bytes"
-	BlockCacheMissBytes = "juicefs_blockcache_miss_bytes"
-	UsedSpace           = "juicefs_used_space"
+	BlockCacheBytesOfEnterprise     = "blockcache.bytes"
+	BlockCacheHitsOfEnterprise      = "blockcache.hits"
+	BlockCacheMissOfEnterprise      = "blockcache.miss"
+	BlockCacheHitBytesOfEnterprise  = "blockcache.hitBytes"
+	BlockCacheMissBytesOfEnterprise = "blockcache.missBytes"
+
+	BlockCacheBytesOfCommunity     = "juicefs_blockcache_bytes"
+	BlockCacheHitsOfCommunity      = "juicefs_blockcache_hits"
+	BlockCacheMissOfCommunity      = "juicefs_blockcache_miss"
+	BlockCacheHitBytesOfCommunity  = "juicefs_blockcache_hit_bytes"
+	BlockCacheMissBytesOfCommunity = "juicefs_blockcache_miss_bytes"
 
 	PodRoleType = "role"
 

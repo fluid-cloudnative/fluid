@@ -197,3 +197,7 @@
 0.8.0
 
 - Change worker from Daemonset to Statefulset
+
+0.9.0
+
+- Add volumeMounts and volumes 

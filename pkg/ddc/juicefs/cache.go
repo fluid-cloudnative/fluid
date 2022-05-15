@@ -18,6 +18,8 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	v1 "k8s.io/api/core/v1"
 	"strconv"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -25,24 +27,39 @@ import (
 
 // queryCacheStatus checks the cache status
 func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
-	dsName := j.getFuseDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(dsName, j.namespace)
-	if err != nil || len(pods) == 0 {
-		return
+	edition := j.GetEdition()
+
+	var pods []v1.Pod
+	// enterprise edition use cache of workers which form a cache group, while community edition use cache of fuse pod whose cache if no-sharing
+	containerName := common.JuiceFSWorkerContainer
+	if edition == "enterprise" {
+		stsName := j.getWorkerName()
+		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
+	} else {
+		containerName = common.JuiceFSFuseContainer
+		stsName := j.getFuseDaemonsetName()
+		pods, err = j.GetRunningPodsOfDaemonset(stsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
 	}
+
 	podMetrics := []fuseMetrics{}
 	for _, pod := range pods {
-		podMetricStr, err := j.GetPodMetrics(pod.Name)
+		podMetricStr, err := j.GetPodMetrics(pod.Name, containerName)
 		if err != nil {
 			return states, err
 		}
-		podMetric := j.parseMetric(podMetricStr)
+		podMetric := j.parseMetric(podMetricStr, edition)
 		podMetrics = append(podMetrics, podMetric)
 	}
 
 	var totalSpace int64
 	if len(podMetrics) != 0 {
-		totalSpace = podMetrics[0].usedSpace
+		totalSpace, _ = j.UsedStorageBytes()
 	}
 	var totalCache, totalCacheHits, totalCacheMiss, totalCacheHitThroughput, totalCacheMissThroughput int64
 	for _, p := range podMetrics {
@@ -53,12 +70,18 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		totalCacheMissThroughput += p.blockCacheMissBytes
 	}
 
-	// caches = total cache / fuse pod num
-	states.cached = utils.BytesSize(float64(totalCache) / float64(len(podMetrics)))
+	if edition == "enterprise" {
+		// caches = total cache of worker pod num
+		states.cached = utils.BytesSize(float64(totalCache))
+	} else {
+		// caches = total cache / fuse pod num
+		states.cached = utils.BytesSize(float64(totalCache) / float64(len(podMetrics)))
+		totalCache = totalCache / int64(len(podMetrics))
+	}
 
 	// cachePercent = cached / total space
 	if totalSpace != 0 {
-		states.cachedPercentage = fmt.Sprintf("%.1f%%", float64(totalCache)*100.0/float64(int64(len(podMetrics))*totalSpace))
+		states.cachedPercentage = fmt.Sprintf("%.1f%%", float64(totalCache)*100.0/float64(totalSpace))
 	} else {
 		states.cachedPercentage = "0.0%"
 	}

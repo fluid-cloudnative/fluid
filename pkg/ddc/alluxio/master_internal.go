@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"

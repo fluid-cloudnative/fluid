@@ -33,10 +33,16 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 				})
 			defer patch1.Reset()
 			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetPodMetrics",
-				func(_ *JuiceFSEngine, podName string) (string, error) {
+				func(_ *JuiceFSEngine, podName, containerName string) (string, error) {
 					return mockJuiceFSMetric(), nil
 				})
 			defer patch2.Reset()
+			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
+				func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfStatefulSet()
+					return r, nil
+				})
+			defer patch3.Reset()
 
 			var workerInputs = []appsv1.StatefulSet{
 				{

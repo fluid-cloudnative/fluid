@@ -206,7 +206,7 @@ func (e *AlluxioEngine) optimizeDefaultForWorker(runtime *datav1alpha1.AlluxioRu
 	}
 }
 
-func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio, isNewFuseArgVersion bool) {
 
 	if len(runtime.Spec.Fuse.JvmOptions) > 0 {
 		value.Fuse.JvmOptions = runtime.Spec.Fuse.JvmOptions
@@ -245,9 +245,12 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 		if readOnly {
 			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
 		} else {
-			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"}
 		}
 
+		if isNewFuseArgVersion {
+			value.Fuse.Args = append(value.Fuse.Args, value.Fuse.MountPath, "/")
+		}
 	}
 
 }

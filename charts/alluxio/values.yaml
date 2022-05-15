@@ -111,6 +111,18 @@ master:
     enabled: false
     # path: /subpath/
     # pvcName: pvc-local
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
 
 jobMaster:
   args:
@@ -220,7 +232,14 @@ worker:
   # JVM options specific to the worker container
   jvmOptions:
   nodeSelector: {}
-  replicaCount: 1
+  replicaCount: 0
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
 
 jobWorker:
   args:
@@ -346,9 +365,15 @@ fuse:
     #      cpu: "0.5"
     #      memory: "1G"
     limits:
-#      cpu: "4"
-#      memory: "4G"
-
+  #      cpu: "4"
+  #      memory: "4G"
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+  volumes: []
 ## HDFS Configuraions ##
 # hadoopConfig:
 #   configMap: hdfs-configmap
@@ -366,3 +391,13 @@ fuse:
 
 ## Monitor ##
 # monitoring: "alluxio_runtime_metrics"
+
+# volumes: []
+# volumes:
+# - name: mySecretVolume
+#   secret:
+#     secretName: mySecret
+# - name: myConfigMapVolume
+#   configMap:
+#     name: myConfigMap
+
