@@ -18,7 +18,6 @@ package watch
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -58,11 +57,6 @@ func (handler *mutatingWebhookConfigurationEventHandler) onUpdateFunc(webhookNam
 
 		if mutatingWebhookConfigurationOld.GetName() != webhookName || mutatingWebhookConfigurationNew.GetName() != webhookName {
 			log.V(1).Info("mutatingWebhookConfiguration.onUpdateFunc Skip", "object", e.ObjectNew)
-			return false
-		}
-
-		if reflect.DeepEqual(mutatingWebhookConfigurationNew.Webhooks, mutatingWebhookConfigurationOld.Webhooks) {
-			log.V(1).Info("mutatingWebhookConfiguration.onUpdateFunc Skip due to Webhooks not changed")
 			return false
 		}
 
