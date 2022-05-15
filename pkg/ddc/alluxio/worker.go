@@ -104,9 +104,9 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 // getWorkerSelectors gets the selector of the worker
 func (e *AlluxioEngine) getWorkerSelectors() string {
 	labels := map[string]string{
-		"release":     e.name,
-		POD_ROLE_TYPE: WOKRER_POD_ROLE,
-		"app":         common.AlluxioRuntime,
+		"release":   e.name,
+		PodRoleType: WOKRER_POD_ROLE,
+		"app":       common.AlluxioRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,
