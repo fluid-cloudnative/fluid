@@ -167,7 +167,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			}, info: runtimeInfo{
 				name:        "dataset1",
 				namespace:   "big-data",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectErr: false,
 			pvcName:   "dataset1",
@@ -640,7 +640,7 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 			}, info: runtimeInfo{
 				name:        "dataset1",
 				namespace:   "big-data",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectErr: false,
 			pvcName:   "dataset1",
@@ -881,7 +881,7 @@ func TestGetFuseDaemonset(t *testing.T) {
 		{
 			name:        "alluxio",
 			namespace:   "default",
-			runtimeType: common.ALLUXIO_RUNTIME,
+			runtimeType: common.AlluxioRuntime,
 			ds: &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "alluxio-fuse",

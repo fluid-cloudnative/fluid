@@ -2,23 +2,21 @@ package common
 
 // Runtime for Alluxio
 const (
-	ALLUXIO_RUNTIME = "alluxio"
+	AlluxioRuntime = "alluxio"
 
-	ALLUXIO_MOUNT_TYPE = "fuse.alluxio-fuse"
+	AlluxioMountType = "fuse.alluxio-fuse"
 
-	ALLUXIO_NAMESPACE = "alluxio-system"
+	AlluxioChart = AlluxioRuntime
 
-	ALLUXIO_CHART = ALLUXIO_RUNTIME
+	DefaultInitImageEnv = "DEFAULT_INIT_IMAGE_ENV"
 
-	DEFAULT_INIT_IMAGE_ENV = "DEFAULT_INIT_IMAGE_ENV"
+	AlluxioRuntimeImageEnv = "ALLUXIO_RUNTIME_IMAGE_ENV"
 
-	ALLUXIO_RUNTIME_IMAGE_ENV = "ALLUXIO_RUNTIME_IMAGE_ENV"
+	AlluxioFuseImageEnv = "ALLUXIO_FUSE_IMAGE_ENV"
 
-	ALLUXIO_FUSE_IMAGE_ENV = "ALLUXIO_FUSE_IMAGE_ENV"
+	DefaultAlluxioRuntimeImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226"
 
-	DEFAULT_ALLUXIO_RUNTIME_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226"
-
-	DEFAULT_ALLUXIO_FUSE_IMAGE = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226"
+	DefaultAlluxioFuseImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226"
 )
 
 var (

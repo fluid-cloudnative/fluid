@@ -111,7 +111,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 	if mountType == "" {
 		// default mountType is ALLUXIO_MOUNT_TYPE
-		mountType = common.ALLUXIO_MOUNT_TYPE
+		mountType = common.AlluxioMountType
 	}
 
 	// 1. Wait the runtime fuse ready

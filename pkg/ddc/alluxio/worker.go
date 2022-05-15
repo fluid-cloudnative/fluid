@@ -106,7 +106,7 @@ func (e *AlluxioEngine) getWorkerSelectors() string {
 	labels := map[string]string{
 		"release":     e.name,
 		POD_ROLE_TYPE: WOKRER_POD_ROLE,
-		"app":         common.ALLUXIO_RUNTIME,
+		"app":         common.AlluxioRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

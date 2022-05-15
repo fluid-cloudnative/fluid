@@ -94,7 +94,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 					Name:           "hbase",
 					Namespace:      "fluid",
 					Category:       common.AccelerateCategory,
-					Type:           common.ALLUXIO_RUNTIME,
+					Type:           common.AlluxioRuntime,
 					MasterReplicas: 1,
 				},
 			},

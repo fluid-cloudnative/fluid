@@ -17,8 +17,9 @@ limitations under the License.
 package base
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestGetStoragetLabelName(t *testing.T) {
@@ -30,7 +31,7 @@ func TestGetStoragetLabelName(t *testing.T) {
 			info: RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 
 			expectedResult: "fluid.io/s-h-alluxio-m-default-spark",
@@ -39,7 +40,7 @@ func TestGetStoragetLabelName(t *testing.T) {
 			info: RuntimeInfo{
 				name:                "hadoop",
 				namespace:           "default",
-				runtimeType:         common.ALLUXIO_RUNTIME,
+				runtimeType:         common.AlluxioRuntime,
 				deprecatedNodeLabel: true,
 			},
 			expectedResult: "data.fluid.io/storage-h-alluxio-m-default-hadoop",
@@ -63,7 +64,7 @@ func TestGetLabelNameForMemory(t *testing.T) {
 			info: RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectResult: "fluid.io/s-h-alluxio-m-default-spark",
 		},
@@ -71,7 +72,7 @@ func TestGetLabelNameForMemory(t *testing.T) {
 			info: RuntimeInfo{
 				name:                "hadoop",
 				namespace:           "default",
-				runtimeType:         common.ALLUXIO_RUNTIME,
+				runtimeType:         common.AlluxioRuntime,
 				deprecatedNodeLabel: true,
 			},
 			expectResult: "data.fluid.io/storage-human-alluxio-mem-default-hadoop",
@@ -95,7 +96,7 @@ func TestGetLabelNameForDisk(t *testing.T) {
 			info: RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectResult: "fluid.io/s-h-alluxio-d-default-spark",
 		},
@@ -103,7 +104,7 @@ func TestGetLabelNameForDisk(t *testing.T) {
 			info: RuntimeInfo{
 				name:                "hadoop",
 				namespace:           "default",
-				runtimeType:         common.ALLUXIO_RUNTIME,
+				runtimeType:         common.AlluxioRuntime,
 				deprecatedNodeLabel: true,
 			},
 			expectResult: "data.fluid.io/storage-human-alluxio-disk-default-hadoop",
@@ -127,7 +128,7 @@ func TestGetLabelNameForTotal(t *testing.T) {
 			info: RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectResult: "fluid.io/s-h-alluxio-t-default-spark",
 		},
@@ -135,7 +136,7 @@ func TestGetLabelNameForTotal(t *testing.T) {
 			info: RuntimeInfo{
 				name:                "hadoop",
 				namespace:           "default",
-				runtimeType:         common.ALLUXIO_RUNTIME,
+				runtimeType:         common.AlluxioRuntime,
 				deprecatedNodeLabel: true,
 			},
 			expectResult: "data.fluid.io/storage-human-alluxio-total-default-hadoop",
@@ -189,7 +190,7 @@ func TestGetRuntimeLabelName(t *testing.T) {
 			info: RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 			},
 			expectResult: "fluid.io/s-alluxio-default-spark",
 		},
@@ -197,7 +198,7 @@ func TestGetRuntimeLabelName(t *testing.T) {
 			info: RuntimeInfo{
 				name:                "hadoop",
 				namespace:           "default",
-				runtimeType:         common.ALLUXIO_RUNTIME,
+				runtimeType:         common.AlluxioRuntime,
 				deprecatedNodeLabel: true,
 			},
 			expectResult: "data.fluid.io/storage-alluxio-default-hadoop",

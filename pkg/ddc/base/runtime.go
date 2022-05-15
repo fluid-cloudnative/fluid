@@ -310,8 +310,8 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeType = dataset.Status.Runtimes[0].Type
 	}
 	switch runtimeType {
-	case common.ALLUXIO_RUNTIME:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ALLUXIO_RUNTIME, datav1alpha1.TieredStore{})
+	case common.AlluxioRuntime:
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}

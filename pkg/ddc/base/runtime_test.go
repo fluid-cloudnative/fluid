@@ -245,7 +245,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "default_policy_alluxio",
 					Namespace: "default",
-					Type:      common.ALLUXIO_RUNTIME,
+					Type:      common.AlluxioRuntime,
 				},
 			},
 		},
@@ -273,7 +273,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "on_demand_policy_alluxio",
 					Namespace: "default",
-					Type:      common.ALLUXIO_RUNTIME,
+					Type:      common.AlluxioRuntime,
 				},
 			},
 		},
@@ -301,7 +301,7 @@ func TestCleanPolicy(t *testing.T) {
 				{
 					Name:      "on_runtime_deleted_policy_alluxio",
 					Namespace: "default",
-					Type:      common.ALLUXIO_RUNTIME,
+					Type:      common.AlluxioRuntime,
 				},
 			},
 		},
@@ -597,7 +597,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "default_policy_alluxio",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -616,7 +616,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "on_demand_policy_alluxio",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -635,7 +635,7 @@ func TestCleanPolicy(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "on_runtime_deleted_policy_alluxio",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -852,7 +852,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				{
 					Name:      "alluxio",
 					Namespace: "default",
-					Type:      common.ALLUXIO_RUNTIME,
+					Type:      common.AlluxioRuntime,
 				},
 			},
 		},
@@ -961,7 +961,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "alluxio",
 				namespace:   "default",
-				runtimeType: common.ALLUXIO_RUNTIME,
+				runtimeType: common.AlluxioRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
