@@ -20,6 +20,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -56,174 +57,135 @@ func TestNewCertificateBuilder(t *testing.T) {
 	}
 }
 
-func TestBuildAndSyncCABundle(t *testing.T) {
-	var webhookName = "webhookName"
-	var caBundles = [][]byte{
-		{3, 5, 54, 34},
-		{3, 8, 54, 4},
-		{35, 5, 54, 4},
-	}
-	var testMutatingWebhookConfiguration = &admissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: webhookName,
-		},
-		Webhooks: []admissionregistrationv1.MutatingWebhook{
-			{
-				Name: "webhook1",
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					CABundle: caBundles[0],
-				},
-			},
-			{
-				Name: "webhook2",
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					CABundle: caBundles[1],
-				},
-			},
-			{
-				Name: "webhook3",
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					CABundle: caBundles[2],
-				},
-			},
-		},
-	}
-	// create dir
-	certPath := "/tmp/fluid/certs"
-	if err := os.MkdirAll(certPath, 0700); err != nil {
-		t.Errorf("fail to create path, path:%s,err:%v", certPath, err)
-	}
-	if err := os.Setenv(common.MyPodNamespace, "default"); err != nil {
-		t.Errorf("fail to set env of path, path:%s,err:%v", certPath, err)
-	}
+func TestBuildOrSyncCABundle(t *testing.T) {
 
 	testCases := map[string]struct {
-		lengthCheck int
-		ns          string
-		svc         string
-		clientIsNil bool
-	}{
-		"test build and sync ca case 1": {
-			lengthCheck: 1000,
-			ns:          "fluid-system",
-			svc:         "fluid-pod-admission-webhook",
-			clientIsNil: false,
-		},
-		"test build and sync ca case 2": {
-			lengthCheck: 1000,
-			ns:          "fluid-system",
-			svc:         "fluid-deployment-admission-webhook",
-			clientIsNil: false,
-		},
-		"test build and sync ca case 3": {
-			lengthCheck: 1000,
-			ns:          "fluid-system",
-			svc:         "fluid-pod-admission-webhook",
-			clientIsNil: true,
-		},
-		"test build and sync ca case 4": {
-			lengthCheck: 1000,
-			ns:          "fluid-system",
-			svc:         "fluid-statefulSet-admission-webhook",
-			clientIsNil: true,
-		},
-	}
-	for index, item := range testCases {
-		testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"}, testMutatingWebhookConfiguration)
-		client := fake.NewFakeClientWithScheme(testScheme, testMutatingWebhookConfiguration)
-		cb := NewCertificateBuilder(client, log)
-		if item.clientIsNil {
-			cb.Client = nil
-		}
-		err := cb.BuildAndSyncCABundle(item.svc, webhookName, certPath)
-		if err != nil {
-			if item.clientIsNil {
-				continue
-			}
-			t.Errorf("fail to build and sync ca, err:%v", err)
-		}
-		var mc admissionregistrationv1.MutatingWebhookConfiguration
-		err = client.Get(context.TODO(), types.NamespacedName{Name: webhookName}, &mc)
-		if err != nil {
-			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
-			continue
-		}
-		for i := range mc.Webhooks {
-			if len(mc.Webhooks[i].ClientConfig.CABundle) < item.lengthCheck {
-				t.Errorf("%s generate certification failed, ns:%s,svc:%s,want greater than %v,got:%v",
-					index,
-					item.ns,
-					item.svc,
-					item.lengthCheck,
-					len(mc.Webhooks[i].ClientConfig.CABundle),
-				)
-				continue
-			}
-			if len(mc.Webhooks[i].ClientConfig.CABundle) == len(caBundles[i]) {
-				t.Errorf("%s cannot paas because have not patched MutatingWebhookConfiguration", index)
-			}
-
-		}
-
-	}
-}
-
-func TestGenCA(t *testing.T) {
-
-	testCases := map[string]struct {
-		lengthCheck int
 		ns          string
 		svc         string
 		certPath    string
-		canMkDir    bool
+		clientIsNil bool
 	}{
-		"test generate ca file case 1": {
-			lengthCheck: 1000,
+		"test build and sync ca case 1": {
 			ns:          "fluid-system",
 			svc:         "fluid-pod-admission-webhook",
-			certPath:    "fluid_certs",
-			canMkDir:    true,
+			certPath:    "fluid_certs1",
+			clientIsNil: false,
 		},
-		"test generate ca file case 2": {
-			lengthCheck: 1000,
+		"test build and sync ca case 2": {
 			ns:          "fluid-system",
-			svc:         "fluid-pod-admission-webhook",
-			certPath:    "TEST",
-			canMkDir:    true,
+			svc:         "fluid-deployment-admission-webhook",
+			certPath:    "fluid_certs2",
+			clientIsNil: false,
 		},
-		"test generate ca file case 3": {
-			lengthCheck: 1000,
-			ns:          "fluid-system",
+		"test build and sync ca case 3": {
+			ns:          "kube-system",
 			svc:         "fluid-pod-admission-webhook",
-			certPath:    "TEst",
-			canMkDir:    false,
+			certPath:    "fluid_certs3",
+			clientIsNil: true,
+		},
+		"test build and sync ca case 4": {
+			ns:          "default",
+			svc:         "fluid-statefulSet-admission-webhook",
+			certPath:    "fluid_certs4",
+			clientIsNil: true,
+		},
+		"test build and sync ca case 5": {
+			ns:          "",
+			svc:         "fluid-pod-admission-webhook",
+			certPath:    "fluid_certs3",
+			clientIsNil: false,
 		},
 	}
+	for _, item := range testCases {
+		if err := os.Unsetenv(common.MyPodNamespace); err != nil {
+			t.Errorf("fail to unset env of ns, ns:%s, err:%v", item.ns, err)
+		}
+		if item.ns != "" {
+			if err := os.Setenv(common.MyPodNamespace, item.ns); err != nil {
+				t.Errorf("fail to set env of ns, ns:%s, err:%v", item.ns, err)
+			}
+		}
 
-	c := fake.NewFakeClient()
-	cb := NewCertificateBuilder(c, log)
-
-	for index, item := range testCases {
 		certDir, err := ioutil.TempDir("/tmp", item.certPath)
 		if err != nil {
 			t.Errorf("MkdirTemp failed due to %v", err)
 		}
-		certs, err := cb.genCA(item.ns, item.svc, certDir)
-		if err != nil && !item.canMkDir {
-			continue
-		}
-		gotLen := len(certs.CACert)
-		if gotLen < item.lengthCheck {
-			t.Errorf("%s generate certification failed, ns:%s,svc:%s,want greater than %v,got:%v",
-				index,
-				item.ns,
-				item.svc,
-				item.lengthCheck,
-				gotLen,
-			)
-		}
-	}
 
+		client := fake.NewFakeClientWithScheme(testScheme)
+		cb := NewCertificateBuilder(client, log)
+		if item.clientIsNil {
+			cb.Client = nil
+		}
+		caCert, err := cb.BuildOrSyncCABundle(item.svc, certDir)
+		if err != nil {
+			if item.clientIsNil || item.ns == "" {
+				continue
+			}
+			t.Errorf("fail to build or sync ca, err:%v", err)
+		}
+
+		// check if the cert files are generated correctly
+		_, err = os.Stat(certDir + "/ca-key.pem")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("ca-key.pem not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if ca-key.pem exist because of err %v", err)
+		}
+		_, err = os.Stat(certDir + "/ca-cert.pem")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("ca-cert.pem not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if ca-cert.pem exist because of err %v", err)
+		}
+		_, err = os.Stat(certDir + "/cert.pem")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("cert.pem not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if cert.pem exist because of err %v", err)
+		}
+		_, err = os.Stat(certDir + "/key.pem")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("key.pem not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if key.pem exist because of err %v", err)
+		}
+		_, err = os.Stat(certDir + "/tls.crt")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("tls.crt not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if tls.crt exist because of err %v", err)
+		}
+		_, err = os.Stat(certDir + "/tls.key")
+		switch {
+		case os.IsNotExist(err):
+			t.Errorf("tls.key not exist in certpath %v", certDir)
+		case err != nil:
+			t.Errorf("fail to check if tls.key exist because of err %v", err)
+		}
+
+		// check if the ca-cert.pem file is the same as the return value of the function
+		content, err := os.ReadFile(certDir + "/ca-cert.pem")
+		if err != nil {
+			t.Errorf("fail to read ca-cert.pem because of err %v", err)
+		}
+		if len(content) != len(caCert) {
+			t.Errorf("the content of ca-cert.pem is %v, but the function return %v", content, caCert)
+		} else {
+			for i := 0; i < len(content); i++ {
+				if content[i] != caCert[i] {
+					t.Errorf("the content of ca-cert.pem is %v, but the function return %v", content, caCert)
+				}
+
+			}
+
+		}
+
+	}
 }
 
 func TestPatchCABundle(t *testing.T) {
@@ -302,11 +264,24 @@ func TestPatchCABundle(t *testing.T) {
 			}
 			for j := range item.ca {
 				if mc.Webhooks[i].ClientConfig.CABundle[j] != item.ca[j] {
-					t.Errorf("%s cannot paas because fail to mutate CABundle ofmMutatingWebhookConfiguration", index)
+					t.Errorf("%s cannot paas because fail to mutate CABundle of MutatingWebhookConfiguration", index)
 					continue
 				}
 			}
 
+		}
+
+		err = cb.PatchCABundle(item.webhookName, item.ca)
+		if err != nil {
+			t.Errorf("%s cannot paas because fail to patch MutatingWebhookConfiguration", index)
+		}
+		var mc2 admissionregistrationv1.MutatingWebhookConfiguration
+		err = client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &mc2)
+		if err != nil {
+			t.Errorf("%s cannot paas because fail to get MutatingWebhookConfiguration", index)
+		}
+		if !reflect.DeepEqual(mc, mc2) {
+			t.Errorf("should not patch MutatingWebhookConfiguration if not change")
 		}
 	}
 
