@@ -26,17 +26,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/csi"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (

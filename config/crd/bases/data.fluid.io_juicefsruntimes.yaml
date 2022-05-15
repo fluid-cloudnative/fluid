@@ -449,6 +449,7 @@ spec:
                             to by services.
                           type: string
                         protocol:
+                          default: TCP
                           description: Protocol for port. Must be UDP, TCP, or SCTP.
                             Defaults to "TCP".
                           type: string
@@ -660,6 +661,7 @@ spec:
                             to by services.
                           type: string
                         protocol:
+                          default: TCP
                           description: Protocol for port. Must be UDP, TCP, or SCTP.
                             Defaults to "TCP".
                           type: string
@@ -940,6 +942,7 @@ spec:
                             to by services.
                           type: string
                         protocol:
+                          default: TCP
                           description: Protocol for port. Must be UDP, TCP, or SCTP.
                             Defaults to "TCP".
                           type: string

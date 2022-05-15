@@ -17,9 +17,8 @@ limitations under the License.
 package app
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 )
 
 var (

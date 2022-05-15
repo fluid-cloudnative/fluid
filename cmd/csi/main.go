@@ -16,15 +16,16 @@ limitations under the License.
 package main
 
 import (
-	"os"
-
 	"github.com/fluid-cloudnative/fluid/cmd/csi/app"
+	"os"
 )
 
 func main() {
 	cmd := app.NewCSICommand()
+
 	if err := cmd.Execute(); err != nil {
 		app.ErrorAndExit(err)
-		os.Exit(1)
 	}
+
+	os.Exit(0)
 }

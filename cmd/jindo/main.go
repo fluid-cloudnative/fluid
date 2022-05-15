@@ -24,6 +24,7 @@ import (
 )
 
 func main() {
+
 	command := app.NewJindoFSCommand()
 	if err := command.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err.Error())

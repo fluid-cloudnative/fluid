@@ -17,8 +17,18 @@ package app
 
 import (
 	"flag"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -27,13 +37,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 )
 
 const (
@@ -94,6 +97,14 @@ func handle() {
 		MetricsBindAddress: metricsAddr,
 		Port:               webhookPort,
 		CertDir:            certDir,
+		NewCache: cache.BuilderWithOptions(cache.Options{
+			Scheme: scheme,
+			SelectorsByObject: cache.SelectorsByObject{
+				&admissionregistrationv1.MutatingWebhookConfiguration{}: {
+					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.WebhookName}),
+				},
+			},
+		}),
 	})
 
 	if err != nil {
@@ -121,10 +132,17 @@ func handle() {
 		os.Exit(1)
 	}
 
-	// patch adminssion web hook  ca bundle
+	// initialize the cert files
 	certBuilder := fluidwebhook.NewCertificateBuilder(client, setupLog)
-	if err := certBuilder.BuildAndSyncCABundle(common.WebhookServiceName, common.WebhookName, certDir); err != nil {
-		setupLog.Error(err, "patch webhook CABundle failed")
+	caCert, err := certBuilder.BuildOrSyncCABundle(common.WebhookServiceName, certDir)
+	if err != nil || len(caCert) == 0 {
+		setupLog.Error(err, "initialize webhook CABundle failed")
+		os.Exit(1)
+	}
+
+	// watch the WebhookConfiguration to patch it
+	if err = watch.SetupWatcherForWebhook(mgr, certBuilder, caCert); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "webhook")
 		os.Exit(1)
 	}
 

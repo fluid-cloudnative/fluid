@@ -20,20 +20,19 @@ import (
 	"io/ioutil"
 	"os"
 
-	"sigs.k8s.io/yaml"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
+	"sigs.k8s.io/yaml"
 )
 
 // setup the cache master
 func (e *AlluxioEngine) setupMasterInternal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/" + common.ALLUXIO_CHART
+		chartName = utils.GetChartsDirectory() + "/" + common.AlluxioChart
 	)
 
 	runtime, err := e.getRuntime()
@@ -74,7 +73,6 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 	// configmapName := e.name + "-" + e.runtimeType + "-values"
 	//1. Transform the runtime to value
 	value, err := e.transform(runtime)
-
 	if err != nil {
 		return
 	}
