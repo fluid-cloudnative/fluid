@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -41,26 +42,22 @@ func NewCertificateBuilder(c client.Client, log logr.Logger) *CertificateBuilder
 	return ch
 }
 
-// BuildAndSyncCABundle use service name and namespace generate webhook caBundle
-// and patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) BuildAndSyncCABundle(svcName, webhookName, cerPath string) error {
+// BuildOrSyncCABundle use service name and namespace to generate webhook certs
+// or sync the certs from the secret
+func (c *CertificateBuilder) BuildOrSyncCABundle(svcName, cerPath string) ([]byte, error) {
 
 	ns, err := utils.GetEnvByKey(common.MyPodNamespace)
 	if err != nil {
-		return errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace)
+		return []byte{}, errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace)
 	}
 	c.log.Info("start generate certificate", "service", svcName, "namespace", ns, "cert dir", cerPath)
 
 	certs, err := c.genCA(ns, svcName, cerPath)
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
 
-	err = c.PatchCABundle(webhookName, certs.CACert)
-	if err != nil {
-		return err
-	}
-	return nil
+	return certs.CACert, nil
 }
 
 // genCA generate the caBundle and store it in secret and local path
@@ -88,16 +85,16 @@ func (c *CertificateBuilder) genCA(ns, svc, certPath string) (*generator.Artifac
 }
 
 // PatchCABundle patch the caBundle to MutatingWebhookConfiguration
-func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error {
+func (c *CertificateBuilder) PatchCABundle(webhookName string, ca []byte) error {
 
 	var m v1.MutatingWebhookConfiguration
 
-	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webHookName)
+	c.log.Info("start patch MutatingWebhookConfiguration caBundle", "name", webhookName)
 
 	ctx := context.Background()
 
-	if err := c.Get(ctx, client.ObjectKey{Name: webHookName}, &m); err != nil {
-		c.log.Error(err, "fail to get mutatingWebHook", "name", webHookName)
+	if err := c.Get(ctx, client.ObjectKey{Name: webhookName}, &m); err != nil {
+		c.log.Error(err, "fail to get mutatingWebHook", "name", webhookName)
 		return err
 	}
 
@@ -106,12 +103,17 @@ func (c *CertificateBuilder) PatchCABundle(webHookName string, ca []byte) error 
 		m.Webhooks[i].ClientConfig.CABundle = ca
 	}
 
+	if reflect.DeepEqual(m.Webhooks, current.Webhooks) {
+		c.log.Info("no need to patch the MutatingWebhookConfiguration", "name", webhookName)
+		return nil
+	}
+
 	if err := c.Patch(ctx, &m, client.MergeFrom(current)); err != nil {
-		c.log.Error(err, "fail to patch CABundle to mutatingWebHook", "name", webHookName)
+		c.log.Error(err, "fail to patch CABundle to mutatingWebHook", "name", webhookName)
 		return err
 	}
 
-	c.log.Info("finished patch MutatingWebhookConfiguration caBundle", "name", webHookName)
+	c.log.Info("finished patch MutatingWebhookConfiguration caBundle", "name", webhookName)
 
 	return nil
 }
