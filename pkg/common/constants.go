@@ -120,4 +120,5 @@ const (
 	InjectCacheDir         = "cachedir" + injectSidecar
 	InjectWorkerSidecar    = "worker" + injectSidecar
 	InjectSidecarDone      = "done" + injectSidecar
+	App                    = "app"
 )
