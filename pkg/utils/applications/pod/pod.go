@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -79,18 +80,33 @@ func (o *PodObject) SetVolumes(volumes []corev1.Volume) (err error) {
 }
 
 func (o *PodObject) GetContainers() (containers []corev1.Container, err error) {
-	containers = o.pod.Spec.Containers
+	if o.isInjectToInitContainer() {
+		containers = o.pod.Spec.InitContainers
+	} else {
+		containers = o.pod.Spec.Containers
+	}
+
 	return
 }
 
 func (o *PodObject) SetContainers(containers []corev1.Container) (err error) {
-	o.pod.Spec.Containers = containers
+	if o.isInjectToInitContainer() {
+		o.pod.Spec.InitContainers = containers
+	} else {
+		o.pod.Spec.Containers = containers
+	}
+
 	return
 }
 
 func (o *PodObject) GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error) {
 	volumeMounts = []corev1.VolumeMount{}
-	for _, container := range o.pod.Spec.Containers {
+	containers, err := o.GetContainers()
+	if err != nil {
+		return
+	}
+
+	for _, container := range containers {
 		volumeMounts = append(volumeMounts, container.VolumeMounts...)
 	}
 
@@ -105,4 +121,8 @@ func (o *PodObject) SetMetaObject(metaObject metav1.ObjectMeta) (err error) {
 
 func (o *PodObject) GetMetaObject() (metaObject metav1.ObjectMeta, err error) {
 	return o.pod.ObjectMeta, nil
+}
+
+func (o *PodObject) isInjectToInitContainer() (is bool) {
+	return utils.IsInjectToInitContainer(o.pod.ObjectMeta.Labels)
 }
