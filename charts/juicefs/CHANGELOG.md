@@ -5,3 +5,7 @@
 0.2.0
 
 - Change worker from Daemonset to Statefulset
+
+0.2.1
+
+- Add owner Reference

@@ -30,12 +30,13 @@ type JuiceFS struct {
 	common.ImageInfo `yaml:",inline"`
 	common.UserInfo  `yaml:",inline"`
 
-	NodeSelector  map[string]string `yaml:"nodeSelector,omitempty"`
-	Configs       Configs           `yaml:"configs,omitempty"`
-	Fuse          Fuse              `yaml:"fuse,omitempty"`
-	Worker        Worker            `yaml:"worker,omitempty"`
-	TieredStore   TieredStore       `yaml:"tieredstore,omitempty"`
-	PlacementMode string            `yaml:"placement,omitempty"`
+	NodeSelector  map[string]string      `yaml:"nodeSelector,omitempty"`
+	Configs       Configs                `yaml:"configs,omitempty"`
+	Fuse          Fuse                   `yaml:"fuse,omitempty"`
+	Worker        Worker                 `yaml:"worker,omitempty"`
+	TieredStore   TieredStore            `yaml:"tieredstore,omitempty"`
+	PlacementMode string                 `yaml:"placement,omitempty"`
+	Owner         *common.OwnerReference `yaml:"owner,omitempty"`
 }
 
 type Configs struct {

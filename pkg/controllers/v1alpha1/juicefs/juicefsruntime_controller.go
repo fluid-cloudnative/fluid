@@ -19,6 +19,7 @@ import (
 	"context"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sync"
@@ -59,7 +60,12 @@ func (r *JuiceFSRuntimeReconciler) ControllerName() string {
 }
 
 func (r *JuiceFSRuntimeReconciler) ManagedResource() client.Object {
-	return &datav1alpha1.JuiceFSRuntime{}
+	return &datav1alpha1.JuiceFSRuntime{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       datav1alpha1.JuiceFSRuntimeKind,
+			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+		},
+	}
 }
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
