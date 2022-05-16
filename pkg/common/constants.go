@@ -120,5 +120,8 @@ const (
 	InjectCacheDir         = "cachedir" + injectSidecar
 	InjectWorkerSidecar    = "worker" + injectSidecar
 	InjectSidecarDone      = "done" + injectSidecar
+	InjectContainerPos     = "position" + injectSidecar
+	ContainerPos           = "container"
+	InitContainerPos       = "initContainer"
 	App                    = "app"
 )

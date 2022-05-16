@@ -37,6 +37,16 @@ func InjectCacheDirEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectCacheDir)
 }
 
+func IsInjectToInitContainer(infos map[string]string) (match bool) {
+	for key, value := range infos {
+		if key == common.InjectContainerPos && value == common.InitContainerPos {
+			match = true
+			break
+		}
+	}
+	return
+}
+
 func enabled(infos map[string]string, name string) (match bool) {
 	for key, value := range infos {
 		if key == name && value == common.True {

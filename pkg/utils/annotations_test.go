@@ -245,3 +245,46 @@ func TestCacheDirInjectionEnabled(t *testing.T) {
 		}
 	}
 }
+
+func TestIsInjectToInitContainer(t *testing.T) {
+	type testCase struct {
+		name        string
+		annotations map[string]string
+		expect      bool
+	}
+
+	testcases := []testCase{
+		{
+			name: "no_injection_pos_set",
+			annotations: map[string]string{
+				common.InjectCacheDir: "true",
+			},
+			expect: false,
+		}, {
+			name: "injection_pos_set_container",
+			annotations: map[string]string{
+				common.InjectContainerPos: common.ContainerPos,
+			},
+			expect: false,
+		}, {
+			name: "injection_pos_set_initcontainer",
+			annotations: map[string]string{
+				common.InjectContainerPos: common.InitContainerPos,
+			},
+			expect: true,
+		}, {
+			name: "injection_pos_set_unknown",
+			annotations: map[string]string{
+				common.InjectContainerPos: "test",
+			},
+			expect: false,
+		},
+	}
+
+	for _, testcase := range testcases {
+		got := IsInjectToInitContainer(testcase.annotations)
+		if got != testcase.expect {
+			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
+		}
+	}
+}
