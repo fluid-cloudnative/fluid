@@ -2,6 +2,15 @@
 fullnameOverride: juicefs
 edition: community
 
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
 ##
 ## Example:
 ##   - key: "toleration=key"
@@ -17,8 +26,8 @@ tieredstore:
   path: /dev/shm
 
 # Docker Image
-image: juicedata/juicefs-csi-driver
-imageTag: v0.11.0
+image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
+imageTag: v1.0.0-beta3
 imagePullPolicy: IfNotPresent
 
 ## WORKER ##
