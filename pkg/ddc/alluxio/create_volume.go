@@ -58,7 +58,7 @@ func (e *AlluxioEngine) createFusePersistentVolume() (err error) {
 	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
 		runtimeInfo,
 		e.getMountPoint(),
-		common.ALLUXIO_MOUNT_TYPE,
+		common.AlluxioMountType,
 		e.Log)
 
 }

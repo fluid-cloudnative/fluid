@@ -32,7 +32,7 @@ import (
 // setup the cache master
 func (e *AlluxioEngine) setupMasterInternal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/" + common.ALLUXIO_CHART
+		chartName = utils.GetChartsDirectory() + "/" + common.AlluxioChart
 	)
 
 	runtime, err := e.getRuntime()
