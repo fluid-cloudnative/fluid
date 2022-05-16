@@ -860,7 +860,7 @@ func TestParseRuntimeImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
-			os.Setenv(common.ALLUXIO_RUNTIME_IMAGE_ENV, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226")
+			os.Setenv(common.AlluxioRuntimeImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226")
 			got, got1, got2 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseRuntimeImage() got = %v, want %v", got, tt.want)
@@ -914,7 +914,7 @@ func TestParseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
-			os.Setenv(common.ALLUXIO_FUSE_IMAGE_ENV, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
+			os.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseFuseImage() got = %v, want %v", got, tt.want)

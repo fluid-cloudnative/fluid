@@ -131,7 +131,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 		log.Info("bounded runtime with Accelerate Category is not found on the target dataset", "targetDataset", targetDataset)
 	}
 	switch boundedRuntime.Type {
-	case common.ALLUXIO_RUNTIME:
+	case common.AlluxioRuntime:
 		podName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 		containerName := "alluxio-master"
 		fileUtils := operations.NewAlluxioFileUtils(podName, containerName, targetDataset.Namespace, ctx.Log)
@@ -221,7 +221,7 @@ func (r *DataBackupReconcilerImplement) reconcileExecutingDataBackup(ctx reconci
 	} else {
 		var err error
 		switch boundedRuntime.Type {
-		case common.ALLUXIO_RUNTIME:
+		case common.AlluxioRuntime:
 			execPodName := fmt.Sprintf("%s-master-0", targetDataset.Name)
 			containerName := "alluxio-master"
 			fileUtils := operations.NewAlluxioFileUtils(execPodName, containerName, targetDataset.Namespace, ctx.Log)
@@ -365,10 +365,10 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 
 	var imageName, imageTag, javaEnv, runtimeType, imageEnv, defaultImage string
 	switch boundedRuntime.Type {
-	case common.ALLUXIO_RUNTIME:
-		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, common.ALLUXIO_RUNTIME, databackup.Namespace)
+	case common.AlluxioRuntime:
+		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, common.AlluxioRuntime, databackup.Namespace)
 		javaEnv = "-Dalluxio.master.hostname=" + ip + " -Dalluxio.master.rpc.port=" + strconv.Itoa(int(rpcPort))
-		runtimeType = common.ALLUXIO_RUNTIME
+		runtimeType = common.AlluxioRuntime
 	case common.GooseFSRuntime:
 		imageName, imageTag = docker.GetWorkerImage(r.Client, databackup.Spec.Dataset, common.GooseFSRuntime, databackup.Namespace)
 		javaEnv = "-Dgoosefs.master.hostname=" + ip + " -Dgoosefs.master.rpc.port=" + strconv.Itoa(int(rpcPort))
@@ -382,9 +382,9 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	if len(imageName) == 0 {
-		if runtimeType == common.ALLUXIO_RUNTIME {
-			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
-			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
+		if runtimeType == common.AlluxioRuntime {
+			imageEnv = common.AlluxioRuntimeImageEnv
+			defaultImage = common.DefaultAlluxioRuntimeImage
 		} else if runtimeType == common.GooseFSRuntime {
 			imageEnv = common.GooseFSRuntimeImageEnv
 			defaultImage = common.DefaultGooseFSRuntimeImage
@@ -402,9 +402,9 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	}
 
 	if len(imageTag) == 0 {
-		if runtimeType == common.ALLUXIO_RUNTIME {
-			imageEnv = common.ALLUXIO_RUNTIME_IMAGE_ENV
-			defaultImage = common.DEFAULT_ALLUXIO_RUNTIME_IMAGE
+		if runtimeType == common.AlluxioRuntime {
+			imageEnv = common.AlluxioRuntimeImageEnv
+			defaultImage = common.DefaultAlluxioRuntimeImage
 		} else if runtimeType == common.GooseFSRuntime {
 			imageEnv = common.GooseFSRuntimeImageEnv
 			defaultImage = common.DefaultGooseFSRuntimeImage
@@ -483,7 +483,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	imageTag = runtime.Spec.InitUsers.ImageTag
 	imagePullPolicy := runtime.Spec.InitUsers.ImagePullPolicy
 
-	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, imageTag, imagePullPolicy, common.DEFAULT_INIT_IMAGE_ENV)
+	dataBackupValue.InitUsers.Image, dataBackupValue.InitUsers.ImageTag, dataBackupValue.InitUsers.ImagePullPolicy = docker.ParseInitImage(image, imageTag, imagePullPolicy, common.DefaultInitImageEnv)
 
 	data, err := yaml.Marshal(dataBackupValue)
 	if err != nil {

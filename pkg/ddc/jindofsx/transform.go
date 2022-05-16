@@ -18,11 +18,12 @@ package jindofsx
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -577,7 +578,7 @@ func (e *JindoFSxEngine) transformInitPortCheck(value *Jindo) {
 	value.InitPortCheck.Enabled = true
 
 	// Always use the default init image defined in env
-	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DEFAULT_INIT_IMAGE_ENV)
+	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DefaultInitImageEnv)
 
 	// Inject ports to be checked to a init container which reports the usage status of the ports for easier debugging.
 	// The jindo master container will always start even when some of the ports is in use.

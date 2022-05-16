@@ -623,7 +623,7 @@ func (e *JindoEngine) transformInitPortCheck(value *Jindo) error {
 	value.InitPortCheck.Enabled = true
 
 	// Always use the default init image defined in env
-	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DEFAULT_INIT_IMAGE_ENV)
+	value.InitPortCheck.Image, value.InitPortCheck.ImageTag, value.InitPortCheck.ImagePullPolicy = docker.ParseInitImage("", "", "", common.DefaultInitImageEnv)
 
 	// Inject ports to be checked to a init container which reports the usage status of the ports for easier debugging.
 	// The jindo master container will always start even when some of the ports is in use.

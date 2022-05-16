@@ -49,7 +49,7 @@ func TestGetFuseMountInContainer(t *testing.T) {
 			},
 			want: "/jfs/jindofs-fuse",
 		}, {
-			mountType: common.ALLUXIO_MOUNT_TYPE,
+			mountType: common.AlluxioMountType,
 			container: corev1.Container{
 				VolumeMounts: []corev1.VolumeMount{
 					{

@@ -18,6 +18,10 @@ package alluxio
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -27,10 +31,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
-	"os"
-	"strings"
 )
 
 // CreateDataLoadJob creates the job to load data
@@ -55,7 +56,7 @@ func (e *AlluxioEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.ALLUXIO_RUNTIME
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.AlluxioRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -78,9 +79,9 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "alluxio", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
-		imageName = docker.GetImageRepoFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		imageName = docker.GetImageRepoFromEnv(common.AlluxioRuntimeImageEnv)
 		if len(imageName) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			defaultImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(defaultImageInfo) < 1 {
 				panic("invalid default dataload image!")
 			} else {
@@ -90,9 +91,9 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	}
 
 	if len(imageTag) == 0 {
-		imageTag = docker.GetImageTagFromEnv(common.ALLUXIO_RUNTIME_IMAGE_ENV)
+		imageTag = docker.GetImageTagFromEnv(common.AlluxioRuntimeImageEnv)
 		if len(imageTag) == 0 {
-			defaultImageInfo := strings.Split(common.DEFAULT_ALLUXIO_RUNTIME_IMAGE, ":")
+			defaultImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(defaultImageInfo) < 2 {
 				panic("invalid default dataload image!")
 			} else {
