@@ -140,6 +140,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
+	log.V(1).Info("Inject application", "namespacedName", namespacedName, "kind", kind)
 	privileged := true
 
 	pods, err := application.GetPodSpecs()
