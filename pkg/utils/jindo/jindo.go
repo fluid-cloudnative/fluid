@@ -32,7 +32,7 @@ const (
 // GetRuntimeType gets the runtime type for Jindo
 func GetRuntimeType() (engine string) {
 	engine = jindofsxEngine
-	if env := os.Getenv(engineTypeFromEnv); env == jindofsxEngine {
+	if env := os.Getenv(engineTypeFromEnv); env == jindoEngine {
 		engine = env
 	}
 	return
