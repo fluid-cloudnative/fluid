@@ -186,7 +186,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			continue
 		}
 
-		// TODO support s3 and cos storage
+		// TODO support cos storage
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
 			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
 			rm := re.FindStringSubmatch(mount.MountPoint)
@@ -212,6 +212,49 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 				propertiesFileStore["jindofsx.oss.bucket."+bucketName+".data.lake.storage.enable"] = "true"
 			}
 		}
+
+		// support s3
+		if strings.HasPrefix(mount.MountPoint, "s3://") {
+			if mount.Options["fs.s3.accessKeyId"] != "" {
+				propertiesFileStore["jindofsx.s3.accessKeyId"] = mount.Options["fs.s3.accessKeyId"]
+			}
+			if mount.Options["fs.s3.accessKeySecret"] != "" {
+				propertiesFileStore["jindofsx.s3.accessKeySecret"] = mount.Options["fs.s3.accessKeySecret"]
+			}
+			if mount.Options["fs.s3.endpoint"] != "" {
+				propertiesFileStore["jindofsx.s3.endpoint"] = mount.Options["fs.s3.endpoint"]
+			}
+			if mount.Options["fs.s3.region"] != "" {
+				propertiesFileStore["jindofsx.s3.region"] = mount.Options["fs.s3.region"]
+			}
+		}
+
+		// support cos
+		if strings.HasPrefix(mount.MountPoint, "cos://") {
+			if mount.Options["fs.cos.accessKeyId"] != "" {
+				propertiesFileStore["jindofsx.cos.accessKeyId"] = mount.Options["fs.cos.accessKeyId"]
+			}
+			if mount.Options["fs.cos.accessKeySecret"] != "" {
+				propertiesFileStore["jindofsx.cos.accessKeySecret"] = mount.Options["fs.cos.accessKeySecret"]
+			}
+			if mount.Options["fs.cos.endpoint"] != "" {
+				propertiesFileStore["jindofsx.cos.endpoint"] = mount.Options["fs.cos.endpoint"]
+			}
+		}
+
+		// support obs
+		if strings.HasPrefix(mount.MountPoint, "obs://") {
+			if mount.Options["fs.obs.accessKeyId"] != "" {
+				propertiesFileStore["jindofsx.obs.accessKeyId"] = mount.Options["fs.obs.accessKeyId"]
+			}
+			if mount.Options["fs.obs.accessKeySecret"] != "" {
+				propertiesFileStore["jindofsx.obs.accessKeySecret"] = mount.Options["fs.obs.accessKeySecret"]
+			}
+			if mount.Options["fs.obs.endpoint"] != "" {
+				propertiesFileStore["jindofsx.obs.endpoint"] = mount.Options["fs.obs.endpoint"]
+			}
+		}
+
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
@@ -230,6 +273,24 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			}
 			if key == "fs.oss.accessKeySecret" {
 				propertiesFileStore["jindofsx.oss.accessKeySecret"] = string(value)
+			}
+			if key == "fs.s3.accessKeyId" {
+				propertiesFileStore["jindofsx.s3.accessKeyId"] = string(value)
+			}
+			if key == "fs.s3.accessKeySecret" {
+				propertiesFileStore["jindofsx.s3.accessKeySecret"] = string(value)
+			}
+			if key == "fs.cos.accessKeyId" {
+				propertiesFileStore["jindofsx.cos.accessKeyId"] = string(value)
+			}
+			if key == "fs.cos.accessKeySecret" {
+				propertiesFileStore["jindofsx.cos.accessKeySecret"] = string(value)
+			}
+			if key == "fs.obs.accessKeyId" {
+				propertiesFileStore["jindofsx.obs.accessKeyId"] = string(value)
+			}
+			if key == "fs.obs.accessKeySecret" {
+				propertiesFileStore["jindofsx.obs.accessKeySecret"] = string(value)
 			}
 			e.Log.Info("Get Credential From Secret Successfully")
 		}
@@ -398,7 +459,11 @@ func (e *JindoFSxEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, 
 	if len(runtime.Spec.LogConfig) > 0 {
 		value.LogConfig = runtime.Spec.LogConfig
 	} else {
-		value.LogConfig = map[string]string{}
+		properties := map[string]string{
+			"logger.sync":    "false",
+			"logger.verbose": "0",
+		}
+		value.LogConfig = properties
 	}
 }
 
@@ -470,7 +535,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "4.3.0"
+		defaultTag       = "4.3.1"
 		defaultDnsServer = "1.1.1.1"
 	)
 
@@ -494,7 +559,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "4.3.0"
+		defaultTag   = "4.3.1"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)

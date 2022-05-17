@@ -14,20 +14,21 @@ metadata:
 data:
   jindofsx.cfg: |
     [jindofsx-common]
-    logger.jnilogger=false
     application.report.on=true
     metric.report.on = true
     logger.dir = /tmp/jindofsx-log
-    logger.sync = true
-    logger.verbose= 99
     logger.cleanner.enable = true
     logger.consolelogger = true
+    logger.jnilogger = false
+    {{- range $key, $val := .Values.logConfig }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
     {{- range $key, $val := .Values.master.secretProperties }}
     {{ $key }} = {{ $val }}
-    {{- end}}
+    {{- end }}
     {{- range $key, $val := .Values.master.fileStoreProperties }}
     {{ $key }} = {{ $val }}
-    {{- end}}
+    {{- end }}
 
     [jindofsx-storage]
     {{- range $key, $val := .Values.worker.properties }}
@@ -37,7 +38,7 @@ data:
     [jindofsx-namespace]
     {{- range $key, $val := .Values.master.properties }}
     {{ $key }} = {{ $val }}
-    {{- end}}
+    {{- end }}
 
   core-site.xml: |
     <?xml version="1.0"?>
@@ -81,17 +82,18 @@ data:
   jindosdk.cfg: |
     [common]
     logger.dir = /tmp/fuse-log
-    logger.sync = true
     logger.consolelogger = true
     logger.level = 2
-    logger.verbose = 0
     logger.cleaner.enable = true
+    {{- range $key, $val := .Values.logConfig }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
     {{- range $key, $val := .Values.master.secretProperties }}
     {{ $key }} = {{ $val }}
-    {{- end}}
+    {{- end }}
 
     [jindosdk]
     fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
     {{- range $key, $val := .Values.fuse.properties }}
     {{ $key }} = {{ $val }}
-    {{- end}}
+    {{- end }}
