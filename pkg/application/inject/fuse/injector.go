@@ -252,7 +252,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			return out, err
 		}
 
-		// 5.Add sidecar as the first container for containers
+		// 5. Add sidecar as the first container for containers
 		containers, err := pod.GetContainers()
 		if err != nil {
 			return out, err
@@ -281,7 +281,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			}
 		}
 
-		// 6.Add sidecar as the first container for initcontainers
+		// 6. Add sidecar as the first container for initcontainers
 		initContainers, err := pod.GetInitContainers()
 		if err != nil {
 			return out, err

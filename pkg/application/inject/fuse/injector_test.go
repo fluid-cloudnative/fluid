@@ -970,9 +970,9 @@ func TestInjectPod(t *testing.T) {
 							Name:  "fuse-sidecar-pvc-name",
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:             "fuse-sidecar",
-									MountPath:        "/data",
-									MountPropagation: &mountPropagationHostToContainer,
+									Name:      "fuse-sidecar",
+									MountPath: "/data",
+									// MountPropagation: &mountPropagationHostToContainer,
 								},
 							},
 						},
