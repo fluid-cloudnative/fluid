@@ -63,6 +63,7 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string, f
 	}
 
 	fuseContainer := template.FuseContainer
+	fuseContainer.Name = fuseContainerName
 	for oldName, newName := range volumeNamesConflict {
 		for i, volumeMount := range fuseContainer.VolumeMounts {
 			if volumeMount.Name == oldName {

@@ -206,7 +206,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
-							Name: common.FuseContainerName,
+							Name: common.InitFuseContainerName,
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
@@ -467,7 +467,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
-							Name: common.FuseContainerName,
+							Name: common.InitFuseContainerName,
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
@@ -783,7 +783,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
-							Name: common.FuseContainerName,
+							Name: common.InitFuseContainerName,
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
