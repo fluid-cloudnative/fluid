@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string,
+func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string, fuseContainerName string,
 	containers []corev1.Container, privileged bool,
 	datasetVolumeNames []string,
 	template *common.FuseInjectionTemplate,
@@ -35,12 +35,12 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string,
 	mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
 	for _, container := range containers {
 		// Skip injection for injected container
-		if container.Name == common.FuseContainerName {
+		if container.Name == fuseContainerName {
 			warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
-				keyName, common.FuseContainerName)
+				keyName, fuseContainerName)
 			if len(kind) != 0 {
 				warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
-					kind, keyName, common.FuseContainerName)
+					kind, keyName, fuseContainerName)
 			}
 			log.Info(warningStr)
 			break

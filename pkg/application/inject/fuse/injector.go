@@ -259,7 +259,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		containers, injectFuseContainer := s.mutateContainers(namespacedName,
-			kind,
+			kind, common.FuseContainerName,
 			containers,
 			privileged,
 			datasetVolumeNames,
@@ -288,7 +288,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		initContainers, injectFuseContainer = s.mutateContainers(namespacedName,
-			kind,
+			kind, common.InitFuseContainerName,
 			initContainers,
 			privileged,
 			datasetVolumeNames,
