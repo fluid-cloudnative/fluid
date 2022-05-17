@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string, fuseContainerName string,
+func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerName string,
 	containers []corev1.Container, privileged bool,
 	datasetVolumeNames []string,
 	template *common.FuseInjectionTemplate,
@@ -38,10 +38,6 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, kind string, f
 		if container.Name == fuseContainerName {
 			warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
 				keyName, fuseContainerName)
-			if len(kind) != 0 {
-				warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
-					kind, keyName, fuseContainerName)
-			}
 			log.Info(warningStr)
 			break
 		}
