@@ -140,6 +140,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
+	privileged := true
 
 	pods, err := application.GetPodSpecs()
 	if err != nil {
@@ -158,7 +159,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		// 1. check if the pod spec has fluid volume claim
-		injectFuseContainer := true
 		enableCacheDir := utils.InjectCacheDirEnabled(metaObj.Labels)
 		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
 		if err != nil {
@@ -252,53 +252,62 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			return out, err
 		}
 
-		// 5.Add sidecar as the first container
+		// 5.Add sidecar as the first container for containers
 		containers, err := pod.GetContainers()
 		if err != nil {
 			return out, err
 		}
 
-		// Skip injection for injected container
-		for _, c := range containers {
-			if c.Name == common.FuseContainerName {
-				warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
-					namespacedName, common.FuseContainerName)
-				if len(kind) != 0 {
-					warningStr = fmt.Sprintf("===> Skipping injection because Kind %s: %v has injected %q sidecar already\n",
-						kind, namespacedName, common.FuseContainerName)
-				}
-				log.Info(warningStr)
-				injectFuseContainer = false
-				break
-			}
-		}
-		fuseContainer := template.FuseContainer
-		for oldName, newName := range volumeNamesConflict {
-			for i, volumeMount := range fuseContainer.VolumeMounts {
-				if volumeMount.Name == oldName {
-					fuseContainer.VolumeMounts[i].Name = newName
-				}
-			}
-		}
-		if injectFuseContainer {
-			containers = append([]corev1.Container{fuseContainer}, containers...)
-		}
-
-		// 6. Set mountPropagationHostToContainer to the dataset volume mount point
-		mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
-		for _, container := range containers {
-			if container.Name != common.FuseContainerName {
-				for i, volumeMount := range container.VolumeMounts {
-					if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
-						container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
-					}
-				}
+		containers, injectFuseContainer := s.mutateContainers(namespacedName,
+			kind,
+			containers,
+			privileged,
+			datasetVolumeNames,
+			template,
+			volumeNamesConflict)
+		if !injectFuseContainer {
+			log.V(1).Info("skipping injection because no volume mount for dataset",
+				"podName", namespacedName,
+				"pvcName", pvcName,
+				"container", containers)
+		} else {
+			log.V(1).Info("after injection",
+				"podName", namespacedName,
+				"pvcName", pvcName,
+				"containers", containers)
+			err = pod.SetContainers(containers)
+			if err != nil {
+				return out, err
 			}
 		}
 
-		err = pod.SetContainers(containers)
+		// 6.Add sidecar as the first container for initcontainers
+		initContainers, err := pod.GetInitContainers()
 		if err != nil {
 			return out, err
+		}
+
+		initContainers, injectFuseContainer = s.mutateContainers(namespacedName,
+			kind,
+			initContainers,
+			privileged,
+			datasetVolumeNames,
+			template,
+			volumeNamesConflict)
+		if !injectFuseContainer {
+			log.V(1).Info("skipping injection because no volume mount for dataset",
+				"podName", namespacedName,
+				"pvcName", pvcName,
+				"initContainers", initContainers)
+		} else {
+			log.V(1).Info("after injection",
+				"podName", namespacedName,
+				"pvcName", pvcName,
+				"initContainers", initContainers)
+			err = pod.SetInitContainers(initContainers)
+			if err != nil {
+				return out, err
+			}
 		}
 
 		// 7. Set the injection phase done to avoid re-injection

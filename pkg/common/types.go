@@ -171,9 +171,13 @@ type FluidObject interface {
 
 	SetVolumes(volumes []corev1.Volume) (err error)
 
+	GetInitContainers() (containers []corev1.Container, err error)
+
 	GetContainers() (containers []corev1.Container, err error)
 
 	SetContainers(containers []corev1.Container) (err error)
+
+	SetInitContainers(containers []corev1.Container) (err error)
 
 	GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error)
 
