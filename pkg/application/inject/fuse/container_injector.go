@@ -45,9 +45,7 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerN
 		// Set mountPropagationHostToContainer to the dataset volume mount point, and set Injection true
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
-				if privileged {
-					container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
-				}
+				container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
 				injectFuseContainer = true
 			}
 		}
