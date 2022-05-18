@@ -24,15 +24,15 @@ const (
 
 	jindofsxEngine = "jindofsx"
 
-	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.0"
+	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.1"
 
 	defaultJindofsRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
 )
 
 // GetRuntimeType gets the runtime type for Jindo
 func GetRuntimeType() (engine string) {
-	engine = jindoEngine
-	if env := os.Getenv(engineTypeFromEnv); env == jindofsxEngine {
+	engine = jindofsxEngine
+	if env := os.Getenv(engineTypeFromEnv); env == jindoEngine {
 		engine = env
 	}
 	return
