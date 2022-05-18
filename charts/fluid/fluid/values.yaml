@@ -51,6 +51,7 @@ runtime:
       portCheck:
         enabled: false
       image: fluidcloudnative/init-users:v0.8.0-2f36393
+    enginetype: jindofsx
   goosefs:
     runtimeWorkers: 3
     portRange: 26000-32000
