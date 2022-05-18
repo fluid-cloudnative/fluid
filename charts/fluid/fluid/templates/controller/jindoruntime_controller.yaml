@@ -71,6 +71,10 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- if .Values.runtime.jindo.enginetype }}
+          - name: JINDO_ENGINE_TYPE
+            value: {{ .Values.runtime.jindo.enginetype | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics
