@@ -19,11 +19,14 @@ package juicefs
 import (
 	"context"
 	"fmt"
-
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
+	"path/filepath"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
@@ -42,10 +45,6 @@ func (j *JuiceFSEngine) Shutdown() (err error) {
 				"retry times", j.retryShutdown)
 			return
 		}
-	}
-
-	if j.MetadataSyncDoneCh != nil {
-		close(j.MetadataSyncDoneCh)
 	}
 
 	_, err = j.destroyWorkers(-1)
@@ -107,15 +106,62 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 		}
 	}
 
+	if len(pods) == 0 {
+		j.Log.Info("no worker pod of runtime %s namespace %s", runtime.Name, runtime.Namespace)
+		return
+	}
+	uuid, err := j.getUUID(pods[0], common.JuiceFSWorkerContainer)
+	if err != nil {
+		return err
+	}
 	for _, pod := range pods {
 		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
 
-		err := fileUtils.DeleteDir(cacheDir)
+		j.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDir)
+		cacheDirToBeDeleted := filepath.Join(cacheDir, uuid, "raw/chunks")
+		err := fileUtils.DeleteDir(cacheDirToBeDeleted)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid string, err error) {
+	cm, err := j.GetValuesConfigMap()
+	if err != nil {
+		return
+	}
+	data := []byte(cm.Data["data"])
+	fuseValues := make(map[string]interface{})
+	err = yaml.Unmarshal(data, &fuseValues)
+	if err != nil {
+		return
+	}
+
+	edition := fuseValues["edition"].(string)
+	source := fuseValues["source"].(string)
+	if edition == "enterprise" {
+		uuid = source
+		return
+	}
+	fileUtils := operations.NewJuiceFileUtils(pod.Name, containerName, j.namespace, j.Log)
+
+	j.Log.Info("Get status in pod", "pod", pod.Name, "source", source)
+	status, err := fileUtils.GetStatus(source)
+	if err != nil {
+		return
+	}
+	matchExp := regexp.MustCompile(`"UUID": "(.*)"`)
+	idStr := matchExp.FindString(status)
+	idStrs := strings.Split(idStr, "\"")
+	if len(idStrs) < 4 {
+		err = fmt.Errorf("parse uuid error, idStr: %s", idStr)
+		return
+	}
+
+	uuid = idStrs[3]
+	return
 }
 
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted

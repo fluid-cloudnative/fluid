@@ -46,6 +46,40 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+const (
+	CommonStatus = `{
+  "Setting": {
+    "Name": "zww-juicefs",
+    "UUID": "73416457-6f3f-490b-abb6-cbc1f837944e",
+    "Storage": "minio",
+    "Bucket": "http://10.98.166.242:9000/zww-juicefs",
+    "AccessKey": "minioadmin",
+    "SecretKey": "removed",
+    "BlockSize": 4096,
+    "Compression": "none",
+    "Shards": 0,
+    "HashPrefix": false,
+    "Capacity": 0,
+    "Inodes": 0,
+    "KeyEncrypted": false,
+    "TrashDays": 2,
+    "MetaVersion": 0,
+    "MinClientVersion": "",
+    "MaxClientVersion": ""
+  },
+  "Sessions": [
+    {
+      "Sid": 14,
+      "Expire": "2022-02-09T10:01:50Z",
+      "Version": "1.0-dev (2022-02-09 748949ac)",
+      "HostName": "juicefs-pvc-33d9bdf3-5fb5-42fe-bf48-d3d6156b424b-createvol2dv4j",
+      "MountPoint": "/mnt/jfs",
+      "ProcessID": 20
+    }
+  ]
+}`
+)
+
 func mockRunningPodsOfDaemonSet() (pods []corev1.Pod) {
 	return []corev1.Pod{{
 		ObjectMeta: metav1.ObjectMeta{
@@ -364,8 +398,12 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			},
 		},
 	}
+	testConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-juicefs-values", Namespace: "fluid"},
+		Data:       map[string]string{"data": "{\"edition\": \"enterprise\", \"source\": \"test\"}"},
+	}
 
-	testObjs := []runtime.Object{testRuntime.DeepCopy(), testRuntimeWithTiredStore.DeepCopy()}
+	testObjs := []runtime.Object{testRuntime.DeepCopy(), testRuntimeWithTiredStore.DeepCopy(), testConfigMap.DeepCopy()}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	Convey("Test CleanupCache ", t, func() {
@@ -384,11 +422,12 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			defer patch2.Reset()
 
 			e := &JuiceFSEngine{
-				name:      "test",
-				namespace: "fluid",
-				Client:    client,
-				runtime:   testRuntime,
-				Log:       fake.NullLogger(),
+				name:        "test",
+				namespace:   "fluid",
+				Client:      client,
+				runtime:     testRuntime,
+				runtimeType: common.JuiceFSRuntime,
+				Log:         fake.NullLogger(),
 			}
 
 			got := e.cleanupCache()
@@ -483,6 +522,87 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldNotBeNil)
 		})
 	})
+}
+
+func TestJuiceFSEngine_getUUID_community(t *testing.T) {
+	testConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-juicefs-values", Namespace: "fluid"},
+		Data:       map[string]string{"data": "{\"edition\": \"community\", \"source\": \"test\"}"},
+	}
+
+	testObjs := []runtime.Object{testConfigMap.DeepCopy()}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	ExecCommon := func(a operations.JuiceFileUtils, source string) (status string, err error) {
+		return CommonStatus, nil
+	}
+	ExecErr := func(a operations.JuiceFileUtils, source string) (status string, err error) {
+		return "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(operations.JuiceFileUtils.GetStatus)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+	pod := corev1.Pod{}
+	e := JuiceFSEngine{
+		name:        "test",
+		namespace:   "fluid",
+		runtimeType: "juicefs",
+		Log:         fake.NullLogger(),
+		Client:      client,
+	}
+
+	err := gohook.Hook(operations.JuiceFileUtils.GetStatus, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, err = e.getUUID(pod, common.JuiceFSWorkerContainer)
+	if err == nil {
+		t.Error("getUUID failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(operations.JuiceFileUtils.GetStatus, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	got, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
+	if err != nil {
+		t.Errorf("getUUID failure, want nil, got err: %v", err)
+	}
+	if got != "73416457-6f3f-490b-abb6-cbc1f837944e" {
+		t.Errorf("getUUID err, got: %v", got)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFSEngine_getUUID_enterprise(t *testing.T) {
+	testConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-juicefs-values", Namespace: "fluid"},
+		Data:       map[string]string{"data": "{\"edition\": \"enterprise\", \"source\": \"test\"}"},
+	}
+
+	testObjs := []runtime.Object{testConfigMap.DeepCopy()}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	pod := corev1.Pod{}
+	e := JuiceFSEngine{
+		name:        "test",
+		namespace:   "fluid",
+		runtimeType: "juicefs",
+		Log:         fake.NullLogger(),
+		Client:      client,
+	}
+
+	got, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
+	if err != nil {
+		t.Errorf("getUUID failure, want nil, got err: %v", err)
+	}
+	if got != "test" {
+		t.Errorf("getUUID err, got: %v", got)
+	}
 }
 
 func TestJuiceFSEngine_cleanAll(t *testing.T) {
