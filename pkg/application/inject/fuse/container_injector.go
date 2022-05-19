@@ -60,6 +60,9 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerN
 	fuseContainer.Name = fuseContainerName
 	if fuseContainerName == common.InitFuseContainerName {
 		fuseContainer.Lifecycle = nil
+		// TODO(zhihao): for init container, it will inject a customized command
+		fuseContainer.Command = []string{"sleep"}
+		fuseContainer.Args = []string{"2s"}
 	}
 	for oldName, newName := range volumeNamesConflict {
 		for i, volumeMount := range fuseContainer.VolumeMounts {
