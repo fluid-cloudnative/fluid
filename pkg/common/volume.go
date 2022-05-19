@@ -19,5 +19,7 @@ var (
 
 	FuseContainerName = "fluid-fuse"
 
+	InitFuseContainerName = "init-fluid-fuse"
+
 	FuseMountEnv = "FLUID_FUSE_MOUNTPOINT"
 )

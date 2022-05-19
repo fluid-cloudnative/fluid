@@ -88,10 +88,24 @@ func (o *PodObject) SetContainers(containers []corev1.Container) (err error) {
 	return
 }
 
+func (o *PodObject) GetInitContainers() (containers []corev1.Container, err error) {
+	containers = o.pod.Spec.InitContainers
+	return
+}
+
+func (o *PodObject) SetInitContainers(containers []corev1.Container) (err error) {
+	o.pod.Spec.InitContainers = containers
+	return
+}
+
 func (o *PodObject) GetVolumeMounts() (volumeMounts []corev1.VolumeMount, err error) {
 	volumeMounts = []corev1.VolumeMount{}
 	for _, container := range o.pod.Spec.Containers {
 		volumeMounts = append(volumeMounts, container.VolumeMounts...)
+	}
+
+	for _, initContainer := range o.pod.Spec.InitContainers {
+		volumeMounts = append(volumeMounts, initContainer.VolumeMounts...)
 	}
 
 	return
