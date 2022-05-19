@@ -210,20 +210,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
-							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.LifecycleHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											// "/check-mount.sh",
-											// "/jfs",
-											// "jindo",
-											"bash",
-											"-c",
-											"time /check-mount.sh /jfs jindo >> /proc/1/fd/1",
-										},
-									},
-								},
-							},
 							Command: []string{"/entrypoint.sh"},
 							Image:   "duplicate-pvc-name",
 							SecurityContext: &corev1.SecurityContext{
@@ -490,19 +476,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
-								},
-							}, Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.LifecycleHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											// "/check-mount.sh",
-											// "/jfs",
-											// "jindo",
-											"bash",
-											"-c",
-											"time /check-mount.sh /jfs jindo >> /proc/1/fd/1",
-										},
-									},
 								},
 							},
 						}, {
@@ -786,20 +759,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							Name: common.InitFuseContainerName,
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							},
-							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.LifecycleHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											// "/check-mount.sh",
-											// "/jfs",
-											// "jindo",
-											"bash",
-											"-c",
-											"time /check-mount.sh /jfs/jindofs-fuse jindo >> /proc/1/fd/1",
-										},
-									},
-								},
 							},
 							Command: []string{"/entrypoint.sh"},
 							Image:   "customizedenv-pvc-name",
