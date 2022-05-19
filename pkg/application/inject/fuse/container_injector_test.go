@@ -207,10 +207,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name: common.InitFuseContainerName,
-							Args: []string{
-								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							},
-							Command: []string{"/entrypoint.sh"},
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
 							Image:   "duplicate-pvc-name",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &bTrue,
@@ -454,10 +456,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name: common.InitFuseContainerName,
-							Args: []string{
-								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							},
-							Command: []string{"/entrypoint.sh"},
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
 							Image:   "test",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &bTrue,
@@ -757,10 +761,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name: common.InitFuseContainerName,
-							Args: []string{
-								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							},
-							Command: []string{"/entrypoint.sh"},
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
 							Image:   "customizedenv-pvc-name",
 							Env: []corev1.EnvVar{
 								{
