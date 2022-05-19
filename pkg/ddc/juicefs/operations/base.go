@@ -187,7 +187,7 @@ func (j JuiceFileUtils) Mkdir(juiceSubPath string) (err error) {
 // DeleteDir delete dir in pod
 func (j JuiceFileUtils) DeleteDir(dir string) (err error) {
 	var (
-		command = []string{"rm", "-rf", dir + "/*"}
+		command = []string{"rm", "-rf", dir}
 		stdout  string
 		stderr  string
 	)
@@ -197,6 +197,23 @@ func (j JuiceFileUtils) DeleteDir(dir string) (err error) {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
+	return
+}
+
+// GetStatus get status of volume
+func (j JuiceFileUtils) GetStatus(source string) (status string, err error) {
+	var (
+		command = []string{"/bin/sh", "-c", fmt.Sprintf("juicefs status %s", source)}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = j.exec(command, true)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	status = stdout
 	return
 }
 
@@ -304,7 +321,7 @@ var (
 )
 
 // QueryMetaDataInfoIntoFile queries the metadata info file.
-func (a JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
+func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
 	line := ""
 	switch key {
 	case DatasetName:
@@ -316,7 +333,7 @@ func (a JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 	case FileNum:
 		line = "4p"
 	default:
-		a.log.Error(errors.New("the key not in  metadatafile"), "key", key)
+		j.log.Error(errors.New("the key not in  metadatafile"), "key", key)
 	}
 	var (
 		str     = "sed -n '" + line + "' " + filename
@@ -324,7 +341,7 @@ func (a JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 		stdout  string
 		stderr  string
 	)
-	stdout, stderr, err = a.exec(command, false)
+	stdout, stderr, err = j.exec(command, false)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with  expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 	} else {
