@@ -415,11 +415,15 @@ func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, 
 func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
-		"fs.jindofsx.request.user":          "root",
-		"fs.jindofsx.data.cache.enable":     "true",
-		"fs.jindofsx.meta.cache.enable":     "false",
-		"fs.jindofsx.tmp.data.dir":          "/tmp",
-		"fs.jindofsx.client.metrics.enable": "true",
+		"fs.jindofsx.request.user":           "root",
+		"fs.jindofsx.data.cache.enable":      "true",
+		"fs.jindofsx.meta.cache.enable":      "true",
+		"fs.jindofsx.tmp.data.dir":           "/tmp",
+		"fs.jindofsx.client.metrics.enable":  "true",
+		"fs.oss.download.queue.size":         "16",
+		"fs.oss.download.thread.concurrency": "32",
+		"fs.s3.download.queue.size":          "16",
+		"fs.s3.download.thread.concurrency":  "32",
 	}
 
 	for k, v := range value.Master.FileStoreProperties {
@@ -523,8 +527,30 @@ func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string) map[strin
 
 func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset) []string {
 	fuseArgs := []string{}
+	readOnly := false
+	runtimeInfo := e.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			e.Log.Info("Error:", "err", err)
+		}
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == corev1.ReadOnlyMany {
+					readOnly = true
+				}
+			}
+		}
+	}
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		fuseArgs = runtime.Spec.Fuse.Args
+	} else {
+		fuseArgs = append(fuseArgs, "-okernel_cache")
+		if readOnly {
+			fuseArgs = append(fuseArgs, "-oro")
+			fuseArgs = append(fuseArgs, "-oattr_timeout=7200")
+			fuseArgs = append(fuseArgs, "-oentry_timeout=7200")
+		}
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
