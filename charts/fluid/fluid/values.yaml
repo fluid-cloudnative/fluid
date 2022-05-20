@@ -41,6 +41,7 @@ runtime:
     runtimeWorkers: 3
     portRange: 18000-19999
     enabled: false
+    engine: jindofsx
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0
     fuse:
