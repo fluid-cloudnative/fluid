@@ -46,7 +46,7 @@ spec:
       enableServiceLinks: false
       {{- if .Values.fuse.hostNetwork }}
       hostNetwork: {{ .Values.fuse.hostNetwork }}
-      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
       hostPID: {{ .Values.fuse.hostPID }}
       nodeSelector:

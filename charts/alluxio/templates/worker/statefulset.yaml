@@ -48,7 +48,7 @@ spec:
       enableServiceLinks: false
       {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ $hostNetwork }}
-      dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
+      dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
       hostPID: {{ .Values.worker.hostPID }}
       securityContext:
