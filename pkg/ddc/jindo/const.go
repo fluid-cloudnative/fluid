@@ -42,7 +42,7 @@ const (
 	DEFAULT_WORKER_RPC_PORT = 6101
 	DEFAULT_RAFT_RPC_PORT   = 8103
 
-	POD_ROLE_TYPE = "role"
+	PodRoleType = "role"
 
 	WOKRER_POD_ROLE = "jindo-worker"
 

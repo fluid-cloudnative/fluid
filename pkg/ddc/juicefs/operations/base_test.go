@@ -28,9 +28,40 @@ import (
 )
 
 const (
-	NOT_EXIST = "not-exist"
-	OTHER_ERR = "other-err"
-	FINE      = "fine"
+	NotExist     = "not-exist"
+	OtherErr     = "other-err"
+	FINE         = "fine"
+	CommonStatus = `{
+  "Setting": {
+    "Name": "zww-juicefs",
+    "UUID": "73416457-6f3f-490b-abb6-cbc1f837944e",
+    "Storage": "minio",
+    "Bucket": "http://10.98.166.242:9000/zww-juicefs",
+    "AccessKey": "minioadmin",
+    "SecretKey": "removed",
+    "BlockSize": 4096,
+    "Compression": "none",
+    "Shards": 0,
+    "HashPrefix": false,
+    "Capacity": 0,
+    "Inodes": 0,
+    "KeyEncrypted": false,
+    "TrashDays": 2,
+    "MetaVersion": 0,
+    "MinClientVersion": "",
+    "MaxClientVersion": ""
+  },
+  "Sessions": [
+    {
+      "Sid": 14,
+      "Expire": "2022-02-09T10:01:50Z",
+      "Version": "1.0-dev (2022-02-09 748949ac)",
+      "HostName": "juicefs-pvc-33d9bdf3-5fb5-42fe-bf48-d3d6156b424b-createvol2dv4j",
+      "MountPoint": "/mnt/jfs",
+      "ProcessID": 20
+    }
+  ]
+}`
 )
 
 func TestNewJuiceFSFileUtils(t *testing.T) {
@@ -48,9 +79,9 @@ func TestNewJuiceFSFileUtils(t *testing.T) {
 
 func TestJuiceFileUtils_IsExist(t *testing.T) {
 	mockExec := func(a JuiceFileUtils, p []string, verbose bool) (stdout string, stderr string, e error) {
-		if strings.Contains(p[1], NOT_EXIST) {
+		if strings.Contains(p[1], NotExist) {
 			return "No such file or directory", "", errors.New("No such file or directory")
-		} else if strings.Contains(p[1], OTHER_ERR) {
+		} else if strings.Contains(p[1], OtherErr) {
 			return "", "", errors.New("other error")
 		} else {
 			return "", "", nil
@@ -73,8 +104,8 @@ func TestJuiceFileUtils_IsExist(t *testing.T) {
 		out   bool
 		noErr bool
 	}{
-		{NOT_EXIST, false, true},
-		{OTHER_ERR, false, false},
+		{NotExist, false, true},
+		{OtherErr, false, false},
 		{FINE, true, true},
 	}
 	for _, test := range tests {
@@ -234,6 +265,45 @@ func TestJuiceFileUtils_DeleteDir(t *testing.T) {
 	err = a.DeleteDir("")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFileUtils_GetStatus(t *testing.T) {
+	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return CommonStatus, "", nil
+	}
+	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := JuiceFileUtils{}
+	err = a.DeleteDir("")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	got, err := a.GetStatus("test")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if got != CommonStatus {
+		t.Errorf("want %s, got: %v", CommonStatus, got)
 	}
 	wrappedUnhookExec()
 }

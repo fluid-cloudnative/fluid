@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -38,6 +39,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	value = &JuiceFS{}
 
 	value.FullnameOverride = j.name
+	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
 
 	// transform the workers
 	err = j.transformWorkers(runtime, value)

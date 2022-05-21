@@ -46,7 +46,7 @@ const (
 	DEFAULT_WORKER_RPC_PORT = 6101
 	DEFAULT_RAFT_RPC_PORT   = 8103
 
-	POD_ROLE_TYPE = "role"
+	PodRoleType = "role"
 
 	WOKRER_POD_ROLE = "jindo-worker"
 
@@ -54,7 +54,7 @@ const (
 
 	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.0"
+	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.1"
 
 	ENGINE_TYPE = "jindofsx"
 

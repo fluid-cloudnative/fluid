@@ -42,6 +42,7 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*juicefs.JuiceFSEngine)(nil)
 
+	eventDriven             bool
 	metricsAddr             string
 	enableLeaderElection    bool
 	development             bool
@@ -65,6 +66,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
+	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
 }
 
 func handle() {
@@ -91,6 +93,7 @@ func handle() {
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "7857424864.data.fluid.io",
 		Port:               9443,
+		NewCache:           juicefsctl.NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start juicefsruntime manager")
@@ -105,7 +108,7 @@ func handle() {
 		ctrl.Log.WithName("juicefsctl").WithName("JuiceFSRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("JuiceFSRuntime"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
+	)).SetupWithManager(mgr, controllerOptions, eventDriven); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "JuiceFSRuntime")
 		os.Exit(1)
 	}

@@ -17,8 +17,9 @@
 package poststart
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestScriptGeneratorForFuse_getConfigmapName(t *testing.T) {
@@ -39,9 +40,9 @@ func TestScriptGeneratorForFuse_getConfigmapName(t *testing.T) {
 				name:      "test",
 				namespace: "default",
 				mountPath: "/dev",
-				mountType: common.ALLUXIO_MOUNT_TYPE,
+				mountType: common.AlluxioMountType,
 			},
-			want: "test-" + common.ALLUXIO_MOUNT_TYPE + "-" + configMapName,
+			want: "test-" + common.AlluxioMountType + "-" + configMapName,
 		},
 		{
 			name: "test-jindo",

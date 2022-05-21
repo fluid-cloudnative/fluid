@@ -127,7 +127,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 
 	var fluidRuntime client.Object
 	switch ctx.RuntimeType {
-	case common.ALLUXIO_RUNTIME:
+	case common.AlluxioRuntime:
 		fluidRuntime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JindoRuntime:
 		fluidRuntime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)

@@ -20,22 +20,19 @@ import (
 	"reflect"
 	"testing"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"gopkg.in/yaml.v3"
-	utilpointer "k8s.io/utils/pointer"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	utilpointer "k8s.io/utils/pointer"
 )
 
-func TestInjectPod(t *testing.T) {
+func TestInjectPodWithInitContainer(t *testing.T) {
 	type runtimeInfo struct {
 		name        string
 		namespace   string
@@ -101,7 +98,7 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
+					InitContainers: []corev1.Container{
 						{
 							Image: "duplicate-pvc-name",
 							Name:  "duplicate-pvc-name",
@@ -207,27 +204,15 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
+					InitContainers: []corev1.Container{
 						{
-							Name: common.FuseContainerName,
-							Args: []string{
-								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							},
-							Lifecycle: &corev1.Lifecycle{
-								PostStart: &corev1.LifecycleHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{
-											// "/check-mount.sh",
-											// "/jfs",
-											// "jindo",
-											"bash",
-											"-c",
-											"time /check-mount.sh /jfs jindo >> /proc/1/fd/1",
-										},
-									},
-								},
-							},
-							Command: []string{"/entrypoint.sh"},
+							Name: common.InitFuseContainerName,
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
 							Image:   "duplicate-pvc-name",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &bTrue,
@@ -311,7 +296,7 @@ func TestInjectPod(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "inject_pod_success",
+			name: "inject_pod_with_init_container_success",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dataset1",
@@ -327,6 +312,18 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Image: "test",
+							Name:  "test",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "dataset",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Image: "test",
@@ -456,6 +453,47 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: common.InitFuseContainerName,
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
+							Image:   "test",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bTrue,
+							}, VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "data",
+									MountPath: "/mnt/disk1",
+								}, {
+									Name:      "fuse-device",
+									MountPath: "/dev/fuse",
+								}, {
+									Name:      "jindofs-fuse-mount",
+									MountPath: "/jfs",
+								}, {
+									Name:      "check-mount",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							},
+						}, {
+							Image: "test",
+							Name:  "test",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "dataset",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name: common.FuseContainerName,
@@ -596,6 +634,18 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Image: "customizedenv-pvc-name",
+							Name:  "customizedenv-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "customizedenv",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Image: "customizedenv-pvc-name",
@@ -708,6 +758,53 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: common.InitFuseContainerName,
+							// Args: []string{
+							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							// },
+							// Command: []string{"/entrypoint.sh"},
+							Args:    []string{"2s"},
+							Command: []string{"sleep"},
+							Image:   "customizedenv-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_FUSE_MOUNTPOINT",
+									Value: "/jfs/jindofs-fuse",
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bTrue,
+							}, VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "fluid-izedenv",
+									MountPath: "/mnt/disk1",
+								}, {
+									Name:      "fuse-device",
+									MountPath: "/dev/fuse",
+								}, {
+									Name:      "jindofs-fuse-mount",
+									MountPath: "/jfs",
+								}, {
+									Name:      "check-mount",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							},
+						}, {
+							Image: "customizedenv-pvc-name",
+							Name:  "customizedenv-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "customizedenv",
+									MountPath:        "/data",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name: common.FuseContainerName,
@@ -1073,6 +1170,7 @@ func TestInjectPod(t *testing.T) {
 		}
 
 		gotContainers := out.Spec.Containers
+		gotInitContainers := out.Spec.InitContainers
 		gotVolumes := out.Spec.Volumes
 		// gotContainers := out.
 		// , gotVolumes, err := getInjectPiece(out)
@@ -1082,6 +1180,35 @@ func TestInjectPod(t *testing.T) {
 
 		wantContainers := testcase.want.Spec.Containers
 		wantVolumes := testcase.want.Spec.Volumes
+
+		wantInitContainers := testcase.want.Spec.InitContainers
+
+		gotInitContainerMap := makeContainerMap(gotInitContainers)
+		wantInitContainerMap := makeContainerMap(wantInitContainers)
+
+		if len(gotInitContainerMap) != len(wantInitContainerMap) {
+			t.Errorf("testcase %s failed, want Initcontainers length %d, Got Initcontainers length  %d", testcase.name, len(gotInitContainerMap), len(wantInitContainerMap))
+		}
+
+		for k, wantInitContainer := range wantInitContainerMap {
+			if gotInitContainer, found := gotInitContainerMap[k]; found {
+				if !reflect.DeepEqual(wantInitContainer, gotInitContainer) {
+					want, err := yaml.Marshal(wantInitContainers)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					outYaml, err := yaml.Marshal(gotInitContainers)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+				}
+			} else {
+				t.Errorf("testcase %s failed due to missing the Initcontainer %s", testcase.name, k)
+			}
+		}
 
 		gotContainerMap := makeContainerMap(gotContainers)
 		wantContainerMap := makeContainerMap(wantContainers)
@@ -1154,35 +1281,4 @@ func TestInjectPod(t *testing.T) {
 		// }
 
 	}
-}
-
-func makeContainerMap(containers []corev1.Container) (containerMap map[string]corev1.Container) {
-	containerMap = map[string]corev1.Container{}
-	for _, c := range containers {
-		containerMap[c.Name] = c
-	}
-	return
-}
-
-func makeVolumeMap(volumes []corev1.Volume) (volumeMap map[string]corev1.Volume) {
-	volumeMap = map[string]corev1.Volume{}
-	for _, v := range volumes {
-		volumeMap[v.Name] = v
-	}
-	return
-}
-
-func keys(vMap interface{}) (keys []string) {
-	switch v := vMap.(type) {
-	case map[string]corev1.Volume:
-		for k := range v {
-			keys = append(keys, k)
-		}
-	case map[string]corev1.Container:
-		for k := range v {
-			keys = append(keys, k)
-		}
-	}
-
-	return
 }
