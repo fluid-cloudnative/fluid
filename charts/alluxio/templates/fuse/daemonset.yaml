@@ -12,6 +12,7 @@
 {{ if .Values.fuse.enabled -}}
 {{- $shortCircuitEnabled := .Values.shortCircuit.enabled -}}
 {{- $needDomainSocketVolume := and $shortCircuitEnabled (eq .Values.shortCircuit.policy "uuid") }}
+{{- $fuseHostNetwork := .Values.fuse.hostNetwork }}
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -44,9 +45,9 @@ spec:
       priorityClassName: system-node-critical
       {{- end }}
       enableServiceLinks: false
-      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      hostNetwork: {{ $fuseHostNetwork }}
       hostPID: {{ .Values.fuse.hostPID }}
-      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      dnsPolicy: {{ .Values.fuse.dnsPolicy | default ($fuseHostNetwork | ternary "ClusterFirst" "ClusterFirst") }}
       nodeSelector:
       {{- if .Values.fuse.nodeSelector }}
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}

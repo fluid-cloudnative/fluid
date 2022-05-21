@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // The value yaml file
@@ -171,7 +172,7 @@ type Fuse struct {
 	MountPath          string               `json:"mountPath,omitempty"`
 	ShortCircuitPolicy string               `json:"shortCircuitPolicy,omitempty"`
 	Args               []string             `json:"args,omitempty"`
-	HostNetwork        bool                 `json:"hostNetwork,omitempty"`
+	HostNetwork        bool                 `json:"hostNetwork"`
 	Enabled            bool                 `json:"enabled,omitempty"`
 	Resources          common.Resources     `json:"resources,omitempty"`
 	Global             bool                 `json:"global,omitempty"`

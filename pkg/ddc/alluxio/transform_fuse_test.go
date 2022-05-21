@@ -19,9 +19,10 @@ import (
 	"reflect"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTransformFuseWithNoArgs(t *testing.T) {
@@ -152,5 +153,80 @@ func TestTransformFuseWithArgs(t *testing.T) {
 		if found != test.foundMountPathEnv {
 			t.Errorf("expected fuse env %v, got fuse env %v", test.foundMountPathEnv, test.alluxioValue.Fuse.Env)
 		}
+	}
+}
+
+func TestTransformFuseWithNetwork(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.AlluxioRuntime
+		wantValue *Alluxio
+	}{
+		"test network mode case 1": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Fuse: datav1alpha1.AlluxioFuseSpec{
+						ImageTag:        "2.8.0",
+						Image:           "fluid/alluixo-fuse",
+						ImagePullPolicy: "always",
+						NetworkMode:     datav1alpha1.ContainerNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Fuse: Fuse{
+					HostNetwork: false,
+				},
+			},
+		},
+		"test network mode case 2": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Fuse: datav1alpha1.AlluxioFuseSpec{
+						ImageTag:        "2.8.0",
+						Image:           "fluid/alluixo-fuse",
+						ImagePullPolicy: "always",
+						NetworkMode:     datav1alpha1.HostNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Fuse: Fuse{
+					HostNetwork: true,
+				},
+			},
+		},
+		"test network mode case 3": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Fuse: datav1alpha1.AlluxioFuseSpec{
+						ImageTag:        "2.8.0",
+						Image:           "fluid/alluixo-fuse",
+						ImagePullPolicy: "always",
+						NetworkMode:     "",
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Fuse: Fuse{
+					HostNetwork: true,
+				},
+			},
+		},
+	}
+
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	ds := &datav1alpha1.Dataset{}
+	for k, v := range testCases {
+		gotValue := &Alluxio{}
+		if err := engine.transformFuse(v.runtime, ds, gotValue); err == nil {
+			if gotValue.Fuse.HostNetwork != v.wantValue.Fuse.HostNetwork {
+				t.Errorf("check %s failure, got:%t,want:%t",
+					k,
+					gotValue.Fuse.HostNetwork,
+					v.wantValue.Fuse.HostNetwork,
+				)
+			}
+		}
+
 	}
 }
