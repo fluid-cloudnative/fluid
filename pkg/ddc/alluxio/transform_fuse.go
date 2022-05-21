@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 )
 
@@ -97,7 +96,10 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 		value.Fuse.NodeSelector = map[string]string{}
 	}
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
-	value.Fuse.HostNetwork = true
+
+	// parse fuse container network mode
+	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+
 	value.Fuse.Enabled = true
 
 	e.transformResourcesForFuse(runtime, value)

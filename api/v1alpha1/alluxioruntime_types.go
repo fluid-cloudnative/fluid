@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,10 +15,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 type AlluxioRuntimeRole common.RuntimeRole
@@ -77,6 +77,10 @@ type AlluxioCompTemplateSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
@@ -134,6 +138,10 @@ type AlluxioFuseSpec struct {
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
