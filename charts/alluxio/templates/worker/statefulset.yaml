@@ -46,9 +46,11 @@ spec:
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
       enableServiceLinks: false
+      {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ $hostNetwork }}
-      hostPID: {{ .Values.worker.hostPID }}
       dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
+      {{- end }}
+      hostPID: {{ .Values.worker.hostPID }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}
       nodeSelector:
