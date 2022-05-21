@@ -18,9 +18,11 @@ package alluxio
 import (
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestTransformFuse(t *testing.T) {
@@ -62,6 +64,135 @@ func TestTransformFuse(t *testing.T) {
 		}
 		if test.value.Fuse.Args[1] != test.expect[1] {
 			t.Errorf("expected %v, got %v", test.expect, test.value.Fuse.Args)
+		}
+	}
+}
+
+func TestTransformMaster(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.AlluxioRuntime
+		wantValue *Alluxio
+	}{
+		"test network mode case 1": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.ContainerNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Master: Master{
+					HostNetwork: false,
+				},
+			},
+		},
+		"test network mode case 2": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Master: Master{
+					HostNetwork: true,
+				},
+			},
+		},
+		"test network mode case 3": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Master: Master{
+					HostNetwork: true,
+				},
+			},
+		},
+	}
+
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	ds := &datav1alpha1.Dataset{}
+	for k, v := range testCases {
+		gotValue := &Alluxio{}
+		if err := engine.transformMasters(v.runtime, ds, gotValue); err == nil {
+			if gotValue.Master.HostNetwork != v.wantValue.Master.HostNetwork {
+				t.Errorf("check %s failure, got:%t,want:%t",
+					k,
+					gotValue.Master.HostNetwork,
+					v.wantValue.Master.HostNetwork,
+				)
+			}
+		}
+	}
+}
+
+func TestTransformWorkers(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.AlluxioRuntime
+		wantValue *Alluxio
+	}{
+		"test network mode case 1": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.ContainerNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					HostNetwork: false,
+				},
+			},
+		},
+		"test network mode case 2": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					HostNetwork: true,
+				},
+			},
+		},
+		"test network mode case 3": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					HostNetwork: true,
+				},
+			},
+		},
+	}
+
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	for k, v := range testCases {
+		gotValue := &Alluxio{}
+		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
+			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
+				t.Errorf("check %s failure, got:%t,want:%t",
+					k,
+					gotValue.Worker.HostNetwork,
+					v.wantValue.Worker.HostNetwork,
+				)
+			}
 		}
 	}
 }
