@@ -43,6 +43,7 @@ jobs:
         export PATH=$PATH:/usr/local/kubebuilder/bin
         curl -L https://get.helm.sh/helm-v3.7.2-${os}-${arch}.tar.gz | tar -xz -C /tmp
         chmod u+x /tmp/${os}-${arch}/helm && sudo mv /tmp/${os}-${arch}/helm /usr/local/bin/helm
+        cp /usr/local/bin/helm /usr/local/bin/ddc-helm
     
     - name: CI script
       run: |

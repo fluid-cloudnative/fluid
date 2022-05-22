@@ -16,6 +16,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
 	"testing"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -194,5 +195,53 @@ func TestTransformWorkers(t *testing.T) {
 				)
 			}
 		}
+	}
+}
+
+func TestGenerateStaticPorts(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger(),
+		runtime: &datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Master: datav1alpha1.AlluxioCompTemplateSpec{
+					Replicas: 3,
+				},
+				APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
+					Enabled: true,
+				},
+			},
+		}}
+	gotValue := &Alluxio{}
+	engine.generateStaticPorts(gotValue)
+	expect := &Alluxio{
+		Master: Master{
+			Ports: Ports{
+				Embedded: 19200,
+				Rpc:      19998,
+				Web:      19999,
+			},
+		}, JobMaster: JobMaster{
+			Ports: Ports{
+				Embedded: 20003,
+				Rpc:      20001,
+				Web:      20002,
+			},
+		}, APIGateway: APIGateway{
+			Ports: Ports{
+				Rest: 39999,
+			},
+		}, Worker: Worker{
+			Ports: Ports{Rpc: 29999,
+				Web: 30000},
+		}, JobWorker: JobWorker{
+			Ports: Ports{
+				Rpc:  30001,
+				Data: 30002,
+				Web:  30003,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(expect, gotValue) {
+		t.Errorf("Expect the value %v, but got %v", expect, gotValue)
 	}
 }

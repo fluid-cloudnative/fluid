@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"sort"
@@ -65,9 +66,20 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		return
 	}
 
-	err = e.releasePorts()
+	// There is no need to release the ports in container network mode
+	runtime, err := e.getRuntime()
 	if err != nil {
-		return
+		return err
+	}
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
+		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+		e.Log.Info("releasePorts for hostnetwork mode")
+		err = e.releasePorts()
+		if err != nil {
+			return
+		}
+	} else {
+		e.Log.Info("skip releasePorts for container network mode")
 	}
 
 	err = e.cleanAll()
