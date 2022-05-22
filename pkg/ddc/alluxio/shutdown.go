@@ -71,7 +71,8 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 	if err != nil {
 		return err
 	}
-	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) || datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
+		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		e.Log.Info("releasePorts for hostnetwork mode")
 		err = e.releasePorts()
 		if err != nil {

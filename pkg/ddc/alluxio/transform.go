@@ -86,7 +86,8 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	e.optimizeDefaultPropertiesAndFuseForHTTP(runtime, dataset, value)
 
 	// 10.allocate port for fluid engine
-	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) || datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
+		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		e.Log.Info("allocatePorts for hostnetwork mode")
 		err = e.allocatePorts(value)
 		if err != nil {
