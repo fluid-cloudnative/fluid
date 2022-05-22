@@ -95,6 +95,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		}
 	} else {
 		e.Log.Info("skip allocatePorts for container network mode")
+		e.generateStaticPorts(value)
 	}
 
 	// 11.set engine properties
@@ -366,6 +367,25 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	}
 
 	return
+}
+
+func (e *AlluxioEngine) generateStaticPorts(value *Alluxio) {
+	value.Master.Ports.Rpc = 19998
+	value.Master.Ports.Web = 19999
+	value.Worker.Ports.Rpc = 29999
+	value.Worker.Ports.Web = 30000
+	value.JobMaster.Ports.Rpc = 20001
+	value.JobMaster.Ports.Web = 20002
+	value.JobWorker.Ports.Rpc = 30001
+	value.JobWorker.Ports.Web = 30003
+	value.JobWorker.Ports.Data = 30002
+	if e.runtime.Spec.APIGateway.Enabled {
+		value.APIGateway.Ports.Rest = 39999
+	}
+	if e.runtime.Spec.Master.Replicas > 1 {
+		value.Master.Ports.Embedded = 19200
+		value.JobMaster.Ports.Embedded = 20003
+	}
 }
 
 // 8.allocate port for fluid engine
