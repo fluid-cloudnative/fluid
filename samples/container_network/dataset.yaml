@@ -21,6 +21,6 @@ spec:
         high: "0.95"
         low: "0.7"
   master:
-    networkMode: containerNetwork
+    networkMode: ContainerNetwork
   worker:
-    networkMode: containerNetwork
+    networkMode: ContainerNetwork
