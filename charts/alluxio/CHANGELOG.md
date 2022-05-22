@@ -197,8 +197,8 @@
 0.8.0
 
 - Change worker from Daemonset to Statefulset
-- Support container network
 
 0.9.0
 
-- Add volumeMounts and volumes 
+- Add volumeMounts and volumes
+- Support container network

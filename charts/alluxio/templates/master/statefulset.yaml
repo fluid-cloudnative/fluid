@@ -51,9 +51,11 @@ spec:
         role: alluxio-master
     spec:
       enableServiceLinks: false
+      {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ $hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       hostPID: {{ .Values.master.hostPID }}
-      dnsPolicy: {{ .Values.master.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}

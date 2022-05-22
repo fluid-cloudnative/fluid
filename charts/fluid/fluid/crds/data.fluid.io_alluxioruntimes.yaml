@@ -113,6 +113,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -266,6 +273,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -428,6 +442,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -542,6 +563,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -661,6 +689,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -2341,6 +2376,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
