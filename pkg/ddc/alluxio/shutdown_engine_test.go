@@ -190,12 +190,9 @@ func TestShutdown(t *testing.T) {
 		engine.Client = client
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
 		engine.Helper = ctrl.BuildHelper(engine.runtimeInfo, client, engine.Log)
-		err = engine.Shutdown()
-		if err != nil && strings.Contains(err.Error(), "ddc-helm") {
+		err := engine.Shutdown()
+		if !(err == nil || strings.Contains(err.Error(), "executable file not found")) {
 			t.Errorf("fail to call the shutdown with the error %v", err)
 		}
 	}
