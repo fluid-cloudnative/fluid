@@ -34,18 +34,18 @@ func (e *AlluxioEngine) transformHadoopConfig(runtime *datav1alpha1.AlluxioRunti
 	var confFiles []string
 	for k := range hadoopConfigMap.Data {
 		switch k {
-		case HADOOP_CONF_HDFS_SITE_FILENAME:
+		case hadoopConfHdfsSiteFilename:
 			value.HadoopConfig.IncludeHdfsSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_HDFS_SITE_FILENAME)
-		case HADOOP_CONF_CORE_SITE_FILENAME:
+			confFiles = append(confFiles, hadoopConfMountPath+"/"+hadoopConfHdfsSiteFilename)
+		case hadoopConfCoreSiteFilename:
 			value.HadoopConfig.IncludeCoreSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_CORE_SITE_FILENAME)
+			confFiles = append(confFiles, hadoopConfMountPath+"/"+hadoopConfCoreSiteFilename)
 		}
 	}
 
 	// Neither hdfs-site.xml nor core-site.xml is found in the configMap
 	if !value.HadoopConfig.IncludeCoreSite && !value.HadoopConfig.IncludeHdfsSite {
-		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HADOOP_CONF_HDFS_SITE_FILENAME, HADOOP_CONF_CORE_SITE_FILENAME, runtime.Spec.HadoopConfig)
+		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", hadoopConfHdfsSiteFilename, hadoopConfCoreSiteFilename, runtime.Spec.HadoopConfig)
 		return err
 	}
 
