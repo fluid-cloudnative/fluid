@@ -131,6 +131,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 		fluidRuntime, err = utils.GetAlluxioRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JindoRuntime:
 		fluidRuntime, err = utils.GetJindoRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
+		ctx.RuntimeType = "jindofsx"
 	case common.GooseFSRuntime:
 		fluidRuntime, err = utils.GetGooseFSRuntime(ctx.Client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JuiceFSRuntime:

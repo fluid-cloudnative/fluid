@@ -54,7 +54,7 @@ const (
 
 	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.3.1"
+	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.4.0"
 
 	ENGINE_TYPE = "jindofsx"
 
