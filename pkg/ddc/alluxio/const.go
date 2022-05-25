@@ -52,7 +52,7 @@ const (
 
 	hadoopConfMountPath = "/hdfs-config"
 
-	PodRoleType = "role"
+	podRoleType = "role"
 
 	wokrerPodRole = "alluxio-worker"
 )
