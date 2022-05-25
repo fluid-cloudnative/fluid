@@ -20,42 +20,39 @@ const (
 	// alluxioHome string = "/opt/alluxio"
 
 	// alluxioUser string = "fluid"
-	METRICS_PREFIX_BYTES_READ_LOCAL = "Cluster.BytesReadLocal "
+	metricsPrefixBytesReadLocal = "Cluster.BytesReadLocal "
 
-	METRICS_PREFIX_BYTES_READ_REMOTE = "Cluster.BytesReadRemote "
+	metricsPrefixBytesReadRemote = "Cluster.BytesReadRemote "
 
-	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll "
+	metricsPrefixBytesReadUfsAll = "Cluster.BytesReadUfsAll "
 
-	METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT = "Cluster.BytesReadLocalThroughput "
+	metricsPrefixBytesReadLocalThroughput = "Cluster.BytesReadLocalThroughput "
 
-	METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT = "Cluster.BytesReadRemoteThroughput "
+	metricsPrefixBytesReadRemoteThroughput = "Cluster.BytesReadRemoteThroughput "
 
-	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
+	metricsPrefixBytesReadUfsThroughput = "Cluster.BytesReadUfsThroughput "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+	summaryPrefixTotalCapacity = "Total Capacity: "
 
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
+	summaryPrefixUsedCapacity = "Used Capacity: "
 
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	metadataSyncNotDoneMsg = "[Calculating]"
 
-	ALLUXIO_RUNTIME_METRICS_LABEL = "alluxio_runtime_metrics"
+	alluxioRuntimeMetricsLabel = "alluxio_runtime_metrics"
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	checkMetadataSyncDoneTimeoutMillisec = 500
 
-	AUTO_SELECT_PORT_MIN = 20000
-	AUTO_SELECT_PORT_MAX = 30000
+	portNum = 9
 
-	PORT_NUM = 9
+	cacheHitQueryIntervalMin = 1
 
-	CACHE_HIT_QUERY_INTERVAL_MIN = 1
+	hadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	hadoopConfCoreSiteFilename = "core-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	hadoopConfMountPath = "/hdfs-config"
 
-	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
+	podRoleType = "role"
 
-	PodRoleType = "role"
-
-	WOKRER_POD_ROLE = "alluxio-worker"
+	wokrerPodRole = "alluxio-worker"
 )
