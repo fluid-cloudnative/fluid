@@ -224,7 +224,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	}
 
 	if !runtime.Spec.DisablePrometheus {
-		value.Monitoring = ALLUXIO_RUNTIME_METRICS_LABEL
+		value.Monitoring = alluxioRuntimeMetricsLabel
 	}
 
 	// transform Tolerations
@@ -390,7 +390,7 @@ func (e *AlluxioEngine) generateStaticPorts(value *Alluxio) {
 
 // 8.allocate port for fluid engine
 func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
-	expectedPortNum := PORT_NUM
+	expectedPortNum := portNum
 
 	if e.runtime.Spec.APIGateway.Enabled {
 		expectedPortNum += 1

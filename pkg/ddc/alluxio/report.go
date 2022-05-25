@@ -24,14 +24,14 @@ func (e AlluxioEngine) ParseReportSummary(s string) cacheStates {
 	strs := strings.Split(s, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
-			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
+		if strings.HasPrefix(str, summaryPrefixTotalCapacity) {
+			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, summaryPrefixTotalCapacity))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
 		}
-		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
-			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
+		if strings.HasPrefix(str, summaryPrefixUsedCapacity) {
+			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, summaryPrefixUsedCapacity))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cached = utils.BytesSize(float64(usedCacheCapacityAlluxio))
@@ -57,32 +57,32 @@ func (e AlluxioEngine) ParseReportMetric(metrics string, cacheHitStates, lastCac
 		str = strings.TrimSpace(str)
 		counterPattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
 		gaugePattern := regexp.MustCompile(`\(Type:\sGAUGE,\sValue:\s(.*)/MIN\)`)
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadLocal) {
 			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadRemote) {
 			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadUfsAll) {
 			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadLocalThroughput) {
 			localThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadRemoteThroughput) {
 			remoteThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT) {
+		if strings.HasPrefix(str, metricsPrefixBytesReadUfsThroughput) {
 			ufsThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 		}
 	}
