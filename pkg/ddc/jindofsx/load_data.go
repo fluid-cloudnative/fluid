@@ -76,7 +76,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 		return "", err
 	}
 
-	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindo", dataload.Spec.Dataset.Namespace)
+	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindofsx", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
 		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
