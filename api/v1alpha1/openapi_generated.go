@@ -212,6 +212,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref com
 							},
 						},
 					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"volumeMounts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the alluxio runtime component's filesystem.",
@@ -357,6 +364,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref common.Refe
 					"cleanPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CleanPolicy decides when to clean Alluxio Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
 							Type:        []string{"string"},
 							Format:      "",
 						},
