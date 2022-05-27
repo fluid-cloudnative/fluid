@@ -97,7 +97,7 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
@@ -158,10 +158,10 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		}
 
 		if shouldStop {
-			setupLog.Info("the plugin return true, no need to hand over other plugins", "plugin", plugin.GetName())
+			setupLog.V(1).Info("the plugin return true, no need to hand over other plugins", "plugin", plugin.GetName())
 			break
 		}
-		setupLog.Info("the plugin return false, will hand over next plugin", "plugin", plugin.GetName())
+		setupLog.V(1).Info("the plugin return false, will hand over next plugin", "plugin", plugin.GetName())
 	}
 
 	return
