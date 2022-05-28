@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -96,6 +97,8 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
+	defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
+		"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
