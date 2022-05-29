@@ -60,7 +60,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		namespace = req.Namespace
 	}
 
-	if setupLog.Enabled() {
+	if setupLog.V(1).Enabled() {
 		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
 			"pod.name", pod.GetName(), "pod.namespace", namespace)
 	}
