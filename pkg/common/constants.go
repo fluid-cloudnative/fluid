@@ -122,3 +122,5 @@ const (
 	InjectSidecarDone      = "done" + injectSidecar
 	App                    = "app"
 )
+
+const UnknownRuntime = "unknown"

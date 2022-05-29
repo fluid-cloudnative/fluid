@@ -58,13 +58,20 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]ba
 	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
 
 	for _, runtime := range runtimeInfos {
-		term, err := getRequiredSchedulingTerm(runtime)
-		if err != nil {
+
+		if runtime == nil {
 			return true, fmt.Errorf("should stop mutating pod %s in namespace %s due to %v",
 				pod.Name,
 				pod.Namespace,
-				err)
+				fmt.Errorf("RuntimeInfo is nil"))
 		}
+
+		// dataset used as hcfs, no need to require node with fuse
+		if runtime.IsHcfsUsed() {
+			continue
+		}
+
+		term := getRequiredSchedulingTerm(runtime)
 
 		if len(term.MatchExpressions) > 0 {
 			requiredSchedulingTerms = append(requiredSchedulingTerms, term)
@@ -78,14 +85,9 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]ba
 	return
 }
 
-func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm corev1.NodeSelectorTerm, err error) {
+func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm corev1.NodeSelectorTerm) {
 	requiredSchedulingTerm = corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{},
-	}
-
-	if runtimeInfo == nil {
-		err = fmt.Errorf("RuntimeInfo is nil")
-		return
 	}
 
 	isGlobalMode, selectors := runtimeInfo.GetFuseDeployMode()

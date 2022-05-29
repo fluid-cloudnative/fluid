@@ -462,6 +462,9 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 					Name:      "test",
 					Namespace: "big-data",
 					Labels:    map[string]string{},
+					Annotations: map[string]string{
+						common.DatasetUseAsHCFS: "test1,test2",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

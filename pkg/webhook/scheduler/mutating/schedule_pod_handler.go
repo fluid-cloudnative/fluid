@@ -20,18 +20,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	corev1 "k8s.io/api/core/v1"
+	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"strings"
+	"time"
 )
 
 // CreateUpdatePodForSchedulingHandler mutates a pod and has implemented admission.DecoderInjector
@@ -105,10 +105,14 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
 		"pod.name", pod.GetName(), "pod.namespace", namespace)
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
+
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+
+	var runtimeInfos = map[string]base.RuntimeInfoInterface{}
+
+	// get datasets used as pvc
 	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
 		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
 		if err != nil {
@@ -125,6 +129,29 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 			runtimeInfo.SetDeprecatedNodeLabel(false)
 			// runtimeInfos = append(runtimeInfos, runtimeInfo)
 			runtimeInfos[pvcName] = runtimeInfo
+		}
+	}
+
+	// get datasets used as hcfs
+	datasetsUsedAsHCFS, find := pod.Annotations[common.DatasetUseAsHCFS]
+	if find {
+		datasetNames := strings.Split(datasetsUsedAsHCFS, ",")
+
+		for _, datasetName := range datasetNames {
+			if datasetName == "" {
+				continue
+			}
+			if _, find := runtimeInfos[datasetName]; !find {
+				runtimeInfo, err := base.GetRuntimeInfo(a.Client, datasetName, namespace)
+				if err != nil {
+					if runtimeInfo == nil {
+						setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", datasetName, "namespace", namespace)
+					}
+				}
+				runtimeInfo.UseAsHcfs()
+				runtimeInfo.SetDeprecatedNodeLabel(false)
+				runtimeInfos[datasetName] = runtimeInfo
+			}
 		}
 	}
 

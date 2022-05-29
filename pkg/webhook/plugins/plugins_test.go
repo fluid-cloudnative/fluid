@@ -186,7 +186,7 @@ func TestRegistry(t *testing.T) {
 	)
 
 	plugins := Registry(client)
-	if len(plugins.GetPodWithDatasetHandler()) != 3 {
+	if len(plugins.GetPodWithDatasetHandler()) != 4 {
 		t.Errorf("expect GetPodWithDatasetHandler len=2, got %v", plugins.GetPodWithDatasetHandler())
 	}
 

@@ -53,7 +53,7 @@ func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[stri
 	if len(runtimeInfos) == 0 {
 		return
 	}
-	runtimeNames := make([]string, len(runtimeInfos))
+	var runtimeNames []string
 	for _, runtimeInfo := range runtimeInfos {
 		if runtimeInfo == nil {
 			err = fmt.Errorf("RuntimeInfo is nil")

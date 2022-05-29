@@ -81,6 +81,10 @@ type RuntimeInfoInterface interface {
 	GetTemplateToInjectForFuse(pvcName string, enableCache bool) (*common.FuseInjectionTemplate, error)
 
 	SetClient(client client.Client)
+
+	UseAsHcfs()
+
+	IsHcfsUsed() bool
 }
 
 // The real Runtime Info should implement
@@ -98,6 +102,9 @@ type RuntimeInfo struct {
 
 	// Fuse configuration
 	fuse Fuse
+
+	// Pods perhaps will use dataset as hcfs
+	UseHcfs bool
 
 	// Check if the deprecated node label is used
 	deprecatedNodeLabel bool
@@ -240,6 +247,14 @@ func (info *RuntimeInfo) SetClient(client client.Client) {
 	info.client = client
 }
 
+func (info *RuntimeInfo) UseAsHcfs() {
+	info.UseHcfs = true
+}
+
+func (info *RuntimeInfo) IsHcfsUsed() bool {
+	return info.UseHcfs
+}
+
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
 	if len(tieredstore.Levels) == 0 {
 		return TieredStoreInfo{}, nil
@@ -302,6 +317,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
 	dataset, err := utils.GetDataset(client, name, namespace)
 	if err != nil {
+		runtimeInfo, _ = BuildRuntimeInfo(name, namespace, common.UnknownRuntime, datav1alpha1.TieredStore{})
 		return runtimeInfo, err
 	}
 

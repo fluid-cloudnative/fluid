@@ -19,6 +19,7 @@ package plugins
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/fusesidecar"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/hcfsaddressesinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/mountpropagationinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
@@ -37,7 +38,7 @@ type MutatingHandler interface {
 }
 
 // Plugins record the active plugins
-// including two kinds: plugins for pod with no dataset mounted and with dataset mounted
+// including three kinds: plugins for pods with no dataset mounted and with dataset mounted, plugins for serverless pods
 type plugins struct {
 	podWithoutDatasetHandler []MutatingHandler
 	podWithDatasetHandler    []MutatingHandler
@@ -66,7 +67,9 @@ func Registry(client client.Client) plugins {
 			requirenodewithfuse.NewPlugin(client),
 			prefernodeswithcache.NewPlugin(client),
 			mountpropagationinjector.NewPlugin(client),
-		}, serverlessPodHandler: []MutatingHandler{
+			hcfsaddressesinjector.NewPlugin(client),
+		},
+		serverlessPodHandler: []MutatingHandler{
 			fusesidecar.NewPlugin(client),
 		},
 	}

@@ -35,7 +35,7 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 1: Global fuse with selector enable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{"test1": "test1"})
-	terms, _ := getRequiredSchedulingTerm(runtimeInfo)
+	terms := getRequiredSchedulingTerm(runtimeInfo)
 
 	expectTerms := corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -53,18 +53,13 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 2: Global fuse with selector disable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
-	terms, _ = getRequiredSchedulingTerm(runtimeInfo)
+	terms = getRequiredSchedulingTerm(runtimeInfo)
 	expectTerms = corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{}}
 
 	if !reflect.DeepEqual(terms, expectTerms) {
 		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", expectTerms, terms)
 	}
 
-	// Test case 3: runtime Info is nil to handle the error path
-	_, err = getRequiredSchedulingTerm(nil)
-	if err == nil {
-		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", nil, err)
-	}
 }
 
 func TestMutate(t *testing.T) {

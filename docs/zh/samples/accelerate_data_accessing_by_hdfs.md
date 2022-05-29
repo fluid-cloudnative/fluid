@@ -189,6 +189,9 @@ metadata:
   name: fluid-hdfs-demo
 spec:
   template:
+    metadata:
+       annotations:
+         fluid.io/dataset-useas-hcfs: hadoop
     spec:
       restartPolicy: OnFailure
       containers:
@@ -201,6 +204,10 @@ spec:
 EOF
 ```
 此处，需要将环境变量中的19998替换为刚刚查询得到的HCFS(Hadoop Compatible FileSystem) URL中实际的端口
+
+开启[Pod调度优化](../operation/pod_schedule.md)后，注解fluid.io/dataset-useas-hcfs将会使Fluid感知到程序需要访问的数据集
+Fluid将结合根据数据集排布的Pod调度策略，通过webhook机制将调度信息注入到Pod
+此外，Fluid还会将HDFS_URL域名alluxio://{HCFS URL}/{DATASET_NAME}注入到Pod的环境变量{DATASET_NAME}-URL中
 
 **启动测试作业**
 

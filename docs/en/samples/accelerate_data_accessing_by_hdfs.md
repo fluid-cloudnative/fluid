@@ -185,6 +185,9 @@ metadata:
   name: fluid-hdfs-demo
 spec:
   template:
+    metadata:
+       annotations:
+         fluid.io/dataset-useas-hcfs: hadoop
     spec:
       restartPolicy: OnFailure
       containers:
@@ -197,6 +200,10 @@ spec:
 EOF
 ```
 Here, you need to replace 19998 in the environment variable with the actual port in the HCFS (Hadoop Compatible FileSystem) URL just queried
+
+After open pod_schedule, annotation fluid.io/dataset-useas-hcfs will make Fluid knowning what datasets this pod need to visit
+Fluid will inject scheduling information into the Pod through the webhook mechanism in combination with the Pod scheduling strategy arranged according to the dataset
+Also，Fluid will inject the HDFS_URL alluxio://{HCFS URL}/{DATASET_NAME} into the env {DATASET_NAME}-URL of Pod
 
 **启动测试作业**
 

@@ -27,6 +27,10 @@ const (
 	WebhookSchedulePodPath = "mutate-fluid-io-v1alpha1-schedulepod"
 
 	CertSecretName = "fluid-webhook-certs"
+
+	DatasetUseAsHCFS = "fluid.io/dataset-useas-hcfs"
+	URLPostfix       = "-URL"
+	UnknownURL       = "NA"
 )
 
 // AdmissionHandler wrappers admission.Handler, but adding client-go capablities
