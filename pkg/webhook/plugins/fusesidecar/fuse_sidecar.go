@@ -17,12 +17,9 @@ limitations under the License.
 package fusesidecar
 
 import (
-	"time"
-
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,8 +49,6 @@ func (p *FuseSidecar) GetName() string {
 }
 
 func (p *FuseSidecar) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
-	defer utils.TimeTrack(time.Now(), "FuseSidecar.Mutate",
-		"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
 	// if the pod has no mounted datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
