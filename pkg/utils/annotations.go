@@ -25,6 +25,10 @@ func FuseSidecarEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectFuseSidecar)
 }
 
+func FuseSidecarVirtualFuseDeviceEnabled(infos map[string]string) (match bool) {
+	return ServerlessEnabled(infos) && enabled(infos, common.InjectVirtualDevEnabled)
+}
+
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectWorkerSidecar)
 }
