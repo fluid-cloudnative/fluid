@@ -112,6 +112,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		RuntimeIdentity: RuntimeIdentity{
+			Namespace: runtime.Namespace,
+			Name:      runtime.Name,
+		},
 	}
 	e.transformNetworkMode(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
