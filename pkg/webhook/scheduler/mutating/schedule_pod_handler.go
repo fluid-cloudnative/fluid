@@ -59,12 +59,6 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	if len(namespace) == 0 {
 		namespace = req.Namespace
 	}
-
-	if setupLog.V(1).Enabled() {
-		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
-			"pod.name", pod.GetName(), "pod.namespace", namespace)
-	}
-
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -95,7 +89,9 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+	resp := admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", namespace, "patches", utils.DumpJSON(resp.Patch))
+	return resp
 }
 
 // InjectDecoder injects the decoder.
@@ -107,7 +103,7 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
 	defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
-		"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
+		"pod.name", pod.GetName(), "pod.namespace", namespace)
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	errPVCs := map[string]error{}
