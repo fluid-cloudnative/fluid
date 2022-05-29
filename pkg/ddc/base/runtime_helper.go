@@ -19,7 +19,11 @@ package base
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
 	"time"
+=======
+	"k8s.io/apimachinery/pkg/api/resource"
+>>>>>>> 2fa66f87 (Support webhook mutation with fuse virtual device enabled)
 
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -37,6 +41,12 @@ var (
 	// mem, ssd, hdd for Alluxio and GooseFS
 	// cache-dir for JuiceFS
 	cacheDirNames = []string{"datavolume-", "volume-localtime", "cache-dir", "mem", "ssd", "hdd"}
+
+	// hostpath fuse mount point for Alluxio, JindoFS, GooseFS and JuiceFS
+	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "goosefs-fuse-mount", "juicefs-fuse-mount"}
+
+	// fuse devices for Alluxio, JindoFS, GooseFS
+	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device"}
 )
 
 // GetTemplateToInjectForFuse gets template for fuse injection
@@ -72,30 +82,55 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, cacheDirNames)
 	}
 
-	// 1. set the pvc name
+	// 1. setup fuse sidecar container when enabling virtual fuse device
+	if enableVirtFuseDev {
+		// remove the fuse related volumes if using virtual fuse device
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostMountNames)
+		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostMountNames)
+
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostFuseDeviceNames)
+		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostFuseDeviceNames)
+
+		// add virtual fuse device resource
+		ds.Spec.Template.Spec.Containers[0].Resources.Limits["fluid.io/fuse"] = resource.MustParse("1")
+		ds.Spec.Template.Spec.Containers[0].Resources.Requests["fluid.io/fuse"] = resource.MustParse("1")
+
+		// invalidate privileged fuse container
+		privilegedContainer := false
+		ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = &privilegedContainer
+		ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add = utils.TrimCapabilities(ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+	}
+
+	// 2. set the pvc name
 	template = &common.FuseInjectionTemplate{
 		PVCName: pvcName,
 	}
 
-	// 2. set the fuse container
+	// 3. set the fuse container
 	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
 	template.FuseContainer.Name = common.FuseContainerName
 
 	// template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
-	// 3. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
+	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
+	// Post start script varies according to privileged or unprivileged sidecar.
 	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, info.namespace)
 	if err != nil {
 		return
 	}
-	mountPathInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
-	if err != nil {
-		return
+
+	mountPathInContainer := ""
+	if !enableVirtFuseDev {
+		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
+		if err != nil {
+			return template, err
+		}
+		mountPathInContainer = volumeMountInContainer.MountPath
 	}
 
 	gen := poststart.NewGenerator(types.NamespacedName{
 		Name:      info.name,
 		Namespace: info.namespace,
-	}, mountPathInContainer.MountPath, mountType)
+	}, mountPathInContainer, mountType, enableVirtFuseDev)
 	cm := gen.BuildConfigmap(ownerReference)
 	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
 	if err != nil {
@@ -115,7 +150,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 	}
 	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
 
-	// 4. create a volume with pvcName with mountpath in pv, and add it to VolumesToUpdate
+	// 5. create a volume with pvcName with mountpath in pv, and add it to VolumesToUpdate
 	template.VolumesToUpdate = []corev1.Volume{
 		{
 			Name: pvcName,

@@ -33,8 +33,8 @@ const (
 )
 
 var (
-	replacer = strings.NewReplacer("¬", "`")
-	content  = `#!/bin/bash
+	replacer                 = strings.NewReplacer("¬", "`")
+	contentPrivilegedSidecar = `#!/bin/bash
 
 set -ex
 
@@ -56,6 +56,13 @@ done
 
 echo "succeed in checking mount point $ConditionPathIsMountPoint"
 `
+	contentUnprivilegedSidecar = `#!/bin/bash
+set -ex
+
+echo "Sending deivce ioctl to /dev/fuse"
+chmod u+x /tools/ioctl_sync
+/tools/ioctl_sync
+`
 )
 
 type ScriptGeneratorForFuse struct {
@@ -63,19 +70,28 @@ type ScriptGeneratorForFuse struct {
 	namespace string
 	mountPath string
 	mountType string
+
+	virtualFuseDeviceEnabled bool
 }
 
-func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string) *ScriptGeneratorForFuse {
+func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, virtualFuseDeviceEnabled bool) *ScriptGeneratorForFuse {
 	return &ScriptGeneratorForFuse{
-		name:      namespacedKey.Name,
-		namespace: namespacedKey.Namespace,
-		mountPath: mountPath,
-		mountType: mountType,
+		name:                     namespacedKey.Name,
+		namespace:                namespacedKey.Namespace,
+		mountPath:                mountPath,
+		mountType:                mountType,
+		virtualFuseDeviceEnabled: virtualFuseDeviceEnabled,
 	}
 }
 
 func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerReference) *corev1.ConfigMap {
 	data := map[string]string{}
+	var content string
+	if f.virtualFuseDeviceEnabled {
+		content = contentUnprivilegedSidecar
+	} else {
+		content = contentPrivilegedSidecar
+	}
 	data[scriptName] = replacer.Replace(content)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -92,9 +108,13 @@ func (f *ScriptGeneratorForFuse) getConfigmapName() string {
 }
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
-	// https://github.com/kubernetes/kubernetes/issues/25766
-	var cmd []string = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
-	// var cmd []string = []string{scriptPath, f.mountPath, f.mountType}
+	var cmd []string
+	if f.virtualFuseDeviceEnabled {
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", scriptPath)}
+	} else {
+		// https://github.com/kubernetes/kubernetes/issues/25766
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
+	}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
 	}
