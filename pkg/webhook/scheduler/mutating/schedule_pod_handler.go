@@ -60,12 +60,21 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		namespace = req.Namespace
 	}
 
+	if setupLog.Enabled() {
+		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
+			"pod.name", pod.GetName(), "pod.namespace", namespace)
+	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
-	if pod.Labels["app"] == "alluxio" || pod.Labels["app"] == "jindofs" || pod.Labels["app"] == "goosefs" || pod.Labels["app"] == "juicefs" || pod.Labels["role"] == "dataload-pod" {
+	if pod.Labels["app"] == "alluxio" ||
+		pod.Labels["app"] == "jindofs" ||
+		pod.Labels["app"] == "goosefs" ||
+		pod.Labels["app"] == "juicefs" ||
+		pod.Labels["role"] == "dataload-pod" {
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}
