@@ -25,6 +25,18 @@ type PersistentVolumeClaimCachedInfo struct {
 	mu sync.RWMutex
 }
 
+func BuildPersistentVolumeClaimCachedInfo(cachedPVC *corev1.PersistentVolumeClaim,
+	isBelongToDataset bool,
+	runtimeInfo base.RuntimeInfoInterface,
+	fuseTemplateToInject *common.FuseInjectionTemplate) *PersistentVolumeClaimCachedInfo {
+	return &PersistentVolumeClaimCachedInfo{
+		cachedPVC:            cachedPVC,
+		isBelongToDataset:    isBelongToDataset,
+		runtimeInfo:          runtimeInfo,
+		fuseTemplateToInject: fuseTemplateToInject,
+	}
+}
+
 func (p *PersistentVolumeClaimCachedInfo) GetCachedPVC() *corev1.PersistentVolumeClaim {
 	defer p.mu.RUnlock()
 	p.mu.RLock()
@@ -43,8 +55,32 @@ func (p *PersistentVolumeClaimCachedInfo) IsBelongToDataset() bool {
 	return p.isBelongToDataset
 }
 
-func (p *PersistentVolumeClaimCachedInfo) SetDataset(isBelongToDataset bool) {
+func (p *PersistentVolumeClaimCachedInfo) SetBelongToDataset(isBelongToDataset bool) {
 	defer p.mu.Unlock()
 	p.mu.Lock()
 	p.isBelongToDataset = isBelongToDataset
+}
+
+func (p *PersistentVolumeClaimCachedInfo) GetRuntimeInfo() base.RuntimeInfoInterface {
+	defer p.mu.RUnlock()
+	p.mu.RLock()
+	return p.runtimeInfo
+}
+
+func (p *PersistentVolumeClaimCachedInfo) SetRuntimeInfo(runtimeInfo base.RuntimeInfoInterface) {
+	defer p.mu.Unlock()
+	p.mu.Lock()
+	p.runtimeInfo = runtimeInfo
+}
+
+func (p *PersistentVolumeClaimCachedInfo) GetFuseTemplateToInject() *common.FuseInjectionTemplate {
+	defer p.mu.RUnlock()
+	p.mu.RLock()
+	return p.fuseTemplateToInject
+}
+
+func (p *PersistentVolumeClaimCachedInfo) SetFuseTemplateToInject(fuseTemplateToInject *common.FuseInjectionTemplate) {
+	defer p.mu.Unlock()
+	p.mu.Lock()
+	p.fuseTemplateToInject = fuseTemplateToInject
 }

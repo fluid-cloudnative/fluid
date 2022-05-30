@@ -17,6 +17,10 @@ func init() {
 	pvcsCache = &InjectionCache{
 		cache: cache.New(5*time.Minute, 10*time.Minute),
 	}
+
+	pvcsCache.cache.OnEvicted(func(key string, item interface{}) {
+		log.V(1).Info("cache is evicted", "key", key, "info", item)
+	})
 }
 
 type InjectionCache struct {
@@ -28,7 +32,7 @@ func GetInjectionCacheForPVCs() *InjectionCache {
 	return pvcsCache
 }
 
-func (c *InjectionCache) GetCachedInfoByPvc(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
+func (c *InjectionCache) FindCachedInfoByPvc(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
 	if info == nil {
 		log.V(1).Info("the input pvc to search is nil")
 		return
