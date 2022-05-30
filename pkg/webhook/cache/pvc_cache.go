@@ -1,18 +1,19 @@
 package cache
 
 import (
-	"sync"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cache "github.com/patrickmn/go-cache"
+	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type PVCInfoCache struct {
+type PersistentVolumeClaimCachedInfo struct {
 	// The uuid is used to check if the pvcCache is validate.
 	// It's pvc's uuid
-	uuid string
+	cachedPVC *corev1.PersistentVolumeClaim
 
 	// Check if the pvc belongs to the fluid dataset
 	isDataset bool
@@ -24,7 +25,10 @@ type PVCInfoCache struct {
 	fuseTemplateToInject *common.FuseInjectionTemplate
 }
 
-var pvcsCache *InjectionCache
+var (
+	pvcsCache *InjectionCache
+	log       = ctrl.Log.WithName("webhook.cache")
+)
 
 func init() {
 	pvcsCache = &InjectionCache{
@@ -33,10 +37,57 @@ func init() {
 }
 
 type InjectionCache struct {
-	mu    sync.RWMutex
+	// mu    sync.RWMutex
 	cache *cache.Cache
 }
 
 func GetInjectionCacheForPVCs() *InjectionCache {
 	return pvcsCache
+}
+
+func (c *InjectionCache) GetCachedInfoByPvc(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
+	if info == nil {
+		log.V(1).Info("the input pvc to search is nil")
+		return
+	}
+
+	name := pvc.GetName()
+	namespace := pvc.GetNamespace()
+	if len(namespace) == 0 {
+		namespace = corev1.NamespaceDefault
+	}
+	namespacedKey := namespace + "/" + name
+
+	// 1. find the pvc in cached by namespacedKey
+	item, found := c.cache.Get(namespacedKey)
+	if !found {
+		return
+	}
+	// info := item.(*PersistentVolumeClaimCachedInfo)
+
+	switch v := item.(type) {
+	case *PersistentVolumeClaimCachedInfo:
+		info = v
+	default:
+		log.Info("No supported PersistentVolumeClaimCachedInfo Type", "v", v)
+		return
+	}
+
+	// 2. check the uid
+	if info.cachedPVC == nil {
+		log.Info("The cached pvc is not found, skip.")
+		c.cache.Delete(namespacedKey)
+		return nil, found
+	}
+
+	if info.cachedPVC.GetUID() != pvc.UID {
+		log.Info("The pvc is found, but uid not match. So the pvc is outdated. Now it's abandoned.",
+			"inputPVC", pvc,
+			"oldUid", info.cachedPVC)
+		c.cache.Delete(namespacedKey)
+		return nil, found
+	}
+
+	found = true
+	return
 }
