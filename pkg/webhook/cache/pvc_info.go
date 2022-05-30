@@ -14,7 +14,7 @@ type PersistentVolumeClaimCachedInfo struct {
 	cachedPVC *corev1.PersistentVolumeClaim
 
 	// Check if the pvc belongs to the fluid dataset
-	isDataset bool
+	isBelongToDataset bool
 
 	// The runtime Info to cache
 	runtimeInfo base.RuntimeInfoInterface
@@ -37,14 +37,14 @@ func (p *PersistentVolumeClaimCachedInfo) SetCachedPVC(cachedPVC *corev1.Persist
 	p.cachedPVC = cachedPVC
 }
 
-func (p *PersistentVolumeClaimCachedInfo) IsDataset() bool {
+func (p *PersistentVolumeClaimCachedInfo) IsBelongToDataset() bool {
 	defer p.mu.RUnlock()
 	p.mu.RLock()
-	return p.isDataset
+	return p.isBelongToDataset
 }
 
-func (p *PersistentVolumeClaimCachedInfo) SetDataset(isDataset bool) {
+func (p *PersistentVolumeClaimCachedInfo) SetDataset(isBelongToDataset bool) {
 	defer p.mu.Unlock()
 	p.mu.Lock()
-	p.isDataset = isDataset
+	p.isBelongToDataset = isBelongToDataset
 }
