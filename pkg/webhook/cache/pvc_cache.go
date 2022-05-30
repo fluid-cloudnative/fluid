@@ -3,27 +3,10 @@ package cache
 import (
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cache "github.com/patrickmn/go-cache"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-type PersistentVolumeClaimCachedInfo struct {
-	// The uuid is used to check if the pvcCache is validate.
-	// It's pvc's uuid
-	cachedPVC *corev1.PersistentVolumeClaim
-
-	// Check if the pvc belongs to the fluid dataset
-	isDataset bool
-
-	// The runtime Info to cache
-	runtimeInfo base.RuntimeInfoInterface
-
-	// The fuse template to inject
-	fuseTemplateToInject *common.FuseInjectionTemplate
-}
 
 var (
 	pvcsCache *InjectionCache
@@ -63,7 +46,6 @@ func (c *InjectionCache) GetCachedInfoByPvc(pvc *corev1.PersistentVolumeClaim) (
 	if !found {
 		return
 	}
-	// info := item.(*PersistentVolumeClaimCachedInfo)
 
 	switch v := item.(type) {
 	case *PersistentVolumeClaimCachedInfo:
