@@ -17,6 +17,7 @@ limitations under the License.
 package base
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -509,16 +510,15 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 		runtimeType string
 	}
 	type testCase struct {
-		name                    string
-		dataset                 *datav1alpha1.Dataset
-		pvcName                 string
-		enableCacheDir          bool
-		enableVirtualFuseDevice bool
-		info                    runtimeInfo
-		pv                      *corev1.PersistentVolume
-		pvc                     *corev1.PersistentVolumeClaim
-		fuse                    *appsv1.DaemonSet
-		expectErr               bool
+		name           string
+		dataset        *datav1alpha1.Dataset
+		pvcName        string
+		enableCacheDir bool
+		info           runtimeInfo
+		pv             *corev1.PersistentVolume
+		pvc            *corev1.PersistentVolumeClaim
+		fuse           *appsv1.DaemonSet
+		expectErr      bool
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
@@ -556,9 +556,8 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 					},
 				},
 			},
-			enableCacheDir:          false,
-			enableVirtualFuseDevice: false,
-			expectErr:               false,
+			enableCacheDir: false,
+			expectErr:      false,
 			pvc: &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mydata",
@@ -862,9 +861,220 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, testcase.enableVirtualFuseDevice)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, false)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
+		}
+	}
+}
+
+func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
+	type runtimeInfo struct {
+		name        string
+		namespace   string
+		runtimeType string
+	}
+	type testCase struct {
+		name                    string
+		dataset                 *datav1alpha1.Dataset
+		pvcName                 string
+		enableCacheDir          bool
+		enableVirtualFuseDevice bool
+		info                    runtimeInfo
+		pv                      *corev1.PersistentVolume
+		pvc                     *corev1.PersistentVolumeClaim
+		fuse                    *appsv1.DaemonSet
+		expectErr               bool
+		expectContainer         corev1.Container
+	}
+
+	hostPathCharDev := corev1.HostPathCharDev
+	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+	bTrue := true
+
+	var containerCheckers []func(template *common.FuseInjectionTemplate) bool
+	// Check mutated container's security context
+	containerCheckers = append(containerCheckers, func(template *common.FuseInjectionTemplate) bool {
+		for _, capAdd := range template.FuseContainer.SecurityContext.Capabilities.Add {
+			if capAdd == "SYS_ADMIN" {
+				return false
+			}
+		}
+
+		return *template.FuseContainer.SecurityContext.Privileged == false
+	})
+	// Check mutated container's volumes
+	containerCheckers = append(containerCheckers, func(template *common.FuseInjectionTemplate) bool {
+		for _, vol := range template.VolumesToAdd {
+			if utils.ContainsString(hostMountNames, vol.Name) || utils.ContainsString(hostFuseDeviceNames, vol.Name) {
+				return false
+			}
+		}
+
+		for _, volMount := range template.FuseContainer.VolumeMounts {
+			if utils.ContainsString(hostMountNames, volMount.Name) || utils.ContainsString(hostFuseDeviceNames, volMount.Name) {
+				return false
+			}
+		}
+
+		return true
+	})
+	// Check mutated container's resources
+	containerCheckers = append(containerCheckers, func(template *common.FuseInjectionTemplate) bool {
+		if len(template.FuseContainer.Resources.Limits) == 0 {
+			return false
+		}
+		if _, ok := template.FuseContainer.Resources.Limits["fluid.io/fuse"]; !ok {
+			return false
+		}
+		if len(template.FuseContainer.Resources.Requests) == 0 {
+			return false
+		}
+		if _, ok := template.FuseContainer.Resources.Requests["fluid.io/fuse"]; !ok {
+			return false
+		}
+
+		return true
+	})
+
+	testcases := []testCase{
+		{
+			name: "jindo",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata",
+					Namespace: "big-data",
+				},
+			},
+			info: runtimeInfo{
+				name:        "mydata",
+				namespace:   "big-data",
+				runtimeType: common.JindoRuntime,
+			},
+			pvcName: "mydata",
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-mydata",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/mydata/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			enableCacheDir: false,
+			expectErr:      false,
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-mydata",
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mydata-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "mydata-pvc-name",
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+										Capabilities: &corev1.Capabilities{
+											Add: []corev1.Capability{"SYS_ADMIN"},
+										},
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "datavolume-1",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "jindofs-fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "datavolume-1",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/mnt/disk1",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									}},
+								{
+									Name: "jindofs-fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/mydata",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
+	_ = appsv1.AddToScheme(s)
+	for _, testcase := range testcases {
+		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset)
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+
+	for _, testcase := range testcases {
+		info := testcase.info
+		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+		}
+		runtimeInfo.SetClient(fakeClient)
+		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, true)
+		if (err == nil) == testcase.expectErr {
+			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
+		}
+
+		for _, checker := range containerCheckers {
+			if !checker(template) {
+				t.Errorf("testcase %s failed due to check failed for template %v", testcase.name, template)
+			}
 		}
 	}
 }
