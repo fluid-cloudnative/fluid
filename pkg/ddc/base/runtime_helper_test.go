@@ -885,7 +885,6 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 		pvc                     *corev1.PersistentVolumeClaim
 		fuse                    *appsv1.DaemonSet
 		expectErr               bool
-		expectContainer         corev1.Container
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
@@ -968,8 +967,9 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 					},
 				},
 			},
-			enableCacheDir: false,
-			expectErr:      false,
+			enableCacheDir:          false,
+			enableVirtualFuseDevice: true,
+			expectErr:               false,
 			pvc: &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mydata",
@@ -1066,7 +1066,7 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, true)
+		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, testcase.enableVirtualFuseDevice)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
