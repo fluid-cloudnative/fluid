@@ -92,7 +92,14 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostFuseDeviceNames)
 
 		// add virtual fuse device resource
+		if ds.Spec.Template.Spec.Containers[0].Resources.Limits == nil {
+			ds.Spec.Template.Spec.Containers[0].Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
+		}
 		ds.Spec.Template.Spec.Containers[0].Resources.Limits["fluid.io/fuse"] = resource.MustParse("1")
+
+		if ds.Spec.Template.Spec.Containers[0].Resources.Requests == nil {
+			ds.Spec.Template.Spec.Containers[0].Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
+		}
 		ds.Spec.Template.Spec.Containers[0].Resources.Requests["fluid.io/fuse"] = resource.MustParse("1")
 
 		// invalidate privileged fuse container

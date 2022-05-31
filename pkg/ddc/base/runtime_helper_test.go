@@ -495,7 +495,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, true)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, true, false)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
@@ -509,15 +509,16 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 		runtimeType string
 	}
 	type testCase struct {
-		name           string
-		dataset        *datav1alpha1.Dataset
-		pvcName        string
-		enableCacheDir bool
-		info           runtimeInfo
-		pv             *corev1.PersistentVolume
-		pvc            *corev1.PersistentVolumeClaim
-		fuse           *appsv1.DaemonSet
-		expectErr      bool
+		name                    string
+		dataset                 *datav1alpha1.Dataset
+		pvcName                 string
+		enableCacheDir          bool
+		enableVirtualFuseDevice bool
+		info                    runtimeInfo
+		pv                      *corev1.PersistentVolume
+		pvc                     *corev1.PersistentVolumeClaim
+		fuse                    *appsv1.DaemonSet
+		expectErr               bool
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
@@ -555,8 +556,9 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 					},
 				},
 			},
-			enableCacheDir: false,
-			expectErr:      false,
+			enableCacheDir:          false,
+			enableVirtualFuseDevice: false,
+			expectErr:               false,
 			pvc: &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mydata",
@@ -860,7 +862,7 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, testcase.enableVirtualFuseDevice)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
