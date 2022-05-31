@@ -75,5 +75,5 @@ owner:
   enabled: false
 
 runtimeIdentity:
-  # namespace: default
-  # name: xxx
+  namespace: default
+  name: xxx
