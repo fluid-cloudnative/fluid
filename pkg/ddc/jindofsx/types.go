@@ -45,6 +45,7 @@ type Jindo struct {
 	LogConfig       map[string]string      `yaml:"logConfig,omitempty"`
 	PlacementMode   string                 `yaml:"placement,omitempty"`
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
+	RuntimeIdentity RuntimeIdentity        `yaml:"runtimeIdentity"`
 }
 
 type HadoopConfig struct {
@@ -113,6 +114,11 @@ type Resources struct {
 type Resource struct {
 	CPU    string `yaml:"cpu"`
 	Memory string `yaml:"memory"`
+}
+
+type RuntimeIdentity struct {
+	Namespace string `yaml:"namespace"`
+	Name      string `yaml:"name"`
 }
 
 type cacheStates struct {

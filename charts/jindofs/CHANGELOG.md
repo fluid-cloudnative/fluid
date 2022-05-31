@@ -29,4 +29,6 @@ Support more Posix
 Add mountPropagation for registrar <br/>
 Add auto fuse recovery
  
+0.8.6
 
+Add runtime identity information to template
