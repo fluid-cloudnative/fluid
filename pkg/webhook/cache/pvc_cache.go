@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -28,8 +29,15 @@ func init() {
 }
 
 type InjectionCache struct {
-	// mu    sync.RWMutex
+	mu    sync.RWMutex
 	cache *cache.Cache
+}
+
+func GetOrCreateCachedInfo(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, err error) {
+	if pvcsCache == nil {
+		return
+	}
+	return pvcsCache.GetOrCreateInfo(pvc)
 }
 
 func GetCachedInfoForPersistentVolumeClaim(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
@@ -58,6 +66,20 @@ func (c *InjectionCache) AddInfo(info *PersistentVolumeClaimCachedInfo) (err err
 	}
 
 	return c.cache.Add(utils.GetNamespaceKey(info.cachedPVC), info, timeToLive)
+}
+
+func (c *InjectionCache) GetOrCreateInfo(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, err error) {
+	defer c.mu.Unlock()
+	c.mu.Lock()
+	info, found := c.Get(pvc)
+	if !found {
+		info := &PersistentVolumeClaimCachedInfo{
+			cachedPVC: pvc,
+		}
+		err = c.cache.Add(utils.GetNamespaceKey(info.cachedPVC), info, timeToLive)
+	}
+
+	return info, err
 }
 
 func (c *InjectionCache) Get(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {

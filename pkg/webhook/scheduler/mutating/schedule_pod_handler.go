@@ -117,7 +117,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 			continue
 		}
 
-		isDatasetPVC := kubeclient.CheckIfPVCIsDataset(pvc)
+		isDatasetPVC := CheckIfPVCIsDataset(pvc)
 		if isDatasetPVC {
 			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {

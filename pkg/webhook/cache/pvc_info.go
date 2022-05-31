@@ -51,6 +51,12 @@ func (p *PersistentVolumeClaimCachedInfo) SetCachedPVC(cachedPVC *corev1.Persist
 	p.cachedPVC = cachedPVC
 }
 
+func (p *PersistentVolumeClaimCachedInfo) IsBelongToDatasetNil() bool {
+	defer p.mu.RUnlock()
+	p.mu.RLock()
+	return p.isBelongToDataset == nil
+}
+
 func (p *PersistentVolumeClaimCachedInfo) IsBelongToDataset() bool {
 	defer p.mu.RUnlock()
 	p.mu.RLock()
