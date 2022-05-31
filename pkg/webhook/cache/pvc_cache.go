@@ -1,21 +1,25 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	cache "github.com/patrickmn/go-cache"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
-	pvcsCache *InjectionCache
-	log       = ctrl.Log.WithName("webhook.cache")
+	pvcsCache     *InjectionCache
+	log           = ctrl.Log.WithName("webhook.cache")
+	timeToLive    = 2 * time.Minute
+	cleanInterval = 1 * time.Minute
 )
 
 func init() {
 	pvcsCache = &InjectionCache{
-		cache: cache.New(5*time.Minute, 10*time.Minute),
+		cache: cache.New(timeToLive, cleanInterval),
 	}
 
 	pvcsCache.cache.OnEvicted(func(key string, item interface{}) {
@@ -28,24 +32,42 @@ type InjectionCache struct {
 	cache *cache.Cache
 }
 
-func GetInjectionCacheForPVCs() *InjectionCache {
-	return pvcsCache
+func GetCachedInfoForPersistentVolumeClaim(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
+	if pvcsCache == nil {
+		return
+	}
+
+	return pvcsCache.Get(pvc)
 }
 
-func (c *InjectionCache) FindCachedInfoByPvc(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
+func AddCachedInfoForPersistentVolumeClaim(info *PersistentVolumeClaimCachedInfo) (err error) {
+	if pvcsCache == nil {
+		return
+	}
+
+	return pvcsCache.AddInfo(info)
+}
+
+func (c *InjectionCache) AddInfo(info *PersistentVolumeClaimCachedInfo) (err error) {
+	if info == nil {
+		return fmt.Errorf("info to add is nil")
+	}
+
+	if info.cachedPVC == nil {
+		return fmt.Errorf("cached pvc of info to add is nil")
+	}
+
+	return c.cache.Add(utils.GetNamespaceKey(info.cachedPVC), info, timeToLive)
+}
+
+func (c *InjectionCache) Get(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
 	if info == nil {
 		log.V(1).Info("the input pvc to search is nil")
 		return
 	}
 
-	name := pvc.GetName()
-	namespace := pvc.GetNamespace()
-	if len(namespace) == 0 {
-		namespace = corev1.NamespaceDefault
-	}
-	namespacedKey := namespace + "/" + name
-
 	// 1. find the pvc in cached by namespacedKey
+	namespacedKey := utils.GetNamespaceKey(pvc)
 	item, found := c.cache.Get(namespacedKey)
 	if !found {
 		return

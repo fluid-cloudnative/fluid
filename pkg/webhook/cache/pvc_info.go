@@ -6,6 +6,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
+
+	utilpointer "k8s.io/utils/pointer"
 )
 
 type PersistentVolumeClaimCachedInfo struct {
@@ -14,7 +16,7 @@ type PersistentVolumeClaimCachedInfo struct {
 	cachedPVC *corev1.PersistentVolumeClaim
 
 	// Check if the pvc belongs to the fluid dataset
-	isBelongToDataset bool
+	isBelongToDataset *bool
 
 	// The runtime Info to cache
 	runtimeInfo base.RuntimeInfoInterface
@@ -31,7 +33,7 @@ func BuildPersistentVolumeClaimCachedInfo(cachedPVC *corev1.PersistentVolumeClai
 	fuseTemplateToInject *common.FuseInjectionTemplate) *PersistentVolumeClaimCachedInfo {
 	return &PersistentVolumeClaimCachedInfo{
 		cachedPVC:            cachedPVC,
-		isBelongToDataset:    isBelongToDataset,
+		isBelongToDataset:    utilpointer.BoolPtr(isBelongToDataset),
 		runtimeInfo:          runtimeInfo,
 		fuseTemplateToInject: fuseTemplateToInject,
 	}
