@@ -54,13 +54,13 @@ func (p *PersistentVolumeClaimCachedInfo) SetCachedPVC(cachedPVC *corev1.Persist
 func (p *PersistentVolumeClaimCachedInfo) IsBelongToDataset() bool {
 	defer p.mu.RUnlock()
 	p.mu.RLock()
-	return p.isBelongToDataset
+	return *p.isBelongToDataset
 }
 
 func (p *PersistentVolumeClaimCachedInfo) SetBelongToDataset(isBelongToDataset bool) {
 	defer p.mu.Unlock()
 	p.mu.Lock()
-	p.isBelongToDataset = isBelongToDataset
+	p.isBelongToDataset = utilpointer.BoolPtr(isBelongToDataset)
 }
 
 func (p *PersistentVolumeClaimCachedInfo) GetRuntimeInfo() base.RuntimeInfoInterface {
