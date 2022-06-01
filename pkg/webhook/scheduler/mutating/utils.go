@@ -21,7 +21,9 @@ func buildRuntimeInfo(client client.Client,
 	pvc *corev1.PersistentVolumeClaim,
 	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	cachedInfo, err := cache.GetOrCreateCachedInfo(pvc)
-	log.Info("Failed to get cache, but ignore it.", "err", err)
+	if err != nil {
+		log.Info("Failed to get cache, but ignore it.", "err", err)
+	}
 
 	// if no cache info is available
 	if cachedInfo == nil {
