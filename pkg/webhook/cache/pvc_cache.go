@@ -75,7 +75,7 @@ func (c *InjectionCache) GetOrCreateInfo(pvc *corev1.PersistentVolumeClaim) (inf
 }
 
 func (c *InjectionCache) Get(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
-	if info == nil {
+	if pvc == nil {
 		log.V(1).Info("the input pvc to search is nil")
 		return
 	}

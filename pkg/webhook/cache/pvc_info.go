@@ -28,12 +28,11 @@ type PersistentVolumeClaimCachedInfo struct {
 }
 
 func BuildPersistentVolumeClaimCachedInfo(cachedPVC *corev1.PersistentVolumeClaim,
-	isBelongToDataset bool,
 	runtimeInfo base.RuntimeInfoInterface,
 	fuseTemplateToInject *common.FuseInjectionTemplate) *PersistentVolumeClaimCachedInfo {
 	return &PersistentVolumeClaimCachedInfo{
-		cachedPVC:            cachedPVC,
-		isBelongToDataset:    utilpointer.BoolPtr(isBelongToDataset),
+		cachedPVC: cachedPVC,
+		// isBelongToDataset:    utilpointer.BoolPtr(isBelongToDataset),
 		runtimeInfo:          runtimeInfo,
 		fuseTemplateToInject: fuseTemplateToInject,
 	}
