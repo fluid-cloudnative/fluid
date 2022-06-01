@@ -9,19 +9,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CheckIfPVCIsDataset(pvc *corev1.PersistentVolumeClaim) (isDataset bool) {
+func CheckIfPVCIsDataset(pvc *corev1.PersistentVolumeClaim, log logr.Logger) (isDataset bool) {
 
-	info, found := cache.GetCachedInfoForPersistentVolumeClaim(pvc)
-	if found {
-		if info.IsBelongToDataset() {
-
-		}
-	}
+	// cachedInfo, err := cache.GetOrCreateCachedInfo(pvc)
+	// log.Info("Failed to get cache, but ignore it.", "err", err)
 
 	return kubeclient.CheckIfPVCIsDataset(pvc)
 }
 
-func buildRuntimeInfo(client client.Client, pvc *corev1.PersistentVolumeClaim, log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
+func buildRuntimeInfo(client client.Client,
+	pvc *corev1.PersistentVolumeClaim,
+	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	cachedInfo, err := cache.GetOrCreateCachedInfo(pvc)
 	log.Info("Failed to get cache, but ignore it.", "err", err)
 
@@ -33,7 +31,7 @@ func buildRuntimeInfo(client client.Client, pvc *corev1.PersistentVolumeClaim, l
 	runtimeInfo = cachedInfo.GetRuntimeInfo()
 	// runtime info is not set
 	if runtimeInfo == nil {
-		runtimeInfo, err = buildRuntimeInfo(client, pvc, log)
+		runtimeInfo, err = buildRuntimeInfoInternal(client, pvc, log)
 		if err != nil {
 			return
 		}
@@ -43,7 +41,9 @@ func buildRuntimeInfo(client client.Client, pvc *corev1.PersistentVolumeClaim, l
 	return
 }
 
-func buildRuntimeInfoInternal(client client.Client, pvc *corev1.PersistentVolumeClaim, log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
+func buildRuntimeInfoInternal(client client.Client,
+	pvc *corev1.PersistentVolumeClaim,
+	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	runtimeInfo, err = base.GetRuntimeInfo(client, pvc.GetName(), pvc.GetNamespace())
 	if err != nil {
 		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", pvc.GetNamespace())

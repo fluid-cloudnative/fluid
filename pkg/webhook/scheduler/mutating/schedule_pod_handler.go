@@ -117,15 +117,12 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 			continue
 		}
 
-		isDatasetPVC := CheckIfPVCIsDataset(pvc)
+		isDatasetPVC := CheckIfPVCIsDataset(pvc, setupLog)
 		if isDatasetPVC {
-			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
+			runtimeInfo, err := buildRuntimeInfo(a.Client, pvc, setupLog)
 			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName, "namespace", namespace)
 				return err
 			}
-			runtimeInfo.SetDeprecatedNodeLabel(false)
-			// runtimeInfos = append(runtimeInfos, runtimeInfo)
 			runtimeInfos[pvcName] = runtimeInfo
 		}
 	}
