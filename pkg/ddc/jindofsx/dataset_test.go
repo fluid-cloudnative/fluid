@@ -98,6 +98,10 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 					MasterReplicas: 1,
 				},
 			},
+			HCFSStatus: &datav1alpha1.HCFSStatus{
+				Endpoint:                    "",
+				UnderlayerFileSystemVersion: "",
+			},
 		},
 	}
 
