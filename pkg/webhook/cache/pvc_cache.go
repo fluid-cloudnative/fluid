@@ -14,8 +14,8 @@ import (
 var (
 	pvcsCache     *InjectionCache
 	log           = ctrl.Log.WithName("webhook.cache")
-	timeToLive    = 2 * time.Minute
-	cleanInterval = 1 * time.Minute
+	timeToLive    = 10 * time.Minute
+	cleanInterval = 5 * time.Minute
 )
 
 func init() {
@@ -38,14 +38,6 @@ func GetOrCreateCachedInfo(pvc *corev1.PersistentVolumeClaim) (info *PersistentV
 		return
 	}
 	return pvcsCache.GetOrCreateInfo(pvc)
-}
-
-func GetCachedInfoForPersistentVolumeClaim(pvc *corev1.PersistentVolumeClaim) (info *PersistentVolumeClaimCachedInfo, found bool) {
-	if pvcsCache == nil {
-		return
-	}
-
-	return pvcsCache.Get(pvc)
 }
 
 func AddCachedInfoForPersistentVolumeClaim(info *PersistentVolumeClaimCachedInfo) (err error) {
