@@ -118,6 +118,15 @@ func (e *JindoFSxEngine) UpdateCacheOfDataset() (err error) {
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
+		if datasetToUpdate.Status.HCFSStatus == nil {
+			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
+			if err != nil {
+				return err
+			}
+		} else {
+			e.Log.Info("No need to update HCFS status")
+		}
+
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
