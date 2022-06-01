@@ -65,7 +65,7 @@ func (c *InjectionCache) GetOrCreateInfo(pvc *corev1.PersistentVolumeClaim) (inf
 	c.mu.Lock()
 	info, found := c.Get(pvc)
 	if !found {
-		info := &PersistentVolumeClaimCachedInfo{
+		info = &PersistentVolumeClaimCachedInfo{
 			cachedPVC: pvc,
 		}
 		err = c.cache.Add(utils.GetNamespaceKey(info.cachedPVC), info, timeToLive)
