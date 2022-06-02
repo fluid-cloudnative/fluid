@@ -48,6 +48,9 @@ func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
 
 // Handle is the mutating logic of pod
 func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+	if utils.IsTimeTrackerEnabled() {
+		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle")
+	}
 	var setupLog = ctrl.Log.WithName("handle")
 	pod := &corev1.Pod{}
 	err := a.decoder.Decode(req, pod)
@@ -166,8 +169,10 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,
 	err error) {
-	defer utils.TimeTrack(time.Now(), "checkIfDatasetPVCs",
-		"pod.name", pvcNames, "pod.namespace", namespace)
+	if utils.IsTimeTrackerEnabled() {
+		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
+			"pvc.names", pvcNames, "pvc.namespace", namespace)
+	}
 	errPVCs = map[string]error{}
 	runtimeInfos = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {

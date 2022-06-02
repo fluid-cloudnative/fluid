@@ -54,3 +54,7 @@ func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}
 func checkLongTask(elpased time.Duration) bool {
 	return elpased >= taskTimeThreshold
 }
+
+func IsTimeTrackerEnabled() bool {
+	return enableTimeTrack
+}
