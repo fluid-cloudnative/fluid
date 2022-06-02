@@ -48,9 +48,8 @@ func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
 
 // Handle is the mutating logic of pod
 func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
-	if utils.IsTimeTrackerEnabled() {
-		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle")
-	}
+	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
+		"req.name", req.Name, "req.namespace", req.Namespace)
 	var setupLog = ctrl.Log.WithName("handle")
 	pod := &corev1.Pod{}
 	err := a.decoder.Decode(req, pod)
@@ -106,8 +105,10 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
-	defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
-		"pod.name", pod.GetName(), "pod.namespace", namespace)
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
+			"pod.name", pod.GetName(), "pod.namespace", namespace)
+	}
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
@@ -169,7 +170,7 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,
 	err error) {
-	if utils.IsTimeTrackerEnabled() {
+	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
 			"pvc.names", pvcNames, "pvc.namespace", namespace)
 	}

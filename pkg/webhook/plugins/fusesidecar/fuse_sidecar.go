@@ -53,7 +53,7 @@ func (p *FuseSidecar) GetName() string {
 
 func (p *FuseSidecar) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	// if the pod has no mounted datasets, should exit and call other plugins
-	if utils.IsTimeTrackerEnabled() {
+	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "FuseSidecar.Mutate",
 			"pod.name", pod.GetName(), "pvc.namespace", pod.GetNamespace())
 	}
