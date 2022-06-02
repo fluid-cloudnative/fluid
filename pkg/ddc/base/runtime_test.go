@@ -1142,3 +1142,14 @@ func TestPermitSync(t *testing.T) {
 		t.Errorf("expect permit, but got %v", permit)
 	}
 }
+
+func TestUseAsHcfs(t *testing.T) {
+	runtimeInfo, err := BuildRuntimeInfo("test", "test", "alluxio", v1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfo.UseAsHcfs()
+	if !runtimeInfo.IsHcfsUsed() {
+		t.Errorf("fail to set runtimeInfo to be used as hcfs")
+	}
+}

@@ -18,7 +18,6 @@ package hcfsaddressesinjector
 
 import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -93,6 +92,11 @@ func TestMutate(t *testing.T) {
 			hcfsStatus:  nil,
 			expectURL:   common.UnknownURL,
 		},
+		"test case 5": {
+			runtimeName: "",
+			hcfsStatus:  nil,
+			expectURL:   common.UnknownURL,
+		},
 	}
 
 	for index, testCase := range testCases {
@@ -112,7 +116,14 @@ func TestMutate(t *testing.T) {
 		if plugin.GetName() != NAME {
 			t.Errorf("testcase %v fail, GetName expect %v, got %v", index, NAME, plugin.GetName())
 		}
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.runtimeName, namespace, "alluxio", datav1alpha1.TieredStore{})
+		if testCase.runtimeName == "" {
+			_, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
+			if err == nil {
+				t.Errorf("expect error is not nil")
+			}
+			continue
+		}
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.runtimeName, namespace, "alluxio", v1alpha1.TieredStore{})
 		if err != nil {
 			t.Errorf("testcase %v fail, fail to create the runtimeInfo with error %v", index, err)
 		}
