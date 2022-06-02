@@ -166,6 +166,8 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,
 	err error) {
+	defer utils.TimeTrack(time.Now(), "checkIfDatasetPVCs",
+		"pod.name", pvcNames, "pod.namespace", namespace)
 	errPVCs = map[string]error{}
 	runtimeInfos = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
