@@ -46,7 +46,7 @@ func init() {
 func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}) {
 	elpased := time.Since(start)
 	if IsTimeTrackerEnabled() {
-		timeLog.V(1).Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
+		timeLog.Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
 	} else if checkLongTask(elpased) {
 		timeLog.Info(fmt.Sprintf("Warning: %s took %s , it's a long task.", processName, elpased), keysAndValues...)
 	} else {
