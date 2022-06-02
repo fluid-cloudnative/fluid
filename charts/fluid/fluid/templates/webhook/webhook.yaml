@@ -30,6 +30,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: TIME_TRACK
+              value: "false"
           ports:
             - containerPort: 8080
               name: metrics
