@@ -43,7 +43,9 @@ func init() {
 //   defer utils.TimeTrack(time.Now(), <func-name>, <keysAndValues>...)
 func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}) {
 	elpased := time.Since(start)
-	if enableTimeTrack || checkLongTask(elpased) {
+	if enableTimeTrack {
+		timeLog.V(1).Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
+	} else if checkLongTask(elpased) {
 		timeLog.Info(fmt.Sprintf("Warning: %s took %s, it's a long task.", processName, elpased), keysAndValues...)
 	} else {
 		timeLog.V(1).Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
