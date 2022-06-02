@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -106,26 +107,10 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		"pod.name", pod.GetName(), "pod.namespace", namespace)
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
-	errPVCs := map[string]error{}
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	var runtimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
-	for _, pvcName := range pvcNames {
-		isDatasetPVC, err := kubeclient.IsDatasetPVC(a.Client, pvcName, namespace)
-		if err != nil {
-			setupLog.Error(err, "unable to check pvc, will ignore it", "pvc", pvcName, "namespace", namespace)
-			errPVCs[pvcName] = err
-			continue
-		}
-		if isDatasetPVC {
-			runtimeInfo, err := base.GetRuntimeInfo(a.Client, pvcName, namespace)
-			if err != nil {
-				setupLog.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvcName, "namespace", namespace)
-				return err
-			}
-			runtimeInfo.SetDeprecatedNodeLabel(false)
-			// runtimeInfos = append(runtimeInfos, runtimeInfo)
-			runtimeInfos[pvcName] = runtimeInfo
-		}
+	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, namespace, setupLog)
+	if err != nil {
+		return err
 	}
 
 	// get plugins Registry and get the need plugins list from it
@@ -174,4 +159,43 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 
 	return
 
+}
+
+func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []string,
+	namespace string,
+	setupLog logr.Logger) (errPVCs map[string]error,
+	runtimeInfos map[string]base.RuntimeInfoInterface,
+	err error) {
+	errPVCs = map[string]error{}
+	runtimeInfos = map[string]base.RuntimeInfoInterface{}
+	for _, pvcName := range pvcNames {
+		isDatasetPVC, pvcErr := kubeclient.IsDatasetPVC(a.Client,
+			pvcName,
+			namespace)
+		if pvcErr != nil {
+			setupLog.Error(pvcErr, "unable to check pvc, will ignore it",
+				"pvc",
+				pvcName,
+				"namespace",
+				namespace)
+			errPVCs[pvcName] = pvcErr
+			continue
+		}
+		if isDatasetPVC {
+			var runtimeInfo base.RuntimeInfoInterface
+			runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
+			if err != nil {
+				setupLog.Error(err,
+					"unable to get runtimeInfo, get failure",
+					"runtime",
+					pvcName,
+					"namespace",
+					namespace)
+				return
+			}
+			runtimeInfo.SetDeprecatedNodeLabel(false)
+			runtimeInfos[pvcName] = runtimeInfo
+		}
+	}
+	return
 }
