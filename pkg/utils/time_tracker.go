@@ -27,14 +27,16 @@ import (
 
 // the default task elapsed
 var (
-	taskTimeThreshold time.Duration = 30 * time.Second
-	timeLog           logr.Logger
-	enableTimeTrack   bool
+	taskTimeThreshold    time.Duration = 30 * time.Second
+	timeLog              logr.Logger
+	enableTimeTrack      bool
+	enableTimeTrackDebug bool
 )
 
 func init() {
-	timeLog = ctrl.Log.WithName("utils")
+	timeLog = ctrl.Log.WithName("utils.time")
 	enableTimeTrack = GetBoolValueFormEnv(common.EnvTimeTrack, false)
+	enableTimeTrackDebug = GetBoolValueFormEnv(common.EnvTimeTrackDebug, false)
 }
 
 // TimeTrack tracks the time cost for some process with some optional information.
@@ -43,8 +45,10 @@ func init() {
 //   defer utils.TimeTrack(time.Now(), <func-name>, <keysAndValues>...)
 func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}) {
 	elpased := time.Since(start)
-	if enableTimeTrack || checkLongTask(elpased) {
-		timeLog.Info(fmt.Sprintf("Warning: %s took %s, it's a long task.", processName, elpased), keysAndValues...)
+	if IsTimeTrackerEnabled() {
+		timeLog.Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
+	} else if checkLongTask(elpased) {
+		timeLog.Info(fmt.Sprintf("Warning: %s took %s , it's a long task.", processName, elpased), keysAndValues...)
 	} else {
 		timeLog.V(1).Info(fmt.Sprintf("%s took %s", processName, elpased), keysAndValues...)
 	}
@@ -53,4 +57,12 @@ func TimeTrack(start time.Time, processName string, keysAndValues ...interface{}
 // checkLongTask checks the time conusmes
 func checkLongTask(elpased time.Duration) bool {
 	return elpased >= taskTimeThreshold
+}
+
+func IsTimeTrackerEnabled() bool {
+	return enableTimeTrack || enableTimeTrackDebug
+}
+
+func IsTimeTrackerDebugEnabled() bool {
+	return enableTimeTrackDebug
 }

@@ -18,4 +18,8 @@ package common
 
 const (
 	EnvTimeTrack = "TIME_TRACK"
+
+	EnvTimeTrackDebug = "TIME_TRACK_DEBUG"
+
+	EnvDisableInjection = "DISABLE_INJECTION"
 )
