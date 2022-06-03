@@ -50,6 +50,11 @@ func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
 func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
 		"req.name", req.Name, "req.namespace", req.Namespace)
+
+	if utils.GetBoolValueFormEnv(common.EnvDisableInjection, false) {
+		return admission.Allowed("skip mutating the pod because global injection is disabled")
+	}
+
 	var setupLog = ctrl.Log.WithName("handle")
 	pod := &corev1.Pod{}
 	err := a.decoder.Decode(req, pod)
