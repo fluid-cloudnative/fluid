@@ -27,6 +27,41 @@ func TestTimeTrack(t *testing.T) {
 	}
 }
 
+func TestIsTimeTrackerDebugEnabled(t *testing.T) {
+
+	type testCases struct {
+		name   string
+		debug  bool
+		wanted bool
+	}
+
+	tests := []testCases{
+		{
+
+			name:   "disable",
+			debug:  false,
+			wanted: false,
+		}, {
+
+			name:   "enable",
+			debug:  true,
+			wanted: true,
+		},
+	}
+
+	for _, testCase := range tests {
+		enableTimeTrackDebug = testCase.debug
+		if IsTimeTrackerDebugEnabled() != testCase.wanted {
+			t.Errorf("failed due to expect IsTimeTrackerDebugEnabled is %v, but got %v", testCase.wanted, IsTimeTrackerDebugEnabled())
+		}
+
+		if IsTimeTrackerEnabled() != testCase.wanted {
+			t.Errorf("failed due to expect IsTimeTrackerEnabled is true, but got %v", IsTimeTrackerEnabled())
+		}
+	}
+
+}
+
 func mockTimeTrack(d time.Duration) {
 	defer TimeTrack(time.Now(), "mockTimeTracker", "test", "test")
 	time.Sleep(d)
