@@ -52,11 +52,11 @@ func TestIsTimeTrackerDebugEnabled(t *testing.T) {
 	for _, testCase := range tests {
 		enableTimeTrackDebug = testCase.debug
 		if IsTimeTrackerDebugEnabled() != testCase.wanted {
-			t.Errorf("failed due to expect IsTimeTrackerDebugEnabled is %v, but got %v", testCase.wanted, IsTimeTrackerDebugEnabled())
+			t.Errorf("test case %s failed due to expect IsTimeTrackerDebugEnabled is %v, but got %v", testCase.name, testCase.wanted, IsTimeTrackerDebugEnabled())
 		}
 
 		if IsTimeTrackerEnabled() != testCase.wanted {
-			t.Errorf("failed due to expect IsTimeTrackerEnabled is true, but got %v", IsTimeTrackerEnabled())
+			t.Errorf("test case %s failed due to expect IsTimeTrackerEnabled is %v, but got %v", testCase.name, testCase.wanted, IsTimeTrackerEnabled())
 		}
 	}
 
