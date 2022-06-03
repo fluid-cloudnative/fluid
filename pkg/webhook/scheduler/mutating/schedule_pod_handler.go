@@ -182,9 +182,7 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 	errPVCs = map[string]error{}
 	runtimeInfos = map[string]base.RuntimeInfoInterface{}
 	for _, pvcName := range pvcNames {
-		isDatasetPVC, pvcErr := kubeclient.IsDatasetPVC(a.Client,
-			pvcName,
-			namespace)
+		pvc, pvcErr := kubeclient.GetPersistentVolumeClaim(a.Client, pvcName, namespace)
 		if pvcErr != nil {
 			setupLog.Error(pvcErr, "unable to check pvc, will ignore it",
 				"pvc",
@@ -194,9 +192,11 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 			errPVCs[pvcName] = pvcErr
 			continue
 		}
+		isDatasetPVC := kubeclient.CheckIfPVCIsDataset(pvc)
 		if isDatasetPVC {
 			var runtimeInfo base.RuntimeInfoInterface
-			runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
+			runtimeInfo, err = buildRuntimeInfoByPVC(a.Client, pvc, setupLog)
+			// runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
 			if err != nil {
 				setupLog.Error(err,
 					"unable to get runtimeInfo, get failure",
