@@ -140,16 +140,16 @@ func TestFuseSidecarVirtualFuseDeviceEnabled(t *testing.T) {
 		{
 			name: "enable_virtual_fuse_device_sidecar",
 			annotations: map[string]string{
-				common.InjectFuseSidecar:       "true",
-				common.InjectVirtualDevEnabled: "true",
+				common.InjectFuseSidecar:             "true",
+				common.InjectUnprivilegedFuseSidecar: "true",
 			},
 			expect: true,
 		},
 		{
 			name: "enable_virtual_fuse_device_serverless",
 			annotations: map[string]string{
-				common.InjectServerless:        "true",
-				common.InjectVirtualDevEnabled: "true",
+				common.InjectServerless:              "true",
+				common.InjectUnprivilegedFuseSidecar: "true",
 			},
 			expect: true,
 		},
@@ -163,15 +163,15 @@ func TestFuseSidecarVirtualFuseDeviceEnabled(t *testing.T) {
 		{
 			name: "override_virtual_fuse_device_enabled",
 			annotations: map[string]string{
-				common.InjectServerless:        "false",
-				common.InjectVirtualDevEnabled: "true",
+				common.InjectServerless:              "false",
+				common.InjectUnprivilegedFuseSidecar: "true",
 			},
 			expect: false,
 		},
 	}
 
 	for _, testcase := range testcases {
-		got := FuseSidecarVirtualFuseDeviceEnabled(testcase.annotations)
+		got := FuseSidecarUnprivileged(testcase.annotations)
 		if got != testcase.expect {
 			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
 		}

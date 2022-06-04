@@ -489,6 +489,11 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
+	options := common.FuseSidecarInjectOptions{
+		EnableCacheDir:            true,
+		EnableUnprivilegedSidecar: false,
+	}
+
 	for _, testcase := range testcases {
 		info := testcase.info
 		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
@@ -496,7 +501,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, true, false)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
@@ -856,12 +861,16 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 
 	for _, testcase := range testcases {
 		info := testcase.info
+		options := common.FuseSidecarInjectOptions{
+			EnableCacheDir:            testcase.enableCacheDir,
+			EnableUnprivilegedSidecar: false,
+		}
 		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
 		if err != nil {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, false)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
@@ -875,16 +884,16 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 		runtimeType string
 	}
 	type testCase struct {
-		name                    string
-		dataset                 *datav1alpha1.Dataset
-		pvcName                 string
-		enableCacheDir          bool
-		enableVirtualFuseDevice bool
-		info                    runtimeInfo
-		pv                      *corev1.PersistentVolume
-		pvc                     *corev1.PersistentVolumeClaim
-		fuse                    *appsv1.DaemonSet
-		expectErr               bool
+		name                          string
+		dataset                       *datav1alpha1.Dataset
+		pvcName                       string
+		enableCacheDir                bool
+		enableUnprivilegedFuseSidecar bool
+		info                          runtimeInfo
+		pv                            *corev1.PersistentVolume
+		pvc                           *corev1.PersistentVolumeClaim
+		fuse                          *appsv1.DaemonSet
+		expectErr                     bool
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
@@ -967,9 +976,9 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 					},
 				},
 			},
-			enableCacheDir:          false,
-			enableVirtualFuseDevice: true,
-			expectErr:               false,
+			enableCacheDir:                false,
+			enableUnprivilegedFuseSidecar: true,
+			expectErr:                     false,
 			pvc: &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mydata",
@@ -1061,12 +1070,16 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 
 	for _, testcase := range testcases {
 		info := testcase.info
+		options := common.FuseSidecarInjectOptions{
+			EnableCacheDir:            testcase.enableCacheDir,
+			EnableUnprivilegedSidecar: testcase.enableUnprivilegedFuseSidecar,
+		}
 		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
 		if err != nil {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.enableCacheDir, testcase.enableVirtualFuseDevice)
+		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}

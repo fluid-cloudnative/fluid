@@ -18,6 +18,7 @@ package poststart
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -71,23 +72,23 @@ type ScriptGeneratorForFuse struct {
 	mountPath string
 	mountType string
 
-	virtualFuseDeviceEnabled bool
+	option common.FuseSidecarInjectOptions
 }
 
-func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, virtualFuseDeviceEnabled bool) *ScriptGeneratorForFuse {
+func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, option common.FuseSidecarInjectOptions) *ScriptGeneratorForFuse {
 	return &ScriptGeneratorForFuse{
-		name:                     namespacedKey.Name,
-		namespace:                namespacedKey.Namespace,
-		mountPath:                mountPath,
-		mountType:                mountType,
-		virtualFuseDeviceEnabled: virtualFuseDeviceEnabled,
+		name:      namespacedKey.Name,
+		namespace: namespacedKey.Namespace,
+		mountPath: mountPath,
+		mountType: mountType,
+		option:    option,
 	}
 }
 
 func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerReference) *corev1.ConfigMap {
 	data := map[string]string{}
 	var content string
-	if f.virtualFuseDeviceEnabled {
+	if f.option.EnableUnprivilegedSidecar {
 		content = contentUnprivilegedSidecar
 	} else {
 		content = contentPrivilegedSidecar
@@ -109,7 +110,7 @@ func (f *ScriptGeneratorForFuse) getConfigmapName() string {
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
 	var cmd []string
-	if f.virtualFuseDeviceEnabled {
+	if f.option.EnableUnprivilegedSidecar {
 		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", scriptPath)}
 	} else {
 		// https://github.com/kubernetes/kubernetes/issues/25766

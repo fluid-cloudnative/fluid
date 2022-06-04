@@ -20,16 +20,20 @@ import (
 	"context"
 	"fmt"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"time"
 =======
 	"k8s.io/apimachinery/pkg/api/resource"
 >>>>>>> 2fa66f87 (Support webhook mutation with fuse virtual device enabled)
 
+=======
+>>>>>>> 33fc2145 (Refactor code)
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -50,7 +54,8 @@ var (
 )
 
 // GetTemplateToInjectForFuse gets template for fuse injection
-func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheDir bool) (template *common.FuseInjectionTemplate, err error) {
+
+func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option common.FuseSidecarInjectOptions) (template *common.FuseInjectionTemplate, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetTemplateToInjectForFuse",
 			"pvc.name", pvcName, "pvc.namespace", info.GetNamespace())
@@ -77,35 +82,13 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 	if len(ds.Spec.Template.Spec.Containers) != 1 {
 		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
 	}
-	if !enableCacheDir {
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, cacheDirNames)
-		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, cacheDirNames)
+	if !option.EnableCacheDir {
+		info.transformTemplateWithCacheDirDisabled(ds)
 	}
 
 	// 1. setup fuse sidecar container when enabling virtual fuse device
-	if enableVirtFuseDev {
-		// remove the fuse related volumes if using virtual fuse device
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostMountNames)
-		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostMountNames)
-
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostFuseDeviceNames)
-		ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostFuseDeviceNames)
-
-		// add virtual fuse device resource
-		if ds.Spec.Template.Spec.Containers[0].Resources.Limits == nil {
-			ds.Spec.Template.Spec.Containers[0].Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
-		}
-		ds.Spec.Template.Spec.Containers[0].Resources.Limits["fluid.io/fuse"] = resource.MustParse("1")
-
-		if ds.Spec.Template.Spec.Containers[0].Resources.Requests == nil {
-			ds.Spec.Template.Spec.Containers[0].Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
-		}
-		ds.Spec.Template.Spec.Containers[0].Resources.Requests["fluid.io/fuse"] = resource.MustParse("1")
-
-		// invalidate privileged fuse container
-		privilegedContainer := false
-		ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = &privilegedContainer
-		ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add = utils.TrimCapabilities(ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+	if option.EnableUnprivilegedSidecar {
+		info.transformTemplateWithUnprivilegedSidecarEnabled(ds)
 	}
 
 	// 2. set the pvc name
@@ -126,7 +109,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 	}
 
 	mountPathInContainer := ""
-	if !enableVirtFuseDev {
+	if !option.EnableUnprivilegedSidecar {
 		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
 		if err != nil {
 			return template, err
@@ -137,7 +120,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheD
 	gen := poststart.NewGenerator(types.NamespacedName{
 		Name:      info.name,
 		Namespace: info.namespace,
-	}, mountPathInContainer, mountType, enableVirtFuseDev)
+	}, mountPathInContainer, mountType, option)
 	cm := gen.BuildConfigmap(ownerReference)
 	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
 	if err != nil {
@@ -187,4 +170,34 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 		fuseName = info.name + "-fuse"
 	}
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
+}
+
+func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(ds *appsv1.DaemonSet) {
+	// remove the fuse related volumes if using virtual fuse device
+	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostMountNames)
+	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostMountNames)
+
+	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostFuseDeviceNames)
+	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostFuseDeviceNames)
+
+	// add virtual fuse device resource
+	if ds.Spec.Template.Spec.Containers[0].Resources.Limits == nil {
+		ds.Spec.Template.Spec.Containers[0].Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
+	}
+	ds.Spec.Template.Spec.Containers[0].Resources.Limits["fluid.io/fuse"] = resource.MustParse("1")
+
+	if ds.Spec.Template.Spec.Containers[0].Resources.Requests == nil {
+		ds.Spec.Template.Spec.Containers[0].Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
+	}
+	ds.Spec.Template.Spec.Containers[0].Resources.Requests["fluid.io/fuse"] = resource.MustParse("1")
+
+	// invalidate privileged fuse container
+	privilegedContainer := false
+	ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = &privilegedContainer
+	ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add = utils.TrimCapabilities(ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+}
+
+func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(ds *appsv1.DaemonSet) {
+	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, cacheDirNames)
+	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, cacheDirNames)
 }
