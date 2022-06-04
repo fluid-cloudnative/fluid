@@ -152,6 +152,7 @@ type FuseInjectionTemplate struct {
 	VolumesToAdd         []corev1.Volume
 }
 
+// FuseSidecarInjectOptions are options for webhook to inject fuse sidecar containers
 type FuseSidecarInjectOptions struct {
 	EnableCacheDir            bool
 	EnableUnprivilegedSidecar bool

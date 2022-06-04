@@ -184,12 +184,12 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(ds *app
 	if ds.Spec.Template.Spec.Containers[0].Resources.Limits == nil {
 		ds.Spec.Template.Spec.Containers[0].Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
 	}
-	ds.Spec.Template.Spec.Containers[0].Resources.Limits["fluid.io/fuse"] = resource.MustParse("1")
+	ds.Spec.Template.Spec.Containers[0].Resources.Limits[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
 
 	if ds.Spec.Template.Spec.Containers[0].Resources.Requests == nil {
 		ds.Spec.Template.Spec.Containers[0].Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
 	}
-	ds.Spec.Template.Spec.Containers[0].Resources.Requests["fluid.io/fuse"] = resource.MustParse("1")
+	ds.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	privilegedContainer := false

@@ -108,6 +108,10 @@ const (
 )
 
 const (
+	FuseDeviceResourceName string = "fluid.io/fuse"
+)
+
+const (
 	RootDirPath                   = "/"
 	DefaultImagePullPolicy        = "IfNotPresent"
 	MyPodNamespace                = "MY_POD_NAMESPACE"
