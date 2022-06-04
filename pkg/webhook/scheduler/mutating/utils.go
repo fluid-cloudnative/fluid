@@ -5,31 +5,10 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func buildRuntimeInfoByPVC(client client.Client,
-	pvc *corev1.PersistentVolumeClaim,
-	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
-	var found bool
-	if utils.IsTimeTrackerDebugEnabled() {
-		defer utils.TimeTrack(time.Now(), "mutating.buildRuntimeInfoByPVC",
-			"pvc.name", pvc.GetName(), "pvc.namespace", pvc.GetNamespace())
-	}
-	if runtimeInfo, found = cache.GetRuntimeInfoByPVC(pvc); found {
-		return runtimeInfo, nil
-	} else {
-		runtimeInfo, err = buildRuntimeInfoInternal(client, pvc, log)
-		if err != nil {
-			return
-		}
-		cache.AddRuntimeInfoByPVC(pvc, runtimeInfo)
-	}
-	return
-}
 
 func buildRuntimeInfoInternal(client client.Client,
 	pvc *corev1.PersistentVolumeClaim,
