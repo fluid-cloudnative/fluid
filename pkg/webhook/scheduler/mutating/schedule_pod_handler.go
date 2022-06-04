@@ -27,9 +27,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -171,6 +173,66 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 }
 
 func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []string,
+	namespace string,
+	setupLog logr.Logger) (errPVCs map[string]error,
+	runtimeInfos map[string]base.RuntimeInfoInterface,
+	err error) {
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
+			"pvc.names", pvcNames, "pvc.namespace", namespace)
+	}
+	errPVCs = map[string]error{}
+	runtimeInfos = map[string]base.RuntimeInfoInterface{}
+	for _, pvcName := range pvcNames {
+		var (
+			isDatasetPVC bool
+			runtimeInfo  base.RuntimeInfoInterface
+		)
+		if cachedInfo, found := cache.GetRuntimeInfoByKey(types.NamespacedName{
+			Name:      pvcName,
+			Namespace: namespace,
+		}); found {
+			isDatasetPVC = cachedInfo.IsBelongToDataset()
+			if isDatasetPVC {
+				runtimeInfos[pvcName] = cachedInfo.GetRuntimeInfo()
+			}
+		} else {
+			pvc, pvcErr := kubeclient.GetPersistentVolumeClaim(a.Client, pvcName, namespace)
+			if pvcErr != nil {
+				setupLog.Error(pvcErr, "unable to check pvc, will ignore it",
+					"pvc",
+					pvcName,
+					"namespace",
+					namespace)
+				errPVCs[pvcName] = pvcErr
+				continue
+			}
+			isDatasetPVC = kubeclient.CheckIfPVCIsDataset(pvc)
+			if isDatasetPVC {
+				runtimeInfo, err = buildRuntimeInfoInternal(a.Client, pvc, setupLog)
+				// runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
+				if err != nil {
+					setupLog.Error(err,
+						"unable to get runtimeInfo, get failure",
+						"runtime",
+						pvcName,
+						"namespace",
+						namespace)
+					return
+				}
+				runtimeInfo.SetDeprecatedNodeLabel(false)
+				runtimeInfos[pvcName] = runtimeInfo
+			}
+			cache.AddRuntimeInfoByKey(types.NamespacedName{
+				Name:      pvcName,
+				Namespace: namespace,
+			}, runtimeInfo, isDatasetPVC)
+		}
+	}
+	return
+}
+
+func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCsByPVC(pvcNames []string,
 	namespace string,
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,

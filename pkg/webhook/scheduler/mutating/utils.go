@@ -22,7 +22,7 @@ func buildRuntimeInfoByPVC(client client.Client,
 	if runtimeInfo, found = cache.GetRuntimeInfoByPVC(pvc); found {
 		return runtimeInfo, nil
 	} else {
-		runtimeInfo, err = buildRuntimeInfoInternalByPVC(client, pvc, log)
+		runtimeInfo, err = buildRuntimeInfoInternal(client, pvc, log)
 		if err != nil {
 			return
 		}
@@ -31,7 +31,7 @@ func buildRuntimeInfoByPVC(client client.Client,
 	return
 }
 
-func buildRuntimeInfoInternalByPVC(client client.Client,
+func buildRuntimeInfoInternal(client client.Client,
 	pvc *corev1.PersistentVolumeClaim,
 	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
