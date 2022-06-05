@@ -19,15 +19,6 @@ package base
 import (
 	"context"
 	"fmt"
-<<<<<<< HEAD
-<<<<<<< HEAD
-	"time"
-=======
-	"k8s.io/apimachinery/pkg/api/resource"
->>>>>>> 2fa66f87 (Support webhook mutation with fuse virtual device enabled)
-
-=======
->>>>>>> 33fc2145 (Refactor code)
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -35,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
