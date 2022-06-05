@@ -20,7 +20,7 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
 | [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Production | weibo deep learning platform |
 | [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Production | bilibili AI platform |
-| [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Staging | LakeCache Containers |
+| [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Production | LakeCache Containers |
 | [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](chenhc@pxing.com) | Testing | Pxing AI training platform |
 | [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](xuzw@dmetasoul.com) | Testing | MetaSpore distributed multimodal AI platform |
 | [Gaussian Robotics](https://www.gaussianrobotics.com/)  | [@gaohairong](gaohairong@gs-robot.com) | Testing | AI Platform on k8s |
