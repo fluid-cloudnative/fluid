@@ -19,10 +19,11 @@ const (
 )
 
 var (
-	runtimeInfoCache *utilcache.LRUExpireCache
-	cacheSize        = 64
-	log              = ctrl.Log.WithName("webhook.cache")
-	timeToLive       = 10 * time.Minute
+	runtimeInfoCache  *utilcache.LRUExpireCache
+	fuseTemplateCache *utilcache.LRUExpireCache
+	cacheSize         = 64
+	log               = ctrl.Log.WithName("webhook.cache")
+	timeToLive        = 10 * time.Minute
 )
 
 // PersistentVolumeClaimInfoCache represents runtime info and whether it belongs dataset
@@ -52,6 +53,7 @@ func init() {
 
 	if cacheSize > 0 && enabled {
 		runtimeInfoCache = utilcache.NewLRUExpireCache(cacheSize)
+		fuseTemplateCache = utilcache.NewLRUExpireCache(cacheSize)
 		timeToLive = utils.GetDurationValueFromEnv(common.EnvRuntimeInfoCacheTTL, defaultTimeToLive)
 	}
 }

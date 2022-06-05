@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
@@ -160,10 +161,19 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		// 1. check if the pod spec has fluid volume claim
-		enableCacheDir := utils.InjectCacheDirEnabled(metaObj.Labels)
-		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
-		if err != nil {
-			return out, err
+		var (
+			enableCacheDir = utils.InjectCacheDirEnabled(metaObj.Labels)
+			key            = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+			template       *common.FuseInjectionTemplate
+			exist          bool
+		)
+
+		if template, exist = cache.GetFuseTemplateByKey(key, enableCacheDir); !exist {
+			template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
+			if err != nil {
+				return out, err
+			}
+			cache.AddFuseTemplateByKey(key, enableCacheDir, template)
 		}
 
 		// 2. Determine if the volumeMounts contain the target pvc, if not found, skip. The reason is that if this `pod` spec doesn't have volumeMounts
