@@ -74,22 +74,24 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 	if len(ds.Spec.Template.Spec.Containers) != 1 {
 		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
 	}
-	if !option.EnableCacheDir {
-		info.transformTemplateWithCacheDirDisabled(ds)
-	}
 
-	// 1. setup fuse sidecar container when enabling virtual fuse device
-	if option.EnableUnprivilegedSidecar {
-		info.transformTemplateWithUnprivilegedSidecarEnabled(ds)
-	}
-
-	// 2. set the pvc name
+	// 1. set the pvc name
 	template = &common.FuseInjectionTemplate{
 		PVCName: pvcName,
 	}
-
-	// 3. set the fuse container
 	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
+	template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
+
+	if !option.EnableCacheDir {
+		info.transformTemplateWithCacheDirDisabled(template)
+	}
+
+	// 2. setup fuse sidecar container when enabling unprivileged sidecar
+	if option.EnableUnprivilegedSidecar {
+		info.transformTemplateWithUnprivilegedSidecarEnabled(template)
+	}
+
+	// 3. set the fuse container name
 	template.FuseContainer.Name = common.FuseContainerName
 
 	// template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
@@ -143,7 +145,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 			},
 		},
 	}
-	template.VolumesToAdd = append(ds.Spec.Template.Spec.Volumes, gen.GetVolume())
+	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume())
 
 	return
 }
@@ -164,32 +166,32 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
 }
 
-func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(ds *appsv1.DaemonSet) {
+func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(template *common.FuseInjectionTemplate) {
 	// remove the fuse related volumes if using virtual fuse device
-	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostMountNames)
-	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostMountNames)
+	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostMountNames)
+	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostMountNames)
 
-	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, hostFuseDeviceNames)
-	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, hostFuseDeviceNames)
+	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostFuseDeviceNames)
+	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostFuseDeviceNames)
 
 	// add virtual fuse device resource
-	if ds.Spec.Template.Spec.Containers[0].Resources.Limits == nil {
-		ds.Spec.Template.Spec.Containers[0].Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
+	if template.FuseContainer.Resources.Limits == nil {
+		template.FuseContainer.Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
 	}
-	ds.Spec.Template.Spec.Containers[0].Resources.Limits[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Limits[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
 
-	if ds.Spec.Template.Spec.Containers[0].Resources.Requests == nil {
-		ds.Spec.Template.Spec.Containers[0].Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
+	if template.FuseContainer.Resources.Requests == nil {
+		template.FuseContainer.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
 	}
-	ds.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Requests[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	privilegedContainer := false
-	ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = &privilegedContainer
-	ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add = utils.TrimCapabilities(ds.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+	template.FuseContainer.SecurityContext.Privileged = &privilegedContainer
+	template.FuseContainer.SecurityContext.Capabilities.Add = utils.TrimCapabilities(template.FuseContainer.SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
 }
 
-func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(ds *appsv1.DaemonSet) {
-	ds.Spec.Template.Spec.Containers[0].VolumeMounts = utils.TrimVolumeMounts(ds.Spec.Template.Spec.Containers[0].VolumeMounts, cacheDirNames)
-	ds.Spec.Template.Spec.Volumes = utils.TrimVolumes(ds.Spec.Template.Spec.Volumes, cacheDirNames)
+func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
+	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
+	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
 }
