@@ -163,17 +163,17 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		// 1. check if the pod spec has fluid volume claim
 		var (
 			enableCacheDir = utils.InjectCacheDirEnabled(metaObj.Labels)
-			key            = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+			pvcKey         = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
 			template       *common.FuseInjectionTemplate
 			exist          bool
 		)
 
-		if template, exist = cache.GetFuseTemplateByKey(key, enableCacheDir); !exist {
+		if template, exist = cache.GetFuseTemplateByKey(pvcKey, enableCacheDir); !exist {
 			template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
 			if err != nil {
 				return out, err
 			}
-			cache.AddFuseTemplateByKey(key, enableCacheDir, template)
+			cache.AddFuseTemplateByKey(pvcKey, enableCacheDir, template)
 		}
 
 		// 2. Determine if the volumeMounts contain the target pvc, if not found, skip. The reason is that if this `pod` spec doesn't have volumeMounts
