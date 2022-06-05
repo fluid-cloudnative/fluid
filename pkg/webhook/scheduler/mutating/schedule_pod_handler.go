@@ -50,10 +50,8 @@ func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
 
 // Handle is the mutating logic of pod
 func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
-	if utils.IsTimeTrackerDebugEnabled() {
-		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
-			"req.name", req.Name, "req.namespace", req.Namespace)
-	}
+	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
+		"req.name", req.Name, "req.namespace", req.Namespace)
 
 	if utils.GetBoolValueFormEnv(common.EnvDisableInjection, false) {
 		return admission.Allowed("skip mutating the pod because global injection is disabled")
@@ -114,8 +112,10 @@ func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder
 
 // AddScheduleInfoToPod will call all plugins to get total prefer info
 func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
-	defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
-		"pod.name", pod.GetName(), "pod.namespace", namespace)
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
+			"pod.name", pod.GetName(), "pod.namespace", namespace)
+	}
 
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
