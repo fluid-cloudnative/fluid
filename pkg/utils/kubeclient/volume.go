@@ -347,3 +347,17 @@ func IsDatasetPVC(client client.Reader, name string, namespace string) (find boo
 	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
 	return
 }
+
+// CheckIfPVCIsDataset checks if the pvc is dataset
+func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
+	if pvc == nil {
+		return
+	}
+	name := pvc.GetName()
+	namespace := pvc.GetNamespace()
+	if len(namespace) == 0 {
+		namespace = v1.NamespaceDefault
+	}
+	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+	return
+}

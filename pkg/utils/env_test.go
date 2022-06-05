@@ -19,6 +19,7 @@ package utils
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 func TestGetBoolValueFormEnv(t *testing.T) {
@@ -50,4 +51,68 @@ func TestGetBoolValueFormEnv(t *testing.T) {
 	if got != expect {
 		t.Errorf("test failed due to expect %v, but got %v", expect, got)
 	}
+}
+
+func TestGetIntValueFormEnv(t *testing.T) {
+	// 1. env is not set
+	testEnvNameNotFound := "envnotfound"
+	expectFound := false
+
+	_, found := GetIntValueFormEnv(testEnvNameNotFound)
+
+	if found != expectFound {
+		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+	}
+
+	// 2. env is set in true
+	testEnvNameFound := "envFound"
+	os.Setenv(testEnvNameFound, "10")
+	expectFound = true
+	expect := 10
+
+	got, found := GetIntValueFormEnv(testEnvNameFound)
+
+	if found != expectFound {
+		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+	}
+
+	if got != expect {
+		t.Errorf("test failed due to expect %v, but got %v", expect, got)
+	}
+
+	// env is set with illegal value
+	testEnvNameIllegal := "envIllegal"
+	os.Setenv(testEnvNameIllegal, "illegal")
+	expectFound = false
+
+	_, found = GetIntValueFormEnv(testEnvNameIllegal)
+
+	if found != expectFound {
+		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+	}
+
+}
+
+func TestGetDurationValueFormEnv(t *testing.T) {
+	// 1. env is not set
+	testEnvNameNotFound := "envnotfound"
+	expect := 3 * time.Second
+
+	got := GetDurationValueFromEnv(testEnvNameNotFound, 3*time.Second)
+
+	if got != expect {
+		t.Errorf("test failed due to expect %v, but got %v", expect, got)
+	}
+
+	// 2. env is set in true
+	testEnvNameFound := "envFound"
+	os.Setenv(testEnvNameFound, "10s")
+	expect = 10 * time.Second
+
+	got = GetDurationValueFromEnv(testEnvNameFound, 3*time.Second)
+
+	if got != expect {
+		t.Errorf("test failed due to expect %v, but got %v", expect, got)
+	}
+
 }

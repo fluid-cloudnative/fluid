@@ -19,6 +19,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -40,6 +41,10 @@ var (
 
 // GetTemplateToInjectForFuse gets template for fuse injection
 func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, enableCacheDir bool) (template *common.FuseInjectionTemplate, err error) {
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetTemplateToInjectForFuse",
+			"pvc.name", pvcName, "pvc.namespace", info.GetNamespace())
+	}
 	// TODO: create fuse container
 	ds, err := info.getFuseDaemonset()
 	if err != nil {

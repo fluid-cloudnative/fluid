@@ -22,4 +22,10 @@ const (
 	EnvTimeTrackDebug = "TIME_TRACK_DEBUG"
 
 	EnvDisableInjection = "DISABLE_INJECTION"
+
+	EnvRuntimeInfoCacheSize = "RUNTIMEINFO_CACHE_SIZE"
+
+	EnvEnableRuntimeInfoCache = "ENABLE_RUNTIMEINFO_CACHE"
+
+	EnvRuntimeInfoCacheTTL = "RUNTIMEINFO_CACHE_TTL"
 )
