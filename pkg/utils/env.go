@@ -19,9 +19,11 @@ package utils
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
-func GetBoolValueFormEnv(key string, defaultValue bool) (value bool) {
+func GetDurationValueFromEnv(key string, defaultValue time.Duration) (value time.Duration) {
+	var err error
 	value = defaultValue
 
 	str, ok := os.LookupEnv(key)
@@ -30,6 +32,42 @@ func GetBoolValueFormEnv(key string, defaultValue bool) (value bool) {
 		return
 	}
 
-	value, _ = strconv.ParseBool(str)
+	value, err = time.ParseDuration(str)
+	if err != nil {
+		value = defaultValue
+	}
+
+	return
+}
+
+func GetBoolValueFormEnv(key string, defaultValue bool) (value bool) {
+	value = defaultValue
+	var err error
+
+	str, ok := os.LookupEnv(key)
+	// if not set, return the default value
+	if !ok {
+		return
+	}
+
+	value, err = strconv.ParseBool(str)
+	if err != nil {
+		value = defaultValue
+	}
+	return
+}
+
+func GetIntValueFormEnv(key string) (value int, found bool) {
+
+	str, found := os.LookupEnv(key)
+	// if not set, return the default value
+	if !found {
+		return
+	}
+
+	value, err := strconv.Atoi(str)
+	if err != nil {
+		found = false
+	}
 	return
 }
