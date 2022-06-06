@@ -24,11 +24,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func toFuseTemplateKey(key types.NamespacedName, option *common.FuseSidecarInjectOption) string {
+func toFuseTemplateKey(key types.NamespacedName, option common.FuseSidecarInjectOption) string {
 	return key.String() + string(types.Separator) + option.String()
 }
 
-func GetFuseTemplateByKey(key types.NamespacedName, option *common.FuseSidecarInjectOption) (info *common.FuseInjectionTemplate, found bool) {
+func GetFuseTemplateByKey(key types.NamespacedName, option common.FuseSidecarInjectOption) (info *common.FuseInjectionTemplate, found bool) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "fuseTemplateCache.GetFuseTemplateByKey",
 			"pvc.name", key.Name, "pvc.namespace", key.Namespace)
@@ -47,7 +47,7 @@ func GetFuseTemplateByKey(key types.NamespacedName, option *common.FuseSidecarIn
 	return
 }
 
-func AddFuseTemplateByKey(k types.NamespacedName, option *common.FuseSidecarInjectOption, info *common.FuseInjectionTemplate) {
+func AddFuseTemplateByKey(k types.NamespacedName, option common.FuseSidecarInjectOption, info *common.FuseInjectionTemplate) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "fuseTemplateCache.AddFuseTemplateByKey",
 			"pvc.name", k.Name, "pvc.namespace", k.Namespace)

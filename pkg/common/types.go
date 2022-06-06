@@ -160,7 +160,7 @@ type FuseSidecarInjectOption struct {
 	EnableUnprivilegedSidecar bool
 }
 
-func (f *FuseSidecarInjectOption) String() string {
+func (f FuseSidecarInjectOption) String() string {
 	return fmt.Sprintf("EnableCacheDir=%v;EnableUnprivilegedSidecar=%v",
 		f.EnableCacheDir,
 		f.EnableUnprivilegedSidecar)
