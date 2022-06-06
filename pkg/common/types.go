@@ -16,6 +16,8 @@ limitations under the License.
 package common
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -152,10 +154,16 @@ type FuseInjectionTemplate struct {
 	VolumesToAdd         []corev1.Volume
 }
 
-// FuseSidecarInjectOptions are options for webhook to inject fuse sidecar containers
-type FuseSidecarInjectOptions struct {
+// FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers
+type FuseSidecarInjectOption struct {
 	EnableCacheDir            bool
 	EnableUnprivilegedSidecar bool
+}
+
+func (f FuseSidecarInjectOption) String() string {
+	return fmt.Sprintf("EnableCacheDir=%v;EnableUnprivilegedSidecar=%v",
+		f.EnableCacheDir,
+		f.EnableUnprivilegedSidecar)
 }
 
 // The Application which is using Fluid,
