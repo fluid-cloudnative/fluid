@@ -211,6 +211,13 @@ func TestServerlessEnabled(t *testing.T) {
 			},
 			expect: false,
 		},
+		{
+			name: "support_ask_platform",
+			annotations: map[string]string{
+				common.ServerlessPlatform: common.ASKPlatform,
+			},
+			expect: true,
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -292,5 +299,50 @@ func TestCacheDirInjectionEnabled(t *testing.T) {
 		if got != testcase.expect {
 			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
 		}
+	}
+}
+
+func TestMatchedValue(t *testing.T) {
+	tests := []struct {
+		name   string
+		infos  map[string]string
+		key    string
+		val    string
+		expect bool
+	}{
+		{
+			name: "include_key_matched",
+			infos: map[string]string{
+				"mytest": "foobar",
+			},
+			key:    "mytest",
+			val:    "foobar",
+			expect: true,
+		},
+		{
+			name: "include_key_not_matched",
+			infos: map[string]string{
+				"mytest": "foobar",
+			},
+			key:    "mytest",
+			val:    "other",
+			expect: false,
+		},
+		{
+			name: "exclude_key",
+			infos: map[string]string{
+				"other": "foobar",
+			},
+			key:    "mytest",
+			val:    "foobar",
+			expect: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotMatch := matchedValue(tt.infos, tt.key, tt.val); gotMatch != tt.expect {
+				t.Errorf("matchedValue() = %v, want %v", gotMatch, tt.expect)
+			}
+		})
 	}
 }
