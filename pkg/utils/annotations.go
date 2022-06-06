@@ -18,7 +18,7 @@ package utils
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
 func FuseSidecarEnabled(infos map[string]string) (match bool) {
@@ -26,7 +26,7 @@ func FuseSidecarEnabled(infos map[string]string) (match bool) {
 }
 
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
-	return ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar)
+	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
@@ -44,6 +44,16 @@ func InjectCacheDirEnabled(infos map[string]string) (match bool) {
 func enabled(infos map[string]string, name string) (match bool) {
 	for key, value := range infos {
 		if key == name && value == common.True {
+			match = true
+			break
+		}
+	}
+	return
+}
+
+func matchedValue(infos map[string]string, name string, val string) (match bool) {
+	for key, value := range infos {
+		if key == name && value == val {
 			match = true
 			break
 		}
