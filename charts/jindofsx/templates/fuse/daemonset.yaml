@@ -110,6 +110,12 @@ spec:
             value: {{ .Values.fuse.mountPath }}
           - name: FLUID_FUSE_MODE
             value: {{ .Values.fuse.mode }}
+          - name: FLUID_RUNTIME_TYPE
+            value: "jindofs"
+          - name: FLUID_RUNTIME_NS
+            value: {{ .Values.runtimeIdentity.namespace }}
+          - name: FLUID_RUNTIME_NAME
+            value: {{ .Values.runtimeIdentity.name }}
           securityContext:
             privileged: true
             capabilities:

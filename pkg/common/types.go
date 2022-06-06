@@ -152,6 +152,12 @@ type FuseInjectionTemplate struct {
 	VolumesToAdd         []corev1.Volume
 }
 
+// FuseSidecarInjectOptions are options for webhook to inject fuse sidecar containers
+type FuseSidecarInjectOptions struct {
+	EnableCacheDir            bool
+	EnableUnprivilegedSidecar bool
+}
+
 // The Application which is using Fluid,
 // and it has serveral PodSpecs.
 type FluidApplication interface {

@@ -160,8 +160,12 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		}
 
 		// 1. check if the pod spec has fluid volume claim
-		enableCacheDir := utils.InjectCacheDirEnabled(metaObj.Labels)
-		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName, enableCacheDir)
+		option := common.FuseSidecarInjectOptions{
+			EnableCacheDir:            utils.InjectCacheDirEnabled(metaObj.Labels),
+			EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
+		}
+
+		template, err := runtimeInfo.GetTemplateToInjectForFuse(pvcName, option)
 		if err != nil {
 			return out, err
 		}
