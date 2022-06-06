@@ -17,8 +17,9 @@ limitations under the License.
 package base
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -489,7 +490,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	options := common.FuseSidecarInjectOptions{
+	options := common.FuseSidecarInjectOption{
 		EnableCacheDir:            true,
 		EnableUnprivilegedSidecar: false,
 	}
@@ -861,7 +862,7 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 
 	for _, testcase := range testcases {
 		info := testcase.info
-		options := common.FuseSidecarInjectOptions{
+		options := common.FuseSidecarInjectOption{
 			EnableCacheDir:            testcase.enableCacheDir,
 			EnableUnprivilegedSidecar: false,
 		}
@@ -1070,7 +1071,7 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 
 	for _, testcase := range testcases {
 		info := testcase.info
-		options := common.FuseSidecarInjectOptions{
+		options := common.FuseSidecarInjectOption{
 			EnableCacheDir:            testcase.enableCacheDir,
 			EnableUnprivilegedSidecar: testcase.enableUnprivilegedFuseSidecar,
 		}
