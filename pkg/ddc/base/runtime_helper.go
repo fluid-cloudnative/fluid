@@ -19,6 +19,8 @@ package base
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -26,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,7 +48,7 @@ var (
 
 // GetTemplateToInjectForFuse gets template for fuse injection
 
-func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option common.FuseSidecarInjectOptions) (template *common.FuseInjectionTemplate, err error) {
+func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option common.FuseSidecarInjectOption) (template *common.FuseInjectionTemplate, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetTemplateToInjectForFuse",
 			"pvc.name", pvcName, "pvc.namespace", info.GetNamespace())

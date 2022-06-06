@@ -18,8 +18,9 @@ package poststart
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,10 +73,10 @@ type ScriptGeneratorForFuse struct {
 	mountPath string
 	mountType string
 
-	option common.FuseSidecarInjectOptions
+	option common.FuseSidecarInjectOption
 }
 
-func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, option common.FuseSidecarInjectOptions) *ScriptGeneratorForFuse {
+func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, option common.FuseSidecarInjectOption) *ScriptGeneratorForFuse {
 	return &ScriptGeneratorForFuse{
 		name:      namespacedKey.Name,
 		namespace: namespacedKey.Namespace,
