@@ -24,12 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-const (
-	Separator = '/'
-)
-
 func toFuseTemplateKey(key types.NamespacedName, option *common.FuseSidecarInjectOption) string {
-	return key.String() + string(Separator) + option.String()
+	return key.String() + string(types.Separator) + option.String()
 }
 
 func GetFuseTemplateByKey(key types.NamespacedName, option *common.FuseSidecarInjectOption) (info *common.FuseInjectionTemplate, found bool) {
