@@ -108,17 +108,22 @@ const (
 )
 
 const (
-	RootDirPath            = "/"
-	DefaultImagePullPolicy = "IfNotPresent"
-	MyPodNamespace         = "MY_POD_NAMESPACE"
-	True                   = "true"
-	False                  = "false"
-	inject                 = ".fluid.io/inject"
-	injectSidecar          = ".sidecar" + inject
-	InjectServerless       = "serverless" + inject
-	InjectFuseSidecar      = "fuse" + injectSidecar
-	InjectCacheDir         = "cachedir" + injectSidecar
-	InjectWorkerSidecar    = "worker" + injectSidecar
-	InjectSidecarDone      = "done" + injectSidecar
-	App                    = "app"
+	FuseDeviceResourceName string = "fluid.io/fuse"
+)
+
+const (
+	RootDirPath                   = "/"
+	DefaultImagePullPolicy        = "IfNotPresent"
+	MyPodNamespace                = "MY_POD_NAMESPACE"
+	True                          = "true"
+	False                         = "false"
+	inject                        = ".fluid.io/inject"
+	injectSidecar                 = ".sidecar" + inject
+	InjectServerless              = "serverless" + inject
+	InjectFuseSidecar             = "fuse" + injectSidecar
+	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar
+	InjectCacheDir                = "cachedir" + injectSidecar
+	InjectWorkerSidecar           = "worker" + injectSidecar
+	InjectSidecarDone             = "done" + injectSidecar
+	App                           = "app"
 )
