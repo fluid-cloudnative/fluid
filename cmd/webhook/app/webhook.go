@@ -17,11 +17,12 @@ package app
 
 import (
 	"flag"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/fluid-cloudnative/fluid"
@@ -120,7 +121,7 @@ func handle() {
 		if !development {
 			encCfg := zapOpt.NewProductionEncoderConfig()
 			encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
-			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+			// encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
