@@ -121,7 +121,7 @@ func handle() {
 		if !development {
 			encCfg := zapOpt.NewProductionEncoderConfig()
 			encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
-			// encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 		}
 	}))
