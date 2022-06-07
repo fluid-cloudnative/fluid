@@ -118,12 +118,15 @@ func handle() {
 	}, func(o *zap.Options) {
 		o.ZapOpts = append(o.ZapOpts, zapOpt.AddCaller())
 	}, func(o *zap.Options) {
+		var encCfg zapcore.EncoderConfig
 		if !development {
-			encCfg := zapOpt.NewProductionEncoderConfig()
-			encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
-			encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-			o.Encoder = zapcore.NewConsoleEncoder(encCfg)
+			encCfg = zapOpt.NewProductionEncoderConfig()
+		} else {
+			encCfg = zapOpt.NewDevelopmentEncoderConfig()
 		}
+		encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
+		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+		o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 	}))
 
 	// get client from mgr
