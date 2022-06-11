@@ -18,7 +18,13 @@ package recover
 
 import (
 	"errors"
-	. "github.com/agiledragon/gomonkey"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,18 +32,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 )
 
 const testfuseRecoverPeriod = 30

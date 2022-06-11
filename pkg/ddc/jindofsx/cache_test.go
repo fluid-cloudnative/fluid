@@ -1,16 +1,17 @@
 package jindofsx
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	. "github.com/agiledragon/gomonkey"
+	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	. "github.com/smartystreets/goconvey/convey"

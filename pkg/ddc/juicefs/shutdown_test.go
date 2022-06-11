@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/agiledragon/gomonkey"
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"

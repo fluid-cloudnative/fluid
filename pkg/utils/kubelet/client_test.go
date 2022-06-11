@@ -18,15 +18,16 @@ package kubelet
 
 import (
 	"errors"
-	. "github.com/agiledragon/gomonkey"
-	. "github.com/smartystreets/goconvey/convey"
 	"io"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
+
+	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/smartystreets/goconvey/convey"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (

@@ -2,16 +2,17 @@ package utils
 
 import (
 	"errors"
-	. "github.com/agiledragon/gomonkey"
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/mount"
 	"os"
 	"os/exec"
 	"reflect"
 	"testing"
+
+	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/smartystreets/goconvey/convey"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/mount"
 )
 
 func TestMountRootWithEnvSet(t *testing.T) {
