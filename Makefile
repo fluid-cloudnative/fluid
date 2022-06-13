@@ -16,6 +16,7 @@ INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 GO_MODULE ?= off
 GC_FLAGS ?= -gcflags="all=-N -l"
+ARCH ?= amd64
 
 LOCAL_FLAGS ?= -gcflags=-l
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -26,10 +27,10 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 UNAME := $(shell uname -m)
-ifeq ($(UNAME), x86_64)
-    ARCH := amd64
-else
+ifeq ($(UNAME), aarch64)
     ARCH := arm64
+else
+    ARCH := amd64
 endif
 
 CURRENT_DIR=$(shell pwd)
@@ -72,6 +73,17 @@ DOCKER_PUSH += docker-push-webhook
 DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-init-users
+
+# Buildx and push docker images
+DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-application-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-alluxioruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-jindoruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-goosefsruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-csi
+DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
+DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -165,22 +177,22 @@ update-api-doc:
 
 # Build the docker image
 docker-build-dataset-controller: generate gen-openapi fmt vet
-	docker build --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-application-controller: generate fmt vet
-	docker build --no-cache . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-alluxioruntime-controller: generate gen-openapi fmt vet
-	docker build --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-jindoruntime-controller: generate gen-openapi fmt vet
-	docker build --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-goosefsruntime-controller: generate gen-openapi fmt vet
-	docker build --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
-	docker build --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
@@ -192,7 +204,7 @@ docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
 
 docker-build-webhook:
-	docker build --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
@@ -225,10 +237,37 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
+# Buildx and push the docker image
+docker-buildx-push-dataset-controller: generate gen-openapi fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-buildx-push-application-controller: generate fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-alluxioruntime-controller: generate gen-openapi fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-jindoruntime-controller: generate gen-openapi fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-goosefsruntime-controller: generate gen-openapi fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-csi: generate fmt vet
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
+
+docker-buildx-push-init-users:
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
+
+docker-buildx-push-webhook:
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 docker-build-all: ${DOCKER_BUILD}
 docker-push-all: ${DOCKER_PUSH}
+docker-buildx-all-push: ${DOCKER_BUILDX_PUSH}
 
 gen-sdk:
 	./hack/sdk/gen-sdk.sh
