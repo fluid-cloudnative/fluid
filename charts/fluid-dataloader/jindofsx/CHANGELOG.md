@@ -1,3 +1,6 @@
+### 0.8.0
+- Support JindoFSx
+
 ### 0.1.0
 
 - Support parallel prefetch job

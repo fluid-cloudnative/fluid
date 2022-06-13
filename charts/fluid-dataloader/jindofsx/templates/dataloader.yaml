@@ -122,12 +122,6 @@ spec:
             {{- end }}
             - mountPath: /scripts
               name: data-load-script
-            {{- range .Values.dataloader.targetPaths }}
-            {{- if .fluidNative }}
-            - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
-              name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
-            {{- end }}
-            {{- end }}
       volumes:
         - name: bigboot-config
           configMap:
@@ -149,11 +143,3 @@ spec:
               - key: dataloader.distributedLoad
                 path: jindo_dataload.sh
                 mode: 365
-        {{- range .Values.dataloader.targetPaths }}
-        {{- if .fluidNative }}
-        - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
-          hostPath:
-            path: {{ .path }}
-        {{- end }}
-        {{- end }}
-
