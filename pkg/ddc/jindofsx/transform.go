@@ -615,6 +615,7 @@ func (e *JindoFSxEngine) transformToken(runtime *datav1alpha1.JindoRuntime, valu
 	properties := map[string]string{}
 	if len(runtime.Spec.Secret) != 0 {
 		properties["default.credential.provider"] = "secrets:///token/"
+		properties["jindofsx.oss.provider.endpoint"] = "secrets:///token/"
 	} else {
 		properties["default.credential.provider"] = "none"
 	}
