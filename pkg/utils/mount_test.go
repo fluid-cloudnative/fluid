@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	. "github.com/agiledragon/gomonkey"
+	. "github.com/agiledragon/gomonkey/v2"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
