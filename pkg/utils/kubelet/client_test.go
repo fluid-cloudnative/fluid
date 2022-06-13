@@ -18,7 +18,7 @@ package kubelet
 
 import (
 	"errors"
-	. "github.com/agiledragon/gomonkey"
+	. "github.com/agiledragon/gomonkey/v2"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	corev1 "k8s.io/api/core/v1"

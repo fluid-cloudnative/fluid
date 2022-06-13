@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/agiledragon/gomonkey"
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 
