@@ -64,7 +64,6 @@ echo "succeed in checking mount point $ConditionPathIsMountPoint"
 set -ex
 
 echo "Sending deivce ioctl to /dev/fuse"
-chmod u+x /tools/ioctl_sync
 /tools/ioctl_sync
 `
 )
