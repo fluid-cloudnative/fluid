@@ -29,9 +29,11 @@ import (
 )
 
 const (
-	configMapName = "check-mount"
-	scriptName    = configMapName + ".sh"
-	scriptPath    = "/" + scriptName
+	configMapName          = "check-mount"
+	privilegedScriptName   = configMapName + ".sh"
+	privilegedScriptPath   = "/" + privilegedScriptName
+	unprivilegedScriptName = configMapName + "-unprivileged" + ".sh"
+	unprivilegedScriptPath = "/" + unprivilegedScriptName
 )
 
 var (
@@ -88,13 +90,8 @@ func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountTyp
 
 func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerReference) *corev1.ConfigMap {
 	data := map[string]string{}
-	var content string
-	if f.option.EnableUnprivilegedSidecar {
-		content = contentUnprivilegedSidecar
-	} else {
-		content = contentPrivilegedSidecar
-	}
-	data[scriptName] = replacer.Replace(content)
+	data[privilegedScriptName] = replacer.Replace(contentPrivilegedSidecar)
+	data[unprivilegedScriptName] = replacer.Replace(contentUnprivilegedSidecar)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            f.getConfigmapName(),
@@ -112,10 +109,10 @@ func (f *ScriptGeneratorForFuse) getConfigmapName() string {
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
 	var cmd []string
 	if f.option.EnableUnprivilegedSidecar {
-		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", scriptPath)}
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", unprivilegedScriptPath)}
 	} else {
 		// https://github.com/kubernetes/kubernetes/issues/25766
-		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", privilegedScriptPath, f.mountPath, f.mountType)}
 	}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
@@ -139,10 +136,19 @@ func (f *ScriptGeneratorForFuse) GetVolume() (v corev1.Volume) {
 }
 
 func (f *ScriptGeneratorForFuse) GetVolumeMount() (vm corev1.VolumeMount) {
-	return corev1.VolumeMount{
-		Name:      configMapName,
-		MountPath: scriptPath,
-		SubPath:   scriptName,
-		ReadOnly:  true,
+	if f.option.EnableUnprivilegedSidecar {
+		return corev1.VolumeMount{
+			Name:      configMapName,
+			MountPath: unprivilegedScriptPath,
+			SubPath:   unprivilegedScriptName,
+			ReadOnly:  true,
+		}
+	} else {
+		return corev1.VolumeMount{
+			Name:      configMapName,
+			MountPath: privilegedScriptPath,
+			SubPath:   privilegedScriptName,
+			ReadOnly:  true,
+		}
 	}
 }
