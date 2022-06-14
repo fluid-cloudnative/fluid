@@ -62,8 +62,9 @@ echo "succeed in checking mount point $ConditionPathIsMountPoint"
 	contentUnprivilegedSidecar = `#!/bin/bash
 set -ex
 
-echo "Sending deivce ioctl to /dev/fuse"
+echo "Sending device ioctl to /dev/fuse"
 /tools/ioctl_sync
+echo "Device ioctl done. Post start script finished"
 `
 )
 
