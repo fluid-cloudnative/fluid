@@ -2,3 +2,7 @@
 
 - Support parallel prefetch job
 - Support configurations by setting values
+
+### 0.2.0
+
+- Remove unused volumes

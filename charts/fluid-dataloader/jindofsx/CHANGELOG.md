@@ -1,3 +1,6 @@
+### 0.3.0
+- Remove unused volumes
+
 ### 0.2.0
 - Support JindoFSx
 
