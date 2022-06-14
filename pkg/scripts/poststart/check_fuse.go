@@ -29,11 +29,10 @@ import (
 )
 
 const (
-	configMapName          = "check-mount"
-	privilegedScriptName   = configMapName + ".sh"
-	privilegedScriptPath   = "/" + privilegedScriptName
-	unprivilegedScriptName = configMapName + "-unprivileged" + ".sh"
-	unprivilegedScriptPath = "/" + unprivilegedScriptName
+	configMapName             = "check-mount"
+	unprivilegedConfigMapName = configMapName + "-unprivileged"
+	scriptName                = configMapName + ".sh"
+	scriptPath                = "/" + scriptName
 )
 
 var (
@@ -89,8 +88,13 @@ func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountTyp
 
 func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerReference) *corev1.ConfigMap {
 	data := map[string]string{}
-	data[privilegedScriptName] = replacer.Replace(contentPrivilegedSidecar)
-	data[unprivilegedScriptName] = replacer.Replace(contentUnprivilegedSidecar)
+	var content string
+	if f.option.EnableUnprivilegedSidecar {
+		content = contentUnprivilegedSidecar
+	} else {
+		content = contentPrivilegedSidecar
+	}
+	data[scriptName] = replacer.Replace(content)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            f.getConfigmapName(),
@@ -102,16 +106,21 @@ func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerRefer
 }
 
 func (f *ScriptGeneratorForFuse) getConfigmapName() string {
-	return f.name + "-" + strings.ToLower(f.mountType) + "-" + configMapName
+	if f.option.EnableUnprivilegedSidecar {
+		return f.name + "-" + strings.ToLower(f.mountType) + "-" + unprivilegedConfigMapName
+	} else {
+		return f.name + "-" + strings.ToLower(f.mountType) + "-" + configMapName
+	}
+
 }
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
 	var cmd []string
 	if f.option.EnableUnprivilegedSidecar {
-		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", unprivilegedScriptPath)}
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", scriptPath)}
 	} else {
 		// https://github.com/kubernetes/kubernetes/issues/25766
-		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", privilegedScriptPath, f.mountPath, f.mountType)}
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
 	}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
@@ -120,9 +129,15 @@ func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.Lifecycl
 }
 
 func (f *ScriptGeneratorForFuse) GetVolume() (v corev1.Volume) {
+	var volName string
+	if f.option.EnableUnprivilegedSidecar {
+		volName = unprivilegedConfigMapName
+	} else {
+		volName = configMapName
+	}
 	var mode int32 = 0755
 	return corev1.Volume{
-		Name: configMapName,
+		Name: volName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -135,19 +150,16 @@ func (f *ScriptGeneratorForFuse) GetVolume() (v corev1.Volume) {
 }
 
 func (f *ScriptGeneratorForFuse) GetVolumeMount() (vm corev1.VolumeMount) {
+	var volName string
 	if f.option.EnableUnprivilegedSidecar {
-		return corev1.VolumeMount{
-			Name:      configMapName,
-			MountPath: unprivilegedScriptPath,
-			SubPath:   unprivilegedScriptName,
-			ReadOnly:  true,
-		}
+		volName = unprivilegedConfigMapName
 	} else {
-		return corev1.VolumeMount{
-			Name:      configMapName,
-			MountPath: privilegedScriptPath,
-			SubPath:   privilegedScriptName,
-			ReadOnly:  true,
-		}
+		volName = configMapName
+	}
+	return corev1.VolumeMount{
+		Name:      volName,
+		MountPath: scriptPath,
+		SubPath:   scriptName,
+		ReadOnly:  true,
 	}
 }

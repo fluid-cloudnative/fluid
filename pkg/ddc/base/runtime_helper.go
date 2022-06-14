@@ -19,7 +19,6 @@ package base
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
@@ -118,9 +117,19 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 		Namespace: info.namespace,
 	}, mountPathInContainer, mountType, option)
 	cm := gen.BuildConfigmap(ownerReference)
-
-	if err := info.applyFuseSidecarPostStartScriptConfigMap(cm); err != nil {
+	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
+	if err != nil {
 		return template, err
+	}
+
+	if !found {
+		err = info.client.Create(context.TODO(), cm)
+		if err != nil {
+			// If ConfigMap creation succeeds concurrently, continue to mutate
+			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return template, err
+			}
+		}
 	}
 
 	template.FuseContainer.VolumeMounts = append(template.FuseContainer.VolumeMounts, gen.GetVolumeMount())
@@ -189,32 +198,4 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
-}
-
-func (info *RuntimeInfo) applyFuseSidecarPostStartScriptConfigMap(cmToApply *corev1.ConfigMap) error {
-	cm, err := kubeclient.GetConfigmapByName(info.client, cmToApply.Name, cmToApply.Namespace)
-	if err != nil {
-		return err
-	}
-
-	if cm == nil {
-		// ConfigMap not found, so create it
-		//todo log not found configMap
-		err = info.client.Create(context.TODO(), cmToApply)
-		if err != nil {
-			return nil
-		}
-	} else {
-		// ConfigMap found, check if updated
-		if !reflect.DeepEqual(cm.Data, cmToApply.Data) {
-			toUpdate := cm.DeepCopy()
-			toUpdate.Data = cmToApply.Data
-			err = info.client.Update(context.TODO(), toUpdate)
-			if err != nil {
-				return nil
-			}
-		}
-	}
-
-	return nil
 }
