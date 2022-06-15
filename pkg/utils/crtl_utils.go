@@ -25,6 +25,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// IgnoreAlreadyExists ignores already existes error
+func IgnoreAlreadyExists(err error) error {
+	if apierrs.IsAlreadyExists(err) {
+		return nil
+	}
+	return err
+}
+
 // IgnoreNotFound ignores not found
 func IgnoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {

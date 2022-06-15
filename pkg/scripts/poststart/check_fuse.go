@@ -29,9 +29,10 @@ import (
 )
 
 const (
-	configMapName = "check-mount"
-	scriptName    = configMapName + ".sh"
-	scriptPath    = "/" + scriptName
+	configMapName             = "check-mount"
+	unprivilegedConfigMapName = configMapName + "-unprivileged"
+	scriptName                = configMapName + ".sh"
+	scriptPath                = "/" + scriptName
 )
 
 var (
@@ -61,9 +62,9 @@ echo "succeed in checking mount point $ConditionPathIsMountPoint"
 	contentUnprivilegedSidecar = `#!/bin/bash
 set -ex
 
-echo "Sending deivce ioctl to /dev/fuse"
-chmod u+x /tools/ioctl_sync
+echo "Sending device ioctl to /dev/fuse"
 /tools/ioctl_sync
+echo "Device ioctl done. Post start script finished"
 `
 )
 
@@ -106,7 +107,12 @@ func (f *ScriptGeneratorForFuse) BuildConfigmap(ownerReference metav1.OwnerRefer
 }
 
 func (f *ScriptGeneratorForFuse) getConfigmapName() string {
-	return f.name + "-" + strings.ToLower(f.mountType) + "-" + configMapName
+	if f.option.EnableUnprivilegedSidecar {
+		return f.name + "-" + strings.ToLower(f.mountType) + "-" + unprivilegedConfigMapName
+	} else {
+		return f.name + "-" + strings.ToLower(f.mountType) + "-" + configMapName
+	}
+
 }
 
 func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
@@ -124,9 +130,15 @@ func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.Lifecycl
 }
 
 func (f *ScriptGeneratorForFuse) GetVolume() (v corev1.Volume) {
+	var volName string
+	if f.option.EnableUnprivilegedSidecar {
+		volName = unprivilegedConfigMapName
+	} else {
+		volName = configMapName
+	}
 	var mode int32 = 0755
 	return corev1.Volume{
-		Name: configMapName,
+		Name: volName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -139,8 +151,14 @@ func (f *ScriptGeneratorForFuse) GetVolume() (v corev1.Volume) {
 }
 
 func (f *ScriptGeneratorForFuse) GetVolumeMount() (vm corev1.VolumeMount) {
+	var volName string
+	if f.option.EnableUnprivilegedSidecar {
+		volName = unprivilegedConfigMapName
+	} else {
+		volName = configMapName
+	}
 	return corev1.VolumeMount{
-		Name:      configMapName,
+		Name:      volName,
 		MountPath: scriptPath,
 		SubPath:   scriptName,
 		ReadOnly:  true,
