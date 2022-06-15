@@ -125,7 +125,10 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 	if !found {
 		err = info.client.Create(context.TODO(), cm)
 		if err != nil {
-			return template, err
+			// If ConfigMap creation succeeds concurrently, continue to mutate
+			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return template, err
+			}
 		}
 	}
 

@@ -28,6 +28,7 @@ func TestScriptGeneratorForFuse_getConfigmapName(t *testing.T) {
 		namespace string
 		mountPath string
 		mountType string
+		option    common.FuseSidecarInjectOption
 	}
 	tests := []struct {
 		name   string
@@ -53,6 +54,17 @@ func TestScriptGeneratorForFuse_getConfigmapName(t *testing.T) {
 				mountType: common.JindoMountType,
 			},
 			want: "test-" + common.JindoMountType + "-" + configMapName,
+		},
+		{
+			name: "test-jindo-unprivileged",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				mountPath: "/dev",
+				mountType: common.JindoMountType,
+				option:    common.FuseSidecarInjectOption{EnableUnprivilegedSidecar: true},
+			},
+			want: "test-" + common.JindoMountType + "-" + unprivilegedConfigMapName,
 		},
 		{
 			name: "test-juicefs",
@@ -82,6 +94,7 @@ func TestScriptGeneratorForFuse_getConfigmapName(t *testing.T) {
 				namespace: tt.fields.namespace,
 				mountPath: tt.fields.mountPath,
 				mountType: tt.fields.mountType,
+				option:    tt.fields.option,
 			}
 			if got := f.getConfigmapName(); got != tt.want {
 				t.Errorf("getConfigmapName() = %v, want %v", got, tt.want)
