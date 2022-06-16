@@ -54,6 +54,10 @@ By default, the binary would be put under `<fluid-path>/bin`.
     
     # build all images
     $ make docker-build-all
+
+    # build and push all images using docker buildx (Run QEMU emulation before docker buildx, as below)
+    $ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    $ make docker-buildx-all-push
     ```
     Before running Fluid, you need to push the built image to an accessible image registry.
 
