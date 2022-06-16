@@ -140,7 +140,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
-	e.transformResources(runtime, value)
+	e.transformResources(runtime, userQuotas, value)
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -353,7 +353,7 @@ func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dat
 	value.Worker.WorkerProperties = properties
 }
 
-func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, userQuotas string, value *Jindo) {
 
 	if runtime.Spec.Master.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")
@@ -362,6 +362,17 @@ func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, 
 		}
 		if runtime.Spec.Master.Resources.Limits.Memory() != nil {
 			value.Master.Resources.Limits.Memory = runtime.Spec.Master.Resources.Limits.Memory().String()
+		}
+	}
+
+	// mem set request
+	if e.getTieredStoreType(runtime) == 0 {
+		quotaString := strings.TrimRight(userQuotas, "g")
+		if quotaString != "" {
+			i, _ := strconv.Atoi(quotaString)
+			if i > defaultMemLimit {
+				value.Master.Resources.Requests.Memory = defaultMetaSize
+			}
 		}
 	}
 
@@ -403,6 +414,11 @@ func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, 
 		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
 			value.Worker.Resources.Limits.Memory = runtime.Spec.Worker.Resources.Limits.Memory().String()
 		}
+	}
+	// mem set request
+	if e.getTieredStoreType(runtime) == 0 {
+		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
+		value.Worker.Resources.Requests.Memory = userQuotas
 	}
 
 	if runtime.Spec.Worker.Resources.Requests != nil {

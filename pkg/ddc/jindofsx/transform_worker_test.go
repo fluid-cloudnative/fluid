@@ -116,8 +116,8 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformResources(test.runtime, test.jindoValue)
-		if test.jindoValue.Worker.Resources.Requests.Memory != "" {
+		engine.transformResources(test.runtime, "10g", test.jindoValue)
+		if test.jindoValue.Worker.Resources.Requests.Memory != "10Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
 		}
 		if test.jindoValue.Worker.Resources.Requests.CPU != "" {
@@ -154,7 +154,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 				},
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
+						MediumType: common.SSD,
 						Quota:      &result,
 					}},
 				},
@@ -166,7 +166,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformResources(test.runtime, test.jindoValue)
+		engine.transformResources(test.runtime, "10g", test.jindoValue)
 		if test.jindoValue.Worker.Resources.Requests.Memory != "1Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
 		}
