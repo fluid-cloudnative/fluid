@@ -317,3 +317,42 @@ func TestTransformAllocatePorts(t *testing.T) {
 		}
 	}
 }
+
+func TestTransformResource(t *testing.T) {
+	resources := corev1.ResourceRequirements{}
+	resources.Limits = make(corev1.ResourceList)
+	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+
+	result := resource.MustParse("200Gi")
+	var tests = []struct {
+		runtime      *datav1alpha1.JindoRuntime
+		jindoValue   *Jindo
+		userQuatas   string
+		expectMaster string
+		expectWorker string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "secret",
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+						High:       "0.8",
+						Low:        "0.1",
+					}},
+				},
+				NetworkMode: "ContainerNetwork",
+			},
+		}, &Jindo{}, "200g", "30Gi", "200Gi",
+		},
+	}
+	for _, test := range tests {
+		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		engine.transformResources(test.runtime, test.userQuatas, test.jindoValue)
+		if test.jindoValue.Master.Resources.Requests.Memory != test.expectMaster ||
+			test.jindoValue.Worker.Resources.Requests.Memory != test.expectWorker {
+			t.Errorf("expected master value %v, worker value %v,  but got %v and %v", test.expectMaster, test.expectWorker, test.jindoValue.Master.Resources.Requests.Memory, test.jindoValue.Worker.Resources.Requests.Memory)
+		}
+	}
+}

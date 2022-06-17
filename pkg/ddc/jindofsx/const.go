@@ -59,4 +59,8 @@ const (
 	ENGINE_TYPE = "jindofsx"
 
 	FuseOnly = "fuseOnly"
+
+	defaultMemLimit = 100
+
+	defaultMetaSize = "30Gi"
 )
