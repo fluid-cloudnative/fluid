@@ -32,6 +32,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: TIME_TRACK
               value: "false"
+            {{- if .Values.webhook.serverlessInject }}
             {{- if .Values.webhook.serverlessInject.platformLabel }}
             - name: LABEL_SERVERLESS_PLATFORM
               value: {{ .Values.webhook.serverlessInject.platformLabel | quote }}
@@ -39,6 +40,7 @@ spec:
             {{- if .Values.webhook.serverlessInject.platformValue }}
             - name: VALUE_SERVERLESS_PLATFORM
               value: {{ .Values.webhook.serverlessInject.platformValue | quote }}
+            {{- end }}
             {{- end }}
           ports:
             - containerPort: 8080
