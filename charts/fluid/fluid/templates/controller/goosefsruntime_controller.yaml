@@ -63,7 +63,7 @@ spec:
           {{- end }}
           {{- if .Values.runtime.criticalFusePod }}
           - name: CRITICAL_FUSE_POD
-            value: {{ ternary "true" "false" (semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version) }}
+            value: {{ ternary "true" "false" (semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version) | quote }}
           {{- end }}
           {{- if .Values.runtime.syncRetryDuration }}
           - name: FLUID_SYNC_RETRY_DURATION
