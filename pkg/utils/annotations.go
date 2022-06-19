@@ -17,7 +17,7 @@ package utils
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/golang/glog"
+	stdlog "log"
 	"os"
 )
 
@@ -29,11 +29,11 @@ var (
 func init() {
 	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformLabel); exists {
 		ServerlessPlatformKey = envVal
-		glog.Infof("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformLabel, envVal)
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformLabel, envVal)
 	}
 	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
 		ServerlessPlatformVal = envVal
-		glog.Infof("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
 	}
 }
 
