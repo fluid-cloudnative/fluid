@@ -126,6 +126,7 @@ const (
 	InjectWorkerSidecar           = "worker" + injectSidecar
 	InjectSidecarDone             = "done" + injectSidecar
 	App                           = "app"
-	ServerlessPlatform            = "serverless.fluid.io/platform"
-	ASKPlatform                   = "ASK"
+
+	EnvServerlessPlatformLabel = "LABEL_SERVERLESS_PLATFORM"
+	EnvServerlessPlatformVal   = "VALUE_SERVERLESS_PLATFORM"
 )

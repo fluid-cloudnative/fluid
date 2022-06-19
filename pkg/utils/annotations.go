@@ -15,10 +15,30 @@ limitations under the License.
 
 package utils
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/golang/glog"
+	"os"
+)
+
+var (
+	ServerlessPlatformKey string = ""
+	ServerlessPlatformVal string = ""
+)
+
+func init() {
+	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformLabel); exists {
+		ServerlessPlatformKey = envVal
+		glog.Infof("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformLabel, envVal)
+	}
+	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
+		ServerlessPlatformVal = envVal
+		glog.Infof("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
+	}
+}
 
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
 func FuseSidecarEnabled(infos map[string]string) (match bool) {
@@ -26,7 +46,7 @@ func FuseSidecarEnabled(infos map[string]string) (match bool) {
 }
 
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
+	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
