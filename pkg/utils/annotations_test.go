@@ -185,6 +185,9 @@ func TestServerlessEnabled(t *testing.T) {
 		expect      bool
 	}
 
+	ServerlessPlatformKey = "serverless.fluid.io/platform"
+	ServerlessPlatformVal = "foo"
+
 	testcases := []testCase{
 		{
 			name: "enable_Serverless",
@@ -214,7 +217,7 @@ func TestServerlessEnabled(t *testing.T) {
 		{
 			name: "support_ask_platform",
 			annotations: map[string]string{
-				common.ServerlessPlatform: common.ASKPlatform,
+				"serverless.fluid.io/platform": "foo",
 			},
 			expect: true,
 		},
