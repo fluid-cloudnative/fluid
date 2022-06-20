@@ -140,9 +140,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
-	e.transformMasterResources(runtime, value, userQuotas)
-	e.transformWorkerResources(runtime, value, userQuotas)
-	e.transformFuseResources(runtime, value)
+	e.transformResources(runtime, value, userQuotas)
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -353,6 +351,12 @@ func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dat
 		}
 	}
 	value.Worker.WorkerProperties = properties
+}
+
+func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
+	e.transformMasterResources(runtime, value, userQuotas)
+	e.transformWorkerResources(runtime, value, userQuotas)
+	e.transformFuseResources(runtime, value)
 }
 
 func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {

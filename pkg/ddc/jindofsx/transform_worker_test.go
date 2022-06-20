@@ -116,9 +116,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformMasterResources(test.runtime, test.jindoValue, "10g")
-		engine.transformWorkerResources(test.runtime, test.jindoValue, "10g")
-		engine.transformFuseResources(test.runtime, test.jindoValue)
+		engine.transformResources(test.runtime, test.jindoValue, "10g")
 		if test.jindoValue.Worker.Resources.Requests.Memory != "10Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
 		}
@@ -168,9 +166,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformMasterResources(test.runtime, test.jindoValue, "10g")
-		engine.transformWorkerResources(test.runtime, test.jindoValue, "10g")
-		engine.transformFuseResources(test.runtime, test.jindoValue)
+		engine.transformResources(test.runtime, test.jindoValue, "10g")
 		if test.jindoValue.Worker.Resources.Requests.Memory != "1Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
 		}

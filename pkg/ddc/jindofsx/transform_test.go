@@ -349,9 +349,7 @@ func TestTransformResource(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformMasterResources(test.runtime, test.jindoValue, test.userQuatas)
-		engine.transformWorkerResources(test.runtime, test.jindoValue, test.userQuatas)
-		engine.transformFuseResources(test.runtime, test.jindoValue)
+		engine.transformResources(test.runtime, test.jindoValue, test.userQuatas)
 		if test.jindoValue.Master.Resources.Requests.Memory != test.expectMaster ||
 			test.jindoValue.Worker.Resources.Requests.Memory != test.expectWorker {
 			t.Errorf("expected master value %v, worker value %v,  but got %v and %v", test.expectMaster, test.expectWorker, test.jindoValue.Master.Resources.Requests.Memory, test.jindoValue.Worker.Resources.Requests.Memory)
