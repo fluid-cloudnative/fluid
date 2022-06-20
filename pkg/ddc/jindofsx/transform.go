@@ -140,7 +140,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
-	e.transformResources(runtime, userQuotas, value)
+	e.transformResources(runtime, value, userQuotas)
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -353,8 +353,13 @@ func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dat
 	value.Worker.WorkerProperties = properties
 }
 
-func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, userQuotas string, value *Jindo) {
+func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
+	e.transformMasterResources(runtime, value, userQuotas)
+	e.transformWorkerResources(runtime, value, userQuotas)
+	e.transformFuseResources(runtime, value)
+}
 
+func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
 	if runtime.Spec.Master.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")
 		if runtime.Spec.Master.Resources.Limits.Cpu() != nil {
@@ -385,27 +390,9 @@ func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, 
 			value.Master.Resources.Requests.Memory = runtime.Spec.Master.Resources.Requests.Memory().String()
 		}
 	}
+}
 
-	if runtime.Spec.Fuse.Resources.Limits != nil {
-		e.Log.Info("setting Resources limit")
-		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
-			value.Fuse.Resources.Limits.CPU = runtime.Spec.Fuse.Resources.Limits.Cpu().String()
-		}
-		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
-			value.Fuse.Resources.Limits.Memory = runtime.Spec.Fuse.Resources.Limits.Memory().String()
-		}
-	}
-
-	if runtime.Spec.Fuse.Resources.Requests != nil {
-		e.Log.Info("setting Resources request")
-		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
-			value.Fuse.Resources.Requests.CPU = runtime.Spec.Fuse.Resources.Requests.Cpu().String()
-		}
-		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
-			value.Fuse.Resources.Requests.Memory = runtime.Spec.Fuse.Resources.Requests.Memory().String()
-		}
-	}
-
+func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
 	if runtime.Spec.Worker.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")
 		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
@@ -428,6 +415,28 @@ func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, 
 		}
 		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
 			value.Worker.Resources.Requests.Memory = runtime.Spec.Worker.Resources.Requests.Memory().String()
+		}
+	}
+}
+
+func (e *JindoFSxEngine) transformFuseResources(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	if runtime.Spec.Fuse.Resources.Limits != nil {
+		e.Log.Info("setting Resources limit")
+		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
+			value.Fuse.Resources.Limits.CPU = runtime.Spec.Fuse.Resources.Limits.Cpu().String()
+		}
+		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
+			value.Fuse.Resources.Limits.Memory = runtime.Spec.Fuse.Resources.Limits.Memory().String()
+		}
+	}
+
+	if runtime.Spec.Fuse.Resources.Requests != nil {
+		e.Log.Info("setting Resources request")
+		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
+			value.Fuse.Resources.Requests.CPU = runtime.Spec.Fuse.Resources.Requests.Cpu().String()
+		}
+		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
+			value.Fuse.Resources.Requests.Memory = runtime.Spec.Fuse.Resources.Requests.Memory().String()
 		}
 	}
 }
