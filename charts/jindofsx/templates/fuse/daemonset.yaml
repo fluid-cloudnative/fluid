@@ -74,15 +74,23 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.fuse.resources }}
           resources:
-            {{- if .Values.fuse.resources.limits }}
             limits:
+            {{- if .Values.fuse.resources.limits }}
+            {{- if .Values.fuse.resources.limits.cpu }}
               cpu: {{ .Values.fuse.resources.limits.cpu }}
+            {{- end }}
+            {{- if .Values.fuse.resources.limits.memory }}
               memory: {{ .Values.fuse.resources.limits.memory }}
             {{- end }}
-            {{- if .Values.fuse.resources.requests }}
+            {{- end }}
             requests:
+            {{- if .Values.fuse.resources.requests }}
+            {{- if .Values.fuse.resources.requests.cpu }}
               cpu: {{ .Values.fuse.resources.requests.cpu }}
+            {{- end }}
+            {{- if .Values.fuse.resources.requests.memory }}
               memory: {{ .Values.fuse.resources.requests.memory }}
+            {{- end }}
             {{- end }}
           {{- end }}
           command: ["/entrypoint.sh"]
