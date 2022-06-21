@@ -15,10 +15,38 @@ limitations under the License.
 
 package utils
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	stdlog "log"
+	"os"
+)
+
+var (
+	ServerlessPlatformKey string = ""
+	ServerlessPlatformVal string = ""
+)
+
+func init() {
+	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformKey); exists {
+		ServerlessPlatformKey = envVal
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformKey, envVal)
+	}
+	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
+		ServerlessPlatformVal = envVal
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
+	}
+}
+
+func ServerlessPlatformMatched(infos map[string]string) (match bool) {
+	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
+		return
+	}
+
+	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal)
+}
 
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return ServerlessPlatformMatched(infos) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
 func FuseSidecarEnabled(infos map[string]string) (match bool) {
@@ -26,7 +54,7 @@ func FuseSidecarEnabled(infos map[string]string) (match bool) {
 }
 
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.ServerlessPlatform, common.ASKPlatform) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
+	return ServerlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
