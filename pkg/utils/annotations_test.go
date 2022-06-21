@@ -185,6 +185,9 @@ func TestServerlessEnabled(t *testing.T) {
 		expect      bool
 	}
 
+	ServerlessPlatformKey = "serverless.fluid.io/platform"
+	ServerlessPlatformVal = "foo"
+
 	testcases := []testCase{
 		{
 			name: "enable_Serverless",
@@ -214,7 +217,7 @@ func TestServerlessEnabled(t *testing.T) {
 		{
 			name: "support_ask_platform",
 			annotations: map[string]string{
-				common.ServerlessPlatform: common.ASKPlatform,
+				"serverless.fluid.io/platform": "foo",
 			},
 			expect: true,
 		},
@@ -342,6 +345,46 @@ func TestMatchedValue(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotMatch := matchedValue(tt.infos, tt.key, tt.val); gotMatch != tt.expect {
 				t.Errorf("matchedValue() = %v, want %v", gotMatch, tt.expect)
+			}
+		})
+	}
+}
+
+func TestServerlessPlatformMatched(t *testing.T) {
+	type envPlatform struct {
+		ServerlessPlatformKey string
+		ServerlessPlatformVal string
+	}
+	tests := []struct {
+		name      string
+		infos     map[string]string
+		envs      *envPlatform
+		wantMatch bool
+	}{
+		{
+			name:      "test_default_platform",
+			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
+			envs:      nil,
+			wantMatch: false,
+		},
+		{
+			name:  "test_platform_env_set",
+			infos: map[string]string{"serverless.fluid.io/platform": "test"},
+			envs: &envPlatform{
+				ServerlessPlatformKey: "serverless.fluid.io/platform",
+				ServerlessPlatformVal: "test",
+			},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envs != nil {
+				ServerlessPlatformKey = tt.envs.ServerlessPlatformKey
+				ServerlessPlatformVal = tt.envs.ServerlessPlatformVal
+			}
+			if gotMatch := ServerlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
+				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)
 			}
 		})
 	}
