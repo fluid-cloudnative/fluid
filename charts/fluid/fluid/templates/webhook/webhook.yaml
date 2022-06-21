@@ -33,9 +33,9 @@ spec:
             - name: TIME_TRACK
               value: "false"
             {{- if .Values.webhook.serverlessInject }}
-            {{- if .Values.webhook.serverlessInject.platformLabel }}
-            - name: LABEL_SERVERLESS_PLATFORM
-              value: {{ .Values.webhook.serverlessInject.platformLabel | quote }}
+            {{- if .Values.webhook.serverlessInject.platformKey }}
+            - name: KEY_SERVERLESS_PLATFORM
+              value: {{ .Values.webhook.serverlessInject.platformKey | quote }}
             {{- end }}
             {{- if .Values.webhook.serverlessInject.platformValue }}
             - name: VALUE_SERVERLESS_PLATFORM

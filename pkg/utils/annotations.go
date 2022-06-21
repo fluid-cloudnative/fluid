@@ -27,9 +27,9 @@ var (
 )
 
 func init() {
-	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformLabel); exists {
+	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformKey); exists {
 		ServerlessPlatformKey = envVal
-		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformLabel, envVal)
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformKey, envVal)
 	}
 	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
 		ServerlessPlatformVal = envVal
@@ -37,8 +37,16 @@ func init() {
 	}
 }
 
+func ServerlessPlatformMatched(infos map[string]string) (match bool) {
+	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
+		return
+	}
+
+	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal)
+}
+
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return ServerlessPlatformMatched(infos) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
 func FuseSidecarEnabled(infos map[string]string) (match bool) {
@@ -46,7 +54,7 @@ func FuseSidecarEnabled(infos map[string]string) (match bool) {
 }
 
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
-	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
+	return ServerlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {

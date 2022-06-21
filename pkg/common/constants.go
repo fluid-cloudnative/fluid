@@ -127,6 +127,6 @@ const (
 	InjectSidecarDone             = "done" + injectSidecar
 	App                           = "app"
 
-	EnvServerlessPlatformLabel = "LABEL_SERVERLESS_PLATFORM"
-	EnvServerlessPlatformVal   = "VALUE_SERVERLESS_PLATFORM"
+	EnvServerlessPlatformKey = "KEY_SERVERLESS_PLATFORM"
+	EnvServerlessPlatformVal = "VALUE_SERVERLESS_PLATFORM"
 )

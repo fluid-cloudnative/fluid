@@ -349,3 +349,43 @@ func TestMatchedValue(t *testing.T) {
 		})
 	}
 }
+
+func TestServerlessPlatformMatched(t *testing.T) {
+	type envPlatform struct {
+		ServerlessPlatformKey string
+		ServerlessPlatformVal string
+	}
+	tests := []struct {
+		name      string
+		infos     map[string]string
+		envs      *envPlatform
+		wantMatch bool
+	}{
+		{
+			name:      "test_default_platform",
+			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
+			envs:      nil,
+			wantMatch: false,
+		},
+		{
+			name:  "test_platform_env_set",
+			infos: map[string]string{"serverless.fluid.io/platform": "test"},
+			envs: &envPlatform{
+				ServerlessPlatformKey: "serverless.fluid.io/platform",
+				ServerlessPlatformVal: "test",
+			},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envs != nil {
+				ServerlessPlatformKey = tt.envs.ServerlessPlatformKey
+				ServerlessPlatformVal = tt.envs.ServerlessPlatformVal
+			}
+			if gotMatch := ServerlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
+				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)
+			}
+		})
+	}
+}
