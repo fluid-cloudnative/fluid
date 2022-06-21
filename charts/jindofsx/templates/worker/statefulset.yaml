@@ -73,10 +73,11 @@ spec:
           {{- if .Values.worker.resources }}
           resources:
             limits:
-            {{- if .Values.worker.resources }}
             {{- if .Values.worker.resources.limits }}
             {{- if .Values.worker.resources.limits.cpu }}
               cpu: {{ .Values.worker.resources.limits.cpu }}
+            {{- end }}
+            {{- if .Values.worker.resources.limits.memory }}
               memory: {{ .Values.worker.resources.limits.memory }}
             {{- end }}
             {{- end }}
@@ -84,8 +85,9 @@ spec:
             {{- if .Values.worker.resources.requests }}
             {{- if .Values.worker.resources.requests.cpu }}
               cpu: {{ .Values.worker.resources.requests.cpu }}
-              memory: {{ .Values.worker.resources.requests.memory }}
             {{- end }}
+            {{- if .Values.worker.resources.requests.memory }}
+              memory: {{ .Values.worker.resources.requests.memory }}
             {{- end }}
             {{- end }}
           {{- end }}
