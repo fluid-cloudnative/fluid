@@ -32,5 +32,9 @@ Add auto fuse recovery
 0.8.6
 
 Add runtime identity information to template
+
+0.8.7
+
+fix resources issue 
  
 
