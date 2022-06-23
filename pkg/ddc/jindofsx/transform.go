@@ -259,6 +259,13 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			}
 		}
 
+		// support HDFS HA
+		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
+			for key, value := range mount.Options {
+				propertiesFileStore[strings.Replace(key, "fs", "jindofsx", 1)] = value
+			}
+		}
+
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
