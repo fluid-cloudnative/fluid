@@ -37,9 +37,15 @@ import (
 // Shutdown shuts down the Jindo engine
 func (e *JindoFSxEngine) Shutdown() (err error) {
 
-	err = e.invokeCleanCache()
-	if err != nil {
-		return
+	if e.retryShutdown < e.gracefulShutdownLimits {
+		err = e.invokeCleanCache()
+		if err != nil {
+			e.retryShutdown = e.retryShutdown + 1
+			e.Log.Info("clean cache failed",
+				// "engine", e,
+				"retry times", e.retryShutdown)
+			return
+		}
 	}
 
 	_, err = e.destroyWorkers(-1)
