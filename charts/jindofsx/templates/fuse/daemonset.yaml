@@ -1,6 +1,3 @@
-{{- $masterCount := int .Values.master.replicaCount }}
-{{- $isSingleMaster := eq $masterCount 1 }}
-{{- $isRaftHa := eq $masterCount 3 }}
 {{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
 
 apiVersion: apps/v1
@@ -99,13 +96,8 @@ spec:
 {{ toYaml .Values.fuse.args | indent 12 }}
           {{- end }}
           env:
-          {{- if $isSingleMaster }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
             value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
-          {{- else if $isRaftHa }}
-          - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
-          {{- end }}
           {{- if .Values.fuse.runAs }}
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}

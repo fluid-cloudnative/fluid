@@ -1,3 +1,7 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -67,11 +71,17 @@ data:
             <name>fs.xengine</name>
             <value>jindofsx</value>
         </property>
-
+        {{- if $isSingleMaster }}
         <property>
             <name>fs.jindofsx.namespace.rpc.address</name>
             <value>{{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}</value>
         </property>
+        {{- else if $isRaftHa }}
+        <property>
+            <name>fs.jindofsx.namespace.rpc.address</name>
+            <value>{{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}</value>
+        </property>
+        {{- end }}
         {{- range $key, $val := .Values.fuse.properties }}
         <property>
             <name>{{ $key }}</name>
