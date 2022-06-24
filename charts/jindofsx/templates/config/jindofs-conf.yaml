@@ -103,7 +103,11 @@ data:
     {{- end }}
 
     [jindosdk]
+    {{- if $isSingleMaster }}
     fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+    {{- else if $isRaftHa }}
+    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+    {{- end }}
     {{- range $key, $val := .Values.fuse.properties }}
     {{ $key }} = {{ $val }}
     {{- end }}
