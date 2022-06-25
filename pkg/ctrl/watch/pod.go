@@ -92,6 +92,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 	for _, cn := range pod.Spec.Containers {
 		if cn.Name == common.FuseContainerName {
 			exist = true
+			break
 		}
 	}
 	if !exist {
@@ -106,24 +107,21 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 	}
 
 	// reconcile if all app containers exit 0 and fuse container not exit
-	appExited := true
-	fuseRunning := false
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.Name != common.FuseContainerName {
-			log.V(2).Info("container status", "status", containerStatus)
-			if containerStatus.State.Terminated != nil {
-				log.Info("fluid app exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
-			} else {
+			log.V(1).Info("container status", "status", containerStatus)
+			if containerStatus.State.Terminated == nil {
+				log.Info("fluid app not exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
 				// container not exist
-				appExited = false
+				return false
 			}
 		}
 		if containerStatus.Name == common.FuseContainerName {
-			if containerStatus.State.Running != nil {
-				fuseRunning = true
-				log.Info("fluid fuse exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
+			if containerStatus.State.Running == nil {
+				log.Info("fluid fuse not running", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
+				return false
 			}
 		}
 	}
-	return appExited && fuseRunning
+	return true
 }
