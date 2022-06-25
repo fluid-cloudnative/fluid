@@ -88,6 +88,10 @@ func (f *FluidAppReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	}
 	requestCtx.pod = pod
 
+	if !watch.ShouldInQueue(pod) {
+		requestCtx.Log.Info("pod should not in queue", "name", request.Name, "namespace", request.Namespace)
+		return reconcile.Result{}, nil
+	}
 	return f.internalReconcile(requestCtx)
 }
 
