@@ -53,7 +53,8 @@ func (h *podEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) b
 		}
 
 		// ignore if it's not fluid label pod
-		if !shouldRequeue(podNew) {
+		if !ShouldInQueue(podNew) {
+			log.Info("podEventHandler.onUpdateFunc skip due to shouldRequeue false")
 			return false
 		}
 
@@ -69,7 +70,7 @@ func (h *podEventHandler) onDeleteFunc(r Controller) func(e event.DeleteEvent) b
 	}
 }
 
-func shouldRequeue(pod *corev1.Pod) bool {
+func ShouldInQueue(pod *corev1.Pod) bool {
 	if pod == nil {
 		return false
 	}
@@ -91,6 +92,7 @@ func shouldRequeue(pod *corev1.Pod) bool {
 	for _, cn := range pod.Spec.Containers {
 		if cn.Name == common.FuseContainerName {
 			exist = true
+			break
 		}
 	}
 	if !exist {
@@ -98,24 +100,28 @@ func shouldRequeue(pod *corev1.Pod) bool {
 		return false
 	}
 
+	// ignore if pod status is not running
+	if pod.Status.Phase != corev1.PodRunning || len(pod.Status.ContainerStatuses) < 2 {
+		log.Info("Pod status is not running or containerStatus less than 2.", "name", pod.Name, "namespace", pod.Namespace)
+		return false
+	}
+
 	// reconcile if all app containers exit 0 and fuse container not exit
-	appExited := true
-	fuseExited := false
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.Name != common.FuseContainerName {
-			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
-				log.Info("fluid app exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
-			} else {
+			log.V(1).Info("container status", "status", containerStatus)
+			if containerStatus.State.Terminated == nil {
+				log.Info("fluid app not exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
 				// container not exist
-				appExited = false
+				return false
 			}
 		}
 		if containerStatus.Name == common.FuseContainerName {
-			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode == 0 {
-				fuseExited = true
-				log.Info("fluid fuse exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
+			if containerStatus.State.Running == nil {
+				log.Info("fluid fuse not running", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
+				return false
 			}
 		}
 	}
-	return appExited && !fuseExited
+	return true
 }
