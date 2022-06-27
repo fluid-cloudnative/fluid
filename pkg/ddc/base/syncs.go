@@ -57,7 +57,7 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 2. Sync Runtime Spec
-	var updated bool = false
+	var updated bool
 	updated, err = t.Implement.SyncRuntime(ctx)
 	if err != nil {
 		return
@@ -72,13 +72,13 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		return
 	}
 
-	// 3. Update runtime
+	// 4. Update runtime status
 	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
 		return
 	}
 
-	// 4. Update dataset mount point
+	// 5. Update dataset mount point
 	ufsToUpdate := t.Implement.ShouldUpdateUFS()
 	if ufsToUpdate != nil {
 		if ufsToUpdate.ShouldUpdate() {
