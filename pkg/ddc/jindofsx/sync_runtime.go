@@ -16,9 +16,51 @@ limitations under the License.
 
 package jindofsx
 
-import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+import (
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+)
 
 // SyncRuntime syncs the runtime spec
 func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+
+	masterChanged, err := e.syncMasterSpec(ctx)
+	if err != nil {
+		return
+	}
+	if masterChanged {
+		e.Log.Info("Master Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		return masterChanged, err
+	}
+
+	workerChanged, err := e.syncWorkerSpec(ctx)
+	if err != nil {
+		return
+	}
+	if workerChanged {
+		e.Log.Info("Worker Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		return workerChanged, err
+	}
+
+	fuseChanged, err := e.syncFuseSpec(ctx)
+	if err != nil {
+		return
+	}
+	if fuseChanged {
+		e.Log.Info("Fuse Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		return fuseChanged, err
+	}
+
+	return
+}
+
+func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	return
+}
+
+func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	return
+}
+
+func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	return
 }
