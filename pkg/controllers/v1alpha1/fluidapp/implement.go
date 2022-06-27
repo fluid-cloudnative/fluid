@@ -79,6 +79,10 @@ func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err er
 			// if mount point not mounted, do not retry
 			return nil
 		}
+		if strings.Contains(err.Error(), "exit code 137") {
+			i.Log.Info("exec with exit code 137, ignore it.", "err", err)
+			return nil
+		}
 		return err
 	}
 	return err
