@@ -19,6 +19,6 @@ package alluxio
 import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 // SyncRuntime syncs the runtime spec
-func (e *AlluxioEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (err error) {
+func (e *AlluxioEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	return
 }

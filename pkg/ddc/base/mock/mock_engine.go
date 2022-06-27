@@ -571,11 +571,12 @@ func (mr *MockImplementMockRecorder) SyncReplicas(ctx interface{}) *gomock.Call 
 }
 
 // SyncRuntime mocks base method.
-func (m *MockImplement) SyncRuntime(ctx runtime.ReconcileRequestContext) error {
+func (m *MockImplement) SyncRuntime(ctx runtime.ReconcileRequestContext) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyncRuntime", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SyncRuntime indicates an expected call of SyncRuntime.

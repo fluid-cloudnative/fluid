@@ -19,6 +19,6 @@ package jindo
 import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 // SyncRuntime syncs the runtime spec
-func (e *JindoEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (err error) {
+func (e *JindoEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	return
 }
