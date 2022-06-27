@@ -19,6 +19,6 @@ package juicefs
 import cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 // SyncRuntime syncs the runtime spec
-func (e *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (err error) {
+func (e *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	return
 }

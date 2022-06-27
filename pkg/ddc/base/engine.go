@@ -136,7 +136,7 @@ type Implement interface {
 	CheckRuntimeReady() (ready bool)
 
 	// SyncRuntime syncs the runtime spec
-	SyncRuntime(ctx cruntime.ReconcileRequestContext) (err error)
+	SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error)
 
 	// Check existence of targetDataload path
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
