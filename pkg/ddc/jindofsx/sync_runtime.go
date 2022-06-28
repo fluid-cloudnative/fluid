@@ -54,13 +54,30 @@ func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chan
 }
 
 func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	e.Log.V(1).Info("syncMasterSpec")
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return changed, err
+	}
+	if runtime.Spec.Master.Disabled {
+		return
+	}
 	return
 }
 
 func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	e.Log.V(1).Info("syncWorkerSpec")
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return changed, err
+	}
+	if runtime.Spec.Worker.Disabled {
+		return
+	}
 	return
 }
 
 func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	e.Log.V(1).Info("syncFuseSpec")
 	return
 }
