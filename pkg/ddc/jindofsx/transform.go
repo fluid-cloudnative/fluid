@@ -462,6 +462,26 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		"fs.s3.download.thread.concurrency":  "32",
 	}
 
+	readOnly := false
+	runtimeInfo := e.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			e.Log.Info("Error:", "err", err)
+		}
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == corev1.ReadOnlyMany {
+					readOnly = true
+				}
+			}
+		}
+	}
+	// to set read only flag
+	if readOnly {
+		properties["fs.jindofsx.read.only.enable"] = "true"
+	}
+
 	for k, v := range value.Master.FileStoreProperties {
 		// to transform jindofsx.oss.bucket to fs.jindofsx.oss.bucket
 		properties[strings.Replace(k, "jindofsx", "fs", 1)] = v
@@ -597,7 +617,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "4.4.0"
+		defaultTag       = "4.4.1"
 		defaultDnsServer = "1.1.1.1"
 	)
 
@@ -621,7 +641,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "4.4.0"
+		defaultTag   = "4.4.1"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)

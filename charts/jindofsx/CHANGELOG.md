@@ -36,5 +36,8 @@ Add runtime identity information to template
 0.8.7
 
 fix resources issue 
- 
+
+0.8.8
+
+fix fuse memleak
 
