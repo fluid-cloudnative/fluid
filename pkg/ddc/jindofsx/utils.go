@@ -128,9 +128,12 @@ func (e *JindoFSxEngine) TotalJindoStorageBytes() (value int64, err error) {
 		mountPathSize, err := fileUtils.GetUfsTotalSize(mountPath)
 		e.Log.Info("jindofsx storage ufsMount size", "ufsSize", mountPath)
 		if err != nil {
-			e.Log.Error(err, "get total size")
+			e.Log.Error(err, "get total size with path error", mountPath)
 		}
 		mountSize, err := strconv.ParseInt(mountPathSize, 10, 64)
+		if err != nil {
+			e.Log.Error(err, "ParseInt with mount size failed")
+		}
 		ufsSize += mountSize
 	}
 	return ufsSize, err
