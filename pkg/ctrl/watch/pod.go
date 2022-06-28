@@ -40,7 +40,7 @@ func (h *podEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) b
 			return false
 		}
 
-		log.Info("podEventHandler.onCreateFunc", "name", pod.GetName(), "namespace", pod.GetNamespace())
+		log.V(1).Info("podEventHandler.onCreateFunc", "name", pod.GetName(), "namespace", pod.GetNamespace())
 		return true
 	}
 }
