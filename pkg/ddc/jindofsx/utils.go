@@ -106,14 +106,32 @@ func (e *JindoFSxEngine) getMasterPodInfo() (podName string, containerName strin
 }
 
 // return total storage size of Jindo in bytes
-func (e *JindoFSxEngine) TotalJindoStorageBytes(useStsSecret bool) (value int64, err error) {
+func (e *JindoFSxEngine) TotalJindoStorageBytes() (value int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	url := "jfs://jindo/"
-	ufsSize, err := fileUtils.GetUfsTotalSize(url, useStsSecret)
-	e.Log.Info("jindo storage ufsSize", "ufsSize", ufsSize)
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		e.Log.Error(err, "get total size")
+		return 0, err
 	}
-	return strconv.ParseInt(ufsSize, 10, 64)
+
+	ready := fileUtils.Ready()
+	if !ready {
+		return 0, fmt.Errorf("the UFS is not ready")
+	}
+
+	ufsSize := int64(0)
+	for _, mount := range dataset.Spec.Mounts {
+		mountPath := "jindo:///"
+		if mount.Path != "/" {
+			mountPath += mount.Name
+		}
+		mountPathSize, err := fileUtils.GetUfsTotalSize(mountPath)
+		e.Log.Info("jindofsx storage ufsMount size", "ufsSize", mountPath)
+		if err != nil {
+			e.Log.Error(err, "get total size")
+		}
+		mountSize, err := strconv.ParseInt(mountPathSize, 10, 64)
+		ufsSize += mountSize
+	}
+	return ufsSize, err
 }
