@@ -29,7 +29,19 @@ type podEventHandler struct {
 func (h *podEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) bool {
 	return func(e event.CreateEvent) (onCreate bool) {
 		// ignore create event
-		return false
+		pod, ok := e.Object.(*corev1.Pod)
+		if !ok {
+			log.Info("pod.onCreateFunc Skip", "object", e.Object)
+			return false
+		}
+
+		if !ShouldInQueue(pod) {
+			log.Info("podEventHandler.onCreateFunc skip due to shouldRequeue false")
+			return false
+		}
+
+		log.Info("podEventHandler.onCreateFunc", "name", pod.GetName(), "namespace", pod.GetNamespace())
+		return true
 	}
 }
 
