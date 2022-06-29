@@ -128,7 +128,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, err = a.GetUfsTotalSize("/tmpDictionary", false)
+	_, err = a.GetUfsTotalSize("/tmpDictionary")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -138,7 +138,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, err = a.GetUfsTotalSize("/tmpDictionary", false)
+	_, err = a.GetUfsTotalSize("/tmpDictionary")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}

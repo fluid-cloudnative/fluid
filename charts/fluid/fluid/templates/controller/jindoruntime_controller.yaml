@@ -75,6 +75,8 @@ spec:
           - name: JINDO_ENGINE_TYPE
             value: {{ .Values.runtime.jindo.engine | quote }}
           {{- end }}
+          - name: DATASET_UFS_TOTAL_CALCULATE
+            value: true
           ports:
             - containerPort: 8080
               name: metrics
