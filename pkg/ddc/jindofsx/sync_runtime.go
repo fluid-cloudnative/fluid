@@ -43,7 +43,7 @@ func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chan
 		return
 	}
 	if masterChanged {
-		e.Log.Info("Master Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		e.Log.Info("Master Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		return masterChanged, err
 	}
 
@@ -53,7 +53,7 @@ func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chan
 		return
 	}
 	if workerChanged {
-		e.Log.Info("Worker Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		e.Log.Info("Worker Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		return workerChanged, err
 	}
 
@@ -63,7 +63,7 @@ func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chan
 		return
 	}
 	if fuseChanged {
-		e.Log.Info("Fuse Spec is changed", "name", ctx.Name, "namespace", ctx.Namespace)
+		e.Log.Info("Fuse Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		return fuseChanged, err
 	}
 
@@ -108,6 +108,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.V(1).Info("The resource requirement is the same.")
 			}
 			if changed {
+				e.Log.Info("The resource requirement of master is updated")
 				err = e.Client.Update(context.TODO(), masterToUpdate)
 				if err != nil {
 					e.Log.Error(err, "Failed to update the sts spec")
@@ -140,7 +141,7 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		if len(runtime.Spec.Worker.Resources.Limits) == 0 &&
 			len(runtime.Spec.Worker.Resources.Requests) == 0 {
-			e.Log.V(1).Info("The resource requirement is not set, skip")
+			e.Log.V(1).Info("The resource requirement of worker is not set, skip")
 			return nil
 		}
 
@@ -166,10 +167,13 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			}
 
 			if changed {
+				e.Log.Info("The resource requirement of worker is updated")
 				err = e.Client.Update(context.TODO(), workersToUpdate)
 				if err != nil {
 					e.Log.Error(err, "Failed to update the sts spec")
 				}
+			} else {
+				e.Log.V(1).Info("The resource requirement of worker is not set, skip")
 			}
 		}
 
@@ -193,7 +197,7 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 
 		if len(runtime.Spec.Fuse.Resources.Limits) == 0 && len(runtime.Spec.Fuse.Resources.Requests) == 0 {
-			e.Log.V(1).Info("The resource requirement is not set, skip")
+			e.Log.V(1).Info("The resource requirement of Fuse is not set, skip")
 			return nil
 		}
 
@@ -221,6 +225,8 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 				if err != nil {
 					e.Log.Error(err, "Failed to update the sts spec")
 				}
+			} else {
+				e.Log.V(1).Info("The resource requirement of fuse is not set, skip")
 			}
 		}
 
