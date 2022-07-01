@@ -25,6 +25,7 @@ import (
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
@@ -127,7 +128,8 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			return err
 		}
 
-		if len(runtime.Spec.Worker.Resources.Limits) == 0 && len(runtime.Spec.Worker.Resources.Requests) == 0 {
+		if len(runtime.Spec.Worker.Resources.Limits) == 0 &&
+			len(runtime.Spec.Worker.Resources.Requests) == 0 {
 			e.Log.V(1).Info("The resource requirement is not set, skip")
 			return nil
 		}
@@ -137,6 +139,16 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Worker.Resources)
+				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
+					workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
+					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
+						*workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
+				}
+				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
+					workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
+					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
+						*workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
+				}
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Worker.Resources
 				changed = true
 			} else {
