@@ -92,17 +92,9 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Master.Resources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Master.Resources)
-				masterToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Master.Resources
-				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
-					masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
-					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
-						*masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
-				}
-				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
-					masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
-					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
-						*masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
-				}
+				masterToUpdate.Spec.Template.Spec.Containers[0].Resources =
+					tranformResources(runtime.Spec.Fuse.Resources,
+						masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			} else {
 				e.Log.V(1).Info("The resource requirement is the same.")
@@ -150,17 +142,9 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Worker.Resources)
-				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
-					workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
-					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
-						*workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
-				}
-				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
-					workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
-					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
-						*workersToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
-				}
-				workersToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Worker.Resources
+				workersToUpdate.Spec.Template.Spec.Containers[0].Resources =
+					tranformResources(runtime.Spec.Fuse.Resources,
+						workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			} else {
 				e.Log.Info("The resource requirement is the same.")
@@ -206,17 +190,9 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Fuse.Resources)
-				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
-					fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
-					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
-						*fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
-				}
-				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
-					fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
-					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
-						*fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
-				}
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Fuse.Resources
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources =
+					tranformResources(runtime.Spec.Fuse.Resources,
+						fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			}
 
@@ -238,4 +214,20 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 		return false, nil
 	}
 	return
+}
+
+func tranformResources(runtimeResources corev1.ResourceRequirements,
+	current corev1.ResourceRequirements) corev1.ResourceRequirements {
+	if runtimeResources.Requests.Memory() == nil &&
+		current.Requests.Memory() != nil {
+		runtimeResources.Requests[corev1.ResourceMemory] =
+			*current.Requests.Memory()
+	}
+	if runtimeResources.Limits.Memory() == nil &&
+		current.Limits.Memory() != nil {
+		runtimeResources.Limits[corev1.ResourceMemory] =
+			*current.Limits.Memory()
+	}
+
+	return runtimeResources
 }
