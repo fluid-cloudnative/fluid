@@ -97,7 +97,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 						masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			} else {
-				e.Log.V(1).Info("The resource requirement is the same.")
+				e.Log.V(1).Info("The resource requirement of master is the same.")
 			}
 			if changed {
 				e.Log.Info("The resource requirement of master is updated")
@@ -218,16 +218,25 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 
 func tranformResources(runtimeResources corev1.ResourceRequirements,
 	current corev1.ResourceRequirements) corev1.ResourceRequirements {
-	if runtimeResources.Requests.Memory() == nil &&
-		current.Requests.Memory() != nil {
-		runtimeResources.Requests[corev1.ResourceMemory] =
-			*current.Requests.Memory()
-	}
-	if runtimeResources.Limits.Memory() == nil &&
-		current.Limits.Memory() != nil {
-		runtimeResources.Limits[corev1.ResourceMemory] =
-			*current.Limits.Memory()
+
+	if len(runtimeResources.Requests) == 0 || runtimeResources.Requests.Memory() == nil {
+		if current.Requests.Memory() != nil {
+			if len(runtimeResources.Requests) == 0 {
+				runtimeResources.Requests = make(corev1.ResourceList)
+			}
+			runtimeResources.Requests[corev1.ResourceMemory] =
+				*current.Requests.Memory()
+		}
 	}
 
+	if len(runtimeResources.Limits) == 0 || runtimeResources.Limits.Memory() == nil {
+		if current.Limits.Memory() != nil {
+			if len(runtimeResources.Limits) == 0 {
+				runtimeResources.Limits = make(corev1.ResourceList)
+			}
+			runtimeResources.Limits[corev1.ResourceMemory] =
+				*current.Limits.Memory()
+		}
+	}
 	return runtimeResources
 }
