@@ -93,7 +93,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.Info("The resource requirement is different.", "worker sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Master.Resources)
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources =
-					tranformResources(runtime.Spec.Fuse.Resources,
+					tranformResources(runtime.Spec.Master.Resources,
 						masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			} else {
@@ -143,7 +143,7 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Worker.Resources)
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources =
-					tranformResources(runtime.Spec.Fuse.Resources,
+					tranformResources(runtime.Spec.Worker.Resources,
 						workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
 				changed = true
 			} else {
