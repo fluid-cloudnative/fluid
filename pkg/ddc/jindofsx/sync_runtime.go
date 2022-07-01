@@ -92,8 +92,8 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 			masterResources := tranformResources(runtime.Spec.Worker.Resources,
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
 			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
-				e.Log.Info("The resource requirement is different.", "worker sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
-					"runtime", runtime.Spec.Master.Resources)
+				e.Log.Info("The resource requirement is different.", "master sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
+					"runtime", masterResources)
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources =
 					masterResources
 				changed = true
@@ -144,7 +144,7 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
 			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
-					"runtime", runtime.Spec.Worker.Resources)
+					"runtime", workerResources)
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources =
 					workerResources
 				changed = true
@@ -193,7 +193,7 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
 			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
-					"runtime", runtime.Spec.Fuse.Resources)
+					"runtime", fuseResource)
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = fuseResource
 				changed = true
 			}
