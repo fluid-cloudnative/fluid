@@ -93,6 +93,16 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.Info("The resource requirement is different.", "worker sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Master.Resources)
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Master.Resources
+				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
+					masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
+					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
+						*masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
+				}
+				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
+					masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
+					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
+						*masterToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
+				}
 				changed = true
 			} else {
 				e.Log.V(1).Info("The resource requirement is the same.")
@@ -192,7 +202,18 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Fuse.Resources)
+				if runtime.Spec.Worker.Resources.Requests.Memory() == nil &&
+					fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
+					runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory] =
+						*fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()
+				}
+				if runtime.Spec.Worker.Resources.Limits.Memory() == nil &&
+					fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
+					runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory] =
+						*fusesToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()
+				}
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = runtime.Spec.Fuse.Resources
+				changed = true
 			}
 
 			if changed {
