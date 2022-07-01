@@ -89,12 +89,13 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		masterToUpdate := master.DeepCopy()
 		if len(masterToUpdate.Spec.Template.Spec.Containers) == 1 {
-			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Master.Resources) {
+			masterResources := tranformResources(runtime.Spec.Worker.Resources,
+				masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Master.Resources)
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources =
-					tranformResources(runtime.Spec.Master.Resources,
-						masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
+					masterResources
 				changed = true
 			} else {
 				e.Log.V(1).Info("The resource requirement of master is the same.")
@@ -139,12 +140,13 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		workersToUpdate := workers.DeepCopy()
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
-			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources) {
+			workerResources := tranformResources(runtime.Spec.Worker.Resources,
+				workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Worker.Resources)
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources =
-					tranformResources(runtime.Spec.Worker.Resources,
-						workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
+					workerResources
 				changed = true
 			} else {
 				e.Log.Info("The resource requirement is the same.")
@@ -187,12 +189,12 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 
 		fusesToUpdate := fuses.DeepCopy()
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
-			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources) {
+			fuseResource := tranformResources(runtime.Spec.Fuse.Resources,
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", runtime.Spec.Fuse.Resources)
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources =
-					tranformResources(runtime.Spec.Fuse.Resources,
-						fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = fuseResource
 				changed = true
 			}
 
