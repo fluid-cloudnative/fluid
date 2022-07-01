@@ -89,7 +89,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		masterToUpdate := master.DeepCopy()
 		if len(masterToUpdate.Spec.Template.Spec.Containers) == 1 {
-			masterResources := tranformResources(runtime.Spec.Worker.Resources,
+			masterResources := tranformResources(runtime.Spec.Master.Resources,
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
 			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
 				e.Log.Info("The resource requirement is different.", "master sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
