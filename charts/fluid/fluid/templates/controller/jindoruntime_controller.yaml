@@ -76,7 +76,7 @@ spec:
             value: {{ .Values.runtime.jindo.engine | quote }}
           {{- end }}
           {{- if .Values.runtime.jindo.queryUfsTotal }}
-          - name: DATASET_UFS_TOTAL_CALCULATE
+          - name: QUERY_UFS_TOTAL
             value: {{ .Values.runtime.jindo.queryUfsTotal | quote }}
           {{- end }}
           ports:

@@ -148,7 +148,7 @@ func (e *JindoFSxEngine) syncMetadataInternal() (err error) {
 
 			result.Done = true
 
-			if env := os.Getenv("DATASET_UFS_TOTAL_CALCULATE"); env == "true" {
+			if env := os.Getenv("QUERY_DATASET_UFS_TOTAL"); env == "true" {
 				datasetUFSTotalBytes, err := e.TotalJindoStorageBytes()
 				if err != nil {
 					e.Log.Error(err, "Get Ufs Total size failed when syncing metadata", "name", e.name, "namespace", e.namespace)
