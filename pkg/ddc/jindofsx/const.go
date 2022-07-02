@@ -63,4 +63,6 @@ const (
 	defaultMemLimit = 100
 
 	defaultMetaSize = "30Gi"
+
+	QueryUfsTotal = "QUERY_UFS_TOTAL"
 )
