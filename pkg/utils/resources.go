@@ -40,3 +40,60 @@ func TransformRequirementsToResources(res corev1.ResourceRequirements) (cRes com
 
 	return
 }
+
+func TranformResourcesWithTieredStore(runtimeResources corev1.ResourceRequirements,
+	statefulset corev1.ResourceRequirements) corev1.ResourceRequirements {
+	runtimeResources.Requests = transformResourceList(runtimeResources.Requests, statefulset.Requests)
+	runtimeResources.Limits = transformResourceList(runtimeResources.Limits, statefulset.Limits)
+	return runtimeResources
+}
+
+func transformResourceList(runtime corev1.ResourceList, worker corev1.ResourceList) corev1.ResourceList {
+	if len(runtime) == 0 ||
+		runtime.Memory() == nil ||
+		runtime.Memory().IsZero() {
+		if worker.Memory() != nil &&
+			!worker.Memory().IsZero() {
+			if len(runtime) == 0 {
+				runtime = make(corev1.ResourceList)
+			}
+			runtime[corev1.ResourceMemory] =
+				*worker.Memory()
+		}
+	}
+	return runtime
+}
+
+func ResourceRequirementsEqual(source corev1.ResourceRequirements,
+	target corev1.ResourceRequirements) bool {
+	return resourceListsEqual(source.Requests, target.Requests) &&
+		resourceListsEqual(source.Limits, target.Limits)
+}
+
+func resourceListsEqual(a corev1.ResourceList, b corev1.ResourceList) bool {
+	a = withoutZeroElems(a)
+	b = withoutZeroElems(b)
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		vb, found := b[k]
+		if !found {
+			return false
+		}
+		if v.Cmp(vb) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func withoutZeroElems(input corev1.ResourceList) (output corev1.ResourceList) {
+	output = corev1.ResourceList{}
+	for k, v := range input {
+		if !v.IsZero() {
+			output[k] = v
+		}
+	}
+	return
+}

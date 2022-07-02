@@ -18,14 +18,13 @@ package jindofsx
 
 import (
 	"context"
-	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
@@ -89,9 +88,9 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		masterToUpdate := master.DeepCopy()
 		if len(masterToUpdate.Spec.Template.Spec.Containers) == 1 {
-			masterResources := tranformResources(runtime.Spec.Master.Resources,
+			masterResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Master.Resources,
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
-			if !reflect.DeepEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
+			if !utils.ResourceRequirementsEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
 				e.Log.Info("The resource requirement is different.", "master sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", masterResources)
 				masterToUpdate.Spec.Template.Spec.Containers[0].Resources =
@@ -140,9 +139,9 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		workersToUpdate := workers.DeepCopy()
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
-			workerResources := tranformResources(runtime.Spec.Worker.Resources,
+			workerResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Worker.Resources,
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
-			if !reflect.DeepEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
+			if !utils.ResourceRequirementsEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", workerResources)
 				workersToUpdate.Spec.Template.Spec.Containers[0].Resources =
@@ -189,9 +188,9 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 
 		fusesToUpdate := fuses.DeepCopy()
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
-			fuseResource := tranformResources(runtime.Spec.Fuse.Resources,
+			fuseResource := utils.TranformResourcesWithTieredStore(runtime.Spec.Fuse.Resources,
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
-			if !reflect.DeepEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
+			if !utils.ResourceRequirementsEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", fuseResource)
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = fuseResource
@@ -216,29 +215,4 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 		return false, nil
 	}
 	return
-}
-
-func tranformResources(runtimeResources corev1.ResourceRequirements,
-	current corev1.ResourceRequirements) corev1.ResourceRequirements {
-
-	if len(runtimeResources.Requests) == 0 || runtimeResources.Requests.Memory() == nil {
-		if current.Requests.Memory() != nil {
-			if len(runtimeResources.Requests) == 0 {
-				runtimeResources.Requests = make(corev1.ResourceList)
-			}
-			runtimeResources.Requests[corev1.ResourceMemory] =
-				*current.Requests.Memory()
-		}
-	}
-
-	if len(runtimeResources.Limits) == 0 || runtimeResources.Limits.Memory() == nil {
-		if current.Limits.Memory() != nil {
-			if len(runtimeResources.Limits) == 0 {
-				runtimeResources.Limits = make(corev1.ResourceList)
-			}
-			runtimeResources.Limits[corev1.ResourceMemory] =
-				*current.Limits.Memory()
-		}
-	}
-	return runtimeResources
 }
