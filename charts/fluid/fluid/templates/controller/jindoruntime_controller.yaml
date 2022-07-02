@@ -75,8 +75,10 @@ spec:
           - name: JINDO_ENGINE_TYPE
             value: {{ .Values.runtime.jindo.engine | quote }}
           {{- end }}
-          - name: DATASET_UFS_TOTAL_CALCULATE
-            value: true
+          {{- if .Values.runtime.jindo.queryUfsTotal }}
+          - name: QUERY_UFS_TOTAL
+            value: {{ .Values.runtime.jindo.queryUfsTotal | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
               name: metrics

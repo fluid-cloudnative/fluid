@@ -42,6 +42,7 @@ runtime:
     portRange: 18000-19999
     enabled: false
     engine: jindofsx
+    queryUfsTotal: true
     smartdata:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.4.1
     fuse:
