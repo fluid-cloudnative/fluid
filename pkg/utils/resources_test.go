@@ -133,18 +133,18 @@ func TestTranformResourcesWithTieredStore(t *testing.T) {
 				},
 			}, want: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: resource.MustParse("10Gi"),
-					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceCPU: resource.MustParse("100m"),
 				},
 				Requests: corev1.ResourceList{
-					corev1.ResourceCPU: resource.MustParse("100m"),
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("10Gi"),
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := TranformResourcesWithTieredStore(tt.args.runtimeResources, tt.args.statefulset); !reflect.DeepEqual(got, tt.want) {
+			if got := TranformResourcesWithTieredStore(tt.args.runtimeResources, tt.args.statefulset); !ResourceRequirementsEqual(got, tt.want) {
 				t.Errorf("TranformResourcesWithTieredStore() = %v, want %v", got, tt.want)
 			}
 		})
