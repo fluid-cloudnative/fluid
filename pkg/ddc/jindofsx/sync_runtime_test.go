@@ -21,32 +21,37 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 	type fields struct {
-		runtime                *datav1alpha1.JindoRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-		runtimeInfo            base.RuntimeInfoInterface
-		MetadataSyncDoneCh     chan MetadataSyncResult
-		cacheNodeNames         []string
-		Recorder               record.EventRecorder
-		Helper                 *ctrl.Helper
+		runtime   *datav1alpha1.JindoRuntime
+		name      string
+		namespace string
+		// runtimeType            string
+		Log    logr.Logger
+		Client client.Client
+		// gracefulShutdownLimits int32
+		// retryShutdown          int32
+		// runtimeInfo            base.RuntimeInfoInterface
+		MetadataSyncDoneCh chan MetadataSyncResult
+		// cacheNodeNames         []string
+		Recorder record.EventRecorder
+		Helper   *ctrl.Helper
 	}
 	type args struct {
 		ctx     cruntime.ReconcileRequestContext
 		runtime *datav1alpha1.JindoRuntime
+		master  appsv1.StatefulSet
 	}
 	tests := []struct {
 		name        string
@@ -55,24 +60,36 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 		wantChanged bool
 		wantErr     bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:   "Not resource for jindoruntime",
+			fields: fields{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.args.master.DeepCopy())
+
+			s := runtime.NewScheme()
+			data := &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tt.fields.name,
+					Namespace: tt.fields.namespace,
+				},
+			}
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.args.master)
+
+			_ = v1.AddToScheme(s)
+			runtimeObjs = append(runtimeObjs, tt.args.runtime)
+			runtimeObjs = append(runtimeObjs, data)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
 			e := &JindoFSxEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-				runtimeInfo:            tt.fields.runtimeInfo,
-				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
-				cacheNodeNames:         tt.fields.cacheNodeNames,
-				Recorder:               tt.fields.Recorder,
-				Helper:                 tt.fields.Helper,
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       fake.NullLogger(),
+				Client:    client,
 			}
 			gotChanged, err := e.syncMasterSpec(tt.args.ctx, tt.args.runtime)
 			if (err != nil) != tt.wantErr {
