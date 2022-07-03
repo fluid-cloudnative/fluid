@@ -255,12 +255,38 @@ func TestResourceRequirementsEqual(t *testing.T) {
 					},
 				},
 			}, want: false,
+		}, {
+			name: "resource value is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("20Gi"),
+					},
+				},
+			}, want: false,
+		}, {
+			name: "resource value is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+				},
+			}, want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ResourceRequirementsEqual(tt.args.source, tt.args.target); got != tt.want {
-				t.Errorf("ResourceRequirementsEqual() = %v, want %v", got, tt.want)
+				t.Errorf("testcase %s ResourceRequirementsEqual() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}
