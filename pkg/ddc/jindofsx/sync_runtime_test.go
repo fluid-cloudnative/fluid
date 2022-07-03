@@ -15,3 +15,73 @@ limitations under the License.
 */
 
 package jindofsx
+
+import (
+	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
+	type fields struct {
+		runtime                *datav1alpha1.JindoRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		runtimeInfo            base.RuntimeInfoInterface
+		MetadataSyncDoneCh     chan MetadataSyncResult
+		cacheNodeNames         []string
+		Recorder               record.EventRecorder
+		Helper                 *ctrl.Helper
+	}
+	type args struct {
+		ctx     cruntime.ReconcileRequestContext
+		runtime *datav1alpha1.JindoRuntime
+	}
+	tests := []struct {
+		name        string
+		fields      fields
+		args        args
+		wantChanged bool
+		wantErr     bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &JindoFSxEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				runtimeInfo:            tt.fields.runtimeInfo,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+				cacheNodeNames:         tt.fields.cacheNodeNames,
+				Recorder:               tt.fields.Recorder,
+				Helper:                 tt.fields.Helper,
+			}
+			gotChanged, err := e.syncMasterSpec(tt.args.ctx, tt.args.runtime)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JindoFSxEngine.syncMasterSpec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotChanged != tt.wantChanged {
+				t.Errorf("JindoFSxEngine.syncMasterSpec() = %v, want %v", gotChanged, tt.wantChanged)
+			}
+		})
+	}
+}

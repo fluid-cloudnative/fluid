@@ -243,6 +243,18 @@ func TestResourceRequirementsEqual(t *testing.T) {
 					},
 				},
 			}, want: true,
+		}, {
+			name: "resource list is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits:   corev1.ResourceList{},
+					Requests: corev1.ResourceList{},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				},
+			}, want: false,
 		},
 	}
 	for _, tt := range tests {
