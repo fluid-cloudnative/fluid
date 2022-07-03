@@ -117,7 +117,7 @@ func TestTranformResourcesWithTieredStore(t *testing.T) {
 		want corev1.ResourceRequirements
 	}{
 		{
-			name: "cpu resource is set",
+			name: "use memory in statefulse",
 			args: args{
 				runtimeResources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -138,6 +138,31 @@ func TestTranformResourcesWithTieredStore(t *testing.T) {
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse("100m"),
 					corev1.ResourceMemory: resource.MustParse("10Gi"),
+				},
+			},
+		}, {
+			name: "use memory in statefulse",
+			args: args{
+				runtimeResources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("5Gi"),
+					},
+				}, statefulset: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				},
+			}, want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("100m"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("5Gi"),
 				},
 			},
 		},
