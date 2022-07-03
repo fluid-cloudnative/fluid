@@ -165,6 +165,20 @@ func TestTranformResourcesWithTieredStore(t *testing.T) {
 					corev1.ResourceMemory: resource.MustParse("5Gi"),
 				},
 			},
+		}, {
+			name: "no resource setting",
+			args: args{
+				runtimeResources: corev1.ResourceRequirements{}, statefulset: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				},
+			}, want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{},
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("10Gi"),
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -207,6 +221,18 @@ func TestResourceRequirementsEqual(t *testing.T) {
 			}, want: true,
 		}, {
 			name: "no limit",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits:   corev1.ResourceList{},
+					Requests: corev1.ResourceList{},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("0"),
+					},
+				},
+			}, want: true,
+		}, {
+			name: "no resources",
 			args: args{
 				source: corev1.ResourceRequirements{
 					Limits:   corev1.ResourceList{},
