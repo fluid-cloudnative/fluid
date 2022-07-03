@@ -101,7 +101,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.V(1).Info("The resource requirement of master is the same.")
 			}
 			if changed {
-				if !reflect.DeepEqual(master, masterToUpdate) {
+				if reflect.DeepEqual(master, masterToUpdate) {
 					changed = false
 					e.Log.V(1).Info("The resource requirement of master is not changed, skip")
 					return nil
@@ -158,7 +158,7 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			}
 
 			if changed {
-				if !reflect.DeepEqual(workers, workersToUpdate) {
+				if reflect.DeepEqual(workers, workersToUpdate) {
 					changed = false
 					e.Log.V(1).Info("The resource requirement of worker is not changed, skip")
 					return nil
@@ -200,8 +200,8 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 
 		fusesToUpdate := fuses.DeepCopy()
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
-			fuseResource := utils.TranformResourcesWithTieredStore(runtime.Spec.Fuse.Resources,
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			fuseResource :=
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources
 			if !utils.ResourceRequirementsEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", fuseResource)
@@ -210,7 +210,7 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 			}
 
 			if changed {
-				if !reflect.DeepEqual(fuses, fusesToUpdate) {
+				if reflect.DeepEqual(fuses, fusesToUpdate) {
 					changed = false
 					e.Log.V(1).Info("The resource requirement of fuse is not changed, skip")
 					return nil
