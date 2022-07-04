@@ -48,17 +48,18 @@ func TranformResourcesWithTieredStore(runtimeResources corev1.ResourceRequiremen
 	return runtimeResources
 }
 
-func transformResourceList(runtime corev1.ResourceList, worker corev1.ResourceList) corev1.ResourceList {
-	if len(runtime) == 0 ||
-		runtime.Memory() == nil ||
+func transformResourceList(runtime corev1.ResourceList, podResource corev1.ResourceList) corev1.ResourceList {
+	if len(runtime) == 0 {
+		runtime = make(corev1.ResourceList)
+	}
+
+	if runtime.Memory() == nil ||
 		runtime.Memory().IsZero() {
-		if worker.Memory() != nil &&
-			!worker.Memory().IsZero() {
-			if len(runtime) == 0 {
-				runtime = make(corev1.ResourceList)
-			}
+		if podResource.Memory() != nil &&
+			!podResource.Memory().IsZero() {
+
 			runtime[corev1.ResourceMemory] =
-				*worker.Memory()
+				*podResource.Memory()
 		}
 	}
 	return runtime
