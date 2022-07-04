@@ -146,7 +146,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
-	e.transformResources(runtime, value, userQuotas)
+	err = e.transformResources(runtime, value, userQuotas)
+	if err != nil {
+		return
+	}
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -410,15 +413,17 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 			if i > defaultMemLimit {
 				// value.Master.Resources.Requests.Memory = defaultMetaSize
 				defaultMetaSizeQuantity := resource.MustParse(defaultMetaSize)
-				if runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
+				if runtime.Spec.Master.Resources.Requests == nil ||
+					runtime.Spec.Master.Resources.Requests.Memory() == nil ||
+					runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
 					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
 					needUpdated = true
 				}
 
-				if runtime.Spec.Master.Resources.Limits.Memory() != nil ||
-					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
+				if !runtime.Spec.Master.Resources.Limits.Memory().IsZero() &&
+					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
 					return fmt.Errorf("the memory meta store's size %v is greater than master limits memory %v",
-						defaultMetaSizeQuantity, runtime.Spec.Master.Resources.Requests.Memory())
+						defaultMetaSizeQuantity, runtime.Spec.Master.Resources.Limits.Memory())
 				}
 
 				if needUpdated {
@@ -485,15 +490,17 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
 		needUpdated := false
 		userQuotasQuantity := resource.MustParse(userQuotas)
-		if runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
+		if runtime.Spec.Worker.Resources.Requests == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
 			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
 			needUpdated = true
 		}
 
-		if runtime.Spec.Worker.Resources.Limits.Memory() != nil ||
-			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
+		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
+			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
 			return fmt.Errorf("the memory tierdStore's size %v is greater than master limits memory %v",
-				userQuotasQuantity, runtime.Spec.Worker.Resources.Requests.Memory())
+				userQuotasQuantity, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 		if needUpdated {
 			value.Worker.Resources.Requests.Memory = userQuotas

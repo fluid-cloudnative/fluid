@@ -17,14 +17,16 @@ limitations under the License.
 package jindofsx
 
 import (
+	"reflect"
 	"testing"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestTransformTolerations(t *testing.T) {
@@ -318,41 +320,170 @@ func TestTransformAllocatePorts(t *testing.T) {
 	}
 }
 
-func TestTransformResource(t *testing.T) {
-	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+// func TestTransformResource(t *testing.T) {
+// 	resources := corev1.ResourceRequirements{}
+// 	resources.Limits = make(corev1.ResourceList)
+// 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
 
-	result := resource.MustParse("200Gi")
-	var tests = []struct {
-		runtime      *datav1alpha1.JindoRuntime
-		jindoValue   *Jindo
-		userQuatas   string
-		expectMaster string
-		expectWorker string
+// 	result := resource.MustParse("200Gi")
+// 	var tests = []struct {
+// 		runtime      *datav1alpha1.JindoRuntime
+// 		jindoValue   *Jindo
+// 		userQuatas   string
+// 		expectMaster string
+// 		expectWorker string
+// 	}{
+// 		{&datav1alpha1.JindoRuntime{
+// 			Spec: datav1alpha1.JindoRuntimeSpec{
+// 				Secret: "secret",
+// 				TieredStore: datav1alpha1.TieredStore{
+// 					Levels: []datav1alpha1.Level{{
+// 						MediumType: common.Memory,
+// 						Quota:      &result,
+// 						High:       "0.8",
+// 						Low:        "0.1",
+// 					}},
+// 				},
+// 				NetworkMode: "ContainerNetwork",
+// 			},
+// 		}, &Jindo{}, "200g", "30Gi", "200Gi",
+// 		},
+// 	}
+// 	for _, test := range tests {
+// 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+// 		engine.transformResources(test.runtime, test.jindoValue, test.userQuatas)
+// 		if test.jindoValue.Master.Resources.Requests.Memory != test.expectMaster ||
+// 			test.jindoValue.Worker.Resources.Requests.Memory != test.expectWorker {
+// 			t.Errorf("expected master value %v, worker value %v,  but got %v and %v", test.expectMaster, test.expectWorker, test.jindoValue.Master.Resources.Requests.Memory, test.jindoValue.Worker.Resources.Requests.Memory)
+// 		}
+// 	}
+// }
+
+func TestJindoFSxEngine_transformMasterResources(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	type args struct {
+		runtime    *datav1alpha1.JindoRuntime
+		value      *Jindo
+		userQuotas string
+	}
+	quotas := []resource.Quantity{resource.MustParse("200Gi"), resource.MustParse("10Gi")}
+	tests := []struct {
+		name                string
+		fields              fields
+		args                args
+		wantErr             bool
+		wantRuntimeResource corev1.ResourceRequirements
+		wantValue           Resources
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "ContainerNetwork",
+		// TODO: Add test cases.
+		{
+			name: "runtime_resource_is_null",
+			fields: fields{
+				name:      "testNull",
+				namespace: "default",
 			},
-		}, &Jindo{}, "200g", "30Gi", "200Gi",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "testNull",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &quotas[0],
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+					},
+				},
+				value:      &Jindo{},
+				userQuotas: "200g",
+			},
+			wantErr: false,
+			wantRuntimeResource: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("30Gi"),
+				},
+			},
+			wantValue: Resources{
+				Requests: Resource{
+					Memory: "30Gi",
+				},
+			},
 		},
 	}
-	for _, test := range tests {
-		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformResources(test.runtime, test.jindoValue, test.userQuatas)
-		if test.jindoValue.Master.Resources.Requests.Memory != test.expectMaster ||
-			test.jindoValue.Worker.Resources.Requests.Memory != test.expectWorker {
-			t.Errorf("expected master value %v, worker value %v,  but got %v and %v", test.expectMaster, test.expectWorker, test.jindoValue.Master.Resources.Requests.Memory, test.jindoValue.Worker.Resources.Requests.Memory)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.args.runtime.DeepCopy())
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.args.runtime)
+			_ = corev1.AddToScheme(s)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			e := &JindoFSxEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+			}
+
+			if err := e.transformMasterResources(tt.args.runtime, tt.args.value, tt.args.userQuotas); (err != nil) != tt.wantErr {
+				t.Errorf("JindoFSxEngine.transformMasterResources() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			runtime, err := e.getRuntime()
+			if err != nil {
+				t.Errorf("JindoFSxEngine.getRUntime() error = %v", err)
+			}
+
+			if !ResourceRequirementsEqual(tt.wantRuntimeResource, runtime.Spec.Master.Resources) {
+				t.Errorf("JindoFSxEngine.transformMasterResources() runtime = %v, wantRuntime %v", runtime.Spec.Master.Resources, tt.wantRuntimeResource)
+			}
+
+			if !reflect.DeepEqual(tt.wantValue, tt.args.value.Master.Resources) {
+				t.Errorf("JindoFSxEngine.transformMasterResources() value = %v, wantValue %v", tt.args.value.Master.Resources, tt.wantValue)
+			}
+
+		})
+	}
+}
+
+func ResourceRequirementsEqual(source corev1.ResourceRequirements,
+	target corev1.ResourceRequirements) bool {
+	return resourceListsEqual(source.Requests, target.Requests) &&
+		resourceListsEqual(source.Limits, target.Limits)
+}
+
+func resourceListsEqual(a corev1.ResourceList, b corev1.ResourceList) bool {
+	a = withoutZeroElems(a)
+	b = withoutZeroElems(b)
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		vb, found := b[k]
+		if !found {
+			return false
+		}
+		if v.Cmp(vb) != 0 {
+			return false
 		}
 	}
+	return true
+}
+
+func withoutZeroElems(input corev1.ResourceList) (output corev1.ResourceList) {
+	output = corev1.ResourceList{}
+	for k, v := range input {
+		if !v.IsZero() {
+			output[k] = v
+		}
+	}
+	return
 }
