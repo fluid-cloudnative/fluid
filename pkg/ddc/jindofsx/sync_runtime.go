@@ -82,10 +82,10 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 			return err
 		}
 
-		if len(runtime.Spec.Master.Resources.Limits) == 0 && len(runtime.Spec.Master.Resources.Requests) == 0 {
-			e.Log.V(1).Info("The resource requirement is not set, skip")
-			return nil
-		}
+		// if len(runtime.Spec.Master.Resources.Limits) == 0 && len(runtime.Spec.Master.Resources.Requests) == 0 {
+		// 	e.Log.V(1).Info("The resource requirement is not set, skip")
+		// 	return nil
+		// }
 
 		masterToUpdate := master.DeepCopy()
 		if len(masterToUpdate.Spec.Template.Spec.Containers) == 1 {
@@ -98,7 +98,7 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 					masterResources
 				changed = true
 			} else {
-				e.Log.V(1).Info("The resource requirement of master is the same.")
+				e.Log.V(1).Info("The resource requirement of master is the same, skip")
 			}
 			if changed {
 				if reflect.DeepEqual(master, masterToUpdate) {
@@ -137,11 +137,11 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 			return err
 		}
 
-		if len(runtime.Spec.Worker.Resources.Limits) == 0 &&
-			len(runtime.Spec.Worker.Resources.Requests) == 0 {
-			e.Log.V(1).Info("The resource requirement of worker is not set, skip")
-			return nil
-		}
+		// if len(runtime.Spec.Worker.Resources.Limits) == 0 &&
+		// 	len(runtime.Spec.Worker.Resources.Requests) == 0 {
+		// 	e.Log.V(1).Info("The resource requirement of worker is not set, skip")
+		// 	return nil
+		// }
 
 		workersToUpdate := workers.DeepCopy()
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
@@ -154,7 +154,7 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 					workerResources
 				changed = true
 			} else {
-				e.Log.Info("The resource requirement is the same.")
+				e.Log.V(1).Info("The resource requirement of workers is the same, skip")
 			}
 
 			if changed {
@@ -193,10 +193,10 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 			return err
 		}
 
-		if len(runtime.Spec.Fuse.Resources.Limits) == 0 && len(runtime.Spec.Fuse.Resources.Requests) == 0 {
-			e.Log.V(1).Info("The resource requirement of Fuse is not set, skip")
-			return nil
-		}
+		// if len(runtime.Spec.Fuse.Resources.Limits) == 0 && len(runtime.Spec.Fuse.Resources.Requests) == 0 {
+		// 	e.Log.V(1).Info("The resource requirement of Fuse is not set, skip")
+		// 	return nil
+		// }
 
 		fusesToUpdate := fuses.DeepCopy()
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
@@ -207,6 +207,8 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 					"runtime", fuseResource)
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = fuseResource
 				changed = true
+			} else {
+				e.Log.V(1).Info("The resource requirement of fuse is the same, skip")
 			}
 
 			if changed {
