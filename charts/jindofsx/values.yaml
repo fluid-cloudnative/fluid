@@ -54,6 +54,8 @@ worker:
 fuse:
   criticalPod: false
   labels: {}
+  updateStrategy:
+    type: OnDelete
   properties:
     fs.jindofsx.request.user: root,
 
