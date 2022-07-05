@@ -46,17 +46,6 @@ func TestOnCreateFunc(t *testing.T) {
 	if predicate {
 		t.Errorf("The event %v should ben't reconciled, but pass.", createRuntimeEvent)
 	}
-
-	// 3. Skip the runtime which is deleting
-	createRuntimeEvent = event.CreateEvent{
-		Object: &datav1alpha1.JindoRuntime{},
-	}
-	createRuntimeEvent.Object.SetDeletionTimestamp(&metav1.Time{})
-	predicate = f(createRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", createRuntimeEvent)
-	}
-
 }
 
 func TestOnUpdateFunc(t *testing.T) {
