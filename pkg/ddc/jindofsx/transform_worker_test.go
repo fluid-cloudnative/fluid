@@ -106,6 +106,7 @@ func TestTransformWorkerMountPath(t *testing.T) {
 }
 
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
+	quotas := []resource.Quantity{resource.MustParse("10Gi")}
 	var tests = []struct {
 		name       string
 		namespace  string
@@ -120,7 +121,16 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 					Name:      "test",
 					Namespace: "default",
 				},
-				Spec: datav1alpha1.JindoRuntimeSpec{},
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							MediumType: common.Memory,
+							Quota:      &quotas[0],
+							High:       "0.8",
+							Low:        "0.1",
+						}},
+					},
+				},
 			},
 			jindoValue: &Jindo{
 				Properties: map[string]string{},
