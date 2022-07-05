@@ -22,11 +22,13 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
 )
 
 func TestTransformTolerations(t *testing.T) {
@@ -486,4 +488,73 @@ func withoutZeroElems(input corev1.ResourceList) (output corev1.ResourceList) {
 		}
 	}
 	return
+}
+
+func TestJindoFSxEngine_transform(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.JindoRuntime
+		name      string
+		namespace string
+		dataset   *datav1alpha1.Dataset
+	}
+	type args struct {
+		runtime *datav1alpha1.JindoRuntime
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantValue *Jindo
+		wantErr   bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "fuseOnly",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.fields.runtime.DeepCopy())
+			runtimeObjs = append(runtimeObjs, tt.fields.dataset.DeepCopy())
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
+			_ = corev1.AddToScheme(s)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			e := &JindoFSxEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
+			tt.args.runtime = tt.fields.runtime
+			portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+			_, err := e.transform(tt.args.runtime)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JindoFSxEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
 }
