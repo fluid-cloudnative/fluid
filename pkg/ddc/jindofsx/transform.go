@@ -17,13 +17,17 @@ limitations under the License.
 package jindofsx
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -32,6 +36,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
@@ -140,7 +146,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
-	e.transformResources(runtime, value, userQuotas)
+	err = e.transformResources(runtime, value, userQuotas)
+	if err != nil {
+		return
+	}
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
@@ -360,13 +369,21 @@ func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dat
 	value.Worker.WorkerProperties = properties
 }
 
-func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
-	e.transformMasterResources(runtime, value, userQuotas)
-	e.transformWorkerResources(runtime, value, userQuotas)
+func (e *JindoFSxEngine) transformResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) (err error) {
+	err = e.transformMasterResources(runtime, value, userQuotas)
+	if err != nil {
+		return
+	}
+	err = e.transformWorkerResources(runtime, value, userQuotas)
+	if err != nil {
+		return
+	}
 	e.transformFuseResources(runtime, value)
+
+	return
 }
 
-func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
+func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) (err error) {
 	if runtime.Spec.Master.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")
 		if runtime.Spec.Master.Resources.Limits.Cpu() != nil {
@@ -374,17 +391,6 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 		}
 		if runtime.Spec.Master.Resources.Limits.Memory() != nil {
 			value.Master.Resources.Limits.Memory = runtime.Spec.Master.Resources.Limits.Memory().String()
-		}
-	}
-
-	// mem set request
-	if e.getTieredStoreType(runtime) == 0 {
-		quotaString := strings.TrimRight(userQuotas, "g")
-		if quotaString != "" {
-			i, _ := strconv.Atoi(quotaString)
-			if i > defaultMemLimit {
-				value.Master.Resources.Requests.Memory = defaultMetaSize
-			}
 		}
 	}
 
@@ -397,9 +403,68 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 			value.Master.Resources.Requests.Memory = runtime.Spec.Master.Resources.Requests.Memory().String()
 		}
 	}
+
+	// set memory request for the larger
+	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
+		quotaString := strings.TrimRight(userQuotas, "g")
+		needUpdated := false
+		if quotaString != "" {
+			i, _ := strconv.Atoi(quotaString)
+			if i > defaultMemLimit {
+				// value.Master.Resources.Requests.Memory = defaultMetaSize
+				defaultMetaSizeQuantity := resource.MustParse(defaultMetaSize)
+				if runtime.Spec.Master.Resources.Requests == nil ||
+					runtime.Spec.Master.Resources.Requests.Memory() == nil ||
+					runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
+					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
+					needUpdated = true
+				}
+
+				if !runtime.Spec.Master.Resources.Limits.Memory().IsZero() &&
+					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
+					return fmt.Errorf("the memory meta store's size %v is greater than master limits memory %v",
+						defaultMetaSizeQuantity, runtime.Spec.Master.Resources.Limits.Memory())
+				}
+
+				if needUpdated {
+					value.Master.Resources.Requests.Memory = defaultMetaSize
+					err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+						runtime, err := e.getRuntime()
+						if err != nil {
+							return err
+						}
+						runtimeToUpdate := runtime.DeepCopy()
+						if len(runtimeToUpdate.Spec.Master.Resources.Requests) == 0 {
+							runtimeToUpdate.Spec.Master.Resources.Requests = make(corev1.ResourceList)
+						}
+						runtimeToUpdate.Spec.Master.Resources.Requests[corev1.ResourceMemory] = defaultMetaSizeQuantity
+						if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+							err = e.Client.Update(context.TODO(), runtimeToUpdate)
+							if err != nil {
+								if apierrors.IsConflict(err) {
+									time.Sleep(3 * time.Second)
+								}
+								return err
+							}
+							time.Sleep(1 * time.Second)
+						}
+
+						return nil
+					})
+
+					if err != nil {
+						return err
+					}
+
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
-func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) {
+func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) (err error) {
 	if runtime.Spec.Worker.Resources.Limits != nil {
 		e.Log.Info("setting Resources limit")
 		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
@@ -408,11 +473,6 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
 			value.Worker.Resources.Limits.Memory = runtime.Spec.Worker.Resources.Limits.Memory().String()
 		}
-	}
-	// mem set request
-	if e.getTieredStoreType(runtime) == 0 {
-		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
-		value.Worker.Resources.Requests.Memory = userQuotas
 	}
 
 	if runtime.Spec.Worker.Resources.Requests != nil {
@@ -424,6 +484,58 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 			value.Worker.Resources.Requests.Memory = runtime.Spec.Worker.Resources.Requests.Memory().String()
 		}
 	}
+
+	// mem set request
+	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
+		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
+		needUpdated := false
+		userQuotasQuantity := resource.MustParse(userQuotas)
+		if runtime.Spec.Worker.Resources.Requests == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
+			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
+		}
+
+		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
+			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the memory tierdStore's size %v is greater than master limits memory %v",
+				userQuotasQuantity, runtime.Spec.Worker.Resources.Limits.Memory())
+		}
+		if needUpdated {
+			value.Worker.Resources.Requests.Memory = userQuotas
+			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := e.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Worker.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Worker.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Worker.Resources.Requests[corev1.ResourceMemory] = userQuotasQuantity
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = e.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						if apierrors.IsConflict(err) {
+							time.Sleep(3 * time.Second)
+						}
+						return err
+					}
+					time.Sleep(1 * time.Second)
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return
 }
 
 func (e *JindoFSxEngine) transformFuseResources(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
