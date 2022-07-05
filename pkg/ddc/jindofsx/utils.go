@@ -30,7 +30,7 @@ import (
 )
 
 func (e *JindoFSxEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
-	var mediumType int
+	var mediumType int = -1
 	for _, level := range runtime.Spec.TieredStore.Levels {
 		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
 	}

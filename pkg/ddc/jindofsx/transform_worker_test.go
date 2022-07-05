@@ -24,6 +24,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -105,17 +107,40 @@ func TestTransformWorkerMountPath(t *testing.T) {
 
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
+		name       string
+		namespace  string
 		runtime    *datav1alpha1.JindoRuntime
 		jindoValue *Jindo
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &Jindo{
-			Properties: map[string]string{},
-		}},
+		{
+			name:      "test",
+			namespace: "default",
+			runtime: &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.JindoRuntimeSpec{},
+			},
+			jindoValue: &Jindo{
+				Properties: map[string]string{},
+			}},
 	}
 	for _, test := range tests {
-		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		// engine := &JindoFSxEngine{Log: fake.NullLogger()}
+
+		runtimeObjs := []runtime.Object{}
+		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
+		s := runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+		_ = corev1.AddToScheme(s)
+		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		engine := &JindoFSxEngine{
+			name:      test.name,
+			namespace: test.namespace,
+			Client:    client,
+			Log:       fake.NullLogger(),
+		}
 		err := engine.transformResources(test.runtime, test.jindoValue, "10g")
 		if err != nil {
 			t.Errorf("got error %v", err)
