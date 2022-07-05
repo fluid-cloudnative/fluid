@@ -108,14 +108,17 @@ func TestTransformWorkerMountPath(t *testing.T) {
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	quotas := []resource.Quantity{resource.MustParse("10Gi")}
 	var tests = []struct {
-		name       string
-		namespace  string
-		runtime    *datav1alpha1.JindoRuntime
-		jindoValue *Jindo
+		name          string
+		namespace     string
+		size          string
+		runtime       *datav1alpha1.JindoRuntime
+		jindoValue    *Jindo
+		wantResources Resources
 	}{
 		{
 			name:      "test",
 			namespace: "default",
+			size:      "10g",
 			runtime: &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -134,6 +137,26 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			},
 			jindoValue: &Jindo{
 				Properties: map[string]string{},
+			}, wantResources: Resources{
+				Requests: Resource{
+					CPU:    "",
+					Memory: "10Gi",
+				},
+			}}, {
+			name:      "noTieredStore",
+			namespace: "default",
+			size:      "0g",
+			runtime: &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.JindoRuntimeSpec{},
+			},
+			jindoValue: &Jindo{
+				Properties: map[string]string{},
+			}, wantResources: Resources{
+				Requests: Resource{},
 			}},
 	}
 	for _, test := range tests {
@@ -151,21 +174,27 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			Client:    client,
 			Log:       fake.NullLogger(),
 		}
-		err := engine.transformResources(test.runtime, test.jindoValue, "10g")
+		err := engine.transformResources(test.runtime, test.jindoValue, test.size)
 		if err != nil {
 			t.Errorf("got error %v", err)
 		}
-		if test.jindoValue.Worker.Resources.Requests.Memory != "10Gi" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
+		if test.jindoValue.Worker.Resources.Requests.Memory != test.wantResources.Requests.Memory {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Requests.Memory,
+				test.jindoValue.Worker.Resources.Requests.Memory)
 		}
-		if test.jindoValue.Worker.Resources.Requests.CPU != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.CPU)
+		if test.jindoValue.Worker.Resources.Requests.CPU != test.wantResources.Requests.CPU {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Requests.CPU,
+				test.jindoValue.Worker.Resources.Requests.CPU)
 		}
-		if test.jindoValue.Worker.Resources.Limits.Memory != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.Memory)
+		if test.jindoValue.Worker.Resources.Limits.Memory != test.wantResources.Limits.Memory {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Limits.Memory,
+				test.jindoValue.Worker.Resources.Limits.Memory)
 		}
-		if test.jindoValue.Worker.Resources.Limits.CPU != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.CPU)
+		if test.jindoValue.Worker.Resources.Limits.CPU != test.wantResources.Limits.CPU {
+			t.Errorf("expected %v, got %v", test.wantResources.Limits.CPU, test.jindoValue.Worker.Resources.Limits.CPU)
 		}
 	}
 }

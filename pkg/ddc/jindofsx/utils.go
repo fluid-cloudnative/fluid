@@ -30,11 +30,15 @@ import (
 )
 
 func (e *JindoFSxEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
-	var mediumType int = -1
+	var mediumType int
 	for _, level := range runtime.Spec.TieredStore.Levels {
 		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
 	}
 	return mediumType
+}
+
+func (e *JindoFSxEngine) hasTieredStore(runtime *datav1alpha1.JindoRuntime) bool {
+	return len(runtime.Spec.TieredStore.Levels) > 0
 }
 
 func (e *JindoFSxEngine) getMountPoint() (mountPath string) {

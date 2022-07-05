@@ -405,7 +405,7 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 	}
 
 	// set memory request for the larger
-	if e.getTieredStoreType(runtime) == 0 {
+	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
 		quotaString := strings.TrimRight(userQuotas, "g")
 		needUpdated := false
 		if quotaString != "" {
@@ -486,7 +486,7 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 	}
 
 	// mem set request
-	if e.getTieredStoreType(runtime) == 0 {
+	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
 		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
 		needUpdated := false
 		userQuotasQuantity := resource.MustParse(userQuotas)
