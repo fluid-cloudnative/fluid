@@ -37,6 +37,10 @@ func (e *JindoFSxEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) 
 	return mediumType
 }
 
+func (e *JindoFSxEngine) hasTieredStore(runtime *datav1alpha1.JindoRuntime) bool {
+	return len(runtime.Spec.TieredStore.Levels) > 0
+}
+
 func (e *JindoFSxEngine) getMountPoint() (mountPath string) {
 	mountRoot := getMountRoot()
 	e.Log.Info("mountRoot", "path", mountRoot)

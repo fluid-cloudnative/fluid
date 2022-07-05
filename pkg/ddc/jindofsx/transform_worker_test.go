@@ -24,6 +24,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -104,30 +106,95 @@ func TestTransformWorkerMountPath(t *testing.T) {
 }
 
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
+	quotas := []resource.Quantity{resource.MustParse("10Gi")}
 	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		jindoValue *Jindo
+		name          string
+		namespace     string
+		size          string
+		runtime       *datav1alpha1.JindoRuntime
+		jindoValue    *Jindo
+		wantResources Resources
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &Jindo{
-			Properties: map[string]string{},
-		}},
+		{
+			name:      "test",
+			namespace: "default",
+			size:      "10g",
+			runtime: &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							MediumType: common.Memory,
+							Quota:      &quotas[0],
+							High:       "0.8",
+							Low:        "0.1",
+						}},
+					},
+				},
+			},
+			jindoValue: &Jindo{
+				Properties: map[string]string{},
+			}, wantResources: Resources{
+				Requests: Resource{
+					CPU:    "",
+					Memory: "10Gi",
+				},
+			}}, {
+			name:      "noTieredStore",
+			namespace: "default",
+			size:      "0g",
+			runtime: &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.JindoRuntimeSpec{},
+			},
+			jindoValue: &Jindo{
+				Properties: map[string]string{},
+			}, wantResources: Resources{
+				Requests: Resource{},
+			}},
 	}
 	for _, test := range tests {
-		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformResources(test.runtime, test.jindoValue, "10g")
-		if test.jindoValue.Worker.Resources.Requests.Memory != "10Gi" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
+		// engine := &JindoFSxEngine{Log: fake.NullLogger()}
+
+		runtimeObjs := []runtime.Object{}
+		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
+		s := runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
+		_ = corev1.AddToScheme(s)
+		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		engine := &JindoFSxEngine{
+			name:      test.name,
+			namespace: test.namespace,
+			Client:    client,
+			Log:       fake.NullLogger(),
 		}
-		if test.jindoValue.Worker.Resources.Requests.CPU != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.CPU)
+		err := engine.transformResources(test.runtime, test.jindoValue, test.size)
+		if err != nil {
+			t.Errorf("got error %v", err)
 		}
-		if test.jindoValue.Worker.Resources.Limits.Memory != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.Memory)
+		if test.jindoValue.Worker.Resources.Requests.Memory != test.wantResources.Requests.Memory {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Requests.Memory,
+				test.jindoValue.Worker.Resources.Requests.Memory)
 		}
-		if test.jindoValue.Worker.Resources.Limits.CPU != "" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.CPU)
+		if test.jindoValue.Worker.Resources.Requests.CPU != test.wantResources.Requests.CPU {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Requests.CPU,
+				test.jindoValue.Worker.Resources.Requests.CPU)
+		}
+		if test.jindoValue.Worker.Resources.Limits.Memory != test.wantResources.Limits.Memory {
+			t.Errorf("expected %v, got %v",
+				test.wantResources.Limits.Memory,
+				test.jindoValue.Worker.Resources.Limits.Memory)
+		}
+		if test.jindoValue.Worker.Resources.Limits.CPU != test.wantResources.Limits.CPU {
+			t.Errorf("expected %v, got %v", test.wantResources.Limits.CPU, test.jindoValue.Worker.Resources.Limits.CPU)
 		}
 	}
 }
@@ -166,7 +233,10 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		engine.transformResources(test.runtime, test.jindoValue, "10g")
+		err := engine.transformResources(test.runtime, test.jindoValue, "10g")
+		if err != nil {
+			t.Errorf("got error %v", err)
+		}
 		if test.jindoValue.Worker.Resources.Requests.Memory != "1Gi" {
 			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
 		}
