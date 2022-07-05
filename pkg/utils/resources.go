@@ -41,30 +41,6 @@ func TransformRequirementsToResources(res corev1.ResourceRequirements) (cRes com
 	return
 }
 
-func TranformResourcesWithTieredStore(runtimeResources corev1.ResourceRequirements,
-	statefulset corev1.ResourceRequirements) corev1.ResourceRequirements {
-	runtimeResources.Requests = transformResourceList(runtimeResources.Requests, statefulset.Requests)
-	runtimeResources.Limits = transformResourceList(runtimeResources.Limits, statefulset.Limits)
-	return runtimeResources
-}
-
-func transformResourceList(runtime corev1.ResourceList, podResource corev1.ResourceList) corev1.ResourceList {
-	if len(runtime) == 0 {
-		runtime = make(corev1.ResourceList)
-	}
-
-	if runtime.Memory() == nil ||
-		runtime.Memory().IsZero() {
-		if podResource.Memory() != nil &&
-			!podResource.Memory().IsZero() {
-
-			runtime[corev1.ResourceMemory] =
-				*podResource.Memory()
-		}
-	}
-	return runtime
-}
-
 func ResourceRequirementsEqual(source corev1.ResourceRequirements,
 	target corev1.ResourceRequirements) bool {
 	return resourceListsEqual(source.Requests, target.Requests) &&

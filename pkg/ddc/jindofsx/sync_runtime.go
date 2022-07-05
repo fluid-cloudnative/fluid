@@ -89,8 +89,9 @@ func (e *JindoFSxEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		masterToUpdate := master.DeepCopy()
 		if len(masterToUpdate.Spec.Template.Spec.Containers) == 1 {
-			masterResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Master.Resources,
-				masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			// masterResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Master.Resources,
+			// 	masterToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			masterResources := runtime.Spec.Master.Resources
 			if !utils.ResourceRequirementsEqual(masterToUpdate.Spec.Template.Spec.Containers[0].Resources, masterResources) {
 				e.Log.Info("The resource requirement is different.", "master sts", masterToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", masterResources)
@@ -145,8 +146,9 @@ func (e *JindoFSxEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, ru
 
 		workersToUpdate := workers.DeepCopy()
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
-			workerResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Worker.Resources,
-				workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			// workerResources := utils.TranformResourcesWithTieredStore(runtime.Spec.Worker.Resources,
+			// 	workersToUpdate.Spec.Template.Spec.Containers[0].Resources)
+			workerResources := runtime.Spec.Worker.Resources
 			if !utils.ResourceRequirementsEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
 				e.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", workerResources)
@@ -201,7 +203,7 @@ func (e *JindoFSxEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runt
 		fusesToUpdate := fuses.DeepCopy()
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
 			fuseResource :=
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources
+				runtime.Spec.Fuse.Resources
 			if !utils.ResourceRequirementsEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
 				e.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources,
 					"runtime", fuseResource)

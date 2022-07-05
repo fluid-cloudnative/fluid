@@ -104,7 +104,8 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 						Master: datav1alpha1.JindoCompTemplateSpec{
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU: resource.MustParse("100m"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
 							},
 						},
@@ -174,11 +175,12 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 			}
 			gotChanged, err := e.syncMasterSpec(tt.args.ctx, tt.fields.runtime)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoFSxEngine.syncMasterSpec() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Testcase %s JindoFSxEngine.syncMasterSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
 			}
 			if gotChanged != tt.wantChanged {
-				t.Errorf("JindoFSxEngine.syncMasterSpec() = %v, want %v. got sts resources %v after updated, want %v",
+				t.Errorf("Testcase %s JindoFSxEngine.syncMasterSpec() = %v, want %v. got sts resources %v after updated, want %v",
+					tt.name,
 					gotChanged,
 					tt.wantChanged,
 					tt.args.master.Spec.Template.Spec.Containers[0].Resources,
@@ -332,11 +334,12 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 			}
 			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoFSxEngine.syncWorkerSpec() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() error = %v, wantErr %v", tt.fields.name, err, tt.wantErr)
 				return
 			}
 			if gotChanged != tt.wantChanged {
-				t.Errorf("JindoFSxEngine.syncWorkerSpec() = %v, want %v. got sts resources %v after updated, want %v",
+				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() = %v, want %v. got sts resources %v after updated, want %v",
+					tt.fields.name,
 					gotChanged,
 					tt.wantChanged,
 					tt.args.worker.Spec.Template.Spec.Containers[0].Resources,
