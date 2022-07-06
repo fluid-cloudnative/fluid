@@ -20,6 +20,8 @@ metadata:
     uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy }}
   selector:
     matchLabels:
       app: {{ template "jindofs.name" . }}
