@@ -109,10 +109,23 @@ spec:
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}
           {{- end }}
+          {{- if .Values.useHostNetwork }}
           - name: STORAGE_ADDRESS
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          {{- else }}
+          - name: STORAGE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: STORAGE_DATA_PATH
+            value: {{ .Values.worker.dataPath }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc

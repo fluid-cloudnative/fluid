@@ -59,7 +59,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	originPath := strings.Split(stroagePath, ",")
 	for _, value := range originPath {
 		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
-			e.namespace+"/"+e.name+"/bigboot")
+			e.namespace+"/"+e.name+"/jindofsx")
 	}
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
@@ -345,6 +345,9 @@ func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dat
 
 	properties["storage.data-dirs"] = dataPath
 	//properties["storage.data-dirs"] = "/mnt/disk1/bigboot, /mnt/disk2/bigboot, /mnt/disk3/bigboot"
+	if !value.UseHostNetwork {
+		value.Worker.Path = dataPath
+	}
 
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		properties["storage.watermark.high.ratio"] = "0.8"
