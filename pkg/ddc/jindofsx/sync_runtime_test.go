@@ -264,7 +264,8 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 						Worker: datav1alpha1.JindoCompTemplateSpec{
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU: resource.MustParse("100m"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: res,
 								},
 							},
 						},
@@ -284,7 +285,7 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 										Resources: corev1.ResourceRequirements{
 											Requests: corev1.ResourceList{
 												corev1.ResourceCPU:    resource.MustParse("100m"),
-												corev1.ResourceMemory: resource.MustParse("1Gi"),
+												corev1.ResourceMemory: resource.MustParse("320Gi"),
 											},
 										},
 									},
@@ -334,12 +335,12 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 			}
 			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() error = %v, wantErr %v", tt.fields.name, err, tt.wantErr)
+				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
 			}
 			if gotChanged != tt.wantChanged {
 				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() = %v, want %v. got sts resources %v after updated, want %v",
-					tt.fields.name,
+					tt.name,
 					gotChanged,
 					tt.wantChanged,
 					tt.args.worker.Spec.Template.Spec.Containers[0].Resources,
@@ -423,7 +424,8 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 						Fuse: datav1alpha1.JindoFuseSpec{
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU: resource.MustParse("100m"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
 							},
 						},
@@ -493,11 +495,12 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 			}
 			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoFSxEngine.syncFuseSpec() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("testcase %s: JindoFSxEngine.syncFuseSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
 			}
 			if gotChanged != tt.wantChanged {
-				t.Errorf("JindoFSxEngine.syncFuseSpec() = %v, want %v. got sts resources %v after updated, want %v",
+				t.Errorf("testcase %s JindoFSxEngine.syncFuseSpec() = %v, want %v. got sts resources %v after updated, want %v",
+					tt.name,
 					gotChanged,
 					tt.wantChanged,
 					tt.args.fuse.Spec.Template.Spec.Containers[0].Resources,
