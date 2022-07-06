@@ -21,7 +21,7 @@ metadata:
   {{- end }}
 spec:
   updateStrategy:
-    type: {{ .Values.fuse.updateStrategy }}
+    type: {{ .Values.fuse.updateStrategy.type }}
   selector:
     matchLabels:
       app: {{ template "jindofs.name" . }}

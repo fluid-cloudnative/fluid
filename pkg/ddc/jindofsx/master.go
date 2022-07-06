@@ -111,19 +111,18 @@ func (e *JindoFSxEngine) SetupMaster() (err error) {
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
-		e.Log.V(1).Info("SetupMaster", "master", e.name+"-master")
+		e.Log.Info("SetupMaster", "master", e.name+"-master")
 		return e.setupMasterInernal()
 	} else if err != nil {
 		//2. Other errors
 		return
 	} else {
 		//3.The master has been set up
-		e.Log.V(1).Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
+		e.Log.Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
 	}
 
 	if e.runtime.Spec.Master.Disabled {
-		err = nil
-		return
+		return nil
 	}
 
 	// 2. Update the status of the runtime
@@ -133,7 +132,6 @@ func (e *JindoFSxEngine) SetupMaster() (err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-
 		runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseNotReady
 		replicas := runtimeToUpdate.Spec.Master.Replicas
 		if replicas == 0 {
@@ -142,7 +140,6 @@ func (e *JindoFSxEngine) SetupMaster() (err error) {
 
 		// Init selector for worker
 		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
-
 		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
 		runtimeToUpdate.Status.ValueFileConfigmap = e.getConfigmapName()
 
