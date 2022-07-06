@@ -132,11 +132,13 @@ var _ = Describe("TemplateEngine", func() {
 			It("Should sync successfully", func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
-					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
-					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					// impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					// impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
+					impl.EXPECT().SyncRuntime(gomock.Eq(fakeCtx)).Return(false, nil).Times(1),
 					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(&utils.UFSToUpdate{}).Times(1),
 					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),
 				)
@@ -165,11 +167,13 @@ var _ = Describe("TemplateEngine", func() {
 
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
-					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
-					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					// impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					// impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
+					impl.EXPECT().SyncRuntime(gomock.Eq(fakeCtx)).Return(false, nil).Times(1),
 					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
+					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(ufsToUpdate).Times(1),
 					impl.EXPECT().UpdateOnUFSChange(ufsToUpdate).Times(1),
 					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),

@@ -40,35 +40,41 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 		return
 	}
 
-	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
-	if err != nil {
-		return
-	}
-
-	err = t.Implement.UpdateCacheOfDataset()
-	if err != nil {
-		return
-	}
-
 	// 1. Sync replicas
 	err = t.Implement.SyncReplicas(ctx)
 	if err != nil {
 		return
 	}
 
-	// 2. Check healthy
+	// 2. Sync Runtime Spec
+	var updated bool
+	updated, err = t.Implement.SyncRuntime(ctx)
+	if err != nil {
+		return
+	}
+	if updated {
+		return
+	}
+
+	// 3. Check healthy
 	err = t.Implement.CheckRuntimeHealthy()
 	if err != nil {
 		return
 	}
 
-	// 3. Update runtime
+	// 4. Update runtime status
 	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
 	if err != nil {
 		return
 	}
 
-	// 4. Update dataset mount point
+	// 5. Update the cached of dataset
+	err = t.Implement.UpdateCacheOfDataset()
+	if err != nil {
+		return
+	}
+
+	// 6. Update dataset mount point
 	ufsToUpdate := t.Implement.ShouldUpdateUFS()
 	if ufsToUpdate != nil {
 		if ufsToUpdate.ShouldUpdate() {

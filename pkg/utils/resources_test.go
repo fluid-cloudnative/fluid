@@ -105,3 +105,105 @@ func mockCommonResource(req, limit common.ResourceList) common.Resources {
 	}
 	return res
 }
+
+func TestResourceRequirementsEqual(t *testing.T) {
+	type args struct {
+		source corev1.ResourceRequirements
+		target corev1.ResourceRequirements
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "memory resource emty and nil",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("0"),
+					}, Limits: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+				},
+			}, want: true,
+		}, {
+			name: "no limit",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits:   corev1.ResourceList{},
+					Requests: corev1.ResourceList{},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("0"),
+					},
+				},
+			}, want: true,
+		}, {
+			name: "no resources",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits:   corev1.ResourceList{},
+					Requests: corev1.ResourceList{},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("0"),
+					},
+				},
+			}, want: true,
+		}, {
+			name: "resource list is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Limits:   corev1.ResourceList{},
+					Requests: corev1.ResourceList{},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				},
+			}, want: false,
+		}, {
+			name: "resource value is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("20Gi"),
+					},
+				},
+			}, want: false,
+		}, {
+			name: "resource value is different",
+			args: args{
+				source: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Gi"),
+					},
+				}, target: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
+					},
+				},
+			}, want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ResourceRequirementsEqual(tt.args.source, tt.args.target); got != tt.want {
+				t.Errorf("testcase %s ResourceRequirementsEqual() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
