@@ -6,7 +6,7 @@ dataloader:
   # Optional
   # Default: 3
   # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
-  backoffLimit: 3
+  backoffLimit: 1
 
   # Required
   # Description: the dataset that this DataLoad targets
