@@ -1,3 +1,7 @@
+### 0.4.0
+
+- Change Restart Policy from OnFailure to Never
+
 ### 0.3.0
 - Remove unused volumes
 
