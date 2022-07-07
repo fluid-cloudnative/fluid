@@ -32,7 +32,7 @@ spec:
         role: dataload-pod
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
