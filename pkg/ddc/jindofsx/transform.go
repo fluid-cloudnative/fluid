@@ -318,7 +318,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	value.Master.FileStoreProperties = propertiesFileStore
 
 	// to transform disabled
-	if e.runtime.Spec.Master.Disabled {
+	if e.runtime.Spec.Master.Disabled && value.Master.ReplicaCount == 1 {
 		value.Master.ServiceCount = 1
 	} else {
 		value.Master.ServiceCount = value.Master.ReplicaCount
