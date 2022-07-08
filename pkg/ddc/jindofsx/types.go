@@ -68,7 +68,7 @@ type Master struct {
 	DnsServer           string            `yaml:"dnsServer,omitempty"`
 	NameSpace           string            `yaml:"namespace,omitempty"`
 	Labels              map[string]string `yaml:"labels,omitempty"`
-	SvcCount            int               `yaml:"svccount"`
+	ServiceCount        int               `yaml:"svccount"`
 }
 
 type Worker struct {
