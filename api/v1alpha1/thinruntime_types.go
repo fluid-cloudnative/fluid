@@ -1,0 +1,166 @@
+/*
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	ThinRuntimeKind = "ThinRuntime"
+)
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// ThinRuntimeSpec defines the desired state of ThinRuntime
+type ThinRuntimeSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// The version information that instructs fluid to orchestrate a particular version,
+	Version VersionSpec `json:"version,omitempty"`
+
+	// The spec of init users
+	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
+
+	// The component spec of master
+	Master ThinCompTemplateSpec `json:"master,omitempty"`
+
+	// The component spec of worker
+	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
+
+	// The component spec of job Worker
+	JobWorker ThinCompTemplateSpec `json:"jobWorker,omitempty"`
+
+	// The component spec of thinRuntime
+	Fuse ThinFuseSpec `json:"fuse,omitempty"`
+
+	// Tiered storage
+	TieredStore TieredStore `json:"tieredstore,omitempty"`
+
+	// The replicas of the worker, need to be specified
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Manage the user to run Runtime
+	RunAs *User `json:"runAs,omitempty"`
+
+	// Disable monitoring for Runtime
+	// Prometheus is enabled by default
+	// +optional
+	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
+
+	// Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// Mounted as volume in fuse/worker pod
+	ConfigMapName string `json:"ConfigMapName"`
+}
+
+// ThinCompTemplateSpec is a description of the thinRuntime components
+type ThinCompTemplateSpec struct {
+	// Replicas is the desired number of replicas of the given template.
+	// If unspecified, defaults to 1.
+	// +kubebuilder:validation:Minimum=1
+	// replicas is the min replicas of dataset in the cluster
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Ports used thinRuntime
+	// +optional
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+
+	// Resources that will be requested by thinRuntime component.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Environment variables that will be used by thinRuntime component.
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Enabled or Disabled for the components.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+
+	// NodeSelector is a selector
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+}
+
+type ThinFuseSpec struct {
+	// Image for thinRuntime fuse
+	Image string `json:"image,omitempty"`
+
+	// Image for thinRuntime fuse
+	ImageTag string `json:"imageTag,omitempty"`
+
+	// One of the three policies: `Always`, `IfNotPresent`, `Never`
+	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// Environment variables that will be used by thinRuntime Fuse
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources that will be requested by thinRuntime Fuse.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// If the fuse client should be deployed in global mode,
+	// otherwise the affinity should be considered
+	// +optional
+	Global bool `json:"global,omitempty"`
+
+	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
+	// this option only effect when global is enabled
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// CleanPolicy decides when to clean thinRuntime Fuse pods.
+	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+	// OnDemand cleans fuse pod once the fuse pod on some node is not needed
+	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+	// Defaults to OnDemand
+	// +optional
+	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+
+// ThinRuntime is the Schema for the thinruntimes API
+type ThinRuntime struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ThinRuntimeSpec `json:"spec,omitempty"`
+	Status RuntimeStatus   `json:"status,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+
+// ThinRuntimeList contains a list of ThinRuntime
+type ThinRuntimeList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ThinRuntime `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&ThinRuntime{}, &ThinRuntimeList{})
+}
