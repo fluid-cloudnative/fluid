@@ -317,6 +317,11 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
 
+	// to transform disabled
+	if e.runtime.Spec.Master.Disabled {
+		value.Master.Disabled = true
+	}
+
 	return nil
 }
 

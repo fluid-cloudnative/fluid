@@ -1,5 +1,8 @@
 {{- $dot := . }}
 {{ $masterCount := int .Values.master.replicaCount }}
+{{- if .Values.master.disabled }}
+{{ $masterCount := 1 }}
+{{- end }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isRaftHa := eq $masterCount 3 }}
 {{- range $i := until $masterCount }}
