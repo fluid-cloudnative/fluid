@@ -181,7 +181,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 				},
 			},
 			wantErr: true,
-		}, {
+		},
+		{
 			name: "serverless_pod_done",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -312,7 +313,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 				},
 			},
 			wantErr: false,
-		}, {
+		},
+		{
 			name: "no_serverless_pod_without_runtime",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -443,8 +445,9 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 				},
 			},
 			wantErr: true,
-		}, {
-			name: "no_serverless_pod_with_runtime",
+		},
+		{
+			name: "no_serverless_pod_with_runtime_as_pvc",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pod-with-fluid",
@@ -488,7 +491,8 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 						},
 					},
 				},
-			}, pv: &corev1.PersistentVolume{
+			},
+			pv: &corev1.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "big-data-pod-with-fluid",
 				},
@@ -581,9 +585,142 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "no_serverless_pod_with_runtime_as_hcfs",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset-as-hcfs",
+					Namespace: "big-data",
+				}, Status: datav1alpha1.DatasetStatus{
+					HCFSStatus: &datav1alpha1.HCFSStatus{
+						Endpoint: "alluxio://test",
+					},
+					Runtimes: []datav1alpha1.Runtime{
+						{
+							Type: common.JindoRuntime,
+						},
+					},
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-hcfs",
+					Namespace: "big-data",
+					Annotations: map[string]string{
+						common.DatasetUseAsHCFS: "dataset-as-hcfs",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "test",
+							Name:  "test",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "dataset",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "pv-dataset-as-hcfs",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/pod-with-fluid/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset-as-hcfs",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.LabelAnnotationStorageCapacityPrefix + "big-data" + "-" + "pod-with-fluid": common.True,
+					},
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-pod-with-fluid",
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dataset-as-hcfs-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "test",
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "data",
+											MountPath: "/mnt/disk1",
+										}, {
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "data",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime_mnt/pod-with-fluid",
+										},
+									}},
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/pod-with-fluid",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 
-	objs := []runtime.Object{}
+	var objs []runtime.Object
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
 	_ = datav1alpha1.AddToScheme(s)
@@ -599,6 +736,13 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 		},
 	}
 	objs = append(objs, runtime)
+	runtime = &datav1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dataset-as-hcfs",
+			Namespace: "big-data",
+		},
+	}
+	objs = append(objs, runtime)
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
@@ -609,7 +753,7 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 
 		err := handler.AddScheduleInfoToPod(testcase.in, testcase.in.Namespace)
 		if !((err != nil) == testcase.wantErr) {
-			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
+			t.Errorf("testcase %s is failed due to error: %v", testcase.name, err)
 		}
 	}
 }
