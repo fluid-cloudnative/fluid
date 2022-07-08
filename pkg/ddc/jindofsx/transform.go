@@ -317,13 +317,6 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
 
-	// to transform disabled
-	if e.runtime.Spec.Master.Disabled && value.Master.ReplicaCount == 1 {
-		value.Master.ServiceCount = 1
-	} else {
-		value.Master.ServiceCount = value.Master.ReplicaCount
-	}
-
 	return nil
 }
 
@@ -936,6 +929,12 @@ func (e *JindoFSxEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, v
 }
 
 func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	// transform master disabled
+	if e.runtime.Spec.Master.Disabled && value.Master.ReplicaCount == 1 {
+		value.Master.ServiceCount = 1
+	} else {
+		value.Master.ServiceCount = value.Master.ReplicaCount
+	}
 	// to set fuseOnly
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		value.Master.ReplicaCount = 0
