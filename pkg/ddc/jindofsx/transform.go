@@ -319,7 +319,9 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 	// to transform disabled
 	if e.runtime.Spec.Master.Disabled {
-		value.Master.Disabled = true
+		value.Master.SvcCount = 1
+	} else {
+		value.Master.SvcCount = value.Master.ReplicaCount
 	}
 
 	return nil
