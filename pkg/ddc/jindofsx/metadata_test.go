@@ -65,9 +65,34 @@ func TestSyncMetadata(t *testing.T) {
 		},
 	}
 
+	RuntimeInputs := []datav1alpha1.JindoRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		},
+	}
+
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, runtimeInput := range RuntimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -134,11 +159,48 @@ func TestShouldSyncMetadata(t *testing.T) {
 			Status: datav1alpha1.DatasetStatus{
 				UfsTotal: "",
 			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "fuseonly",
+				Namespace: "fluid",
+			},
+			Status: datav1alpha1.DatasetStatus{
+				UfsTotal: "",
+			},
+		},
+	}
+	runtimeInputs := []datav1alpha1.JindoRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "fuseonly",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: true,
+				},
+			},
 		},
 	}
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -154,27 +216,39 @@ func TestShouldSyncMetadata(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+		}, {
+			name:      "fuseonly",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
 		},
 	}
 
 	var testCases = []struct {
+		name           string
 		engine         JindoFSxEngine
 		expectedShould bool
 	}{
 		{
+			name:           "hbase",
 			engine:         engines[0],
 			expectedShould: false,
 		},
 		{
+			name:           "spark",
 			engine:         engines[1],
 			expectedShould: true,
+		}, {
+			name:           "disable_master",
+			engine:         engines[2],
+			expectedShould: false,
 		},
 	}
 
 	for _, test := range testCases {
 		should, err := test.engine.shouldSyncMetadata()
 		if err != nil || should != test.expectedShould {
-			t.Errorf("fail to exec the function")
+			t.Errorf("testcase %s fail to exec the function", test.name)
 		}
 	}
 }
