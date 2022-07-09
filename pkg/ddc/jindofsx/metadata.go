@@ -60,6 +60,15 @@ func (e *JindoFSxEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return should, err
+	}
+
+	if runtime.Spec.Master.Disabled {
+		return
+	}
+
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
 		e.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
