@@ -558,3 +558,84 @@ func TestJindoFSxEngine_transform(t *testing.T) {
 		})
 	}
 }
+
+func TestJindoFSxEngine_transformDeployMode(t *testing.T) {
+
+	type args struct {
+		runtime *datav1alpha1.JindoRuntime
+		value   *Jindo
+	}
+	tests := []struct {
+		name string
+		args args
+		want *Jindo
+	}{
+		// TODO: Add test cases.
+		{
+			name: "replicas is 1, enabled",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{},
+				value:   &Jindo{},
+			},
+			want: &Jindo{
+				Master: Master{
+					ServiceCount: 1,
+					ReplicaCount: 1,
+				},
+			},
+		}, {
+			name: "replicas is 1, disabled",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Disabled: true,
+						},
+					},
+				},
+				value: &Jindo{},
+			},
+			want: &Jindo{
+				Master: Master{
+					ServiceCount: 1,
+					ReplicaCount: 0,
+				},
+			},
+		}, {
+			name: "replicas is 1, disabled",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Disabled: true,
+							Replicas: 3,
+						},
+					},
+				},
+				value: &Jindo{},
+			},
+			want: &Jindo{
+				Master: Master{
+					ServiceCount: 3,
+					ReplicaCount: 0,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &JindoFSxEngine{
+				runtime: tt.args.runtime,
+			}
+			tt.args.value.Master.ReplicaCount = e.transformReplicasCount(tt.args.runtime)
+			tt.args.value.Master.ServiceCount = e.transformReplicasCount(tt.args.runtime)
+			e.transformDeployMode(tt.args.runtime, tt.args.value)
+			if !reflect.DeepEqual(tt.want.Master, tt.args.value.Master) {
+				t.Errorf("Testcase %s failed, wanted %v, got %v.",
+					tt.name,
+					tt.want.Master,
+					tt.args.value.Master)
+			}
+		})
+	}
+}
