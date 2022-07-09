@@ -104,6 +104,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
+			ServiceCount: e.transformReplicasCount(runtime),
 			NodeSelector: e.transformMasterSelector(runtime),
 		},
 		Worker: Worker{
@@ -930,15 +931,14 @@ func (e *JindoFSxEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, v
 
 func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	// transform master disabled
-	if e.runtime.Spec.Master.Disabled && value.Master.ReplicaCount == 1 {
-		value.Master.ServiceCount = 1
-	} else {
-		value.Master.ServiceCount = value.Master.ReplicaCount
+	if runtime.Spec.Master.Disabled {
+		value.Master.ReplicaCount = 0
+	}
+	if runtime.Spec.Worker.Disabled {
+		value.Worker.ReplicaCount = 0
 	}
 	// to set fuseOnly
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
-		value.Master.ReplicaCount = 0
-		value.Worker.ReplicaCount = 0
 		value.Fuse.Mode = FuseOnly
 	}
 }
