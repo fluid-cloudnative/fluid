@@ -17,12 +17,14 @@ package jindofsx
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // Query the hcfs status
 func (e *JindoFSxEngine) GetHCFSStatus() (status *datav1alpha1.HCFSStatus, err error) {
+
 	endpoint, err := e.queryHCFSEndpoint()
 	if err != nil {
 		e.Log.Error(err, "Failed to get HCFS Endpoint")
@@ -34,6 +36,13 @@ func (e *JindoFSxEngine) GetHCFSStatus() (status *datav1alpha1.HCFSStatus, err e
 		UnderlayerFileSystemVersion: "",
 	}
 	return
+}
+
+func (e *JindoFSxEngine) GetHCFSStatusWithoutMaster() (status *datav1alpha1.HCFSStatus, err error) {
+	return &datav1alpha1.HCFSStatus{
+		Endpoint:                    "N/A",
+		UnderlayerFileSystemVersion: "",
+	}, err
 }
 
 // query the hcfs endpoint
