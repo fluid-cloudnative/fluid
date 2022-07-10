@@ -117,6 +117,96 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+func TestUpdateCacheOfDatasetWithoutMaster(t *testing.T) {
+	testDatasetInputs := []*datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+		},
+	}
+	testObjs := []runtime.Object{}
+	for _, datasetInput := range testDatasetInputs {
+		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+
+	testRuntimeInputs := []*datav1alpha1.JindoRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: true,
+					Replicas: 1,
+				},
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CacheStates: map[common.CacheStateName]string{
+					common.Cached: "true",
+				},
+			},
+		},
+	}
+	for _, runtimeInput := range testRuntimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	engine := &JindoFSxEngine{
+		Client:    client,
+		Log:       fake.NullLogger(),
+		name:      "hbase",
+		namespace: "fluid",
+		runtime:   testRuntimeInputs[0],
+	}
+
+	err := engine.UpdateCacheOfDataset()
+	if err != nil {
+		t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
+		return
+	}
+
+	expectedDataset := datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Status: datav1alpha1.DatasetStatus{
+			CacheStates: map[common.CacheStateName]string{
+				common.Cached: "true",
+			},
+			Runtimes: []datav1alpha1.Runtime{
+				{
+					Name:           "hbase",
+					Namespace:      "fluid",
+					Category:       common.AccelerateCategory,
+					Type:           common.JindoRuntime,
+					MasterReplicas: 1,
+				},
+			},
+			HCFSStatus: &datav1alpha1.HCFSStatus{
+				Endpoint:                    "N/A",
+				UnderlayerFileSystemVersion: "",
+			},
+		},
+	}
+
+	var datasets datav1alpha1.DatasetList
+	err = client.List(context.TODO(), &datasets)
+	if err != nil {
+		t.Errorf("fail to list the datasets with error %v", err)
+		return
+	}
+	if !reflect.DeepEqual(datasets.Items[0].Status, expectedDataset.Status) {
+		t.Errorf("fail to exec the function with error %v", err)
+		return
+	}
+}
+
 func TestUpdateDatasetStatus(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{

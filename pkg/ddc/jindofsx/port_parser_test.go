@@ -1,9 +1,10 @@
 package jindofsx
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"reflect"
 	"testing"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 var cfg = `
@@ -11,7 +12,7 @@ var cfg = `
 logger.dir =  /dev/shm/default/oss-tf-dataset/bigboot/log
 logger.cleanner.enable = true
 
-[bigboot-namespace]
+[jindofsx-common]
 jfs.namespaces = spark
 jfs.namespaces.spark.oss.uri = oss://tensorflow-datasets.oss-cn-shanghai-internal.aliyuncs.com/
 namespace.backend.type = rocksdb
@@ -21,7 +22,7 @@ namespace.meta-dir = /dev/shm/default/oss-tf-dataset/bigboot/server
 namespace.rpc.port = 18000
 namespace.filelet.atime.enable = false
 
-[bigboot-storage]
+[jindofsx-storage]
 namespace.meta-dir = /dev/shm/default/oss-tf-dataset/bigboot/bignode
 storage.data-dirs = /dev/shm/default/oss-tf-dataset/bigboot
 storage.data-dirs.capacities = 10g
@@ -30,7 +31,7 @@ storage.rpc.port = 18001
 namespace.meta-dir = /dev/shm/default/oss-tf-dataset/bigboot/bignode
 storage.compaction.enable = false
 
-[bigboot-client]
+[jindofsx-namespace]
 client.oss.upload.queue.size = 5
 client.oss.upload.threads = 4
 client.storage.rpc.port = 18001
@@ -49,7 +50,7 @@ func Test_parsePortsFromConfigMap(t *testing.T) {
 		{
 			name: "parse configMap",
 			args: args{configMap: &v1.ConfigMap{Data: map[string]string{
-				"bigboot.cfg": cfg,
+				"jindofsx.cfg": cfg,
 			}}},
 			wantPorts: []int{18000, 18001},
 			wantErr:   false,

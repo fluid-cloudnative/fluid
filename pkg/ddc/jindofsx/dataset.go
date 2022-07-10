@@ -119,7 +119,11 @@ func (e *JindoFSxEngine) UpdateCacheOfDataset() (err error) {
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if datasetToUpdate.Status.HCFSStatus == nil {
-			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
+			if runtime.Spec.Master.Disabled {
+				datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatusWithoutMaster()
+			} else {
+				datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
+			}
 			if err != nil {
 				return err
 			}
