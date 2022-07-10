@@ -19,12 +19,13 @@ package jindofsx
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
 )
 
 var propertiesToCheck = []string{
@@ -70,7 +71,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 
 // parsePortsFromConfigMap extracts port usage information given a configMap
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
-	if conf, ok := configMap.Data["bigboot.cfg"]; ok {
+	if conf, ok := configMap.Data["jindofsx.cfg"]; ok {
 		cfgConfs := strings.Split(conf, "\n")
 		for _, cfgConf := range cfgConfs {
 			for _, toCheck := range propertiesToCheck {
