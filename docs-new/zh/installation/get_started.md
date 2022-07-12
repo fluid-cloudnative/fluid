@@ -143,7 +143,5 @@ Fluid提供了云原生的数据加速和管理能力，并抽象出了`数据�
     sys	0m0.032s
     ```
 
-到这里，我们简单地创建了一个数据集并实现了数据集的抽象管理与加速, 更多有关 Fluid 的更详细的信息, 请参考以下示例文档:
-- [远程文件访问加速](../samples/accelerate_data_accessing.md)
-- [数据缓存亲和性调度](../samples/data_co_locality.md)
-- [用Fluid加速机器学习训练](../examples/machinelearning.md)
+到这里，我们简单地创建了一个数据集并实现了数据集的抽象管理与加速。更多使用示例，请参考具体的运行时：
+- [Alluxio 运行时](../runtime_alluxio/task/README.md)

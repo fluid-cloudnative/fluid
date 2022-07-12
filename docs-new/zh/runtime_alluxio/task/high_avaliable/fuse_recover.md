@@ -1,24 +1,26 @@
 # 示例 - 如何开启 FUSE 自动恢复能力
 
+> 以下内容通过 AlluxioRuntime 验证 FUSE 的自动恢复功能。
+
 ## 安装
 
 您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
 
 在 Fluid 的安装 chart values.yaml 中将 `csi.featureGates` 设置为 `FuseRecovery=true`，表示开启 FUSE 自动恢复功能。
-再参考 [安装文档](../guide/install.md) 完成安装。并检查 Fluid 各组件正常运行（这里以 JuiceFSRuntime 为例）：
+再参考 [安装文档](../../../installation/installation.md) 完成安装。并检查 Fluid 各组件正常运行（这里以 AlluxioRuntime 为例）：
 
 ```shell
 $ kubectl -n fluid-system get po
 NAME                                        READY   STATUS    RESTARTS   AGE
+alluxioruntime-controller-859b4b89dc-6zz6l  1/1     Running   0          20m
 csi-nodeplugin-fluid-2gtsz                  2/2     Running   0          20m
 csi-nodeplugin-fluid-2h79g                  2/2     Running   0          20m
 csi-nodeplugin-fluid-sc459                  2/2     Running   0          20m
 dataset-controller-57fb4569cd-k2jb7         1/1     Running   0          20m
 fluid-webhook-844dcb995f-nfmjl              1/1     Running   0          20m
-juicefsruntime-controller-7d9c964b4-jnbtf   1/1     Running   0          20m
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `juicefsruntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
+通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `alluxioruntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
 和多个名为 `csi-nodeplugin` 的 Pod 正在运行。其中，`csi-nodeplugin` 这些 Pod 的数量取决于你的 Kubernetes 集群中结点的数量。
 
 ## 运行示例
@@ -38,15 +40,45 @@ default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata
 
 **创建 dataset 和 runtime**
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](./juicefs_runtime.md)，如下：
+针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例，具体可参考 [文档](../dataset_usage/accelerate_data_accessing.md)，如下：
 
 ```shell
-$ kubectl get juicefsruntime
+$ cat<<EOF >ds.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: fusedemo
+spec:
+  mounts:
+    - mountPoint: https://mirrors.bit.edu.cn/apache/spark/
+      name: fusedemo
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: fusedemo
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 1Gi
+        high: "0.95"
+        low: "0.7"
+EOF
+
+$ kubectl create -f  ds.yaml
+dataset.data.fluid.io/fusedemo created
+alluxioruntime.data.fluid.io/fusedemo created
+
+$ kubectl get alluxioruntime
 NAME      WORKER PHASE   FUSE PHASE   AGE
-jfsdemo   Ready          Ready        2m58s
+fusedemo   Ready          Ready        2m58s
+
 $ kubectl get dataset
 NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   [Calculating]    N/A                       N/A                 Bound   2m55s
+fusedemo   [Calculating]    N/A                       N/A                 Bound   2m55s
 ```
 
 **创建 Pod 资源对象**
@@ -67,8 +99,8 @@ spec:
   volumes:
     - name: demo
       persistentVolumeClaim:
-        claimName: jfsdemo
-  EOF
+        claimName: fusedemo
+EOF
 $ kubectl create -f sample.yaml
 pod/demo-app created
 ```
@@ -77,9 +109,10 @@ pod/demo-app created
 
 ```shell
 $ kubectl get po |grep demo
-demo-app             1/1     Running   0          96s
-jfsdemo-fuse-g9pvp   1/1     Running   0          95s
-jfsdemo-worker-0     1/1     Running   0          4m25s
+demo-app                       0/1     ContainerCreating   0          10s
+fusedemo-fuse-c6fwj            1/1     Running             0          9s
+fusedemo-master-0              3/3     Running             0          5m14s
+fusedemo-worker-0              2/2     Running             0          4m38s
 $ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
     volumeMounts:
     - mountPath: /data
@@ -94,13 +127,15 @@ $ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
 删除 FUSE pod 后，并等待其重启：
 
 ```shell
-$ kubectl delete po jfsdemo-fuse-g9pvp
-pod "jfsdemo-fuse-g9pvp" deleted
+$ kubectl delete po fusedemo-fuse-c6fwj
+pod "fusedemo-fuse-c6fwj" deleted
 $ kubectl get po
-NAME                 READY   STATUS    RESTARTS   AGE
-demo-app             1/1     Running   0          5m7s
-jfsdemo-fuse-bdsdt   1/1     Running   0          6s
-jfsdemo-worker-0     1/1     Running   0          7m56s
+NAME                        READY   STATUS    RESTARTS   AGE
+demo-app                    1/1     Running   0          2m5s
+fusedemo-fuse-z7sn4         1/1     Running   0          6s
+fusedemo-master-0           3/3     Running   0          7m9s
+fusedemo-worker-0           2/2     Running   0          6m33s
+
 ````
 
 新的 FUSE pod 创建后，再查看 demo pod 中的挂载点情况：
@@ -108,18 +143,9 @@ jfsdemo-worker-0     1/1     Running   0          7m56s
 ```shell
 $ kubectl exec -it demo-app bash
 kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
-[root@demo-app /]# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-overlay         100G  9.4G   91G  10% /
-tmpfs            64M     0   64M   0% /dev
-tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
-JuiceFS:minio   1.0P   64K  1.0P   1% /data
-/dev/sdb1       100G  9.4G   91G  10% /etc/hosts
-shm              64M     0   64M   0% /dev/shm
-tmpfs           3.8G   12K  3.8G   1% /run/secrets/kubernetes.io/serviceaccount
-tmpfs           2.0G     0  2.0G   0% /proc/acpi
-tmpfs           2.0G     0  2.0G   0% /proc/scsi
-tmpfs           2.0G     0  2.0G   0% /sys/firmware
+[root@demo-app /]# ls /data/fusedemo/
+spark-2.4.8  spark-3.0.3  spark-3.1.2  spark-3.1.3  spark-3.2.1  spark-3.3.0
+
 ```
 
 可以看到，容器中没有出现 `Transport endpoint is not connected` 的报错，表明挂载点已经恢复。
@@ -127,19 +153,20 @@ tmpfs           2.0G     0  2.0G   0% /sys/firmware
 **查看 dataset 的 event**
 
 ```shell
-$ kubectl describe dataset jfsdemo
-Name:         jfsdemo
+$ kubectl describe dataset fusedemo
+Name:         fusedemo
 Namespace:    default
 ...
 Events:
   Type    Reason              Age                  From         Message
   ----    ------              ----                 ----         -------
-  Normal  FuseRecoverSucceed  2m34s (x5 over 11m)  FuseRecover  Fuse recover /var/lib/kubelet/pods/6c1e0318-858b-4ead-976b-37ccce26edfe/volumes/kubernetes.io~csi/default-jfsdemo/mount succeed
+  Normal  FuseRecoverSucceed  113s  FuseRecover  Fuse recover /var/lib/kubelet/pods/c38020e8-2750-4d01-90d2-1b42dc96839c/volumes/kubernetes.io~csi/default-fusedemo/mount succeed
 ```
 
 可以看到 Dataset 的 event 有一条 `FuseRecover` 的事件，表明 Fluid 已经对挂载做过一次恢复操作。
 
 ## 注意
 
-在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 csi 轮询 kubelet 的周期大小（环境变量 `RECOVER_FUSE_PERIOD`），在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
-另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE pod crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。
+1. 在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 csi 轮询 kubelet 的周期大小（环境变量 `RECOVER_FUSE_PERIOD`），在恢复之前Pods中如果执行`ls /data/fusedemo`会出现 `ls: cannot open directory '/data/fusedemo': Transport endpoint is not connected` 的错误，这是符合预期的。
+
+2. 挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE pod crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。

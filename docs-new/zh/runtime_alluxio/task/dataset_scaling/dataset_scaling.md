@@ -4,7 +4,7 @@
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.5.0)
 
-请参考[Fluid安装文档](../guide/install.md)完成安
+请参考[Fluid安装文档](../../../installation/installation.md)完成安
 
 ## 新建工作环境
 ```shell

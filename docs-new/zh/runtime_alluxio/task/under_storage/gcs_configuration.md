@@ -10,7 +10,7 @@
 - 配置完成的 [GCS bucket](https://cloud.google.com/storage/docs/creating-buckets)
 - 有权限访问该GCS bucket的[Google Application Credentials](https://cloud.google.com/docs/authentication/getting-started)
 
-请参考[Fluid安装文档](../guide/install.md) 完成安装
+请参考[Fluid安装文档](../../../installation/installation.md) 完成安装
 
 ## 运行示例
 

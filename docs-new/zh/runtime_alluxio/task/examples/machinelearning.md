@@ -12,7 +12,7 @@
 
 > **注意**：
 >
-> 1. 本文要求在Kubernetes集群中已安装好Fluid，如果您还没部署Fluid，请参考[Fluid安装手册](../guide/get_started.md)在您的Kubernetes集群上安装Fluid。
+> 1. 本文要求在Kubernetes集群中已安装好Fluid，如果您还没部署Fluid，请参考[Fluid安装手册](../../../installation/installation.md)在您的Kubernetes集群上安装Fluid。
 >
 > 2. `Arena`是一个方便数据科学家运行和监视机器学习任务的CLI, 本文使用`Arena`提交机器学习任务，安装教程可参考[Arena安装教程](https://github.com/kubeflow/arena/blob/master/docs/installation/index.md)。
 >
