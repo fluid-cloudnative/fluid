@@ -41,6 +41,10 @@ spec:
             - name: VALUE_SERVERLESS_PLATFORM
               value: {{ .Values.webhook.serverlessInject.platformValue | quote }}
             {{- end }}
+            {{- if .Values.webhook.serverlessInject }}
+            - name: VFUSE_RESOURCE_NAME
+              value: {{ .Values.webhook.serverlessInject.vfuseResourceName | quote }}
+            {{- end }}
             {{- end }}
           ports:
             - containerPort: 8080
