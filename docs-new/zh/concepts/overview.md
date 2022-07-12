@@ -74,4 +74,4 @@ Fluid项目当前主要关注数据集编排和应用编排这两个重要场景
 Fluid需要运行在 Kubernetes v1.14 及以上版本，并且需要支持CSI存储。Fluid Operator的部署和管理是通过 Kubernetes 平台上的包管理工具 Helm v3实现的。运行 Fluid前请确保 Helm 已经正确安装在 Kubernetes 集群里。
 
 你可以参照以下文档，安装和使用Fluid：
-- [简体中文](./get_started.md)
+- [快速入门](../installation/get_started.md)

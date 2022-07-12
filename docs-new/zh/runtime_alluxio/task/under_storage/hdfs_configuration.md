@@ -10,7 +10,7 @@
 - [Fluid](https://github.com/fluid-cloudnative/fluid)
 - 可与Kubernetes环境网络连通的HDFS集群
 
-请参考[Fluid安装文档](../guide/install.md)完成安装
+请参考[Fluid安装文档](../../../installation/installation.md)完成安装
 
 ## 运行示例
 

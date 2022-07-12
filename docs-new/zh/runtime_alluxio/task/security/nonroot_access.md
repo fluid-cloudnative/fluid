@@ -8,7 +8,7 @@
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.3.0)
 
-请参考[Fluid安装文档](../guide/install.md)完成安装
+请参考[Fluid安装文档](../../../installation/installation.md)完成安装
 
 ## 运行示例
 
@@ -90,7 +90,7 @@ spec:
 EOF
 ```
 
-在上述yaml配置文件中，我们将以挂载主机目录的方式挂载我们刚才创建的目录(`/mnt/nonroot`)，更多有关Fluid挂载主机目录的信息，请参考[示例 - 用Fluid加速主机目录](./hostpath.md)
+在上述yaml配置文件中，我们将以挂载主机目录的方式挂载我们刚才创建的目录(`/mnt/nonroot`)，更多有关Fluid挂载主机目录的信息，请参考[示例 - 用Fluid加速主机目录](../under_storage/hostpath.md)
 
 另外，在`spec.runAs`中我们设置了`uid`等用户信息，这意味着我们将以`fluid-user-1`的用户身份启动缓存引擎，提供分布式缓存能力
 

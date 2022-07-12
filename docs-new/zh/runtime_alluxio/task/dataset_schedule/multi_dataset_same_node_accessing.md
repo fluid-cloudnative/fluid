@@ -4,7 +4,7 @@
 本文档通过一个简单的例子演示了上述功能特性
 
 ## 前提条件
-在运行该示例之前，请参考[安装文档](../guide/install.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考[安装文档](../../../installation/installation.md)完成安装，并检查Fluid各组件正常运行：
 ```shell
 $ kubectl get pod -n fluid-system
 NAME                                  READY   STATUS    RESTARTS   AGE

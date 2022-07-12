@@ -78,9 +78,7 @@ NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 prometheus-svc   NodePort   172.16.135.24   <none>        9090:32114/TCP   2m7s
 ```
 
-如果希望可视化监控指标，您可以安装 Grafana 验证监控数据，具体操作可以参考[文档](./monitoring.md)
-
-![](./images/dataset_auto_scaling.png)
+如果希望可视化监控指标，您可以安装 Grafana 验证监控数据，具体操作可以参考[文档](../../operation/monitoring.md)
 
 5. 部署 metrics server
 
