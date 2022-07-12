@@ -71,3 +71,11 @@ func GetIntValueFormEnv(key string) (value int, found bool) {
 	}
 	return
 }
+
+func GetStringValueFromEnv(key string, defaultValue string) (value string) {
+	if res, found := os.LookupEnv(key); found {
+		return res
+	}
+
+	return defaultValue
+}

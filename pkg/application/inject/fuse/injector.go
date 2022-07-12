@@ -18,7 +18,6 @@ package fuse
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -165,7 +164,7 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		option := common.FuseSidecarInjectOption{
 			EnableCacheDir:            utils.InjectCacheDirEnabled(metaObj.Labels),
 			EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
-			FuseDeviceResourceName:    s.getFuseDeviceResourceNameFromEnv(),
+			FuseDeviceResourceName:    utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName),
 		}
 
 		var (
@@ -365,12 +364,4 @@ func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 
 func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtimeInfos map[string]base.RuntimeInfoInterface) (out *unstructuredtype.Unstructured, err error) {
 	return nil, fmt.Errorf("not implemented yet")
-}
-
-func (s *Injector) getFuseDeviceResourceNameFromEnv() string {
-	if res, found := os.LookupEnv(common.EnvFuseDeviceResourceName); found {
-		return res
-	}
-
-	return common.DefaultFuseDeviceResourceName
 }
