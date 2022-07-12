@@ -33,6 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+var fuseDeviceResourceName string
+
 var (
 	// datavolume-, volume-localtime for JindoFS
 	// mem, ssd, hdd for Alluxio and GooseFS
@@ -46,8 +48,11 @@ var (
 	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device"}
 )
 
-// GetTemplateToInjectForFuse gets template for fuse injection
+func init() {
+	fuseDeviceResourceName = utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName)
+}
 
+// GetTemplateToInjectForFuse gets template for fuse injection
 func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option common.FuseSidecarInjectOption) (template *common.FuseInjectionTemplate, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetTemplateToInjectForFuse",
@@ -89,7 +94,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 
 	// 2. setup fuse sidecar container when enabling unprivileged sidecar
 	if option.EnableUnprivilegedSidecar {
-		info.transformTemplateWithUnprivilegedSidecarEnabled(template, option.FuseDeviceResourceName)
+		info.transformTemplateWithUnprivilegedSidecarEnabled(template)
 	}
 
 	// 3. set the fuse container name
@@ -170,7 +175,7 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
 }
 
-func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(template *common.FuseInjectionTemplate, fuseDevResName string) {
+func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(template *common.FuseInjectionTemplate) {
 	// remove the fuse related volumes if using virtual fuse device
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostMountNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostMountNames)
@@ -182,12 +187,12 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 	if template.FuseContainer.Resources.Limits == nil {
 		template.FuseContainer.Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Limits[corev1.ResourceName(fuseDevResName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Limits[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
 
 	if template.FuseContainer.Resources.Requests == nil {
 		template.FuseContainer.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Requests[corev1.ResourceName(fuseDevResName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Requests[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	privilegedContainer := false

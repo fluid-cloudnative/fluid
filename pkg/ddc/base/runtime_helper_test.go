@@ -1074,7 +1074,6 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 		options := common.FuseSidecarInjectOption{
 			EnableCacheDir:            testcase.enableCacheDir,
 			EnableUnprivilegedSidecar: testcase.enableUnprivilegedFuseSidecar,
-			FuseDeviceResourceName:    common.DefaultFuseDeviceResourceName,
 		}
 		runtimeInfo, err := BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
 		if err != nil {

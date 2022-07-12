@@ -164,7 +164,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		option := common.FuseSidecarInjectOption{
 			EnableCacheDir:            utils.InjectCacheDirEnabled(metaObj.Labels),
 			EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
-			FuseDeviceResourceName:    utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName),
 		}
 
 		var (

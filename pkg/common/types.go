@@ -145,21 +145,19 @@ type OwnerReference struct {
 
 // FuseInjectionTemplate for injecting fuse container into the pod
 type FuseInjectionTemplate struct {
-	PVCName                string
-	SubPath                string
-	FuseDeviceResourceName string
-	FuseContainer          corev1.Container
-	VolumeMountsToUpdate   []corev1.VolumeMount
-	VolumeMountsToAdd      []corev1.VolumeMount
-	VolumesToUpdate        []corev1.Volume
-	VolumesToAdd           []corev1.Volume
+	PVCName              string
+	SubPath              string
+	FuseContainer        corev1.Container
+	VolumeMountsToUpdate []corev1.VolumeMount
+	VolumeMountsToAdd    []corev1.VolumeMount
+	VolumesToUpdate      []corev1.Volume
+	VolumesToAdd         []corev1.Volume
 }
 
 // FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers
 type FuseSidecarInjectOption struct {
 	EnableCacheDir            bool
 	EnableUnprivilegedSidecar bool
-	FuseDeviceResourceName    string
 }
 
 func (f FuseSidecarInjectOption) String() string {
