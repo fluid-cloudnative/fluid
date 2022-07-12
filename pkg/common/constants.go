@@ -108,7 +108,8 @@ const (
 )
 
 const (
-	FuseDeviceResourceName string = "fluid.io/fuse"
+	EnvFuseDeviceResourceName     string = "VFUSE_RESOURCE_NAME"
+	DefaultFuseDeviceResourceName string = "fluid.io/fuse"
 )
 
 const (

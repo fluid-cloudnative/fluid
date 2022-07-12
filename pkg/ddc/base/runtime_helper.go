@@ -89,7 +89,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 
 	// 2. setup fuse sidecar container when enabling unprivileged sidecar
 	if option.EnableUnprivilegedSidecar {
-		info.transformTemplateWithUnprivilegedSidecarEnabled(template)
+		info.transformTemplateWithUnprivilegedSidecarEnabled(template, option.FuseDeviceResourceName)
 	}
 
 	// 3. set the fuse container name
@@ -170,7 +170,7 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
 }
 
-func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(template *common.FuseInjectionTemplate) {
+func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(template *common.FuseInjectionTemplate, fuseDevResName string) {
 	// remove the fuse related volumes if using virtual fuse device
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostMountNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostMountNames)
@@ -182,12 +182,12 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 	if template.FuseContainer.Resources.Limits == nil {
 		template.FuseContainer.Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Limits[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Limits[corev1.ResourceName(fuseDevResName)] = resource.MustParse("1")
 
 	if template.FuseContainer.Resources.Requests == nil {
 		template.FuseContainer.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Requests[corev1.ResourceName(common.FuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Requests[corev1.ResourceName(fuseDevResName)] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	privilegedContainer := false
