@@ -25,7 +25,7 @@
   - [S3存储系统](./under_storage/s3_configuration.md)
   - [GCS存储系统](./under_storage/gcs_configuration.md)
 + 可靠性
-  - [Runtime Master高可用](./high_avaliable/master_high_aviliability.md)
+  - [Runtime Master高可用](./high_avaliable/master_high_availiable.md)
   - [如何开启 FUSE 自动恢复能力](./high_avaliable/fuse_recover.md)
 + 安全
   - [使用参数加密](./security/use_encryptoptions.md)

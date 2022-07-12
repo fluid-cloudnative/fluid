@@ -4,7 +4,7 @@
 本文档将向你简单地展示上述特性
 
 ## 前提条件
-在运行该示例之前，请参考[安装文档](../guide/install.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考[安装文档](../../../installation/installation.md)完成安装，并检查Fluid各组件正常运行：
 ```shell
 $ kubectl get pod -n fluid-system
 alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h

@@ -9,7 +9,7 @@ Fluid所使用的底层存储引擎[Alluxio](https://github.com/Alluxio/alluxio)
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)
 
-请参考[Fluid安装文档](../guide/install.md)完成安装
+请参考[Fluid安装文档](../../../installation/installation.md)完成安装
 
 
 ## 单层存储配置

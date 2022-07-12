@@ -9,7 +9,7 @@
   - [概述](concepts/overview.md)
   - [架构](concepts/architecture.md)
 + 安装
-  - [入门](installation/getstarted.md)
+  - [入门](installation/get_started.md)
   - [安装](installation/installation.md)
   - [升级](installation/upgrade.md)
 + 任务
@@ -19,6 +19,7 @@
   	- [Jindo]()
   	- [JuiceFS]()
 + 运维指南
+  - [安装和使用问题解答](./operation/faq.md)
   + 选择不同运行时
   	- [Alluxio](./runtime_alluxio/operation/README.md)
   	- [GooseFS]()

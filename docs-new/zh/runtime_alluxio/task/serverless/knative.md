@@ -15,7 +15,7 @@ kubectl get Deployments -n knative-serving
 > 注：本文只是作为演示目的，关于Knative的生产系统安装请参考Knative文档最佳实践进行部署。另外由于Knative的容器镜像都在gcr.io镜像仓库，请确保镜像可达。
 如果您使用的是阿里云，您也可以直接使用[阿里云ACK的托管服务](https://help.aliyun.com/document_detail/121508.html)降低配置Knative的复杂度。
 
-2. 请参考[安装文档](../guide/install.md)安装Fluid最新版, 安装后检查 Fluid 各组件正常运行（本文以 AlluxioRuntime 为例）：
+2. 请参考[安装文档](../../../installation/installation.md)安装Fluid最新版, 安装后检查 Fluid 各组件正常运行（本文以 AlluxioRuntime 为例）：
 
 ```shell
 $ kubectl get deploy -n fluid-system

@@ -4,7 +4,7 @@
 
 ## 前提条件
 
-在运行该示例之前，请参考[安装文档](../guide/get_started.md)完成安装，并检查Fluid各组件正常运行：
+在运行该示例之前，请参考[安装文档](../../../installation/installation.md)完成安装，并检查Fluid各组件正常运行：
 
 ```shell
 $ kubectl get pod -n fluid-system
@@ -177,7 +177,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   H
 hbase   443.49MiB        0.00B    4.00GiB          0.0%                Bound   alluxio://hbase-master-0.default:19998   97s
 ```
 
-完整的测试代码可参考[samples/hdfs](../../../samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
+完整的测试代码可参考[samples/hdfs](http://github.com/fluid-cloudnative/fluid/master/samples/hdfs)。我们把测试代码制作成镜像，方便接下来的测试，镜像地址为registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
 
 **查看待创建的测试作业**
 

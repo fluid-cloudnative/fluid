@@ -9,12 +9,12 @@
 - [Fluid](https://github.com/fluid-cloudnative/fluid)
 - 配置完成的S3 bucket及有权限访问该bucket的AWS证书
 
-请参考[Fluid安装文档](../guide/install.md) 完成安装
+请参考[Fluid安装文档](../../../installation/installation.md) 完成安装
 
 ## 运行示例
 
 为了保证安全，Fluid建议使用Secret来配置敏感信息，如`aws.accessKeyId`和`aws.secretKey`。更多关于Secret在fluid中的使用，请参考
-[使用Secret配置Dataset敏感信息](./use_encryptoptions.md)
+[使用Secret配置Dataset敏感信息](../security/use_encryptoptions.md)
 
 **创建Dataset资源对象**
 

@@ -13,7 +13,7 @@
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.4.0)
 
-请参考[Fluid安装文档](../guide/install.md)完成安装
+请参考[Fluid安装文档](../../../installation/installation.md)完成安装
 
 
 ## 新建工作环境
