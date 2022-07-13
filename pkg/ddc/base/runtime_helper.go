@@ -187,12 +187,12 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 	if template.FuseContainer.Resources.Limits == nil {
 		template.FuseContainer.Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Limits[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Limits[corev1.ResourceName(getFuseDeviceResourceName())] = resource.MustParse("1")
 
 	if template.FuseContainer.Resources.Requests == nil {
 		template.FuseContainer.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
 	}
-	template.FuseContainer.Resources.Requests[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
+	template.FuseContainer.Resources.Requests[corev1.ResourceName(getFuseDeviceResourceName())] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	privilegedContainer := false
@@ -203,4 +203,8 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
+}
+
+func getFuseDeviceResourceName() string {
+	return fuseDeviceResourceName
 }
