@@ -933,13 +933,13 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 		if len(template.FuseContainer.Resources.Limits) == 0 {
 			return false
 		}
-		if _, ok := template.FuseContainer.Resources.Limits[corev1.ResourceName(common.FuseDeviceResourceName)]; !ok {
+		if _, ok := template.FuseContainer.Resources.Limits[corev1.ResourceName(common.DefaultFuseDeviceResourceName)]; !ok {
 			return false
 		}
 		if len(template.FuseContainer.Resources.Requests) == 0 {
 			return false
 		}
-		if _, ok := template.FuseContainer.Resources.Requests[corev1.ResourceName(common.FuseDeviceResourceName)]; !ok {
+		if _, ok := template.FuseContainer.Resources.Requests[corev1.ResourceName(common.DefaultFuseDeviceResourceName)]; !ok {
 			return false
 		}
 
