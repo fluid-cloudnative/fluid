@@ -41,7 +41,7 @@ spec:
             - name: VALUE_SERVERLESS_PLATFORM
               value: {{ .Values.webhook.serverlessInject.platformValue | quote }}
             {{- end }}
-            {{- if .Values.webhook.serverlessInject }}
+            {{- if .Values.webhook.serverlessInject.vfuseResourceName }}
             - name: VFUSE_RESOURCE_NAME
               value: {{ .Values.webhook.serverlessInject.vfuseResourceName | quote }}
             {{- end }}
