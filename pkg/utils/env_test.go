@@ -116,3 +116,26 @@ func TestGetDurationValueFormEnv(t *testing.T) {
 	}
 
 }
+
+func TestGetStringValueFromEnv(t *testing.T) {
+	defaultStringValue := "defaultStringValue"
+	// 1. env is not set
+	testEnvNameNotFound := "envnotfound"
+	expect := defaultStringValue
+
+	got := GetStringValueFromEnv(testEnvNameNotFound, defaultStringValue)
+
+	if got != expect {
+		t.Errorf("test failed due to expect %v, but got %v", expect, got)
+	}
+
+	// 2. env is set in true
+	testEnvNameFound := "envFound"
+	os.Setenv(testEnvNameFound, "stringValue")
+	expect = "stringValue"
+
+	got = GetStringValueFromEnv(testEnvNameFound, defaultStringValue)
+	if got != expect {
+		t.Errorf("test failed due to expect %v, but got %v", expect, got)
+	}
+}
