@@ -16,14 +16,16 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	stdlog "log"
 	"os"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 var (
-	ServerlessPlatformKey string = ""
-	ServerlessPlatformVal string = ""
+	ServerlessPlatformKey        string = ""
+	ServerlessPlatformVal        string = ""
+	disableApplicationController string = ""
 )
 
 func init() {
@@ -34,6 +36,10 @@ func init() {
 	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
 		ServerlessPlatformVal = envVal
 		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
+	}
+	if envVal, exists := os.LookupEnv(common.EnvDisableApplicationController); exists {
+		disableApplicationController = envVal
+		stdlog.Printf("Found %s value %s, using it as disableApplicationController", common.EnvDisableApplicationController, envVal)
 	}
 }
 
@@ -69,6 +75,10 @@ func InjectCacheDirEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectCacheDir)
 }
 
+func AppControllerDisabled(info map[string]string) (match bool) {
+	return matchedKey(info, disableApplicationController)
+}
+
 func enabled(infos map[string]string, name string) (match bool) {
 	for key, value := range infos {
 		if key == name && value == common.True {
@@ -82,6 +92,16 @@ func enabled(infos map[string]string, name string) (match bool) {
 func matchedValue(infos map[string]string, name string, val string) (match bool) {
 	for key, value := range infos {
 		if key == name && value == val {
+			match = true
+			break
+		}
+	}
+	return
+}
+
+func matchedKey(infos map[string]string, name string) (match bool) {
+	for key, _ := range infos {
+		if key == name {
 			match = true
 			break
 		}
