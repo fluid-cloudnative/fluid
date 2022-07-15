@@ -16,7 +16,237 @@
 
 package thin
 
-func (t ThinEngine) Shutdown() error {
-	//TODO implement me
-	panic("implement me")
+import (
+	"context"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func (t ThinEngine) Shutdown() (err error) {
+	if t.retryShutdown < t.gracefulShutdownLimits {
+		err = t.cleanupCache()
+		if err != nil {
+			t.retryShutdown = t.retryShutdown + 1
+			t.Log.Info("clean cache failed",
+				"retry times", t.retryShutdown)
+			return
+		}
+	}
+
+	_, err = t.destroyWorkers(-1)
+	if err != nil {
+		return
+	}
+
+	err = t.destroyMaster()
+	if err != nil {
+		return
+	}
+
+	err = t.cleanAll()
+	return
+}
+
+// destroyMaster Destroy the master
+func (t *ThinEngine) destroyMaster() (err error) {
+	var found bool
+	found, err = helm.CheckRelease(t.name, t.namespace)
+	if err != nil {
+		return err
+	}
+
+	if found {
+		err = helm.DeleteRelease(t.name, t.namespace)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// cleanupCache cleans up the cache
+func (t *ThinEngine) cleanupCache() (err error) {
+	// todo
+	return
+}
+
+// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
+// This func returns currentWorkers representing how many workers are left after this process.
+func (t *ThinEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+	//  SchedulerMutex only for patch mode
+	lifecycle.SchedulerMutex.Lock()
+	defer lifecycle.SchedulerMutex.Unlock()
+
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return currentWorkers, err
+	}
+
+	var (
+		nodeList           = &corev1.NodeList{}
+		labelExclusiveName = utils.GetExclusiveKey()
+		labelName          = runtimeInfo.GetRuntimeLabelName()
+		labelCommonName    = runtimeInfo.GetCommonLabelName()
+		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
+		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
+	)
+
+	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
+	t.Log.Info("check node labels", "labelNames", labelNames)
+
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
+	if err != nil {
+		return currentWorkers, err
+	}
+
+	err = t.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+
+	if err != nil {
+		return currentWorkers, err
+	}
+
+	currentWorkers = int32(len(nodeList.Items))
+	if expectedWorkers >= currentWorkers {
+		t.Log.Info("No need to scale in. Skip.")
+		return currentWorkers, nil
+	}
+
+	var nodes []corev1.Node
+	if expectedWorkers >= 0 {
+		t.Log.Info("Scale in thinfs workers", "expectedWorkers", expectedWorkers)
+		// This is a scale in operation
+		runtimeInfo, err := t.getRuntimeInfo()
+		if err != nil {
+			t.Log.Error(err, "getRuntimeInfo when scaling in")
+			return currentWorkers, err
+		}
+
+		fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
+		nodes, err = t.sortNodesToShutdown(nodeList.Items, fuseGlobal)
+		if err != nil {
+			return currentWorkers, err
+		}
+
+	} else {
+		// Destroy all workers. This is a subprocess during deletion of ThinRuntime
+		nodes = nodeList.Items
+	}
+
+	// 1.select the nodes
+	for _, node := range nodes {
+		if expectedWorkers == currentWorkers {
+			break
+		}
+
+		if len(node.Labels) == 0 {
+			continue
+		}
+
+		nodeName := node.Name
+		var labelsToModify common.LabelsToModify
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			node, err := kubeclient.GetNode(t.Client, nodeName)
+			if err != nil {
+				t.Log.Error(err, "Fail to get node", "nodename", nodeName)
+				return err
+			}
+
+			toUpdate := node.DeepCopy()
+			for _, label := range labelNames {
+				labelsToModify.Delete(label)
+			}
+
+			exclusiveLabelValue := utils.GetExclusiveValue(t.namespace, t.name)
+			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+				labelsToModify.Delete(labelExclusiveName)
+			}
+
+			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
+			if err != nil {
+				return err
+			}
+			// Update the toUpdate in UPDATE mode
+			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
+			// Update the toUpdate in PATCH mode
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(t.Client, toUpdate, labelsToModify)
+			if err != nil {
+				return err
+			}
+			t.Log.Info("Destroy worker", "Dataset", t.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
+			return nil
+		})
+
+		if err != nil {
+			return currentWorkers, err
+		}
+
+		currentWorkers--
+	}
+
+	return currentWorkers, nil
+}
+
+func (t *ThinEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGlobal bool) (nodes []corev1.Node, err error) {
+	if !fuseGlobal {
+		// If fuses are deployed in non-global mode, workers and fuses will be scaled in together.
+		// It can be dangerous if we scale in nodes where there are pods using the related pvc.
+		// So firstly we filter out such nodes
+		pvcMountNodes, err := kubeclient.GetPvcMountNodes(t.Client, t.name, t.namespace)
+		if err != nil {
+			t.Log.Error(err, "GetPvcMountNodes when scaling in")
+			return nil, err
+		}
+
+		for _, node := range candidateNodes {
+			if _, found := pvcMountNodes[node.Name]; !found {
+				nodes = append(nodes, node)
+			}
+		}
+	} else {
+		// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
+		// All nodes with related label can be candidate nodes.
+		nodes = candidateNodes
+	}
+
+	// Prefer to choose nodes with less data cache
+	//Todo
+
+	return nodes, nil
+}
+
+func (t *ThinEngine) cleanAll() (err error) {
+	count, err := t.Helper.CleanUpFuse()
+	if err != nil {
+		t.Log.Error(err, "Err in cleaning fuse")
+		return err
+	}
+	t.Log.Info("clean up fuse count", "n", count)
+
+	var (
+		valueConfigmapName = t.name + "-" + t.runtimeType + "-values"
+		configmapName      = t.name + "-config"
+		namespace          = t.namespace
+	)
+
+	cms := []string{valueConfigmapName, configmapName}
+
+	for _, cm := range cms {
+		err = kubeclient.DeleteConfigMap(t.Client, cm, namespace)
+		if err != nil {
+			return
+		}
+	}
+
+	return nil
 }

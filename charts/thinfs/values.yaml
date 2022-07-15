@@ -1,0 +1,71 @@
+# This should not be modified in the usual case.
+fullnameOverride: thinfs
+edition: community
+
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
+##
+## Example:
+##   - key: "toleration=key"
+##     operator: "Equal"
+##     value: "value"
+##     effect: "NoSchedule"
+##
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: [ ]
+
+tieredstore:
+  path: /dev/shm
+
+# Docker Image
+image: ""
+imageTag: ""
+imagePullPolicy: IfNotPresent
+
+## WORKER ##
+worker:
+  image: ""
+  imageTag: ""
+  imagePullPolicy: ""
+  nodeSelector: ""
+  envs: [ ]
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+  replicaCount: 0
+
+## FUSE ##
+
+fuse:
+  criticalPod: false
+  enabled: true
+  image: ""
+  imageTag: ""
+  imagePullPolicy: IfNotPresent
+  envs: [ ]
+  nodeSelector: { }
+  dnsPolicy: ClusterFirstWithHostNet
+  # Mount path in the host
+  mountPath: /mnt/jfs
+  hostMountPath: /mnt/jfs
+  command: []
+  args: []
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+#      cpu: "4"
+#      memory: "4G"

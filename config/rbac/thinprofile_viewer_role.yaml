@@ -1,0 +1,20 @@
+# permissions for end users to view thinprofiles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: thinprofile-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinprofiles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinprofiles/status
+  verbs:
+  - get

@@ -36,10 +36,10 @@ type ThinValue struct {
 
 type Worker struct {
 	Image           string                 `yaml:"image,omitempty"`
-	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
 	ImageTag        string                 `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources       `yaml:"resources,omitempty"`
+	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 
@@ -49,10 +49,14 @@ type Worker struct {
 type Fuse struct {
 	Enabled         bool              `yaml:"enabled,omitempty"`
 	Image           string            `yaml:"image,omitempty"`
-	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
 	ImageTag        string            `yaml:"imageTag,omitempty"`
 	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources  `yaml:"resources,omitempty"`
 	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
+	HostNetwork     bool              `json:"hostNetwork,omitempty"`
+	MountPath       string            `json:"mountPath,omitempty"`
+	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
+	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
+	Command         []string          `json:"command,omitempty"`
+	Args            []string          `json:"args,omitempty"`
 }

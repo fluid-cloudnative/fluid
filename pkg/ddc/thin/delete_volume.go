@@ -16,7 +16,45 @@
 
 package thin
 
+import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+
 func (t ThinEngine) DeleteVolume() (err error) {
-	//TODO implement me
-	panic("implement me")
+	if t.runtime == nil {
+		t.runtime, err = t.getRuntime()
+		if err != nil {
+			return
+		}
+	}
+
+	err = t.deleteFusePersistentVolumeClaim()
+	if err != nil {
+		return
+	}
+
+	err = t.deleteFusePersistentVolume()
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// deleteFusePersistentVolume
+func (t *ThinEngine) deleteFusePersistentVolume() (err error) {
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumehelper.DeleteFusePersistentVolume(t.Client, runtimeInfo, t.Log)
+}
+
+// deleteFusePersistentVolume
+func (t *ThinEngine) deleteFusePersistentVolumeClaim() (err error) {
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumehelper.DeleteFusePersistentVolumeClaim(t.Client, runtimeInfo, t.Log)
 }

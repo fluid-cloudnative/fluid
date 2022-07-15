@@ -16,7 +16,50 @@
 
 package thin
 
-func (t ThinEngine) CreateVolume() error {
-	//TODO implement me
-	panic("implement me")
+import (
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+)
+
+func (t ThinEngine) CreateVolume() (err error) {
+	if t.runtime == nil {
+		t.runtime, err = t.getRuntime()
+		if err != nil {
+			return
+		}
+	}
+
+	err = t.createFusePersistentVolume()
+	if err != nil {
+		return err
+	}
+
+	err = t.createFusePersistentVolumeClaim()
+	if err != nil {
+		return err
+	}
+	return
+}
+
+// createFusePersistentVolume
+func (t *ThinEngine) createFusePersistentVolume() (err error) {
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumehelper.CreatePersistentVolumeForRuntime(t.Client,
+		runtimeInfo,
+		t.getMountPoint(),
+		t.runtime.Spec.FileSystemType,
+		t.Log)
+}
+
+// createFusePersistentVolume
+func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
 }

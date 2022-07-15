@@ -1,0 +1,24 @@
+# permissions for end users to edit thinprofiles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: thinprofile-editor-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinprofiles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinprofiles/status
+  verbs:
+  - get
