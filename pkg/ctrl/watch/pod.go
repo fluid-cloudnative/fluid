@@ -93,6 +93,12 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 		return false
 	}
 
+	// ignore if it claims to ignore
+	if utils.AppControllerDisabled(pod.Labels) {
+		log.Info("Calim to make application controller ignore.", "labels", pod.Labels)
+		return false
+	}
+
 	// ignore if restartPolicy is Always
 	if pod.Spec.RestartPolicy == corev1.RestartPolicyAlways {
 		log.Info("pod restart policy", "policy", pod.Spec.RestartPolicy)
