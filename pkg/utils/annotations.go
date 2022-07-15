@@ -100,7 +100,7 @@ func matchedValue(infos map[string]string, name string, val string) (match bool)
 }
 
 func matchedKey(infos map[string]string, name string) (match bool) {
-	for key, _ := range infos {
+	for key := range infos {
 		if key == name {
 			match = true
 			break
