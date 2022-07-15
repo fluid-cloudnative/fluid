@@ -94,8 +94,8 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 	}
 
 	// ignore if it claims to ignore
-	if utils.AppControllerDisabled(pod.Annotations) {
-		log.Info("Calim to ignore.", "labels", pod.Annotations)
+	if utils.AppControllerDisabled(pod.Labels) {
+		log.Info("Calim to ignore.", "labels", pod.Labels)
 		return false
 	}
 
