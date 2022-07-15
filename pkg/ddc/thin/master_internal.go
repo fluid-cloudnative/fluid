@@ -40,7 +40,12 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	valuefileName, err := t.generateThinValueFile(runtime)
+	profile, err := t.getThinProfile()
+	if err != nil {
+		return
+	}
+
+	valuefileName, err := t.generateThinValueFile(runtime, profile)
 	if err != nil {
 		return
 	}
@@ -58,7 +63,7 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 	return helm.InstallRelease(t.name, t.namespace, valuefileName, chartName)
 }
 
-func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime) (valueFileName string, err error) {
+func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (valueFileName string, err error) {
 	//0. Check if the configmap exists
 	err = kubeclient.DeleteConfigMap(t.Client, t.getConfigmapName(), t.namespace)
 	if err != nil {
@@ -69,7 +74,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime) (v
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
 	// configmapName := e.name + "-" + e.runtimeType + "-values"
 	//1. Transform the runtime to value
-	value, err := t.transform(runtime)
+	value, err := t.transform(runtime, profile)
 	if err != nil {
 		return
 	}

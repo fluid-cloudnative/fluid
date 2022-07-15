@@ -18,7 +18,11 @@ package thin
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 )
 
 func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
@@ -32,8 +36,29 @@ func (t ThinEngine) ShouldSetupWorkers() (should bool, err error) {
 }
 
 func (t ThinEngine) SetupWorkers() (err error) {
-	//TODO implement me
-	panic("implement me")
+	var (
+		workerName string = t.getWorkerName()
+		namespace  string = t.namespace
+	)
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
+		if err != nil {
+			return err
+		}
+		runtime, err := t.getRuntime()
+		if err != nil {
+			return err
+		}
+		runtimeToUpdate := runtime.DeepCopy()
+		err = t.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		return err
+	})
+	if err != nil {
+		return utils.LoggingErrorExceptConflict(t.Log, err, "Failed to setup worker",
+			types.NamespacedName{Namespace: t.namespace, Name: t.name})
+	}
+	return
 }
 
 // getWorkerSelectors gets the selector of the worker

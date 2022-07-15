@@ -18,7 +18,10 @@ package thin
 
 import (
 	"context"
+	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -37,9 +40,41 @@ func (t *ThinEngine) getRuntime() (*datav1alpha1.ThinRuntime, error) {
 	return &runtime, nil
 }
 
+func (t *ThinEngine) getThinProfile() (profile *datav1alpha1.ThinProfile, err error) {
+	if t.runtime == nil {
+		return
+	}
+	key := types.NamespacedName{
+		Name: t.runtime.Spec.ThinProfileName,
+	}
+
+	if err := t.Get(context.TODO(), key, profile); err != nil {
+		return nil, err
+	}
+	return
+}
+
 func (t *ThinEngine) getFuseDaemonsetName() (dsName string) {
 	return t.name + "-fuse"
 }
+
 func (t *ThinEngine) getWorkerName() (dsName string) {
 	return t.name + "-worker"
+}
+
+func (t *ThinEngine) getMountPoint() (mountPath string) {
+	mountRoot := getMountRoot()
+	t.Log.Info("mountRoot", "path", mountRoot)
+	return fmt.Sprintf("%s/%s/%s/thin-fuse", mountRoot, t.namespace, t.name)
+}
+
+// getMountRoot returns the default path, if it's not set
+func getMountRoot() (path string) {
+	path, err := utils.GetMountRoot()
+	if err != nil {
+		path = "/" + common.ThinRuntime
+	} else {
+		path = path + "/" + common.ThinRuntime
+	}
+	return
 }

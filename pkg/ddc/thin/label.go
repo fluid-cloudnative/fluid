@@ -16,7 +16,12 @@
 
 package thin
 
-const (
-	PodRoleType   = "role"
-	WorkerPodRole = "thinfs-worker"
-)
+import "github.com/fluid-cloudnative/fluid/pkg/common"
+
+func (t *ThinEngine) getCommonLabelName() string {
+	return common.LabelAnnotationStorageCapacityPrefix + t.namespace + "-" + t.name
+}
+
+func (t *ThinEngine) getFuseLabelName() string {
+	return common.LabelAnnotationFusePrefix + t.namespace + "-" + t.name
+}

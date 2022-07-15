@@ -29,6 +29,7 @@ import (
 
 type ThinEngine struct {
 	runtime     *datav1alpha1.ThinRuntime
+	profile     *datav1alpha1.ThinProfile
 	name        string
 	namespace   string
 	runtimeType string

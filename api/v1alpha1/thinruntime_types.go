@@ -32,6 +32,11 @@ type ThinRuntimeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	ThinProfileName string `json:"thinProfile,omitempty"`
+
+	// file system of thinRuntime
+	FileSystemType string `json:"fileSystemType"`
+
 	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`
 
@@ -67,9 +72,6 @@ type ThinRuntimeSpec struct {
 	// Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
-
-	// Mounted as volume in fuse/worker pod
-	ConfigMapName string `json:"ConfigMapName"`
 }
 
 // ThinCompTemplateSpec is a description of the thinRuntime components
@@ -118,6 +120,16 @@ type ThinFuseSpec struct {
 	// Environment variables that will be used by thinRuntime Fuse
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
+	// Command that will be passed to thinRuntime Fuse
+	Command []string `json:"command,omitempty"`
+
+	// Arguments that will be passed to thinRuntime Fuse
+	Args []string `json:"args,omitempty"`
+
+	// Options configurable options of FUSE client, performance parameters usually.
+	// will be merged with Dataset.spec.mounts.options into fuse pod.
+	Options map[string]string `json:"options,omitempty"`
+
 	// Resources that will be requested by thinRuntime Fuse.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
@@ -138,6 +150,11 @@ type ThinFuseSpec struct {
 	// Defaults to OnDemand
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -150,6 +167,14 @@ type ThinRuntime struct {
 
 	Spec   ThinRuntimeSpec `json:"spec,omitempty"`
 	Status RuntimeStatus   `json:"status,omitempty"`
+}
+
+func (in *ThinRuntime) Replicas() int32 {
+	return in.Spec.Replicas
+}
+
+func (in *ThinRuntime) GetStatus() *RuntimeStatus {
+	return &in.Status
 }
 
 //+kubebuilder:object:root=true

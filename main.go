@@ -14,9 +14,4 @@
   limitations under the License.
 */
 
-package thin
-
-const (
-	PodRoleType   = "role"
-	WorkerPodRole = "thinfs-worker"
-)
+package fluid
