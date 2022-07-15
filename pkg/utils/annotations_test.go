@@ -389,3 +389,63 @@ func TestServerlessPlatformMatched(t *testing.T) {
 		})
 	}
 }
+
+func Test_matchedKey(t *testing.T) {
+
+	tests := []struct {
+		name      string
+		key       string
+		infos     map[string]string
+		wantMatch bool
+	}{
+		{
+			name:      "test_default_platform",
+			infos:     map[string]string{"disabled.fluid.io/platform": "test"},
+			key:       "",
+			wantMatch: false,
+		},
+		{
+			name:      "test_platform_env_set",
+			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
+			key:       "serverless.fluid.io/platform",
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotMatch := matchedKey(tt.infos, tt.key); gotMatch != tt.wantMatch {
+				t.Errorf("matchedKey() = %v, want %v", gotMatch, tt.wantMatch)
+			}
+		})
+	}
+}
+
+func TestAppControllerDisabled(t *testing.T) {
+	tests := []struct {
+		name      string
+		infos     map[string]string
+		key       string
+		wantMatch bool
+	}{
+		{
+			name:      "test_default_platform",
+			infos:     map[string]string{"disabled.fluid.io/platform": "test"},
+			key:       "",
+			wantMatch: false,
+		},
+		{
+			name:      "test_platform_env_set",
+			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
+			key:       "serverless.fluid.io/platform",
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			disableApplicationController = tt.key
+			if gotMatch := AppControllerDisabled(tt.infos); gotMatch != tt.wantMatch {
+				t.Errorf("AppControllerDisabled() = %v, want %v", gotMatch, tt.wantMatch)
+			}
+		})
+	}
+}
