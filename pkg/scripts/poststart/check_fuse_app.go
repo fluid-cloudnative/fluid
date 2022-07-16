@@ -98,8 +98,8 @@ func (a *ScriptGeneratorForApp) GetVolumeMount() (vm corev1.VolumeMount) {
 	volName := appVolName
 	return corev1.VolumeMount{
 		Name:      volName,
-		MountPath: scriptPath,
-		SubPath:   scriptName,
+		MountPath: appScriptPath,
+		SubPath:   appScriptName,
 		ReadOnly:  true,
 	}
 }
