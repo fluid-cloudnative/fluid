@@ -17,7 +17,9 @@ limitations under the License.
 package fuse
 
 import (
+	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -262,6 +264,48 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 
 			log.V(1).Info("After append volume", "original", volumes)
 		}
+
+		var appScriptGen *poststart.ScriptGeneratorForApp
+		if utils.FuseSidecarUnprivileged(metaObj.Labels) {
+			dataset, err := utils.GetDataset(s.client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+			if err != nil {
+				return out, err
+			}
+
+			ownerReference := metav1.OwnerReference{
+				APIVersion: dataset.APIVersion,
+				Kind:       dataset.Kind,
+				Name:       dataset.Name,
+				UID:        dataset.UID,
+			}
+
+			_, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(s.client, pvcName, runtimeInfo.GetNamespace())
+			if err != nil {
+				return out, err
+			}
+
+			appScriptGen = poststart.NewScriptGeneratorForApp(types.NamespacedName{
+				Namespace: runtimeInfo.GetNamespace(),
+				Name:      runtimeInfo.GetName(),
+			}, mountType, utils.AppContainerPostStartInjectEnabled(metaObj.Labels))
+			cm := appScriptGen.BuildConfigmap(ownerReference)
+			cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
+			if err != nil {
+				return out, err
+			}
+
+			if !cmFound {
+				err = s.client.Create(context.TODO(), cm)
+				if err != nil {
+					if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+						return out, err
+					}
+				}
+			}
+
+			volumes = append(volumes, appScriptGen.GetVolume())
+		}
+
 		err = pod.SetVolumes(volumes)
 		if err != nil {
 			return out, err
@@ -279,7 +323,8 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			privileged,
 			datasetVolumeNames,
 			template,
-			volumeNamesConflict)
+			volumeNamesConflict,
+			appScriptGen)
 		if !injectFuseContainer {
 			log.V(1).Info("skipping injection because no volume mount for dataset",
 				"podName", namespacedName,
@@ -308,7 +353,8 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 			privileged,
 			datasetVolumeNames,
 			template,
-			volumeNamesConflict)
+			volumeNamesConflict,
+			appScriptGen)
 		if !injectFuseContainer {
 			log.V(1).Info("skipping injection because no volume mount for dataset",
 				"podName", namespacedName,

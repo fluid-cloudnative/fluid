@@ -127,6 +127,7 @@ const (
 	InjectWorkerSidecar           = "worker" + injectSidecar
 	InjectSidecarDone             = "done" + injectSidecar
 	App                           = "app"
+	InjectAppPostStart            = "app.poststart" + inject
 
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
