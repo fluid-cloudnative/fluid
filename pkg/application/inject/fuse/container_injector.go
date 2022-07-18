@@ -43,6 +43,7 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerN
 			break
 		}
 
+		// Add volumeMounts only when appScriptGenerator is non-null, which means fuse sidecar injection in privileged mode.
 		if appScriptGenerator != nil {
 			containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
 		}
@@ -51,6 +52,7 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerN
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
 				container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
+				// Inject postStartHook only when appScriptGenerator is non-null, which means fuse sidecar injection in privileged mode.
 				if appScriptGenerator != nil {
 					if postStart := appScriptGenerator.GetPostStartCommand(volumeMount.MountPath); postStart != nil {
 						if containers[ci].Lifecycle != nil && containers[ci].Lifecycle.PostStart != nil {
