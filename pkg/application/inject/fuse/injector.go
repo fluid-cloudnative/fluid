@@ -144,7 +144,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 	}
 	kind := typeMeta.Kind
 	log.V(1).Info("Inject application", "namespacedName", namespacedName, "kind", kind)
-	privileged := true
 
 	pods, err := application.GetPodSpecs()
 	if err != nil {
@@ -320,7 +319,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		containers, injectFuseContainer := s.mutateContainers(namespacedName,
 			common.FuseContainerName,
 			containers,
-			privileged,
 			datasetVolumeNames,
 			template,
 			volumeNamesConflict,
@@ -350,7 +348,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		initContainers, injectFuseContainer = s.mutateContainers(namespacedName,
 			common.InitFuseContainerName,
 			initContainers,
-			privileged,
 			datasetVolumeNames,
 			template,
 			volumeNamesConflict,

@@ -40,9 +40,9 @@ type ScriptGeneratorForApp struct {
 
 func NewScriptGeneratorForApp(namespacedKey types.NamespacedName, mountType string, enablePostStartInjection bool) *ScriptGeneratorForApp {
 	return &ScriptGeneratorForApp{
-		name:      namespacedKey.Name,
-		namespace: namespacedKey.Namespace,
-
+		name:                     namespacedKey.Name,
+		namespace:                namespacedKey.Namespace,
+		mountType:                mountType,
 		enablePostStartInjection: enablePostStartInjection,
 	}
 }

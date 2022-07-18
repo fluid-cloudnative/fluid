@@ -26,7 +26,7 @@ import (
 )
 
 func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerName string,
-	containers []corev1.Container, privileged bool,
+	containers []corev1.Container,
 	datasetVolumeNames []string,
 	template *common.FuseInjectionTemplate,
 	volumeNamesConflict map[string]string,
