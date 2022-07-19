@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	appScriptName = "fluid-app-check-mount.sh"
-	appScriptPath = "/" + scriptName
+	appScriptName = "app-check-mount.sh"
+	appScriptPath = "/" + appScriptName
 	appVolName    = "check-mount-app"
 )
 
@@ -51,7 +51,7 @@ func (a *ScriptGeneratorForApp) BuildConfigmap(ownerReference metav1.OwnerRefere
 	data := map[string]string{}
 	content := contentPrivilegedSidecar
 
-	data[scriptName] = replacer.Replace(content)
+	data[appScriptName] = replacer.Replace(content)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            a.getConfigmapName(),
