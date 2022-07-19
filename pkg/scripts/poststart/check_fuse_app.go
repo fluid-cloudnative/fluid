@@ -58,11 +58,12 @@ func (a *ScriptGeneratorForApp) BuildConfigmap(ownerReference metav1.OwnerRefere
 			Namespace:       a.namespace,
 			OwnerReferences: []metav1.OwnerReference{ownerReference},
 		},
+		Data: data,
 	}
 }
 
 func (a *ScriptGeneratorForApp) getConfigmapName() string {
-	return a.name + "-app-" + configMapName
+	return a.name + "-" + a.mountType + "-app-" + configMapName
 }
 
 func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPath string) (handler *corev1.LifecycleHandler) {
