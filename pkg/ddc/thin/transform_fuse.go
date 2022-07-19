@@ -17,8 +17,12 @@
 package thin
 
 import (
+	"errors"
+	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
+	"strings"
 )
 
 func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
@@ -29,9 +33,18 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 
 	value.Fuse.MountPath = t.getMountPoint()
 
-	// todo merge option in runtime & profile & dataset
+	if len(dataset.Spec.Mounts) <= 0 {
+		return errors.New("do not assign mount point")
+	}
 
-	// todo merge env in runtime & profile
+	options := t.parseFuseOptions(runtime, profile, dataset)
+
+	envs := t.parseFuseEnv(runtime, profile)
+	envs = append(envs, corev1.EnvVar{
+		Name:  common.ThinFuseOptionEnvKey,
+		Value: options,
+	})
+	value.Fuse.Envs = envs
 
 	value.Fuse.Args = runtime.Spec.Fuse.Args
 	if len(value.Fuse.Args) == 0 && profile != nil {
@@ -57,7 +70,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
-	// todo volume
+	// transform volumes for fuse
+	err = t.transformFuseVolumes(runtime, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform volumes for fuse")
+	}
 	return
 }
 
@@ -79,6 +96,38 @@ func (t ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, profile *d
 	return
 }
 
-func (t ThinEngine) parseFuse() {
+func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile, dataset *datav1alpha1.Dataset) (option string) {
+	options := make(map[string]string)
+	if profile != nil {
+		options = profile.Spec.Options
+	}
+	// option in runtime will cover option in profile
+	for k, v := range runtime.Spec.Fuse.Options {
+		options[k] = v
+	}
+	// option in dataset will cover option in runtime
+	for k, v := range dataset.Spec.Mounts[0].Options {
+		// support only one mountpoint
+		options[k] = v
+	}
+	optionList := make([]string, len(options))
+	for k, v := range options {
+		if len(v) != 0 {
+			optionList = append(optionList, fmt.Sprintf("%s=%s", k, v))
+		} else {
+			optionList = append(optionList, fmt.Sprintf("%s", k))
+		}
+	}
+	if len(optionList) != 0 {
+		option = strings.Join(optionList, ",")
+	}
+	return
+}
 
+func (t ThinEngine) parseFuseEnv(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (envs []corev1.EnvVar) {
+	if profile != nil {
+		envs = profile.Spec.Env
+	}
+	envs = append(envs, runtime.Spec.Fuse.Env...)
+	return
 }

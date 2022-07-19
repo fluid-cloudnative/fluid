@@ -24,4 +24,6 @@ const (
 	ThinFuseContainer = "thin-fuse"
 
 	ThinWorkerContainer = "thin-worker"
+
+	ThinFuseOptionEnvKey = "MOUNT_OPTIONS"
 )
