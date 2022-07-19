@@ -25,9 +25,9 @@ import (
 )
 
 const (
-	appScriptName = "app-check-mount.sh"
+	appScriptName = "check-dataset-ready.sh"
 	appScriptPath = "/" + appScriptName
-	appVolName    = "check-mount-app"
+	appVolName    = "check-dataset-ready"
 )
 
 type ScriptGeneratorForApp struct {
