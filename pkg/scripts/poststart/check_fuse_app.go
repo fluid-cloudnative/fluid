@@ -70,7 +70,7 @@ func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPath string) (handler *
 	// Return non-null post start command only when PostStartInjeciton is enabled
 	if a.enablePostStartInjection {
 		// https://github.com/kubernetes/kubernetes/issues/25766
-		cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, mountPath, a.mountType)}
+		cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", appScriptPath, mountPath, a.mountType)}
 		handler = &corev1.LifecycleHandler{
 			Exec: &corev1.ExecAction{Command: cmd},
 		}
