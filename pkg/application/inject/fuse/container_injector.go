@@ -18,22 +18,23 @@ package fuse
 
 import (
 	"fmt"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerName string,
-	containers []corev1.Container, privileged bool,
+	containers []corev1.Container,
 	datasetVolumeNames []string,
 	template *common.FuseInjectionTemplate,
-	volumeNamesConflict map[string]string) (result []corev1.Container,
+	volumeNamesConflict map[string]string,
+	appScriptGenerator *poststart.ScriptGeneratorForApp) (result []corev1.Container,
 	injectFuseContainer bool) {
 
 	mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
-	for _, container := range containers {
+	for ci, container := range containers {
 		// Skip injection for injected container
 		if container.Name == fuseContainerName {
 			warningStr := fmt.Sprintf("===> Skipping injection because %v has injected %q sidecar already\n",
@@ -42,10 +43,30 @@ func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerN
 			break
 		}
 
+		// Add volumeMounts only when appScriptGenerator is non-null, which means fuse sidecar injection in privileged mode.
+		if appScriptGenerator != nil {
+			containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
+		}
+
 		// Set mountPropagationHostToContainer to the dataset volume mount point, and set Injection true
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
 				container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
+				// Inject postStartHook only when appScriptGenerator is non-null, which means fuse sidecar injection in privileged mode.
+				if appScriptGenerator != nil {
+					if postStart := appScriptGenerator.GetPostStartCommand(volumeMount.MountPath); postStart != nil {
+						if containers[ci].Lifecycle != nil && containers[ci].Lifecycle.PostStart != nil {
+							warningStr := fmt.Sprintf("===> Skipping inject post start command because container %v already have one", containers[ci].Name)
+							log.Info(warningStr)
+							continue
+						} else {
+							if containers[ci].Lifecycle == nil {
+								containers[ci].Lifecycle = &corev1.Lifecycle{}
+							}
+							containers[ci].Lifecycle.PostStart = appScriptGenerator.GetPostStartCommand(volumeMount.MountPath)
+						}
+					}
+				}
 				injectFuseContainer = true
 			}
 		}

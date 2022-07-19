@@ -17,7 +17,9 @@ limitations under the License.
 package fuse
 
 import (
+	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -142,7 +144,6 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 	}
 	kind := typeMeta.Kind
 	log.V(1).Info("Inject application", "namespacedName", namespacedName, "kind", kind)
-	privileged := true
 
 	pods, err := application.GetPodSpecs()
 	if err != nil {
@@ -262,6 +263,19 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 
 			log.V(1).Info("After append volume", "original", volumes)
 		}
+
+		// Do app container injection only if fuse sidecar in unprivileged mode
+		// If fuse sidecar is in privileged mode, appScriptGen will be nil
+		var appScriptGen *poststart.ScriptGeneratorForApp = nil
+		if utils.FuseSidecarUnprivileged(metaObj.Labels) {
+			appScriptGen, err = s.prepareAppContainerInjection(pvcName, runtimeInfo, utils.AppContainerPostStartInjectEnabled(metaObj.Labels))
+			if err != nil {
+				return out, err
+			}
+
+			volumes = append(volumes, appScriptGen.GetVolume())
+		}
+
 		err = pod.SetVolumes(volumes)
 		if err != nil {
 			return out, err
@@ -276,10 +290,10 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		containers, injectFuseContainer := s.mutateContainers(namespacedName,
 			common.FuseContainerName,
 			containers,
-			privileged,
 			datasetVolumeNames,
 			template,
-			volumeNamesConflict)
+			volumeNamesConflict,
+			appScriptGen)
 		if !injectFuseContainer {
 			log.V(1).Info("skipping injection because no volume mount for dataset",
 				"podName", namespacedName,
@@ -305,10 +319,10 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		initContainers, injectFuseContainer = s.mutateContainers(namespacedName,
 			common.InitFuseContainerName,
 			initContainers,
-			privileged,
 			datasetVolumeNames,
 			template,
-			volumeNamesConflict)
+			volumeNamesConflict,
+			appScriptGen)
 		if !injectFuseContainer {
 			log.V(1).Info("skipping injection because no volume mount for dataset",
 				"podName", namespacedName,
@@ -345,6 +359,46 @@ func (s *Injector) inject(in runtime.Object, pvcName string, runtimeInfo base.Ru
 		return out, err
 	}
 	return out, nil
+}
+
+func (s *Injector) prepareAppContainerInjection(pvcName string, runtimeInfo base.RuntimeInfoInterface, postStartInjectionEnabled bool) (*poststart.ScriptGeneratorForApp, error) {
+	dataset, err := utils.GetDataset(s.client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+	if err != nil {
+		return nil, err
+	}
+
+	ownerReference := metav1.OwnerReference{
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
+	}
+
+	_, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(s.client, pvcName, runtimeInfo.GetNamespace())
+	if err != nil {
+		return nil, err
+	}
+
+	appScriptGen := poststart.NewScriptGeneratorForApp(types.NamespacedName{
+		Namespace: runtimeInfo.GetNamespace(),
+		Name:      runtimeInfo.GetName(),
+	}, mountType, postStartInjectionEnabled)
+	cm := appScriptGen.BuildConfigmap(ownerReference)
+	cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if !cmFound {
+		err = s.client.Create(context.TODO(), cm)
+		if err != nil {
+			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return appScriptGen, nil
 }
 
 func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {

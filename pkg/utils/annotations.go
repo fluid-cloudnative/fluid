@@ -63,6 +63,10 @@ func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
 	return ServerlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
+func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectAppPostStart)
+}
+
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectWorkerSidecar)
 }
