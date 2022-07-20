@@ -66,7 +66,7 @@ runtime:
     fuse:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
   juicefs:
-    enabled: false
+    enabled: true
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.8.0-ad337ba
     fuse:
