@@ -69,7 +69,7 @@ type EncryptOption struct {
 // Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio Storage Integrations</a> for more info
 type Mount struct {
 	// MountPoint is the mount point of source.
-	// +kubebuilder:validation:MinLength=10
+	// +kubebuilder:validation:MinLength=5
 	// +required
 	MountPoint string `json:"mountPoint,omitempty"`
 
