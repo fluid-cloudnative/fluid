@@ -39,6 +39,7 @@ var (
 
 	metricsAddr             string
 	enableLeaderElection    bool
+	leaderElectionNamespace string
 	development             bool
 	maxConcurrentReconciles int
 	pprofAddr               string
@@ -57,6 +58,7 @@ func init() {
 	_ = corev1.AddToScheme(scheme)
 	fluidAppCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	fluidAppCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	fluidAppCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	fluidAppCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	fluidAppCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	fluidAppCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for Fluid App controller")
@@ -81,12 +83,13 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "4fa6ffa6.data.fluid.io",
-		Port:               9443,
-		NewCache:           fluidapp.NewCache(scheme),
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        "fluidapp.data.fluid.io",
+		Port:                    9443,
+		NewCache:                fluidapp.NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start fluid app manager")
