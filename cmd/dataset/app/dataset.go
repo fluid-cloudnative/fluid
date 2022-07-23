@@ -43,10 +43,11 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*alluxio.AlluxioEngine)(nil)
 
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
-	pprofAddr            string
+	metricsAddr             string
+	enableLeaderElection    bool
+	leaderElectionNamespace string
+	development             bool
+	pprofAddr               string
 )
 
 var datasetCmd = &cobra.Command{
@@ -63,6 +64,7 @@ func init() {
 
 	datasetCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	datasetCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	datasetCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	datasetCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	datasetCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 }
@@ -86,11 +88,12 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "89759796.data.fluid.io",
-		Port:               9443,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        "dataset.data.fluid.io",
+		Port:                    9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start dataset manager")

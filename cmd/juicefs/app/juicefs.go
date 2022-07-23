@@ -45,6 +45,7 @@ var (
 	eventDriven             bool
 	metricsAddr             string
 	enableLeaderElection    bool
+	leaderElectionNamespace string
 	development             bool
 	maxConcurrentReconciles int
 	pprofAddr               string
@@ -64,6 +65,7 @@ func init() {
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	startCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
@@ -88,12 +90,13 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "7857424864.data.fluid.io",
-		Port:               9443,
-		NewCache:           juicefsctl.NewCache(scheme),
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        "juicefs.data.fluid.io",
+		Port:                    9443,
+		NewCache:                juicefsctl.NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start juicefsruntime manager")
