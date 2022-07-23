@@ -19,25 +19,25 @@ import (
 	"flag"
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
 )
 
 const (
@@ -50,12 +50,14 @@ var (
 )
 
 var (
-	development   bool
-	fullGoProfile bool
-	metricsAddr   string
-	webhookPort   int
-	certDir       string
-	pprofAddr     string
+	development             bool
+	fullGoProfile           bool
+	metricsAddr             string
+	webhookPort             int
+	certDir                 string
+	pprofAddr               string
+	enableLeaderElection    bool
+	leaderElectionNamespace string
 )
 
 var webhookCmd = &cobra.Command{
@@ -77,6 +79,8 @@ func init() {
 	webhookCmd.Flags().IntVar(&webhookPort, "webhook-port", 9443, "Admission webhook listen address.")
 	webhookCmd.Flags().StringVar(&certDir, "webhook-cert-dir", "/etc/k8s-webhook-server/certs", "Admission webhook cert/key dir.")
 	webhookCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	webhookCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	webhookCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	webhookCmd.Flags().AddGoFlagSet(flag.CommandLine)
 }
 
@@ -84,34 +88,6 @@ func handle() {
 
 	// print fluid version
 	fluid.LogVersion()
-
-	cfg, err := ctrl.GetConfig()
-	if err != nil {
-		setupLog.Error(err, "can not get kube config")
-		os.Exit(1)
-	}
-
-	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
-
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               webhookPort,
-		CertDir:            certDir,
-		NewCache: cache.BuilderWithOptions(cache.Options{
-			Scheme: scheme,
-			SelectorsByObject: cache.SelectorsByObject{
-				&admissionregistrationv1.MutatingWebhookConfiguration{}: {
-					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.WebhookName}),
-				},
-			},
-		}),
-	})
-
-	if err != nil {
-		setupLog.Error(err, "initialize controller manager failed")
-		os.Exit(1)
-	}
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development
@@ -128,6 +104,37 @@ func handle() {
 		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 		o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 	}))
+
+	cfg, err := ctrl.GetConfig()
+	if err != nil {
+		setupLog.Error(err, "can not get kube config")
+		os.Exit(1)
+	}
+
+	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		Port:                    webhookPort,
+		CertDir:                 certDir,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        "webhook.data.fluid.io",
+		NewCache: cache.BuilderWithOptions(cache.Options{
+			Scheme: scheme,
+			SelectorsByObject: cache.SelectorsByObject{
+				&admissionregistrationv1.MutatingWebhookConfiguration{}: {
+					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.WebhookName}),
+				},
+			},
+		}),
+	})
+
+	if err != nil {
+		setupLog.Error(err, "initialize controller manager failed")
+		os.Exit(1)
+	}
 
 	// get client from mgr
 	client, err := client.New(cfg, client.Options{})

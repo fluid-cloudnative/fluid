@@ -46,9 +46,10 @@ var (
 	_ base.Implement = (*jindo.JindoEngine)(nil)
 	_ base.Implement = (*jindofsx.JindoFSxEngine)(nil)
 
-	metricsAddr          string
-	enableLeaderElection bool
-	development          bool
+	metricsAddr             string
+	enableLeaderElection    bool
+	leaderElectionNamespace string
+	development             bool
 	// The new mode
 	eventDriven             bool
 	portRange               string
@@ -70,6 +71,7 @@ func init() {
 
 	jindoCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	jindoCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	jindoCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	jindoCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	jindoCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "18000-19999", "Set available port range for Jindo")
 	jindoCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JindoRuntime controller")
@@ -96,11 +98,12 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "5688274864.data.fluid.io",
-		Port:               9443,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        "jindo.data.fluid.io",
+		Port:                    9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start jindoruntime manager")
