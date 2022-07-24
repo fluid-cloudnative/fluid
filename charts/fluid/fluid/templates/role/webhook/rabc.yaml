@@ -38,6 +38,7 @@ rules:
     resources:
       - secrets
       - configmaps
+      - events
     verbs:
       - get
       - create
@@ -53,6 +54,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
