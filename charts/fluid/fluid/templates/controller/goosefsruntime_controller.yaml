@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       control-plane: goosefsruntime-controller
-  replicas: 1
+  replicas: {{ .Values.runtime.goosefs.replicas }}
   template:
     metadata:
       labels:
@@ -40,6 +40,7 @@ spec:
           - --runtime-node-port-range={{ .Values.runtime.goosefs.portRange }}
           - --runtime-workers={{ .Values.runtime.goosefs.runtimeWorkers }}
           - --pprof-addr=:6060
+          - --enable-leader-election
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

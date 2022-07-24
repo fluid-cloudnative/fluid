@@ -5,6 +5,7 @@
 workdir: /tmp
 
 dataset:
+  replicas: 1
   controller:
     image: fluidcloudnative/dataset-controller:v0.8.0-c7f5888
 
@@ -24,6 +25,7 @@ runtime:
   syncRetryDuration: 15s
   mountRoot: /runtime-mnt
   alluxio:
+    replicas: 1
     runtimeWorkers: 3
     portRange: 20000-26000
     enabled: true
@@ -38,6 +40,7 @@ runtime:
       # image: fluidcloudnative/alluxio-fuse:release-2.7.3-SNAPSHOT-a7154f1
       image: fluidcloudnative/alluxio-fuse:release-2.8.1-SNAPSHOT-0433ade
   jindo:
+    replicas: 1
     runtimeWorkers: 3
     portRange: 18000-19999
     enabled: false
@@ -54,6 +57,7 @@ runtime:
         enabled: false
       image: fluidcloudnative/init-users:v0.8.0-c7f5888
   goosefs:
+    replicas: 1
     runtimeWorkers: 3
     portRange: 26000-32000
     enabled: false
@@ -66,6 +70,7 @@ runtime:
     fuse:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
   juicefs:
+    replicas: 1
     enabled: true
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.8.0-c7f5888
@@ -79,5 +84,6 @@ webhook:
 
 fluidapp:
   enabled: true
+  replicas: 1
   controller:
     image: fluidcloudnative/application-controller:v0.8.0-c7f5888
