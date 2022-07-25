@@ -36,7 +36,12 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		return value, err
 	}
 
-	value = &JuiceFS{}
+	value = &JuiceFS{
+		RuntimeIdentity: common.RuntimeIdentity{
+			Namespace: runtime.Namespace,
+			Name:      runtime.Name,
+		},
+	}
 
 	value.FullnameOverride = j.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)

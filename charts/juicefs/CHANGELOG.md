@@ -9,3 +9,7 @@
 0.2.1
 
 - Add owner Reference
+
+0.2.2
+
+- Add runtime identity information

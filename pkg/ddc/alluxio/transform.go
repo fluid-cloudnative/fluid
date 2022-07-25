@@ -114,6 +114,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	dataset *datav1alpha1.Dataset,
 	value *Alluxio) (err error) {
 
+	value.RuntimeIdentity.Namespace = runtime.Namespace
+	value.RuntimeIdentity.Name = runtime.Name
+
 	image := runtime.Spec.AlluxioVersion.Image
 	imageTag := runtime.Spec.AlluxioVersion.ImageTag
 	imagePullPolicy := runtime.Spec.AlluxioVersion.ImagePullPolicy
