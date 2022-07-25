@@ -119,7 +119,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 			WorkersAndClients: e.transformWorkerMountPath(originPath),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
-		RuntimeIdentity: RuntimeIdentity{
+		RuntimeIdentity: common.RuntimeIdentity{
 			Namespace: e.namespace,
 			Name:      e.name,
 		},
