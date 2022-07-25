@@ -409,3 +409,7 @@ fuse:
 #   configMap:
 #     name: myConfigMap
 
+runtimeIdentity:
+  namespace: default
+  name: xxx
+
