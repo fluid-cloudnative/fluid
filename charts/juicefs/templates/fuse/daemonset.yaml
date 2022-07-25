@@ -101,6 +101,12 @@ spec:
                 name: {{ .Values.configs.tokenSecret }}
                 key: token
           {{- end }}
+          - name: FLUID_RUNTIME_TYPE
+            value: "alluxio"
+          - name: FLUID_RUNTIME_NS
+            value: {{ .Values.runtimeIdentity.namespace }}
+          - name: FLUID_RUNTIME_NAME
+            value: {{ .Values.runtimeIdentity.name }}
           readinessProbe:
             exec:
               command:
