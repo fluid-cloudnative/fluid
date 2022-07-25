@@ -70,6 +70,8 @@ type Alluxio struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	PlacementMode string `json:"placement,omitempty"`
+
+	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
 }
 
 type HadoopConfig struct {
