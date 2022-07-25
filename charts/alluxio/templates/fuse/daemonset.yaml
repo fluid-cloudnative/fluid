@@ -108,6 +108,12 @@ spec:
                 fieldPath: status.hostIP
           - name: ALLUXIO_CLIENT_JAVA_OPTS
             value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME} "
+          - name: FLUID_RUNTIME_TYPE
+            value: "alluxio"
+          - name: FLUID_RUNTIME_NS
+            value: {{ .Values.runtimeIdentity.namespace }}
+          - name: FLUID_RUNTIME_NAME
+            value: {{ .Values.runtimeIdentity.name }}
           {{- range $key, $value := .Values.fuse.env }}
           - name: "{{ $key }}"
             value: "{{ $value }}"
