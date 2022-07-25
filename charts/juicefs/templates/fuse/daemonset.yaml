@@ -102,7 +102,7 @@ spec:
                 key: token
           {{- end }}
           - name: FLUID_RUNTIME_TYPE
-            value: "alluxio"
+            value: "juicefs"
           - name: FLUID_RUNTIME_NS
             value: {{ .Values.runtimeIdentity.namespace }}
           - name: FLUID_RUNTIME_NAME
