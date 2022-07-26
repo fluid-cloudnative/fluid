@@ -40,7 +40,7 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	profile, err := t.getThinProfile()
+	profile, err := t.getThinRuntimeProfile()
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 	return helm.InstallRelease(t.name, t.namespace, valuefileName, chartName)
 }
 
-func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (valueFileName string, err error) {
+func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (valueFileName string, err error) {
 	//0. Check if the configmap exists
 	err = kubeclient.DeleteConfigMap(t.Client, t.getConfigmapName(), t.namespace)
 	if err != nil {

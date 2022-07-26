@@ -23,32 +23,36 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ThinProfileSpec defines the desired state of ThinProfile
-type ThinProfileSpec struct {
+// ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile
+type ThinRuntimeProfileSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`
 
-	// Environment variables that will be used by thinRuntime Fuse
-	Env []corev1.EnvVar `json:"env,omitempty"`
+	// The spec of init users
+	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
-	// Command that will be passed to thinRuntime Fuse
-	Command []string `json:"command,omitempty"`
+	// The component spec of master
+	Master ThinCompTemplateSpec `json:"master,omitempty"`
 
-	// Arguments that will be passed to thinRuntime Fuse
-	Args []string `json:"args,omitempty"`
+	// The component spec of worker
+	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
 
-	// Options configurable options of FUSE client, performance parameters usually.
-	// will be merged with Dataset.spec.mounts.options into fuse pod.
-	Options map[string]string `json:"options,omitempty"`
+	// The component spec of job Worker
+	JobWorker ThinCompTemplateSpec `json:"jobWorker,omitempty"`
 
-	// Resources that will be requested by thinRuntime Fuse.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// The component spec of thinRuntime
+	Fuse ThinFuseSpec `json:"fuse,omitempty"`
+
+	// Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
-// ThinProfileStatus defines the observed state of ThinProfile
-type ThinProfileStatus struct {
+// ThinRuntimeProfileStatus defines the observed state of ThinRuntimeProfile
+type ThinRuntimeProfileStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -56,24 +60,24 @@ type ThinProfileStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// ThinProfile is the Schema for the thinprofiles API
-type ThinProfile struct {
+// ThinRuntimeProfile is the Schema for the ThinRuntimeProfiles API
+type ThinRuntimeProfile struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ThinProfileSpec   `json:"spec,omitempty"`
-	Status ThinProfileStatus `json:"status,omitempty"`
+	Spec   ThinRuntimeProfileSpec   `json:"spec,omitempty"`
+	Status ThinRuntimeProfileStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// ThinProfileList contains a list of ThinProfile
-type ThinProfileList struct {
+// ThinRuntimeProfileList contains a list of ThinRuntimeProfile
+type ThinRuntimeProfileList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ThinProfile `json:"items"`
+	Items           []ThinRuntimeProfile `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ThinProfile{}, &ThinProfileList{})
+	SchemeBuilder.Register(&ThinRuntimeProfile{}, &ThinRuntimeProfileList{})
 }

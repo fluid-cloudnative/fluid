@@ -69,6 +69,12 @@ spec:
           {{- end }}
           securityContext:
             privileged: true
+          {{- if .Values.worker.livenessProbe }}
+          livenessProbe: {{ .Values.worker.livenessProbe }}
+          {{- end }}
+          {{- if .Values.worker.readinessProbe }}
+          readinessProbe: {{ .Values.worker.readinessProbe }}
+          {{- end }}
           env:
           {{- if .Values.worker.envs }}
 {{ toYaml .Values.worker.envs | trim | indent 10  }}
