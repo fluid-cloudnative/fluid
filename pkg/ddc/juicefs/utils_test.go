@@ -916,6 +916,23 @@ func TestJuiceFSEngine_GetEdition(t *testing.T) {
 			},
 			wantValue: "",
 		},
+		{
+			name: "test4",
+			args: args{
+				cmName:    "test4",
+				namespace: "fluid",
+			},
+			cm: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test4",
+					Namespace: "fluid",
+				},
+				Data: map[string]string{
+					"data": "a: b",
+				},
+			},
+			wantValue: "",
+		},
 	}
 
 	for _, tt := range tests {

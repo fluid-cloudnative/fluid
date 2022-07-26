@@ -337,6 +337,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 		},
 	}
+	q, _ := resource.ParseQuantity("10240000")
 	type fields struct {
 		runtime     *datav1alpha1.JuiceFSRuntime
 		name        string
@@ -382,6 +383,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				tiredStoreLevel: &datav1alpha1.Level{
 					MediumType: "SSD",
 					Path:       "/dev",
+					Quota:      &q,
 				},
 				value: &JuiceFS{
 					FullnameOverride: "test",
@@ -391,7 +393,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			wantErr: false,
 			wantOptions: map[string]string{
-				"cache-dir": "/dev",
+				"cache-dir":  "/dev",
+				"cache-size": "9",
 			},
 		},
 		{

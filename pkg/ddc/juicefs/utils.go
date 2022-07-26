@@ -240,9 +240,13 @@ func (j *JuiceFSEngine) GetEdition() (edition string) {
 		return ""
 	}
 
-	edition, _ = fuseValues["edition"].(string)
+	editionStr, ok := fuseValues["edition"]
+	if !ok {
+		return ""
+	}
 
-	return edition
+	edition = editionStr.(string)
+	return
 }
 
 // getMountRoot returns the default path, if it's not set
