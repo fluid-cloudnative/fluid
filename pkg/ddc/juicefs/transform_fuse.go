@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strconv"
 	"strings"
 )
 
@@ -143,7 +144,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			cacheDir = "memory"
 		}
 		if tiredStoreLevel.Quota != nil {
-			options["cache-size"] = tiredStoreLevel.Quota.String()
+			q := tiredStoreLevel.Quota
+			// juicefs cache-size should be integer in MiB
+			// community doc: https://juicefs.com/docs/community/command_reference/#juicefs-mount
+			// enterprise doc: https://juicefs.com/docs/cloud/commands_reference#mount
+			cacheSize := q.Value() >> 20
+			options["cache-size"] = strconv.FormatInt(cacheSize, 10)
 		}
 		if tiredStoreLevel.Low != "" {
 			options["free-space-ratio"] = tiredStoreLevel.Low
