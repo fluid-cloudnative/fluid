@@ -24,7 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
-func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (value *ThinValue, err error) {
+func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (value *ThinValue, err error) {
 	if runtime == nil {
 		err = fmt.Errorf("the juicefsRuntime is null")
 		return
@@ -57,7 +57,7 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	return
 }
 
-func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile, value *ThinValue) (err error) {
+func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
 	value.Worker = Worker{}
 
 	image := runtime.Spec.Version.Image

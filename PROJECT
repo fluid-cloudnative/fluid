@@ -81,7 +81,7 @@ resources:
     namespaced: true
   domain: fluid.io
   group: data
-  kind: ThinProfile
+  kind: ThinRuntimeProfile
   path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
 version: "3"

@@ -32,7 +32,7 @@ type ThinRuntimeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	ThinProfileName string `json:"thinProfile,omitempty"`
+	ThinRuntimeProfileName string `json:"ThinRuntimeProfile,omitempty"`
 
 	// file system of thinRuntime
 	FileSystemType string `json:"fileSystemType"`
@@ -155,6 +155,14 @@ type ThinFuseSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
+
+	// livenessProbe of thin fuse pod
+	// +optional
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+
+	// readinessProbe of thin fuse pod
+	// +optional
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
 
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the thinruntime component's filesystem.
 	// +optional

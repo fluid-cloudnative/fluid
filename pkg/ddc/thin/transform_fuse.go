@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
+func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
 	value.Fuse = Fuse{}
 	value.Fuse.Enabled = true
 
@@ -48,12 +48,12 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 
 	value.Fuse.Args = runtime.Spec.Fuse.Args
 	if len(value.Fuse.Args) == 0 && profile != nil {
-		value.Fuse.Args = profile.Spec.Args
+		value.Fuse.Args = profile.Spec.Fuse.Args
 	}
 
 	value.Fuse.Command = runtime.Spec.Fuse.Command
 	if len(value.Fuse.Command) == 0 && profile != nil {
-		value.Fuse.Command = profile.Spec.Command
+		value.Fuse.Command = profile.Spec.Fuse.Command
 	}
 
 	t.transformResourcesForFuse(runtime, value)
@@ -78,7 +78,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	return
 }
 
-func (t ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (image string, tag string, imagePullPolicy string) {
+func (t ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (image string, tag string, imagePullPolicy string) {
 	image = runtime.Spec.Fuse.Image
 	tag = runtime.Spec.Fuse.ImageTag
 	imagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
@@ -96,10 +96,10 @@ func (t ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, profile *d
 	return
 }
 
-func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile, dataset *datav1alpha1.Dataset) (option string) {
+func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string) {
 	options := make(map[string]string)
 	if profile != nil {
-		options = profile.Spec.Options
+		options = profile.Spec.Fuse.Options
 	}
 	// option in runtime will cover option in profile
 	for k, v := range runtime.Spec.Fuse.Options {
@@ -124,9 +124,9 @@ func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile 
 	return
 }
 
-func (t ThinEngine) parseFuseEnv(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinProfile) (envs []corev1.EnvVar) {
+func (t ThinEngine) parseFuseEnv(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (envs []corev1.EnvVar) {
 	if profile != nil {
-		envs = profile.Spec.Env
+		envs = profile.Spec.Fuse.Env
 	}
 	envs = append(envs, runtime.Spec.Fuse.Env...)
 	return

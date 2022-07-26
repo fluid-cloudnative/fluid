@@ -82,6 +82,12 @@ spec:
             preStop:
               exec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
+          {{- if .Values.fuse.livenessProbe }}
+          livenessProbe: {{ .Values.fuse.livenessProbe }}
+          {{- end }}
+          {{- if .Values.fuse.readinessProbe }}
+          readinessProbe: {{ .Values.fuse.readinessProbe }}
+          {{- end }}
           volumeMounts:
           - name: thinfs-fuse-mount
             mountPath: {{ .Values.fuse.hostMountPath }}

@@ -1,7 +1,7 @@
 apiVersion: data.fluid.io/v1alpha1
-kind: ThinProfile
+kind: ThinRuntimeProfile
 metadata:
-  name: thinprofile-sample
+  name: ThinRuntimeProfile-sample
 spec:
   # Add fields here
   foo: bar

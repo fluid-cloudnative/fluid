@@ -45,6 +45,8 @@ worker:
   #      cpu: "4"
   #      memory: "4G"
   replicaCount: 0
+  livenessProbe:
+  readinessProbe:
 
 ## FUSE ##
 
@@ -62,6 +64,8 @@ fuse:
   hostMountPath: /mnt/jfs
   command: []
   args: []
+  livenessProbe:
+  readinessProbe:
   resources:
     requests:
     #      cpu: "0.5"
