@@ -178,7 +178,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		properties["namespace.backend.type"] = "raft"
 		var raftLists []string
 		for i := 0; i < value.Master.ReplicaCount; i++ {
-			raftLists = append(raftLists, e.getMasterName()+"-"+string(i)+":"+string(value.Master.Port.Raft)+":0")
+			raftLists = append(raftLists, e.getMasterName()+"-"+strconv.Itoa(i)+":"+strconv.Itoa(value.Master.Port.Raft)+":0")
 		}
 		properties["namespace.backend.raft.initial-conf"] = strings.Join(raftLists, ",")
 	}
