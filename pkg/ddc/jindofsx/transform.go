@@ -176,6 +176,11 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	}
 	if value.Master.ReplicaCount == 3 {
 		properties["namespace.backend.type"] = "raft"
+		var raftLists []string
+		for i := 0; i < value.Master.ReplicaCount; i++ {
+			raftLists = append(raftLists, e.getMasterName()+"-"+string(i)+":"+string(value.Master.Port.Raft)+":0")
+		}
+		properties["namespace.backend.raft.initial-conf"] = strings.Join(raftLists, ",")
 	}
 	properties["namespace.rpc.port"] = strconv.Itoa(value.Master.Port.Rpc)
 	properties["namespace.meta-dir"] = metaPath + "/server"
