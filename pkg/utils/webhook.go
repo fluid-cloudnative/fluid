@@ -95,8 +95,8 @@ func InjectMountPropagation(runtimeNames []string, pod *corev1.Pod) {
 // InjectHCFSAddresses inject HCFS addresses into pods according to runtimeNames
 func InjectHCFSAddresses(c client.Client, runtimeNames []string, pod *corev1.Pod) (err error) {
 	namespace := pod.GetNamespace()
-	if namespace == "" {
-		namespace = "default"
+	if len(namespace) == 0 {
+		namespace = corev1.NamespaceDefault
 	}
 
 	for _, runtimeName := range runtimeNames {

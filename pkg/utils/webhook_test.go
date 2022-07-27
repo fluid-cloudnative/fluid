@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"math/rand"
 	"testing"
 	"time"
@@ -194,4 +195,35 @@ func TestInjectMountPropagation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInjectHCFSAddressIntoEnv(t *testing.T) {
+	runtimeName := "runtimeName-test"
+	url := "url-test"
+	EnvName := runtimeName + common.URLPostfix
+
+	envVars := []corev1.EnvVar{
+		{
+			Name:  "k1",
+			Value: "v1",
+		},
+		{
+			Name:  "k2",
+			Value: "v2",
+		},
+	}
+	result := InjectHCFSAddressIntoEnv(runtimeName, url, envVars)
+
+	var find bool
+	for _, env := range result {
+		if env.Name == EnvName {
+			if env.Value == url {
+				find = true
+			}
+		}
+	}
+	if !find {
+		t.Errorf("InjectHCFSAddressIntoEnv failure, cannot find the env")
+	}
+
 }

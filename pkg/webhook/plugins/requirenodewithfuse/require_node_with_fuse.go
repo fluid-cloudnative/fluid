@@ -64,6 +64,7 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]ba
 		for _, pvcName := range pvcNames {
 			if pvcName == runtime.GetName() {
 				find = true
+				break
 			}
 		}
 		if !find {

@@ -72,8 +72,10 @@ func (p *HCFSAddressesInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 		}
 		find = false
 		for _, datasetName := range datasetNames {
+			datasetName = strings.TrimSpace(datasetName)
 			if datasetName == runtimeInfo.GetName() {
 				find = true
+				break
 			}
 		}
 		if find {

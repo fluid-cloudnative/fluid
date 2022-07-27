@@ -253,7 +253,8 @@ func (a *CreateUpdatePodForSchedulingHandler) getRuntimeInfosAsUCFS(datasetsUsed
 	datasetNames := strings.Split(datasetsUsedAsHCFS, ",")
 
 	for _, datasetName := range datasetNames {
-		if datasetName == "" {
+		datasetName = strings.TrimSpace(datasetName)
+		if len(datasetName) == 0 {
 			continue
 		}
 		if _, find := runtimeInfos[datasetName]; !find {

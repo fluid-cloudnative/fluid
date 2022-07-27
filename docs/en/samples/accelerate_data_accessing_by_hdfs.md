@@ -203,7 +203,7 @@ Here, you need to replace 19998 in the environment variable with the actual port
 
 After open pod_schedule, annotation fluid.io/dataset-useas-hcfs will make Fluid knowning what datasets this pod need to visit
 Fluid will inject scheduling information into the Pod through the webhook mechanism in combination with the Pod scheduling strategy arranged according to the dataset
-Also，Fluid will inject the HDFS_URL alluxio://{HCFS URL}/{DATASET_NAME} into the env {DATASET_NAME}-URL of Pod
+Also，Fluid will inject the HDFS_URL alluxio://{HCFS URL}/{DATASET_NAME} into the env {DATASET_NAME}-ADDRESS of Pod
 
 **Start the test job**
 
