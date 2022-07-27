@@ -163,9 +163,9 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
-		"namespace.filelet.threads":                 "10",
-		"namespace.blocklet.threads":                "10",
-		"namespace.long-running.threads":            "4",
+		"namespace.filelet.threads":                 "200",
+		"namespace.blocklet.threads":                "100",
+		"namespace.long-running.threads":            "20",
 		"namespace.filelet.cache.size":              "100000",
 		"namespace.blocklet.cache.size":             "1000000",
 		"namespace.filelet.atime.enable":            "false",
@@ -176,6 +176,11 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	}
 	if value.Master.ReplicaCount == 3 {
 		properties["namespace.backend.type"] = "raft"
+		var raftLists []string
+		for i := 0; i < value.Master.ReplicaCount; i++ {
+			raftLists = append(raftLists, e.getMasterName()+"-"+strconv.Itoa(i)+":"+strconv.Itoa(value.Master.Port.Raft)+":0")
+		}
+		properties["namespace.backend.raft.initial-conf"] = strings.Join(raftLists, ",")
 	}
 	properties["namespace.rpc.port"] = strconv.Itoa(value.Master.Port.Rpc)
 	properties["namespace.meta-dir"] = metaPath + "/server"
@@ -733,7 +738,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "4.5.0"
+		defaultTag       = "4.5.1"
 		defaultDnsServer = "1.1.1.1"
 	)
 
@@ -757,7 +762,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "4.5.0"
+		defaultTag   = "4.5.1"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
