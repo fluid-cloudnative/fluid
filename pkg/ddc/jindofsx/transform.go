@@ -163,9 +163,9 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
-		"namespace.filelet.threads":                 "10",
-		"namespace.blocklet.threads":                "10",
-		"namespace.long-running.threads":            "4",
+		"namespace.filelet.threads":                 "200",
+		"namespace.blocklet.threads":                "100",
+		"namespace.long-running.threads":            "20",
 		"namespace.filelet.cache.size":              "100000",
 		"namespace.blocklet.cache.size":             "1000000",
 		"namespace.filelet.atime.enable":            "false",
