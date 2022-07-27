@@ -70,7 +70,7 @@ data:
         fi
 
         if [[ $enbaleCacheListLocation == 'false' ]]; then
-            cmd="$cmd -s -R -replicas $replica $default$path"
+            cmd="$cmd -s -R -replica $replica $default$path"
             echo -e "execute cmd $cmd"
             time $cmd
         else
