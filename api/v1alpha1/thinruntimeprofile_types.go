@@ -31,17 +31,8 @@ type ThinRuntimeProfileSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`
 
-	// The spec of init users
-	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
-
-	// The component spec of master
-	Master ThinCompTemplateSpec `json:"master,omitempty"`
-
 	// The component spec of worker
 	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
-
-	// The component spec of job Worker
-	JobWorker ThinCompTemplateSpec `json:"jobWorker,omitempty"`
 
 	// The component spec of thinRuntime
 	Fuse ThinFuseSpec `json:"fuse,omitempty"`
