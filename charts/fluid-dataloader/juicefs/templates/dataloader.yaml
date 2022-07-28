@@ -48,9 +48,9 @@ spec:
           args: ["/scripts/juicefs_dataload.sh"]
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
-          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) "" }}
           {{- end }}
-          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+          {{- $targetPaths = $targetPaths | trim }}
 
           {{- $pathReplicas := ""}}
           {{- range .Values.dataloader.targetPaths }}

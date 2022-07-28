@@ -141,7 +141,7 @@ func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid stri
 
 	edition := fuseValues["edition"].(string)
 	source := fuseValues["source"].(string)
-	if edition == "enterprise" {
+	if edition == EnterpriseEdition {
 		uuid = source
 		return
 	}
