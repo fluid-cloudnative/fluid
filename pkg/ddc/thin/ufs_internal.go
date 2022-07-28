@@ -21,14 +21,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
-func (j *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
-	stsName := j.getFuseDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(stsName, j.namespace)
+func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
+	stsName := t.getFuseDaemonsetName()
+	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	total, err = fileUtils.GetUsedSpace(j.getMountPoint())
+	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	total, err = fileUtils.GetUsedSpace(t.getMountPoint())
 	if err != nil {
 		return
 	}
@@ -36,14 +36,14 @@ func (j *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
 	return
 }
 
-func (j *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
-	stsName := j.getFuseDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(stsName, j.namespace)
+func (t *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
+	stsName := t.getFuseDaemonsetName()
+	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	fileCount, err = fileUtils.GetFileCount(j.getMountPoint())
+	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	fileCount, err = fileUtils.GetFileCount(t.getMountPoint())
 	if err != nil {
 		return
 	}
@@ -51,14 +51,14 @@ func (j *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	return
 }
 
-func (j *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
-	stsName := j.getFuseDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(stsName, j.namespace)
+func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
+	stsName := t.getFuseDaemonsetName()
+	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	usedSpace, err = fileUtils.GetUsedSpace(j.getMountPoint())
+	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	usedSpace, err = fileUtils.GetUsedSpace(t.getMountPoint())
 	if err != nil {
 		return
 	}
