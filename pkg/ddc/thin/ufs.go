@@ -18,42 +18,34 @@ package thin
 
 import "github.com/fluid-cloudnative/fluid/pkg/utils"
 
-func (t ThinEngine) UsedStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThinEngine) UsedStorageBytes() (int64, error) {
+	return t.usedSpaceInternal()
 }
 
-func (t ThinEngine) FreeStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThinEngine) FreeStorageBytes() (int64, error) {
+	return 0, nil
 }
 
-func (t ThinEngine) TotalStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThinEngine) TotalStorageBytes() (int64, error) {
+	return t.totalStorageBytesInternal()
 }
 
-func (t ThinEngine) TotalFileNums() (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (t *ThinEngine) TotalFileNums() (int64, error) {
+	return t.totalFileNumsInternal()
 }
 
 func (t ThinEngine) ShouldCheckUFS() (should bool, err error) {
-	//TODO implement me
-	panic("implement me")
+	return false, nil
 }
 
 func (t ThinEngine) PrepareUFS() (err error) {
-	//TODO implement me
-	panic("implement me")
+	return
 }
 
 func (t ThinEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (t ThinEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
+	return true, nil
 }

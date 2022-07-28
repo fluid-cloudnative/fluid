@@ -17,6 +17,7 @@
 package thin
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -26,13 +27,47 @@ import (
 )
 
 func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
+	var (
+		workerName string = t.getWorkerName()
+		namespace  string = t.namespace
+	)
+
+	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
+	if err != nil {
+		return ready, err
+	}
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := t.getRuntime()
+		if err != nil {
+			return err
+		}
+		runtimeToUpdate := runtime.DeepCopy()
+		ready, err = t.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		if err != nil {
+			_ = utils.LoggingErrorExceptConflict(t.Log, err, "Failed to setup worker",
+				types.NamespacedName{Namespace: t.namespace, Name: t.name})
+		}
+		return err
+	})
+
+	return
 }
 
 func (t ThinEngine) ShouldSetupWorkers() (should bool, err error) {
-	//TODO implement me
-	panic("implement me")
+	runtime, err := t.getRuntime()
+	if err != nil {
+		return
+	}
+
+	switch runtime.Status.WorkerPhase {
+	case datav1alpha1.RuntimePhaseNone:
+		should = true
+	default:
+		should = false
+	}
+
+	return
 }
 
 func (t ThinEngine) SetupWorkers() (err error) {
