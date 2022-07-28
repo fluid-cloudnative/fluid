@@ -37,7 +37,7 @@ func (j *JuiceFSEngine) GetPodMetrics(podName, containerName string) (metrics st
 func (j JuiceFSEngine) parseMetric(metrics, edition string) (podMetric fuseMetrics) {
 	var blockCacheBytes, blockCacheHits, blockCacheMiss, blockCacheHitBytes, blockCacheMissBytes string
 
-	if edition == "enterprise" {
+	if edition == EnterpriseEdition {
 		blockCacheBytes = BlockCacheBytesOfEnterprise
 		blockCacheHits = BlockCacheHitsOfEnterprise
 		blockCacheMiss = BlockCacheMissOfEnterprise

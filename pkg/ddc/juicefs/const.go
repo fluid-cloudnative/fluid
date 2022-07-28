@@ -31,7 +31,9 @@ const (
 
 	PodRoleType = "role"
 
-	WorkerPodRole = "juicefs-worker"
+	WorkerPodRole     = "juicefs-worker"
+	EnterpriseEdition = "enterprise"
+	CommunityEdition  = "community"
 
 	MetadataSyncNotDoneMsg               = "[Calculating]"
 	CheckMetadataSyncDoneTimeoutMillisec = 500

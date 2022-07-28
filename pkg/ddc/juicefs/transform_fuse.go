@@ -77,7 +77,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	value.Configs.Name = mount.Name
 	options := make(map[string]string)
 	source := ""
-	value.Edition = "enterprise"
+	value.Edition = EnterpriseEdition
 	for k, v := range mount.Options {
 		switch k {
 		case JuiceStorage:
@@ -110,7 +110,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			if !ok {
 				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
 			}
-			value.Edition = "community"
+			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
 		case JuiceSecretKey:
@@ -179,7 +179,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 			workerOptionMap[k] = v
 		}
 	}
-	if value.Edition == "community" {
+	if value.Edition == CommunityEdition {
 		if _, ok := optionMap["metrics"]; !ok {
 			optionMap["metrics"] = "0.0.0.0:9567"
 		}
@@ -235,7 +235,7 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 			}
 		}
 	}
-	if value.Edition == "community" {
+	if value.Edition == CommunityEdition {
 		// ce
 		if value.Configs.AccessKeySecret != "" {
 			args = append(args, "--access-key=${ACCESS_KEY}")

@@ -106,8 +106,9 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	targetPaths := []cdataload.TargetPath{}
 	for _, target := range dataload.Spec.Target {
 		fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
+		path := strings.TrimSpace(target.Path)
 		targetPaths = append(targetPaths, cdataload.TargetPath{
-			Path:        target.Path,
+			Path:        path,
 			Replicas:    target.Replicas,
 			FluidNative: fluidNative,
 		})
@@ -138,7 +139,7 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
 	}
-	if cacheinfo[Edition] == "community" {
+	if cacheinfo[Edition] == CommunityEdition {
 		options["podNames"] = strings.Join(podNames, ":")
 	} else {
 		options["podNames"] = podNames[0]
