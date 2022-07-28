@@ -1846,10 +1846,7 @@ func (in *ThinRuntimeProfileList) DeepCopyObject() runtime.Object {
 func (in *ThinRuntimeProfileSpec) DeepCopyInto(out *ThinRuntimeProfileSpec) {
 	*out = *in
 	out.Version = in.Version
-	in.InitUsers.DeepCopyInto(&out.InitUsers)
-	in.Master.DeepCopyInto(&out.Master)
 	in.Worker.DeepCopyInto(&out.Worker)
-	in.JobWorker.DeepCopyInto(&out.JobWorker)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
@@ -1889,10 +1886,7 @@ func (in *ThinRuntimeProfileStatus) DeepCopy() *ThinRuntimeProfileStatus {
 func (in *ThinRuntimeSpec) DeepCopyInto(out *ThinRuntimeSpec) {
 	*out = *in
 	out.Version = in.Version
-	in.InitUsers.DeepCopyInto(&out.InitUsers)
-	in.Master.DeepCopyInto(&out.Master)
 	in.Worker.DeepCopyInto(&out.Worker)
-	in.JobWorker.DeepCopyInto(&out.JobWorker)
 	in.Fuse.DeepCopyInto(&out.Fuse)
 	in.TieredStore.DeepCopyInto(&out.TieredStore)
 	if in.RunAs != nil {
