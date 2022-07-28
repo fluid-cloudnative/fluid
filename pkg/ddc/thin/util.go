@@ -22,7 +22,12 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
+	options "sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 )
 
 // getRuntime gets thin runtime
@@ -77,4 +82,48 @@ func getMountRoot() (path string) {
 		path = path + "/" + common.ThinRuntime
 	}
 	return
+}
+
+func (t *ThinEngine) getDaemonset(name string, namespace string) (fuse *appsv1.DaemonSet, err error) {
+	fuse = &appsv1.DaemonSet{}
+	err = t.Client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, fuse)
+
+	return fuse, err
+}
+
+func (t *ThinEngine) GetRunningPodsOfDaemonset(dsName string, namespace string) (pods []corev1.Pod, err error) {
+	ds, err := t.getDaemonset(dsName, namespace)
+	if err != nil {
+		return pods, err
+	}
+
+	selector := ds.Spec.Selector.MatchLabels
+
+	pods = []corev1.Pod{}
+	podList := &corev1.PodList{}
+	err = t.Client.List(context.TODO(), podList, options.InNamespace(namespace), options.MatchingLabels(selector))
+	if err != nil {
+		return pods, err
+	}
+
+	for _, pod := range podList.Items {
+		if !podutil.IsPodReady(&pod) {
+			t.Log.Info("Skip the pod because it's not ready", "pod", pod.Name, "namespace", pod.Namespace)
+			continue
+		}
+		pods = append(pods, pod)
+	}
+
+	return pods, nil
+}
+
+func (t *ThinEngine) getDataSetFileNum() (string, error) {
+	fileCount, err := t.TotalFileNums()
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(fileCount, 10), err
 }

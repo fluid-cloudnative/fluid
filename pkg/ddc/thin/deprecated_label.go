@@ -17,6 +17,5 @@
 package thin
 
 func (t *ThinEngine) HasDeprecatedCommonLabelName() (deprecated bool, err error) {
-	// todo
 	return false, nil
 }
