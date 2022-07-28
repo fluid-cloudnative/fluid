@@ -32,7 +32,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	var pods []v1.Pod
 	// enterprise edition use cache of workers which form a cache group, while community edition use cache of fuse pod whose cache if no-sharing
 	containerName := common.JuiceFSWorkerContainer
-	if edition == "enterprise" {
+	if edition == EnterpriseEdition {
 		stsName := j.getWorkerName()
 		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
 		if err != nil || len(pods) == 0 {
@@ -70,7 +70,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		totalCacheMissThroughput += p.blockCacheMissBytes
 	}
 
-	if edition == "enterprise" {
+	if edition == EnterpriseEdition {
 		// caches = total cache of worker pod num
 		states.cached = utils.BytesSize(float64(totalCache))
 	} else {
