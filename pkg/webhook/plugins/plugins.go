@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/mountpropagationinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/requirenodeswithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/requirenodewithfuse"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,6 +65,7 @@ func Registry(client client.Client) plugins {
 		},
 		podWithDatasetHandler: []MutatingHandler{
 			requirenodewithfuse.NewPlugin(client),
+			requirenodeswithcache.NewPlugin(client),
 			prefernodeswithcache.NewPlugin(client),
 			mountpropagationinjector.NewPlugin(client),
 		}, serverlessPodHandler: []MutatingHandler{
