@@ -198,7 +198,7 @@ nginx-1   node.172.16.1.84
 
 ## 运行示例3: 创建挂载数据集的Pod，通过指定Label将Pod调度到挂载数据集的节点
 **创建Pod**
-metadata中指定label，`fluid.io/dataset.fusedemo.sched: required`表明该Pod需要被调度到数据集 hbase 的缓存节点上。
+metadata中指定label（格式`fluid.io/dataset.{dataset_name}.sched: required`），如`fluid.io/dataset.hbase.sched: required`表明该Pod需要被调度到数据集 hbase 的缓存节点上。
 ```shell
 $ cat<<EOF >nginx-3.yaml
 apiVersion: v1
@@ -206,7 +206,7 @@ kind: Pod
 metadata:
   name: nginx-3
   labels:
-    fluid.io/dataset.fusedemo.sched: required
+    fluid.io/dataset.hbase.sched: required
 spec:
   containers:
     - name: nginx-3
@@ -233,7 +233,7 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
         - matchExpressions:
-          - key: fluid.io/s-default-fusedemo
+          - key: fluid.io/s-default-hbase
             operator: In
             values:
             - "true"
