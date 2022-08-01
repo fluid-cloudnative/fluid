@@ -21,11 +21,18 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sync"
 	"time"
 
@@ -60,6 +67,20 @@ func (r *ThinRuntimeReconciler) ManagedResource() client.Object {
 			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 		},
 	}
+}
+
+// NewRuntimeReconciler create controller for watching runtime custom resources created
+func NewRuntimeReconciler(client client.Client,
+	log logr.Logger,
+	scheme *runtime.Scheme,
+	recorder record.EventRecorder) *ThinRuntimeReconciler {
+	r := &ThinRuntimeReconciler{
+		Scheme:  scheme,
+		mutex:   &sync.Mutex{},
+		engines: map[string]base.Engine{},
+	}
+	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, log, recorder)
+	return r
 }
 
 //+kubebuilder:rbac:groups=data.fluid.io,resources=thinruntimes,verbs=get;list;watch;create;update;patch;delete
@@ -100,9 +121,27 @@ func (r *ThinRuntimeReconciler) Reconcile(context context.Context, req ctrl.Requ
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ThinRuntimeReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
-		Complete(r)
+func (r *ThinRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
+	if eventDriven {
+		return watch.SetupWatcherWithReconciler(mgr, options, r)
+	} else {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.ThinRuntime{}).
+			Complete(r)
+	}
+}
+
+func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		Scheme: scheme,
+		SelectorsByObject: cache.SelectorsByObject{
+			&appsv1.StatefulSet{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.App: common.ThinRuntime,
+			})},
+			&appsv1.DaemonSet{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.App: common.ThinRuntime,
+			})},
+		},
+	})
 }

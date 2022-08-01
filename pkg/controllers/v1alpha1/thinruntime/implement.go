@@ -30,8 +30,8 @@ const (
 )
 
 // getRuntime gets the runtime
-func (r *ThinRuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.JuiceFSRuntime, error) {
-	var runtime datav1alpha1.JuiceFSRuntime
+func (r *ThinRuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.ThinRuntime, error) {
+	var runtime datav1alpha1.ThinRuntime
 	if err := r.Get(ctx, ctx.NamespacedName, &runtime); err != nil {
 		return nil, err
 	}

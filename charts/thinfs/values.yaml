@@ -1,6 +1,5 @@
 # This should not be modified in the usual case.
-fullnameOverride: thinfs
-edition: community
+fullnameOverride: thin
 
 owner:
   enabled: false
