@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -38,7 +39,10 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JuiceFSEngine{Log: fake.NullLogger()}
-		engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
+		err := engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
 		if result, found := test.juicefsValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
@@ -47,28 +51,69 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 
 func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+	resources.Requests = make(corev1.ResourceList)
+	resources.Requests[corev1.ResourceMemory] = resource.MustParse("2Gi")
+
+	result := resource.MustParse("20Gi")
 
 	var tests = []struct {
-		runtime      *datav1alpha1.JuiceFSRuntime
-		juicefsValue *JuiceFS
+		runtime       *datav1alpha1.JuiceFSRuntime
+		juicefsValue  *JuiceFS
+		wantedRequest string
 	}{
-		{&datav1alpha1.JuiceFSRuntime{
-			Spec: datav1alpha1.JuiceFSRuntimeSpec{
-				Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-					Resources: resources,
+		{
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+						Resources: resources,
+					},
 				},
 			},
-		}, &JuiceFS{}},
+			juicefsValue:  &JuiceFS{},
+			wantedRequest: "2Gi",
+		},
+		{
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test2",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+						Resources: resources,
+					},
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							MediumType: common.Memory,
+							Quota:      &result,
+						}},
+					},
+				},
+			},
+			juicefsValue: &JuiceFS{
+				Edition: EnterpriseEdition,
+			},
+			wantedRequest: "20Gi",
+		},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: fake.NullLogger()}
+		client := fake.NewFakeClientWithScheme(testScheme, test.runtime)
+		engine := &JuiceFSEngine{
+			Log:    fake.NullLogger(),
+			Client: client,
+			name:   test.runtime.Name,
+		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
-		engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
-		if test.juicefsValue.Worker.Resources.Limits[corev1.ResourceMemory] != "2Gi" {
-			t.Errorf("expected 22Gi, got %v", test.juicefsValue.Worker.Resources.Limits[corev1.ResourceMemory])
+		err := engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
+		if err != nil {
+			t.Error(err)
+		}
+		quantity := test.juicefsValue.Worker.Resources.Requests[corev1.ResourceMemory]
+		if quantity != test.wantedRequest {
+			t.Errorf("expected 22Gi, got %v", test.juicefsValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
 	}
 }
@@ -84,7 +129,10 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JuiceFSEngine{Log: fake.NullLogger()}
-		engine.transformResourcesForFuse(test.runtime, test.juicefsValue)
+		err := engine.transformResourcesForFuse(test.runtime, test.juicefsValue)
+		if err != nil {
+			t.Error(err)
+		}
 		if result, found := test.juicefsValue.Fuse.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
@@ -94,8 +142,8 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 func TestTransformResourcesForFuseWithValue(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+	resources.Requests = make(corev1.ResourceList)
+	resources.Requests[corev1.ResourceMemory] = resource.MustParse("2Gi")
 
 	result := resource.MustParse("20Gi")
 
@@ -104,6 +152,9 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		juiceValue *JuiceFS
 	}{
 		{&datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test",
+			},
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{
 					Resources: resources,
@@ -115,14 +166,24 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 					}},
 				},
 			},
+			Status: datav1alpha1.RuntimeStatus{},
 		}, &JuiceFS{}},
 	}
 	for _, test := range tests {
-		engine := &JuiceFSEngine{Log: fake.NullLogger()}
+		client := fake.NewFakeClientWithScheme(testScheme, test.runtime)
+		engine := &JuiceFSEngine{
+			Log:    fake.NullLogger(),
+			Client: client,
+			name:   test.runtime.Name,
+		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
 		engine.UnitTest = true
-		engine.transformResourcesForFuse(test.runtime, test.juiceValue)
-		if test.juiceValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
+		err := engine.transformResourcesForFuse(test.runtime, test.juiceValue)
+		if err != nil {
+			t.Error(err)
+		}
+		quantity := test.juiceValue.Fuse.Resources.Requests[corev1.ResourceMemory]
+		if quantity != "20Gi" {
 			t.Errorf("expected 22Gi, got %v", test.juiceValue.Fuse.Resources.Limits[corev1.ResourceMemory])
 		}
 	}
