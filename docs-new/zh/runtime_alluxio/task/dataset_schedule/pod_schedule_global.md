@@ -191,7 +191,7 @@ spec:
 ```shell
 $ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx-1   node.172.16.1.84
+nginx-2   node.172.16.1.84
 ```
 
 从结果上看, 可以看到pod被调度到了有数据缓存（即运行Alluxio Worker Pod）的节点。
@@ -245,7 +245,7 @@ spec:
 ```shell
 $ kubectl get pods nginx-3 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
-nginx-1   node.172.16.1.84
+nginx-3   node.172.16.1.84
 ```
 
 从结果上看, 可以看到pod被调度到了有数据缓存（即运行Alluxio Worker Pod）的节点。
