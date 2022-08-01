@@ -115,7 +115,7 @@ func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile 
 		if len(v) != 0 {
 			optionList = append(optionList, fmt.Sprintf("%s=%s", k, v))
 		} else {
-			optionList = append(optionList, fmt.Sprintf("%s", k))
+			optionList = append(optionList, k)
 		}
 	}
 	if len(optionList) != 0 {
