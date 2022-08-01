@@ -27,8 +27,6 @@ import (
 )
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
-	value.Fuse = Fuse{}
-
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
 	}
@@ -41,7 +39,6 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
 
 	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
-	value.Fuse.NodeSelector = map[string]string{}
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
 	var tiredStoreLevel *datav1alpha1.Level
@@ -58,19 +55,27 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		return err
 	}
 
-	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-	} else {
-		value.Fuse.NodeSelector = map[string]string{}
-	}
-	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
+	j.transformFuseNodeSelector(runtime, value)
 	value.Fuse.Enabled = true
 
-	j.transformResourcesForFuse(runtime, value)
+	err = j.transformResourcesForFuse(runtime, value)
+	if err != nil {
+		return err
+	}
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
 	return
+}
+
+func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) {
+	value.Fuse.NodeSelector = map[string]string{}
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+	}
+
+	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
 }
 
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS) (map[string]string, error) {

@@ -49,7 +49,7 @@ worker:
     limits:
 #      cpu: "4"
 #      memory: "4G"
-  replicaCount: 0
+  replicas: 0
 
 configs:
   name: ""

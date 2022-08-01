@@ -17,81 +17,166 @@ limitations under the License.
 package juicefs
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-
+	"context"
+	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 )
 
-func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) {
-
-	if runtime.Spec.Fuse.Resources.Limits == nil {
-		j.Log.Info("skip setting memory limit")
-		return
+func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+	value.Fuse.Resources = common.Resources{
+		Requests: common.ResourceList{},
+		Limits:   common.ResourceList{},
 	}
-
-	if _, found := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; !found {
-		j.Log.Info("skip setting memory limit")
-		return
-	}
-
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
-
-	runtimeInfo, err := j.getRuntimeInfo()
-	if err != nil {
-		j.Log.Error(err, "failed to transformResourcesForFuse")
-	}
-	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
-
-	j.Log.Info("transformFuse", "storageMap", storageMap)
-
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("50Gi")
-	if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
-	}
-
-	for key, requirement := range storageMap {
-		if value.Fuse.Resources.Limits == nil {
-			value.Fuse.Resources.Limits = make(common.ResourceList)
+	if runtime.Spec.Fuse.Resources.Limits != nil {
+		j.Log.Info("setting fuse Resources limit")
+		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceCPU]
+			value.Fuse.Resources.Limits[corev1.ResourceCPU] = quantity.String()
 		}
-		if key == common.MemoryCacheStore {
-			req := requirement.DeepCopy()
-
-			memLimit.Add(req)
-
-			j.Log.Info("update the requiremnet for memory", "requirement", memLimit)
-
+		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
+			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
 		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
-	}
-	if value.Fuse.Resources.Limits != nil {
-		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
 	}
 
+	if runtime.Spec.Fuse.Resources.Requests != nil {
+		j.Log.Info("setting fuse Resources request")
+		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceCPU]
+			value.Fuse.Resources.Requests[corev1.ResourceCPU] = quantity.String()
+		}
+		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
+			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
+	}
+
+	// mem set request
+	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 {
+		userQuota := runtime.Spec.TieredStore.Levels[0].Quota
+		if userQuota == nil {
+			return
+		}
+		needUpdated := false
+		if runtime.Spec.Fuse.Resources.Requests == nil ||
+			runtime.Spec.Fuse.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Fuse.Resources.Requests.Memory().IsZero() ||
+			userQuota.Cmp(*runtime.Spec.Fuse.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
+		}
+		if !runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
+			userQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than master limits memory %v",
+				userQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
+		}
+
+		if needUpdated {
+			value.Fuse.Resources.Requests[corev1.ResourceMemory] = userQuota.String()
+			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := j.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Fuse.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Fuse.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Fuse.Resources.Requests[corev1.ResourceMemory] = *userQuota
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = j.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return
 }
 
-func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) {
-	if runtime.Spec.Worker.Resources.Limits == nil {
-		j.Log.Info("skip setting memory limit")
-		return
+func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+	value.Worker.Resources = common.Resources{
+		Requests: common.ResourceList{},
+		Limits:   common.ResourceList{},
+	}
+	if runtime.Spec.Worker.Resources.Limits != nil {
+		j.Log.Info("setting worker Resources limit")
+		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
+			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceCPU]
+			value.Worker.Resources.Limits[corev1.ResourceCPU] = quantity.String()
+		}
+		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
+			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
+			value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+		}
 	}
 
-	if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
-		j.Log.Info("skip setting memory limit")
-		return
+	if runtime.Spec.Worker.Resources.Requests != nil {
+		j.Log.Info("setting worker Resources request")
+		if runtime.Spec.Worker.Resources.Requests.Cpu() != nil {
+			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceCPU]
+			value.Worker.Resources.Requests[corev1.ResourceCPU] = quantity.String()
+		}
+		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
+			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
 	}
 
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
+	// mem set request in enterprise edition
+	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && value.Edition == EnterpriseEdition {
+		userQuota := runtime.Spec.TieredStore.Levels[0].Quota
+		if userQuota == nil {
+			return
+		}
+		needUpdated := false
+		if runtime.Spec.Worker.Resources.Requests == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
+			userQuota.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
+		}
+		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
+			userQuota.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the worker memory tierdStore's size %v is greater than master limits memory %v",
+				userQuota, runtime.Spec.Worker.Resources.Limits.Memory())
+		}
 
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+		if needUpdated {
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = userQuota.String()
+			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := j.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Worker.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Worker.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Worker.Resources.Requests[corev1.ResourceMemory] = *userQuota
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = j.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+		}
 	}
+	return
 }
