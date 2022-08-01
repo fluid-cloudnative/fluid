@@ -20,7 +20,7 @@ metadata:
       uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
-  replicas: {{ .Values.worker.replicaCount }}
+  replicas: {{ .Values.worker.replicas }}
   serviceName: {{ template "juicefs.fullname" . }}-worker
   selector:
     matchLabels:
@@ -56,16 +56,7 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.worker.resources  }}
           resources:
-            {{- if .Values.worker.resources.limits }}
-            limits:
-              cpu: {{ .Values.worker.resources.limits.cpu }}
-              memory: {{ .Values.worker.resources.limits.memory }}
-            {{- end }}
-            {{- if .Values.worker.resources.requests }}
-            requests:
-              cpu: {{ .Values.worker.resources.requests.cpu }}
-              memory: {{ .Values.worker.resources.requests.memory }}
-            {{- end }}
+{{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
           securityContext:

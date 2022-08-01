@@ -67,6 +67,14 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 		{&datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+				Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+					Replicas:     2,
+					Resources:    corev1.ResourceRequirements{},
+					Options:      nil,
+					Env:          nil,
+					Enabled:      false,
+					NodeSelector: nil,
+				},
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{

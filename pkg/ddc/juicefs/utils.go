@@ -37,6 +37,18 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 )
 
+func (j *JuiceFSEngine) getTieredStoreType(runtime *datav1alpha1.JuiceFSRuntime) int {
+	var mediumType int
+	for _, level := range runtime.Spec.TieredStore.Levels {
+		mediumType = common.GetDefaultTieredStoreOrder(level.MediumType)
+	}
+	return mediumType
+}
+
+func (j *JuiceFSEngine) hasTieredStore(runtime *datav1alpha1.JuiceFSRuntime) bool {
+	return len(runtime.Spec.TieredStore.Levels) > 0
+}
+
 func (j *JuiceFSEngine) getDataSetFileNum() (string, error) {
 	fileCount, err := j.TotalFileNums()
 	if err != nil {

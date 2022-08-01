@@ -46,14 +46,16 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	value.FullnameOverride = j.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
 
-	// transform the workers
-	err = j.transformWorkers(runtime, value)
+	// transform the fuse
+	value.Fuse = Fuse{}
+	value.Worker = Worker{}
+	err = j.transformFuse(runtime, dataset, value)
 	if err != nil {
 		return
 	}
 
-	// transform the fuse
-	err = j.transformFuse(runtime, dataset, value)
+	// transform the workers
+	err = j.transformWorkers(runtime, value)
 	if err != nil {
 		return
 	}
@@ -64,7 +66,6 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 }
 
 func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	value.Worker = Worker{}
 
 	image := runtime.Spec.JuiceFSVersion.Image
 	imageTag := runtime.Spec.JuiceFSVersion.ImageTag
@@ -75,8 +76,10 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 
 	value.Image, value.ImageTag, value.ImagePullPolicy = j.parseRuntimeImage(image, imageTag, imagePullPolicy)
 
-	if len(value.Worker.NodeSelector) == 0 {
-		value.Worker.NodeSelector = map[string]string{}
+	// nodeSelector
+	value.Worker.NodeSelector = map[string]string{}
+	if len(runtime.Spec.Worker.NodeSelector) > 0 {
+		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
 	}
 
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
@@ -87,7 +90,7 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 		value.Worker.CacheDir = DefaultCacheDir
 	}
 
-	j.transformResourcesForWorker(runtime, value)
+	err = j.transformResourcesForWorker(runtime, value)
 	return
 }
 
