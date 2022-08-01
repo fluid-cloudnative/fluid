@@ -39,7 +39,10 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JuiceFSEngine{Log: fake.NullLogger()}
-		engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
+		err := engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
 		if result, found := test.juicefsValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
