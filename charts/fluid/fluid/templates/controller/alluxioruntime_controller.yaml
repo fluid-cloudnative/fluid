@@ -17,6 +17,10 @@ spec:
       labels:
         control-plane: alluxioruntime-controller
     spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: alluxioruntime-controller
       affinity:
         nodeAffinity:

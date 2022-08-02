@@ -17,6 +17,10 @@ spec:
       labels:
         control-plane: juicefsruntime-controller
     spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: juicefsruntime-controller
       affinity:
         nodeAffinity:
