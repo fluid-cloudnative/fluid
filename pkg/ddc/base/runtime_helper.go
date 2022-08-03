@@ -195,9 +195,13 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 	template.FuseContainer.Resources.Requests[corev1.ResourceName(getFuseDeviceResourceName())] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
-	privilegedContainer := false
-	template.FuseContainer.SecurityContext.Privileged = &privilegedContainer
-	template.FuseContainer.SecurityContext.Capabilities.Add = utils.TrimCapabilities(template.FuseContainer.SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+	if template.FuseContainer.SecurityContext != nil {
+		privilegedContainer := false
+		template.FuseContainer.SecurityContext.Privileged = &privilegedContainer
+		if template.FuseContainer.SecurityContext.Capabilities != nil {
+			template.FuseContainer.SecurityContext.Capabilities.Add = utils.TrimCapabilities(template.FuseContainer.SecurityContext.Capabilities.Add, []string{"SYS_ADMIN"})
+		}
+	}
 }
 
 func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
