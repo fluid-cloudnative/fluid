@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prefernodeswithcache
+package nodeaffinitywithcache
 
 import (
 	"reflect"
@@ -26,6 +26,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func TestPlugin(t *testing.T) {
+	var (
+		client client.Client
+	)
+	plugin := NewPlugin(client)
+	if plugin.GetName() != NAME {
+		t.Errorf("GetName expect %v, got %v", NAME, plugin.GetName())
+	}
+}
 
 func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
@@ -69,7 +79,51 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 }
 
-func TestMutate(t *testing.T) {
+func TestMutateOnlyRequired(t *testing.T) {
+	var (
+		client   client.Client
+		schedPod *corev1.Pod
+	)
+
+	plugin := NewPlugin(client)
+	runtimeInfo, err := base.BuildRuntimeInfo("test10-ds", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	// enable preferred scheduling
+	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	schedPod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"fluid.io/dataset.test10-ds.sched": "required",
+			},
+		},
+	}
+
+	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
+	if err == nil {
+		t.Errorf("expect error is nil")
+	}
+
+	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"test10-ds": runtimeInfo})
+	if err != nil {
+		t.Errorf("fail to mutate pod with error %v", err)
+	}
+
+	if len(schedPod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != 1 {
+		t.Errorf("fail to mutate pod, not add node affinity")
+	}
+
+	if schedPod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
+		t.Errorf("fail to mutate pod, not need to add preferred scheduling term")
+	}
+}
+
+func TestMutateOnlyPrefer(t *testing.T) {
 	var (
 		client client.Client
 		pod    *corev1.Pod
@@ -108,7 +162,55 @@ func TestMutate(t *testing.T) {
 
 	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
 	if err == nil {
-		t.Errorf("expect error is not nil")
+		t.Errorf("expect error is nil")
 	}
 
+}
+
+func TestMutateBothRequiredAndPrefer(t *testing.T) {
+	var (
+		client   client.Client
+		schedPod *corev1.Pod
+	)
+
+	plugin := NewPlugin(client)
+	runtimeInfo, err := base.BuildRuntimeInfo("test10-ds", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	// set global true to enable prefer
+	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	schedPod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"fluid.io/dataset.test10-ds.sched": "required",
+				"fluid.io/dataset.no_exist.sched":  "required",
+			},
+		},
+	}
+	runtimeInfos := map[string]base.RuntimeInfoInterface{
+		"test10-ds":           runtimeInfo,
+		"prefer_dataset_name": runtimeInfo,
+	}
+	_, err = plugin.Mutate(schedPod, runtimeInfos)
+
+	if err != nil {
+		t.Errorf("fail to mutate pod with error %v", err)
+	}
+
+	if len(schedPod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != 1 {
+		t.Errorf("fail to mutate pod, not add node required scheduling term")
+	}
+
+	if len(schedPod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != 1 {
+		t.Errorf("fail to mutate pod, not add node preferred scheduling term")
+	}
+
+	if len(runtimeInfos) != 2 {
+		t.Errorf("mutate should not modify the parameter runtimeInfo")
+	}
 }
