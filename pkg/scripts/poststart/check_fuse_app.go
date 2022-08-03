@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
+	"strings"
 )
 
 const (
@@ -63,7 +64,7 @@ func (a *ScriptGeneratorForApp) BuildConfigmap(ownerReference metav1.OwnerRefere
 }
 
 func (a *ScriptGeneratorForApp) getConfigmapName() string {
-	return a.name + "-" + a.mountType + "-app-" + configMapName
+	return a.name + "-" + strings.ToLower(a.mountType) + "-app-" + configMapName
 }
 
 func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPath string) (handler *corev1.LifecycleHandler) {
