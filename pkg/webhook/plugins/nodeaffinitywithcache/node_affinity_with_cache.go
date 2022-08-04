@@ -106,9 +106,9 @@ func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map
 	}
 
 	for name := range boundDataSetNames {
-		// labeled dataset has no runtime, logging info instead of return error
-		runtimeInfo := runtimeInfos[name]
-		if runtimeInfo == nil {
+		// labeled dataset has no runtime(maybe wrong name), logging info instead of return error
+		runtimeInfo, ok := runtimeInfos[name]
+		if ok == false {
 			log.V(1).Info("labeled dataset has no runtime")
 			continue
 		}

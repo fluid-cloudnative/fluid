@@ -104,10 +104,21 @@ func TestMutateOnlyRequired(t *testing.T) {
 		},
 	}
 
-	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
-	if err == nil {
+	// labeled dataset not exist, no err
+	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
+	if err != nil {
 		t.Errorf("expect error is nil")
 	}
+	// reset injected scheduling terms
+	schedPod.Spec = corev1.PodSpec{}
+
+	// labeled dataset exist with nil value, return err
+	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"test10-ds": nil})
+	if err == nil {
+		t.Errorf("expect error is not nil")
+	}
+	// reset injected scheduling terms
+	schedPod.Spec = corev1.PodSpec{}
 
 	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"test10-ds": runtimeInfo})
 	if err != nil {
@@ -121,6 +132,8 @@ func TestMutateOnlyRequired(t *testing.T) {
 	if schedPod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
 		t.Errorf("fail to mutate pod, not need to add preferred scheduling term")
 	}
+	// reset injected scheduling terms
+	schedPod.Spec = corev1.PodSpec{}
 }
 
 func TestMutateOnlyPrefer(t *testing.T) {
