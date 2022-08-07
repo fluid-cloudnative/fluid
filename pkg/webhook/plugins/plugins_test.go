@@ -23,7 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithcache"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/nodeaffinitywithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -131,7 +131,7 @@ func TestPods(t *testing.T) {
 		}
 
 		// test of plugin preferNodesWithCache
-		plugin = prefernodeswithcache.NewPlugin(c)
+		plugin = nodeaffinitywithcache.NewPlugin(c)
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
 		if err != nil {
@@ -187,7 +187,7 @@ func TestRegistry(t *testing.T) {
 
 	plugins := Registry(client)
 	if len(plugins.GetPodWithDatasetHandler()) != 3 {
-		t.Errorf("expect GetPodWithDatasetHandler len=2, got %v", plugins.GetPodWithDatasetHandler())
+		t.Errorf("expect GetPodWithDatasetHandler len=3, got %v", plugins.GetPodWithDatasetHandler())
 	}
 
 	if len(plugins.GetPodWithoutDatasetHandler()) != 1 {
