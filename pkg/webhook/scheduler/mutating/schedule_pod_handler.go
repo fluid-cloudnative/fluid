@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -118,10 +119,21 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	}
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+
+	// get datasets used as PVC
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, namespace, setupLog)
 	if err != nil {
 		return err
+	}
+
+	// get datasets used as HCFS
+	datasetsUsedAsHCFS, find := pod.Annotations[common.DatasetUseAsHCFS]
+	if find {
+		runtimeInfos, err = a.getRuntimeInfosAsUCFS(datasetsUsedAsHCFS, namespace, runtimeInfos, setupLog)
+		if err != nil {
+			return err
+		}
 	}
 
 	// get plugins Registry and get the need plugins list from it
@@ -230,4 +242,34 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 		}
 	}
 	return
+}
+
+// getRuntimeInfosAsUCFS build the runtimeInfos from the annotation of Pod
+func (a *CreateUpdatePodForSchedulingHandler) getRuntimeInfosAsUCFS(datasetsUsedAsHCFS string,
+	namespace string,
+	runtimeInfos map[string]base.RuntimeInfoInterface,
+	setupLog logr.Logger) (map[string]base.RuntimeInfoInterface, error) {
+
+	datasetNames := strings.Split(datasetsUsedAsHCFS, ",")
+
+	for _, datasetName := range datasetNames {
+		datasetName = strings.TrimSpace(datasetName)
+		if len(datasetName) == 0 {
+			continue
+		}
+		if _, find := runtimeInfos[datasetName]; !find {
+			runtimeInfo, err := base.GetRuntimeInfo(a.Client, datasetName, namespace)
+			if err != nil {
+				setupLog.Error(err,
+					"unable to get runtimeInfo, get failure",
+					"runtime",
+					datasetName,
+					"namespace",
+					namespace)
+				return runtimeInfos, err
+			}
+			runtimeInfos[datasetName] = runtimeInfo
+		}
+	}
+	return runtimeInfos, nil
 }

@@ -175,7 +175,7 @@ hbase   443.49MiB        0.00B    4.00GiB          0.0%                Bound   a
 
 For the complete test code, please refer to [samples/hdfs](../../../samples/hdfs). We made the test code into a mirror to facilitate the next test. The mirror address is registry.cn-hangzhou.aliyuncs.com/qiulingwei/fluid-hdfs-demo:1.2.0
 
-**查看待创建的测试作业**
+**View the job to be created**
 
 ```shell
 $ cat<<EOF >app.yaml
@@ -185,6 +185,9 @@ metadata:
   name: fluid-hdfs-demo
 spec:
   template:
+    metadata:
+        annotations:
+          fluid.io/dataset-useas-hcfs: hadoop
     spec:
       restartPolicy: OnFailure
       containers:
@@ -198,7 +201,11 @@ EOF
 ```
 Here, you need to replace 19998 in the environment variable with the actual port in the HCFS (Hadoop Compatible FileSystem) URL just queried
 
-**启动测试作业**
+After open pod_schedule, annotation fluid.io/dataset-useas-hcfs will make Fluid knowning what datasets this pod need to visit
+Fluid will inject scheduling information into the Pod through the webhook mechanism in combination with the Pod scheduling strategy arranged according to the dataset
+Also，Fluid will inject the HDFS_URL alluxio://{HCFS URL}/{DATASET_NAME} into the env {DATASET_NAME}-ADDRESS of Pod
+
+**Start the test job**
 
 ```shell
 $ kubectl apply -f app.yaml
@@ -215,7 +222,7 @@ NAME                            READY   STATUS      RESTARTS   AGE
 fluid-hdfs-demo-8q9b7           0/1     Completed   0          14m
 ```
 
-**查看任务执行时间**
+**View the time cost of job**
 
 ```shell
 $ kubectl logs fluid-hdfs-demo-8q9b7

@@ -15,7 +15,14 @@ limitations under the License.
 
 package utils
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"context"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
 //InjectPreferredSchedulingTerms inject the preferredSchedulingTerms into a pod
 func InjectPreferredSchedulingTerms(preferredSchedulingTerms []corev1.PreferredSchedulingTerm, pod *corev1.Pod) {
@@ -83,4 +90,61 @@ func InjectMountPropagation(runtimeNames []string, pod *corev1.Pod) {
 			}
 		}
 	}
+}
+
+// InjectHCFSAddresses inject HCFS addresses into pods according to runtimeNames
+func InjectHCFSAddresses(c client.Client, runtimeNames []string, pod *corev1.Pod) (err error) {
+	namespace := pod.GetNamespace()
+	if len(namespace) == 0 {
+		namespace = corev1.NamespaceDefault
+	}
+
+	for _, runtimeName := range runtimeNames {
+		var url string
+		dataset := v1alpha1.Dataset{}
+
+		if err = c.Get(context.TODO(), client.ObjectKey{Name: runtimeName, Namespace: namespace}, &dataset); err != nil {
+			return
+		} else if dataset.Status.HCFSStatus == nil {
+			err = fmt.Errorf("dataset %s has not recorded the HCFS url", dataset.GetName())
+			log.Error(err, "fail to get HCFS url")
+			return
+		} else {
+			if dataset.Status.HCFSStatus.Endpoint == "" {
+				err = fmt.Errorf("dataset %s has not recorded the HCFS url", dataset.GetName())
+				log.Error(err, "fail to get HCFS url")
+				return
+			} else {
+				url = dataset.Status.HCFSStatus.Endpoint
+			}
+		}
+
+		for i, container := range pod.Spec.InitContainers {
+			pod.Spec.InitContainers[i].Env = InjectHCFSAddressIntoEnv(runtimeName, url, container.Env)
+		}
+		for i, container := range pod.Spec.Containers {
+			pod.Spec.Containers[i].Env = InjectHCFSAddressIntoEnv(runtimeName, url, container.Env)
+		}
+	}
+	return nil
+}
+
+// InjectHCFSAddressIntoEnv inject a HCFS address into a pod's env
+func InjectHCFSAddressIntoEnv(runtimeName, url string, envVars []corev1.EnvVar) []corev1.EnvVar {
+
+	EnvName := runtimeName + common.URLPostfix
+
+	find := false
+	for i, env := range envVars {
+		if env.Name == EnvName {
+			envVars[i].Value = url
+			find = true
+		}
+	}
+	if !find {
+		envVars = append(envVars, corev1.EnvVar{Name: EnvName, Value: url})
+
+	}
+
+	return envVars
 }

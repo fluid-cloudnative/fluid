@@ -88,6 +88,13 @@ func TestMutate(t *testing.T) {
 			Name:      "test",
 			Namespace: "test",
 		},
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: "test",
+				},
+			},
+		},
 	}
 
 	shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
@@ -105,8 +112,8 @@ func TestMutate(t *testing.T) {
 	}
 
 	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
-	if err == nil {
-		t.Errorf("expect error is not nil")
+	if err != nil {
+		t.Errorf("expect error is nil")
 	}
 
 }

@@ -18,6 +18,7 @@ package requirenodewithfuse
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -50,14 +51,26 @@ func (p *RequireNodeWithFuse) GetName() string {
 
 // Mutate mutates the pod based on runtimeInfo, this action shouldn't stop other handler
 func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
-	// if the pod has no mounted datasets, should exit and call other plugins
+	// if the pod doesn't visit datasets, should exit and call other plugins
 	if len(runtimeInfos) == 0 {
 		return
 	}
 
-	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
+	var requiredSchedulingTerms []corev1.NodeSelectorTerm
 
 	for _, runtime := range runtimeInfos {
+		pvcNames := kubeclient.GetPVCNamesFromPod(pod)
+		find := false
+		for _, pvcName := range pvcNames {
+			if pvcName == runtime.GetName() {
+				find = true
+				break
+			}
+		}
+		if !find {
+			continue
+		}
+
 		term, err := getRequiredSchedulingTerm(runtime)
 		if err != nil {
 			return true, fmt.Errorf("should stop mutating pod %s in namespace %s due to %v",
