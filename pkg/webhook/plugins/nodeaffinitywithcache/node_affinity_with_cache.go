@@ -33,14 +33,14 @@ import (
    else, it should prefer nodes with the mounted dataset on them.
 */
 
-const NAME = "NodeAffinityWithCache"
+const Name = "NodeAffinityWithCache"
 
 var (
 	log logr.Logger
 )
 
 func init() {
-	log = ctrl.Log.WithName(NAME)
+	log = ctrl.Log.WithName(Name)
 }
 
 type NodeAffinityWithCache struct {
@@ -51,7 +51,7 @@ type NodeAffinityWithCache struct {
 func NewPlugin(c client.Client) *NodeAffinityWithCache {
 	return &NodeAffinityWithCache{
 		client: c,
-		name:   NAME,
+		name:   Name,
 	}
 }
 
