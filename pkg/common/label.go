@@ -15,6 +15,8 @@ limitations under the License.
 
 package common
 
+import "regexp"
+
 const (
 	// LabelAnnotationPrefix is the prefix of every labels and annotations added by the controller.
 	LabelAnnotationPrefix = "fluid.io/"
@@ -30,6 +32,11 @@ const (
 
 	// fluid adminssion webhook inject flag
 	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
+)
+
+var (
+	// fluid cache label for scheduling pod, format: 'fluid.io/dataset.{dataset name}.sched]'
+	LabelAnnotationPodSchedRegex = regexp.MustCompile("^" + LabelAnnotationDataset + "\\.([A-Za-z0-9.-]*)\\.sched$")
 )
 
 type OperationType string
