@@ -30,7 +30,7 @@ import (
 
 */
 
-const NAME = "PreferNodesWithoutCache"
+const Name = "PreferNodesWithoutCache"
 
 type PreferNodesWithoutCache struct {
 	client client.Client
@@ -40,7 +40,7 @@ type PreferNodesWithoutCache struct {
 func NewPlugin(c client.Client) *PreferNodesWithoutCache {
 	return &PreferNodesWithoutCache{
 		client: c,
-		name:   NAME,
+		name:   Name,
 	}
 }
 

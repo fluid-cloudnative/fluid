@@ -30,7 +30,7 @@ import (
    They should require nods with fuse.
 */
 
-const NAME = "RequireNodeWithFuse"
+const Name = "RequireNodeWithFuse"
 
 type RequireNodeWithFuse struct {
 	client client.Client
@@ -40,7 +40,7 @@ type RequireNodeWithFuse struct {
 func NewPlugin(c client.Client) *RequireNodeWithFuse {
 	return &RequireNodeWithFuse{
 		client: c,
-		name:   NAME,
+		name:   Name,
 	}
 }
 
