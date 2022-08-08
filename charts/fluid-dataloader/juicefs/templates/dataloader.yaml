@@ -63,8 +63,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: CACHEDIR2
-              value: /test
             {{- range $key, $val := .Values.dataloader.options }}
             {{- if eq $key "cachedir" }}
             - name: CACHEDIR
@@ -101,18 +99,6 @@ spec:
           volumeMounts:
             - mountPath: /scripts
               name: data-load-script
-            {{- range .Values.dataloader.targetPaths }}
-            {{- if .fluidNative }}
-            - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
-              name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
-            {{- end }}
-            {{- end }}
-            {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "cachedir" }}
-            - mountPath: {{ $val | quote }}
-            {{- end }}
-            {{- end }}
-              name: cachedir
       volumes:
         - name: data-load-script
           configMap:
@@ -121,17 +107,3 @@ spec:
               - key: dataloader.distributedLoad
                 path: juicefs_dataload.sh
                 mode: 365
-        {{- range .Values.dataloader.targetPaths }}
-        {{- if .fluidNative }}
-        - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
-          hostPath:
-            path: {{ .path }}
-        {{- end }}
-        {{- end }}
-        - name: cachedir
-        {{- range $key, $val := .Values.dataloader.options }}
-        {{- if eq $key "cachedir" }}
-          hostPath:
-            path: {{ $val | quote }}
-        {{- end }}
-        {{- end }}
