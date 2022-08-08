@@ -96,8 +96,8 @@ func TestMutate(t *testing.T) {
 	)
 
 	plugin := NewPlugin(client)
-	if plugin.GetName() != NAME {
-		t.Errorf("GetName expect %v, got %v", NAME, plugin.GetName())
+	if plugin.GetName() != Name {
+		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
 
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})

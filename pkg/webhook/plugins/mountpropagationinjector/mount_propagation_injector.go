@@ -26,10 +26,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const NAME = "MountPropagationInjector"
+const Name = "MountPropagationInjector"
 
 var (
-	log = ctrl.Log.WithName(NAME)
+	log = ctrl.Log.WithName(Name)
 )
 
 type MountPropagationInjector struct {
@@ -40,7 +40,7 @@ type MountPropagationInjector struct {
 func NewPlugin(c client.Client) *MountPropagationInjector {
 	return &MountPropagationInjector{
 		client: c,
-		name:   NAME,
+		name:   Name,
 	}
 }
 
