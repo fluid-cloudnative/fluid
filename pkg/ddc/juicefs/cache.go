@@ -19,32 +19,31 @@ package juicefs
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	"strconv"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // queryCacheStatus checks the cache status
 func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	edition := j.GetEdition()
 
+	if len(j.runtime.Spec.TieredStore.Levels) != 0 {
+		cachesize, e := strconv.ParseUint(strconv.FormatInt(j.runtime.Spec.TieredStore.Levels[0].Quota.Value(), 10), 10, 64)
+		if e != nil {
+			err = e
+			return
+		}
+		states.cacheCapacity = utils.BytesSize(float64(cachesize))
+	}
+
 	var pods []v1.Pod
 	// enterprise edition use cache of workers which form a cache group, while community edition use cache of fuse pod whose cache if no-sharing
 	containerName := common.JuiceFSWorkerContainer
-	if edition == EnterpriseEdition {
-		stsName := j.getWorkerName()
-		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-		if err != nil || len(pods) == 0 {
-			return
-		}
-	} else {
-		containerName = common.JuiceFSFuseContainer
-		stsName := j.getFuseDaemonsetName()
-		pods, err = j.GetRunningPodsOfDaemonset(stsName, j.namespace)
-		if err != nil || len(pods) == 0 {
-			return
-		}
+	stsName := j.getWorkerName()
+	pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	if err != nil || len(pods) == 0 {
+		return
 	}
 
 	podMetrics := []fuseMetrics{}
@@ -86,6 +85,36 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		states.cachedPercentage = "0.0%"
 	}
 
+	err = j.getCacheRatio(edition, &states)
+	return
+}
+
+// get cacheHitRatio & cacheThroughputRatio from fuse pod
+func (j *JuiceFSEngine) getCacheRatio(edition string, states *cacheStates) (err error) {
+	containerName := common.JuiceFSFuseContainer
+	stsName := j.getFuseDaemonsetName()
+	pods, err := j.GetRunningPodsOfDaemonset(stsName, j.namespace)
+	if err != nil || len(pods) == 0 {
+		return
+	}
+
+	podMetrics := []fuseMetrics{}
+	for _, pod := range pods {
+		podMetricStr, err := j.GetPodMetrics(pod.Name, containerName)
+		if err != nil {
+			return err
+		}
+		podMetric := j.parseMetric(podMetricStr, edition)
+		podMetrics = append(podMetrics, podMetric)
+	}
+
+	var totalCacheHits, totalCacheMiss, totalCacheHitThroughput, totalCacheMissThroughput int64
+	for _, p := range podMetrics {
+		totalCacheHits += p.blockCacheHits
+		totalCacheMiss += p.blockCacheMiss
+		totalCacheHitThroughput += p.blockCacheHitsBytes
+		totalCacheMissThroughput += p.blockCacheMissBytes
+	}
 	// cacheHitRatio = total cache hits / (total cache hits + total cache miss)
 	totalCacheCounts := totalCacheHits + totalCacheMiss
 	if totalCacheCounts != 0 {
@@ -101,15 +130,5 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	} else {
 		states.cacheThroughputRatio = "0.0%"
 	}
-
-	if len(j.runtime.Spec.TieredStore.Levels) != 0 {
-		//cacheCapacity = cachesize * numberworker
-		cachesize, e := strconv.ParseUint(j.runtime.Spec.TieredStore.Levels[0].Quota.String(), 10, 64)
-		if e != nil {
-			return
-		}
-		states.cacheCapacity = utils.BytesSize(float64(1024 * 1024 * cachesize * uint64(len(pods))))
-	}
-
 	return
 }

@@ -145,9 +145,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	var cacheDir = DefaultCacheDir
 	if tiredStoreLevel != nil {
 		cacheDir = tiredStoreLevel.Path
-		if tiredStoreLevel.MediumType == common.Memory {
-			cacheDir = "memory"
-		}
 		if tiredStoreLevel.Quota != nil {
 			q := tiredStoreLevel.Quota
 			// juicefs cache-size should be integer in MiB
@@ -161,9 +158,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 	options["cache-dir"] = cacheDir
-	if cacheDir != "memory" {
-		value.Fuse.CacheDir = cacheDir
-	}
 
 	return options, nil
 }
