@@ -286,7 +286,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
-	glog.Infof("NodeStageVolume: NodeStage Successful with VolumeId: %s, and add NodeLabel: %s", req.GetVolumeId(), fuseLabelKey)
+	glog.Infof("NodeStageVolume: NodeStage succeded with VolumeId: %s, and added NodeLabel: %s", req.GetVolumeId(), fuseLabelKey)
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
