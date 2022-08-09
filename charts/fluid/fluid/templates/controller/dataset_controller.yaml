@@ -22,6 +22,10 @@ spec:
       labels:
         control-plane: dataset-controller
     spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: dataset-controller
       affinity:
         nodeAffinity:

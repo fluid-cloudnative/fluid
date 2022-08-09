@@ -4,6 +4,9 @@
 
 workdir: /tmp
 
+image:
+  imagePullSecrets: []
+
 dataset:
   replicas: 1
   controller:

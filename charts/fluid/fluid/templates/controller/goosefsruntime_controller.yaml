@@ -17,6 +17,10 @@ spec:
       labels:
         control-plane: goosefsruntime-controller
     spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: goosefsruntime-controller
       affinity:
         nodeAffinity:
