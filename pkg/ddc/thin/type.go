@@ -40,27 +40,34 @@ type Worker struct {
 	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
 	Resources       common.Resources       `yaml:"resources,omitempty"`
 	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
+	HostNetwork     bool                   `yaml:"hostNetwork,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
-	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
-	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
-
-	CacheDir string `yaml:"cacheDir,omitempty"`
+	Volumes         []corev1.Volume        `yaml:"volumes,omitempty"`
+	VolumeMounts    []corev1.VolumeMount   `yaml:"volumeMounts,omitempty"`
+	LivenessProbe   *corev1.Probe          `yaml:"livenessProbe,omitempty"`
+	ReadinessProbe  *corev1.Probe          `yaml:"readinessProbe,omitempty"`
+	CacheDir        string                 `yaml:"cacheDir,omitempty"`
 }
 
 type Fuse struct {
-	Enabled         bool                 `yaml:"enabled,omitempty"`
-	Image           string               `yaml:"image,omitempty"`
-	ImageTag        string               `yaml:"imageTag,omitempty"`
-	ImagePullPolicy string               `yaml:"imagePullPolicy,omitempty"`
-	Resources       common.Resources     `yaml:"resources,omitempty"`
-	CriticalPod     bool                 `yaml:"criticalPod,omitempty"`
-	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
-	MountPath       string               `json:"mountPath,omitempty"`
-	NodeSelector    map[string]string    `yaml:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar      `yaml:"envs,omitempty"`
-	Command         []string             `json:"command,omitempty"`
-	Args            []string             `json:"args,omitempty"`
-	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
-	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Enabled         bool                   `yaml:"enabled,omitempty"`
+	Image           string                 `yaml:"image,omitempty"`
+	ImageTag        string                 `yaml:"imageTag,omitempty"`
+	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
+	Resources       common.Resources       `yaml:"resources,omitempty"`
+	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
+	CriticalPod     bool                   `yaml:"criticalPod,omitempty"`
+	HostNetwork     bool                   `yaml:"hostNetwork,omitempty"`
+	MountPath       string                 `yaml:"mountPath,omitempty"`
+	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
+	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
+	Command         []string               `yaml:"command,omitempty"`
+	Args            []string               `yaml:"args,omitempty"`
+	Volumes         []corev1.Volume        `yaml:"volumes,omitempty"`
+	VolumeMounts    []corev1.VolumeMount   `yaml:"volumeMounts,omitempty"`
+	LivenessProbe   *corev1.Probe          `yaml:"livenessProbe,omitempty"`
+	ReadinessProbe  *corev1.Probe          `yaml:"readinessProbe,omitempty"`
+	CacheDir        string                 `yaml:"cacheDir,omitempty"`
+	ConfigValue     string                 `yaml:"configValue"`
 }

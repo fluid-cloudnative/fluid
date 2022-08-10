@@ -49,7 +49,6 @@ var (
 
 // ThinRuntimeReconciler reconciles a ThinRuntime object
 type ThinRuntimeReconciler struct {
-	client.Client
 	Scheme  *runtime.Scheme
 	engines map[string]base.Engine
 	mutex   *sync.Mutex

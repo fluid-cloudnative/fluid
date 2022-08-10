@@ -31,11 +31,18 @@ imagePullPolicy: IfNotPresent
 
 ## WORKER ##
 worker:
-  image: ""
-  imageTag: ""
+  image: "test"
+  imageTag: "test"
   imagePullPolicy: ""
   nodeSelector: ""
-  envs: [ ]
+  envs: []
+  volumes:
+    - name: test
+      hostPath:
+        path: /test
+  volumeMounts:
+    - name: test
+      mountPath: /test
   resources:
     requests:
     #      cpu: "0.5"
@@ -44,6 +51,7 @@ worker:
   #      cpu: "4"
   #      memory: "4G"
   replicaCount: 0
+  hostNetwork: true
   livenessProbe:
   readinessProbe:
 
@@ -52,11 +60,11 @@ worker:
 fuse:
   criticalPod: false
   enabled: true
-  image: ""
-  imageTag: ""
+  image: "test"
+  imageTag: "test"
   imagePullPolicy: IfNotPresent
-  envs: [ ]
-  nodeSelector: { }
+  envs:
+  nodeSelector:
   dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host
   mountPath: /mnt/jfs
@@ -65,6 +73,10 @@ fuse:
   args: []
   livenessProbe:
   readinessProbe:
+  hostNetwork: true
+  configValue: "test"
+  volumes:
+  volumeMounts:
   resources:
     requests:
     #      cpu: "0.5"

@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "thinfs.fullname" . }}-worker
+  name: {{ template "thin.fullname" . }}-worker
   labels:
-    app: {{ template "thinfs.name" . }}
-    chart: {{ template "thinfs.chart" . }}
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    role: thinfs-worker
+    role: thin-worker
     fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
     fluid.io/dataset-placement: {{ .Values.placement }}
   ownerReferences:
@@ -21,22 +21,22 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.worker.replicaCount }}
-  serviceName: {{ template "thinfs.fullname" . }}-worker
+  serviceName: {{ template "thin.fullname" . }}-worker
   selector:
     matchLabels:
-      app: {{ template "thinfs.name" . }}
-      chart: {{ template "thinfs.chart" . }}
+      app: {{ template "thin.name" . }}
+      chart: {{ template "thin.chart" . }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
-      role: thinfs-worker
+      role: thin-worker
   template:
     metadata:
       labels:
-        app: {{ template "thinfs.name" . }}
-        chart: {{ template "thinfs.chart" . }}
+        app: {{ template "thin.name" . }}
+        chart: {{ template "thin.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
-        role: thinfs-worker
+        role: thin-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
@@ -51,32 +51,42 @@ spec:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
       containers:
-        - name: thinfs-worker
-          image: {{ .Values.image }}:{{ .Values.imageTag }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+        - name: thin-worker
+          image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
           {{- if .Values.worker.resources  }}
           resources:
-            {{- if .Values.worker.resources.limits }}
-            limits:
-              cpu: {{ .Values.worker.resources.limits.cpu }}
-              memory: {{ .Values.worker.resources.limits.memory }}
-            {{- end }}
-            {{- if .Values.worker.resources.requests }}
-            requests:
-              cpu: {{ .Values.worker.resources.requests.cpu }}
-              memory: {{ .Values.worker.resources.requests.memory }}
-            {{- end }}
+{{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
+          ports:
+          {{- if .Values.worker.ports }}
+{{ toYaml .Values.worker.ports | trim | indent 12  }}
+          {{- end }}
+          hostNetwork: {{ .Values.worker.hostNetwork }}
           securityContext:
             privileged: true
           {{- if .Values.worker.livenessProbe }}
-          livenessProbe: {{ .Values.worker.livenessProbe }}
+          livenessProbe:
+{{ toYaml .Values.worker.livenessProbe | trim | indent 12  }}
           {{- end }}
           {{- if .Values.worker.readinessProbe }}
-          readinessProbe: {{ .Values.worker.readinessProbe }}
+          readinessProbe:
+{{ toYaml .Values.worker.readinessProbe | trim | indent 12  }}
           {{- end }}
           env:
           {{- if .Values.worker.envs }}
-{{ toYaml .Values.worker.envs | trim | indent 10  }}
+{{ toYaml .Values.worker.envs | trim | indent 12  }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.worker.cacheDir }}
+          - name: cache-dir
+            mountPath: {{ .Values.worker.cacheDir }}
+          {{- end }}
+          {{- if .Values.worker.volumeMounts }}
+{{ toYaml .Values.worker.volumeMounts | indent 12 }}
           {{- end }}
       restartPolicy: Always
+      volumes:
+      {{- if .Values.worker.volumes }}
+{{ toYaml .Values.worker.volumes | indent 8 }}
+      {{- end }}

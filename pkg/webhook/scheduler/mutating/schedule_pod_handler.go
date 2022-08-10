@@ -78,6 +78,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		pod.Labels["app"] == "jindofs" ||
 		pod.Labels["app"] == "goosefs" ||
 		pod.Labels["app"] == "juicefs" ||
+		pod.Labels["app"] == "thin" ||
 		pod.Labels["role"] == "dataload-pod" {
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")

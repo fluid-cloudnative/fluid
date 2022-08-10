@@ -96,6 +96,19 @@ type ThinCompTemplateSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// livenessProbe of thin fuse pod
+	// +optional
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+
+	// readinessProbe of thin fuse pod
+	// +optional
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 type ThinFuseSpec struct {
@@ -107,6 +120,10 @@ type ThinFuseSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// Ports used thinRuntime
+	// +optional
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
 
 	// Environment variables that will be used by thinRuntime Fuse
 	Env []corev1.EnvVar `json:"env,omitempty"`
