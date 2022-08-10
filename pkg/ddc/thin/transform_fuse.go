@@ -42,7 +42,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 1. image
 	t.parseFuseImage(runtime, value)
 	if len(value.Fuse.Image) == 0 || len(value.Fuse.ImageTag) == 0 {
-		err = errors.New(fmt.Sprintf("fuse %s image or imageTag is nil", runtime.Name))
+		err = fmt.Errorf("fuse %s image or imageTag is nil", runtime.Name)
 		return
 	}
 	// 2. resources
@@ -105,8 +105,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 12. config
 	config := make(map[string]string)
 	config[value.Fuse.MountPath] = options
-	configStr := []byte{}
+	var configStr []byte
 	configStr, err = json.Marshal(config)
+	if err != nil {
+		return
+	}
 	value.Fuse.ConfigValue = string(configStr)
 
 	// 13. critical

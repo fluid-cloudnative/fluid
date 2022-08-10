@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -73,7 +72,7 @@ func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile
 	// 1. image
 	t.parseWorkerImage(runtime, value)
 	if len(value.Worker.Image) == 0 || len(value.Worker.ImageTag) == 0 {
-		err = errors.New(fmt.Sprintf("worker %s image or imageTag is nil", runtime.Name))
+		err = fmt.Errorf("worker %s image or imageTag is nil", runtime.Name)
 		return
 	}
 
