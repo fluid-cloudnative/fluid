@@ -28,9 +28,9 @@ const (
 
 	JuiceFSFuseImageEnv = "JUICEFS_FUSE_IMAGE_ENV"
 
-	DefaultJuiceFSFuseImage = "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0-beta2"
+	DefaultJuiceFSFuseImage = "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0"
 
-	DefaultJuiceFSRuntimeImage = "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0-beta2"
+	DefaultJuiceFSRuntimeImage = "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse:v1.0.0"
 
 	JuiceFSCeMountPath = "/bin/mount.juicefs"
 	JuiceFSMountPath   = "/sbin/mount.juicefs"
