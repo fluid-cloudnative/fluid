@@ -18,17 +18,16 @@ package thin
 
 import (
 	"fmt"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // transform worker volumes
-func (t *ThinEngine) transformWorkerVolumes(runtime *datav1alpha1.ThinRuntime, value *ThinValue) (err error) {
-	if len(runtime.Spec.Worker.VolumeMounts) > 0 {
-		for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
+func (t *ThinEngine) transformWorkerVolumes(volumes []corev1.Volume, volumeMounts []corev1.VolumeMount, value *ThinValue) (err error) {
+	if len(volumeMounts) > 0 {
+		for _, volumeMount := range volumeMounts {
 			var volume *corev1.Volume
 
-			for _, v := range runtime.Spec.Volumes {
+			for _, v := range volumes {
 				if v.Name == volumeMount.Name {
 					volume = &v
 					break
@@ -55,11 +54,11 @@ func (t *ThinEngine) transformWorkerVolumes(runtime *datav1alpha1.ThinRuntime, v
 }
 
 // transform fuse volumes
-func (t *ThinEngine) transformFuseVolumes(runtime *datav1alpha1.ThinRuntime, value *ThinValue) (err error) {
-	if len(runtime.Spec.Fuse.VolumeMounts) > 0 {
-		for _, volumeMount := range runtime.Spec.Fuse.VolumeMounts {
+func (t *ThinEngine) transformFuseVolumes(volumes []corev1.Volume, volumeMounts []corev1.VolumeMount, value *ThinValue) (err error) {
+	if len(volumeMounts) > 0 {
+		for _, volumeMount := range volumeMounts {
 			var volume *corev1.Volume
-			for _, v := range runtime.Spec.Volumes {
+			for _, v := range volumes {
 				if v.Name == volumeMount.Name {
 					volume = &v
 					break

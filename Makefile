@@ -134,7 +134,7 @@ goosefsruntime-controller-build: generate gen-openapi fmt vet
 juicefsruntime-controller-build: generate gen-openapi fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
 
-thinruntime-controller-build: generate gen-openapi fmt vet
+thinruntime-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/thinruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
 
 webhook-build: generate fmt vet

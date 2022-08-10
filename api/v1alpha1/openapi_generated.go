@@ -3939,11 +3939,30 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref common
 							},
 						},
 					},
+					"livenessProbe": {
+						SchemaProps: spec.SchemaProps{
+							Description: "livenessProbe of thin fuse pod",
+							Ref:         ref("k8s.io/api/core/v1.Probe"),
+						},
+					},
+					"readinessProbe": {
+						SchemaProps: spec.SchemaProps{
+							Description: "readinessProbe of thin fuse pod",
+							Ref:         ref("k8s.io/api/core/v1.Probe"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -3972,6 +3991,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref common.Referen
 							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports used thinRuntime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.ContainerPort"),
+									},
+								},
+							},
 						},
 					},
 					"env": {
@@ -4108,7 +4141,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 

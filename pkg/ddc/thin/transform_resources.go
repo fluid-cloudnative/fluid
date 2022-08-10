@@ -17,78 +17,66 @@
 package thin
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func (t *ThinEngine) transformResourcesForWorker(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
-	if runtime.Spec.Worker.Resources.Limits == nil {
-		t.Log.Info("skip setting memory limit")
-		return
+func (t *ThinEngine) transformResourcesForWorker(resources corev1.ResourceRequirements, value *ThinValue) {
+	value.Worker.Resources = common.Resources{
+		Requests: common.ResourceList{},
+		Limits:   common.ResourceList{},
+	}
+	if resources.Limits != nil {
+		t.Log.Info("setting worker Resources limit")
+		if resources.Limits.Cpu() != nil {
+			quantity := resources.Limits[corev1.ResourceCPU]
+			value.Worker.Resources.Limits[corev1.ResourceCPU] = quantity.String()
+		}
+		if resources.Limits.Memory() != nil {
+			quantity := resources.Limits[corev1.ResourceMemory]
+			value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+		}
 	}
 
-	if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
-		t.Log.Info("skip setting memory limit")
-		return
-	}
-
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
-
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+	if resources.Requests != nil {
+		t.Log.Info("setting worker Resources request")
+		if resources.Requests.Cpu() != nil {
+			quantity := resources.Requests[corev1.ResourceCPU]
+			value.Worker.Resources.Requests[corev1.ResourceCPU] = quantity.String()
+		}
+		if resources.Requests.Memory() != nil {
+			quantity := resources.Requests[corev1.ResourceMemory]
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
 	}
 }
-func (t *ThinEngine) transformResourcesForFuse(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
 
-	if runtime.Spec.Fuse.Resources.Limits == nil {
-		t.Log.Info("skip setting memory limit")
-		return
+func (t *ThinEngine) transformResourcesForFuse(resources corev1.ResourceRequirements, value *ThinValue) {
+	value.Fuse.Resources = common.Resources{
+		Requests: common.ResourceList{},
+		Limits:   common.ResourceList{},
 	}
-
-	if _, found := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; !found {
-		t.Log.Info("skip setting memory limit")
-		return
-	}
-
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
-
-	runtimeInfo, err := t.getRuntimeInfo()
-	if err != nil {
-		t.Log.Error(err, "failed to transformResourcesForFuse")
-	}
-	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
-
-	t.Log.Info("transformFuse", "storageMap", storageMap)
-
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("50Gi")
-	if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
-	}
-
-	for key, requirement := range storageMap {
-		if value.Fuse.Resources.Limits == nil {
-			value.Fuse.Resources.Limits = make(common.ResourceList)
+	if resources.Limits != nil {
+		t.Log.Info("setting fuse Resources limit")
+		if resources.Limits.Cpu() != nil {
+			quantity := resources.Limits[corev1.ResourceCPU]
+			value.Fuse.Resources.Limits[corev1.ResourceCPU] = quantity.String()
 		}
-		if key == common.MemoryCacheStore {
-			req := requirement.DeepCopy()
-
-			memLimit.Add(req)
-
-			t.Log.Info("update the requiremnet for memory", "requirement", memLimit)
-
+		if resources.Limits.Memory() != nil {
+			quantity := resources.Limits[corev1.ResourceMemory]
+			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
 		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
 	}
-	if value.Fuse.Resources.Limits != nil {
-		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+
+	if resources.Requests != nil {
+		t.Log.Info("setting fuse Resources request")
+		if resources.Requests.Cpu() != nil {
+			quantity := resources.Requests[corev1.ResourceCPU]
+			value.Fuse.Resources.Requests[corev1.ResourceCPU] = quantity.String()
+		}
+		if resources.Requests.Memory() != nil {
+			quantity := resources.Requests[corev1.ResourceMemory]
+			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
 	}
 }

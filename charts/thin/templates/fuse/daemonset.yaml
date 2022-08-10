@@ -1,0 +1,137 @@
+{{- if .Values.fuse.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "thin.fullname" . }}-fuse
+  labels:
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: thin-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled -}}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "thin.name" . }}
+      chart: {{ template "thin.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: thin-fuse
+  template:
+    metadata:
+      labels:
+        app: {{ template "thin.name" . }}
+        chart: {{ template "thin.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: thin-fuse
+    spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
+      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+        - name: thin-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          {{- if .Values.fuse.resources }}
+          resources:
+{{ toYaml .Values.fuse.resources | trim | indent 12  }}
+          {{- end }}
+          ports:
+          {{- if .Values.fuse.ports }}
+{{ toYaml .Values.fuse.ports | trim | indent 12  }}
+          {{- end }}
+          {{- if .Values.fuse.command }}
+          command:
+{{ toYaml .Values.fuse.command | trim | indent 12 }}
+          {{- end }}
+          {{- if .Values.fuse.args }}
+          args:
+{{ toYaml .Values.fuse.args | trim | indent 12 }}
+          {{- end }}
+          env:
+          {{- if .Values.fuse.envs }}
+{{ toYaml .Values.fuse.envs | trim | indent 12 }}
+          {{- end }}
+          hostNetwork: {{ .Values.fuse.hostNetwork }}
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
+          {{- if .Values.fuse.livenessProbe }}
+          livenessProbe:
+{{ toYaml .Values.fuse.livenessProbe | trim | indent 12  }}
+          {{- end }}
+          {{- if .Values.fuse.readinessProbe }}
+          readinessProbe:
+{{ toYaml .Values.fuse.readinessProbe | trim | indent 12  }}
+          {{- end }}
+          volumeMounts:
+          - name: thin-fuse-mount
+            mountPath: {{ .Values.fuse.hostMountPath }}
+            mountPropagation: Bidirectional
+          - mountPath: /etc/fluid
+            name: thin-conf
+          {{- if .Values.fuse.cacheDir }}
+          - name: cache-dir
+            mountPath: {{ .Values.fuse.cacheDir }}
+          {{- end }}
+          {{- if .Values.fuse.volumeMounts }}
+{{ toYaml .Values.fuse.volumeMounts | indent 10 }}
+          {{- end }}
+      restartPolicy: Always
+      volumes:
+        - name: thin-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.hostMountPath }}
+            type: DirectoryOrCreate
+        {{- if .Values.fuse.cacheDir }}
+        - name: cache-dir
+          hostPath:
+            path: {{ .Values.fuse.cacheDir }}
+            type: DirectoryOrCreate
+        {{- end }}
+        - name: thin-conf
+          secret:
+            name: {{ template "thin.fullname" . }}-fuse-conf
+            defaultMode: 0755
+        {{- if .Values.fuse.volumes }}
+{{ toYaml .Values.fuse.volumes | indent 8 }}
+        {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "thin.fullname" . }}-fuse-conf
+  labels:
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: thin-fuse
+type: Opaque
+stringData:
+  config.json: {{ .Values.fuse.configValue }}
+{{- end }}

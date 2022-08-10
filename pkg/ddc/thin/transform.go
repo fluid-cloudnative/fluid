@@ -17,11 +17,12 @@
 package thin
 
 import (
+	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (value *ThinValue, err error) {
@@ -58,29 +59,59 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 }
 
 func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
-	value.Worker = Worker{}
-
-	image := runtime.Spec.Version.Image
-	imageTag := runtime.Spec.Version.ImageTag
-	imagePullPolicy := runtime.Spec.Version.ImagePullPolicy
-
-	value.Worker.Envs = runtime.Spec.Worker.Env
-	value.Worker.Ports = runtime.Spec.Worker.Ports
-
-	// todo
-	value.Image, value.ImageTag, value.ImagePullPolicy = image, imageTag, imagePullPolicy
-
-	if len(value.Worker.NodeSelector) == 0 {
-		value.Worker.NodeSelector = map[string]string{}
+	value.Worker = Worker{
+		Envs:  []corev1.EnvVar{},
+		Ports: []corev1.ContainerPort{},
 	}
 
+	// parse config from profile
+	err = t.parseFromProfile(profile, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform profile for worker")
+	}
+
+	// 1. image
+	t.parseWorkerImage(runtime, value)
+	if len(value.Worker.Image) == 0 || len(value.Worker.ImageTag) == 0 {
+		err = errors.New(fmt.Sprintf("worker %s image or imageTag is nil", runtime.Name))
+		return
+	}
+
+	// 2. env
+	if len(runtime.Spec.Worker.Env) != 0 {
+		value.Worker.Envs = append(value.Worker.Envs, runtime.Spec.Worker.Env...)
+	}
+	// 3. ports
+	if len(runtime.Spec.Worker.Ports) != 0 {
+		value.Worker.Ports = append(value.Worker.Ports, runtime.Spec.Worker.Ports...)
+	}
+	// 4. nodeSelector
+	if len(runtime.Spec.Worker.NodeSelector) != 0 {
+		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
+	}
+
+	// 5. cachedir
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
-		if runtime.Spec.TieredStore.Levels[0].MediumType != common.Memory {
-			value.Worker.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
-		}
+		value.Worker.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
+	}
+	// 6. volume
+	err = t.transformWorkerVolumes(runtime.Spec.Volumes, runtime.Spec.Worker.VolumeMounts, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform volumes for worker")
 	}
 
-	t.transformResourcesForWorker(runtime, value)
+	// 7. resources
+	t.transformResourcesForWorker(runtime.Spec.Worker.Resources, value)
+
+	// 8. probe
+	if runtime.Spec.Worker.ReadinessProbe != nil {
+		value.Worker.ReadinessProbe = runtime.Spec.Worker.ReadinessProbe
+	}
+	if runtime.Spec.Worker.LivenessProbe != nil {
+		value.Worker.LivenessProbe = runtime.Spec.Worker.LivenessProbe
+	}
+	// 9. network
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 	return
 }
 
@@ -89,4 +120,56 @@ func (t *ThinEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
+}
+
+func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
+	if len(runtime.Spec.Version.Image) == 0 {
+		value.Worker.Image = runtime.Spec.Version.Image
+	}
+	if len(runtime.Spec.Version.ImageTag) == 0 {
+		value.Worker.ImageTag = runtime.Spec.Version.ImageTag
+	}
+	if len(runtime.Spec.Version.ImagePullPolicy) == 0 {
+		value.Worker.ImagePullPolicy = runtime.Spec.Version.ImagePullPolicy
+	}
+}
+
+func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
+	if profile == nil {
+		return
+	}
+	// 1. image
+	value.Worker.Image = profile.Spec.Version.Image
+	value.Worker.ImageTag = profile.Spec.Version.ImageTag
+	value.Worker.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	// 2. volumes
+	err = t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform volumes from profile for worker")
+	}
+	// 3. resources
+	t.transformResourcesForWorker(profile.Spec.Worker.Resources, value)
+
+	// 4. env
+	if len(profile.Spec.Worker.Env) != 0 {
+		value.Worker.Envs = profile.Spec.Worker.Env
+	}
+	// 5. nodeSelector
+	if len(profile.Spec.Worker.NodeSelector) != 0 {
+		value.Worker.NodeSelector = profile.Spec.Worker.NodeSelector
+	}
+	// 6. ports
+	if len(profile.Spec.Worker.Ports) != 0 {
+		value.Worker.Ports = profile.Spec.Worker.Ports
+	}
+	// 7. probe
+	if profile.Spec.Worker.ReadinessProbe != nil {
+		value.Worker.ReadinessProbe = profile.Spec.Worker.ReadinessProbe
+	}
+	if profile.Spec.Worker.LivenessProbe != nil {
+		value.Worker.LivenessProbe = profile.Spec.Worker.LivenessProbe
+	}
+	// 8. network
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(profile.Spec.Worker.NetworkMode)
+	return
 }

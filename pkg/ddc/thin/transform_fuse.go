@@ -17,6 +17,7 @@
 package thin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -26,74 +27,109 @@ import (
 )
 
 func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
-	value.Fuse = Fuse{}
+	value.Fuse = Fuse{
+		Enabled: true,
+		Ports:   []corev1.ContainerPort{},
+		Envs:    []corev1.EnvVar{},
+	}
 	value.Fuse.Enabled = true
 
-	value.Fuse.Image, value.Fuse.ImageTag, value.ImagePullPolicy = t.parseFuseImage(runtime, profile)
+	err = t.parseFromProfileFuse(profile, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform profile for worker")
+	}
 
+	// 1. image
+	t.parseFuseImage(runtime, value)
+	if len(value.Fuse.Image) == 0 || len(value.Fuse.ImageTag) == 0 {
+		err = errors.New(fmt.Sprintf("fuse %s image or imageTag is nil", runtime.Name))
+		return
+	}
+	// 2. resources
+	t.transformResourcesForFuse(runtime.Spec.Fuse.Resources, value)
+
+	// 3. volumes
+	err = t.transformFuseVolumes(runtime.Spec.Volumes, runtime.Spec.Fuse.VolumeMounts, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform volumes for fuse")
+	}
+
+	// 4. nodeSelector
+	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
+		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
+	}
+	value.Fuse.NodeSelector[t.getFuseLabelName()] = "true"
+
+	// 5. ports
+	if len(runtime.Spec.Fuse.Ports) != 0 {
+		value.Fuse.Ports = append(value.Fuse.Ports, runtime.Spec.Fuse.Ports...)
+	}
+
+	// 6. probe
+	if runtime.Spec.Fuse.ReadinessProbe != nil {
+		value.Fuse.ReadinessProbe = runtime.Spec.Fuse.ReadinessProbe
+	}
+	if runtime.Spec.Fuse.LivenessProbe != nil {
+		value.Fuse.LivenessProbe = runtime.Spec.Fuse.LivenessProbe
+	}
+	// 7. command
+	if len(runtime.Spec.Fuse.Command) != 0 {
+		value.Fuse.Command = runtime.Spec.Fuse.Command
+	}
+	// 8. args
+	if len(runtime.Spec.Fuse.Args) != 0 {
+		value.Fuse.Args = runtime.Spec.Fuse.Args
+	}
+
+	// 9. network
+	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+
+	// 10. mountpath
 	value.Fuse.MountPath = t.getMountPoint()
 
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
 	}
 
+	// 11. env
 	options := t.parseFuseOptions(runtime, profile, dataset)
-
-	envs := t.parseFuseEnv(runtime, profile)
-	envs = append(envs, corev1.EnvVar{
+	value.Fuse.Envs = append(value.Fuse.Envs, runtime.Spec.Fuse.Env...)
+	value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
 		Name:  common.ThinFuseOptionEnvKey,
 		Value: options,
+	}, corev1.EnvVar{
+		Name:  common.ThinFusePointEnvKey,
+		Value: value.Fuse.MountPath,
 	})
-	value.Fuse.Envs = envs
 
-	value.Fuse.Args = runtime.Spec.Fuse.Args
-	if len(value.Fuse.Args) == 0 && profile != nil {
-		value.Fuse.Args = profile.Spec.Fuse.Args
-	}
+	// 12. config
+	config := make(map[string]string)
+	config[value.Fuse.MountPath] = options
+	configStr := []byte{}
+	configStr, err = json.Marshal(config)
+	value.Fuse.ConfigValue = string(configStr)
 
-	value.Fuse.Command = runtime.Spec.Fuse.Command
-	if len(value.Fuse.Command) == 0 && profile != nil {
-		value.Fuse.Command = profile.Spec.Fuse.Command
-	}
-
-	t.transformResourcesForFuse(runtime, value)
-
-	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
-		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
-	} else {
-		value.Fuse.NodeSelector = map[string]string{}
-	}
-	value.Fuse.NodeSelector[t.getFuseLabelName()] = "true"
-
-	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
-
+	// 13. critical
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
-	// transform volumes for fuse
-	err = t.transformFuseVolumes(runtime, value)
-	if err != nil {
-		t.Log.Error(err, "failed to transform volumes for fuse")
+	// 14. cachedir
+	if len(runtime.Spec.TieredStore.Levels) > 0 {
+		value.Fuse.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
 	}
 	return
 }
 
-func (t ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (image string, tag string, imagePullPolicy string) {
-	image = runtime.Spec.Fuse.Image
-	tag = runtime.Spec.Fuse.ImageTag
-	imagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
-	if profile != nil {
-		if len(image) == 0 {
-			image = profile.Spec.Version.Image
-		}
-		if len(tag) == 0 {
-			tag = profile.Spec.Version.ImageTag
-		}
-		if len(imagePullPolicy) == 0 {
-			imagePullPolicy = profile.Spec.Version.ImagePullPolicy
-		}
+func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
+	if len(runtime.Spec.Fuse.Image) == 0 {
+		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
-	return
+	if len(runtime.Spec.Fuse.ImageTag) == 0 {
+		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
+	}
+	if len(runtime.Spec.Fuse.ImagePullPolicy) == 0 {
+		value.Fuse.ImagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
+	}
 }
 
 func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string) {
@@ -124,10 +160,56 @@ func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile 
 	return
 }
 
-func (t ThinEngine) parseFuseEnv(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (envs []corev1.EnvVar) {
-	if profile != nil {
-		envs = profile.Spec.Fuse.Env
+func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
+	if profile == nil {
+		return
 	}
-	envs = append(envs, runtime.Spec.Fuse.Env...)
+	// 1. image
+	value.Fuse.Image = profile.Spec.Version.Image
+	value.Fuse.ImageTag = profile.Spec.Version.ImageTag
+	value.Fuse.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	if len(profile.Spec.Fuse.Image) != 0 {
+		value.Fuse.Image = profile.Spec.Version.Image
+	}
+	if len(profile.Spec.Fuse.ImageTag) != 0 {
+		value.Fuse.ImageTag = profile.Spec.Version.ImageTag
+	}
+	if len(profile.Spec.Fuse.ImagePullPolicy) != 0 {
+		value.Fuse.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	}
+	// 2. resources
+	t.transformResourcesForFuse(profile.Spec.Fuse.Resources, value)
+
+	// 3. volumes
+	err = t.transformFuseVolumes(profile.Spec.Volumes, profile.Spec.Fuse.VolumeMounts, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform volumes from profile for worker")
+	}
+
+	// 4. nodeSelector
+	if len(profile.Spec.Fuse.NodeSelector) != 0 {
+		value.Fuse.NodeSelector = profile.Spec.Fuse.NodeSelector
+	}
+	// 5. ports
+	if len(profile.Spec.Fuse.Ports) != 0 {
+		value.Fuse.Ports = profile.Spec.Fuse.Ports
+	}
+	// 6. probe
+	value.Fuse.ReadinessProbe = profile.Spec.Fuse.ReadinessProbe
+	value.Fuse.LivenessProbe = profile.Spec.Fuse.LivenessProbe
+	// 7. command
+	if len(profile.Spec.Fuse.Command) != 0 {
+		value.Fuse.Command = profile.Spec.Fuse.Command
+	}
+	// 8. args
+	if len(profile.Spec.Fuse.Args) != 0 {
+		value.Fuse.Args = profile.Spec.Fuse.Args
+	}
+	// 9. network
+	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(profile.Spec.Fuse.NetworkMode)
+	// 10. env
+	if len(profile.Spec.Fuse.Env) != 0 {
+		value.Fuse.Envs = profile.Spec.Fuse.Env
+	}
 	return
 }
