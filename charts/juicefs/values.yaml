@@ -27,7 +27,7 @@ tieredstore:
 
 # Docker Image
 image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
-imageTag: v1.0.0-beta3
+imageTag: v1.0.0
 imagePullPolicy: IfNotPresent
 
 ## WORKER ##
