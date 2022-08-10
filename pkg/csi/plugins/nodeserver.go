@@ -260,7 +260,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	// The lock is to ensure CSI plugin labels the node in correct order
 	ns.mutex.Lock()
 	defer ns.mutex.Unlock()
-	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
+	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
 
 	// 1. get runtime namespace and name
 	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), req.GetVolumeId())
