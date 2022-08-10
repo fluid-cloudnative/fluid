@@ -105,3 +105,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinruntimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinruntimes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinruntimes/status
+  verbs:
+  - get
+  - patch
+  - update

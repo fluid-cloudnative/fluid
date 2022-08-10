@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "thin.fullname" . }}-worker
+  labels:
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: thin-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  serviceName: {{ template "thin.fullname" . }}-worker
+  selector:
+    matchLabels:
+      app: {{ template "thin.name" . }}
+      chart: {{ template "thin.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: thin-worker
+  template:
+    metadata:
+      labels:
+        app: {{ template "thin.name" . }}
+        chart: {{ template "thin.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: thin-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
+    spec:
+      nodeSelector:
+      {{- if .Values.worker.nodeSelector }}
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+        - name: thin-worker
+          image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          {{- if .Values.worker.resources  }}
+          resources:
+{{ toYaml .Values.worker.resources | trim | indent 12  }}
+          {{- end }}
+          ports:
+          {{- if .Values.worker.ports }}
+{{ toYaml .Values.worker.ports | trim | indent 12  }}
+          {{- end }}
+          hostNetwork: {{ .Values.worker.hostNetwork }}
+          securityContext:
+            privileged: true
+          {{- if .Values.worker.livenessProbe }}
+          livenessProbe:
+{{ toYaml .Values.worker.livenessProbe | trim | indent 12  }}
+          {{- end }}
+          {{- if .Values.worker.readinessProbe }}
+          readinessProbe:
+{{ toYaml .Values.worker.readinessProbe | trim | indent 12  }}
+          {{- end }}
+          env:
+          {{- if .Values.worker.envs }}
+{{ toYaml .Values.worker.envs | trim | indent 12  }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.worker.cacheDir }}
+          - name: cache-dir
+            mountPath: {{ .Values.worker.cacheDir }}
+          {{- end }}
+          {{- if .Values.worker.volumeMounts }}
+{{ toYaml .Values.worker.volumeMounts | indent 12 }}
+          {{- end }}
+      restartPolicy: Always
+      volumes:
+      {{- if .Values.worker.volumes }}
+{{ toYaml .Values.worker.volumes | indent 8 }}
+      {{- end }}

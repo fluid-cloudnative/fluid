@@ -19,6 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -36,6 +37,7 @@ func init() {
 		"jindofsx": jindofsx.Build,
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
+		"thin":     thin.Build,
 	}
 }
 

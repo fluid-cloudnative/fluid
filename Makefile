@@ -10,6 +10,7 @@ ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
 GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
 JUICEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/juicefsruntime-controller
+THINRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/thinruntime-controller
 CSI_IMG ?= ${IMG_REPO}/fluid-csi
 LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
@@ -49,6 +50,7 @@ BINARY_BUILD += application-controller-build
 BINARY_BUILD += alluxioruntime-controller-build
 BINARY_BUILD += jindoruntime-controller-build
 BINARY_BUILD += juicefsruntime-controller-build
+BINARY_BUILD += thinruntime-controller-build
 BINARY_BUILD += csi-build
 BINARY_BUILD += webhook-build
 
@@ -61,6 +63,7 @@ DOCKER_BUILD += docker-build-goosefsruntime-controller
 DOCKER_BUILD += docker-build-csi
 DOCKER_BUILD += docker-build-webhook
 DOCKER_BUILD += docker-build-juicefsruntime-controller
+DOCKER_BUILD += docker-build-thinruntime-controller
 DOCKER_BUILD += docker-build-init-users
 
 # Push docker images
@@ -72,6 +75,7 @@ DOCKER_PUSH += docker-push-csi
 DOCKER_PUSH += docker-push-webhook
 DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
+DOCKER_PUSH += docker-push-thinruntime-controller
 DOCKER_PUSH += docker-push-init-users
 
 # Buildx and push docker images
@@ -83,6 +87,7 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-goosefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-csi
 DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-thinruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
 
 override LDFLAGS += \
@@ -124,6 +129,9 @@ goosefsruntime-controller-build: generate gen-openapi fmt vet
 
 juicefsruntime-controller-build: generate gen-openapi fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
+
+thinruntime-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/thinruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
 
 webhook-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
@@ -194,6 +202,9 @@ docker-build-goosefsruntime-controller: generate gen-openapi fmt vet
 docker-build-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-build-thinruntime-controller: generate gen-openapi fmt vet thinruntime-controller-build
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-build-csi: generate fmt vet
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
@@ -225,6 +236,9 @@ docker-push-goosefsruntime-controller: docker-build-goosefsruntime-controller
 docker-push-juicefsruntime-controller: docker-build-juicefsruntime-controller
 	docker push ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
+docker-push-thinruntime-controller: docker-build-thinruntime-controller
+	docker push ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
 
@@ -255,6 +269,9 @@ docker-buildx-push-goosefsruntime-controller: generate gen-openapi fmt vet
 
 docker-buildx-push-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-thinruntime-controller: generate gen-openapi fmt vet thinruntime-controller-build
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-csi: generate fmt vet
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
