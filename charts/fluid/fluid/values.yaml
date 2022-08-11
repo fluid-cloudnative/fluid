@@ -28,6 +28,7 @@ runtime:
     replicas: 1
     runtimeWorkers: 3
     portRange: 20000-26000
+    portAllocatePolicy: bitmap
     enabled: true
     init:
       image: fluidcloudnative/init-users:v0.8.0-50edf67

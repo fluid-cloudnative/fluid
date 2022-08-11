@@ -27,11 +27,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type AllocatePolicy string
+
+const (
+	Random AllocatePolicy = "random"
+	BitMap AllocatePolicy = "bitmap"
+)
+
 // RuntimePortAllocator is an allocator resonsible for maintaining port usage information
 // given a user-defined port range. It allocates and releases ports when a port is requested or
 // reclaimed by a runtime.
 type RuntimePortAllocator struct {
-	pa     *portallocator.PortAllocator
+	pa             portallocator.Interface
+	allocatePolicy AllocatePolicy
+
 	client client.Client
 	pr     *net.PortRange
 
@@ -45,9 +54,14 @@ type RuntimePortAllocator struct {
 // rpa is a global singleton of type RuntimePortAllocator
 var rpa *RuntimePortAllocator
 
-// SetupRuntimePortAllocator instantiates the global singleton rpa
+// SetupRuntimePortAllocator instantiates the global singleton rpa, use BitMap port allocating policy
 func SetupRuntimePortAllocator(client client.Client, pr *net.PortRange, getReservedPorts func(client client.Client) (ports []int, err error)) {
-	rpa = &RuntimePortAllocator{client: client, pr: pr, getReservedPorts: getReservedPorts}
+	SetupRuntimePortAllocatorWithType(client, pr, BitMap, getReservedPorts)
+}
+
+// SetupRuntimePortAllocatorWithType instantiates the global singleton rpa with specified port allocating policy
+func SetupRuntimePortAllocatorWithType(client client.Client, pr *net.PortRange, allocatePolicy AllocatePolicy, getReservedPorts func(client client.Client) (ports []int, err error)) {
+	rpa = &RuntimePortAllocator{client: client, pr: pr, allocatePolicy: allocatePolicy, getReservedPorts: getReservedPorts}
 	rpa.log = ctrl.Log.WithName("RuntimePortAllocator")
 }
 
@@ -64,9 +78,17 @@ func GetRuntimePortAllocator() (*RuntimePortAllocator, error) {
 
 // createAndRestorePortAllocator creates and restores port allocator with runtime-specific logic
 func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
+	// random policy does not need check reserved ports
+	if alloc.allocatePolicy == Random {
+		alloc.pa = newRandomAllocator(alloc.pr)
+		return nil
+	}
+
+	// bitmap policy check reserved ports
 	alloc.pa, err = portallocator.New(*alloc.pr, func(max int, rangeSpec string) (allocator.Interface, error) {
 		return allocator.NewAllocationMap(max, rangeSpec), nil
 	})
+
 	if err != nil {
 		return err
 	}

@@ -69,6 +69,36 @@ func TestRuntimePortAllocator(t *testing.T) {
 	}
 }
 
+func TestRandomRuntimePortAllocator(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("20000-21000")
+	SetupRuntimePortAllocatorWithType(nil, pr, Random, dummy)
+
+	allocator, err := GetRuntimePortAllocator()
+	if err != nil {
+		t.Errorf("get non-nil err when GetRuntimePortAllocator")
+		return
+	}
+
+	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size)
+	if err != nil || !between(allocatedPorts, pr.Base, pr.Base+pr.Size) {
+		t.Errorf("get non-nil err when GetAvailablePortAllocator")
+		return
+	}
+
+	toRelease := []int{20003, 20004}
+	allocator.ReleaseReservedPorts(toRelease)
+
+}
+
+func between(a []int, min int, max int) bool {
+	for _, value := range a {
+		if value < min && value > max {
+			return false
+		}
+	}
+	return true
+}
+
 func sameArray(a []int, b []int) bool {
 	if len(a) != len(b) {
 		return false
