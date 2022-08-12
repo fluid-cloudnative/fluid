@@ -69,6 +69,53 @@ func TestRuntimePortAllocator(t *testing.T) {
 	}
 }
 
+func TestRuntimePortAllocatorRelease(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("20000-20010")
+	SetupRuntimePortAllocator(nil, pr, dummy)
+
+	preservedPorts, _ := dummy(nil)
+
+	allocator, err := GetRuntimePortAllocator()
+	if err != nil {
+		t.Errorf("get non-nil err when GetRuntimePortAllocator")
+		return
+	}
+
+	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size - len(preservedPorts))
+
+	if err != nil || containsAny(allocatedPorts, preservedPorts) {
+		t.Errorf("get non-nil err when GetAvailablePortAllocator")
+		return
+	}
+
+}
+
+func containsAny(ports []int, dst []int) bool {
+	m := map[int]bool{}
+	for _, v := range ports {
+		m[v] = true
+	}
+	for _, v := range dst {
+		_, ok := m[v]
+		if ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func TestUnknownPortAllocator(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("1000-1100")
+	SetupRuntimePortAllocatorWithType(nil, pr, "unknown", dummy)
+
+	_, err := GetRuntimePortAllocator()
+	if err == nil {
+		t.Errorf("get non-nil err when GetRuntimePortAllocator")
+		return
+	}
+}
+
 func TestRandomRuntimePortAllocator(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("1000-1100")
 	SetupRuntimePortAllocatorWithType(nil, pr, Random, dummy)

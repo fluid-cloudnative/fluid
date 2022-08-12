@@ -37,6 +37,7 @@ type BatchAllocatorInterface interface {
 	Release(int) error
 
 	AllocateBatch(portNum int) ([]int, error)
+	needResetReservedPorts() bool
 }
 
 // RuntimePortAllocator is an allocator resonsible for maintaining port usage information
@@ -83,28 +84,31 @@ func GetRuntimePortAllocator() (*RuntimePortAllocator, error) {
 
 // createAndRestorePortAllocator creates and restores port allocator with runtime-specific logic
 func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
-	// random policy does not need check reserved ports
-	if alloc.allocatePolicy == Random {
-		alloc.pa = newRandomAllocator(alloc.pr, alloc.log)
-		return nil
+	switch alloc.allocatePolicy {
+	case Random:
+		alloc.pa, err = newRandomAllocator(alloc.pr, alloc.log)
+	case BitMap:
+		alloc.pa, err = newBitMapAllocator(alloc.pr, alloc.log)
+	default:
+		err = errors.New("allocate-port-policy can only be random or bitmap")
 	}
-
-	// bitmap policy check reserved ports
-	alloc.pa, err = newBitMapAllocator(alloc.pr, alloc.log)
 
 	if err != nil {
 		return err
 	}
 
-	ports, err := alloc.getReservedPorts(alloc.client)
-	if err != nil {
-		return err
-	}
-	alloc.log.Info("Found reserved ports", "ports", ports)
+	// policy should check reserved ports
+	if alloc.pa.needResetReservedPorts() {
+		ports, err := alloc.getReservedPorts(alloc.client)
+		if err != nil {
+			return err
+		}
+		alloc.log.Info("Found reserved ports", "ports", ports)
 
-	for _, port := range ports {
-		if err = alloc.pa.Allocate(port); err != nil {
-			alloc.log.Error(err, "can't allocate reserved ports", "port", port)
+		for _, port := range ports {
+			if err = alloc.pa.Allocate(port); err != nil {
+				alloc.log.Error(err, "can't allocate reserved ports", "port", port)
+			}
 		}
 	}
 

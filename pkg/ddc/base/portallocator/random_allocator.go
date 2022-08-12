@@ -17,14 +17,18 @@ type RandomAllocator struct {
 	log  logr.Logger
 }
 
-func newRandomAllocator(pr *net.PortRange, log logr.Logger) *RandomAllocator {
+func (r *RandomAllocator) needResetReservedPorts() bool {
+	return false
+}
+
+func newRandomAllocator(pr *net.PortRange, log logr.Logger) (*RandomAllocator, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	return &RandomAllocator{
 		portRange: pr,
 		rand:      r,
 		log:       log,
-	}
+	}, nil
 }
 
 func (r *RandomAllocator) Allocate(port int) error {

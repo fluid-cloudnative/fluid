@@ -14,7 +14,11 @@ type BitMapAllocator struct {
 	log   logr.Logger
 }
 
-func newBitMapAllocator(pr *net.PortRange, log logr.Logger) (*BitMapAllocator, error) {
+func (b *BitMapAllocator) needResetReservedPorts() bool {
+	return true
+}
+
+func newBitMapAllocator(pr *net.PortRange, log logr.Logger) (BatchAllocatorInterface, error) {
 	alloc, err := portallocator.New(*pr, func(max int, rangeSpec string) (allocator.Interface, error) {
 		return allocator.NewAllocationMap(max, rangeSpec), nil
 	})
