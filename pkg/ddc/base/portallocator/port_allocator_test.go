@@ -79,13 +79,13 @@ func TestRandomRuntimePortAllocator(t *testing.T) {
 		return
 	}
 
-	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size + 1)
+	_, err = allocator.GetAvailablePorts(pr.Size + 1)
 	if err == nil {
 		t.Errorf("allocate ports shoule have error")
 		return
 	}
 
-	allocatedPorts, err = allocator.GetAvailablePorts(pr.Size)
+	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size)
 	if err != nil {
 		t.Errorf("get non-nil err when GetAvailablePortAllocator")
 		return
