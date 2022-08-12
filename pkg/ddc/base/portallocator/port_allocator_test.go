@@ -70,7 +70,7 @@ func TestRuntimePortAllocator(t *testing.T) {
 }
 
 func TestRandomRuntimePortAllocator(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("20000-21000")
+	pr := net.ParsePortRangeOrDie("1000-1100")
 	SetupRuntimePortAllocatorWithType(nil, pr, Random, dummy)
 
 	allocator, err := GetRuntimePortAllocator()
@@ -79,15 +79,37 @@ func TestRandomRuntimePortAllocator(t *testing.T) {
 		return
 	}
 
-	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size)
-	if err != nil || !between(allocatedPorts, pr.Base, pr.Base+pr.Size) {
+	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size + 1)
+	if err == nil {
+		t.Errorf("allocate ports shoule have error")
+		return
+	}
+
+	allocatedPorts, err = allocator.GetAvailablePorts(pr.Size)
+	if err != nil {
 		t.Errorf("get non-nil err when GetAvailablePortAllocator")
+		return
+	}
+	if len(allocatedPorts) != pr.Size {
+		t.Errorf("allocate ports size less than required")
+		return
+	}
+	if !between(allocatedPorts, pr.Base, pr.Base+pr.Size) || hasDuplicatedElement(allocatedPorts) {
+		t.Errorf("allocate ports are not all valid")
 		return
 	}
 
 	toRelease := []int{20003, 20004}
 	allocator.ReleaseReservedPorts(toRelease)
 
+}
+
+func hasDuplicatedElement(ports []int) bool {
+	m := map[int]bool{}
+	for _, v := range ports {
+		m[v] = true
+	}
+	return len(m) != len(ports)
 }
 
 func between(a []int, min int, max int) bool {

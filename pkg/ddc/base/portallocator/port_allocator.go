@@ -20,9 +20,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/net"
-	"k8s.io/kubernetes/pkg/registry/core/service/allocator"
-	"k8s.io/kubernetes/pkg/registry/core/service/portallocator"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,11 +31,19 @@ const (
 	BitMap AllocatePolicy = "bitmap"
 )
 
+type BatchAllocatorInterface interface {
+	Allocate(int) error
+
+	Release(int) error
+
+	AllocateBatch(portNum int) ([]int, error)
+}
+
 // RuntimePortAllocator is an allocator resonsible for maintaining port usage information
 // given a user-defined port range. It allocates and releases ports when a port is requested or
 // reclaimed by a runtime.
 type RuntimePortAllocator struct {
-	pa             portallocator.Interface
+	pa             BatchAllocatorInterface
 	allocatePolicy AllocatePolicy
 
 	client client.Client
@@ -80,14 +85,12 @@ func GetRuntimePortAllocator() (*RuntimePortAllocator, error) {
 func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
 	// random policy does not need check reserved ports
 	if alloc.allocatePolicy == Random {
-		alloc.pa = newRandomAllocator(alloc.pr)
+		alloc.pa = newRandomAllocator(alloc.pr, alloc.log)
 		return nil
 	}
 
 	// bitmap policy check reserved ports
-	alloc.pa, err = portallocator.New(*alloc.pr, func(max int, rangeSpec string) (allocator.Interface, error) {
-		return allocator.NewAllocationMap(max, rangeSpec), nil
-	})
+	alloc.pa, err = newBitMapAllocator(alloc.pr, alloc.log)
 
 	if err != nil {
 		return err
@@ -115,24 +118,9 @@ func (alloc *RuntimePortAllocator) GetAvailablePorts(portNum int) (ports []int, 
 		return nil, errors.New("Runtime port allocator not setup")
 	}
 
-	for i := 0; i < portNum; i++ {
-		if availPort, err := alloc.pa.AllocateNext(); err != nil {
-			alloc.log.Error(err, "can't allocate next, all ports are in use")
-			break
-		} else {
-			ports = append(ports, availPort)
-		}
-	}
-
-	// Something unexpected happened, rollback to release allocated ports
-	if len(ports) < portNum {
-		for _, reservedPort := range ports {
-			_ = alloc.pa.Release(reservedPort)
-		}
-		// Allocated port may not be released as expect, restart to restore allocated ports.
-		alloc.log.Error(errors.Errorf("can't get enough available ports, only %d ports are available", len(ports)), "")
-		alloc.log.Info("Exit to restore port allocator...")
-		os.Exit(1)
+	ports, err = alloc.pa.AllocateBatch(portNum)
+	if err != nil {
+		return ports, err
 	}
 
 	alloc.log.Info("Successfully allocated ports", "expeceted port num", portNum, "allocated ports", ports)
