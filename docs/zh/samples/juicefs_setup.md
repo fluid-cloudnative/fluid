@@ -42,6 +42,9 @@ spec:
       - name: minio
         # Pulls the default Minio image from Docker Hub
         image: minio/minio
+        args:
+        - server
+        - /storage
         env:
         # Minio access key and secret key
         - name: MINIO_ROOT_USER
@@ -65,4 +68,11 @@ deployment.apps/minio created
 查看运行结果
 
 ```bash
+$ kubectl  get deploy minio
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+minio   0/1     1            0           40s
+$ kubectl  get svc minio
+NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+minio   ClusterIP   172.16.159.15   <none>        9000/TCP   77s
+
 ```
