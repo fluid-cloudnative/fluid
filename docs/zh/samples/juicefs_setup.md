@@ -57,7 +57,7 @@ spec:
 EOF
 ```
 
-执行以下命令创建Deployment和Service，
+2.执行以下命令创建Deployment和Service，
 
 ```bash
 $ kubectl create -f minio.yaml
@@ -65,7 +65,7 @@ service/minio created
 deployment.apps/minio created
 ````
 
-查看运行结果
+3.查看运行结果
 
 ```bash
 $ kubectl  get deploy minio
@@ -74,5 +74,47 @@ minio   0/1     1            0           40s
 $ kubectl  get svc minio
 NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
 minio   ClusterIP   172.16.159.15   <none>        9000/TCP   77s
+```
 
+4.创建Redis服务
+
+```yaml
+$ cat << EOF > redis.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+  selector:
+    app: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+EOF
 ```
