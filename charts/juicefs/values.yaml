@@ -26,7 +26,7 @@ tieredstore:
   path: /dev/shm
 
 # Docker Image
-image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
+image: juicedata/juicefs-fuse
 imageTag: v1.0.0
 imagePullPolicy: IfNotPresent
 
