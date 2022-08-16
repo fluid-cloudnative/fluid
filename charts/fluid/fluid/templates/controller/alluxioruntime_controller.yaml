@@ -44,6 +44,7 @@ spec:
           - --runtime-workers={{ .Values.runtime.alluxio.runtimeWorkers }}
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --port-allocate-policy={{ .Values.runtime.alluxio.portAllocatePolicy }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR
