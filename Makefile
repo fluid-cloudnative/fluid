@@ -14,6 +14,7 @@ CSI_IMG ?= ${IMG_REPO}/fluid-csi
 LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
+CRD_UPGRADER_IMG?= ${IMG_REPO}/fluid-crd-upgrader
 GO_MODULE ?= off
 GC_FLAGS ?= -gcflags="all=-N -l"
 ARCH ?= amd64
@@ -62,6 +63,7 @@ DOCKER_BUILD += docker-build-csi
 DOCKER_BUILD += docker-build-webhook
 DOCKER_BUILD += docker-build-juicefsruntime-controller
 DOCKER_BUILD += docker-build-init-users
+DOCKER_BUILD += docker-build-crd-upgrader
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
@@ -73,6 +75,7 @@ DOCKER_PUSH += docker-push-webhook
 DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-init-users
+DOCKER_PUSH += docker-push-crd-upgrader
 
 # Buildx and push docker images
 DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
@@ -84,6 +87,7 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-csi
 DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
+DOCKER_BUILDX_PUSH += docker-buildx-push-crd-upgrader
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -206,6 +210,9 @@ docker-build-init-users:
 docker-build-webhook:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
+docker-build-crd-upgrader:
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
 	docker push ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
@@ -237,6 +244,9 @@ docker-push-init-users: docker-build-init-users
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
 
+docker-push-crd-upgrader: docker-build-crd-upgrader
+	docker push ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+
 # Buildx and push the docker image
 docker-buildx-push-dataset-controller: generate gen-openapi fmt vet
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
@@ -264,6 +274,9 @@ docker-buildx-push-init-users:
 
 docker-buildx-push-webhook:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+
+docker-buildx-push-crd-upgrader:
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 docker-build-all: ${DOCKER_BUILD}
 docker-push-all: ${DOCKER_PUSH}

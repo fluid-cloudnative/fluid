@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 
 workdir: /tmp
+crdUpgrade:
+  image: fluidcloudnative/fluid-crd-upgrader:v0.8.0-5bb4677
 
 image:
   imagePullSecrets: []
