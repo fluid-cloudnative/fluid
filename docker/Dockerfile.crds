@@ -1,0 +1,13 @@
+FROM alpine:3.10
+
+COPY ./charts/fluid/fluid/crds /fluid/crds
+COPY ./tools/crd-upgrade/upgrade-crds.sh /fluid/upgrade-crds.sh
+
+RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
+ 	rm -rf /var/cache/apk/* && \
+ 	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+ 	echo "Asia/Shanghai" >  /etc/timezone
+
+ENV K8S_VERSION v1.14.8
+ARG TARGETARCH
+RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/${TARGETARCH}/kubectl && chmod +x /usr/local/bin/kubectl
