@@ -158,6 +158,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 	options["cache-dir"] = cacheDir
+	value.Fuse.CacheDir = cacheDir
 
 	return options, nil
 }
