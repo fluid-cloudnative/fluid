@@ -293,6 +293,82 @@ resources:
   {{- end }}
 {{- end -}}
 
+{{- define "alluxio.fuse.tieredstoreVolumeMounts" -}}
+  {{- if .Values.tieredstore.levels }}
+    {{- range .Values.tieredstore.levels }}
+      {{- /* The mediumtype can have multiple parts like MEM,SSD */}}
+      {{- if .mediumtype }}
+        {{- /* Mount each part */}}
+        {{- if contains "," .mediumtype }}
+          {{- $type := .type }}
+          {{- $path := .path }}
+          {{- $parts := splitList "," .mediumtype }}
+          {{- /* shortCircuit has no effect when use emptyDir volume type */}}
+          {{- if ne $type "emptyDir" }}
+          {{- range $i, $val := $parts }}
+            {{- /* Example: For path="/tmp/mem,/tmp/ssd", mountPath resolves to /tmp/mem and /tmp/ssd */}}
+            - mountPath: {{ index ($path | splitList ",") $i }}
+              name: {{ $val | lower }}-{{ $i }}
+          {{- end}}
+          {{- end}}
+        {{- /* The mediumtype is a single value. */}}
+        {{- else}}
+          {{- /* shortCircuit has no effect when use emptyDir volume type */}}
+          {{- if ne .type "emptyDir" }}
+            - mountPath: {{ .path }}
+              name: {{ .mediumtype | replace "," "-" | lower }}
+          {{- end }}
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end}}
+{{- end -}}
+
+{{- define "alluxio.fuse.tieredstoreVolumes" -}}
+  {{- if .Values.tieredstore.levels }}
+    {{- range .Values.tieredstore.levels }}
+      {{- if .mediumtype }}
+        {{- /* The mediumtype can have multiple parts like MEM,SSD */}}
+        {{- if contains "," .mediumtype }}
+          {{- $parts := splitList "," .mediumtype }}
+          {{- $type := .type }}
+          {{- $path := .path }}
+          {{- $volumeName := .name }}
+          {{- /* A volume will be generated for each part */}}
+          {{- range $i, $val := $parts }}
+            {{- /* Example: For mediumtype="MEM,SSD", mediumName resolves to mem-0 and ssd-1 */}}
+            {{- $mediumName := printf "%v-%v" (lower $val) $i }}
+            {{- if eq $type "hostPath"}}
+        - hostPath:
+            path: {{ index ($path | splitList ",") $i }}
+            type: DirectoryOrCreate
+          name: {{ $mediumName }}
+            {{- else if eq $type "persistentVolumeClaim" }}
+        - name: {{ $mediumName }}
+          persistentVolumeClaim:
+            {{- /* Example: For volumeName="/tmp/mem,/tmp/ssd", claimName resolves to /tmp/mem and /tmp/ssd */}}
+            claimName: {{ index ($volumeName | splitList ",") $i }}
+            {{- end}}
+          {{- end}}
+        {{- /* The mediumtype is a single value like MEM. */}}
+        {{- else}}
+          {{- $mediumName := .mediumtype | lower }}
+          {{- if eq .type "hostPath"}}
+        - hostPath:
+            path: {{ .path }}
+            type: DirectoryOrCreate
+          name: {{ $mediumName }}
+          {{- else if eq .type "persistentVolumeClaim" }}
+        - name: {{ $mediumName }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end}}
+{{- end -}}
+
 {{- define "alluxio.master.readinessProbe" -}}
 readinessProbe:
   exec:

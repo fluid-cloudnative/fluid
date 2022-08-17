@@ -152,7 +152,7 @@ spec:
               mountPath: /opt/domain
               {{- end }}
               {{- if eq .Values.shortCircuit.policy "local" }}
-{{- include "alluxio.worker.tieredstoreVolumeMounts" . }}
+{{- include "alluxio.fuse.tieredstoreVolumeMounts" . }}
               {{- end }}
             {{- end }}
             {{- if .Values.fuse.volumeMounts }}
@@ -183,7 +183,7 @@ spec:
 {{- include "alluxio.worker.shortCircuit.volume" . }}
           {{- end }}
           {{- if eq .Values.shortCircuit.policy "local" }}
-{{- include "alluxio.worker.tieredstoreVolumes" . }}
+{{- include "alluxio.fuse.tieredstoreVolumes" . }}
           {{- end }}
         {{- end }}
         {{- if .Values.fuse.volumes }}
