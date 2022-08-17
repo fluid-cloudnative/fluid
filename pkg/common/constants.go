@@ -87,10 +87,10 @@ var tieredStoreOrderMap = map[MediumType]int{
 type VolumeType string
 
 const (
-	VolumeTypeDefault               = ""
-	VolumeTypeHostPath              = "hostPath"
-	VolumeTypeEmptyDir              = "emptyDir"
-	VolumeTypePersistentVolumeClaim = "persistentVolumeClaim"
+	VolumeTypeDefault        = ""
+	VolumeTypeHostPath       = "hostPath"
+	VolumeTypeEmptyDir       = "emptyDir"
+	VolumeTypeVolumeTemplate = "volumeTemplate"
 )
 
 // GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map

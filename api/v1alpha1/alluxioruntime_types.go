@@ -157,9 +157,10 @@ type Level struct {
 	// +required
 	MediumType common.MediumType `json:"mediumtype"`
 
-	// VolumeType is the volume type of the tier. Should be one of the two types: `hostPath`, `emptyDir`.
+	// VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`.
 	// If not set, defaults to hostPath.
 	// +kubebuilder:default=hostPath
+	// +kubebuilder:validation:Enum=hostPath;emptyDir;volumeTemplate
 	// +optional
 	VolumeType common.VolumeType `json:"volumeType"`
 

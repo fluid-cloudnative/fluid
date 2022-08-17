@@ -442,8 +442,12 @@ spec:
                         volumeType:
                           default: hostPath
                           description: 'VolumeType is the volume type of the tier.
-                            Should be one of the two types: `hostPath`, `emptyDir`.
-                            If not set, defaults to hostPath.'
+                            Should be one of the three types: `hostPath`, `emptyDir`
+                            and `volumeTemplate`. If not set, defaults to hostPath.'
+                          enum:
+                          - hostPath
+                          - emptyDir
+                          - volumeTemplate
                           type: string
                       required:
                       - mediumtype
