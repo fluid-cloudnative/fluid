@@ -220,6 +220,7 @@ resources:
           {{- $parts := splitList "," .mediumtype }}
           {{- $type := .type }}
           {{- $path := .path }}
+          {{- $quota := .quota }}
           {{- $volumeName := .name }}
           {{- /* A volume will be generated for each part */}}
           {{- range $i, $val := $parts }}
@@ -239,9 +240,7 @@ resources:
         - name: {{ $mediumName }}
           emptyDir:
             medium: {{ eq $val "MEM" | ternary "Memory" "" }}
-              {{- if .quota }}
-            sizeLimit: {{ .quota }}
-              {{- end}}
+            sizeLimit: {{ index ($quota | splitList ",") $i | replace "B" "i" }}
             {{- end}}
           {{- end}}
         {{- /* The mediumtype is a single value like MEM. */}}

@@ -18,6 +18,7 @@ package alluxio
 import (
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"os"
 	"strings"
 
@@ -168,15 +169,13 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		value.JvmOptions = runtime.Spec.JvmOptions
 	}
 
-	value.Fuse.ShortCircuitPolicy = "local"
-
-	var levels []Level
-
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
+	// Set tieredstore levels
+	var levels []Level
 	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
@@ -220,18 +219,14 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		Size:       "30Gi",
 	}
 
-	value.ShortCircuit = ShortCircuit{
-		VolumeType: "emptyDir",
-		Policy:     "local",
-		Enable:     true,
-	}
-
 	if !runtime.Spec.DisablePrometheus {
 		value.Monitoring = alluxioRuntimeMetricsLabel
 	}
 
 	// transform Tolerations
 	e.transformTolerations(dataset, value)
+
+	e.transformShortCircuit(runtimeInfo, value)
 
 	return
 }
@@ -464,4 +459,28 @@ func (e *AlluxioEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, va
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
 
+}
+
+func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterface, value *Alluxio) {
+	value.Fuse.ShortCircuitPolicy = "local"
+
+	enableShortCircuit := true
+
+	// Disable short circuit when using emptyDir as the volume type of any tieredstore level.
+	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
+		if level.VolumeType == common.VolumeTypeEmptyDir {
+			enableShortCircuit = false
+			break
+		}
+	}
+
+	value.ShortCircuit = ShortCircuit{
+		VolumeType: "emptyDir",
+		Policy:     "local",
+		Enable:     enableShortCircuit,
+	}
+
+	if !enableShortCircuit {
+		value.Properties["alluxio.user.short.circuit.enabled"] = "false"
+	}
 }
