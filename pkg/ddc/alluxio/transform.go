@@ -195,7 +195,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
 			Level:      l,
-			Type:       "hostPath",
+			Type:       string(level.VolumeType),
 			Path:       pathConfigStr,
 			MediumType: mediumTypeConfigStr,
 			Low:        level.Low,

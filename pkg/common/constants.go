@@ -84,6 +84,14 @@ var tieredStoreOrderMap = map[MediumType]int{
 	HDD:    2,
 }
 
+type VolumeType string
+
+const (
+	VolumeTypeDefault  = ""
+	VolumeTypeHostPath = "hostPath"
+	VolumeTypeEmptyDir = "emptyDir"
+)
+
 // GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map
 // because the crd has validated the value, It's not possible to meet unknown MediumType
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
