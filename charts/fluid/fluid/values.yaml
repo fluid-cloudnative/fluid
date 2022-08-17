@@ -19,7 +19,7 @@ csi:
   config:
     hostNetwork: false
   registrar:
-    image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v1.2.0
+    image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v2.3.0-038aeb6-aliyun
   plugins:
     image: fluidcloudnative/fluid-csi:v0.8.0-5bb4677
   kubelet:
