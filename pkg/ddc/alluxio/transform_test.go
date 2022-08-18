@@ -16,6 +16,9 @@ limitations under the License.
 package alluxio
 
 import (
+	"github.com/agiledragon/gomonkey/v2"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"reflect"
 	"testing"
 
@@ -243,5 +246,108 @@ func TestGenerateStaticPorts(t *testing.T) {
 
 	if !reflect.DeepEqual(expect, gotValue) {
 		t.Errorf("Expect the value %v, but got %v", expect, gotValue)
+	}
+}
+
+func TestTransformShortCircuit(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type wantValue struct {
+		wantShortCircuitPolicy string
+		wantShortCircuit       ShortCircuit
+		wantPropertyKey        string
+		wantPropertyValue      string
+	}
+
+	type testCase struct {
+		Name          string
+		RuntimeInfo   base.RuntimeInfoInterface
+		MockPatchFunc func(_ *base.RuntimeInfo) base.TieredStoreInfo
+		Value         *Alluxio
+
+		want wantValue
+	}
+
+	testsCases := []testCase{
+		{
+			Name:        "With emptyDir volume type tier",
+			RuntimeInfo: &base.RuntimeInfo{},
+			MockPatchFunc: func(_ *base.RuntimeInfo) base.TieredStoreInfo {
+				return base.TieredStoreInfo{
+					Levels: []base.Level{
+						{
+							MediumType: common.Memory,
+							VolumeType: common.VolumeTypeEmptyDir,
+						},
+						{
+							MediumType: common.SSD,
+							VolumeType: common.VolumeTypeHostPath,
+						},
+					},
+				}
+			},
+			Value: &Alluxio{
+				Properties: map[string]string{},
+			},
+			want: wantValue{
+				wantShortCircuitPolicy: "local",
+				wantShortCircuit: ShortCircuit{
+					Enable:     false,
+					Policy:     "local",
+					VolumeType: "emptyDir",
+				},
+				wantPropertyKey:   "alluxio.user.short.circuit.enabled",
+				wantPropertyValue: "false",
+			},
+		},
+		{
+			Name:        "Without emptyDir volume type tier",
+			RuntimeInfo: &base.RuntimeInfo{},
+			MockPatchFunc: func(_ *base.RuntimeInfo) base.TieredStoreInfo {
+				return base.TieredStoreInfo{
+					Levels: []base.Level{
+						{
+							MediumType: common.Memory,
+							VolumeType: common.VolumeTypeDefault,
+						},
+						{
+							MediumType: common.SSD,
+							VolumeType: common.VolumeTypeHostPath,
+						},
+					},
+				}
+			},
+			Value: &Alluxio{
+				Properties: map[string]string{},
+			},
+			want: wantValue{
+				wantShortCircuitPolicy: "local",
+				wantShortCircuit: ShortCircuit{
+					Enable:     true,
+					Policy:     "local",
+					VolumeType: "emptyDir",
+				},
+			},
+		},
+	}
+
+	for _, tt := range testsCases {
+		patch := gomonkey.ApplyMethod(reflect.TypeOf(tt.RuntimeInfo), "GetTieredStoreInfo", tt.MockPatchFunc)
+		engine.transformShortCircuit(tt.RuntimeInfo, tt.Value)
+
+		if tt.Value.Fuse.ShortCircuitPolicy != "local" {
+			t.Errorf("Expect Fuse.ShortCircuitPolicy=%s, got=%s", "local", tt.Value.Fuse.ShortCircuitPolicy)
+		}
+
+		if !reflect.DeepEqual(tt.Value.ShortCircuit, tt.want.wantShortCircuit) {
+			t.Errorf("Expect ShortCircuit=%v, got=%v", tt.want.wantShortCircuit, tt.Value.ShortCircuit)
+		}
+
+		if len(tt.want.wantPropertyKey) > 0 {
+			if val, ok := tt.Value.Properties[tt.want.wantPropertyKey]; !ok || val != tt.want.wantPropertyValue {
+				t.Errorf("Expect Property has %s=%s, but got not expected", tt.want.wantPropertyKey, tt.want.wantPropertyValue)
+			}
+		}
+		patch.Reset()
 	}
 }

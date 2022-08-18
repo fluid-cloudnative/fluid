@@ -782,6 +782,16 @@ spec:
                             num of paths defined in Path.
                           pattern: ^((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+)))),)+((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?)$
                           type: string
+                        volumeType:
+                          default: hostPath
+                          description: 'VolumeType is the volume type of the tier.
+                            Should be one of the three types: `hostPath`, `emptyDir`
+                            and `volumeTemplate`. If not set, defaults to hostPath.'
+                          enum:
+                          - hostPath
+                          - emptyDir
+                          - volumeTemplate
+                          type: string
                       required:
                       - mediumtype
                       type: object
