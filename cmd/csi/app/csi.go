@@ -43,6 +43,8 @@ var (
 	nodeID      string
 	metricsAddr string
 	pprofAddr   string
+	pruneFs     []string
+	prunePath   string
 )
 
 var scheme = runtime.NewScheme()
@@ -75,6 +77,8 @@ func init() {
 		ErrorAndExit(err)
 	}
 
+	startCmd.Flags().StringSliceVarP(&pruneFs, "prune-fs", "", []string{}, "Prune fs to add in /etc/updatedb.conf, separated by comma")
+	startCmd.Flags().StringVarP(&prunePath, "prune-path", "", "/runtime-mnt", "Prune path to add in /etc/updatedb.conf")
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
@@ -105,8 +109,10 @@ func handle() {
 	}
 
 	config := config.Config{
-		NodeId:   nodeID,
-		Endpoint: endpoint,
+		NodeId:    nodeID,
+		Endpoint:  endpoint,
+		PruneFs:   pruneFs,
+		PrunePath: prunePath,
 	}
 
 	if err = csi.SetupWithManager(mgr, config); err != nil {

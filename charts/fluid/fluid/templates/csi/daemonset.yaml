@@ -74,6 +74,10 @@ spec:
           {{- if .Values.csi.featureGates }}
           - --feature-gates={{ .Values.csi.featureGates }}
           {{- end }}
+          {{- if .Values.csi.pruneFs }}
+          - --prune-fs={{ .Values.csi.pruneFs }}
+          {{- end }}
+          - --prune-path={{ .Values.runtime.mountRoot }}
           - "--pprof-addr=:6060"
         env:
           - name: NODE_ID
@@ -106,6 +110,8 @@ spec:
             mountPropagation: "Bidirectional"
           - name: registration-dir
             mountPath: /registration
+          - name: host-etc-dir
+            mountPath: /host-etc
       volumes:
         - name: kubelet-dir
           hostPath:
@@ -123,3 +129,7 @@ spec:
             path: {{ .Values.runtime.mountRoot | quote }}
             type: DirectoryOrCreate
           name: fluid-src-dir
+        - hostPath:
+            path: /etc
+            type: Directory
+          name: host-etc-dir
