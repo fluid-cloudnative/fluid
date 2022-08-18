@@ -71,9 +71,9 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
 	}
 
+	quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
+	quotas := strings.Split(quotaList, ",")
 	if len(runtime.Spec.TieredStore.Levels) != 0 && runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
-		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
-		quotas := strings.Split(quotaList, ",")
 		if len(quotas) != len(originPath) {
 			err = fmt.Errorf("the num of cache path and quota must be equal")
 			return
@@ -116,7 +116,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath),
-			WorkersAndClients: e.transformWorkerMountPath(originPath),
+			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, runtime.Spec.TieredStore.Levels[0].MediumType, runtime.Spec.TieredStore.Levels[0].VolumeType),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
@@ -201,7 +201,10 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		// support nas storage
 		if strings.HasPrefix(mount.MountPoint, "local:///") {
 			value.Mounts.Master[mount.Name] = mount.MountPoint[8:]
-			value.Mounts.WorkersAndClients[mount.Name] = mount.MountPoint[8:]
+			value.Mounts.WorkersAndClients[mount.Name] = &MountVolume{
+				Path: mount.MountPoint[8:],
+				Type: "hostPath",
+			}
 			continue
 		}
 
@@ -694,10 +697,17 @@ func (e *JindoFSxEngine) transformMasterMountPath(metaPath string) map[string]st
 	return properties
 }
 
-func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string) map[string]string {
-	properties := map[string]string{}
+func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string, quotas []string, mediumType common.MediumType, volumeType common.VolumeType) map[string]*MountVolume {
+	properties := map[string]*MountVolume{}
 	for index, value := range originPath {
-		properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
+		mountVol := &MountVolume{
+			Path:       strings.TrimRight(value, "/"),
+			Type:       string(volumeType),
+			MediumType: string(mediumType),
+			Quota:      quotas[index],
+		}
+		//properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
+		properties[strconv.Itoa(index+1)] = mountVol
 	}
 	return properties
 }

@@ -104,8 +104,8 @@ type Fuse struct {
 }
 
 type Mounts struct {
-	Master            map[string]string `yaml:"master"`
-	WorkersAndClients map[string]string `yaml:"workersAndClients"`
+	Master            map[string]string       `yaml:"master"`
+	WorkersAndClients map[string]*MountVolume `yaml:"workersAndClients"`
 }
 
 type Resources struct {
@@ -116,6 +116,13 @@ type Resources struct {
 type Resource struct {
 	CPU    string `yaml:"cpu"`
 	Memory string `yaml:"memory"`
+}
+
+type MountVolume struct {
+	Path       string `yaml:"path,omitempty"`
+	Type       string `yaml:"type,omitempty"`
+	MediumType string `yaml:"mediumType,omitempty"`
+	Quota      string `yaml:"quota,omitempty"`
 }
 
 type cacheStates struct {
