@@ -129,8 +129,6 @@ spec:
             - name: jindofs-fuse-mount
               mountPath: /jfs
               mountPropagation: Bidirectional
-            - mountPath: /etc/localtime
-              name: volume-localtime
             - name: bigboot-config
               mountPath: /jindofsx.cfg
               subPath: jindofsx.cfg
@@ -188,10 +186,6 @@ spec:
           secret:
             secretName: {{ .Values.secret }}
         {{- end }}
-        - hostPath:
-            path: /etc/localtime
-            type: ''
-          name: volume-localtime
         - name: jindofs-fuse-mount
           hostPath:
             path: {{ .Values.fuse.hostPath }}

@@ -155,8 +155,6 @@ spec:
               mountPath: /token
               readOnly: true
           {{- end }}
-            - mountPath: /etc/localtime
-              name: volume-localtime
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
@@ -177,10 +175,6 @@ spec:
       enableServiceLinks: true
       {{- end }}
       volumes:
-        - hostPath:
-            path: /etc/localtime
-            type: ''
-          name: volume-localtime
           {{- range $name, $path := .Values.mounts.master }}
         - hostPath:
             path:  "{{ $path }}"
