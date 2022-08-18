@@ -140,9 +140,11 @@ spec:
             - name: bigboot-config
               mountPath: /jindosdk.cfg
               subPath: jindosdk.cfg
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath"}}
             - name: datavolume-{{ $name }}
-              mountPath: "{{ $path }}"
+              mountPath: "{{ $mount.path }}"
+          {{- end }}
             {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
@@ -194,11 +196,14 @@ spec:
           hostPath:
             path: {{ .Values.fuse.hostPath }}
             type: DirectoryOrCreate
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath" }}
         - hostPath:
-            path:  "{{ $path }}"
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
+          {{- /* todo: support volume template */}}
+          {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}

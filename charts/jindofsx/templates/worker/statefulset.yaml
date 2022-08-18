@@ -193,6 +193,8 @@ spec:
             {{- if $mount.quota }}
             sizeLimit: {{ $mount.quota }}
             {{- end }}
+          name: datavolume-{{ $name }}
+          {{- /* todo: support volume template */}}
           {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}
