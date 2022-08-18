@@ -40,6 +40,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-master
+        alibabacloud.com/eci: "true"
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}
@@ -48,7 +49,6 @@ spec:
 {{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
-      hostPID: {{ .Values.useHostPID }}
       nodeSelector:
 {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}

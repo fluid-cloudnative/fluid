@@ -43,6 +43,7 @@ spec:
         role: jindofs-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
+        alibabacloud.com/eci: "true"
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}
@@ -51,7 +52,6 @@ spec:
 {{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
-      hostPID: {{ .Values.useHostPID }}
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
