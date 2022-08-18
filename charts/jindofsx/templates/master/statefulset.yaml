@@ -139,9 +139,9 @@ spec:
             - name: bigboot-config
               mountPath: /jindosdk.cfg
               subPath: jindosdk.cfg
-          {{- range $name, $path := .Values.mounts.master }}
+          {{- range $name, $mount := .Values.mounts.master }}
             - name: datavolume-{{ $name }}
-              mountPath: "{{ $path }}"
+              mountPath: "{{ $mount.path }}"
           {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
@@ -175,11 +175,17 @@ spec:
       enableServiceLinks: true
       {{- end }}
       volumes:
-          {{- range $name, $path := .Values.mounts.master }}
+          {{- range $name, $mount := .Values.mounts.master }}
+          {{- if eq $mount.type "hostPath"}}
         - hostPath:
-            path:  "{{ $path }}"
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
+          {{- else if eq $mount.type "emptyDir"}}
+        - emptyDir:
+            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" "" }}
+          name: datavolume-{{ $name }}
+          {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}

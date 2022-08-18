@@ -61,7 +61,10 @@ fuse:
 
 mounts:
   master:
-  # 1: /mnt/disk1
+  #  1:
+  #    path: /mnt/disk1
+  #    type: emptyDir
+  #    mediumType: MEM
   workersAndClients:
   #  1:
   #    path: /mnt/disk1

@@ -115,7 +115,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 			HostPath: e.getHostMountPoint(),
 		},
 		Mounts: Mounts{
-			Master:            e.transformMasterMountPath(metaPath),
+			Master:            e.transformMasterMountPath(metaPath, runtime.Spec.TieredStore.Levels[0].MediumType, runtime.Spec.TieredStore.Levels[0].VolumeType),
 			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, runtime.Spec.TieredStore.Levels[0].MediumType, runtime.Spec.TieredStore.Levels[0].VolumeType),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
@@ -200,7 +200,10 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		}
 		// support nas storage
 		if strings.HasPrefix(mount.MountPoint, "local:///") {
-			value.Mounts.Master[mount.Name] = mount.MountPoint[8:]
+			value.Mounts.Master[mount.Name] = &MountVolume{
+				Path: mount.MountPoint[8:],
+				Type: "hostPath",
+			}
 			value.Mounts.WorkersAndClients[mount.Name] = &MountVolume{
 				Path: mount.MountPoint[8:],
 				Type: "hostPath",
@@ -691,9 +694,13 @@ func (e *JindoFSxEngine) transformPriority(metaPath string) map[string]string {
 	return properties
 }
 
-func (e *JindoFSxEngine) transformMasterMountPath(metaPath string) map[string]string {
-	properties := map[string]string{}
-	properties["1"] = metaPath
+func (e *JindoFSxEngine) transformMasterMountPath(metaPath string, mediumType common.MediumType, volumeType common.VolumeType) map[string]*MountVolume {
+	properties := map[string]*MountVolume{}
+	properties["1"] = &MountVolume{
+		Path:       metaPath,
+		Type:       string(volumeType),
+		MediumType: string(mediumType),
+	}
 	return properties
 }
 

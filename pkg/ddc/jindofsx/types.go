@@ -104,7 +104,7 @@ type Fuse struct {
 }
 
 type Mounts struct {
-	Master            map[string]string       `yaml:"master"`
+	Master            map[string]*MountVolume `yaml:"master"`
 	WorkersAndClients map[string]*MountVolume `yaml:"workersAndClients"`
 }
 
