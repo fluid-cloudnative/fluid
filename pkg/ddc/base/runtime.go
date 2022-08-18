@@ -125,6 +125,8 @@ type TieredStoreInfo struct {
 type Level struct {
 	MediumType common.MediumType
 
+	VolumeType common.VolumeType
+
 	CachePaths []CachePath
 
 	High string
@@ -290,6 +292,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 
 		tieredstoreInfo.Levels = append(tieredstoreInfo.Levels, Level{
 			MediumType: level.MediumType,
+			VolumeType: level.VolumeType,
 			CachePaths: cachePaths,
 			High:       level.High,
 			Low:        level.Low,

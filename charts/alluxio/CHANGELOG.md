@@ -206,3 +206,7 @@
 0.9.1
 
 - Add runtime identity information
+
+0.9.2
+
+- Support emptyDir as tieredStore volume type

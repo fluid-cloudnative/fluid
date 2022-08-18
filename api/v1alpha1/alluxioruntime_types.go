@@ -157,6 +157,13 @@ type Level struct {
 	// +required
 	MediumType common.MediumType `json:"mediumtype"`
 
+	// VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`.
+	// If not set, defaults to hostPath.
+	// +kubebuilder:default=hostPath
+	// +kubebuilder:validation:Enum=hostPath;emptyDir;volumeTemplate
+	// +optional
+	VolumeType common.VolumeType `json:"volumeType"`
+
 	// File paths to be used for the tier. Multiple paths are supported.
 	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
 	// +kubebuilder:validation:MinLength=1
