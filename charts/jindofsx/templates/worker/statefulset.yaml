@@ -139,9 +139,9 @@ spec:
             - name: bigboot-config
               mountPath: /jindosdk.cfg
               subPath: jindosdk.cfg
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
             - name: datavolume-{{ $name }}
-              mountPath: "{{ $path }}"
+              mountPath: "{{ $mount.path }}"
             {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
@@ -181,11 +181,19 @@ spec:
             path: /etc/localtime
             type: ''
           name: volume-localtime
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath" }}
         - hostPath:
-            path:  "{{ $path }}"
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
+          {{- else if eq $mount.type "emptyDir" }}
+        - emptyDir:
+            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" "" }}
+            {{- if $mount.quota }}
+            sizeLimit: {{ $mount.quota }}
+            {{- end }}
+          {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}

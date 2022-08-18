@@ -63,9 +63,16 @@ mounts:
   master:
   # 1: /mnt/disk1
   workersAndClients:
-  # 1: /mnt/disk1
-  # 2: /mnt/disk2
-  # 3: /mnt/disk3
+  #  1:
+  #    path: /mnt/disk1
+  #    type: emptyDir
+  #    mediumType: MEM
+  #    quota: 10Gi
+  #  2:
+  #    path: /mnt/disk2
+  #    type: hostPath
+  #    mediumType: SSD
+  #    quota: 5Gi
 
 owner:
   enabled: false
