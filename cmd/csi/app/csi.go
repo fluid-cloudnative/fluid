@@ -77,7 +77,7 @@ func init() {
 		ErrorAndExit(err)
 	}
 
-	startCmd.Flags().StringSliceVarP(&pruneFs, "prune-fs", "", []string{}, "Prune fs to add in /etc/updatedb.conf, separated by comma")
+	startCmd.Flags().StringSliceVarP(&pruneFs, "prune-fs", "", []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "fuse.juicefs", "fuse.goosefs-fuse", "ossfs"}, "Prune fs to add in /etc/updatedb.conf, separated by comma")
 	startCmd.Flags().StringVarP(&prunePath, "prune-path", "", "/runtime-mnt", "Prune path to add in /etc/updatedb.conf")
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
