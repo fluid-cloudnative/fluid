@@ -40,7 +40,6 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-master
-        alibabacloud.com/eci: "true"
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}
