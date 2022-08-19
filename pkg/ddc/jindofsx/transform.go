@@ -64,16 +64,19 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
 
+	var quotas []string
 	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		userSetQuota = append(userSetQuota, "1Gi")
+		quotas = append(quotas, "1Gi")
 	} else if runtime.Spec.TieredStore.Levels[0].Quota != nil {
 		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
+		quotas = append(quotas, runtime.Spec.TieredStore.Levels[0].Quota.String())
 	}
 
 	if len(runtime.Spec.TieredStore.Levels) != 0 && runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
 		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
-		quotas := strings.Split(quotaList, ",")
+		quotas = strings.Split(quotaList, ",")
 		if len(quotas) != len(originPath) {
 			err = fmt.Errorf("the num of cache path and quota must be equal")
 			return
@@ -89,6 +92,14 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 
 	jindoSmartdataImage, smartdataTag, dnsServer := e.getSmartDataConfigs()
 	jindoFuseImage, fuseTag := e.parseFuseImage()
+
+	var mediumType = common.Memory
+	var volumeType = common.VolumeTypeHostPath
+
+	if len(runtime.Spec.TieredStore.Levels) > 0 {
+		mediumType = runtime.Spec.TieredStore.Levels[0].MediumType
+		volumeType = runtime.Spec.TieredStore.Levels[0].VolumeType
+	}
 
 	value = &Jindo{
 		Image:           jindoSmartdataImage,
@@ -115,8 +126,8 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 			HostPath: e.getHostMountPoint(),
 		},
 		Mounts: Mounts{
-			Master:            e.transformMasterMountPath(metaPath),
-			WorkersAndClients: e.transformWorkerMountPath(originPath),
+			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
+			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, mediumType, volumeType),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
@@ -200,8 +211,14 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		}
 		// support nas storage
 		if strings.HasPrefix(mount.MountPoint, "local:///") {
-			value.Mounts.Master[mount.Name] = mount.MountPoint[8:]
-			value.Mounts.WorkersAndClients[mount.Name] = mount.MountPoint[8:]
+			value.Mounts.Master[mount.Name] = &Level{
+				Path: mount.MountPoint[8:],
+				Type: "hostPath",
+			}
+			value.Mounts.WorkersAndClients[mount.Name] = &Level{
+				Path: mount.MountPoint[8:],
+				Type: "hostPath",
+			}
 			continue
 		}
 
@@ -688,16 +705,27 @@ func (e *JindoFSxEngine) transformPriority(metaPath string) map[string]string {
 	return properties
 }
 
-func (e *JindoFSxEngine) transformMasterMountPath(metaPath string) map[string]string {
-	properties := map[string]string{}
-	properties["1"] = metaPath
+func (e *JindoFSxEngine) transformMasterMountPath(metaPath string, mediumType common.MediumType, volumeType common.VolumeType) map[string]*Level {
+	properties := map[string]*Level{}
+	properties["1"] = &Level{
+		Path:       metaPath,
+		Type:       string(volumeType),
+		MediumType: string(mediumType),
+	}
 	return properties
 }
 
-func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string) map[string]string {
-	properties := map[string]string{}
+func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string, quotas []string, mediumType common.MediumType, volumeType common.VolumeType) map[string]*Level {
+	properties := map[string]*Level{}
 	for index, value := range originPath {
-		properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
+		mountVol := &Level{
+			Path:       strings.TrimRight(value, "/"),
+			Type:       string(volumeType),
+			MediumType: string(mediumType),
+			Quota:      quotas[index],
+		}
+		//properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
+		properties[strconv.Itoa(index+1)] = mountVol
 	}
 	return properties
 }

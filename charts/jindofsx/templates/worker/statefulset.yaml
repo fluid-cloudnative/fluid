@@ -51,7 +51,6 @@ spec:
 {{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
-      hostPID: {{ .Values.useHostPID }}
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
@@ -139,9 +138,9 @@ spec:
             - name: bigboot-config
               mountPath: /jindosdk.cfg
               subPath: jindosdk.cfg
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
             - name: datavolume-{{ $name }}
-              mountPath: "{{ $path }}"
+              mountPath: "{{ $mount.path }}"
             {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
@@ -155,8 +154,6 @@ spec:
               mountPath: /token
               readOnly: true
           {{- end }}
-            - mountPath: /etc/localtime
-              name: volume-localtime
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
@@ -177,15 +174,21 @@ spec:
       enableServiceLinks: true
       {{- end }}
       volumes:
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath" }}
         - hostPath:
-            path: /etc/localtime
-            type: ''
-          name: volume-localtime
-          {{- range $name, $path := .Values.mounts.workersAndClients }}
-        - hostPath:
-            path:  "{{ $path }}"
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
           name: datavolume-{{ $name }}
+          {{- else if eq $mount.type "emptyDir" }}
+        - emptyDir:
+            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" "" }}
+            {{- if $mount.quota }}
+            sizeLimit: {{ $mount.quota }}
+            {{- end }}
+          name: datavolume-{{ $name }}
+          {{- /* todo: support volume template */}}
+          {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}

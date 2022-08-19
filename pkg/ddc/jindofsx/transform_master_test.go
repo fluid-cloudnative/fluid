@@ -17,6 +17,8 @@ limitations under the License.
 package jindofsx
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -56,7 +58,7 @@ func TestTransformMasterMountPath(t *testing.T) {
 		runtime    *datav1alpha1.JindoRuntime
 		dataset    *datav1alpha1.Dataset
 		jindoValue *Jindo
-		expect     string
+		expect     *Level
 	}{
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
@@ -68,12 +70,16 @@ func TestTransformMasterMountPath(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Jindo{}, "/mnt/disk1"},
+			}}, &Jindo{}, &Level{
+			Path:       "/mnt/disk1",
+			Type:       string(common.VolumeTypeHostPath),
+			MediumType: string(common.Memory),
+		}},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		properties := engine.transformMasterMountPath("/mnt/disk1")
-		if properties["1"] != test.expect {
+		properties := engine.transformMasterMountPath("/mnt/disk1", common.Memory, common.VolumeTypeHostPath)
+		if !reflect.DeepEqual(properties["1"], test.expect) {
 			t.Errorf("expected value %v, but got %v", test.expect, properties["1"])
 		}
 	}
