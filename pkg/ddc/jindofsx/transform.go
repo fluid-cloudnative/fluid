@@ -64,14 +64,16 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
 
+	var quotas []string
 	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		userSetQuota = append(userSetQuota, "1Gi")
+		quotas = append(quotas, "1Gi")
 	} else if runtime.Spec.TieredStore.Levels[0].Quota != nil {
 		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
+		quotas = append(quotas, runtime.Spec.TieredStore.Levels[0].Quota.String())
 	}
 
-	quotas := []string{"1Gi"}
 	if len(runtime.Spec.TieredStore.Levels) != 0 && runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
 		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
 		quotas = strings.Split(quotaList, ",")
