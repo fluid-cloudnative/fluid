@@ -17,6 +17,7 @@ limitations under the License.
 package jindofsx
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -77,30 +78,41 @@ func TestTransformWorker(t *testing.T) {
 
 func TestTransformWorkerMountPath(t *testing.T) {
 	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     string
+		storagePath                string
+		quotaList                  string
+		tieredStoreLevelMediumType common.MediumType
+		tieredStoreLevelVolumeType common.VolumeType
+		expect                     map[string]*Level
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
+		{
+			storagePath:                "/mnt/disk1,/mnt/disk2",
+			quotaList:                  "10Gi,5Gi",
+			tieredStoreLevelMediumType: common.SSD,
+			tieredStoreLevelVolumeType: common.VolumeTypeHostPath,
+			expect: map[string]*Level{
+				"1": &Level{
+					Path:       "/mnt/disk1",
+					Type:       string(common.VolumeTypeHostPath),
+					MediumType: string(common.SSD),
+					Quota:      "10Gi",
+				},
+				"2": &Level{
+					Path:       "/mnt/disk2",
+					Type:       string(common.VolumeTypeHostPath),
+					MediumType: string(common.SSD),
+					Quota:      "5Gi",
+				},
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, "/mnt/disk2"},
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		stroagePath := "/mnt/disk1,/mnt/disk2"
-		originPath := strings.Split(stroagePath, ",")
-		properties := engine.transformWorkerMountPath(originPath)
-		if properties["2"] != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, properties["2"])
+		originPath := strings.Split(test.storagePath, ",")
+		quotas := strings.Split(test.quotaList, ",")
+
+		properties := engine.transformWorkerMountPath(originPath, quotas, test.tieredStoreLevelMediumType, test.tieredStoreLevelVolumeType)
+		if !reflect.DeepEqual(properties, test.expect) {
+			t.Errorf("expected value %v, but got %v", test.expect, properties)
 		}
 	}
 }
