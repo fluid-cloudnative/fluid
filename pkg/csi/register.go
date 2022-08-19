@@ -17,11 +17,13 @@ limitations under the License.
 package csi
 
 import (
+	"github.com/golang/glog"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/plugins"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/recover"
-	"github.com/golang/glog"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"github.com/fluid-cloudnative/fluid/pkg/csi/updatedbconf"
 )
 
 type registrationFuncs struct {
@@ -36,6 +38,7 @@ func init() {
 
 	registraions["plugins"] = registrationFuncs{enabled: plugins.Enabled, register: plugins.Register}
 	registraions["recover"] = registrationFuncs{enabled: recover.Enabled, register: recover.Register}
+	registraions["updatedbconf"] = registrationFuncs{enabled: updatedbconf.Enabled, register: updatedbconf.Register}
 }
 
 // SetupWithManager registers all the enabled components defined in registrations to the controller manager.
