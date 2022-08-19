@@ -24,7 +24,7 @@ csi:
     image: fluidcloudnative/fluid-csi:v0.8.0-7dd9d35
   kubelet:
     rootDir: /var/lib/kubelet
-  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,JuiceFS,fuse.goosefs-fuse,ossfs
+  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs
 
 runtime:
   criticalFusePod: true
