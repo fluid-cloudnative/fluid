@@ -24,6 +24,10 @@ func Register(_ manager.Manager, cfg config.Config) error {
 		glog.Warningf("failed to update updatedb.conf %s ", err)
 		return nil
 	}
+	if newconfig == string(content) {
+		glog.Info("/etc/updatedb.conf has no changes, skip updating")
+		return nil
+	}
 	return os.WriteFile(updatedbConfPath, []byte(newconfig), 0644)
 }
 
