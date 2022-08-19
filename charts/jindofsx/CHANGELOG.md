@@ -44,3 +44,7 @@ Fix fuse memleak
 0.8.9
 
 Add updateStrategy for fuse
+
+0.8.10
+
+Support configurable tieredstore's volume type
