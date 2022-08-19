@@ -3133,6 +3133,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref common.ReferenceCallb
 							Format:      "",
 						},
 					},
+					"volumeType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`. If not set, defaults to hostPath.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"path": {
 						SchemaProps: spec.SchemaProps{
 							Description: "File paths to be used for the tier. Multiple paths are supported. Multiple paths should be separated with comma. For example: \"/mnt/cache1,/mnt/cache2\".",

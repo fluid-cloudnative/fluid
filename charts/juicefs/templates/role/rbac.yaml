@@ -1,8 +1,9 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
+  namespace: {{ .Release.Namespace | quote }}
 rules:
   - apiGroups:
       - ""
@@ -15,12 +16,13 @@ rules:
       - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
+  namespace: {{ .Release.Namespace | quote }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: {{ printf "%s-loader" .Release.Name }}
 subjects:
   - kind: ServiceAccount
