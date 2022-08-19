@@ -48,9 +48,9 @@ spec:
         env:
         # Minio access key and secret key
         - name: MINIO_ROOT_USER
-          value: "minio"
+          value: "minioadmin"
         - name: MINIO_ROOT_PASSWORD
-          value: "minio"
+          value: "minioadmin"
         ports:
         - containerPort: 9000
           hostPort: 9000
@@ -118,3 +118,15 @@ spec:
             - containerPort: 6379
 EOF
 ```
+
+此时开源Juicefs依赖的基础环境已经准备完毕，可以看到此时对应的配置
+
+| Name                             | Value                                      | Description                                |
+|----------------------------------|--------------------------------------------|--------------------------------------------|
+| `metaurl`                        | redis://redis:6379/0                       | 元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/)                  | 
+| `access-key`                     | minoadmin                                  | 对象存储的 access key                        |
+| `access-secret`                  | minoadmin                                  | 对象存储的 access secret                     |
+| `storage type`                   | minio                                      | 对象存储的类型                                |
+
+
+
