@@ -30,7 +30,17 @@ $ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/fluid
 $ vim values.yaml
 ```
 
-### 安装或者更新helm chart
+### 创建基于arm64的Kubernetes集群， 并且安装helm chart
+
+#### 查看arm节点
+
+```shell
+kubectl get no -l kubernetes.io/arch=arm64
+NAME                       STATUS   ROLES    AGE    VERSION
+cn-beijing.192.168.3.183   Ready    <none>   6d3h   v1.22.10
+cn-beijing.192.168.3.184   Ready    <none>   6d3h   v1.22.10
+cn-beijing.192.168.3.185   Ready    <none>   6d3h   v1.22.10
+```
 
 #### 安装
 
@@ -38,13 +48,18 @@ $ vim values.yaml
 $ helm install fluid fluid
 ```
 
-### 升级
 
-```
-$ helm upgrade fluid fluid
-```
 
 ## 运行示例
+
+本文 JuiceFSRuntime 为例
+
+
+1. 创建基于arm64的Kubernetes集群
+
+
+2. 根据[文档](juicefs_setup.md)准备JuiceFS 社区版
+
 
 **为 namespace 开启 webhook**
 
