@@ -54,8 +54,6 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-
-
 ## 运行示例
 
 本文 JuiceFSRuntime 为例
@@ -63,37 +61,141 @@ TEST SUITE: None
 
 1. 创建基于arm64的Kubernetes集群
 
-
 2. 根据[文档](juicefs_setup.md)准备JuiceFS 社区版
 
-
-**为 namespace 开启 webhook**
-
-FUSE 挂载点自动恢复功能需要 pod 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
-Fluid webhook 提供了自动将 pod 的 mountPropagation 设置为 `HostToContainer`，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
+在使用 JuiceFS 之前，您需要提供元数据服务（如 Redis）及对象存储服务（如 MinIO）的参数，并创建对应的 secret:
 
 ```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
+kubectl create secret generic jfs-secret \
+    --from-literal=metaurl=redis://redis:6379/1 \
+    --from-literal=access-key=minioadmin \
+    --from-literal=secret-key=minioadmin
 ```
 
-**创建 dataset 和 runtime**
+其中：
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
+- `metaurl`：元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/) 。
+- `access-key`：对象存储的 access key。
+- `secret-key`：对象存储的 secret key。
 
+**查看待创建的 `Dataset` 资源对象**
+
+```yaml
+$ cat<<EOF >dataset.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: jfsdemo
+spec:
+  mounts:
+    - name: minio
+      mountPoint: "juicefs:///"
+      options:
+        bucket: "http://minio:9000/minio"
+        storage: "minio"
+      encryptOptions:
+        - name: metaurl
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: metaurl
+        - name: access-key
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: access-key
+        - name: secret-key
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: secret-key
+EOF
+```
+
+其中：
+
+- `mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 JuiceFS 文件系统的 `/demo` 子目录。
+- `bucket`：Bucket URL。例如使用 S3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+- `storage`：对象存储类型，比如 `s3`，`gs`，`oss`。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+
+> **注意**：只有 `name` 和 `metaurl` 为必填项，若 JuiceFS 已经格式化过，只需要填写 `name` 和 `metaurl` 即可。
+
+由于 JuiceFS 采用的是本地缓存，对应的 `Dataset` 只支持一个 mount，且 JuiceFS 没有 UFS，`mountPoint` 中可以指定需要挂载的子目录（`juicefs:///` 为根路径），会作为根目录挂载到容器内。
+
+**创建 `Dataset` 资源对象**
+```shell
+$ kubectl create -f dataset.yaml
+dataset.data.fluid.io/jfsdemo created
+```
+
+**查看 `Dataset` 资源对象状态**
+```shell
+$ kubectl get dataset jfsdemo
+NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE      AGE
+jfsdemo                                                                  NotBound   44s
+```
+
+如上所示，`status` 中的 `phase` 属性值为 `NotBound`，这意味着该 `Dataset` 资源对象目前还未与任何 `JuiceFSRuntime` 资源对象绑定，接下来，我们将创建一个 `JuiceFSRuntime` 资源对象。
+
+**查看待创建的 `JuiceFSRuntime` 资源对象**
+
+```yaml
+$ cat<<EOF >runtime.yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 40960
+        low: "0.1"
+EOF
+```
+
+> 注意：JuiceFS 中 `quota` 的最小单位是 MiB
+
+**创建 `JuiceFSRuntime` 资源对象**
+
+```shell
+$ kubectl create -f runtime.yaml
+juicefsruntime.data.fluid.io/jfsdemo created
+```
+
+**检查 `JuiceFSRuntime` 资源对象是否已经创建**
 ```shell
 $ kubectl get juicefsruntime
-NAME      WORKER PHASE   FUSE PHASE   AGE
-jfsdemo   Ready          Ready        2m58s
-$ kubectl get dataset
-NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   [Calculating]    N/A                       N/A                 Bound   2m55s
+NAME      AGE
+jfsdemo   34s
 ```
 
-**创建 Pod 资源对象**
+等待一段时间，让 `JuiceFSRuntime` 资源对象中的各个组件得以顺利启动，你会看到类似以下状态：
+
+```shell
+$ kubectl get po |grep jfs
+jfsdemo-worker-0                                          1/1     Running   0          4m2s
+```
+
+`JuiceFSRuntime` 没有 master 组件，而 FUSE 组件实现了懒启动，会在 pod 使用时再创建。
+
+```shell
+$ kubectl get juicefsruntime jfsdemo
+NAME      AGE
+jfsdemo   6m13s
+```
+
+然后，再查看 `Dataset` 状态，发现已经与 `JuiceFSRuntime` 绑定。
+
+```shell
+$ kubectl get dataset jfsdemo
+NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
+jfsdemo   4.00KiB          -        40.00GiB         -                   Bound   9m28s
+```
+
+**查看待创建的 Pod 资源对象**，其中 Pod 使用上面创建的 `Dataset` 的方式为指定同名的 PVC。
 
 ```yaml
 $ cat<<EOF >sample.yaml
@@ -112,78 +214,22 @@ spec:
     - name: demo
       persistentVolumeClaim:
         claimName: jfsdemo
-  EOF
+EOF
+```
+
+**创建 Pod 资源对象**
+
+```shell
 $ kubectl create -f sample.yaml
 pod/demo-app created
 ```
 
-**查看 Pod 是否创建，并检查其 mountPropagation**
-
+**检查 Pod 资源对象是否已经创建**
 ```shell
 $ kubectl get po |grep demo
-demo-app             1/1     Running   0          96s
-jfsdemo-fuse-g9pvp   1/1     Running   0          95s
-jfsdemo-worker-0     1/1     Running   0          4m25s
-$ kubectl get po demo-app -oyaml |grep volumeMounts -A 3
-    volumeMounts:
-    - mountPath: /data
-      mountPropagation: HostToContainer
-      name: demo
+demo-app                                                       1/1     Running   0          31s
+jfsdemo-fuse-fx7np                                             1/1     Running   0          31s
+jfsdemo-worker-0                                               1/1     Running   0          10m
 ```
 
-## 测试 FUSE 挂载点自动恢复
-
-**删除 FUSE pod**
-
-删除 FUSE pod 后，并等待其重启：
-
-```shell
-$ kubectl delete po jfsdemo-fuse-g9pvp
-pod "jfsdemo-fuse-g9pvp" deleted
-$ kubectl get po
-NAME                 READY   STATUS    RESTARTS   AGE
-demo-app             1/1     Running   0          5m7s
-jfsdemo-fuse-bdsdt   1/1     Running   0          6s
-jfsdemo-worker-0     1/1     Running   0          7m56s
-````
-
-新的 FUSE pod 创建后，再查看 demo pod 中的挂载点情况：
-
-```shell
-$ kubectl exec -it demo-app bash
-kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
-[root@demo-app /]# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-overlay         100G  9.4G   91G  10% /
-tmpfs            64M     0   64M   0% /dev
-tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
-JuiceFS:minio   1.0P   64K  1.0P   1% /data
-/dev/sdb1       100G  9.4G   91G  10% /etc/hosts
-shm              64M     0   64M   0% /dev/shm
-tmpfs           3.8G   12K  3.8G   1% /run/secrets/kubernetes.io/serviceaccount
-tmpfs           2.0G     0  2.0G   0% /proc/acpi
-tmpfs           2.0G     0  2.0G   0% /proc/scsi
-tmpfs           2.0G     0  2.0G   0% /sys/firmware
-```
-
-可以看到，容器中没有出现 `Transport endpoint is not connected` 的报错，表明挂载点已经恢复。
-
-**查看 dataset 的 event**
-
-```shell
-$ kubectl describe dataset jfsdemo
-Name:         jfsdemo
-Namespace:    default
-...
-Events:
-  Type    Reason              Age                  From         Message
-  ----    ------              ----                 ----         -------
-  Normal  FuseRecoverSucceed  2m34s (x5 over 11m)  FuseRecover  Fuse recover /var/lib/kubelet/pods/6c1e0318-858b-4ead-976b-37ccce26edfe/volumes/kubernetes.io~csi/default-jfsdemo/mount succeed
-```
-
-可以看到 Dataset 的 event 有一条 `FuseRecover` 的事件，表明 Fluid 已经对挂载做过一次恢复操作。
-
-## 注意
-
-在 FUSE pod crash 的时候，挂载点恢复的时间依赖 FUSE pod 自身的恢复以及 csi 轮询 kubelet 的周期大小（环境变量 `RECOVER_FUSE_PERIOD`），在恢复之前挂载点会出现 `Transport endpoint is not connected` 的错误，这是符合预期的。
-另外，挂载点恢复是通过重复 bind 的方法实现的，对于 FUSE pod crash 之前应用已经打开的文件描述符，挂载点恢复后该 fd 亦不可恢复，需要应用自身实现错误重试，增强应用自身的鲁棒性。
+可以看到 pod 已经创建成功，同时 JuiceFS 的 FUSE 组件也启动成功。
