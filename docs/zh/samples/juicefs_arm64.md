@@ -46,6 +46,12 @@ cn-beijing.192.168.3.185   Ready    <none>   6d3h   v1.22.10
 
 ```
 $ helm install fluid fluid
+NAME: fluid
+LAST DEPLOYED: Sat Aug 20 21:43:27 2022
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
 ```
 
 
