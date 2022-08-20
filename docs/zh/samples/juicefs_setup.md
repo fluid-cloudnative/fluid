@@ -123,7 +123,7 @@ EOF
 
 | Name                             | Value                                      | Description                                |
 |----------------------------------|--------------------------------------------|--------------------------------------------|
-| `metaurl`                        | redis://redis:6379/0                       | 元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/)                  | 
+| `metaurl`                        | redis://redis:6379/0                       | 元数据服务的访问 URL (比如 Redis)。更多信息参考[文档](https://juicefs.com/docs/zh/community/databases_for_metadata/)                  | 
 | `access-key`                     | minoadmin                                  | 对象存储的 access key                        |
 | `access-secret`                  | minoadmin                                  | 对象存储的 access secret                     |
 | `storage type`                   | minio                                      | 对象存储的类型                                |

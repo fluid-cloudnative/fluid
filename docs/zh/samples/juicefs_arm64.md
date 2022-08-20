@@ -1,25 +1,48 @@
-# 示例 - 在ARM64平台上使用
+# 示例 - 在ARM64平台上使用Fluid
 
-## 安装
+## 环境准备
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
-
-在 Fluid 的安装 chart values.yaml 中将 `csi.featureGates` 设置为 `FuseRecovery=true`，表示开启 FUSE 自动恢复功能。
-再参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行（这里以 JuiceFSRuntime 为例）：
+### 获取Fluid最新源码
 
 ```shell
-$ kubectl -n fluid-system get po
-NAME                                        READY   STATUS    RESTARTS   AGE
-csi-nodeplugin-fluid-2gtsz                  2/2     Running   0          20m
-csi-nodeplugin-fluid-2h79g                  2/2     Running   0          20m
-csi-nodeplugin-fluid-sc459                  2/2     Running   0          20m
-dataset-controller-57fb4569cd-k2jb7         1/1     Running   0          20m
-fluid-webhook-844dcb995f-nfmjl              1/1     Running   0          20m
-juicefsruntime-controller-7d9c964b4-jnbtf   1/1     Running   0          20m
+$ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
+$ cd $GOPATH/src/github.com/fluid-cloudnative
+$ git clone https://github.com/fluid-cloudnative/fluid.git
+$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid
 ```
 
-通常来说，你会看到一个名为 `dataset-controller` 的 Pod、一个名为 `juicefsruntime-controller` 的 Pod、一个名为 `fluid-webhook` 的 Pod
-和多个名为 `csi-nodeplugin` 的 Pod 正在运行。其中，`csi-nodeplugin` 这些 Pod 的数量取决于你的 Kubernetes 集群中结点的数量。
+### 构建amd64和arm64容器镜像
+
+```shell
+$ export DOCKER_CLI_EXPERIMENTAL=enabled
+$ docker run --rm --privileged docker/binfmt:66f9012c56a8316f9244ffd7622d7c21c1f6f28d
+$ docker buildx create --use --name mybuilder
+$ export IMG_REPO=<your docker image repo>
+$ make docker-buildx-all-push
+```
+
+> 获取到构建的镜像地址和镜像版本
+
+### 修改helm chart中镜像版本
+
+```shell
+$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/fluid
+$ vim values.yaml
+```
+
+### 安装或者更新helm chart
+
+#### 安装
+
+```
+$ helm install fluid fluid
+```
+
+### 升级
+
+```
+$ helm upgrade fluid fluid
+```
 
 ## 运行示例
 
