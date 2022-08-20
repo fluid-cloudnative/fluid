@@ -67,7 +67,7 @@ TEST SUITE: None
 
 ```shell
 kubectl create secret generic jfs-secret \
-    --from-literal=metaurl=redis://redis:6379/1 \
+    --from-literal=metaurl=redis://redis:6379/0 \
     --from-literal=access-key=minioadmin \
     --from-literal=secret-key=minioadmin
 ```
@@ -91,7 +91,7 @@ spec:
     - name: minio
       mountPoint: "juicefs:///"
       options:
-        bucket: "http://minio:9000/minio"
+        bucket: "http://minio:9000/minio/test"
         storage: "minio"
       encryptOptions:
         - name: metaurl
@@ -115,7 +115,7 @@ EOF
 其中：
 
 - `mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 JuiceFS 文件系统的 `/demo` 子目录。
-- `bucket`：Bucket URL。例如使用 S3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
+- `bucket`：Bucket URL。例如使用 S3 作为对象存储，在本例子中bucket的名字为test 。
 - `storage`：对象存储类型，比如 `s3`，`gs`，`oss`。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
 
 > **注意**：只有 `name` 和 `metaurl` 为必填项，若 JuiceFS 已经格式化过，只需要填写 `name` 和 `metaurl` 即可。
@@ -151,12 +151,10 @@ spec:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 40960
+        quota: 4Gi
         low: "0.1"
 EOF
 ```
-
-> 注意：JuiceFS 中 `quota` 的最小单位是 MiB
 
 **创建 `JuiceFSRuntime` 资源对象**
 
@@ -175,24 +173,18 @@ jfsdemo   34s
 等待一段时间，让 `JuiceFSRuntime` 资源对象中的各个组件得以顺利启动，你会看到类似以下状态：
 
 ```shell
-$ kubectl get po |grep jfs
-jfsdemo-worker-0                                          1/1     Running   0          4m2s
+$ kubectl get juicefs jfsdemo
+NAME      WORKER PHASE   FUSE PHASE   AGE
+jfsdemo   Ready          Ready        2m15s
 ```
 
-`JuiceFSRuntime` 没有 master 组件，而 FUSE 组件实现了懒启动，会在 pod 使用时再创建。
-
-```shell
-$ kubectl get juicefsruntime jfsdemo
-NAME      AGE
-jfsdemo   6m13s
-```
 
 然后，再查看 `Dataset` 状态，发现已经与 `JuiceFSRuntime` 绑定。
 
 ```shell
 $ kubectl get dataset jfsdemo
 NAME      UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
-jfsdemo   4.00KiB          -        40.00GiB         -                   Bound   9m28s
+jfsdemo   0.00B            0.00B    4.00GiB          0.0%                Bound   3m16s
 ```
 
 **查看待创建的 Pod 资源对象**，其中 Pod 使用上面创建的 `Dataset` 的方式为指定同名的 PVC。
