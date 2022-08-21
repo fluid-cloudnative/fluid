@@ -117,6 +117,14 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 		} else {
 			ctx.Log.V(1).Info("Update the status of the dataset successfully", "phase", dataset.Status.Phase)
 		}
+
+		// invoke runtimeController on demand if needed
+		if controller, err := utils.InvokeRuntimeContollerOnDemand(r.Client, dataset); err != nil {
+			ctx.Log.Error(err, "Failed to invoke runtime controller", "RuntimeController", ctx)
+			return utils.RequeueIfError(err)
+		} else {
+			ctx.Log.V(1).Info("invoke the runtime controller successfully", "controller", controller)
+		}
 	}
 
 	// return utils.RequeueAfterInterval(r.ResyncPeriod)
