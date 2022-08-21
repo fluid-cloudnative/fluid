@@ -194,7 +194,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing
-		cacheGroup := value.FullnameOverride
+		cacheGroup := fmt.Sprintf("%s-%s", runtime.Namespace, value.FullnameOverride)
 		if _, ok := optionMap["cache-group"]; ok {
 			cacheGroup = optionMap["cache-group"]
 		}
