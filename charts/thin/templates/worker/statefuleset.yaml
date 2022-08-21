@@ -50,9 +50,14 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
+      hostNetwork: {{ .Values.worker.hostNetwork }}
       containers:
         - name: thin-worker
+          {{- if .Values.worker.imageTag }}
           image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}
+          {{- else }}
+          image: {{ .Values.worker.image }}
+          {{- end }}
           imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
           {{- if .Values.worker.resources  }}
           resources:
@@ -62,7 +67,6 @@ spec:
           {{- if .Values.worker.ports }}
 {{ toYaml .Values.worker.ports | trim | indent 12  }}
           {{- end }}
-          hostNetwork: {{ .Values.worker.hostNetwork }}
           securityContext:
             privileged: true
           {{- if .Values.worker.livenessProbe }}

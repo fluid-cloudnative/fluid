@@ -41,8 +41,8 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 
 	// 1. image
 	t.parseFuseImage(runtime, value)
-	if len(value.Fuse.Image) == 0 || len(value.Fuse.ImageTag) == 0 {
-		err = fmt.Errorf("fuse %s image or imageTag is nil", runtime.Name)
+	if len(value.Fuse.Image) == 0 {
+		err = fmt.Errorf("fuse %s image is nil", runtime.Name)
 		return
 	}
 	// 2. resources
@@ -55,6 +55,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	// 4. nodeSelector
+	value.Fuse.NodeSelector = map[string]string{}
 	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	}
@@ -124,13 +125,13 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 }
 
 func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
-	if len(runtime.Spec.Fuse.Image) == 0 {
+	if len(runtime.Spec.Fuse.Image) != 0 {
 		value.Fuse.Image = runtime.Spec.Fuse.Image
 	}
-	if len(runtime.Spec.Fuse.ImageTag) == 0 {
+	if len(runtime.Spec.Fuse.ImageTag) != 0 {
 		value.Fuse.ImageTag = runtime.Spec.Fuse.ImageTag
 	}
-	if len(runtime.Spec.Fuse.ImagePullPolicy) == 0 {
+	if len(runtime.Spec.Fuse.ImagePullPolicy) != 0 {
 		value.Fuse.ImagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
 	}
 }

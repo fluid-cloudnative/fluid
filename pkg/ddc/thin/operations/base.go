@@ -96,6 +96,42 @@ func (t ThinFileUtils) GetUsedSpace(path string) (usedSpace int64, err error) {
 	return usedSpace, err
 }
 
+func (t ThinFileUtils) GetFileCount(path string) (fileCount int64, err error) {
+	var (
+		strs    = fmt.Sprintf("ls -lR %s |grep ^- |wc -l ", path)
+		command = []string{"bash", "-c", strs}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = t.exec(command, false)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	// eg: Master.FilesCompleted  (Type: COUNTER, Value: 6,367,897)
+	str := strings.Split(stdout, "\n")
+
+	if len(str) != 1 {
+		err = fmt.Errorf("failed to parse %s in Count method", str)
+		return
+	}
+
+	data := strings.Fields(str[0])
+	if len(data) != 1 {
+		err = fmt.Errorf("failed to parse %s in Count method", data)
+		return
+	}
+
+	fileCount, err = strconv.ParseInt(data[0], 10, 64)
+	if err != nil {
+		return
+	}
+
+	return fileCount, nil
+}
+
 // exec with timeout
 func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)

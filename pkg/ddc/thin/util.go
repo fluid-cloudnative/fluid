@@ -45,18 +45,19 @@ func (t *ThinEngine) getRuntime() (*datav1alpha1.ThinRuntime, error) {
 	return &runtime, nil
 }
 
-func (t *ThinEngine) getThinRuntimeProfile() (profile *datav1alpha1.ThinRuntimeProfile, err error) {
+func (t *ThinEngine) getThinRuntimeProfile() (*datav1alpha1.ThinRuntimeProfile, error) {
 	if t.runtime == nil {
-		return
+		return nil, nil
 	}
 	key := types.NamespacedName{
 		Name: t.runtime.Spec.ThinRuntimeProfileName,
 	}
 
-	if err := t.Get(context.TODO(), key, profile); err != nil {
+	var profile datav1alpha1.ThinRuntimeProfile
+	if err := t.Get(context.TODO(), key, &profile); err != nil {
 		return nil, err
 	}
-	return
+	return nil, nil
 }
 
 func (t *ThinEngine) getFuseDaemonsetName() (dsName string) {

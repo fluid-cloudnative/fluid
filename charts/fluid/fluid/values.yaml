@@ -87,7 +87,7 @@ runtime:
     replicas: 1
     enabled: true
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/hdls/thinruntime-controller:dev-9214977c-dirty
+      image: registry.cn-hangzhou.aliyuncs.com/hdls/thinruntime-controller:dev-880a5a7a-dirty
 
 webhook:
   enabled: true

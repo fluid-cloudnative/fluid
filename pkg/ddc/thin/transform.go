@@ -26,7 +26,7 @@ import (
 
 func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (value *ThinValue, err error) {
 	if runtime == nil {
-		err = fmt.Errorf("the juicefsRuntime is null")
+		err = fmt.Errorf("the thinRuntime is null")
 		return
 	}
 
@@ -71,8 +71,8 @@ func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile
 
 	// 1. image
 	t.parseWorkerImage(runtime, value)
-	if len(value.Worker.Image) == 0 || len(value.Worker.ImageTag) == 0 {
-		err = fmt.Errorf("worker %s image or imageTag is nil", runtime.Name)
+	if len(value.Worker.Image) == 0 {
+		err = fmt.Errorf("worker %s image is nil", runtime.Name)
 		return
 	}
 
@@ -122,13 +122,13 @@ func (t *ThinEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value
 }
 
 func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
-	if len(runtime.Spec.Version.Image) == 0 {
+	if len(runtime.Spec.Version.Image) != 0 {
 		value.Worker.Image = runtime.Spec.Version.Image
 	}
-	if len(runtime.Spec.Version.ImageTag) == 0 {
+	if len(runtime.Spec.Version.ImageTag) != 0 {
 		value.Worker.ImageTag = runtime.Spec.Version.ImageTag
 	}
-	if len(runtime.Spec.Version.ImagePullPolicy) == 0 {
+	if len(runtime.Spec.Version.ImagePullPolicy) != 0 {
 		value.Worker.ImagePullPolicy = runtime.Spec.Version.ImagePullPolicy
 	}
 }

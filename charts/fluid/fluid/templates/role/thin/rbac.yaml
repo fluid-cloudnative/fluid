@@ -24,8 +24,10 @@ rules:
       - data.fluid.io
     resources:
       - thinruntimes
+      - thinruntimeprofiles
       - datasets
       - thinruntimes/status
+      - thinruntimeprofiles/status
       - datasets/status
     verbs:
       - '*'

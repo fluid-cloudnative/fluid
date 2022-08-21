@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -41,7 +42,7 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 	}
 
 	profile, err := t.getThinRuntimeProfile()
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		return
 	}
 

@@ -18,7 +18,7 @@ package thin
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/operations"
 )
 
 func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
@@ -27,7 +27,7 @@ func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinWorkerContainer, t.namespace, t.Log)
 	total, err = fileUtils.GetUsedSpace(t.getMountPoint())
 	if err != nil {
 		return
@@ -42,7 +42,7 @@ func (t *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinWorkerContainer, t.namespace, t.Log)
 	fileCount, err = fileUtils.GetFileCount(t.getMountPoint())
 	if err != nil {
 		return
@@ -57,7 +57,7 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 	if err != nil || len(pods) == 0 {
 		return
 	}
-	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, t.namespace, t.Log)
+	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinWorkerContainer, t.namespace, t.Log)
 	usedSpace, err = fileUtils.GetUsedSpace(t.getMountPoint())
 	if err != nil {
 		return

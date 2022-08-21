@@ -10,7 +10,7 @@ metadata:
     heritage: {{ .Release.Service }}
     role: thin-fuse
   ownerReferences:
-  {{- if .Values.owner.enabled -}}
+  {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
       blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
       controller: {{ .Values.owner.controller }}
@@ -49,9 +49,14 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
       containers:
         - name: thin-fuse
+          {{- if .Values.fuse.imageTag }}
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          {{- else }}
+          image: {{ .Values.fuse.image }}
+          {{- end }}
           imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
           {{- if .Values.fuse.resources }}
           resources:
@@ -73,7 +78,6 @@ spec:
           {{- if .Values.fuse.envs }}
 {{ toYaml .Values.fuse.envs | trim | indent 12 }}
           {{- end }}
-          hostNetwork: {{ .Values.fuse.hostNetwork }}
           securityContext:
             privileged: true
           lifecycle:
@@ -90,7 +94,7 @@ spec:
           {{- end }}
           volumeMounts:
           - name: thin-fuse-mount
-            mountPath: {{ .Values.fuse.hostMountPath }}
+            mountPath: {{ .Values.fuse.mountPath | dir }}
             mountPropagation: Bidirectional
           - mountPath: /etc/fluid
             name: thin-conf
@@ -105,7 +109,7 @@ spec:
       volumes:
         - name: thin-fuse-mount
           hostPath:
-            path: {{ .Values.fuse.hostMountPath }}
+            path: {{ .Values.fuse.mountPath | dir }}
             type: DirectoryOrCreate
         {{- if .Values.fuse.cacheDir }}
         - name: cache-dir
@@ -115,7 +119,7 @@ spec:
         {{- end }}
         - name: thin-conf
           secret:
-            name: {{ template "thin.fullname" . }}-fuse-conf
+            secretName: {{ template "thin.fullname" . }}-fuse-conf
             defaultMode: 0755
         {{- if .Values.fuse.volumes }}
 {{ toYaml .Values.fuse.volumes | indent 8 }}
@@ -133,5 +137,6 @@ metadata:
     role: thin-fuse
 type: Opaque
 stringData:
-  config.json: {{ .Values.fuse.configValue }}
+  config.json: |
+    {{ .Values.fuse.configValue }}
 {{- end }}
