@@ -90,13 +90,13 @@ func TestTransformWorkerMountPath(t *testing.T) {
 			tieredStoreLevelMediumType: common.SSD,
 			tieredStoreLevelVolumeType: common.VolumeTypeHostPath,
 			expect: map[string]*Level{
-				"1": &Level{
+				"1": {
 					Path:       "/mnt/disk1",
 					Type:       string(common.VolumeTypeHostPath),
 					MediumType: string(common.SSD),
 					Quota:      "10Gi",
 				},
-				"2": &Level{
+				"2": {
 					Path:       "/mnt/disk2",
 					Type:       string(common.VolumeTypeHostPath),
 					MediumType: string(common.SSD),
