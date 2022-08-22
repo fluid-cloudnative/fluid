@@ -34,13 +34,16 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 
 	value.Configs.Name = mount.Name
 
+	// transform image
 	image := runtime.Spec.Fuse.Image
 	tag := runtime.Spec.Fuse.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
-
 	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
+
+	// transform envs
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
 
+	// transform options
 	var tiredStoreLevel *datav1alpha1.Level
 	if len(runtime.Spec.TieredStore.Levels) != 0 {
 		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
@@ -49,19 +52,26 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if err != nil {
 		return err
 	}
+
+	// transform format cmd
 	j.genFormatCmd(value, runtime.Spec.Configs)
+
+	// transform mount cmd & stat cmd
 	err = j.genMount(value, runtime, option)
 	if err != nil {
 		return err
 	}
 
+	// transform nodeSelector
 	j.transformFuseNodeSelector(runtime, value)
 	value.Fuse.Enabled = true
 
+	// transform resource
 	err = j.transformResourcesForFuse(runtime, value)
 	if err != nil {
 		return err
 	}
+
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
@@ -129,7 +139,10 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		source = mount.Name
 	}
 
+	// transform source
 	value.Source = source
+
+	// transform mountPath & subPath
 	subPath, err := ParseSubPathFromMountPoint(mount.MountPoint)
 	if err != nil {
 		return nil, err
@@ -158,6 +171,8 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 	options["cache-dir"] = cacheDir
+
+	// transform cacheDir
 	value.Fuse.CacheDir = cacheDir
 
 	return options, nil
@@ -194,7 +209,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing
-		cacheGroup := value.FullnameOverride
+		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, value.FullnameOverride)
 		if _, ok := optionMap["cache-group"]; ok {
 			cacheGroup = optionMap["cache-group"]
 		}

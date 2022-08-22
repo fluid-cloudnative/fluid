@@ -31,6 +31,7 @@ type JuiceFS struct {
 	common.UserInfo  `yaml:",inline"`
 
 	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
+	Tolerations     []corev1.Toleration    `json:"tolerations,omitempty"`
 	Configs         Configs                `yaml:"configs,omitempty"`
 	Fuse            Fuse                   `yaml:"fuse,omitempty"`
 	Worker          Worker                 `yaml:"worker,omitempty"`

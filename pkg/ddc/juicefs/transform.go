@@ -19,6 +19,7 @@ package juicefs
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -45,6 +46,9 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 
 	value.FullnameOverride = j.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
+
+	// transform toleration
+	j.transformTolerations(dataset, value)
 
 	// transform the fuse
 	value.Fuse = Fuse{}
@@ -96,5 +100,16 @@ func (j *JuiceFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, va
 	value.PlacementMode = string(dataset.Spec.PlacementMode)
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
+	}
+}
+
+func (j *JuiceFSEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *JuiceFS) {
+	if len(dataset.Spec.Tolerations) > 0 {
+		// value.Tolerations = dataset.Spec.Tolerations
+		value.Tolerations = []corev1.Toleration{}
+		for _, toleration := range dataset.Spec.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Tolerations = append(value.Tolerations, toleration)
+		}
 	}
 }
