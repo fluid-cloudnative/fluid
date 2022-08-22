@@ -101,3 +101,49 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 		}
 	}
 }
+
+func TestJuiceFSEngine_transformTolerations(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+	}
+	type args struct {
+		dataset *datav1alpha1.Dataset
+		value   *JuiceFS
+	}
+	var tests = []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "",
+				namespace: "",
+			},
+			args: args{
+				dataset: &datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{
+					Tolerations: []corev1.Toleration{{
+						Key:      "a",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "b",
+					}},
+				}},
+				value: &JuiceFS{},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+			}
+			j.transformTolerations(tt.args.dataset, tt.args.value)
+			if len(tt.args.value.Tolerations) != len(tt.args.dataset.Spec.Tolerations) {
+				t.Errorf("transformTolerations() tolerations = %v", tt.args.value.Tolerations)
+			}
+		})
+	}
+}

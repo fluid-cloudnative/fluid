@@ -126,12 +126,10 @@ spec:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 40960
+        quota: 40Gi
         low: "0.1"
 EOF
 ```
-
-> 注意：JuiceFS 中 `quota` 的最小单位是 MiB
 
 **创建 `JuiceFSRuntime` 资源对象**
 
@@ -298,12 +296,10 @@ spec:
     levels:
       - mediumtype: MEM
         path: /dev/shm
-        quota: 40960
+        quota: 40Gi
         low: "0.1"
 EOF
 ```
-
-> 注意：JuiceFS 中 `quota` 的最小单位是 MiB
 
 **创建 `JuiceFSRuntime` 资源对象**
 
