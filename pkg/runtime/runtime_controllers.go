@@ -43,7 +43,7 @@ var checkFuncs map[string]checkFunc = map[string]checkFunc{
 }
 
 func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Dataset, log logr.Logger) (
-	controllerName string, err error) {
+	controllerName string, scaleout bool, err error) {
 
 	if dataset != nil {
 		err = fmt.Errorf("the dataset is nil")
@@ -57,19 +57,19 @@ func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Datas
 	for myControllerName, checkRuntime := range checkFuncs {
 		match, err := checkRuntime(c, key)
 		if err != nil {
-			return controllerName, err
+			return controllerName, scaleout, err
 		}
 
 		if match {
-			err = createRuntimeControllerIfNeeded(c, types.NamespacedName{
+			scaleout, err = createRuntimeControllerIfNeeded(c, types.NamespacedName{
 				Namespace: "fluid-system",
 				Name:      myControllerName,
 			}, log)
 			if err != nil {
-				return controllerName, err
+				return controllerName, scaleout, err
 			}
 			// if it's match, the skip checking other runtime controller
-			return myControllerName, nil
+			return myControllerName, scaleout, nil
 		}
 
 	}
@@ -77,7 +77,7 @@ func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Datas
 	return
 }
 
-func createRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (err error) {
+func createRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		deploy := &appsv1.Deployment{}
 		err = c.Get(context.TODO(), key, deploy)
@@ -88,6 +88,9 @@ func createRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, 
 		// scale out
 		if *deployToUpdate.Spec.Replicas == 0 {
 			deployToUpdate.Spec.Replicas = utilpointer.Int32(1)
+			scale = true
+		} else {
+			return nil
 		}
 
 		if !reflect.DeepEqual(deploy, deployToUpdate) {
