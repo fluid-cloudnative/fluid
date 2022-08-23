@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -123,7 +124,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 	// 4. Scale the runtime controller to handle the phase change
 	if ctx.Dataset.Status.Phase == datav1alpha1.NotBoundDatasetPhase {
 		// invoke runtimeController on demand if needed
-		if controller, err := utils.InvokeRuntimeContollerOnDemand(r.Client, &ctx.Dataset); err != nil {
+		if controller, err := cruntime.CreateRuntimeContollerOnDemand(r.Client, &ctx.Dataset, ctx.Log); err != nil {
 			ctx.Log.Error(err, "Failed to invoke runtime controller", "RuntimeController", ctx)
 			return utils.RequeueIfError(err)
 		} else {
