@@ -39,13 +39,6 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		t.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
 
 		if !t.UnitTest {
-			// Check if the runtime is using deprecated labels
-			isLabelDeprecated, err := t.HasDeprecatedCommonLabelName()
-			if err != nil {
-				return t.runtimeInfo, err
-			}
-			t.runtimeInfo.SetDeprecatedNodeLabel(isLabelDeprecated)
-
 			// Check if the runtime is using deprecated naming style for PersistentVolumes
 			isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(t.Client, t.runtimeInfo, t.Log)
 			if err != nil {

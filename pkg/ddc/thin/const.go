@@ -18,7 +18,7 @@ package thin
 
 const (
 	PodRoleType   = "role"
-	WorkerPodRole = "thinfs-worker"
+	WorkerPodRole = "thin-worker"
 
 	MetadataSyncNotDoneMsg               = "[Calculating]"
 	CheckMetadataSyncDoneTimeoutMillisec = 500

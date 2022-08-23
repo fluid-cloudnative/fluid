@@ -19,6 +19,7 @@ package thin
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -67,7 +68,7 @@ func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		return err
 	}
 
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=thinfs,role=thinfs-worker", t.namespace, t.name))
+	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=%s,role=%s", t.namespace, t.name, common.ThinRuntime, WorkerPodRole))
 	if err != nil {
 		return err
 	}

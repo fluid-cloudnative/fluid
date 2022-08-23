@@ -22,7 +22,7 @@ owner:
 tolerations: [ ]
 
 tieredstore:
-  path: /dev/shm
+  path: ""
 
 # Docker Image
 image: ""
@@ -31,18 +31,13 @@ imagePullPolicy: IfNotPresent
 
 ## WORKER ##
 worker:
-  image: "test"
-  imageTag: "test"
+  image: ""
+  imageTag: ""
   imagePullPolicy: ""
   nodeSelector: ""
   envs: []
-  volumes:
-    - name: test
-      hostPath:
-        path: /test
-  volumeMounts:
-    - name: test
-      mountPath: /test
+  volumes: []
+  volumeMounts: []
   resources:
     requests:
     #      cpu: "0.5"
@@ -60,21 +55,20 @@ worker:
 fuse:
   criticalPod: false
   enabled: true
-  image: "test"
-  imageTag: "test"
+  image: ""
+  imageTag: ""
   imagePullPolicy: IfNotPresent
   envs:
   nodeSelector:
   dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host
-  mountPath: /mnt/jfs
-  hostMountPath: /mnt/jfs
+  mountPath: ""
   command: []
   args: []
   livenessProbe:
   readinessProbe:
   hostNetwork: true
-  configValue: "test"
+  configValue: ""
   volumes:
   volumeMounts:
   resources:

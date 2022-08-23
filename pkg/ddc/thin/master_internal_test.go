@@ -16,6 +16,20 @@
 
 package thin
 
-func (t *ThinEngine) HasDeprecatedCommonLabelName() (deprecated bool, err error) {
-	return false, nil
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
+var (
+	testScheme *runtime.Scheme
+)
+
+func init() {
+	testScheme = runtime.NewScheme()
+	_ = v1.AddToScheme(testScheme)
+	_ = datav1alpha1.AddToScheme(testScheme)
+	_ = appsv1.AddToScheme(testScheme)
 }
