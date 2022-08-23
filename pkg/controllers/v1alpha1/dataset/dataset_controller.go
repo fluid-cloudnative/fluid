@@ -105,6 +105,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
+	// 3.Update the phase to NoneDatasetPhase
 	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
 		dataset := ctx.Dataset.DeepCopy()
 		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
@@ -117,9 +118,12 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 		} else {
 			ctx.Log.V(1).Info("Update the status of the dataset successfully", "phase", dataset.Status.Phase)
 		}
+	}
 
+	// 4. Scale the runtime controller to handle the phase change
+	if ctx.Dataset.Status.Phase == datav1alpha1.NotBoundDatasetPhase {
 		// invoke runtimeController on demand if needed
-		if controller, err := utils.InvokeRuntimeContollerOnDemand(r.Client, dataset); err != nil {
+		if controller, err := utils.InvokeRuntimeContollerOnDemand(r.Client, &ctx.Dataset); err != nil {
 			ctx.Log.Error(err, "Failed to invoke runtime controller", "RuntimeController", ctx)
 			return utils.RequeueIfError(err)
 		} else {
