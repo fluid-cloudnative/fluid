@@ -1,4 +1,3 @@
-{{ if .Values.runtime.goosefs.enabled -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -11,7 +10,11 @@ spec:
   selector:
     matchLabels:
       control-plane: goosefsruntime-controller
+  {{ if .Values.runtime.goosefs.enabled -}}
   replicas: {{ .Values.runtime.goosefs.replicas }}
+  {{- else }}
+  replicas: 0
+  {{- end }}
   template:
     metadata:
       labels:
@@ -86,4 +89,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-{{- end }}
