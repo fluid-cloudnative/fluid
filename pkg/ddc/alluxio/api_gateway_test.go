@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,10 +47,10 @@ func TestGetAPIGatewayStatus(t *testing.T) {
 		},
 		"test GetAPIGatewayStatus case 2": {
 			engineName:      "demo",
-			engineNamespace: "fluid-system",
+			engineNamespace: common.NamespaceFluidSystem,
 			port:            80,
 			wantStatus: &datav1alpha1.APIGatewayStatus{
-				Endpoint: fmt.Sprintf(endpointFormat, "demo", "fluid-system", 80),
+				Endpoint: fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
 			},
 		},
 	}
@@ -110,9 +111,9 @@ func TestQueryAPIGatewayEndpoint(t *testing.T) {
 		},
 		"test GetAPIGatewayStatus case 2": {
 			engineName:      "demo",
-			engineNamespace: "fluid-system",
+			engineNamespace: common.NamespaceFluidSystem,
 			port:            80,
-			wantEndpoint:    fmt.Sprintf(endpointFormat, "demo", "fluid-system", 80),
+			wantEndpoint:    fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
 		},
 	}
 

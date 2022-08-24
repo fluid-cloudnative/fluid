@@ -66,13 +66,13 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 		clientIsNil bool
 	}{
 		"test build and sync ca case 1": {
-			ns:          "fluid-system",
+			ns:          common.NamespaceFluidSystem,
 			svc:         "fluid-pod-admission-webhook",
 			certPath:    "fluid_certs1",
 			clientIsNil: false,
 		},
 		"test build and sync ca case 2": {
-			ns:          "fluid-system",
+			ns:          common.NamespaceFluidSystem,
 			svc:         "fluid-deployment-admission-webhook",
 			certPath:    "fluid_certs2",
 			clientIsNil: false,
