@@ -55,10 +55,6 @@ spec:
           - name: registration-dir
             mountPath: /registration
       - name: plugins
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "rm /registration/fuse.csi.fluid.io-reg.sock"]
         securityContext:
           privileged: true
           runAsUser: 0
@@ -108,8 +104,6 @@ spec:
           - name: fluid-src-dir
             mountPath: {{ .Values.runtime.mountRoot | quote }}
             mountPropagation: "Bidirectional"
-          - name: registration-dir
-            mountPath: /registration
           - name: host-etc-dir
             mountPath: /host-etc
       volumes:
