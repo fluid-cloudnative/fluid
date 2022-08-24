@@ -43,7 +43,7 @@ var checkFuncs map[string]checkFunc = map[string]checkFunc{
 	"goosefsruntime-controller": utils.CheckGooseFSRuntime,
 }
 
-func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Dataset, log logr.Logger) (
+func ScaleoutRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Dataset, log logr.Logger) (
 	controllerName string, scaleout bool, err error) {
 
 	if dataset != nil {
@@ -62,7 +62,7 @@ func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Datas
 		}
 
 		if match {
-			scaleout, err = createRuntimeControllerIfNeeded(c, types.NamespacedName{
+			scaleout, err = scaleoutRuntimeControllerIfNeeded(c, types.NamespacedName{
 				Namespace: common.NamespaceFluidSystem,
 				Name:      myControllerName,
 			}, log)
@@ -78,7 +78,7 @@ func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Datas
 	return
 }
 
-func createRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
+func scaleoutRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		deploy := &appsv1.Deployment{}
 		err = c.Get(context.TODO(), key, deploy)
