@@ -36,6 +36,12 @@ spec:
   replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key }}: {{ $val }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "alluxio.name" . }}
         chart: {{ template "alluxio.chart" . }}
@@ -44,6 +50,11 @@ spec:
         role: alluxio-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key }}: {{ $val }}
+        {{- end }}
+        {{- end }}
     spec:
       enableServiceLinks: false
       {{- if .Values.worker.hostNetwork }}

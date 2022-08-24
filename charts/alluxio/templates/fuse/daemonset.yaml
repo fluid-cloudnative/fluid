@@ -33,12 +33,23 @@ spec:
       role: alluxio-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key }}: {{ $val }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "alluxio.name" . }}
         chart: {{ template "alluxio.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: alluxio-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key }}: {{ $val }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
