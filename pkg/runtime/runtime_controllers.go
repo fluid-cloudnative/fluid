@@ -23,6 +23,7 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,7 +63,7 @@ func CreateRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Datas
 
 		if match {
 			scaleout, err = createRuntimeControllerIfNeeded(c, types.NamespacedName{
-				Namespace: "fluid-system",
+				Namespace: common.NamespaceFluidSystem,
 				Name:      myControllerName,
 			}, log)
 			if err != nil {
