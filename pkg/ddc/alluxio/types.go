@@ -139,6 +139,8 @@ type Worker struct {
 	Ports        Ports                `json:"ports,omitempty"`
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
+	Labels       map[string]string    `json:"labels,omitempty"`
+	Annotations  map[string]string    `json:"annotations,omitempty"`
 }
 
 type Master struct {
@@ -155,6 +157,8 @@ type Master struct {
 	Restore      Restore              `json:"restore,omitempty"`
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
+	Labels       map[string]string    `json:"labels,omitempty"`
+	Annotations  map[string]string    `json:"annotations,omitempty"`
 }
 
 type Restore struct {
@@ -181,6 +185,8 @@ type Fuse struct {
 	CriticalPod        bool                 `json:"criticalPod,omitempty"`
 	VolumeMounts       []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes            []corev1.Volume      `json:"volumes,omitempty"`
+	Labels             map[string]string    `json:"labels,omitempty"`
+	Annotations        map[string]string    `json:"annotations,omitempty"`
 }
 
 type TieredStore struct {

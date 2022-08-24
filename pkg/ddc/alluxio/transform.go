@@ -68,6 +68,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		return
 	}
 
+	err = e.transformPodMetadata(runtime, value)
+	if err != nil {
+		return
+	}
+
 	// 5.transform the hadoop non-default configurations
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
@@ -229,6 +234,23 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	e.transformShortCircuit(runtimeInfo, value)
 
 	return
+}
+
+func (e *AlluxioEngine) transformPodMetadata(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
+	// todo: add ut
+	// transform labels
+	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
+	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
+	value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)
+	value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.PodMetadata.Labels)
+
+	// transform annotations
+	commonAnnotations := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Annotations)
+	value.Master.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Master.PodMetadata.Annotations)
+	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
+	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
+
+	return nil
 }
 
 // 2. Transform the masters
