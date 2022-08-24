@@ -18,6 +18,7 @@ limitations under the License.
 package runtime
 
 import (
+	"context"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,13 +38,26 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 		log logr.Logger
 	}
 	tests := []struct {
-		name      string
-		args      args
-		wantScale bool
-		wantErr   bool
+		name         string
+		args         args
+		wantScale    bool
+		wantErr      bool
+		wantGotErr   bool
+		wantReplicas int32
 	}{
 		// TODO: Add test cases.
-		{},
+		{
+			name: "notFound",
+			args: args{
+				key: types.NamespacedName{
+					Namespace: "default",
+					Name:      "notFoundController",
+				},
+				log: fake.NullLogger(),
+			}, wantErr: true,
+			wantScale:  false,
+			wantGotErr: true,
+		},
 	}
 
 	objs := []runtime.Object{}
@@ -76,7 +90,7 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 				Name:      "goosefsruntime-controller",
 				Namespace: common.NamespaceFluidSystem,
 				Annotations: map[string]string{
-					"managers.fluid.io/replicas": "3",
+					common.RuntimeControllerReplicas: "3",
 				},
 			}, Spec: appsv1.DeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(0),
@@ -98,7 +112,23 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 			}
 			if gotScale != tt.wantScale {
 				t.Errorf("scaleoutRuntimeControllerIfNeeded() = %v, want %v", gotScale, tt.wantScale)
+				return
 			}
+
+			deploy := &appsv1.Deployment{}
+			err = fakeClient.Get(context.TODO(), tt.args.key, deploy)
+			if (err != nil) != tt.wantGotErr {
+				t.Errorf("getDeployment() error = %v, wantErr %v", err, tt.wantGotErr)
+				return
+			}
+
+			if err == nil {
+				gotReplicas := *deploy.Spec.Replicas
+				if gotReplicas != tt.wantReplicas {
+					t.Errorf("scaleoutRuntimeControllerIfNeeded() replicas = %v, want %v", gotReplicas, tt.wantReplicas)
+				}
+			}
+
 		})
 	}
 }
