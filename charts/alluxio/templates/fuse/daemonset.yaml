@@ -36,7 +36,7 @@ spec:
       {{- if .Values.fuse.annotations }}
       annotations:
       {{- range $key, $val := .Values.fuse.annotations }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
       {{- end }}
       labels:
@@ -47,7 +47,7 @@ spec:
         role: alluxio-fuse
         {{- if .Values.fuse.labels }}
         {{- range $key, $val := .Values.fuse.labels }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
         {{- end }}
         {{- end }}
     spec:

@@ -45,7 +45,7 @@ spec:
       {{- if .Values.master.annotations }}
       annotations:
       {{- range $key, $val := .Values.master.annotations }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
       {{- end }}
       labels:
@@ -57,7 +57,7 @@ spec:
         role: alluxio-master
         {{- if .Values.master.labels }}
         {{- range $key, $val := .Values.master.labels }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
         {{- end }}
         {{- end }}
     spec:

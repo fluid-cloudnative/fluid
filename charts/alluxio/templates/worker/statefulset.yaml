@@ -39,7 +39,7 @@ spec:
       {{- if .Values.worker.annotations }}
       annotations:
       {{- range $key, $val := .Values.worker.annotations }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
       {{- end }}
       labels:
@@ -52,7 +52,7 @@ spec:
         fluid.io/dataset-placement: {{ .Values.placement }}
         {{- if .Values.worker.labels }}
         {{- range $key, $val := .Values.worker.labels }}
-        {{ $key }}: {{ $val }}
+        {{ $key | quote }}: {{ $val | quote }}
         {{- end }}
         {{- end }}
     spec:
