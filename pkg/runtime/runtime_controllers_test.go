@@ -21,17 +21,19 @@ import (
 	"context"
 	"testing"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 )
 
-func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
+func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 	type args struct {
 		key types.NamespacedName
 		log logr.Logger
@@ -101,22 +103,22 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 	deployments := []*appsv1.Deployment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "alluxioruntime-controller",
-				Namespace: common.NamespaceFluidSystem,
+				Name:      "alluxio",
+				Namespace: corev1.NamespaceDefault,
 			}, Spec: appsv1.DeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "jindoruntime-controller",
-				Namespace: common.NamespaceFluidSystem,
+				Name:      "jindo",
+				Namespace: corev1.NamespaceDefault,
 			}, Spec: appsv1.DeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(1),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefsruntime-controller",
-				Namespace: common.NamespaceFluidSystem,
+				Name:      "juicefs",
+				Namespace: corev1.NamespaceDefault,
 				Annotations: map[string]string{
 					common.RuntimeControllerReplicas: "0",
 				},
@@ -147,16 +149,32 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 		objs = append(objs, deployment)
 	}
 
+	objs = append(objs, &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alluxio",
+			Namespace: corev1.NamespaceDefault,
+		},
+	}, &datav1alpha1.GooseFSRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "goosefs",
+		Namespace: corev1.NamespaceDefault,
+	}}, &datav1alpha1.JindoRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "jindo",
+		Namespace: corev1.NamespaceDefault,
+	}}, &datav1alpha1.JuiceFSRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "juicefs",
+		Namespace: corev1.NamespaceDefault,
+	}})
+
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotScale, err := scaleoutRuntimeControllerIfNeeded(fakeClient, tt.args.key, tt.args.log)
+			gotScale, err := scaleoutDeploymentIfNeeded(fakeClient, tt.args.key, tt.args.log)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("scaleoutRuntimeControllerIfNeeded() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("scaleoutDeploymentIfNeeded() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotScale != tt.wantScale {
-				t.Errorf("scaleoutRuntimeControllerIfNeeded() = %v, want %v", gotScale, tt.wantScale)
+				t.Errorf("scaleoutDeploymentIfNeeded() = %v, want %v", gotScale, tt.wantScale)
 				return
 			}
 
@@ -170,7 +188,7 @@ func Test_scaleoutRuntimeControllerIfNeeded(t *testing.T) {
 			if err == nil {
 				gotReplicas := *deploy.Spec.Replicas
 				if gotReplicas != tt.wantReplicas {
-					t.Errorf("scaleoutRuntimeControllerIfNeeded() replicas = %v, want %v", gotReplicas, tt.wantReplicas)
+					t.Errorf("scaleoutDeploymentIfNeeded() replicas = %v, want %v", gotReplicas, tt.wantReplicas)
 				}
 			}
 
@@ -242,6 +260,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 	objs := []runtime.Object{}
 	s := runtime.NewScheme()
 	_ = appsv1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
 	deployments := []*appsv1.Deployment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
