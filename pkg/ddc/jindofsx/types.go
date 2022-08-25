@@ -41,7 +41,6 @@ type Jindo struct {
 	Secret          string                 `yaml:"secret,omitempty"`
 	Tolerations     []v1.Toleration        `yaml:"tolerations,omitempty"`
 	InitPortCheck   common.InitPortCheck   `yaml:"initPortCheck,omitempty"`
-	Labels          map[string]string      `yaml:"labels,omitempty"`
 	LogConfig       map[string]string      `yaml:"logConfig,omitempty"`
 	PlacementMode   string                 `yaml:"placement,omitempty"`
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
@@ -68,6 +67,7 @@ type Master struct {
 	DnsServer           string            `yaml:"dnsServer,omitempty"`
 	NameSpace           string            `yaml:"namespace,omitempty"`
 	Labels              map[string]string `yaml:"labels,omitempty"`
+	Annotations         map[string]string `yaml:"annotations,omitempty"`
 	ServiceCount        int               `yaml:"svccount"`
 }
 
@@ -79,8 +79,9 @@ type Worker struct {
 	Port             Ports             `yaml:"ports,omitempty"`
 	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
 	// Affinity         v1.Affinity       `yaml:"affinity,omitempty"`
-	Labels map[string]string `yaml:"labels,omitempty"`
-	Path   string            `yaml:"dataPath"`
+	Labels      map[string]string `yaml:"labels,omitempty"`
+	Annotations map[string]string `yaml:"annotations,omitempty"`
+	Path        string            `yaml:"dataPath"`
 }
 
 type Ports struct {
@@ -97,6 +98,7 @@ type Fuse struct {
 	RunAs          string            `yaml:"runAs,omitempty"`
 	Tolerations    []v1.Toleration   `yaml:"tolerations,omitempty"`
 	Labels         map[string]string `yaml:"labels,omitempty"`
+	Annotations    map[string]string `yaml:"annotations,omitempty"`
 	CriticalPod    bool              `yaml:"criticalPod,omitempty"`
 	Resources      Resources         `yaml:"resources,omitempty"`
 	MountPath      string            `yaml:"mountPath,omitempty"`

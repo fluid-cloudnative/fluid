@@ -117,8 +117,9 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
-                    description: Labels will be added on all the JindoFS Fuse pods.
-                      Any label already existed will be overriden
+                    description: 'Labels will be added on all the JindoFS pods. DEPRECATED:
+                      this is a deprecated field. Please use PodMetadata.Labels instead.
+                      Note: this field is set to be exclusive with PodMetadata.Labels'
                     type: object
                   nodeSelector:
                     additionalProperties:
@@ -126,6 +127,21 @@ spec:
                     description: NodeSelector is a selector which must be true for
                       the fuse client to fit on a node, this option only effect when
                       global is enabled
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Jindo's fuse pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   properties:
                     additionalProperties:
@@ -228,7 +244,9 @@ spec:
               labels:
                 additionalProperties:
                   type: string
-                description: Labels will be added on all the JindoFS pods.
+                description: 'Labels will be added on all the JindoFS pods. DEPRECATED:
+                  this is a deprecated field. Please use PodMetadata.Labels instead.
+                  Note: this field is set to be exclusive with PodMetadata.Labels'
                 type: object
               logConfig:
                 additionalProperties:
@@ -249,14 +267,30 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
-                    description: Labels will be added on all the JindoFS Master or
-                      Worker pods. Any label already existed will be overriden
+                    description: 'Labels will be added on JindoFS Master or Worker
+                      pods. DEPRECATED: This is a deprecated field. Please use PodMetadata
+                      instead. Note: this field is set to be exclusive with PodMetadata.Labels'
                     type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector which must be true for
                       the master to fit on a node
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Jindo's pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     additionalProperties:
@@ -353,6 +387,21 @@ spec:
                 - ""
                 - ContainerNetwork
                 type: string
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to all Jindo's fuse pods
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
+                type: object
               properties:
                 additionalProperties:
                   type: string
@@ -471,14 +520,30 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
-                    description: Labels will be added on all the JindoFS Master or
-                      Worker pods. Any label already existed will be overriden
+                    description: 'Labels will be added on JindoFS Master or Worker
+                      pods. DEPRECATED: This is a deprecated field. Please use PodMetadata
+                      instead. Note: this field is set to be exclusive with PodMetadata.Labels'
                     type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector which must be true for
                       the master to fit on a node
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Jindo's pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     additionalProperties:

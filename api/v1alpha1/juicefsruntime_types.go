@@ -67,6 +67,10 @@ type JuiceFSRuntimeSpec struct {
 	// Prometheus is enabled by default
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components
@@ -99,6 +103,10 @@ type JuiceFSCompTemplateSpec struct {
 	// NodeSelector is a selector
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 type JuiceFSFuseSpec struct {
@@ -134,6 +142,10 @@ type JuiceFSFuseSpec struct {
 	// Defaults to OnDemand
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 //+kubebuilder:object:root=true

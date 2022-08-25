@@ -216,6 +216,21 @@ spec:
                       the fuse client to fit on a node, this option only effect when
                       global is enabled
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to JuiceFs's pods.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   resources:
                     description: Resources that will be requested by JuiceFS Fuse.
                     properties:
@@ -420,6 +435,21 @@ spec:
                     additionalProperties:
                       type: string
                     description: Options
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to JuiceFs's pods.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     description: Ports used by JuiceFS
@@ -633,6 +663,21 @@ spec:
                       type: string
                     description: Options
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to JuiceFs's pods.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   ports:
                     description: Ports used by JuiceFS
                     items:
@@ -701,6 +746,21 @@ spec:
                           it defaults to Limits if that is explicitly specified, otherwise
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
+                    type: object
+                type: object
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to JuiceFs's pods.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
                     type: object
                 type: object
               replicas:
@@ -923,6 +983,21 @@ spec:
                     additionalProperties:
                       type: string
                     description: Options
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to JuiceFs's pods.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     description: Ports used by JuiceFS

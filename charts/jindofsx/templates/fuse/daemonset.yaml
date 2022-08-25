@@ -31,18 +31,23 @@ spec:
       role: jindofs-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "jindofs.name" . }}
         chart: {{ template "jindofs.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-fuse
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | trim | indent 8 }}
-{{- end }}
-{{- if .Values.fuse.labels }}
-{{ toYaml .Values.fuse.labels | trim | indent 8 }}
-{{- end }}
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical

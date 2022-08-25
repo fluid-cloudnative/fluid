@@ -58,10 +58,15 @@ type JindoCompTemplateSpec struct {
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// Labels will be added on all the JindoFS Master or Worker pods.
-	// Any label already existed will be overriden
+	// Labels will be added on JindoFS Master or Worker pods.
+	// DEPRECATED: This is a deprecated field. Please use PodMetadata instead.
+	// Note: this field is set to be exclusive with PodMetadata.Labels
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Jindo's pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// If disable JindoFS master or worker
 	// +optional
@@ -112,10 +117,15 @@ type JindoFuseSpec struct {
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// Labels will be added on all the JindoFS Fuse pods.
-	// Any label already existed will be overriden
+	// Labels will be added on all the JindoFS pods.
+	// DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+	// Note: this field is set to be exclusive with PodMetadata.Labels
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Jindo's fuse pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// CleanPolicy decides when to clean JindoFS Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
@@ -168,8 +178,14 @@ type JindoRuntimeSpec struct {
 	Secret string `json:"secret,omitempty"`
 
 	// Labels will be added on all the JindoFS pods.
+	// DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+	// Note: this field is set to be exclusive with PodMetadata.Labels
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to all Jindo's fuse pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// +optional
 	LogConfig map[string]string `json:"logConfig,omitempty"`
