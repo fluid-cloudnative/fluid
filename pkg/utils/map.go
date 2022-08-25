@@ -16,8 +16,6 @@ func ContainsAll(m map[string]string, slice []string) bool {
 	return true
 }
 
-// todo: Add ut
-
 // UnionMapsWithOverride unions two maps into one. If either of the maps is empty, return the other one.
 // If both maps share the same key, the value in map2 overrides the corresponding value in map1.
 func UnionMapsWithOverride(map1 map[string]string, map2 map[string]string) map[string]string {
