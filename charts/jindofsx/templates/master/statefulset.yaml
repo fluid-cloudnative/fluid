@@ -40,9 +40,6 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-master
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | trim | indent 8 }}
-{{- end }}
 {{- if .Values.master.labels }}
 {{ toYaml .Values.master.labels | trim | indent 8 }}
 {{- end }}

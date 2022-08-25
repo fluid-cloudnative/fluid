@@ -37,9 +37,6 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-fuse
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | trim | indent 8 }}
-{{- end }}
 {{- if .Values.fuse.labels }}
 {{ toYaml .Values.fuse.labels | trim | indent 8 }}
 {{- end }}
