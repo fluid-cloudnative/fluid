@@ -207,13 +207,14 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 		wantControllerName string
 		wantScaleout       bool
 		wantErr            bool
+		wantReplicas       int32
 	}{
 		// TODO: Add test cases.
 		{
 			name: "notFound",
 			args: args{
 				key: types.NamespacedName{
-					Namespace: "default",
+					Namespace: corev1.NamespaceDefault,
 					Name:      "notFound",
 				},
 				log: fake.NullLogger(),
@@ -224,7 +225,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 			name: "unknown",
 			args: args{
 				key: types.NamespacedName{
-					Namespace: common.NamespaceFluidSystem,
+					Namespace: corev1.NamespaceDefault,
 					Name:      "unknown",
 				},
 				log: fake.NullLogger(),
@@ -233,27 +234,53 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 			wantControllerName: "",
 			wantScaleout:       false,
 		}, {
-			name: "scale to 1 annotations 3",
+			name: "scale alluxio runtime to 1 without annotations",
 			args: args{
 				key: types.NamespacedName{
-					Namespace: common.NamespaceFluidSystem,
-					Name:      "goosefsruntime-controller",
+					Namespace: corev1.NamespaceDefault,
+					Name:      "alluxio",
 				},
 				log: fake.NullLogger(),
-			}, wantErr: true,
-			wantControllerName: "",
-			wantScaleout:       false,
+			}, wantErr: false,
+			wantControllerName: "alluxioruntime-controller",
+			wantScaleout:       true,
+			wantReplicas:       1,
 		}, {
-			name: "scale to 1 annotations 0",
+			name: "no need to scale jindo runtime",
 			args: args{
 				key: types.NamespacedName{
-					Namespace: common.NamespaceFluidSystem,
-					Name:      "juicefsruntime-controller",
+					Namespace: corev1.NamespaceDefault,
+					Name:      "jindo",
 				},
 				log: fake.NullLogger(),
-			}, wantErr: true,
-			wantControllerName: "",
+			}, wantErr: false,
+			wantControllerName: "jindoruntime-controller",
 			wantScaleout:       false,
+			wantReplicas:       1,
+		}, {
+			name: "scale juice runtime with annotation 0",
+			args: args{
+				key: types.NamespacedName{
+					Namespace: corev1.NamespaceDefault,
+					Name:      "juicefs",
+				},
+				log: fake.NullLogger(),
+			}, wantErr: false,
+			wantControllerName: "juicefsruntime-controller",
+			wantScaleout:       true,
+			wantReplicas:       1,
+		}, {
+			name: "scale goosef runtime with annotation 0",
+			args: args{
+				key: types.NamespacedName{
+					Namespace: corev1.NamespaceDefault,
+					Name:      "goosefs",
+				},
+				log: fake.NullLogger(),
+			}, wantErr: false,
+			wantControllerName: "goosefsruntime-controller",
+			wantScaleout:       true,
+			wantReplicas:       3,
 		},
 	}
 
@@ -310,6 +337,22 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 		objs = append(objs, deployment)
 	}
 
+	objs = append(objs, &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alluxio",
+			Namespace: corev1.NamespaceDefault,
+		},
+	}, &datav1alpha1.GooseFSRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "goosefs",
+		Namespace: corev1.NamespaceDefault,
+	}}, &datav1alpha1.JindoRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "jindo",
+		Namespace: corev1.NamespaceDefault,
+	}}, &datav1alpha1.JuiceFSRuntime{ObjectMeta: metav1.ObjectMeta{
+		Name:      "juicefs",
+		Namespace: corev1.NamespaceDefault,
+	}})
+
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -323,6 +366,25 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 			}
 			if gotScaleout != tt.wantScaleout {
 				t.Errorf("ScaleoutRuntimeContollerOnDemand() gotScaleout = %v, want %v", gotScaleout, tt.wantScaleout)
+			}
+
+			if tt.wantControllerName != "" {
+				deploy := &appsv1.Deployment{}
+				err = fakeClient.Get(context.TODO(), types.NamespacedName{
+					Namespace: common.NamespaceFluidSystem,
+					Name:      tt.wantControllerName,
+				}, deploy)
+				if err != nil {
+					t.Errorf("getDeployment() error = %v", err)
+					return
+				}
+
+				if err == nil {
+					gotReplicas := *deploy.Spec.Replicas
+					if gotReplicas != tt.wantReplicas {
+						t.Errorf("scaleoutDeploymentIfNeeded() replicas = %v, want %v", gotReplicas, tt.wantReplicas)
+					}
+				}
 			}
 		})
 	}
