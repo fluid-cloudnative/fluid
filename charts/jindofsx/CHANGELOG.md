@@ -48,3 +48,7 @@ Add updateStrategy for fuse
 0.8.10
 
 Support configurable tieredstore's volume type
+
+0.8.11
+
+Support configurable pod metadata
