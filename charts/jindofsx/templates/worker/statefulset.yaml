@@ -35,6 +35,12 @@ spec:
   podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "jindofs.name" . }}
         chart: {{ template "jindofs.chart" . }}
@@ -43,9 +49,11 @@ spec:
         role: jindofs-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
-{{- if .Values.worker.labels }}
-{{ toYaml .Values.worker.labels | trim | indent 8 }}
-{{- end }}
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
       securityContext:
