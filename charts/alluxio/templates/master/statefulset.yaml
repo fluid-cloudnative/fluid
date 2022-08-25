@@ -42,6 +42,12 @@ spec:
   replicas: {{ $masterCount }}
   template:
     metadata:
+      {{- if .Values.master.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.master.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         name: {{ $fullName }}-master
         app: {{ $name }}
@@ -49,6 +55,11 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: alluxio-master
+        {{- if .Values.master.labels }}
+        {{- range $key, $val := .Values.master.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       enableServiceLinks: false
       {{- if .Values.master.hostNetwork }}

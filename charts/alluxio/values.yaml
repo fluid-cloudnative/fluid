@@ -71,6 +71,15 @@ tolerations: []
 ## Master ##
 
 master:
+  # Metadata for Alluxio Master Pod(including both master and job master component's label)
+  labels:
+#    label1: value1
+#    label2: value2
+
+  annotations:
+#    annotation1: value1
+#    annotation2: value2
+
   replicaCount: 1 # Controls the number of StatefulSets. For multiMaster mode increase this to >1.
   env:
     # Extra environment variables for the master pod
@@ -206,6 +215,15 @@ apiGateway:
 ## Worker ##
 
 worker:
+  # Metadata for Alluxio Worker Pod(including both worker and job worker component's label)
+  labels:
+#    label1: value1
+#    label2: value2
+
+  annotations:
+#    annotation1: value1
+#    annotation2: value2
+
   env:
     # Extra environment variables for the worker pod
     # Example:
@@ -332,6 +350,15 @@ shortCircuit:
 ## FUSE ##
 
 fuse:
+  # Metadata for Alluxio Fuse Pod
+  labels:
+#    label1: value1
+#    label2: value2
+
+  annotations:
+#    annotation1: value1
+#    annotation2: value2
+
   criticalPod: false
   env:
     # Extra environment variables for the fuse pod

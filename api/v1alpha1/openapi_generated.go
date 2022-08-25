@@ -73,6 +73,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                   schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                   schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":             schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                 schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":        schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
@@ -233,11 +234,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref com
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Alluxio's pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -389,11 +397,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref common.Refe
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Alluxio's fuse pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -642,11 +657,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Alluxio's pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -2323,7 +2345,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref commo
 					},
 					"labels": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Labels will be added on all the JindoFS Master or Worker pods. Any label already existed will be overriden",
+							Description: "Labels will be added on JindoFS Master or Worker pods. DEPRECATED: This is a deprecated field. Please use PodMetadata instead. Note: this field is set to be exclusive with PodMetadata.Labels",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -2337,6 +2359,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref commo
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Jindo's pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 					"disabled": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If disable JindoFS master or worker",
@@ -2348,7 +2377,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref commo
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
@@ -2473,7 +2502,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 					},
 					"labels": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Labels will be added on all the JindoFS Fuse pods. Any label already existed will be overriden",
+							Description: "Labels will be added on all the JindoFS pods. DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead. Note: this field is set to be exclusive with PodMetadata.Labels",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -2485,6 +2514,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 									},
 								},
 							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Jindo's fuse pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
 					"cleanPolicy": {
@@ -2505,7 +2541,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
@@ -2697,7 +2733,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 					},
 					"labels": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Labels will be added on all the JindoFS pods.",
+							Description: "Labels will be added on all the JindoFS pods. DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead. Note: this field is set to be exclusive with PodMetadata.Labels",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -2709,6 +2745,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 									},
 								},
 							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to all Jindo's fuse pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
 					"logConfig": {
@@ -2737,7 +2780,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -2829,11 +2872,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref com
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 
@@ -2915,11 +2965,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 							Format:      "",
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 
@@ -3110,11 +3167,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Format:      "",
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -3261,6 +3325,51 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodMetadata defines subgroup properties of metav1.ObjectMeta",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels are labels of pod specification",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"annotations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Annotations are annotations of pod specification",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

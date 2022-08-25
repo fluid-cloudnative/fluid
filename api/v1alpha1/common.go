@@ -98,3 +98,12 @@ type User struct {
 	// The group name to run the alluxio runtime
 	GroupName string `json:"group"`
 }
+
+// PodMetadata defines subgroup properties of metav1.ObjectMeta
+type PodMetadata struct {
+	// Labels are labels of pod specification
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations are annotations of pod specification
+	Annotations map[string]string `json:"annotations,omitempty"`
+}

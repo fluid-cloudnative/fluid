@@ -84,6 +84,10 @@ type AlluxioCompTemplateSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Alluxio's pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -145,6 +149,10 @@ type AlluxioFuseSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the alluxio runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Alluxio's fuse pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // Level describes configurations a tier needs. <br>
@@ -273,6 +281,10 @@ type AlluxioRuntimeSpec struct {
 	// Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Alluxio's pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true

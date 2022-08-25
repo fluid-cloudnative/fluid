@@ -210,3 +210,7 @@
 0.9.2
 
 - Support emptyDir as tieredStore volume type
+
+0.9.3
+
+- Support configurable pod metadata
