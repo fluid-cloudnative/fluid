@@ -52,7 +52,7 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.Namespac
 		}
 
 		if match {
-			scaleout, err = scaleoutRuntimeControllerIfNeeded(c, types.NamespacedName{
+			scaleout, err = scaleoutDeploymentIfNeeded(c, types.NamespacedName{
 				Namespace: common.NamespaceFluidSystem,
 				Name:      myControllerName,
 			}, log)
@@ -68,8 +68,8 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.Namespac
 	return
 }
 
-// scale out rutnime controller If needed
-func scaleoutRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
+// scale out deployment If needed
+func scaleoutDeploymentIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		deploy := &appsv1.Deployment{}
 		err = c.Get(context.TODO(), key, deploy)
