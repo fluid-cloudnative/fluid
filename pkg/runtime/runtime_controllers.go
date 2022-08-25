@@ -19,10 +19,9 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+	"strconv"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
@@ -43,20 +42,11 @@ var checkFuncs map[string]checkFunc = map[string]checkFunc{
 	"goosefsruntime-controller": utils.CheckGooseFSRuntime,
 }
 
-func ScaleoutRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Dataset, log logr.Logger) (
+func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
 	controllerName string, scaleout bool, err error) {
 
-	if dataset != nil {
-		err = fmt.Errorf("the dataset is nil")
-		return
-	}
-	key := types.NamespacedName{
-		Namespace: dataset.Namespace,
-		Name:      dataset.Name,
-	}
-
 	for myControllerName, checkRuntime := range checkFuncs {
-		match, err := checkRuntime(c, key)
+		match, err := checkRuntime(c, datasetKey)
 		if err != nil {
 			return controllerName, scaleout, err
 		}
@@ -78,6 +68,7 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, dataset *datav1alpha1.Dat
 	return
 }
 
+// scale out rutnime controller If needed
 func scaleoutRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		deploy := &appsv1.Deployment{}
@@ -86,11 +77,21 @@ func scaleoutRuntimeControllerIfNeeded(c client.Client, key types.NamespacedName
 			return err
 		}
 		deployToUpdate := deploy.DeepCopy()
-		// scale out
+		// scale out at least 1
 		if *deployToUpdate.Spec.Replicas == 0 {
-			deployToUpdate.Spec.Replicas = utilpointer.Int32(1)
+			replicasStr, ok := deployToUpdate.Annotations[common.RuntimeControllerReplicas]
+			var replicas int32 = 0
+			if ok {
+				replicasInt64, _ := strconv.ParseInt(replicasStr, 10, 32)
+				replicas = int32(replicasInt64)
+			}
+			if replicas <= 1 {
+				replicas = 1
+			}
+			deployToUpdate.Spec.Replicas = utilpointer.Int32(replicas)
 			scale = true
 		} else {
+			log.V(1).Info("No need to scale out runtime controller, skip", "key", key)
 			return nil
 		}
 

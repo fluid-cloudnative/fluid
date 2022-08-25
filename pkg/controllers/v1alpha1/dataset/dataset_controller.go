@@ -123,8 +123,13 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 
 	// 4. Scale the runtime controller to handle the phase change
 	if ctx.Dataset.Status.Phase == datav1alpha1.NotBoundDatasetPhase {
+		datasetKey := types.NamespacedName{
+			Namespace: ctx.Dataset.Namespace,
+			Name:      ctx.Dataset.Name,
+		}
+
 		// create runtimeController on demand if needed
-		if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, &ctx.Dataset, ctx.Log); err != nil {
+		if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, datasetKey, ctx.Log); err != nil {
 			ctx.Log.Error(err, "Failed to create runtime controller on demand", "RuntimeController", ctx)
 			return utils.RequeueIfError(err)
 		} else {
