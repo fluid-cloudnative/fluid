@@ -18,6 +18,7 @@ package jindofsx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -154,7 +155,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
 	e.transformInitPortCheck(value)
-	e.transformLabels(runtime, value)
+	err = e.transformPodMetadata(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
@@ -932,14 +936,41 @@ func (e *JindoFSxEngine) transformTolerations(dataset *datav1alpha1.Dataset, run
 	}
 }
 
-func (e *JindoFSxEngine) transformLabels(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
-	// the labels will not be merged here because they will be sequentially added into yaml templates
-	// If two labels share the same label key, the last one in yaml templates overrides the former ones
-	// and takes effect.
-	value.Labels = runtime.Spec.Labels
-	value.Master.Labels = runtime.Spec.Master.Labels
-	value.Worker.Labels = runtime.Spec.Worker.Labels
-	value.Fuse.Labels = runtime.Spec.Fuse.Labels
+func (e *JindoFSxEngine) transformPodMetadata(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	// check if setting labels with deprecated API(i.e. spec.labels)
+	deprecatedLabelSet := len(runtime.Spec.Labels) != 0 ||
+		len(runtime.Spec.Master.Labels) != 0 ||
+		len(runtime.Spec.Worker.Labels) != 0 ||
+		len(runtime.Spec.Fuse.Labels) != 0
+
+	labelSet := len(runtime.Spec.PodMetadata.Labels) != 0 ||
+		len(runtime.Spec.Master.PodMetadata.Labels) != 0 ||
+		len(runtime.Spec.Worker.PodMetadata.Labels) != 0 ||
+		len(runtime.Spec.Fuse.PodMetadata.Labels) != 0
+
+	if deprecatedLabelSet && labelSet {
+		return errors.New("cannot setting runtime pod's labels with both spec.labels(deprecated) and spec.podMetadata.labels. Use spec.podMetadata.labels only")
+	}
+
+	// transform labels
+	if deprecatedLabelSet {
+		commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.Labels)
+		value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.Labels)
+		value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.Labels)
+		value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.Labels)
+	} else if labelSet {
+		commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
+		value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
+		value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)
+		value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.PodMetadata.Labels)
+	}
+
+	commonAnnotations := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Annotations)
+	value.Master.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Master.PodMetadata.Annotations)
+	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
+	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
+
+	return nil
 }
 
 func (e *JindoFSxEngine) transformNetworkMode(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
