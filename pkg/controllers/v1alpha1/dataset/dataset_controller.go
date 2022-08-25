@@ -130,7 +130,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 
 		// create runtimeController on demand if needed
 		if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, datasetKey, ctx.Log); err != nil {
-			ctx.Log.Error(err, "Failed to create runtime controller on demand", "RuntimeController", ctx)
+			ctx.Log.Error(err, "Failed to scale out the runtime controller on demand", "RuntimeController", ctx)
 			return utils.RequeueIfError(err)
 		} else {
 			if scaleout {

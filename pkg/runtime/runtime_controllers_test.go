@@ -214,10 +214,10 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 			args: args{
 				key: types.NamespacedName{
 					Namespace: "default",
-					Name:      "notFoundController",
+					Name:      "notFound",
 				},
 				log: fake.NullLogger(),
-			}, wantErr: true,
+			}, wantErr: false,
 			wantControllerName: "",
 			wantScaleout:       false,
 		}, {
@@ -225,11 +225,11 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 			args: args{
 				key: types.NamespacedName{
 					Namespace: common.NamespaceFluidSystem,
-					Name:      "unknown-Controller",
+					Name:      "unknown",
 				},
 				log: fake.NullLogger(),
 			},
-			wantErr:            true,
+			wantErr:            false,
 			wantControllerName: "",
 			wantScaleout:       false,
 		}, {

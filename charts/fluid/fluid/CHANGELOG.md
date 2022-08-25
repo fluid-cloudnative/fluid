@@ -49,4 +49,3 @@
 * Add Go gull profile capablities
 * Support setting global image pull secrets
 * Update mutating webhook configuration rules
-* Create runtime controllers on demand
