@@ -104,22 +104,22 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 	deployments := []*appsv1.Deployment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "alluxio",
-				Namespace: corev1.NamespaceDefault,
+				Name:      "alluxioruntime-controller",
+				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "jindo",
-				Namespace: corev1.NamespaceDefault,
+				Name:      "jindoruntime-controller",
+				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(1),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs",
-				Namespace: corev1.NamespaceDefault,
+				Name:      "juicefsruntime-controller",
+				Namespace: common.NamespaceFluidSystem,
 				Annotations: map[string]string{
 					common.RuntimeControllerReplicas: "0",
 				},
