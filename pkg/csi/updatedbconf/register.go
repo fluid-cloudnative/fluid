@@ -1,7 +1,9 @@
 package updatedbconf
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -28,12 +30,18 @@ func Register(_ manager.Manager, cfg config.Config) error {
 		glog.Info("/etc/updatedb.conf has no changes, skip updating")
 		return nil
 	}
-	glog.Info("backup old /etc/updatedb.conf to /etc/updatedb.conf.backup")
-	err = os.WriteFile(updatedbConfBackupPath, content, 0644)
-	if err != nil {
-		return err
+	// if the old file does not have the `modifiedByFluidComment` comments
+	// we consider this an original config file that has never been modified
+	// by Fluid before and should do a backup for that.
+	if !strings.HasPrefix(string(content), modifiedByFluidComment) {
+		glog.Info("backup old /etc/updatedb.conf to /etc/updatedb.conf.backup")
+		err = os.WriteFile(updatedbConfBackupPath, content, 0644)
+		if err != nil {
+			return err
+		}
+		newconfig = fmt.Sprintf("%s\n%s", modifiedByFluidComment, newconfig)
+		glog.Info("backup complete, now update /etc/updatedb.conf")
 	}
-	glog.Info("backup complete, now update /etc/updatedb.conf")
 	return os.WriteFile(updatedbConfPath, []byte(newconfig), 0644)
 }
 

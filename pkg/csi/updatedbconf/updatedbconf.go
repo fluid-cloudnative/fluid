@@ -10,6 +10,7 @@ const (
 	updatedbConfBackupPath = "/host-etc/updatedb.conf.backup"
 	configKeyPruneFs       = "PRUNEFS"
 	configKeyPrunePaths    = "PRUNEPATHS"
+	modifiedByFluidComment = "# Modified by Fluid"
 )
 
 // updateLine add new config items to a line
