@@ -67,7 +67,21 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	ctx.Log.V(1).Info("process the request", "request", req)
 
 	/*
-		###1. Load the dataset
+		### 1. Scale out runtime controller if possible
+	*/
+	if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
+		ctx.Log.Error(err, "Failed to scale out the runtime controller on demand", "RuntimeController", ctx)
+		return utils.RequeueIfError(err)
+	} else {
+		if scaleout {
+			ctx.Log.Info("scale out the runtime controller on demand successfully", "controller", controller)
+		} else {
+			ctx.Log.Info("no need to scale out the runtime controller because it's already scaled", "controller", controller)
+		}
+	}
+
+	/*
+		### 2. Load the dataset
 	*/
 	if err := r.Get(ctx, req.NamespacedName, &ctx.Dataset); err != nil {
 		ctx.Log.Info("Unable to fetch Dataset", "reason", err)
@@ -82,7 +96,7 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	}
 
 	/*
-		### 2. we'll ignore not-found errors, since they can't be fixed by an immediate
+		### 3. we'll ignore not-found errors, since they can't be fixed by an immediate
 		 requeue (we'll need to wait for a new notification), and we can get them
 		 on deleted requests.
 	*/
@@ -106,7 +120,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
-	// 3.Update the phase to NoneDatasetPhase
+	// 3. Update the phase to NotBoundDatasetPhase
 	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
 		dataset := ctx.Dataset.DeepCopy()
 		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
@@ -118,26 +132,6 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 			return utils.RequeueIfError(err)
 		} else {
 			ctx.Log.V(1).Info("Update the status of the dataset successfully", "phase", dataset.Status.Phase)
-		}
-	}
-
-	// 4. Scale the runtime controller to handle the phase change
-	if ctx.Dataset.Status.Phase == datav1alpha1.NotBoundDatasetPhase {
-		datasetKey := types.NamespacedName{
-			Namespace: ctx.Dataset.Namespace,
-			Name:      ctx.Dataset.Name,
-		}
-
-		// create runtimeController on demand if needed
-		if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, datasetKey, ctx.Log); err != nil {
-			ctx.Log.Error(err, "Failed to scale out the runtime controller on demand", "RuntimeController", ctx)
-			return utils.RequeueIfError(err)
-		} else {
-			if scaleout {
-				ctx.Log.Info("scale out the runtime controller on demand successfully", "controller", controller)
-			} else {
-				ctx.Log.Info("no need to scale out the runtime controller because it's already scaled", "controller", controller)
-			}
 		}
 	}
 
