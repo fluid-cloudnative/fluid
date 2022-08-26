@@ -100,6 +100,7 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 	objs := []runtime.Object{}
 	s := runtime.NewScheme()
 	_ = appsv1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
 	deployments := []*appsv1.Deployment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
