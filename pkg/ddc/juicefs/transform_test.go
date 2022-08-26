@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"reflect"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -145,5 +146,81 @@ func TestJuiceFSEngine_transformTolerations(t *testing.T) {
 				t.Errorf("transformTolerations() tolerations = %v", tt.args.value.Tolerations)
 			}
 		})
+	}
+}
+
+func TestJuiceFSEngine_transformPodMetadata(t *testing.T) {
+	engine := &JuiceFSEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name    string
+		Runtime *datav1alpha1.JuiceFSRuntime
+		Value   *JuiceFS
+
+		wantValue *JuiceFS
+	}
+
+	testCases := []testCase{
+		{
+			Name: "set_common_labels_and_annotations",
+			Runtime: &datav1alpha1.JuiceFSRuntime{
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+				},
+			},
+			Value: &JuiceFS{},
+			wantValue: &JuiceFS{
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+		{
+			Name: "set_master_and_workers_labels_and_annotations",
+			Runtime: &datav1alpha1.JuiceFSRuntime{
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+					Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "worker-value"},
+							Annotations: map[string]string{"common-annotation": "worker-val"},
+						},
+					},
+				},
+			},
+			Value: &JuiceFS{},
+			wantValue: &JuiceFS{
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "worker-value"},
+					Annotations: map[string]string{"common-annotation": "worker-val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		err := engine.transformPodMetadata(tt.Runtime, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+
+		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
+			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
+		}
 	}
 }
