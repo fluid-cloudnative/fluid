@@ -28,12 +28,23 @@ spec:
       role: juicefs-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote}}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "juicefs.name" . }}
         chart: {{ template "juicefs.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: juicefs-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
