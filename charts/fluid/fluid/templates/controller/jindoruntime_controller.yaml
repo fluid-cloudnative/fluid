@@ -19,6 +19,10 @@ spec:
     metadata:
       labels:
         control-plane: jindoruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.jindo.replicas | int) 1 -}}
+        replicas: {{ .Values.runtime.jindo.replicas | quote }}
+      {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:

@@ -19,6 +19,10 @@ spec:
     metadata:
       labels:
         control-plane: juicefsruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.juicefs.replicas | int) 1 -}}
+        replicas: {{ .Values.runtime.juicefs.replicas | quote }}
+      {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
