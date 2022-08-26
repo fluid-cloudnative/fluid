@@ -351,3 +351,92 @@ func TestTransformShortCircuit(t *testing.T) {
 		patch.Reset()
 	}
 }
+
+func TestTransformPodMetadata(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name    string
+		Runtime *datav1alpha1.AlluxioRuntime
+		Value   *Alluxio
+
+		wantValue *Alluxio
+	}
+
+	testCases := []testCase{
+		{
+			Name: "set_common_labels_and_annotations",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+				},
+			},
+			Value: &Alluxio{},
+			wantValue: &Alluxio{
+				Master: Master{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+		{
+			Name: "set_master_and_workers_labels_and_annotations",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "master-value"},
+							Annotations: map[string]string{"common-annotation": "master-val"},
+						},
+					},
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "worker-value"},
+							Annotations: map[string]string{"common-annotation": "worker-val"},
+						},
+					},
+				},
+			},
+			Value: &Alluxio{},
+			wantValue: &Alluxio{
+				Master: Master{
+					Labels:      map[string]string{"common-key": "master-value"},
+					Annotations: map[string]string{"common-annotation": "master-val"}},
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "worker-value"},
+					Annotations: map[string]string{"common-annotation": "worker-val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		err := engine.transformPodMetadata(tt.Runtime, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+
+		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
+			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
+		}
+	}
+}

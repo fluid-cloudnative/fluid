@@ -50,6 +50,8 @@ worker:
 #      cpu: "4"
 #      memory: "4G"
   replicas: 0
+  labels: {}
+  annotations: {}
 
 configs:
   name: ""
@@ -86,6 +88,8 @@ fuse:
     limits:
 #      cpu: "4"
 #      memory: "4G"
+  labels: {}
+  annotations: {}
 
 runtimeIdentity:
   namespace: default
