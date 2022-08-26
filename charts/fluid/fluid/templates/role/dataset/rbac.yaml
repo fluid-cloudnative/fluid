@@ -56,6 +56,18 @@ rules:
     verbs:
       - '*'
   - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+      - deployments/status
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+      - 'update'
+      - 'patch'
+  - apiGroups:
       - coordination.k8s.io
     resources:
       - leases

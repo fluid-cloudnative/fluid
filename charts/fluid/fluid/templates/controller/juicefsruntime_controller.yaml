@@ -1,4 +1,3 @@
-{{ if .Values.runtime.juicefs.enabled -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -11,11 +10,19 @@ spec:
   selector:
     matchLabels:
       control-plane: juicefsruntime-controller
+  {{ if .Values.runtime.juicefs.enabled -}}
   replicas: {{ .Values.runtime.juicefs.replicas }}
+  {{- else }}
+  replicas: 0
+  {{- end }}
   template:
     metadata:
       labels:
         control-plane: juicefsruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.juicefs.replicas | int) 1 -}}
+        replicas: {{ .Values.runtime.juicefs.replicas | quote }}
+      {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -71,4 +78,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-{{- end }}
