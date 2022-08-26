@@ -1,4 +1,3 @@
-{{ if .Values.runtime.jindo.enabled -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -11,11 +10,19 @@ spec:
   selector:
     matchLabels:
       control-plane: jindoruntime-controller
+  {{ if .Values.runtime.jindo.enabled -}}
   replicas: {{ .Values.runtime.jindo.replicas }}
+  {{- else }}
+  replicas: 0
+  {{- end }}
   template:
     metadata:
       labels:
         control-plane: jindoruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.jindo.replicas | int) 1 -}}
+        replicas: {{ .Values.runtime.jindo.replicas | quote }}
+      {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -96,4 +103,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-{{- end }}

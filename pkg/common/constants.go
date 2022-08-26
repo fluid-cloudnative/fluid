@@ -141,4 +141,5 @@ const (
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
 	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"
+	NamespaceFluidSystem            = "fluid-system"
 )

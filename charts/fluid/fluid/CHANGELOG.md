@@ -50,3 +50,4 @@
 * Support setting global image pull secrets
 * Update mutating webhook configuration rules
 * Support configurable pod metadata of runtimes
+* Scale runtime controllers on demand
