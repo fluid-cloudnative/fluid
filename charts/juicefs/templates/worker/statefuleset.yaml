@@ -31,6 +31,12 @@ spec:
       role: juicefs-worker
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations}}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "juicefs.name" . }}
         chart: {{ template "juicefs.chart" . }}
@@ -39,6 +45,11 @@ spec:
         role: juicefs-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key | quote}}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}

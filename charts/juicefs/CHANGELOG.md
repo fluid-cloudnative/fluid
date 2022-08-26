@@ -13,3 +13,7 @@
 0.2.2
 
 - Add runtime identity information
+
+0.2.3
+
+- Support configurable runtime pod metadata

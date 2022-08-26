@@ -237,7 +237,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 }
 
 func (e *AlluxioEngine) transformPodMetadata(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
-	// todo: add ut
 	// transform labels
 	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
 	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)

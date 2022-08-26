@@ -64,6 +64,12 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		return
 	}
 
+	// transform runtime pod metadata
+	err = j.transformPodMetadata(runtime, value)
+	if err != nil {
+		return
+	}
+
 	// set the placementMode
 	j.transformPlacementMode(dataset, value)
 	return
@@ -112,4 +118,16 @@ func (j *JuiceFSEngine) transformTolerations(dataset *datav1alpha1.Dataset, valu
 			value.Tolerations = append(value.Tolerations, toleration)
 		}
 	}
+}
+
+func (j *JuiceFSEngine) transformPodMetadata(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
+	value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)
+	value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.PodMetadata.Labels)
+
+	commonAnnotations := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Annotations)
+	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
+	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
+
+	return nil
 }
