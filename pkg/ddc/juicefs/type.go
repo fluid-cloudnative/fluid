@@ -61,10 +61,12 @@ type Worker struct {
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 
-	MountPath string `yaml:"mountPath,omitempty"`
-	CacheDir  string `yaml:"cacheDir,omitempty"`
-	StatCmd   string `yaml:"statCmd,omitempty"`
-	Command   string `yaml:"command,omitempty"`
+	MountPath   string            `yaml:"mountPath,omitempty"`
+	CacheDir    string            `yaml:"cacheDir,omitempty"`
+	StatCmd     string            `yaml:"statCmd,omitempty"`
+	Command     string            `yaml:"command,omitempty"`
+	Labels      map[string]string `yaml:"labels,omitempty"`
+	Annotations map[string]string `yaml:"annotations,omitempty"`
 }
 
 type Fuse struct {
@@ -77,12 +79,14 @@ type Fuse struct {
 	Resources       common.Resources  `yaml:"resources,omitempty"`
 	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
 
-	SubPath       string `yaml:"subPath,omitempty"`
-	MountPath     string `yaml:"mountPath,omitempty"`
-	CacheDir      string `yaml:"cacheDir,omitempty"`
-	HostMountPath string `yaml:"hostMountPath,omitempty"`
-	Command       string `yaml:"command,omitempty"`
-	StatCmd       string `yaml:"statCmd,omitempty"`
+	SubPath       string            `yaml:"subPath,omitempty"`
+	MountPath     string            `yaml:"mountPath,omitempty"`
+	CacheDir      string            `yaml:"cacheDir,omitempty"`
+	HostMountPath string            `yaml:"hostMountPath,omitempty"`
+	Command       string            `yaml:"command,omitempty"`
+	StatCmd       string            `yaml:"statCmd,omitempty"`
+	Labels        map[string]string `yaml:"labels,omitempty"`
+	Annotations   map[string]string `yaml:"annotations,omitempty"`
 }
 
 type TieredStore struct {
