@@ -73,6 +73,21 @@ spec:
                   type: string
                 description: Options specifies the extra dataload properties for runtime
                 type: object
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to DataLoad pods
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
+                type: object
               target:
                 description: Target defines target paths that needs to be loaded
                 items:

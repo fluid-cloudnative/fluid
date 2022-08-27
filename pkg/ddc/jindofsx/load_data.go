@@ -117,6 +117,8 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
 		Image:         image,
+		Labels:        dataload.Spec.PodMetadata.Labels,
+		Annotations:   dataload.Spec.PodMetadata.Annotations,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
