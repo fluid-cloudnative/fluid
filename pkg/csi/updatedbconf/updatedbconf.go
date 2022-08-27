@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	updatedbConfPath    = "/host-etc/updatedb.conf"
-	configKeyPruneFs    = "PRUNEFS"
-	configKeyPrunePaths = "PRUNEPATHS"
+	updatedbConfPath       = "/host-etc/updatedb.conf"
+	updatedbConfBackupPath = "/host-etc/updatedb.conf.backup"
+	configKeyPruneFs       = "PRUNEFS"
+	configKeyPrunePaths    = "PRUNEPATHS"
+	modifiedByFluidComment = "# Modified by Fluid"
 )
 
 // updateLine add new config items to a line
