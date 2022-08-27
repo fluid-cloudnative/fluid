@@ -32,3 +32,11 @@ dataloader:
   # Optional
   # Description: optional parameter DataLoad job uses
   options:
+
+  # Optional
+  # Description: optional labels on DataLoad pods
+  labels:
+
+  # Optional
+  # Description: optional annotations on DataLoad pods
+  annotations:

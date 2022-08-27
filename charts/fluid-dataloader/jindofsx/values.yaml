@@ -28,3 +28,11 @@ dataloader:
   # Required
   # Description: the image that the DataLoad job uses
   image: #<jindo-image>
+
+  # Optional
+  # Description: optional labels on DataLoad pods
+  labels:
+
+  # Optional
+  # Description: optional annotations on DataLoad pods
+  annotations:
