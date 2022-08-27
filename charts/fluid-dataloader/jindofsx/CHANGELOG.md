@@ -1,3 +1,7 @@
+### 0.5.0
+
+- Support configurable DataLoad pod metadata
+
 ### 0.4.0
 
 - Change Restart Policy from OnFailure to Never

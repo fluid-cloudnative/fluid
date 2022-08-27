@@ -28,11 +28,21 @@ spec:
       name: {{ printf "%s-loader" .Release.Name }}
       annotations:
         sidecar.istio.io/inject: "false"
+      {{- if .Values.dataloader.annotations }}
+      {{- range $key, $val := .Values.dataloader.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
         app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+      {{- if .Values.dataloader.labels }}
+      {{- range $key, $val := .Values.dataloader.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
     spec:
       restartPolicy: OnFailure
       {{- range $key, $val := .Values.dataloader.options }}

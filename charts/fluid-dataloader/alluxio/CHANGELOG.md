@@ -6,3 +6,7 @@
 ### 0.2.0
 
 - Remove unused volumes
+
+### 0.3.0
+
+- Support configurable DataLoad pod metadata

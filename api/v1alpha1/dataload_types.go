@@ -56,6 +56,9 @@ type DataLoadSpec struct {
 
 	// Options specifies the extra dataload properties for runtime
 	Options map[string]string `json:"options,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to DataLoad pods
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // DataLoadStatus defines the observed state of DataLoad

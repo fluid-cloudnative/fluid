@@ -40,6 +40,12 @@ type DataLoadInfo struct {
 
 	// Options specifies the extra dataload properties for runtime
 	Options map[string]string `yaml:"options,omitempty"`
+
+	// Labels defines labels in DataLoad's pod metadata
+	Labels map[string]string `yaml:"labels,omitempty"`
+
+	// Annotations defines annotations in DataLoad's pod metadata
+	Annotations map[string]string `yaml:"annotations,omitempty"`
 }
 
 type TargetPath struct {
