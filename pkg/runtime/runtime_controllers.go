@@ -23,7 +23,10 @@ import (
 	"strconv"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime/goosefs"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime/jindofsx"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime/juicefs"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,10 +39,10 @@ import (
 type checkFunc func(client.Client, types.NamespacedName) (bool, error)
 
 var checkFuncs map[string]checkFunc = map[string]checkFunc{
-	"alluxioruntime-controller": utils.CheckAlluxioRuntime,
-	"jindoruntime-controller":   utils.CheckJindoRuntime,
-	"juicefsruntime-controller": utils.CheckJuiceFSRuntime,
-	"goosefsruntime-controller": utils.CheckGooseFSRuntime,
+	"alluxioruntime-controller": alluxio.Precheck,
+	"jindoruntime-controller":   jindofsx.Precheck,
+	"juicefsruntime-controller": juicefs.Precheck,
+	"goosefsruntime-controller": goosefs.Precheck,
 }
 
 func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
