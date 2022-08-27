@@ -30,6 +30,7 @@ type ThinValue struct {
 	Fuse          Fuse                   `yaml:"fuse,omitempty"`
 	Worker        Worker                 `yaml:"worker,omitempty"`
 	NodeSelector  map[string]string      `yaml:"nodeSelector,omitempty"`
+	Tolerations   []corev1.Toleration    `json:"tolerations,omitempty"`
 	PlacementMode string                 `yaml:"placement,omitempty"`
 	Owner         *common.OwnerReference `yaml:"owner,omitempty"`
 }

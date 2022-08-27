@@ -40,6 +40,9 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	value.FullnameOverride = t.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
 
+	// transform toleration
+	t.transformTolerations(dataset, value)
+
 	// transform the workers
 	err = t.transformWorkers(runtime, profile, value)
 	if err != nil {
@@ -171,4 +174,15 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 	// 8. network
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(profile.Spec.Worker.NetworkMode)
 	return
+}
+
+func (t *ThinEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *ThinValue) {
+	if len(dataset.Spec.Tolerations) > 0 {
+		// value.Tolerations = dataset.Spec.Tolerations
+		value.Tolerations = []corev1.Toleration{}
+		for _, toleration := range dataset.Spec.Tolerations {
+			toleration.TolerationSeconds = nil
+			value.Tolerations = append(value.Tolerations, toleration)
+		}
+	}
 }

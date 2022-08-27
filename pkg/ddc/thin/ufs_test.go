@@ -354,25 +354,22 @@ func TestThinEngine_UpdateOnUFSChange(t *testing.T) {
 }
 
 func TestThinEngine_UsedStorageBytes(t *testing.T) {
-	statefulset := &appsv1.StatefulSet{
+	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-worker",
+			Name:      "test-fuse",
 			Namespace: "thin",
 		},
-		Spec: appsv1.StatefulSetSpec{
+		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"a": "b"},
 			},
 		},
-		Status: appsv1.StatefulSetStatus{
-			Replicas:      1,
-			ReadyReplicas: 1,
-		},
+		Status: appsv1.DaemonSetStatus{},
 	}
 
 	var pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-worker-0",
+			Name:      "test-fuse-0",
 			Namespace: "thin",
 			Labels:    map[string]string{"a": "b"},
 		},
@@ -388,9 +385,9 @@ func TestThinEngine_UsedStorageBytes(t *testing.T) {
 		Items: []corev1.Pod{*pod},
 	}
 	runtimeObjs := []runtime.Object{}
-	runtimeObjs = append(runtimeObjs, statefulset, pod)
+	runtimeObjs = append(runtimeObjs, ds, pod)
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, statefulset)
+	scheme.AddKnownTypes(appsv1.SchemeGroupVersion, ds)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, pod)
 	scheme.AddKnownTypes(corev1.SchemeGroupVersion, podList)
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
