@@ -101,6 +101,8 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		TargetDataset: dataload.Spec.Dataset.Name,
 		LoadMetadata:  dataload.Spec.LoadMetadata,
 		Image:         image,
+		Labels:        dataload.Spec.PodMetadata.Labels,
+		Annotations:   dataload.Spec.PodMetadata.Annotations,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
