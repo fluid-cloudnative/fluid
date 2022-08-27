@@ -22,6 +22,7 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 )
@@ -32,12 +33,8 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 		Ports:   []corev1.ContainerPort{},
 		Envs:    []corev1.EnvVar{},
 	}
-	value.Fuse.Enabled = true
 
-	err = t.parseFromProfileFuse(profile, value)
-	if err != nil {
-		t.Log.Error(err, "failed to transform profile for worker")
-	}
+	t.parseFromProfileFuse(profile, value)
 
 	// 1. image
 	t.parseFuseImage(runtime, value)
@@ -93,7 +90,10 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	// 11. env
-	options := t.parseFuseOptions(runtime, profile, dataset)
+	options, err := t.parseFuseOptions(runtime, profile, dataset)
+	if err != nil {
+		return
+	}
 	value.Fuse.Envs = append(value.Fuse.Envs, runtime.Spec.Fuse.Env...)
 	value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
 		Name:  common.ThinFuseOptionEnvKey,
@@ -136,9 +136,9 @@ func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *Th
 	}
 }
 
-func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string) {
+func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string, err error) {
 	options := make(map[string]string)
-	if profile != nil {
+	if profile != nil && profile.Spec.Fuse.Options != nil {
 		options = profile.Spec.Fuse.Options
 	}
 	// option in runtime will cover option in profile
@@ -150,7 +150,22 @@ func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile 
 		// support only one mountpoint
 		options[k] = v
 	}
-	optionList := make([]string, len(options))
+	for _, encryptOption := range dataset.Spec.Mounts[0].EncryptOptions {
+		key := encryptOption.Name
+		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+		secret, err := kubeclient.GetSecret(t.Client, secretKeyRef.Name, t.namespace)
+		if err != nil {
+			t.Log.Info("can't get the secret",
+				"namespace", t.namespace,
+				"name", t.name,
+				"secretName", secretKeyRef.Name)
+			return "", err
+		}
+		val := secret.Data[secretKeyRef.Key]
+		options[key] = string(val)
+	}
+
+	optionList := make([]string, 0, len(options))
 	for k, v := range options {
 		if len(v) != 0 {
 			optionList = append(optionList, fmt.Sprintf("%s=%s", k, v))
@@ -164,7 +179,7 @@ func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile 
 	return
 }
 
-func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
+func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) {
 	if profile == nil {
 		return
 	}
@@ -185,7 +200,7 @@ func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfi
 	t.transformResourcesForFuse(profile.Spec.Fuse.Resources, value)
 
 	// 3. volumes
-	err = t.transformFuseVolumes(profile.Spec.Volumes, profile.Spec.Fuse.VolumeMounts, value)
+	err := t.transformFuseVolumes(profile.Spec.Volumes, profile.Spec.Fuse.VolumeMounts, value)
 	if err != nil {
 		t.Log.Error(err, "failed to transform volumes from profile for worker")
 	}

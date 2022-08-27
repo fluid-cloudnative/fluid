@@ -67,10 +67,7 @@ func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile
 	}
 
 	// parse config from profile
-	err = t.parseFromProfile(profile, value)
-	if err != nil {
-		t.Log.Error(err, "failed to transform profile for worker")
-	}
+	t.parseFromProfile(profile, value)
 
 	// 1. image
 	t.parseWorkerImage(runtime, value)
@@ -136,7 +133,7 @@ func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *
 	}
 }
 
-func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) (err error) {
+func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) {
 	if profile == nil {
 		return
 	}
@@ -145,7 +142,7 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 	value.Worker.ImageTag = profile.Spec.Version.ImageTag
 	value.Worker.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
 	// 2. volumes
-	err = t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
+	err := t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
 	if err != nil {
 		t.Log.Error(err, "failed to transform volumes from profile for worker")
 	}
