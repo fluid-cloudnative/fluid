@@ -17,11 +17,11 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,7 +69,7 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	/*
 		### 1. Scale out runtime controller if possible
 	*/
-	if controller, scaleout, err := cruntime.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
+	if controller, scaleout, err := deploy.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
 		ctx.Log.Error(err, "Failed to scale out the runtime controller on demand", "RuntimeController", ctx)
 		return utils.RequeueIfError(err)
 	} else {
