@@ -61,7 +61,6 @@ type Fuse struct {
 	CriticalPod     bool                   `yaml:"criticalPod,omitempty"`
 	HostNetwork     bool                   `yaml:"hostNetwork,omitempty"`
 	MountPath       string                 `yaml:"mountPath,omitempty"`
-	hostMountPath   string                 `yaml:"hostMountPath,omitempty"`
 	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Command         []string               `yaml:"command,omitempty"`

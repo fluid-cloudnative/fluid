@@ -170,7 +170,6 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 	}
 	// 8. network
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(profile.Spec.Worker.NetworkMode)
-	return
 }
 
 func (t *ThinEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *ThinValue) {

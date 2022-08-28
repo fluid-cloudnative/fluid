@@ -230,5 +230,4 @@ func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfi
 	if len(profile.Spec.Fuse.Env) != 0 {
 		value.Fuse.Envs = profile.Spec.Fuse.Env
 	}
-	return
 }

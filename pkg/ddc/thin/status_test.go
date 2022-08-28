@@ -30,28 +30,6 @@ import (
 	"testing"
 )
 
-func mockRunningPodsOfDaemonSet() (pods []corev1.Pod) {
-	return []corev1.Pod{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec:   corev1.PodSpec{},
-		Status: corev1.PodStatus{},
-	}}
-}
-
-func mockRunningPodsOfStatefulSet() (pods []corev1.Pod) {
-	return []corev1.Pod{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec:   corev1.PodSpec{},
-		Status: corev1.PodStatus{},
-	}}
-}
-
 func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 	Convey("Test CheckAndUpdateRuntimeStatus ", t, func() {
 		Convey("CheckAndUpdateRuntimeStatus success", func() {
