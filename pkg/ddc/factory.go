@@ -37,6 +37,14 @@ func init() {
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
 	}
+
+	cruntime.SetPrecheckFunc(map[string]cruntime.CheckFunc{
+		"alluxioruntime-controller": alluxio.Precheck,
+		"jindoruntime-controller":   jindofsx.Precheck,
+		"juicefsruntime-controller": juicefs.Precheck,
+		"goosefsruntime-controller": goosefs.Precheck,
+	})
+
 }
 
 /**
