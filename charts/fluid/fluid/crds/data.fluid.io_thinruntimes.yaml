@@ -35,8 +35,6 @@ spec:
           spec:
             description: ThinRuntimeSpec defines the desired state of ThinRuntime
             properties:
-              ThinRuntimeProfile:
-                type: string
               disablePrometheus:
                 description: Disable monitoring for Runtime Prometheus is enabled
                   by default
@@ -610,6 +608,8 @@ spec:
                       type: object
                     type: array
                 type: object
+              profileName:
+                type: string
               replicas:
                 description: The replicas of the worker, need to be specified
                 format: int32
@@ -688,6 +688,16 @@ spec:
                             Also note that num of quotas must be consistent with the
                             num of paths defined in Path.
                           pattern: ^((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+)))),)+((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?)$
+                          type: string
+                        volumeType:
+                          default: hostPath
+                          description: 'VolumeType is the volume type of the tier.
+                            Should be one of the three types: `hostPath`, `emptyDir`
+                            and `volumeTemplate`. If not set, defaults to hostPath.'
+                          enum:
+                          - hostPath
+                          - emptyDir
+                          - volumeTemplate
                           type: string
                       required:
                       - mediumtype

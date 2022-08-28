@@ -188,13 +188,13 @@ func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfi
 	value.Fuse.ImageTag = profile.Spec.Version.ImageTag
 	value.Fuse.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
 	if len(profile.Spec.Fuse.Image) != 0 {
-		value.Fuse.Image = profile.Spec.Version.Image
+		value.Fuse.Image = profile.Spec.Fuse.Image
 	}
 	if len(profile.Spec.Fuse.ImageTag) != 0 {
-		value.Fuse.ImageTag = profile.Spec.Version.ImageTag
+		value.Fuse.ImageTag = profile.Spec.Fuse.ImageTag
 	}
 	if len(profile.Spec.Fuse.ImagePullPolicy) != 0 {
-		value.Fuse.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+		value.Fuse.ImagePullPolicy = profile.Spec.Fuse.ImagePullPolicy
 	}
 	// 2. resources
 	t.transformResourcesForFuse(profile.Spec.Fuse.Resources, value)

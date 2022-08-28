@@ -32,7 +32,7 @@ type ThinRuntimeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	ThinRuntimeProfileName string `json:"ThinRuntimeProfile,omitempty"`
+	ThinRuntimeProfileName string `json:"profileName,omitempty"`
 
 	// file system of thinRuntime
 	FileSystemType string `json:"fileSystemType"`

@@ -57,7 +57,7 @@ func (t *ThinEngine) getThinRuntimeProfile() (*datav1alpha1.ThinRuntimeProfile, 
 	if err := t.Get(context.TODO(), key, &profile); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &profile, nil
 }
 
 func (t *ThinEngine) getFuseDaemonsetName() (dsName string) {

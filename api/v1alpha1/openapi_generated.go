@@ -84,6 +84,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                    schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":            schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntime":              schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeList":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfile":       schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfile(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileList":   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileStatus": schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref),
 	}
 }
 
@@ -4405,7 +4414,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 				Description: "ThinRuntimeSpec defines the desired state of ThinRuntime",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"ThinRuntimeProfile": {
+					"profileName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",

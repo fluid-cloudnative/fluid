@@ -85,9 +85,9 @@ runtime:
       image: juicedata/juicefs-fuse:v1.0.0-4.8.0
   thin:
     replicas: 1
-    enabled: true
+    enabled: false
     controller:
-      image: registry.cn-hangzhou.aliyuncs.com/hdls/thinruntime-controller:dev-880a5a7a-dirty
+      image: fluidcloudnative/thinruntime-controller:v0.8.0-e7cc7ce
 
 webhook:
   enabled: true
