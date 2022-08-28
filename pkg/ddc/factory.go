@@ -13,6 +13,7 @@ limitations under the License.
 package ddc
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
@@ -37,6 +38,14 @@ func init() {
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
 	}
+
+	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
+		"alluxioruntime-controller": alluxio.Precheck,
+		"jindoruntime-controller":   jindofsx.Precheck,
+		"juicefsruntime-controller": juicefs.Precheck,
+		"goosefsruntime-controller": goosefs.Precheck,
+	})
+
 }
 
 /**

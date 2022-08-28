@@ -15,7 +15,7 @@ limitations under the License.
 
 */
 
-package runtime
+package deploy
 
 import (
 	"context"
@@ -23,7 +23,6 @@ import (
 	"strconv"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,19 +32,18 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
-type checkFunc func(client.Client, types.NamespacedName) (bool, error)
+type CheckFunc func(client.Client, types.NamespacedName) (bool, error)
 
-var checkFuncs map[string]checkFunc = map[string]checkFunc{
-	"alluxioruntime-controller": utils.CheckAlluxioRuntime,
-	"jindoruntime-controller":   utils.CheckJindoRuntime,
-	"juicefsruntime-controller": utils.CheckJuiceFSRuntime,
-	"goosefsruntime-controller": utils.CheckGooseFSRuntime,
+var precheckFuncs map[string]CheckFunc
+
+func SetPrecheckFunc(checks map[string]CheckFunc) {
+	precheckFuncs = checks
 }
 
 func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
 	controllerName string, scaleout bool, err error) {
 
-	for myControllerName, checkRuntime := range checkFuncs {
+	for myControllerName, checkRuntime := range precheckFuncs {
 		match, err := checkRuntime(c, datasetKey)
 		if err != nil {
 			return controllerName, scaleout, err
