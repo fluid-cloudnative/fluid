@@ -35,7 +35,7 @@ runtime:
     runtimeWorkers: 3
     portRange: 20000-26000
     portAllocatePolicy: bitmap
-    enabled: true
+    enabled: false
     init:
       image: fluidcloudnative/init-users:v0.8.0-661212c
     controller:
@@ -78,7 +78,7 @@ runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
   juicefs:
     replicas: 1
-    enabled: true
+    enabled: false
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.8.0-661212c
     fuse:
