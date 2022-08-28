@@ -18,13 +18,17 @@ package thin
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
+
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ThinEngine struct {
@@ -77,4 +81,9 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
+}
+
+func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
+	var obj datav1alpha1.ThinRuntime
+	return utils.CheckObject(client, key, &obj)
 }
