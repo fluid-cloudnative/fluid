@@ -15,7 +15,7 @@ limitations under the License.
 
 */
 
-package runtime
+package deploy
 
 import (
 	"context"
@@ -23,6 +23,10 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -167,6 +171,14 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 	}})
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+
+	SetPrecheckFunc(map[string]CheckFunc{
+		"alluxioruntime-controller": alluxio.Precheck,
+		"jindoruntime-controller":   jindofsx.Precheck,
+		"juicefsruntime-controller": juicefs.Precheck,
+		"goosefsruntime-controller": goosefs.Precheck,
+	})
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotScale, err := scaleoutDeploymentIfNeeded(fakeClient, tt.args.key, tt.args.log)

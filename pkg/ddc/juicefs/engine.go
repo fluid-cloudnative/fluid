@@ -18,7 +18,10 @@ package juicefs
 
 import (
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,4 +82,9 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
+}
+
+func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
+	var obj datav1alpha1.JuiceFSRuntime
+	return utils.CheckObject(client, key, &obj)
 }

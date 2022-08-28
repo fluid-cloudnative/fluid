@@ -23,8 +23,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -84,4 +86,10 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
+}
+
+// Precheck checks if the given key can be found in the current runtime types
+func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
+	var obj datav1alpha1.JindoRuntime
+	return utils.CheckObject(client, key, &obj)
 }
