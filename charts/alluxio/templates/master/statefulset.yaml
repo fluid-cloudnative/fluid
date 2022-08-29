@@ -203,10 +203,6 @@ spec:
             mountPath: /host
         {{- end }}
         {{- end }}
-          {{- if .Values.master.backupPath }}
-          - name: backup
-            mountPath: /alluxio_backups
-          {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
           - name: hdfs-confs
@@ -354,12 +350,6 @@ spec:
             path: {{ .Values.master.restore.path }}
             type: DirectoryOrCreate
         {{- end }}
-        {{- end }}
-        {{- if .Values.master.backupPath }}
-        - name: backup
-          hostPath:
-            path: {{ .Values.master.backupPath }}
-            type: DirectoryOrCreate
         {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
