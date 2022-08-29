@@ -214,3 +214,7 @@
 0.9.3
 
 - Support configurable pod metadata
+
+0.9.4
+
+- Remove host pid and hostPath volume for backup
