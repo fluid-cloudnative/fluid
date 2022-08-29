@@ -16,7 +16,6 @@
 {{- $isUfsLocal := and (eq .Values.journal.type "UFS") (eq .Values.journal.ufsType "local") }}
 {{- $needJournalVolume := or $isEmbedded $isUfsLocal }}
 {{- $hostNetwork := .Values.master.hostNetwork }}
-{{- $hostPID := .Values.master.hostPID }}
 {{- $name := include "alluxio.name" . }}
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
@@ -66,7 +65,6 @@ spec:
       hostNetwork: {{ $hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      hostPID: {{ .Values.master.hostPID }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
@@ -205,10 +203,6 @@ spec:
             mountPath: /host
         {{- end }}
         {{- end }}
-          {{- if .Values.master.backupPath }}
-          - name: backup
-            mountPath: /alluxio_backups
-          {{- end }}
           {{- if .Values.hadoopConfig }}
           {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
           - name: hdfs-confs
@@ -356,12 +350,6 @@ spec:
             path: {{ .Values.master.restore.path }}
             type: DirectoryOrCreate
         {{- end }}
-        {{- end }}
-        {{- if .Values.master.backupPath }}
-        - name: backup
-          hostPath:
-            path: {{ .Values.master.backupPath }}
-            type: DirectoryOrCreate
         {{- end }}
         {{- if .Values.hadoopConfig }}
         {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
