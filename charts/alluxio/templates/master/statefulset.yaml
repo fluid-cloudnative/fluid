@@ -16,7 +16,6 @@
 {{- $isUfsLocal := and (eq .Values.journal.type "UFS") (eq .Values.journal.ufsType "local") }}
 {{- $needJournalVolume := or $isEmbedded $isUfsLocal }}
 {{- $hostNetwork := .Values.master.hostNetwork }}
-{{- $hostPID := .Values.master.hostPID }}
 {{- $name := include "alluxio.name" . }}
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
@@ -66,7 +65,6 @@ spec:
       hostNetwork: {{ $hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      hostPID: {{ .Values.master.hostPID }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
