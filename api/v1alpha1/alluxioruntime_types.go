@@ -172,6 +172,10 @@ type Level struct {
 	// +optional
 	VolumeType common.VolumeType `json:"volumeType"`
 
+	// VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource.
+	// Users should only specify VolumeSource when VolumeType is set to emptyDir or volumeTemplate
+	VolumeSource corev1.VolumeSource `json:"volumeSource,omitempty"`
+
 	// File paths to be used for the tier. Multiple paths are supported.
 	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
 	// +kubebuilder:validation:MinLength=1
