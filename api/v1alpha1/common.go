@@ -107,3 +107,8 @@ type PodMetadata struct {
 	// Annotations are annotations of pod specification
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
+
+// VolumeSource defines volume source and volume claim template.
+type VolumeSource struct {
+	corev1.VolumeSource `json:",inline"`
+}
