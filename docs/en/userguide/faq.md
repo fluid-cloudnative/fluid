@@ -80,7 +80,7 @@ First, Please on the work node of Kubernetes execute`ps -ef | grep kubelet | gre
 ```yaml
 csi:
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.8.0-3d66068
+    image: fluidcloudnative/fluid-csi:v0.8.0-e7cc7ce
   kubelet:
     rootDir: you kubelet root dir
 ```

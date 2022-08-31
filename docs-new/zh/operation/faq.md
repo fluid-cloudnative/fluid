@@ -38,7 +38,7 @@ kubectl describe pvc <dataset_name> -n <dataset_namespace> | \
 ```yaml
 csi:
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.8.0-3d66068
+    image: fluidcloudnative/fluid-csi:v0.8.0-e7cc7ce
   kubelet:
     rootDir: you kubelet root dir
 ```
