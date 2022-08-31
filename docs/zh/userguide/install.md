@@ -62,7 +62,7 @@ hbase-worker-rznd5   2/2     Running   0          9h
 由于helm upgrade不会更新CRD，需要先对其手动进行更新：
 
 ```shell
-$ tar zxvf fluid-0.7.0.tgz ./
+$ tar zxvf fluid-0.8.0.tgz ./
 $ kubectl apply -f fluid/crds/.
 ```
 
