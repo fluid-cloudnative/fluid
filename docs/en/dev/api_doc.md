@@ -295,6 +295,20 @@ of the file as the value.</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -524,6 +538,19 @@ map[string]string
 </td>
 <td>
 <p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
 </td>
 </tr>
 </table>
@@ -1211,7 +1238,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS pods.</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -1452,6 +1495,20 @@ bool
 Prometheus is enabled by default</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1646,6 +1703,20 @@ NetworkMode
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec
@@ -1830,6 +1901,20 @@ NetworkMode
 <td>
 <em>(Optional)</em>
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s fuse pods</p>
 </td>
 </tr>
 </tbody>
@@ -2072,6 +2157,20 @@ of the file as the value.</p>
 <td>
 <em>(Optional)</em>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
 </td>
 </tr>
 </tbody>
@@ -2469,6 +2568,19 @@ map[string]string
 </td>
 <td>
 <p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
 </td>
 </tr>
 </tbody>
@@ -3796,8 +3908,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS Master or Worker pods.
-Any label already existed will be overriden</p>
+<p>Labels will be added on JindoFS Master or Worker pods.
+DEPRECATED: This is a deprecated field. Please use PodMetadata instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Jindo&rsquo;s pods</p>
 </td>
 </tr>
 <tr>
@@ -3963,8 +4090,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS Fuse pods.
-Any label already existed will be overriden</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -4160,7 +4302,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS pods.</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -4297,6 +4455,20 @@ map[string]string
 <p>NodeSelector is a selector</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec
@@ -4416,6 +4588,20 @@ Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 Defaults to OnDemand</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
 </td>
 </tr>
 </tbody>
@@ -4576,6 +4762,20 @@ bool
 Prometheus is enabled by default</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.Level">Level
@@ -4605,6 +4805,33 @@ common.MediumType
 </td>
 <td>
 <p>Medium Type of the tier. One of the three types: <code>MEM</code>, <code>SSD</code>, <code>HDD</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeType</code></br>
+<em>
+common.VolumeType
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeType is the volume type of the tier. Should be one of the three types: <code>hostPath</code>, <code>emptyDir</code> and <code>volumeTemplate</code>.
+If not set, defaults to hostPath.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeSource</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumesource-v1-core">
+Kubernetes core/v1.VolumeSource
+</a>
+</em>
+</td>
+<td>
+<p>VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource.
+Users should only specify VolumeSource when VolumeType is set to emptyDir or volumeTemplate</p>
 </td>
 </tr>
 <tr>
@@ -4802,6 +5029,56 @@ bool
 </p>
 <p>
 </p>
+<h3 id="data.fluid.io/v1alpha1.PodMetadata">PodMetadata
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">JindoCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+</p>
+<p>
+<p>PodMetadata defines subgroup properties of metav1.ObjectMeta</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Labels are labels of pod specification</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotations</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Annotations are annotations of pod specification</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Runtime">Runtime
 </h3>
 <p>
@@ -5596,5 +5873,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>7c68e76</code>.
+on git commit <code>17db7ee</code>.
 </em></p>
