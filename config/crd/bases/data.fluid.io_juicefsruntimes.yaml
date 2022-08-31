@@ -844,9 +844,9 @@ spec:
                           type: string
                         volumeSource:
                           description: VolumeSource is the volume source of the tier.
-                            It follows the form of corev1.VolumeSource. Users should
-                            only specify VolumeSource when VolumeType is set to emptyDir
-                            or persistentVolumeClaim
+                            It follows the form of corev1.VolumeSource. For now, users
+                            should only specify VolumeSource when VolumeType is set
+                            to emptyDir.
                           properties:
                             awsElasticBlockStore:
                               description: 'AWSElasticBlockStore represents an AWS
@@ -2449,7 +2449,6 @@ spec:
                           enum:
                           - hostPath
                           - emptyDir
-                          - persistentVolumeClaim
                           type: string
                       required:
                       - mediumtype

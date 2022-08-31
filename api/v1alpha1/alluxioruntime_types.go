@@ -168,13 +168,13 @@ type Level struct {
 	// VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`.
 	// If not set, defaults to hostPath.
 	// +kubebuilder:default=hostPath
-	// +kubebuilder:validation:Enum=hostPath;emptyDir;persistentVolumeClaim
+	// +kubebuilder:validation:Enum=hostPath;emptyDir
 	// +optional
 	VolumeType common.VolumeType `json:"volumeType"`
 
 	// VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource.
-	// Users should only specify VolumeSource when VolumeType is set to emptyDir or persistentVolumeClaim
-	VolumeSource corev1.VolumeSource `json:"volumeSource,omitempty"`
+	// For now, users should only specify VolumeSource when VolumeType is set to emptyDir.
+	VolumeSource VolumeSource `json:"volumeSource,omitempty"`
 
 	// File paths to be used for the tier. Multiple paths are supported.
 	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
