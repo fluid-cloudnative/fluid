@@ -46,7 +46,7 @@ jobs:
           git status --porcelain
           if [ -z "`git status --porcelain`" ]; then echo "CRD validation passed."; else echo "CRD validation failed. Please use 'make update-crd' to keep CRDs latest"; exit 1; fi
 
-      - name: Project vet
+      - name: Project lint
         run: |
           golangci-lint run --timeout=10m
           test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
@@ -86,5 +86,5 @@ jobs:
         make build
         make test
         git status --porcelain | grep generated
-        if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make build' to generate openapi"; exit 1; fi
+        if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make build' to update openapi"; exit 1; fi
         bash <(curl -s https://codecov.io/bash)
