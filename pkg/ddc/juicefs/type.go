@@ -30,12 +30,13 @@ type JuiceFS struct {
 	common.ImageInfo `yaml:",inline"`
 	common.UserInfo  `yaml:",inline"`
 
-	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
-	Tolerations     []corev1.Toleration    `json:"tolerations,omitempty"`
-	Configs         Configs                `yaml:"configs,omitempty"`
-	Fuse            Fuse                   `yaml:"fuse,omitempty"`
-	Worker          Worker                 `yaml:"worker,omitempty"`
-	TieredStore     TieredStore            `yaml:"tieredstore,omitempty"`
+	NodeSelector map[string]string   `yaml:"nodeSelector,omitempty"`
+	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+	Configs      Configs             `yaml:"configs,omitempty"`
+	Fuse         Fuse                `yaml:"fuse,omitempty"`
+	Worker       Worker              `yaml:"worker,omitempty"`
+
+	CacheDirs       map[string]cache       `yaml:"cacheDirs,omitempty"`
 	PlacementMode   string                 `yaml:"placement,omitempty"`
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
 	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity,omitempty"`
@@ -60,9 +61,10 @@ type Worker struct {
 	Resources       common.Resources       `yaml:"resources,omitempty"`
 	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
+	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
+	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
 
 	MountPath   string            `yaml:"mountPath,omitempty"`
-	CacheDir    string            `yaml:"cacheDir,omitempty"`
 	StatCmd     string            `yaml:"statCmd,omitempty"`
 	Command     string            `yaml:"command,omitempty"`
 	Labels      map[string]string `yaml:"labels,omitempty"`
@@ -70,18 +72,19 @@ type Worker struct {
 }
 
 type Fuse struct {
-	Enabled         bool              `yaml:"enabled,omitempty"`
-	Image           string            `yaml:"image,omitempty"`
-	NodeSelector    map[string]string `yaml:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar   `yaml:"envs,omitempty"`
-	ImageTag        string            `yaml:"imageTag,omitempty"`
-	ImagePullPolicy string            `yaml:"imagePullPolicy,omitempty"`
-	Resources       common.Resources  `yaml:"resources,omitempty"`
-	CriticalPod     bool              `yaml:"criticalPod,omitempty"`
+	Enabled         bool                 `yaml:"enabled,omitempty"`
+	Image           string               `yaml:"image,omitempty"`
+	NodeSelector    map[string]string    `yaml:"nodeSelector,omitempty"`
+	Envs            []corev1.EnvVar      `yaml:"envs,omitempty"`
+	ImageTag        string               `yaml:"imageTag,omitempty"`
+	ImagePullPolicy string               `yaml:"imagePullPolicy,omitempty"`
+	Resources       common.Resources     `yaml:"resources,omitempty"`
+	CriticalPod     bool                 `yaml:"criticalPod,omitempty"`
+	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
 
 	SubPath       string            `yaml:"subPath,omitempty"`
 	MountPath     string            `yaml:"mountPath,omitempty"`
-	CacheDir      string            `yaml:"cacheDir,omitempty"`
 	HostMountPath string            `yaml:"hostMountPath,omitempty"`
 	Command       string            `yaml:"command,omitempty"`
 	StatCmd       string            `yaml:"statCmd,omitempty"`
@@ -89,11 +92,9 @@ type Fuse struct {
 	Annotations   map[string]string `yaml:"annotations,omitempty"`
 }
 
-type TieredStore struct {
-	Path  string `yaml:"path,omitempty"`
-	Quota string `yaml:"quota,omitempty"`
-	High  string `yaml:"high,omitempty"`
-	Low   string `yaml:"low,omitempty"`
+type cache struct {
+	Path string `yaml:"path,omitempty"`
+	Type string `yaml:"type,omitempty"`
 }
 
 type cacheStates struct {

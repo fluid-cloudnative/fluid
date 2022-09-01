@@ -92,13 +92,18 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
 	}
 
-	if len(runtime.Spec.TieredStore.Levels) > 0 {
-		value.Worker.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
-	} else {
-		value.Worker.CacheDir = DefaultCacheDir
+	err = j.transformResourcesForWorker(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform resource for worker")
+		return
 	}
 
-	err = j.transformResourcesForWorker(runtime, value)
+	// transform volumes for worker
+	err = j.transformWorkerVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform volumes for worker")
+	}
+
 	return
 }
 

@@ -71,6 +71,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if err != nil {
 		return err
 	}
+	// transform volumes for fuse
+	err = j.transformFuseVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform volumes for fuse")
+		return err
+	}
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
@@ -155,9 +161,10 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		options["subdir"] = subPath
 	}
 
-	var cacheDir = DefaultCacheDir
+	var storagePath = DefaultCacheDir
+	var volumeType = common.VolumeTypeHostPath
 	if tiredStoreLevel != nil {
-		cacheDir = tiredStoreLevel.Path
+		storagePath = tiredStoreLevel.Path // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
 		if tiredStoreLevel.Quota != nil {
 			q := tiredStoreLevel.Quota
 			// juicefs cache-size should be integer in MiB
@@ -169,11 +176,19 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		if tiredStoreLevel.Low != "" {
 			options["free-space-ratio"] = tiredStoreLevel.Low
 		}
+		volumeType = tiredStoreLevel.VolumeType
 	}
-	options["cache-dir"] = cacheDir
+	originPath := strings.Split(storagePath, ",")
+	options["cache-dir"] = storagePath
 
 	// transform cacheDir
-	value.Fuse.CacheDir = cacheDir
+	value.CacheDirs = make(map[string]cache)
+	for i, v := range originPath {
+		value.CacheDirs[strconv.Itoa(i+1)] = cache{
+			Path: v,
+			Type: string(volumeType),
+		}
+	}
 
 	return options, nil
 }

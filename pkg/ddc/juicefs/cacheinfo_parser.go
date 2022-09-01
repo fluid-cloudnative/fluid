@@ -51,7 +51,6 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
 			return nil, err
 		}
-		configmapinfo[CacheDir] = value.Fuse.CacheDir
 		configmapinfo[MountPath] = value.Fuse.MountPath
 		configmapinfo[Edition] = value.Edition
 	}

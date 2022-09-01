@@ -17,3 +17,8 @@
 0.2.3
 
 - Support configurable runtime pod metadata
+
+0.2.4
+
+Support configurable tieredstore's volume type
+

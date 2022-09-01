@@ -68,6 +68,10 @@ type JuiceFSRuntimeSpec struct {
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
 
+	// Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
@@ -104,6 +108,10 @@ type JuiceFSCompTemplateSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
@@ -134,6 +142,10 @@ type JuiceFSFuseSpec struct {
 	// this option only effect when global is enabled
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
 	// CleanPolicy decides when to clean Juicefs Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
