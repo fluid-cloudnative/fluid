@@ -128,17 +128,23 @@ spec:
           volumeMounts:
             - mountPath: /root/script
               name: script
-            {{- if .Values.worker.cacheDir }}
-            - name: cache-dir
-              mountPath: {{ .Values.worker.cacheDir }}
+            {{- range $name, $mount := .Values.cacheDirs }}
+            - name: cache-dir-{{ $name }}
+              mountPath: "{{ $mount.path }}"
             {{- end }}
       restartPolicy: Always
       volumes:
-        {{- if .Values.worker.cacheDir }}
-        - name: cache-dir
-          hostPath:
-            path: {{ .Values.worker.cacheDir }}
+        {{- range $name, $mount := .Values.cacheDirs }}
+        {{- if eq $mount.type "hostPath" }}
+        - hostPath:
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
+          name: cache-dir-{{ $name }}
+          {{- else if eq $mount.type "emptyDir" }}
+        - emptyDir: {}
+          name: cache-dir-{{ $name }}
+        {{- /* todo: support volume template */}}
+        {{- end }}
         {{- end }}
         - name: script
           configMap:

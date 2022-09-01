@@ -136,9 +136,9 @@ spec:
             mountPropagation: Bidirectional
           - mountPath: /root/script
             name: script
-          {{- if .Values.fuse.cacheDir }}
-          - name: cache-dir
-            mountPath: {{ .Values.fuse.cacheDir }}
+          {{- range $name, $mount := .Values.cacheDirs }}
+          - name: cache-dir-{{ $name }}
+            mountPath: "{{ $mount.path }}"
           {{- end }}
       restartPolicy: Always
       volumes:
@@ -146,11 +146,17 @@ spec:
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
-        {{- if .Values.fuse.cacheDir }}
-        - name: cache-dir
-          hostPath:
-            path: {{ .Values.fuse.cacheDir }}
+        {{- range $name, $mount := .Values.cacheDirs }}
+        {{- if eq $mount.type "hostPath" }}
+        - hostPath:
+            path:  "{{ $mount.path }}"
             type: DirectoryOrCreate
+          name: cache-dir-{{ $name }}
+          {{- else if eq $mount.type "emptyDir" }}
+        - emptyDir: {}
+          name: cache-dir-{{ $name }}
+        {{- /* todo: support volume template */}}
+        {{- end }}
         {{- end }}
         - name: script
           configMap:
