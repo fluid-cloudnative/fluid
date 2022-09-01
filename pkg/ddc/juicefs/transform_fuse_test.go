@@ -501,7 +501,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 					Worker: Worker{
@@ -538,7 +537,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 					Worker: Worker{
@@ -578,7 +576,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 					Worker: Worker{
@@ -614,7 +611,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 					Worker: Worker{
@@ -680,7 +676,6 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 				},
@@ -704,7 +699,6 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					Fuse: Fuse{
 						SubPath:       "/",
 						MountPath:     "/test",
-						CacheDir:      "/cache",
 						HostMountPath: "/test",
 					},
 				},

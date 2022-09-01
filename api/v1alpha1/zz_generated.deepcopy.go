@@ -1265,6 +1265,13 @@ func (in *JuiceFSCompTemplateSpec) DeepCopyInto(out *JuiceFSCompTemplateSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.VolumeMounts != nil {
+		in, out := &in.VolumeMounts, &out.VolumeMounts
+		*out = make([]v1.VolumeMount, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.PodMetadata.DeepCopyInto(&out.PodMetadata)
 }
 
@@ -1294,6 +1301,13 @@ func (in *JuiceFSFuseSpec) DeepCopyInto(out *JuiceFSFuseSpec) {
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
+		}
+	}
+	if in.VolumeMounts != nil {
+		in, out := &in.VolumeMounts, &out.VolumeMounts
+		*out = make([]v1.VolumeMount, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	in.PodMetadata.DeepCopyInto(&out.PodMetadata)
@@ -1391,6 +1405,13 @@ func (in *JuiceFSRuntimeSpec) DeepCopyInto(out *JuiceFSRuntimeSpec) {
 		in, out := &in.RunAs, &out.RunAs
 		*out = new(User)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Volumes != nil {
+		in, out := &in.Volumes, &out.Volumes
+		*out = make([]v1.Volume, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	in.PodMetadata.DeepCopyInto(&out.PodMetadata)
 }
