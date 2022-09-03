@@ -14,6 +14,7 @@
 
 |![更新](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) 最新进展：|
 |------------------|
+|Sep. 03th, 2022. Fluid v0.8.0  **发布**! 提供一系列新功能，包括基于Fluid边车支持的Serverlesss作业生命周期管理，按需启动Runtime controller，自动化CRD更新, 严格的pod与数据集节点的调度机制， JuicefsRuntime的Arm64支持, Alluxio Runtime的GCS支持等等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Mar. 16th, 2021. Fluid v0.5.0 **发布**! 提供一系列新功能，包括提供数据集缓存的在线弹性扩缩容，元数据备份与恢复，Fuse全局模式部署等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Nov. 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Oct. 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
