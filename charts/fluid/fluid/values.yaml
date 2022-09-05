@@ -82,7 +82,7 @@ runtime:
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.8.2-4fb1a6c
     fuse:
-      image: juicedata/juicefs-fuse:v1.0.0
+      image: juicedata/juicefs-fuse:v1.0.0-4.8.0
 
 webhook:
   enabled: true
