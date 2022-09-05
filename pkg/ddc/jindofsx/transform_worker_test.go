@@ -80,15 +80,17 @@ func TestTransformWorkerMountPath(t *testing.T) {
 	var tests = []struct {
 		storagePath                string
 		quotaList                  string
-		tieredStoreLevelMediumType common.MediumType
+		tieredStoreLevelMediumType string
 		tieredStoreLevelVolumeType common.VolumeType
+		tieredStoreLevels          []datav1alpha1.Level
 		expect                     map[string]*Level
 	}{
 		{
 			storagePath:                "/mnt/disk1,/mnt/disk2",
 			quotaList:                  "10Gi,5Gi",
-			tieredStoreLevelMediumType: common.SSD,
+			tieredStoreLevelMediumType: string(common.SSD),
 			tieredStoreLevelVolumeType: common.VolumeTypeHostPath,
+			tieredStoreLevels:          []datav1alpha1.Level{},
 			expect: map[string]*Level{
 				"1": {
 					Path:       "/mnt/disk1",
@@ -104,13 +106,33 @@ func TestTransformWorkerMountPath(t *testing.T) {
 				},
 			},
 		},
+		{
+			storagePath:                "/dev/shm",
+			quotaList:                  "20Gi",
+			tieredStoreLevelMediumType: string(common.Memory),
+			tieredStoreLevelVolumeType: common.VolumeTypeEmptyDir,
+			tieredStoreLevels: []datav1alpha1.Level{
+				{
+					VolumeType:   common.VolumeTypeEmptyDir,
+					VolumeSource: datav1alpha1.VolumeSource{VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: corev1.StorageMedium("LocalSSD")}}},
+				},
+			},
+			expect: map[string]*Level{
+				"1": {
+					Path:       "/dev/shm",
+					Type:       string(common.VolumeTypeEmptyDir),
+					MediumType: "LocalSSD",
+					Quota:      "20Gi",
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
 		originPath := strings.Split(test.storagePath, ",")
 		quotas := strings.Split(test.quotaList, ",")
 
-		properties := engine.transformWorkerMountPath(originPath, quotas, engine.getMediumTypeFromVolumeSource(string(test.tieredStoreLevelMediumType), []datav1alpha1.Level{}), test.tieredStoreLevelVolumeType)
+		properties := engine.transformWorkerMountPath(originPath, quotas, engine.getMediumTypeFromVolumeSource(test.tieredStoreLevelMediumType, test.tieredStoreLevels), test.tieredStoreLevelVolumeType)
 		if !reflect.DeepEqual(properties, test.expect) {
 			t.Errorf("expected value %v, but got %v", test.expect, properties)
 		}
