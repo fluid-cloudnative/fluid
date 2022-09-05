@@ -110,7 +110,7 @@ func TestTransformWorkerMountPath(t *testing.T) {
 		originPath := strings.Split(test.storagePath, ",")
 		quotas := strings.Split(test.quotaList, ",")
 
-		properties := engine.transformWorkerMountPath(originPath, quotas, test.tieredStoreLevelMediumType, test.tieredStoreLevelVolumeType)
+		properties := engine.transformWorkerMountPath(originPath, quotas, engine.getMediumTypeFromVolumeSource(string(test.tieredStoreLevelMediumType), []datav1alpha1.Level{}), test.tieredStoreLevelVolumeType)
 		if !reflect.DeepEqual(properties, test.expect) {
 			t.Errorf("expected value %v, but got %v", test.expect, properties)
 		}
