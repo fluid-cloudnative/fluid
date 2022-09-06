@@ -183,6 +183,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	var levels []Level
 	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 
+		mediumType := e.getMediumTypeFromVolumeSource(string(level.MediumType), level)
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
 		var paths []string
@@ -194,7 +195,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 		pathConfigStr := strings.Join(paths, ",")
 		quotaConfigStr := strings.Join(quotas, ",")
-		mediumTypeConfigStr := strings.Join(*utils.FillSliceWithString(string(level.MediumType), len(paths)), ",")
+		mediumTypeConfigStr := strings.Join(*utils.FillSliceWithString(mediumType, len(paths)), ",")
 
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
@@ -504,4 +505,16 @@ func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterf
 	if !enableShortCircuit {
 		value.Properties["alluxio.user.short.circuit.enabled"] = "false"
 	}
+}
+
+func (e *AlluxioEngine) getMediumTypeFromVolumeSource(defaultMediumType string, level base.Level) string {
+	mediumType := defaultMediumType
+
+	if level.VolumeType == common.VolumeTypeEmptyDir {
+		if level.VolumeSource.EmptyDir != nil {
+			mediumType = string(level.VolumeSource.EmptyDir.Medium)
+		}
+	}
+
+	return mediumType
 }

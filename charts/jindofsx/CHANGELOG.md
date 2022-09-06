@@ -52,3 +52,7 @@ Support configurable tieredstore's volume type
 0.8.11
 
 Support configurable pod metadata
+
+0.8.12
+
+Support emptyDir volume source

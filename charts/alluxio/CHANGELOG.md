@@ -218,3 +218,7 @@
 0.9.4
 
 - Remove host pid and hostPath volume for backup
+
+0.9.5
+
+- Support emptyDir volume source
