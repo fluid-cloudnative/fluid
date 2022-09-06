@@ -10,7 +10,7 @@ About how to use JuiceFS you can refer to the document [JuiceFS Quick Start Guid
 
 You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases).
 
-Set `runtime.juicefs.enable` to `true` in Fluid chart, then refer to the [Installation document](../userguide/install.md) to complete the installation
+Refer to the [Installation document](../userguide/install.md) to complete the installation.
 
 ```shell
 $ kubectl get po -n fluid-system
@@ -20,10 +20,9 @@ csi-nodeplugin-fluid-k7cqt                   2/2     Running             0      
 csi-nodeplugin-fluid-x9dfd                   2/2     Running             0          113s
 dataset-controller-57ddd56b54-9vd86          1/1     Running             0          113s
 fluid-webhook-84467465f8-t65mr               1/1     Running             0          113s
-juicefsruntime-controller-56df96b75f-qzq8x   1/1     Running             0          113s
 ```
 
-Make sure `juicefsruntime-controller`, `dataset-controller`, `fluid-webhook` pod and `csi-nodeplugin` pods work well.
+Make sure `dataset-controller`, `fluid-webhook` pod and `csi-nodeplugin` pods work well. `juicefs-runtime-controller` will be installed automatically when JuiceFSRuntime created.
 
 ## Create new work environment
 
