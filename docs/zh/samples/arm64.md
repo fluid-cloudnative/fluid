@@ -225,3 +225,14 @@ jfsdemo-worker-0                                               1/1     Running  
 ```
 
 可以看到 pod 已经创建成功，同时 JuiceFS 的 FUSE 组件也启动成功。
+
+登陆到应用pod中可以看到挂载成功，并且该环境是ARM64
+
+```bash
+root@demo-app:/# mount | grep fuse.juicefs
+JuiceFS:minio on /data type fuse.juicefs (rw,relatime,user_id=0,group_id=0,default_permissions,allow_other)
+root@demo-app:/# arch
+aarch64
+root@demo-app:/# lscpu | grep -i arm
+Vendor ID:                       ARM
+```

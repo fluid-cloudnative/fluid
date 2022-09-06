@@ -8,9 +8,7 @@ JuiceFS 是一款面向云环境设计的开源高性能共享文件系统，提
 
 ## 安装
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
-
-在 Fluid 的安装 chart values.yaml 中将 `runtime.juicefs.enable` 设置为 `true`，再参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
+您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
 
 ```shell
 $ kubectl get po -n fluid-system
@@ -20,10 +18,9 @@ csi-nodeplugin-fluid-k7cqt                   2/2     Running             0      
 csi-nodeplugin-fluid-x9dfd                   2/2     Running             0          113s
 dataset-controller-57ddd56b54-9vd86          1/1     Running             0          113s
 fluid-webhook-84467465f8-t65mr               1/1     Running             0          113s
-juicefsruntime-controller-56df96b75f-qzq8x   1/1     Running             0          113s
 ```
 
-确保 `juicefsruntime-controller`、`dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。
+确保 `dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。 `juicefs-runtime-controller` 会在使用 JuiceFSRuntime 的时候动态创建。
 
 ## 新建工作环境
 
@@ -377,14 +374,3 @@ jfsdemo-worker-0         1/1     Running   0          4m56s
 
 可以看到 pod 已经创建成功，同时 JuiceFS 的 FUSE 组件也启动成功。
 
-
-登陆到应用pod中可以看到挂载成功，并且该环境是ARM64
-
-```bash
-root@demo-app:/# mount | grep fuse.juicefs
-JuiceFS:minio on /data type fuse.juicefs (rw,relatime,user_id=0,group_id=0,default_permissions,allow_other)
-root@demo-app:/# arch
-aarch64
-root@demo-app:/# lscpu | grep -i arm
-Vendor ID:                       ARM
-```
