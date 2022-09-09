@@ -17,38 +17,34 @@ limitations under the License.
 package jindo
 
 const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
+	CsiDriver = "fuse.csi.fluid.io"
 
-	//fluid_PATH = "fluid_path"
+	MountType = "mount_type"
 
-	Mount_TYPE = "mount_type"
+	SummaryPrefixTotalCapacity = "Total Capacity: "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+	SummaryPrefixUsedCapacity = "Used Capacity: "
 
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
+	MetaDataSyncNotDoneMsg = "[Calculating]"
 
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	CheckMetadataSyncDoneTimeoutMillisec = 500
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	HadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	HadoopConfCoreSiteFilename = "core-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	JindoMasterNumDefault = 1
+	JindoHaMasterNum      = 3
 
-	JINDO_MASTERNUM_DEFAULT = 1
-	JINDO_HA_MASTERNUM      = 3
-
-	DEFAULT_MASTER_RPC_PORT = 8101
-	DEFAULT_WORKER_RPC_PORT = 6101
-	DEFAULT_RAFT_RPC_PORT   = 8103
+	DefaultMasterRpcPort = 8101
+	DefaultWorkerRpcPort = 6101
+	DefaultRaftRpcPort   = 8103
 
 	PodRoleType = "role"
 
-	WOKRER_POD_ROLE = "jindo-worker"
+	WorkerPodRole = "jindo-worker"
 
-	runtimeFSType = "jindofs"
+	RuntimeFSType = "jindofs"
 
-	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
-
-	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
+	JindoFuseMountPath = "/jfs/jindofs-fuse"
 )

@@ -40,14 +40,14 @@ func (e GooseFSEngine) ParseReportSummary(s string) cacheStates {
 	strs := strings.Split(s, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
-			totalCacheCapacityGooseFS, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
+		if strings.HasPrefix(str, SummaryPrefixTotalCapacity) {
+			totalCacheCapacityGooseFS, _ := utils.FromHumanSize(strings.TrimPrefix(str, SummaryPrefixTotalCapacity))
 			// Convert GooseFS's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityGooseFS))
 		}
-		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
-			usedCacheCapacityGooseFS, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
+		if strings.HasPrefix(str, SummaryPrefixUsedCapacity) {
+			usedCacheCapacityGooseFS, _ := utils.FromHumanSize(strings.TrimPrefix(str, SummaryPrefixUsedCapacity))
 			// Convert GooseFS's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cached = utils.BytesSize(float64(usedCacheCapacityGooseFS))

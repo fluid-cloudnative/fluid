@@ -56,7 +56,7 @@ func (e *JindoFSxEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext,
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + ENGINE_TYPE
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + EngineType
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")
@@ -79,7 +79,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "jindofsx", dataload.Spec.Dataset.Namespace)
 
 	if len(imageName) == 0 {
-		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DefaultJindofsxRuntimeImage, ":")
 		if len(defaultImageInfo) < 1 {
 			panic("invalid default dataload image!")
 		} else {
@@ -88,7 +88,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	}
 
 	if len(imageTag) == 0 {
-		defaultImageInfo := strings.Split(DEFAULT_JINDOFSX_RUNTIME_IMAGE, ":")
+		defaultImageInfo := strings.Split(DefaultJindofsxRuntimeImage, ":")
 		if len(defaultImageInfo) < 2 {
 			panic("invalid default dataload image!")
 		} else {

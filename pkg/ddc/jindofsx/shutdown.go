@@ -134,8 +134,8 @@ func (e *JindoFSxEngine) cleanAll() (err error) {
 func (e *JindoFSxEngine) cleanConfigMap() (err error) {
 	var (
 		valueConfigmapName  = e.name + "-" + e.runtimeType + "-values"
-		configmapName       = e.name + "-" + runtimeFSType + "-config"
-		clientConfigmapName = e.name + "-" + runtimeFSType + "-client-config"
+		configmapName       = e.name + "-" + RuntimeFSType + "-config"
+		clientConfigmapName = e.name + "-" + RuntimeFSType + "-client-config"
 		namespace           = e.namespace
 	)
 

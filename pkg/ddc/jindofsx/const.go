@@ -17,52 +17,50 @@ limitations under the License.
 package jindofsx
 
 const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
+	CsiDriver = "fuse.csi.fluid.io"
 
-	//fluid_PATH = "fluid_path"
+	MountType = "mount_type"
 
-	Mount_TYPE = "mount_type"
+	SummaryPrefixTotalCapacity = "Total Disk Capacity: "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Disk Capacity: "
+	SummaryPrefixUsedCapacity = "Used Disk Capacity: "
 
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Disk Capacity: "
+	SummaryPrefixTotalMemCapacity = "Total MEM Capacity: "
 
-	SUMMARY_PREFIX_TOTAL_MEM_CAPACITY = "Total MEM Capacity: "
+	SummaryPrefixUsedMemCapacity = "Used MEM Capacity: "
 
-	SUMMARY_PREFIX_USED_MEM_CAPACITY = "Used MEM Capacity: "
+	MetaDataSyncNotDoneMsg = "[Calculating]"
 
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	CheckMetadataSyncDoneTimeoutMillisec = 500
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	HadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	HadoopConfCoreSiteFilename = "core-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	JindoMasterNumDefault = 1
+	JindoHaMasterNum      = 3
 
-	JINDO_MASTERNUM_DEFAULT = 1
-	JINDO_HA_MASTERNUM      = 3
-
-	DEFAULT_MASTER_RPC_PORT = 8101
-	DEFAULT_WORKER_RPC_PORT = 6101
-	DEFAULT_RAFT_RPC_PORT   = 8103
+	DefaultMasterRpcPort = 8101
+	DefaultWorkerRpcPort = 6101
+	DefaultRaftRpcPort   = 8103
 
 	PodRoleType = "role"
 
-	WOKRER_POD_ROLE = "jindo-worker"
+	WorkerPodRole = "jindo-worker"
 
-	runtimeFSType = "jindofs"
+	RuntimeFSType = "jindofs"
 
-	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
+	JindoFuseMountPath = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.1"
+	DefaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.1"
 
-	ENGINE_TYPE = "jindofsx"
+	EngineType = "jindofsx"
 
 	FuseOnly = "fuseOnly"
 
-	defaultMemLimit = 100
+	DefaultMemLimit = 100
 
-	defaultMetaSize = "30Gi"
+	DefaultMetaSize = "30Gi"
 
 	QueryUfsTotal = "QUERY_UFS_TOTAL"
 )

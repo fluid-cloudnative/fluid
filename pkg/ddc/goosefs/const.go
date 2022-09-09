@@ -33,15 +33,15 @@ const (
 
 	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+	SummaryPrefixTotalCapacity = "Total Capacity: "
 
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
+	SummaryPrefixUsedCapacity = "Used Capacity: "
 
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	MetaDataSyncNotDoneMsg = "[Calculating]"
 
 	GOOSEFS_RUNTIME_METRICS_LABEL = "goosefs_runtime_metrics"
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	CheckMetadataSyncDoneTimeoutMillisec = 500
 
 	AUTO_SELECT_PORT_MIN = 20000
 	AUTO_SELECT_PORT_MAX = 30000
@@ -50,13 +50,13 @@ const (
 
 	CACHE_HIT_QUERY_INTERVAL_MIN = 1
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	HadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	HadoopConfCoreSiteFilename = "core-site.xml"
 
 	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
 
 	PodRoleType = "role"
 
-	WOKRER_POD_ROLE = "goosefs-worker"
+	WorkerPodRole = "goosefs-worker"
 )

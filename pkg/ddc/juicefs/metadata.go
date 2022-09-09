@@ -138,7 +138,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 			return
 		})
 		if err != nil {
-			j.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
+			j.Log.Error(err, "Failed to set UfsTotal to MetaDataSyncNotDoneMsg")
 		}
 		j.MetadataSyncDoneCh = make(chan MetadataSyncResult)
 		go func(resultChan chan MetadataSyncResult) {

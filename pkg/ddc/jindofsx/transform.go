@@ -170,7 +170,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformDeployMode(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
-	value.Fuse.MountPath = JINDO_FUSE_MONNTPATH
+	value.Fuse.MountPath = JindoFuseMountPath
 	return value, err
 }
 
@@ -440,24 +440,24 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 		needUpdated := false
 		if quotaString != "" {
 			i, _ := strconv.Atoi(quotaString)
-			if i > defaultMemLimit {
-				// value.Master.Resources.Requests.Memory = defaultMetaSize
-				defaultMetaSizeQuantity := resource.MustParse(defaultMetaSize)
+			if i > DefaultMemLimit {
+				// value.Master.Resources.Requests.Memory = DefaultMetaSize
+				DefaultMetaSizeQuantity := resource.MustParse(DefaultMetaSize)
 				if runtime.Spec.Master.Resources.Requests == nil ||
 					runtime.Spec.Master.Resources.Requests.Memory() == nil ||
 					runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
-					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
+					DefaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
 					needUpdated = true
 				}
 
 				if !runtime.Spec.Master.Resources.Limits.Memory().IsZero() &&
-					defaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
+					DefaultMetaSizeQuantity.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
 					return fmt.Errorf("the memory meta store's size %v is greater than master limits memory %v",
-						defaultMetaSizeQuantity, runtime.Spec.Master.Resources.Limits.Memory())
+						DefaultMetaSizeQuantity, runtime.Spec.Master.Resources.Limits.Memory())
 				}
 
 				if needUpdated {
-					value.Master.Resources.Requests.Memory = defaultMetaSize
+					value.Master.Resources.Requests.Memory = DefaultMetaSize
 					err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 						runtime, err := e.getRuntime()
 						if err != nil {
@@ -467,7 +467,7 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 						if len(runtimeToUpdate.Spec.Master.Resources.Requests) == 0 {
 							runtimeToUpdate.Spec.Master.Resources.Requests = make(corev1.ResourceList)
 						}
-						runtimeToUpdate.Spec.Master.Resources.Requests[corev1.ResourceMemory] = defaultMetaSizeQuantity
+						runtimeToUpdate.Spec.Master.Resources.Requests[corev1.ResourceMemory] = DefaultMetaSizeQuantity
 						if !reflect.DeepEqual(runtimeToUpdate, runtime) {
 							err = e.Client.Update(context.TODO(), runtimeToUpdate)
 							if err != nil {
@@ -689,10 +689,10 @@ func (e *JindoFSxEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntim
 }
 
 func (e *JindoFSxEngine) transformReplicasCount(runtime *datav1alpha1.JindoRuntime) int {
-	if runtime.Spec.Master.Replicas == JINDO_HA_MASTERNUM {
-		return JINDO_HA_MASTERNUM
+	if runtime.Spec.Master.Replicas == JindoHaMasterNum {
+		return JindoHaMasterNum
 	}
-	return JINDO_MASTERNUM_DEFAULT
+	return JindoMasterNumDefault
 }
 
 func (e *JindoFSxEngine) transformMasterSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
@@ -774,9 +774,9 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 		defaultDnsServer = "1.1.1.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	dnsServer = os.Getenv(common.JINDO_DNS_SERVER)
+	image = docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
+	dnsServer = os.Getenv(common.JindoDnsServer)
 	if len(image) == 0 {
 		image = defaultImage
 	}
@@ -797,8 +797,8 @@ func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 		defaultTag   = "4.5.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+	image = docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoFuseImageEnv)
 	if len(image) == 0 {
 		image = defaultImage
 	}
@@ -833,15 +833,15 @@ func (e *JindoFSxEngine) allocatePorts(value *Jindo) error {
 	// usehostnetwork to choose port from port allocator
 	expectedPortNum := 2
 	if !value.UseHostNetwork {
-		value.Master.Port.Rpc = DEFAULT_MASTER_RPC_PORT
-		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
-		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
-			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
+		value.Master.Port.Rpc = DefaultMasterRpcPort
+		value.Worker.Port.Rpc = DefaultWorkerRpcPort
+		if value.Master.ReplicaCount == JindoHaMasterNum {
+			value.Master.Port.Raft = DefaultRaftRpcPort
 		}
 		return nil
 	}
 
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHaMasterNum {
 		expectedPortNum = 3
 	}
 
@@ -861,7 +861,7 @@ func (e *JindoFSxEngine) allocatePorts(value *Jindo) error {
 	value.Master.Port.Rpc = allocatedPorts[index]
 	index++
 	value.Worker.Port.Rpc = allocatedPorts[index]
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHaMasterNum {
 		index++
 		value.Master.Port.Raft = allocatedPorts[index]
 	}
@@ -886,7 +886,7 @@ func (e *JindoFSxEngine) transformInitPortCheck(value *Jindo) {
 	var ports []string
 
 	ports = append(ports, strconv.Itoa(value.Master.Port.Rpc))
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHaMasterNum {
 		ports = append(ports, strconv.Itoa(value.Master.Port.Raft))
 	}
 

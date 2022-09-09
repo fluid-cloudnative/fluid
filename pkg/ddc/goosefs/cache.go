@@ -66,7 +66,7 @@ func (e GooseFSEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cac
 		return
 	}
 	// skip when `dataset.Status.UfsTotal` is "[Calculating]"
-	if dataset.Status.UfsTotal == METADATA_SYNC_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal == MetaDataSyncNotDoneMsg {
 		return
 	}
 
