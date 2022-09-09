@@ -774,9 +774,9 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 		defaultDnsServer = "1.1.1.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	dnsServer = os.Getenv(common.JINDO_DNS_SERVER)
+	image = docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
+	dnsServer = os.Getenv(common.JindoDnsServer)
 	if len(image) == 0 {
 		image = defaultImage
 	}
@@ -797,8 +797,8 @@ func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 		defaultTag   = "4.5.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+	image = docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoFuseImageEnv)
 	if len(image) == 0 {
 		image = defaultImage
 	}
