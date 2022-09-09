@@ -44,7 +44,7 @@ const (
 
 	WorkerPodRole = "jindo-worker"
 
-	RuntimeFSType = "jindofs"
+	RuntimeFsType = "jindofs"
 
 	JindoFuseMountPath = "/jfs/jindofs-fuse"
 )
