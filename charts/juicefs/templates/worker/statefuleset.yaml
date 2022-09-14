@@ -70,8 +70,10 @@ spec:
 {{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
+          {{- if not .Values.worker.unPrivileged }}
           securityContext:
             privileged: true
+          {{- end }}
           {{- if .Values.worker.ports }}
           ports:
 {{ toYaml .Values.worker.ports | trim | indent 10  }}

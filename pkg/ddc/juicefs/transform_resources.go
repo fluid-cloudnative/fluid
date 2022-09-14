@@ -41,6 +41,14 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
 			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
 		}
+		if runtime.Spec.Fuse.Resources.Limits.Storage() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceStorage]
+			value.Fuse.Resources.Limits[corev1.ResourceStorage] = quantity.String()
+		}
+		if runtime.Spec.Fuse.Resources.Limits.StorageEphemeral() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage]
+			value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = quantity.String()
+		}
 	}
 
 	if runtime.Spec.Fuse.Resources.Requests != nil {
@@ -52,6 +60,14 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
 			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
 			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
+		if runtime.Spec.Fuse.Resources.Requests.Storage() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceStorage]
+			value.Fuse.Resources.Requests[corev1.ResourceStorage] = quantity.String()
+		}
+		if runtime.Spec.Fuse.Resources.Requests.StorageEphemeral() != nil {
+			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceEphemeralStorage]
+			value.Fuse.Resources.Requests[corev1.ResourceEphemeralStorage] = quantity.String()
 		}
 	}
 
@@ -118,6 +134,14 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
 			value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
 		}
+		if runtime.Spec.Worker.Resources.Limits.Storage() != nil {
+			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceStorage]
+			value.Worker.Resources.Limits[corev1.ResourceStorage] = quantity.String()
+		}
+		if runtime.Spec.Worker.Resources.Limits.StorageEphemeral() != nil {
+			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceEphemeralStorage]
+			value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = quantity.String()
+		}
 	}
 
 	if runtime.Spec.Worker.Resources.Requests != nil {
@@ -129,6 +153,14 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
 			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
 			value.Worker.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		}
+		if runtime.Spec.Worker.Resources.Requests.Storage() != nil {
+			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceStorage]
+			value.Worker.Resources.Requests[corev1.ResourceStorage] = quantity.String()
+		}
+		if runtime.Spec.Worker.Resources.Requests.StorageEphemeral() != nil {
+			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceEphemeralStorage]
+			value.Worker.Resources.Requests[corev1.ResourceEphemeralStorage] = quantity.String()
 		}
 	}
 
