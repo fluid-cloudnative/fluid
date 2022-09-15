@@ -70,7 +70,7 @@ spec:
 {{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
-          {{- if not .Values.worker.unPrivileged }}
+          {{- if .Values.worker.privileged }}
           securityContext:
             privileged: true
           {{- end }}

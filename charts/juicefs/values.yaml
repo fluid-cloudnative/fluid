@@ -32,7 +32,7 @@ imagePullPolicy: IfNotPresent
 
 ## WORKER ##
 worker:
-  unPrivileged: false
+  privileged: true
   image: ""
   imageTag: ""
   imagePullPolicy: ""
@@ -67,7 +67,7 @@ configs:
 ## FUSE ##
 
 fuse:
-  unPrivileged: false
+  privileged: true
   subPath: ""
   criticalPod: false
   enabled: true
