@@ -54,7 +54,7 @@ type Configs struct {
 }
 
 type Worker struct {
-	NotPrivileged   bool                   `yaml:"notPrivileged,omitempty"`
+	UnPrivileged    bool                   `yaml:"unPrivileged,omitempty"`
 	Image           string                 `yaml:"image,omitempty"`
 	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
 	ImageTag        string                 `yaml:"imageTag,omitempty"`
@@ -73,7 +73,7 @@ type Worker struct {
 }
 
 type Fuse struct {
-	NotPrivileged   bool                 `yaml:"notPrivileged,omitempty"`
+	UnPrivileged    bool                 `yaml:"unPrivileged,omitempty"`
 	Enabled         bool                 `yaml:"enabled,omitempty"`
 	Image           string               `yaml:"image,omitempty"`
 	NodeSelector    map[string]string    `yaml:"nodeSelector,omitempty"`
