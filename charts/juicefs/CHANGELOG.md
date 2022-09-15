@@ -20,5 +20,8 @@
 
 0.2.4
 
-Support configurable tieredstore's volume type
+- Support configurable tieredstore's volume type
 
+0.2.5
+
+- Support configurable resource and privileged
