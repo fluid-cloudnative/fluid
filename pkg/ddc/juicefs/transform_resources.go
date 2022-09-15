@@ -33,25 +33,15 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 	}
 	if runtime.Spec.Fuse.Resources.Limits != nil {
 		j.Log.Info("setting fuse Resources limit")
-		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceCPU]
-			value.Fuse.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
-			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+		for k, v := range runtime.Spec.Fuse.Resources.Limits {
+			value.Fuse.Resources.Limits[k] = v.String()
 		}
 	}
 
 	if runtime.Spec.Fuse.Resources.Requests != nil {
 		j.Log.Info("setting fuse Resources request")
-		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceCPU]
-			value.Fuse.Resources.Requests[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
-			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		for k, v := range runtime.Spec.Fuse.Resources.Requests {
+			value.Fuse.Resources.Requests[k] = v.String()
 		}
 	}
 
@@ -110,25 +100,15 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 	}
 	if runtime.Spec.Worker.Resources.Limits != nil {
 		j.Log.Info("setting worker Resources limit")
-		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
-			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceCPU]
-			value.Worker.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
-			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
-			value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+		for k, v := range runtime.Spec.Worker.Resources.Limits {
+			value.Worker.Resources.Limits[k] = v.String()
 		}
 	}
 
 	if runtime.Spec.Worker.Resources.Requests != nil {
 		j.Log.Info("setting worker Resources request")
-		if runtime.Spec.Worker.Resources.Requests.Cpu() != nil {
-			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceCPU]
-			value.Worker.Resources.Requests[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
-			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
-			value.Worker.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+		for k, v := range runtime.Spec.Worker.Resources.Requests {
+			value.Worker.Resources.Requests[k] = v.String()
 		}
 	}
 
