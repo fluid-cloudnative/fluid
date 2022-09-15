@@ -48,11 +48,10 @@ type ThinRuntimeProfileStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
+// ThinRuntimeProfile is the Schema for the ThinRuntimeProfiles API
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
-
-// ThinRuntimeProfile is the Schema for the ThinRuntimeProfiles API
 type ThinRuntimeProfile struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
