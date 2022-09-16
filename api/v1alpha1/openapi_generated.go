@@ -4083,13 +4083,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref common.Referen
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
 					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
