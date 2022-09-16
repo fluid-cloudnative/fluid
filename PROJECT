@@ -67,4 +67,21 @@ resources:
   kind: DataBackup
   path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
+  kind: ThinRuntime
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: false
+  domain: fluid.io
+  group: data
+  kind: ThinRuntimeProfile
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
+  version: v1alpha1
 version: "3"

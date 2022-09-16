@@ -1,0 +1,20 @@
+# permissions for end users to view thinruntimes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: thinruntime-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinruntimes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - thinruntimes/status
+  verbs:
+  - get
