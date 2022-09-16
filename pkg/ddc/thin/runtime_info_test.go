@@ -54,9 +54,7 @@ func TestThinEngine_getRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.ThinRuntimeSpec{
-				Fuse: datav1alpha1.ThinFuseSpec{
-					Global: true,
-				},
+				Fuse: datav1alpha1.ThinFuseSpec{},
 			},
 		},
 		{
@@ -65,9 +63,7 @@ func TestThinEngine_getRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.ThinRuntimeSpec{
-				Fuse: datav1alpha1.ThinFuseSpec{
-					Global: false,
-				},
+				Fuse: datav1alpha1.ThinFuseSpec{},
 			},
 		},
 	}

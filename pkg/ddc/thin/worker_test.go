@@ -294,9 +294,7 @@ func TestThinEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.ThinRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.ThinFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.ThinFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -336,9 +334,7 @@ func TestThinEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.ThinRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.ThinFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.ThinFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
