@@ -98,6 +98,10 @@ func TestTransformFuseWithArgs(t *testing.T) {
 				},
 			},
 		}, &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
@@ -115,13 +119,21 @@ func TestTransformFuseWithArgs(t *testing.T) {
 				},
 			},
 		}, &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other"}, false},
+			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
 		{&datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
 					ImageTag: "v2.8.0",
@@ -137,10 +149,13 @@ func TestTransformFuseWithArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other"}, false},
+			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine := &AlluxioEngine{
+			name:      "test",
+			namespace: "default",
+			Log: fake.NullLogger()}
 		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
