@@ -1,5 +1,5 @@
 <div align="left">
-    <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/fluid_logo.jpg" title="architecture" height="11%" width="11%" alt="">
+    <img src="static/fluid_logo.jpg" title="architecture" height="11%" width="11%" alt="">
 </div>
 
 
@@ -22,7 +22,7 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
-|![notification](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) What is NEW!|
+|![notification](static/bell-outline-badge.svg) What is NEW!|
 |------------------|
 |Sep. 03th, 2022. Fluid v0.8.0 is **RELEASED**! It provides various new features, such as Lifecycle management of Serverless Job with fluid sidecar support, Enable runtime controller on demand, Automatic CRD upgrader, Restrict pod scheduling to dataset cache nodes, Arm64 support with JuicefsRuntime, GCS support for Alluxio Runtime, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
 |Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
@@ -30,7 +30,7 @@ English | [简体中文](./README-zh_CN.md)
 |Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
 
 <div align="center">
-    <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" height="60%" width="60%" alt="">
+    <img src="static/architecture.png" title="architecture" height="60%" width="60%" alt="">
 </div>
 
 ## Features
@@ -88,14 +88,14 @@ You can also visit [Fluid Homepage](https://fluid-cloudnative.github.io) to get 
 <details>
 <summary>Demo 1: Accelerate Remote File Accessing with Fluid</summary>
 <pre>
-<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/2ee9ef7de9eeb386f365a5d10f5defd12f08457f/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f72656d6f74655f66696c655f616363657373696e672e706e67" alt="" data-canonical-src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png" style="max-width:100%;"></a>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/2ee9ef7de9eeb386f365a5d10f5defd12f08457f/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f72656d6f74655f66696c655f616363657373696e672e706e67" alt="" data-canonical-src="static/remote_file_accessing.png" style="max-width:100%;"></a>
 </pre>
 </details>
 
 <details>
 <summary>Demo 2: Machine Learning with Fluid</summary>
 <pre>
-<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/5688ab788da9f8cd057e32f3764784ce616ff0fd/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f6d616368696e655f6c6561726e696e672e706e67" alt="" data-canonical-src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png" style="max-width:100%;"></a>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/5688ab788da9f8cd057e32f3764784ce616ff0fd/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f6d616368696e655f6c6561726e696e672e706e67" alt="" data-canonical-src="static/machine_learning.png" style="max-width:100%;"></a>
 </pre>
 </details>
 
