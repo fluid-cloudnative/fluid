@@ -448,3 +448,41 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 		})
 	}
 }
+
+func TestOptimizeDefaultForFuseWithArgs(t *testing.T) {
+	var tests = []struct {
+		runtime             *datav1alpha1.AlluxioRuntime
+		alluxioValue        *Alluxio
+		isNewFuseArgVersion bool
+		expectArgs          []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Fuse: datav1alpha1.AlluxioFuseSpec{
+					Args: []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Fuse: Fuse{
+				MountPath: "/mnt/runtime",
+			},
+		}, true, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072", "/mnt/runtime", "/"}},
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Fuse: datav1alpha1.AlluxioFuseSpec{
+					Args: []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, false, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue, test.isNewFuseArgVersion)
+		if !reflect.DeepEqual(test.alluxioValue.Fuse.Args, test.expectArgs) {
+			t.Errorf("expected fuse arg %v, got fuse arg %v", test.expectArgs, test.alluxioValue.Fuse.Args)
+		}
+	}
+}
