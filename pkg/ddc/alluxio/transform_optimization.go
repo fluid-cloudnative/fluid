@@ -247,10 +247,10 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 		} else {
 			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"}
 		}
+	}
 
-		if isNewFuseArgVersion {
-			value.Fuse.Args = append(value.Fuse.Args, value.Fuse.MountPath, "/")
-		}
+	if isNewFuseArgVersion {
+		value.Fuse.Args = append(value.Fuse.Args, value.Fuse.MountPath, "/")
 	}
 
 }
