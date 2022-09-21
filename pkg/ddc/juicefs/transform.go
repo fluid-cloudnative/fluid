@@ -51,8 +51,12 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	j.transformTolerations(dataset, value)
 
 	// transform the fuse
-	value.Fuse = Fuse{}
-	value.Worker = Worker{}
+	value.Fuse = Fuse{
+		Privileged: true,
+	}
+	value.Worker = Worker{
+		Privileged: true,
+	}
 	err = j.transformFuse(runtime, dataset, value)
 	if err != nil {
 		return

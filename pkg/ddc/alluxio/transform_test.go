@@ -19,6 +19,7 @@ import (
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	corev1 "k8s.io/api/core/v1"
 	"reflect"
 	"testing"
 
@@ -437,6 +438,47 @@ func TestTransformPodMetadata(t *testing.T) {
 
 		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
 			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
+		}
+	}
+}
+
+func TestGetMediumTypeFromVolumeSource(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		name              string
+		defaultMediumType string
+		level             base.Level
+
+		wantMediumType string
+	}
+
+	testCases := []testCase{
+		{
+			name:              "no_volume_resource",
+			defaultMediumType: "MEM",
+			level:             base.Level{VolumeType: common.VolumeTypeEmptyDir},
+			wantMediumType:    "MEM",
+		},
+		{
+			name:              "set_emptyDir_volume_resource",
+			defaultMediumType: "SSD",
+			level: base.Level{
+				VolumeType: common.VolumeTypeEmptyDir,
+				VolumeSource: datav1alpha1.VolumeSource{
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{Medium: "Memory"},
+					},
+				},
+			},
+			wantMediumType: "Memory",
+		},
+	}
+
+	for _, tt := range testCases {
+		got := engine.getMediumTypeFromVolumeSource(tt.defaultMediumType, tt.level)
+		if got != tt.wantMediumType {
+			t.Fatalf("test name: %s. Expected value=%s, but got value=%s", tt.name, tt.wantMediumType, got)
 		}
 	}
 }

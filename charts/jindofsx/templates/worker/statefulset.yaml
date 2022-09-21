@@ -187,7 +187,7 @@ spec:
           name: datavolume-{{ $name }}
           {{- else if eq $mount.type "emptyDir" }}
         - emptyDir:
-            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" "" }}
+            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" (or (eq $mount.mediumType "SSD") (eq $mount.mediumType "HDD") | ternary "" ($mount.mediumType | quote)) }}
             {{- if $mount.quota }}
             sizeLimit: {{ $mount.quota }}
             {{- end }}

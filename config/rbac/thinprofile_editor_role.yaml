@@ -1,0 +1,24 @@
+# permissions for end users to edit ThinRuntimeProfiles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ThinRuntimeProfile-editor-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - ThinRuntimeProfiles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - ThinRuntimeProfiles/status
+  verbs:
+  - get
