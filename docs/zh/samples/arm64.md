@@ -26,7 +26,7 @@ $ make docker-buildx-all-push
 ### 修改helm chart中镜像版本
 
 ```shell
-$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/fluid
+$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/charts/fluid/fluid
 $ vim values.yaml
 ```
 
@@ -45,6 +45,7 @@ cn-beijing.192.168.3.185   Ready    <none>   6d3h   v1.22.10
 #### 安装
 
 ```
+$ kubectl create ns fluid-system
 $ helm install fluid fluid
 NAME: fluid
 LAST DEPLOYED: Sat Aug 20 21:43:27 2022
