@@ -56,3 +56,7 @@ Support configurable pod metadata
 0.8.12
 
 Support emptyDir volume source
+
+0.8.13
+
+Repair preRead and meta access issue
