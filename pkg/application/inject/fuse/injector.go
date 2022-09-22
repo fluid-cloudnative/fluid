@@ -187,7 +187,21 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return nil
 	}
 
-	// 1.b skip if the pod does not mount any Fluid PVCs.
+	// 1.b Skip if found existing container with conflicting name.
+	allContainerNames, err := collectAllContainerNames(pod)
+	if err != nil {
+		return err
+	}
+	for _, cName := range allContainerNames {
+		if cName == common.FuseContainerName || cName == common.InitFuseContainerName {
+			log.Info("Found existing conflict container name before injection, skip", "containerName", cName,
+				"name", namespacedName.Name,
+				"namespace", namespacedName.Namespace)
+			return nil
+		}
+	}
+
+	// 1.c skip if the pod does not mount any Fluid PVCs.
 	volumeMounts, err := pod.GetVolumeMounts()
 	if err != nil {
 		return err
@@ -256,17 +270,18 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return err
 	}
 
-	// 5. Add sidecar as the first container for containers
+	// 4. Add sidecar as the first container for containers
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
 	}
 
-	// ##### a. Set mount propagation to existing containers
-	// ##### b. Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
+	// 4.a Set mount propagation to existing containers
+	// 4.b Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
 	containers, needInjection := mutateVolumeMounts(containers, appScriptGen, datasetVolumeNames)
-	// ##### c. Add fuse container to First
+	// 4.c Add fuse container to First
 	if needInjection {
+		// todo: use index as part of container name
 		containerNameToInject := common.FuseContainerName
 		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
 
@@ -281,7 +296,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return err
 	}
 
-	// 6. Add sidecar as the first container for initcontainers
+	// 5. Add sidecar as the first container for initcontainers
 	initContainers, err := pod.GetInitContainers()
 	if err != nil {
 		return err
@@ -289,6 +304,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	initContainers, needInjection = mutateVolumeMounts(initContainers, appScriptGen, datasetVolumeNames)
 
 	if needInjection {
+		// todo: use index as part of container name
 		initContainerNameToInject := common.InitFuseContainerName
 		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 

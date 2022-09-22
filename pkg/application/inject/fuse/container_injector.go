@@ -46,6 +46,30 @@ func injectFuseContainerToFirst(containers []corev1.Container, fuseContainerName
 	return containers
 }
 
+func collectAllContainerNames(pod common.FluidObject) ([]string, error) {
+	var allContainerNames []string
+
+	containers, err := pod.GetContainers()
+	if err != nil {
+		return allContainerNames, err
+	}
+
+	for _, c := range containers {
+		allContainerNames = append(allContainerNames, c.Name)
+	}
+
+	initContainers, err := pod.GetInitContainers()
+	if err != nil {
+		return allContainerNames, err
+	}
+
+	for _, c := range initContainers {
+		allContainerNames = append(allContainerNames, c.Name)
+	}
+
+	return allContainerNames, nil
+}
+
 //func (s *Injector) mutateContainers(keyName types.NamespacedName, fuseContainerName string,
 //	containers []corev1.Container,
 //	datasetVolumeNames []string,
