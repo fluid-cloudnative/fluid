@@ -19,7 +19,6 @@ package fuse
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 func injectFuseContainerToFirst(containers []corev1.Container, fuseContainerName string,
@@ -28,7 +27,7 @@ func injectFuseContainerToFirst(containers []corev1.Container, fuseContainerName
 	fuseContainer := template.FuseContainer
 	fuseContainer.Name = fuseContainerName
 
-	if strings.HasSuffix(fuseContainerName, common.InitFuseContainerName) {
+	if fuseContainerName == common.InitFuseContainerName {
 		fuseContainer.Lifecycle = nil
 		// TODO(zhihao): for init container, it will inject a customized command
 		fuseContainer.Command = []string{"sleep"}

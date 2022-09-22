@@ -180,8 +180,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	// 1. Check if the pod needs injection
 	// 1.a Skip if pod does not enable serverless injection (i.e. lack of specific label)
-	// todo: check injection done
-	if !utils.ServerlessEnabled(metaObj.Labels) {
+	if !utils.ServerlessEnabled(metaObj.Labels) || utils.InjectSidecarDone(metaObj.Labels) {
 		log.V(1).Info("Serverless injection not enabled in pod labels, skip",
 			"name", namespacedName.Name,
 			"namespace", namespacedName.Namespace)
@@ -265,21 +264,17 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	// ##### a. Set mount propagation to existing containers
 	// ##### b. Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
-	containers = mutateVolumeMounts(containers, appScriptGen, datasetVolumeNames)
+	containers, needInjection := mutateVolumeMounts(containers, appScriptGen, datasetVolumeNames)
 	// ##### c. Add fuse container to First
-	// todo use index
-	containerNameToInject := pvcName + "-" + common.FuseContainerName
-	containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
+	if needInjection {
+		containerNameToInject := common.FuseContainerName
+		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
 
-	log.V(1).Info("after injection",
-		"podName", namespacedName,
-		"pvcName", pvcName,
-		"containers", containers)
-
-	log.V(1).Info("after injection",
-		"podName", namespacedName,
-		"pvcName", pvcName,
-		"containers", containers)
+		log.V(1).Info("after injection",
+			"podName", namespacedName,
+			"pvcName", pvcName,
+			"containers", containers)
+	}
 
 	err = pod.SetContainers(containers)
 	if err != nil {
@@ -291,10 +286,17 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	if err != nil {
 		return err
 	}
-	initContainers = mutateVolumeMounts(initContainers, appScriptGen, datasetVolumeNames)
-	// todo: use index
-	initContainerNameToInject := pvcName + "-" + common.InitFuseContainerName
-	initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
+	initContainers, needInjection = mutateVolumeMounts(initContainers, appScriptGen, datasetVolumeNames)
+
+	if needInjection {
+		initContainerNameToInject := common.InitFuseContainerName
+		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
+
+		log.V(1).Info("after injection",
+			"podName", namespacedName,
+			"pvcName", pvcName,
+			"initContainers", initContainers)
+	}
 
 	err = pod.SetInitContainers(initContainers)
 	if err != nil {
