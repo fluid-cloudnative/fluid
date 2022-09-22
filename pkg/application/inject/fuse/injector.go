@@ -74,6 +74,11 @@ func (s *Injector) InjectPod(in *corev1.Pod, runtimeInfos map[string]base.Runtim
 	return
 }
 
+// inject takes the following steps to inject fuse container:
+// 1. Determine the type of the input runtime.Object and wrap it as a FluidApplication which contains one or more PodSpecs.
+// 2. For each PodSpec in the FluidApplication, and for each runtimeInfo involved, inject the PodSpec according to the runtimeInfo(i.e. func `injectObject()`)
+// 3. Add injection done label to the PodSpec, indicating mutation is done for the PodSpec.
+// 4. When all the PodSpecs are mutated, return the modified runtime.Object
 func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
@@ -172,6 +177,12 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 	return out, nil
 }
 
+// injectObject injects fuse container into a PodSpec given the pvcName and the runtimeInfo. It takes the following steps:
+// 1. Check if it needs injection by checking PodSpec's original information.
+// 2. Generate the fuse container template to inject.
+// 3. Handle mutations on the PodSpec's volumes
+// 4. Handle mutations on the PodSpec's volumeMounts
+// 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName) (err error) {
 	metaObj, err := pod.GetMetaObject()
 	if err != nil {
@@ -362,6 +373,7 @@ func (s *Injector) prepareAppContainerInjection(pvcName string, runtimeInfo base
 	return appScriptGen, nil
 }
 
+// Inject delegates inject() to do all the mutations
 func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {
 	return s.inject(in, runtimeInfos)
 }
@@ -370,6 +382,7 @@ func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtime
 	return nil, fmt.Errorf("not implemented yet")
 }
 
+// labelInjectionDone adds a injecting done label to a PodSpec, indicating all the mutations have been finished
 func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
 	metaObj, err := pod.GetMetaObject()
 	if err != nil {
