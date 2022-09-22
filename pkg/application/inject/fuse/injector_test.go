@@ -555,7 +555,8 @@ func TestInjectPod(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-		}, {
+		},
+		{
 			name: "inject_pod_with_customizedenv_volumemount_name",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -816,7 +817,168 @@ func TestInjectPod(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-		}, {
+		},
+	}
+
+	objs := []runtime.Object{}
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = datav1alpha1.AddToScheme(s)
+	_ = appsv1.AddToScheme(s)
+	for _, testcase := range testcases {
+		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset)
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+
+	for _, testcase := range testcases {
+		injector := NewInjector(fakeClient)
+
+		runtimeInfos := map[string]base.RuntimeInfoInterface{}
+		for pvc, info := range testcase.infos {
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
+			}
+			runtimeInfo.SetClient(fakeClient)
+			runtimeInfos[pvc] = runtimeInfo
+		}
+
+		out, err := injector.InjectPod(testcase.in, runtimeInfos)
+		if err != nil {
+			if testcase.wantErr == nil {
+				t.Errorf("testcase %s failed, Got error %v", testcase.name, err)
+			} else {
+				continue
+			}
+		}
+
+		gotMetaObj := out.ObjectMeta
+		wantMetaObj := testcase.want.ObjectMeta
+
+		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
+
+			want, err := yaml.Marshal(wantMetaObj)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			outYaml, err := yaml.Marshal(gotMetaObj)
+			if err != nil {
+				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+			}
+
+			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+		}
+
+		gotContainers := out.Spec.Containers
+		gotVolumes := out.Spec.Volumes
+		// gotContainers := out.
+		// , gotVolumes, err := getInjectPiece(out)
+		// if err != nil {
+		// 	t.Errorf("testcase %s failed due to inject error %v", testcase.name, err)
+		// }
+
+		wantContainers := testcase.want.Spec.Containers
+		wantVolumes := testcase.want.Spec.Volumes
+
+		gotContainerMap := makeContainerMap(gotContainers)
+		wantContainerMap := makeContainerMap(wantContainers)
+
+		if len(gotContainerMap) != len(wantContainerMap) {
+			t.Errorf("testcase %s failed, want containers length %d, Got containers length  %d", testcase.name, len(gotContainerMap), len(wantContainerMap))
+		}
+
+		for k, wantContainer := range wantContainerMap {
+			if gotContainer, found := gotContainerMap[k]; found {
+				if !reflect.DeepEqual(wantContainer, gotContainer) {
+					want, err := yaml.Marshal(wantContainers)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					outYaml, err := yaml.Marshal(gotContainers)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+				}
+			} else {
+				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
+			}
+		}
+
+		gotVolumeMap := makeVolumeMap(gotVolumes)
+		wantVolumeMap := makeVolumeMap(wantVolumes)
+		if len(gotVolumeMap) != len(wantVolumeMap) {
+			gotVolumeKeys := keys(gotVolumeMap)
+			wantVolumeKeys := keys(wantVolumeMap)
+			t.Errorf("testcase %s failed, got volumes length %d with keys %v, want volumes length  %d with keys %v", testcase.name, len(gotVolumeMap),
+				gotVolumeKeys, len(wantVolumeMap), wantVolumeKeys)
+		}
+
+		for k, wantVolume := range wantVolumeMap {
+			if gotVolume, found := gotVolumeMap[k]; found {
+				if !reflect.DeepEqual(wantVolume, gotVolume) {
+					want, err := yaml.Marshal(wantVolume)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					outYaml, err := yaml.Marshal(gotVolume)
+					if err != nil {
+						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+					}
+
+					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+				}
+			} else {
+				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)
+			}
+		}
+
+		// if !reflect.DeepEqual(gotVolumeMap, wantVolumeMap) {
+		// 	want, err := yaml.Marshal(wantVolumes)
+		// 	if err != nil {
+		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+		// 	}
+
+		// 	outYaml, err := yaml.Marshal(gotVolumes)
+		// 	if err != nil {
+		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
+		// 	}
+
+		// 	t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+		// }
+
+	}
+}
+
+func TestSkipInjectPod(t *testing.T) {
+	type runtimeInfo struct {
+		name        string
+		namespace   string
+		runtimeType string
+	}
+	type testCase struct {
+		name    string
+		in      *corev1.Pod
+		dataset *datav1alpha1.Dataset
+		pv      *corev1.PersistentVolume
+		pvc     *corev1.PersistentVolumeClaim
+		fuse    *appsv1.DaemonSet
+		want    *corev1.Pod
+		infos   map[string]runtimeInfo
+		wantErr error
+	}
+
+	hostPathCharDev := corev1.HostPathCharDev
+	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+	bTrue := true
+
+	testcases := []testCase{
+		{
 			name: "inject_pod_with_fuse_sidecar",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -944,20 +1106,12 @@ func TestInjectPod(t *testing.T) {
 					},
 				},
 			},
-			infos: map[string]runtimeInfo{
-				"fuse-sidecar": {
-					name:        "fuse-sidecar",
-					namespace:   "big-data",
-					runtimeType: common.JindoRuntime,
-				},
-			},
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fuse-sidecar-pvc-name",
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -972,7 +1126,6 @@ func TestInjectPod(t *testing.T) {
 								{
 									Name:      "fuse-sidecar",
 									MountPath: "/data",
-									// MountPropagation: &mountPropagationHostToContainer,
 								},
 							},
 						},
@@ -981,40 +1134,196 @@ func TestInjectPod(t *testing.T) {
 						{
 							Name: "fuse-sidecar",
 							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
-								},
-							},
-						},
-						{
-							Name: "fuse-device",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/dev/fuse",
-									Type: &hostPathCharDev,
-								},
-							},
-						},
-						{
-							Name: "jindofs-fuse-mount",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar",
-									Type: &hostPathDirectoryOrCreate,
-								},
-							},
-						}, {
-							Name: "check-mount",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "fuse-sidecar-jindo-check-mount",
-									},
-									DefaultMode: utilpointer.Int32Ptr(mode),
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "fuse-sidecar",
+									ReadOnly:  true,
 								},
 							},
 						},
 					},
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"fuse-sidecar": {
+					name:        "fuse-sidecar",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "inject_pod_with_injection_done_label",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-2",
+					Namespace: "big-data",
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-fuse-sidecar-2",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/fuse-sidecar-2/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-2",
+					Namespace: "big-data",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "big-data-fuse-sidecar-2",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-2-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fuse-sidecar-2-pvc-name",
+							Name:  common.FuseContainerName,
+						}, {
+							Image: "fuse-sidecar-2-pvc-name",
+							Name:  "fuse-sidecar-2-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "fuse-sidecar-2",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "fuse-sidecar-2",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "fuse-sidecar-2",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-2-jindofs-fuse",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "fuse",
+									Args: []string{
+										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+									},
+									Command: []string{"/entrypoint.sh"},
+									Image:   "fuse-sidecar-2-pvc-name",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "FLUID_FUSE_MOUNTPOINT",
+											Value: "/jfs/jindofs-fuse",
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Privileged: &bTrue,
+									}, VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "fuse-device",
+											MountPath: "/dev/fuse",
+										}, {
+											Name:      "jindofs-fuse-mount",
+											MountPath: "/jfs",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "fuse-device",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/dev/fuse",
+											Type: &hostPathCharDev,
+										},
+									},
+								},
+								{
+									Name: "jindofs-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/jindo/big-data/fuse-sidecar-2",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "fuse-sidecar-2-pvc-name",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fuse-sidecar-2-pvc-name",
+							Name:  common.FuseContainerName,
+						}, {
+							Image: "fuse-sidecar-2-pvc-name",
+							Name:  "fuse-sidecar-2-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "fuse-sidecar-2",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "fuse-sidecar-2",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "fuse-sidecar-2",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"fuse-sidecar-2": {
+					name:        "fuse-sidecar-2",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
 				},
 			},
 			wantErr: nil,

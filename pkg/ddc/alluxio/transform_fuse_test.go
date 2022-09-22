@@ -155,7 +155,7 @@ func TestTransformFuseWithArgs(t *testing.T) {
 		engine := &AlluxioEngine{
 			name:      "test",
 			namespace: "default",
-			Log: fake.NullLogger()}
+			Log:       fake.NullLogger()}
 		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
