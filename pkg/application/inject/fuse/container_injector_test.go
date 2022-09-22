@@ -593,7 +593,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-		}, {
+		},
+		{
 			name: "inject_pod_with_customizedenv_volumemount_name",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -913,7 +914,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-		}, {
+		},
+		{
 			name: "inject_pod_with_fuse_sidecar",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1078,36 +1080,9 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						{
 							Name: "fuse-sidecar",
 							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
-								},
-							},
-						},
-						{
-							Name: "fuse-device",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/dev/fuse",
-									Type: &hostPathCharDev,
-								},
-							},
-						},
-						{
-							Name: "jindofs-fuse-mount",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/runtime-mnt/jindo/big-data/fuse-sidecar",
-									Type: &hostPathDirectoryOrCreate,
-								},
-							},
-						}, {
-							Name: "check-mount",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "fuse-sidecar-jindo-check-mount",
-									},
-									DefaultMode: utilpointer.Int32Ptr(mode),
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "fuse-sidecar",
+									ReadOnly:  true,
 								},
 							},
 						},
