@@ -149,11 +149,15 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		return
 	}
 
-	for pvcName, runtimeInfo := range runtimeInfos {
-		for _, pod := range pods {
+	for _, pod := range pods {
+		for pvcName, runtimeInfo := range runtimeInfos {
 			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName); err != nil {
 				return out, err
 			}
+		}
+
+		if err = s.labelInjectionDone(pod); err != nil {
+			return out, err
 		}
 	}
 
@@ -292,6 +296,11 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	initContainerNameToInject := pvcName + "-" + common.InitFuseContainerName
 	initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 
+	err = pod.SetInitContainers(initContainers)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -341,4 +350,23 @@ func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 
 func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtimeInfos map[string]base.RuntimeInfoInterface) (out *unstructuredtype.Unstructured, err error) {
 	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
+	metaObj, err := pod.GetMetaObject()
+	if err != nil {
+		return err
+	}
+
+	if metaObj.Labels == nil {
+		metaObj.Labels = map[string]string{}
+	}
+
+	metaObj.Labels[common.InjectSidecarDone] = common.True
+	err = pod.SetMetaObject(metaObj)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
