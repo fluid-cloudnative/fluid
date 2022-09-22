@@ -644,6 +644,7 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		properties["fs.oss.credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
 		properties["aliyun.oss.provider.url"] = "secrets:///token/"
 		properties["fs.oss.provider.endpoint"] = "secrets:///token/"
+		properties["fs.oss.provider.format"] = "JSON"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
@@ -770,7 +771,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "4.5.1"
+		defaultTag       = "4.5.2"
 		defaultDnsServer = "1.1.1.1"
 	)
 
@@ -794,7 +795,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "4.5.1"
+		defaultTag   = "4.5.2"
 	)
 
 	image = docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)

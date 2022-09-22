@@ -49,6 +49,34 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 	}
 }
 
+func TestTransformFuseWithSecret(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Secret: "test",
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+				}},
+			}}, &Jindo{}, "JSON"},
+	}
+	for _, test := range tests {
+		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		engine.transformFuse(test.runtime, test.jindoValue)
+		if test.jindoValue.Fuse.FuseProperties["fs.oss.provider.format"] != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.FuseProperties["fs.oss.provider.format"])
+		}
+	}
+}
+
 func TestTransformRunAsUser(t *testing.T) {
 	var tests = []struct {
 		runtime    *datav1alpha1.JindoRuntime
@@ -155,7 +183,7 @@ func TestParseFuseImage(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.1"},
+			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.2"},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
