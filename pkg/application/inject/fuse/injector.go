@@ -155,12 +155,12 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 	}
 
 	for _, pod := range pods {
-		shouldSkipInjection, err := s.shouldSkipInjection(pod, namespacedName)
+		shouldInject, err := s.shouldInject(pod, namespacedName)
 		if err != nil {
 			return out, err
 		}
 
-		if shouldSkipInjection {
+		if !shouldInject {
 			continue
 		}
 
@@ -193,6 +193,12 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName) (err error) {
+	var (
+		pvcKey       = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+		template     *common.FuseInjectionTemplate
+		appScriptGen *poststart.ScriptGeneratorForApp = nil
+	)
+
 	// 1 skip if the pod does not mount any Fluid PVCs.
 	volumeMounts, err := pod.GetVolumeMounts()
 	if err != nil {
@@ -216,7 +222,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	}
 
 	// 2. generate fuse container template for injection.
-
 	metaObj, err := pod.GetMetaObject()
 	if err != nil {
 		return err
@@ -227,13 +232,8 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
 	}
 
-	var (
-		pvcKey   = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
-		template *common.FuseInjectionTemplate
-		exist    bool
-	)
-
-	if template, exist = cache.GetFuseTemplateByKey(pvcKey, option); !exist {
+	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
+	if !exist {
 		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, option)
 		if err != nil {
 			return err
@@ -253,7 +253,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	// 3.c Add configmap volume if fuse sidecar needs mount point checking scripts.
 	// Do app container injection only if fuse sidecar in unprivileged mode. If fuse sidecar is in privileged mode, appScriptGen will be nil.
-	var appScriptGen *poststart.ScriptGeneratorForApp = nil
 	if utils.FuseSidecarUnprivileged(metaObj.Labels) {
 		appScriptGen, err = s.prepareAppContainerInjection(pvcName, runtimeInfo, utils.AppContainerPostStartInjectEnabled(metaObj.Labels))
 		if err != nil {
@@ -369,7 +368,7 @@ func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtime
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (s *Injector) shouldSkipInjection(pod common.FluidObject, namespacedName types.NamespacedName) (should bool, err error) {
+func (s *Injector) shouldInject(pod common.FluidObject, namespacedName types.NamespacedName) (should bool, err error) {
 	metaObj, err := pod.GetMetaObject()
 	if err != nil {
 		return should, err
@@ -380,7 +379,6 @@ func (s *Injector) shouldSkipInjection(pod common.FluidObject, namespacedName ty
 		log.V(1).Info("Serverless injection not enabled in pod labels, skip",
 			"name", namespacedName.Name,
 			"namespace", namespacedName.Namespace)
-		should = true
 		return should, nil
 	}
 
@@ -394,11 +392,11 @@ func (s *Injector) shouldSkipInjection(pod common.FluidObject, namespacedName ty
 			log.Info("Found existing conflict container name before injection, skip", "containerName", cName,
 				"name", namespacedName.Name,
 				"namespace", namespacedName.Namespace)
-			should = true
 			return should, nil
 		}
 	}
 
+	should = true
 	return should, nil
 }
 
