@@ -1056,7 +1056,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{

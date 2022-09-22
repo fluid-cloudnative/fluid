@@ -155,6 +155,15 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 	}
 
 	for _, pod := range pods {
+		shouldSkipInjection, err := s.shouldSkipInjection(pod, namespacedName)
+		if err != nil {
+			return out, err
+		}
+
+		if shouldSkipInjection {
+			continue
+		}
+
 		for pvcName, runtimeInfo := range runtimeInfos {
 			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName); err != nil {
 				return out, err
@@ -184,35 +193,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName) (err error) {
-	metaObj, err := pod.GetMetaObject()
-	if err != nil {
-		return err
-	}
-
-	// 1. Check if the pod needs injection
-	// 1.a Skip if pod does not enable serverless injection (i.e. lack of specific label)
-	if !utils.ServerlessEnabled(metaObj.Labels) || utils.InjectSidecarDone(metaObj.Labels) {
-		log.V(1).Info("Serverless injection not enabled in pod labels, skip",
-			"name", namespacedName.Name,
-			"namespace", namespacedName.Namespace)
-		return nil
-	}
-
-	// 1.b Skip if found existing container with conflicting name.
-	allContainerNames, err := collectAllContainerNames(pod)
-	if err != nil {
-		return err
-	}
-	for _, cName := range allContainerNames {
-		if cName == common.FuseContainerName || cName == common.InitFuseContainerName {
-			log.Info("Found existing conflict container name before injection, skip", "containerName", cName,
-				"name", namespacedName.Name,
-				"namespace", namespacedName.Namespace)
-			return nil
-		}
-	}
-
-	// 1.c skip if the pod does not mount any Fluid PVCs.
+	// 1 skip if the pod does not mount any Fluid PVCs.
 	volumeMounts, err := pod.GetVolumeMounts()
 	if err != nil {
 		return err
@@ -235,6 +216,12 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	}
 
 	// 2. generate fuse container template for injection.
+
+	metaObj, err := pod.GetMetaObject()
+	if err != nil {
+		return err
+	}
+
 	option := common.FuseSidecarInjectOption{
 		EnableCacheDir:            utils.InjectCacheDirEnabled(metaObj.Labels),
 		EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
@@ -380,6 +367,39 @@ func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 
 func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtimeInfos map[string]base.RuntimeInfoInterface) (out *unstructuredtype.Unstructured, err error) {
 	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (s *Injector) shouldSkipInjection(pod common.FluidObject, namespacedName types.NamespacedName) (should bool, err error) {
+	metaObj, err := pod.GetMetaObject()
+	if err != nil {
+		return should, err
+	}
+
+	// Skip if pod does not enable serverless injection (i.e. lack of specific label)
+	if !utils.ServerlessEnabled(metaObj.Labels) || utils.InjectSidecarDone(metaObj.Labels) {
+		log.V(1).Info("Serverless injection not enabled in pod labels, skip",
+			"name", namespacedName.Name,
+			"namespace", namespacedName.Namespace)
+		should = true
+		return should, nil
+	}
+
+	// Skip if found existing container with conflicting name.
+	allContainerNames, err := collectAllContainerNames(pod)
+	if err != nil {
+		return should, err
+	}
+	for _, cName := range allContainerNames {
+		if cName == common.FuseContainerName || cName == common.InitFuseContainerName {
+			log.Info("Found existing conflict container name before injection, skip", "containerName", cName,
+				"name", namespacedName.Name,
+				"namespace", namespacedName.Namespace)
+			should = true
+			return should, nil
+		}
+	}
+
+	return should, nil
 }
 
 // labelInjectionDone adds a injecting done label to a PodSpec, indicating all the mutations have been finished
