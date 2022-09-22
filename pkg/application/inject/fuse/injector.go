@@ -164,10 +164,19 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
+		idx := 0
 		for pvcName, runtimeInfo := range runtimeInfos {
-			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName); err != nil {
+			// Append no suffix to fuse container name unless there are multiple ones.
+			containerNameSuffix := ""
+			if idx != 0 {
+				containerNameSuffix = fmt.Sprintf("-%d", idx)
+			}
+
+			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName, containerNameSuffix); err != nil {
 				return out, err
 			}
+
+			idx++
 		}
 
 		if err = s.labelInjectionDone(pod); err != nil {
@@ -192,7 +201,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 3. Handle mutations on the PodSpec's volumes
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
-func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName) (err error) {
+func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName, containerNameSuffix string) (err error) {
 	var (
 		pvcKey       = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
 		template     *common.FuseInjectionTemplate
@@ -278,8 +287,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	containers, needInjection := mutateVolumeMounts(containers, appScriptGen, datasetVolumeNames)
 	// 4.c Add fuse container to First
 	if needInjection {
-		// todo: use index as part of container name
-		containerNameToInject := common.FuseContainerName
+		containerNameToInject := common.FuseContainerName + containerNameSuffix
 		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
 
 		log.V(1).Info("after injection",
@@ -301,8 +309,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	initContainers, needInjection = mutateVolumeMounts(initContainers, appScriptGen, datasetVolumeNames)
 
 	if needInjection {
-		// todo: use index as part of container name
-		initContainerNameToInject := common.InitFuseContainerName
+		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
 		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 
 		log.V(1).Info("after injection",
