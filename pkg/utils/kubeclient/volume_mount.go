@@ -30,6 +30,7 @@ func PVCNames(volumeMounts []corev1.VolumeMount, volumes []corev1.Volume) (pvcNa
 		volumes)
 }
 
+// volumeNamesFromMounts gets all the volume names refered by given volumeMounts
 func volumeNamesFromMounts(volumeMounts []corev1.VolumeMount) (volumeNames []string) {
 	volumeNameMap := map[string]bool{}
 
@@ -51,7 +52,7 @@ func volumeNamesFromMounts(volumeMounts []corev1.VolumeMount) (volumeNames []str
 
 }
 
-// pvcNamesFromVolumes gets the pvcNames from names of volumeMounts and volumes
+// pvcNamesFromVolumes gets the pvcNames from existing volume names and volume specs
 func pvcNamesFromVolumes(knownVolumeNames []string, volumes []corev1.Volume) (pvcNames []string) {
 	vMap := map[string]corev1.Volume{}
 	for _, v := range volumes {
