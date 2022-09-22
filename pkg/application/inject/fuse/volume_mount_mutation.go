@@ -7,15 +7,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func mutateVolumeMounts(containers []corev1.Container, appScriptGenerator *poststart.ScriptGeneratorForApp, datasetVolumeNames []string) []corev1.Container {
+func mutateVolumeMounts(containers []corev1.Container, appScriptGenerator *poststart.ScriptGeneratorForApp, datasetVolumeNames []string) (retContainers []corev1.Container, needInjection bool) {
 	mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
 
 	for ci, container := range containers {
-		// Add volumeMounts only when appScriptGenerator is non-null, which means fuse sidecar injection in privileged mode.
-		if appScriptGenerator != nil {
-			containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
-		}
 
+		needAppScript := false
 		// Set HostToContainer to the dataset volume mount point
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(datasetVolumeNames, volumeMount.Name) {
@@ -37,9 +34,18 @@ func mutateVolumeMounts(containers []corev1.Container, appScriptGenerator *posts
 					}
 
 				}
+
+				needInjection = true
+				needAppScript = true
 			}
+		}
+
+		// Add volumeMounts only when the container mounts some dataset pvc and appScriptGenerator is non-null,
+		// which means fuse sidecar injection in privileged mode.
+		if needAppScript && appScriptGenerator != nil {
+			containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
 		}
 	}
 
-	return containers
+	return containers, needInjection
 }
