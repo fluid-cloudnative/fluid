@@ -255,7 +255,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	datasetVolumeNames, volumes := overrideDatasetVolumes(volumes, pvcName, template.VolumesToUpdate[0])
 
 	// 3.b append new volumes
-	volumeNamesConflict, volumes, err := appendVolumes(volumes, template.VolumesToAdd, namespacedName)
+	volumeNamesConflict, volumes, err := appendVolumes(volumes, template.VolumesToAdd, namespacedName, containerNameSuffix)
 	if err != nil {
 		return err
 	}
