@@ -7,11 +7,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 )
 
-func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
+func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface, log logr.Logger) error {
 	objMeta, err := pod.GetMetaObject()
 	if err != nil {
 		return err
@@ -31,30 +32,31 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 	if err != nil {
 		return err
 	}
+	volumes = append(volumes, appScriptGenerator.GetVolume())
 
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
 	}
 
-	for i := range containers {
-		path2RuntimeTypeMap := collectDatasetVolumeMountInfo(containers[i].VolumeMounts, volumes, runtimeInfos)
+	for ci := range containers {
+		path2RuntimeTypeMap := collectDatasetVolumeMountInfo(containers[ci].VolumeMounts, volumes, runtimeInfos)
 		if len(path2RuntimeTypeMap) == 0 {
 			continue
 		}
 
 		// todo: resolving name conflicts
-		containers[i].VolumeMounts = append(containers[i].VolumeMounts, appScriptGenerator.GetVolumeMount())
+		containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
 		if utils.AppContainerPostStartInjectEnabled(objMeta.Labels) {
-			if containers[i].Lifecycle != nil && containers[i].Lifecycle.PostStart != nil {
+			if containers[ci].Lifecycle != nil && containers[ci].Lifecycle.PostStart != nil {
 				//todo log
 			} else {
-				if containers[i].Lifecycle == nil {
-					containers[i].Lifecycle = &corev1.Lifecycle{}
+				if containers[ci].Lifecycle == nil {
+					containers[ci].Lifecycle = &corev1.Lifecycle{}
 				}
 
 				mountPaths, mountTypes := assembleMountInfos(path2RuntimeTypeMap)
-				containers[i].Lifecycle.PostStart = appScriptGenerator.GetPostStartCommand(mountPaths, mountTypes)
+				containers[ci].Lifecycle.PostStart = appScriptGenerator.GetPostStartCommand(mountPaths, mountTypes)
 			}
 		}
 	}
