@@ -3406,6 +3406,474 @@ func TestInjectPodUnprivileged(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name: "inject_pod_unprivileged_multiple_pvc_with_poststart_hook",
+			dataset: []*datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-a",
+						Namespace: "big-data",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-b",
+						Namespace: "big-data",
+					},
+				},
+			},
+			pv: []*corev1.PersistentVolume{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "big-data-dataset-a",
+					},
+					Spec: corev1.PersistentVolumeSpec{
+						PersistentVolumeSource: corev1.PersistentVolumeSource{
+							CSI: &corev1.CSIPersistentVolumeSource{
+								Driver: "fuse.csi.fluid.io",
+								VolumeAttributes: map[string]string{
+									common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/dataset-a/jindofs-fuse",
+									common.VolumeAttrMountType: common.JindoRuntime,
+								},
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "big-data-dataset-b",
+					},
+					Spec: corev1.PersistentVolumeSpec{
+						PersistentVolumeSource: corev1.PersistentVolumeSource{
+							CSI: &corev1.CSIPersistentVolumeSource{
+								Driver: "fuse.csi.fluid.io",
+								VolumeAttributes: map[string]string{
+									common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/dataset-b/jindofs-fuse",
+									common.VolumeAttrMountType: common.JindoRuntime,
+								},
+							},
+						},
+					},
+				},
+			},
+			pvc: []*corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-a",
+						Namespace: "big-data",
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "big-data-dataset-a",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-b",
+						Namespace: "big-data",
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "big-data-dataset-b",
+					},
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "unprivileged-pvc-pod",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar:             common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+						common.InjectAppPostStart:            common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "unprivileged-pvc-pod",
+							Name:  "unprivileged-pvc-pod",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "dataset-a",
+									MountPath: "/data1",
+								},
+								{
+									Name:      "dataset-b",
+									MountPath: "/data2",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "dataset-a",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "dataset-a",
+									ReadOnly:  true,
+								},
+							},
+						},
+						{
+							Name: "dataset-b",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "dataset-b",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
+				},
+			},
+			fuse: []*appsv1.DaemonSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-a-jindofs-fuse",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "fuse",
+										Args: []string{
+											"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+										},
+										Command: []string{"/entrypoint.sh"},
+										Image:   "unprivileged-pvc-pod",
+										SecurityContext: &corev1.SecurityContext{
+											Privileged: &bTrue,
+										}, VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      "cachedir",
+												MountPath: "/mnt/disk",
+											}, {
+												Name:      "jindofs-fuse-device",
+												MountPath: "/dev/fuse",
+											}, {
+												Name:      "jindofs-fuse-mount",
+												MountPath: "/jfs",
+											},
+										},
+									},
+								},
+								Volumes: []corev1.Volume{
+									{
+										Name: "cachedir",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/mnt/disk",
+												Type: &hostPathDirectoryOrCreate,
+											},
+										}},
+									{
+										Name: "jindofs-fuse-device",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/dev/fuse",
+												Type: &hostPathCharDev,
+											},
+										},
+									},
+									{
+										Name: "jindofs-fuse-mount",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/runtime-mnt/jindo/big-data/dataset-a",
+												Type: &hostPathDirectoryOrCreate,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dataset-b-jindofs-fuse",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "fuse",
+										Args: []string{
+											"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+										},
+										Command: []string{"/entrypoint.sh"},
+										Image:   "unprivileged-pvc-pod",
+										SecurityContext: &corev1.SecurityContext{
+											Privileged: &bTrue,
+										}, VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      "cachedir",
+												MountPath: "/mnt/disk",
+											}, {
+												Name:      "jindofs-fuse-device",
+												MountPath: "/dev/fuse",
+											}, {
+												Name:      "jindofs-fuse-mount",
+												MountPath: "/jfs",
+											},
+										},
+									},
+								},
+								Volumes: []corev1.Volume{
+									{
+										Name: "cachedir",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/mnt/disk",
+												Type: &hostPathDirectoryOrCreate,
+											},
+										}},
+									{
+										Name: "jindofs-fuse-device",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/dev/fuse",
+												Type: &hostPathCharDev,
+											},
+										},
+									},
+									{
+										Name: "jindofs-fuse-mount",
+										VolumeSource: corev1.VolumeSource{
+											HostPath: &corev1.HostPathVolumeSource{
+												Path: "/runtime-mnt/jindo/big-data/dataset-b",
+												Type: &hostPathDirectoryOrCreate,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"dataset-a": {
+					name:        "dataset-a",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
+				},
+				"dataset-b": {
+					name:        "dataset-b",
+					namespace:   "big-data",
+					runtimeType: common.JindoRuntime,
+				},
+			},
+			numPvcMount: 2,
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "unprivileged-pvc-pod",
+					Namespace: "big-data",
+					Labels: map[string]string{
+						common.InjectFuseSidecar:             common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+						common.InjectSidecarDone:             common.True,
+						common.InjectAppPostStart:            common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: common.FuseContainerName + "-1",
+							Args: []string{
+								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh >> /proc/1/fd/1",
+										},
+									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: map[corev1.ResourceName]resource.Quantity{
+									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
+								},
+								Requests: map[corev1.ResourceName]resource.Quantity{
+									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
+								},
+							},
+							Command: []string{"/entrypoint.sh"},
+							Image:   "unprivileged-pvc-pod",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bFalse,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "cachedir-1",
+									MountPath: "/mnt/disk",
+								},
+								{
+									Name:      "check-mount-unprivileged-1",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							},
+						},
+						{
+							Name: common.FuseContainerName + "-0",
+							Args: []string{
+								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh >> /proc/1/fd/1",
+										},
+									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: map[corev1.ResourceName]resource.Quantity{
+									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
+								},
+								Requests: map[corev1.ResourceName]resource.Quantity{
+									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
+								},
+							},
+							Command: []string{"/entrypoint.sh"},
+							Image:   "unprivileged-pvc-pod",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bFalse,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "cachedir-0",
+									MountPath: "/mnt/disk",
+								},
+								{
+									Name:      "check-mount-unprivileged-0",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							},
+						},
+						{
+							Image: "unprivileged-pvc-pod",
+							Name:  "unprivileged-pvc-pod",
+							Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"bash", "-c", "time /check-fluid-mount-ready.sh /data1:/data2 jindo:jindo >> /proc/1/fd/1"},
+									},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "dataset-a",
+									MountPath:        "/data1",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+								{
+									Name:             "dataset-b",
+									MountPath:        "/data2",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "dataset-a",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/dataset-a/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "dataset-b",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/jindo/big-data/dataset-b/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
+						},
+						{
+							Name: "cachedir-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/mnt/disk",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						},
+						{
+							Name: "check-mount-unprivileged-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "dataset-a-jindo-check-mount-unprivileged",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
+						},
+						{
+							Name: "cachedir-1",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/mnt/disk",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						},
+						{
+							Name: "check-mount-unprivileged-1",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "dataset-b-jindo-check-mount-unprivileged",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
 	}
 
 	objs := []runtime.Object{}
@@ -3512,12 +3980,12 @@ func TestInjectPodUnprivileged(t *testing.T) {
 				}
 			} else if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
+					want, err := yaml.Marshal(wantContainer)
 					if err != nil {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
 
-					outYaml, err := yaml.Marshal(gotContainers)
+					outYaml, err := yaml.Marshal(gotContainer)
 					if err != nil {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
