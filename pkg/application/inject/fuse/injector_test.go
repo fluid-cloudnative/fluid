@@ -1664,7 +1664,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: common.FuseContainerName,
+							Name: common.FuseContainerName + "-0",
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
@@ -1688,16 +1688,16 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								Privileged: &bTrue,
 							}, VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "duplicate",
+									Name:      "duplicate-0",
 									MountPath: "/mnt/disk1",
 								}, {
-									Name:      "fuse-device",
+									Name:      "fuse-device-0",
 									MountPath: "/dev/fuse",
 								}, {
-									Name:      "jindofs-fuse-mount",
+									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -1738,7 +1738,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							},
 						},
 						{
-							Name: "fuse-device",
+							Name: "fuse-device-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/dev/fuse",
@@ -1747,7 +1747,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							},
 						},
 						{
-							Name: "jindofs-fuse-mount",
+							Name: "jindofs-fuse-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/duplicate",
@@ -1755,7 +1755,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "duplicate",
+							Name: "duplicate-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/mnt/disk1",
@@ -1763,7 +1763,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -2091,7 +2091,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							},
 						},
 						{
-							Name: common.FuseContainerName,
+							Name: common.FuseContainerName + "-0",
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							},
@@ -2115,16 +2115,16 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								Privileged: &bTrue,
 							}, VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "cachedir",
+									Name:      "cachedir-0",
 									MountPath: "/mnt/disk1",
 								}, {
-									Name:      "jindofs-fuse-device",
+									Name:      "jindofs-fuse-device-0",
 									MountPath: "/dev/fuse",
 								}, {
-									Name:      "jindofs-fuse-mount",
+									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -2166,7 +2166,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							},
 						},
 						{
-							Name: "jindofs-fuse-device",
+							Name: "jindofs-fuse-device-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/dev/fuse",
@@ -2175,7 +2175,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							},
 						},
 						{
-							Name: "jindofs-fuse-mount",
+							Name: "jindofs-fuse-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/dataset1",
@@ -2183,7 +2183,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "cachedir",
+							Name: "cachedir-0",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/mnt/disk1",
@@ -2191,7 +2191,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
