@@ -43,7 +43,7 @@ func overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newD
 
 // appendVolumes adds new volumes from volumesToAdd into existing volumes. It also resolve volume name conflicts when appending volumes.
 // The func returns conflict names with mappings from old name to new name and the appended volumes.
-func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namespacedName types.NamespacedName) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
+func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namespacedName types.NamespacedName, nameSuffix string) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
 	// collect all volumes' names
 	var volumeNames []string
 	for _, volume := range volumes {
@@ -56,20 +56,20 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namesp
 		log.V(1).Info("Before append volume", "original", volumes)
 		// volumes = append(volumes, template.VolumesToAdd...)
 		for _, volumeToAdd := range volumesToAdd {
-			if !utils.ContainsString(volumeNames, volumeToAdd.Name) {
-				volumes = append(volumes, volumeToAdd)
-			} else {
-				// Found conflict volume name
-				newVolumeName, err := randomizeNewVolumeName(volumeToAdd.Name, volumeNames, namespacedName)
+			// nameSuffix would be like: "-0", "-1", "-2", "-3", ...
+			oldVolumeName := volumeToAdd.Name
+			newVolumeName := volumeToAdd.Name + nameSuffix
+			if utils.ContainsString(volumeNames, newVolumeName) {
+				newVolumeName, err = randomizeNewVolumeName(newVolumeName, volumeNames, namespacedName)
 				if err != nil {
 					return volumeNamesConflict, volumes, err
 				}
-
-				volume := volumeToAdd.DeepCopy()
-				volume.Name = newVolumeName
-				volumeNamesConflict[volumeToAdd.Name] = volume.Name
-				volumeNames = append(volumeNames, newVolumeName)
-				volumes = append(volumes, *volume)
+			}
+			volumeToAdd.Name = newVolumeName
+			volumeNames = append(volumeNames, newVolumeName)
+			volumes = append(volumes, volumeToAdd)
+			if oldVolumeName != newVolumeName {
+				volumeNamesConflict[oldVolumeName] = newVolumeName
 			}
 		}
 
