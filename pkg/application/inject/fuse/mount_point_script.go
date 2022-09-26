@@ -32,7 +32,8 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 	if err != nil {
 		return err
 	}
-	volumes = append(volumes, appScriptGenerator.GetVolume())
+	volumeToAdd := appScriptGenerator.GetVolume()
+	conflictNames, volumes, err := appendVolumes(volumes, []corev1.Volume{volumeToAdd}, "", log)
 
 	containers, err := pod.GetContainers()
 	if err != nil {
@@ -45,11 +46,15 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 			continue
 		}
 
-		// todo: resolving name conflicts
-		containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, appScriptGenerator.GetVolumeMount())
+		volumeMountToAdd := appScriptGenerator.GetVolumeMount()
+		if newName, found := conflictNames[volumeToAdd.Name]; found {
+			volumeMountToAdd.Name = newName
+		}
+
+		containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, volumeMountToAdd)
 		if utils.AppContainerPostStartInjectEnabled(objMeta.Labels) {
 			if containers[ci].Lifecycle != nil && containers[ci].Lifecycle.PostStart != nil {
-				//todo log
+				log.Info("container already has post start lifecycle, skip injection", "container name", containers[ci].Name)
 			} else {
 				if containers[ci].Lifecycle == nil {
 					containers[ci].Lifecycle = &corev1.Lifecycle{}
