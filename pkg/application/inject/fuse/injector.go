@@ -17,9 +17,7 @@ limitations under the License.
 package fuse
 
 import (
-	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -164,6 +162,10 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
+		if err = s.injectMountReadyCheckScript(pod, runtimeInfos); err != nil {
+			return out, err
+		}
+
 		idx := 0
 		for pvcName, runtimeInfo := range runtimeInfos {
 			// Append no suffix to fuse container name unless there are multiple ones.
@@ -200,9 +202,8 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName, containerNameSuffix string) (err error) {
 	var (
-		pvcKey       = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
-		template     *common.FuseInjectionTemplate
-		appScriptGen *poststart.ScriptGeneratorForApp = nil
+		pvcKey   = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+		template *common.FuseInjectionTemplate
 	)
 
 	// 1 skip if the pod does not mount any Fluid PVCs.
@@ -257,17 +258,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return err
 	}
 
-	// 3.c Add configmap volume if fuse sidecar needs mount point checking scripts.
-	// Do app container injection only if fuse sidecar in unprivileged mode. If fuse sidecar is in privileged mode, appScriptGen will be nil.
-	if utils.FuseSidecarUnprivileged(metaObj.Labels) {
-		appScriptGen, err = s.prepareAppContainerInjection(pvcName, runtimeInfo, utils.AppContainerPostStartInjectEnabled(metaObj.Labels))
-		if err != nil {
-			return err
-		}
-
-		volumes = append(volumes, appScriptGen.GetVolume())
-	}
-
 	err = pod.SetVolumes(volumes)
 	if err != nil {
 		return err
@@ -281,7 +271,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	// 4.a Set mount propagation to existing containers
 	// 4.b Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
-	containers, needInjection := mutateVolumeMounts(containers, appScriptGen, datasetVolumeNames)
+	containers, needInjection := mutateVolumeMounts(containers, datasetVolumeNames)
 	// 4.c Add fuse container to First
 	if needInjection {
 		containerNameToInject := common.FuseContainerName + containerNameSuffix
@@ -303,7 +293,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	if err != nil {
 		return err
 	}
-	initContainers, needInjection = mutateVolumeMounts(initContainers, appScriptGen, datasetVolumeNames)
+	initContainers, needInjection = mutateVolumeMounts(initContainers, datasetVolumeNames)
 
 	if needInjection {
 		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
@@ -321,46 +311,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	}
 
 	return nil
-}
-
-func (s *Injector) prepareAppContainerInjection(pvcName string, runtimeInfo base.RuntimeInfoInterface, postStartInjectionEnabled bool) (*poststart.ScriptGeneratorForApp, error) {
-	dataset, err := utils.GetDataset(s.client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
-	if err != nil {
-		return nil, err
-	}
-
-	ownerReference := metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
-	}
-
-	_, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(s.client, pvcName, runtimeInfo.GetNamespace())
-	if err != nil {
-		return nil, err
-	}
-
-	appScriptGen := poststart.NewScriptGeneratorForApp(types.NamespacedName{
-		Namespace: runtimeInfo.GetNamespace(),
-		Name:      runtimeInfo.GetName(),
-	}, mountType, postStartInjectionEnabled)
-	cm := appScriptGen.BuildConfigmap(ownerReference)
-	cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	if !cmFound {
-		err = s.client.Create(context.TODO(), cm)
-		if err != nil {
-			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return appScriptGen, nil
 }
 
 // Inject delegates inject() to do all the mutations
