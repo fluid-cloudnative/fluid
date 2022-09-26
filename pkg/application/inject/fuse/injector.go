@@ -167,10 +167,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		idx := 0
 		for pvcName, runtimeInfo := range runtimeInfos {
 			// Append no suffix to fuse container name unless there are multiple ones.
-			containerNameSuffix := ""
-			if idx != 0 {
-				containerNameSuffix = fmt.Sprintf("-%d", idx)
-			}
+			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
 			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName, containerNameSuffix); err != nil {
 				return out, err

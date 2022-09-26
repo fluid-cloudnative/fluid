@@ -56,7 +56,7 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namesp
 		log.V(1).Info("Before append volume", "original", volumes)
 		// volumes = append(volumes, template.VolumesToAdd...)
 		for _, volumeToAdd := range volumesToAdd {
-			// nameSuffix would be like: "", "-1", "-2", "-3", ...
+			// nameSuffix would be like: "-0", "-1", "-2", "-3", ...
 			oldVolumeName := volumeToAdd.Name
 			newVolumeName := volumeToAdd.Name + nameSuffix
 			if utils.ContainsString(volumeNames, newVolumeName) {
