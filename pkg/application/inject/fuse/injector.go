@@ -146,14 +146,15 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		Name:      objectMeta.Name,
 	}
 	kind := typeMeta.Kind
-	log.V(1).Info("Inject application", "namespacedName", namespacedName, "kind", kind)
+	tempLog := log.WithValues("name", namespacedName.Name, "namespace", namespacedName.Namespace, "kind", kind)
+	tempLog.V(1).Info("Inject application")
 	pods, err := application.GetPodSpecs()
 	if err != nil {
 		return
 	}
 
 	for _, pod := range pods {
-		shouldInject, err := s.shouldInject(pod, namespacedName)
+		shouldInject, err := s.shouldInject(pod, tempLog)
 		if err != nil {
 			return out, err
 		}
@@ -162,7 +163,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		if err = s.injectMountReadyCheckScript(pod, runtimeInfos); err != nil {
+		if err = s.injectCheckMountReadyScript(pod, runtimeInfos); err != nil {
 			return out, err
 		}
 
@@ -171,7 +172,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
-			if err = s.injectObject(pod, pvcName, runtimeInfo, namespacedName, containerNameSuffix); err != nil {
+			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix, tempLog); err != nil {
 				return out, err
 			}
 
@@ -200,7 +201,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 3. Handle mutations on the PodSpec's volumes
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
-func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, namespacedName types.NamespacedName, containerNameSuffix string) (err error) {
+func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string, log logr.Logger) (err error) {
 	var (
 		pvcKey   = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
 		template *common.FuseInjectionTemplate
@@ -221,8 +222,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	found := utils.ContainsString(mountedPvc, pvcName)
 	if !found {
 		log.Info("Not able to find the fluid pvc in pod spec, skip",
-			"name", namespacedName.Name,
-			"namespace", namespacedName.Namespace,
 			"pvc", pvcName,
 			"mounted pvcs", mountedPvc)
 		return nil
@@ -253,7 +252,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	datasetVolumeNames, volumes := overrideDatasetVolumes(volumes, pvcName, template.VolumesToUpdate[0])
 
 	// 3.b append new volumes
-	volumeNamesConflict, volumes, err := appendVolumes(volumes, template.VolumesToAdd, namespacedName, containerNameSuffix)
+	volumeNamesConflict, volumes, err := appendVolumes(volumes, template.VolumesToAdd, containerNameSuffix, log)
 	if err != nil {
 		return err
 	}
@@ -278,7 +277,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
 
 		log.V(1).Info("after injection",
-			"podName", namespacedName,
 			"pvcName", pvcName,
 			"containers", containers)
 	}
@@ -300,7 +298,6 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 
 		log.V(1).Info("after injection",
-			"podName", namespacedName,
 			"pvcName", pvcName,
 			"initContainers", initContainers)
 	}
@@ -322,7 +319,7 @@ func (s *Injector) InjectUnstructured(in *unstructuredtype.Unstructured, runtime
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (s *Injector) shouldInject(pod common.FluidObject, namespacedName types.NamespacedName) (should bool, err error) {
+func (s *Injector) shouldInject(pod common.FluidObject, log logr.Logger) (should bool, err error) {
 	metaObj, err := pod.GetMetaObject()
 	if err != nil {
 		return should, err
@@ -330,9 +327,7 @@ func (s *Injector) shouldInject(pod common.FluidObject, namespacedName types.Nam
 
 	// Skip if pod does not enable serverless injection (i.e. lack of specific label)
 	if !utils.ServerlessEnabled(metaObj.Labels) || utils.InjectSidecarDone(metaObj.Labels) {
-		log.V(1).Info("Serverless injection not enabled in pod labels, skip",
-			"name", namespacedName.Name,
-			"namespace", namespacedName.Namespace)
+		log.V(1).Info("Serverless injection not enabled in pod labels, skip")
 		return should, nil
 	}
 
@@ -343,9 +338,7 @@ func (s *Injector) shouldInject(pod common.FluidObject, namespacedName types.Nam
 	}
 	for _, cName := range allContainerNames {
 		if cName == common.FuseContainerName || cName == common.InitFuseContainerName {
-			log.Info("Found existing conflict container name before injection, skip", "containerName", cName,
-				"name", namespacedName.Name,
-				"namespace", namespacedName.Namespace)
+			log.Info("Found existing conflict container name before injection, skip", "containerName", cName)
 			return should, nil
 		}
 	}

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Injector) injectMountReadyCheckScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
+func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
 	objMeta, err := pod.GetMetaObject()
 	if err != nil {
 		return err
@@ -32,15 +32,12 @@ func (s *Injector) injectMountReadyCheckScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
-	// todo: resolving name conflicts
-	volumes = append(volumes, appScriptGenerator.GetVolume())
-
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
 	}
 
-	for i, _ := range containers {
+	for i := range containers {
 		path2RuntimeTypeMap := collectDatasetVolumeMountInfo(containers[i].VolumeMounts, volumes, runtimeInfos)
 		if len(path2RuntimeTypeMap) == 0 {
 			continue

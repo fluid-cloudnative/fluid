@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // overrideDatasetVolumes overrides any PersistentVolumeClaim volume that possesses a claimName equals to datasetPvcName with newDatasetVolume.
@@ -43,7 +43,7 @@ func overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newD
 
 // appendVolumes adds new volumes from volumesToAdd into existing volumes. It also resolve volume name conflicts when appending volumes.
 // The func returns conflict names with mappings from old name to new name and the appended volumes.
-func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namespacedName types.NamespacedName, nameSuffix string) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
+func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSuffix string, log logr.Logger) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
 	// collect all volumes' names
 	var volumeNames []string
 	for _, volume := range volumes {
@@ -60,7 +60,7 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namesp
 			oldVolumeName := volumeToAdd.Name
 			newVolumeName := volumeToAdd.Name + nameSuffix
 			if utils.ContainsString(volumeNames, newVolumeName) {
-				newVolumeName, err = randomizeNewVolumeName(newVolumeName, volumeNames, namespacedName)
+				newVolumeName, err = randomizeNewVolumeName(newVolumeName, volumeNames, log)
 				if err != nil {
 					return volumeNamesConflict, volumes, err
 				}
@@ -79,7 +79,7 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, namesp
 	return volumeNamesConflict, volumes, nil
 }
 
-func randomizeNewVolumeName(origName string, existingNames []string, namespacedName types.NamespacedName) (string, error) {
+func randomizeNewVolumeName(origName string, existingNames []string, log logr.Logger) (string, error) {
 	i := 0
 	newVolumeName := utils.ReplacePrefix(origName, common.Fluid)
 	for {
@@ -87,16 +87,11 @@ func randomizeNewVolumeName(origName string, existingNames []string, namespacedN
 			break
 		} else {
 			if i > 100 {
-				return "", fmt.Errorf("retry  the volume name %v for object %v because duplicate name more than 100 times, then give up", newVolumeName, types.NamespacedName{
-					Namespace: namespacedName.Namespace,
-					Name:      namespacedName.Name,
-				})
+				return "", fmt.Errorf("retry  the volume name %v because duplicate name more than 100 times, then give up", newVolumeName)
 			}
 			suffix := common.Fluid + "-" + utils.RandomAlphaNumberString(3)
 			newVolumeName = utils.ReplacePrefix(origName, suffix)
 			log.Info("retry  the volume name because duplicate name",
-				"name", namespacedName.Name,
-				"namespace", namespacedName.Namespace,
 				"volumeName", newVolumeName)
 			i++
 		}
