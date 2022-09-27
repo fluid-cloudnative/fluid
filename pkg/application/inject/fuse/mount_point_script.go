@@ -22,7 +22,19 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return nil
 	}
 
-	appScriptGenerator, err := s.ensureScriptConfigMapExists(objMeta.Namespace)
+	var namespace string
+	if len(runtimeInfos) == 0 {
+		// Skip if no need to inject because no dataset pvc is mounted
+		return nil
+	} else {
+		// Choose the first runtime info's namespace
+		for _, v := range runtimeInfos {
+			namespace = v.GetNamespace()
+			break
+		}
+	}
+
+	appScriptGenerator, err := s.ensureScriptConfigMapExists(namespace)
 	if err != nil {
 		return err
 	}
@@ -82,9 +94,6 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 }
 
 func (s *Injector) ensureScriptConfigMapExists(namespace string) (*poststart.ScriptGeneratorForApp, error) {
-	if len(namespace) == 0 {
-		namespace = corev1.NamespaceDefault
-	}
 	appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
 
 	cm := appScriptGen.BuildConfigmap()
