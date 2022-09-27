@@ -82,6 +82,9 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 }
 
 func (s *Injector) ensureScriptConfigMapExists(namespace string) (*poststart.ScriptGeneratorForApp, error) {
+	if len(namespace) == 0 {
+		namespace = corev1.NamespaceDefault
+	}
 	appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
 
 	cm := appScriptGen.BuildConfigmap()
