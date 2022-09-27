@@ -20,13 +20,12 @@ import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // overrideDatasetVolumes overrides any PersistentVolumeClaim volume that possesses a claimName equals to datasetPvcName with newDatasetVolume.
 // it returns the affected volumes' name and the volumes after overriding.
-func overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newDatasetVolume corev1.Volume) ([]string, []corev1.Volume) {
+func (s *Injector) overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newDatasetVolume corev1.Volume) ([]string, []corev1.Volume) {
 	var datasetVolumeNames []string
 
 	for i, volume := range volumes {
@@ -43,7 +42,7 @@ func overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newD
 
 // appendVolumes adds new volumes from volumesToAdd into existing volumes. It also resolve volume name conflicts when appending volumes.
 // The func returns conflict names with mappings from old name to new name and the appended volumes.
-func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSuffix string, log logr.Logger) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
+func (s *Injector) appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSuffix string) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {
 	// collect all volumes' names
 	var volumeNames []string
 	for _, volume := range volumes {
@@ -53,14 +52,14 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSu
 	volumeNamesConflict = map[string]string{}
 	// Append volumes
 	if len(volumesToAdd) > 0 {
-		log.V(1).Info("Before append volume", "original", volumes)
+		s.log.V(1).Info("Before append volume", "original", volumes)
 		// volumes = append(volumes, template.VolumesToAdd...)
 		for _, volumeToAdd := range volumesToAdd {
 			// nameSuffix would be like: "-0", "-1", "-2", "-3", ...
 			oldVolumeName := volumeToAdd.Name
 			newVolumeName := volumeToAdd.Name + nameSuffix
 			if utils.ContainsString(volumeNames, newVolumeName) {
-				newVolumeName, err = randomizeNewVolumeName(newVolumeName, volumeNames, log)
+				newVolumeName, err = s.randomizeNewVolumeName(newVolumeName, volumeNames)
 				if err != nil {
 					return volumeNamesConflict, volumes, err
 				}
@@ -73,13 +72,13 @@ func appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSu
 			}
 		}
 
-		log.V(1).Info("After append volume", "original", volumes)
+		s.log.V(1).Info("After append volume", "original", volumes)
 	}
 
 	return volumeNamesConflict, volumes, nil
 }
 
-func randomizeNewVolumeName(origName string, existingNames []string, log logr.Logger) (string, error) {
+func (s *Injector) randomizeNewVolumeName(origName string, existingNames []string) (string, error) {
 	i := 0
 	newVolumeName := utils.ReplacePrefix(origName, common.Fluid)
 	for {
@@ -91,7 +90,7 @@ func randomizeNewVolumeName(origName string, existingNames []string, log logr.Lo
 			}
 			suffix := common.Fluid + "-" + utils.RandomAlphaNumberString(3)
 			newVolumeName = utils.ReplacePrefix(origName, suffix)
-			log.Info("retry  the volume name because duplicate name",
+			s.log.Info("retry  the volume name because duplicate name",
 				"volumeName", newVolumeName)
 			i++
 		}

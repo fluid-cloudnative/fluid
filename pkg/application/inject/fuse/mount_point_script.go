@@ -7,12 +7,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 )
 
-func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface, log logr.Logger) error {
+func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
 	objMeta, err := pod.GetMetaObject()
 	if err != nil {
 		return err
@@ -33,7 +32,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 	volumeToAdd := appScriptGenerator.GetVolume()
-	conflictNames, volumes, err := appendVolumes(volumes, []corev1.Volume{volumeToAdd}, "", log)
+	conflictNames, volumes, err := s.appendVolumes(volumes, []corev1.Volume{volumeToAdd}, "")
 	if err != nil {
 		return err
 	}
@@ -57,7 +56,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, volumeMountToAdd)
 		if utils.AppContainerPostStartInjectEnabled(objMeta.Labels) {
 			if containers[ci].Lifecycle != nil && containers[ci].Lifecycle.PostStart != nil {
-				log.Info("container already has post start lifecycle, skip injection", "container name", containers[ci].Name)
+				s.log.Info("container already has post start lifecycle, skip injection", "container name", containers[ci].Name)
 			} else {
 				if containers[ci].Lifecycle == nil {
 					containers[ci].Lifecycle = &corev1.Lifecycle{}
