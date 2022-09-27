@@ -104,8 +104,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values
-          securityContext:
-            privileged: true
           volumeMounts:
             - mountPath: /scripts
               name: data-load-script
