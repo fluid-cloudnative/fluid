@@ -17,6 +17,7 @@ limitations under the License.
 package fuse
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"strings"
@@ -2660,16 +2661,15 @@ func TestInjectPodUnprivileged(t *testing.T) {
 		runtimeType string
 	}
 	type testCase struct {
-		name        string
-		in          *corev1.Pod
-		dataset     []*datav1alpha1.Dataset
-		pv          []*corev1.PersistentVolume
-		pvc         []*corev1.PersistentVolumeClaim
-		fuse        []*appsv1.DaemonSet
-		infos       map[string]runtimeInfo
-		numPvcMount int
-		want        *corev1.Pod
-		wantErr     error
+		name    string
+		in      *corev1.Pod
+		dataset []*datav1alpha1.Dataset
+		pv      []*corev1.PersistentVolume
+		pvc     []*corev1.PersistentVolumeClaim
+		fuse    []*appsv1.DaemonSet
+		infos   map[string]runtimeInfo
+		want    *corev1.Pod
+		wantErr error
 	}
 
 	hostPathCharDev := corev1.HostPathCharDev
@@ -2826,7 +2826,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					runtimeType: common.JindoRuntime,
 				},
 			},
-			numPvcMount: 1,
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "unprivileged-pvc-pod",
@@ -3207,7 +3206,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					runtimeType: common.JindoRuntime,
 				},
 			},
-			numPvcMount: 2,
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "unprivileged-pvc-pod",
@@ -3667,7 +3665,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					runtimeType: common.JindoRuntime,
 				},
 			},
-			numPvcMount: 2,
 			want: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "unprivileged-pvc-pod",
@@ -3979,6 +3976,19 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					t.Errorf("testcase %s failed, want container: %v, but not found in containers", testcase.name, string(want))
 				}
 			} else if gotContainer, found := gotContainerMap[k]; found {
+				if gotContainer.Lifecycle != nil && wantContainer.Lifecycle != nil {
+					if gotContainer.Lifecycle.PostStart != nil && wantContainer.Lifecycle.PostStart != nil {
+						if gotContainer.Lifecycle.PostStart.Exec != nil && wantContainer.Lifecycle.PostStart.Exec != nil {
+							equal := comparePostStartExecCommands(gotContainer.Lifecycle.PostStart.Exec, wantContainer.Lifecycle.PostStart.Exec)
+							if !equal {
+								t.Errorf("testcase %s failed, want poststart %v, got poststart %v", testcase.name, wantContainer.Lifecycle.PostStart.Exec, gotContainer.Lifecycle.PostStart.Exec)
+							}
+							// ignore post start exec when checking deep equal
+							wantContainer.Lifecycle.PostStart.Exec = nil
+							gotContainer.Lifecycle.PostStart.Exec = nil
+						}
+					}
+				}
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
 					want, err := yaml.Marshal(wantContainer)
 					if err != nil {
@@ -4070,4 +4080,44 @@ func keys(vMap interface{}) (keys []string) {
 	}
 
 	return
+}
+
+func comparePostStartExecCommands(exec1, exec2 *corev1.ExecAction) (equal bool) {
+	if len(exec1.Command) != len(exec2.Command) {
+		return false
+	}
+
+	for ci := range exec1.Command {
+		subCmd1 := exec1.Command[ci]
+		subCmd2 := exec2.Command[ci]
+		if strings.Contains(subCmd1, " ") {
+			parameters1 := strings.Split(subCmd1, " ")
+			parameters2 := strings.Split(subCmd2, " ")
+			if len(parameters1) != len(parameters2) {
+				return false
+			}
+			for pi := range parameters1 {
+				if strings.Contains(parameters1[pi], ":") {
+					tokens1 := strings.Split(parameters1[pi], ":")
+					tokens2 := strings.Split(parameters2[pi], ":")
+
+					if len(tokens1) != len(tokens2) {
+						return false
+					}
+
+					for _, token := range tokens1 {
+						if !utils.ContainsString(tokens2, token) {
+							return false
+						}
+					}
+				} else {
+					if !reflect.DeepEqual(parameters1[pi], parameters2[pi]) {
+						return false
+					}
+				}
+			}
+		}
+	}
+
+	return true
 }
