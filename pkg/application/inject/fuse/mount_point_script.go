@@ -34,6 +34,9 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 	}
 	volumeToAdd := appScriptGenerator.GetVolume()
 	conflictNames, volumes, err := appendVolumes(volumes, []corev1.Volume{volumeToAdd}, "", log)
+	if err != nil {
+		return err
+	}
 
 	containers, err := pod.GetContainers()
 	if err != nil {

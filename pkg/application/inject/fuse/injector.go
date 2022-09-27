@@ -18,7 +18,6 @@ package fuse
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -164,7 +163,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		if err = s.injectCheckMountReadyScript(pod, runtimeInfos, fake.NullLogger()); err != nil {
+		if err = s.injectCheckMountReadyScript(pod, runtimeInfos, tempLog); err != nil {
 			return out, err
 		}
 
