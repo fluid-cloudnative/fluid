@@ -1,4 +1,4 @@
-# Juicefs开源环境搭建步骤
+# Steps to build Juicefs open source environment
 
 In order to quickly start Fluid + JuiceFS, you can quickly build an open source version of JuiceFS environment in Kubernetes by following the steps below. This environment is only used for functional verification, without any tuning, and is not recommended for production environments.
 
