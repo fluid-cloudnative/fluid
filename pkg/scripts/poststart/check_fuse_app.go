@@ -32,10 +32,22 @@ const (
 
 var contentCheckMountReadyScript = `#!/bin/bash
 
-set -ex
+set -e
+
+if [[ "$#" -ne 2 ]]; then
+  echo -e "Usage:"
+  echo -e "  check-fluid-mount-ready.sh <path>[:<path>...] <runtime_type>[:<runtime_type>...]"
+  echo -e "  (e.g. check-fluid-mount-ready.sh /data1:/data2:/data3 alluxio:jindo:juicefs)"
+  exit 1
+fi
 
 mountPaths=( $(echo "$1" | tr ":" " ") )
 mountTypes=( $(echo "$2" | tr ":" " ") )
+
+if [[ "${#mountPaths[@]}" -ne "${#mountTypes[@]}" ]]; then
+  echo "Error: length of mount paths must be equal to length of runtime types"
+  exit 1
+fi
 
 for idx in "${!mountPaths[@]}"; do
 	mp=${mountPaths[$idx]}
