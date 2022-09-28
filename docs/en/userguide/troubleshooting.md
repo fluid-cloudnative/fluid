@@ -6,12 +6,15 @@ To make this troublesome work easier, we provided a shell script to help users c
 Fluid provides different diagnostic scripts for different Runtimes, but the usage is the same. You can download the runtime diagnostic scripts you use:
 
 Alluxio:
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh```
 
 JuiceFS:
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh```
 
 GooseFS:
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh```
 
 ## Diagnose Fluid using Script

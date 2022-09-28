@@ -6,12 +6,15 @@
 针对不同的 Runtime，Fluid 提供了不同的诊断脚本，但使用方式是一致的。您可以下载您使用的 Runtime 诊断脚本：
 
 Alluxio: 
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh```
 
 JuiceFS: 
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh```
 
 GooseFS: 
+
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh```
 
 ## 如何使用脚本收集日志
