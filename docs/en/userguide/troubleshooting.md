@@ -1,21 +1,46 @@
 # Troubleshooting
 
-You may encounter various problems during installation or development in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. To make this troublesome work easier, we provided a [shell script](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh) to help users collect logs more quickly. This document describes how to use that script.
+You may encounter various problems during installation or development in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. 
+To make this troublesome work easier, we provided a shell script to help users collect logs more quickly. This document describes how to use that script.
+
+
+Alluxio:
+
+```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh```
+
+JuiceFS:
+
+```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh```
+
+GooseFS:
+
+```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh```
 
 ## Diagnose Fluid using Script
 
-1. Make sure that script is executable
-   
+1. Fluid provides different diagnostic scripts for different Runtimes, but the usage is the same. You can download the runtime diagnostic scripts you use:
+
    ```shell
-   $ chmod a+x diagnose-fluid.sh
+   # Alluxio:
+   wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh
+   # JuiceFS:
+   wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh
+   # GooseFS:
+   wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh
    ```
 
-2. Get help message
+2. Make sure that script is executable, take `diagnose-fluid-alluxio.sh` as an example:
+   
+   ```shell
+   $ chmod a+x diagnose-fluid-alluxio.sh
+   ```
+
+3. Get help message
 
    ```shell
-   $ ./diagnose-fluid.sh 
+   $ ./diagnose-fluid-alluxio.sh
    Usage:
-       ./diagnose-fluid.sh COMMAND [OPTIONS]
+       ./diagnose-fluid-alluxio.sh COMMAND [OPTIONS]
    COMMAND:
        help
            Display this help message.
@@ -28,12 +53,12 @@ You may encounter various problems during installation or development in Fluid. 
            Set the namespace of runtime.
    ```
 
-3. Collect logs
+4. Collect logs
 
    You can collect all the Runtime container logs for given name and namespace with:
 
    ```shell
-   $ ./diagnose-fluid.sh collect --name cifar10 --namespace default
+   $ ./diagnose-fluid-alluxio.sh collect --name cifar10 --namespace default
    ```
 
    > **NOTES**:

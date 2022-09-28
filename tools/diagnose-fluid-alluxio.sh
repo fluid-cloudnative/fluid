@@ -3,7 +3,7 @@ set +x
 
 print_usage() {
   echo "Usage:"
-  echo "    ./diagnose-fluid-goosefs.sh COMMAND [OPTIONS]"
+  echo "    ./diagnose-fluid-alluxio.sh COMMAND [OPTIONS]"
   echo "COMMAND:"
   echo "    help"
   echo "        Display this help message."
@@ -36,18 +36,18 @@ pod_status() {
 }
 
 fluid_pod_logs() {
-  core_component "${fluid_namespace}" "manager" "control-plane=goosefsruntime-controller"
+  core_component "${fluid_namespace}" "manager" "control-plane=alluxioruntime-controller"
   core_component "${fluid_namespace}" "manager" "control-plane=dataset-controller"
   core_component "${fluid_namespace}" "plugins" "app=csi-nodeplugin-fluid"
   core_component "${fluid_namespace}" "node-driver-registrar" "app=csi-nodeplugin-fluid"
 }
 
 runtime_pod_logs() {
-  core_component "${runtime_namespace}" "goosefs-master" "role=goosefs-master" "release=${runtime_name}"
-  core_component "${runtime_namespace}" "goosefs-job-master" "role=goosefs-master" "release=${runtime_name}"
-  core_component "${runtime_namespace}" "goosefs-worker" "role=goosefs-worker" "release=${runtime_name}"
-  core_component "${runtime_namespace}" "goosefs-job-worker" "role=goosefs-worker" "release=${runtime_name}"
-  core_component "${runtime_namespace}" "goosefs-fuse" "role=goosefs-fuse" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-master" "role=alluxio-master" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-job-master" "role=alluxio-master" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-worker" "role=alluxio-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-job-worker" "role=alluxio-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-fuse" "role=alluxio-fuse" "release=${runtime_name}"
 }
 
 core_component() {
@@ -65,10 +65,10 @@ core_component() {
   mkdir -p "$diagnose_dir/pods-${namespace}"
   pods=$(kubectl get po -n ${namespace} "${constrains}" | awk '{print $1}' | grep -v NAME)
   for po in ${pods}; do
-   if [[ "${namespace}"="${fluid_namesapce}" ]]; then
+    if [[ "${namespace}" == "${fluid_namespace}" ]]; then
       kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
     else
-      kubectl cp "${namespace}/${po}":/opt/goosefs/logs -c "${container}" "$diagnose_dir/pods-${namespace}/${po}-${container}" 2>&1
+      kubectl cp "${namespace}/${po}":/opt/alluxio/logs -c "${container}" "$diagnose_dir/pods-${namespace}/${po}-${container}" 2>&1
     fi
   done
 }
@@ -76,7 +76,7 @@ core_component() {
 kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
   kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
-  kubectl describe goosefsruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/goosefsruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe alluxioruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/alluxioruntime-${runtime_name}.yaml" 2>&1
   kubectl describe pv ${runtime_namespace}-${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
   kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
