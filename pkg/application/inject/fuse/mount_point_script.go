@@ -80,6 +80,42 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
+	initContainers, err := pod.GetInitContainers()
+	if err != nil {
+		return err
+	}
+
+	for ci := range initContainers {
+		pathToRuntimeTypeMap := collectDatasetVolumeMountInfo(initContainers[ci].VolumeMounts, volumes, runtimeInfos)
+		if len(pathToRuntimeTypeMap) == 0 {
+			continue
+		}
+
+		volumeMountToAdd := appScriptGenerator.GetVolumeMount()
+		if newName, found := conflictNames[volumeToAdd.Name]; found {
+			volumeMountToAdd.Name = newName
+		}
+
+		initContainers[ci].VolumeMounts = append(initContainers[ci].VolumeMounts, volumeMountToAdd)
+		if utils.AppContainerPostStartInjectEnabled(objMeta.Labels) {
+			if initContainers[ci].Lifecycle != nil && initContainers[ci].Lifecycle.PostStart != nil {
+				s.log.Info("container already has post start lifecycle, skip injection", "container name", initContainers[ci].Name)
+			} else {
+				if initContainers[ci].Lifecycle == nil {
+					initContainers[ci].Lifecycle = &corev1.Lifecycle{}
+				}
+
+				mountPaths, mountTypes := assembleMountInfos(pathToRuntimeTypeMap)
+				initContainers[ci].Lifecycle.PostStart = appScriptGenerator.GetPostStartCommand(mountPaths, mountTypes)
+			}
+		}
+	}
+
+	err = pod.SetInitContainers(initContainers)
+	if err != nil {
+		return err
+	}
+
 	err = pod.SetVolumes(volumes)
 	if err != nil {
 		return err

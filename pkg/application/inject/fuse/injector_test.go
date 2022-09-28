@@ -260,6 +260,12 @@ func TestInjectPod(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -269,6 +275,17 @@ func TestInjectPod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -509,6 +526,12 @@ func TestInjectPod(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -518,6 +541,17 @@ func TestInjectPod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -769,6 +803,12 @@ func TestInjectPod(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -778,6 +818,17 @@ func TestInjectPod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -1018,6 +1069,12 @@ func TestInjectPod(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -1027,6 +1084,17 @@ func TestInjectPod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/dataset-conflict/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -1966,6 +2034,12 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 									MountPath:        "/data2",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -1983,6 +2057,17 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -2394,6 +2479,12 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 									MountPath:        "/data2",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -2411,6 +2502,17 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/dataset2/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -2622,7 +2724,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 				gotVolumeKeys, len(wantVolumeMap), wantVolumeKeys)
 		}
 
-		wantVolumesTotal := len(testcase.in.Spec.Volumes) + testcase.numPvcMount
+		wantVolumesTotal := len(testcase.in.Spec.Volumes) + testcase.numPvcMount + 1
 		for _, injectedFuse := range testcase.fuse {
 			for _, wantVolume := range injectedFuse.Spec.Template.Spec.Volumes {
 				wantTemp := wantVolume.DeepCopy()
