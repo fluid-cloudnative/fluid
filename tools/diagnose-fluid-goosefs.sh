@@ -3,7 +3,7 @@ set +x
 
 print_usage() {
   echo "Usage:"
-  echo "    ./diagnose-fluid.sh COMMAND [OPTIONS]"
+  echo "    ./diagnose-fluid-goosefs.sh COMMAND [OPTIONS]"
   echo "COMMAND:"
   echo "    help"
   echo "        Display this help message."

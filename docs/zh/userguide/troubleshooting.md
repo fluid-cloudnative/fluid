@@ -5,23 +5,25 @@
 
 针对不同的 Runtime，Fluid 提供了不同的诊断脚本，但使用方式是一致的。您可以下载您使用的 Runtime 诊断脚本：
 
-Alluxio: [diagnose-fluid.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh)
-JuiceFS: [diagnose-fluid-juicefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh)
-GooseFS: [diagnose-fluid-goosefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh)
+Alluxio: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh`
+JuiceFS: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh`
+GooseFS: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh`
 
 ## 如何使用脚本收集日志
 
+以 `diagnose-fluid-alluxio.sh` 为例：
+
 1. 首先，确保shell脚本有运行权限
     ```bash
-    $ chmod a+x diagnose-fluid.sh
+    $ chmod a+x diagnose-fluid-alluxio.sh
     ```
    
 2. 查看帮助信息
 
     ```bash
-    $ ./diagnose-fluid.sh 
+    $ ./diagnose-fluid-alluxio.sh
     Usage:
-        ./diagnose-fluid.sh COMMAND [OPTIONS]
+        ./diagnose-fluid-alluxio.sh COMMAND [OPTIONS]
     COMMAND:
         help
             Display this help message.

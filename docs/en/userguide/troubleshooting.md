@@ -5,24 +5,26 @@ To make this troublesome work easier, we provided a shell script to help users c
 
 Fluid provides different diagnostic scripts for different Runtimes, but the usage is the same. You can download the runtime diagnostic scripts you use:
 
-Alluxio: [diagnose-fluid.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh)
-JuiceFS: [diagnose-fluid-juicefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh)
-GooseFS: [diagnose-fluid-goosefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh)
+Alluxio: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh`
+JuiceFS: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh`
+GooseFS: `wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh`
 
 ## Diagnose Fluid using Script
+
+Take `diagnose-fluid-alluxio.sh` as an example:
 
 1. Make sure that script is executable
    
    ```shell
-   $ chmod a+x diagnose-fluid.sh
+   $ chmod a+x diagnose-fluid-alluxio.sh
    ```
 
 2. Get help message
 
    ```shell
-   $ ./diagnose-fluid.sh 
+   $ ./diagnose-fluid-alluxio.sh
    Usage:
-       ./diagnose-fluid.sh COMMAND [OPTIONS]
+       ./diagnose-fluid-alluxio.sh COMMAND [OPTIONS]
    COMMAND:
        help
            Display this help message.
