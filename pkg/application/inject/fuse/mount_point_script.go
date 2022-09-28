@@ -17,21 +17,16 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
-	if !utils.FuseSidecarUnprivileged(objMeta.Labels) {
-		// Skip if no need to check mount point ready
-		return nil
-	}
-
 	var namespace string
 	if len(runtimeInfos) == 0 {
 		// Skip if no need to inject because no dataset pvc is mounted
 		return nil
-	} else {
-		// Choose the first runtime info's namespace
-		for _, v := range runtimeInfos {
-			namespace = v.GetNamespace()
-			break
-		}
+	}
+
+	// Choose the first runtime info's namespace
+	for _, v := range runtimeInfos {
+		namespace = v.GetNamespace()
+		break
 	}
 
 	appScriptGenerator, err := s.ensureScriptConfigMapExists(namespace)
@@ -55,8 +50,8 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 	}
 
 	for ci := range containers {
-		path2RuntimeTypeMap := collectDatasetVolumeMountInfo(containers[ci].VolumeMounts, volumes, runtimeInfos)
-		if len(path2RuntimeTypeMap) == 0 {
+		pathToRuntimeTypeMap := collectDatasetVolumeMountInfo(containers[ci].VolumeMounts, volumes, runtimeInfos)
+		if len(pathToRuntimeTypeMap) == 0 {
 			continue
 		}
 
@@ -74,7 +69,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 					containers[ci].Lifecycle = &corev1.Lifecycle{}
 				}
 
-				mountPaths, mountTypes := assembleMountInfos(path2RuntimeTypeMap)
+				mountPaths, mountTypes := assembleMountInfos(pathToRuntimeTypeMap)
 				containers[ci].Lifecycle.PostStart = appScriptGenerator.GetPostStartCommand(mountPaths, mountTypes)
 			}
 		}
