@@ -77,7 +77,7 @@ kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
   kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
   kubectl describe goosefsruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/goosefsruntime-${runtime_name}.yaml" 2>&1
-  kubectl describe pv ${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
+  kubectl describe pv ${runtime_namespace}-${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
   kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
 

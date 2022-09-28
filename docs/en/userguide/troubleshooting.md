@@ -1,6 +1,13 @@
 # Troubleshooting
 
-You may encounter various problems during installation or development in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. To make this troublesome work easier, we provided a [shell script](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh) to help users collect logs more quickly. This document describes how to use that script.
+You may encounter various problems during installation or development in Fluid. Usually, logs are useful for debugging. But the Runtime containers where Fluid's underlying Distributed Cache Engine is running, are distributed on different hosts under distributed environment, so it's quite annoying to collect these logs one by one. 
+To make this troublesome work easier, we provided a shell script to help users collect logs more quickly. This document describes how to use that script.
+
+Fluid provides different diagnostic scripts for different Runtimes, but the usage is the same. You can download the runtime diagnostic scripts you use:
+
+Alluxio: [diagnose-fluid.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid.sh)
+JuiceFS: [diagnose-fluid-juicefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh)
+GooseFS: [diagnose-fluid-goosefs.sh](https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh)
 
 ## Diagnose Fluid using Script
 
