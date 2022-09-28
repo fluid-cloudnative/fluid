@@ -57,3 +57,13 @@ outer:
 
 	return
 }
+
+func FindVolumeByVolumeMount(volumeMount corev1.VolumeMount, volumes []corev1.Volume) *corev1.Volume {
+	for _, vol := range volumes {
+		if vol.Name == volumeMount.Name {
+			return &vol
+		}
+	}
+
+	return nil
+}

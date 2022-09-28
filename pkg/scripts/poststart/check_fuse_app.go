@@ -20,61 +20,88 @@ import (
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
-	"strings"
 )
 
 const (
-	appScriptName = "check-dataset-ready.sh"
-	appScriptPath = "/" + appScriptName
-	appVolName    = "check-dataset-ready"
+	appScriptName    = "check-fluid-mount-ready.sh"
+	appScriptPath    = "/" + appScriptName
+	appVolName       = "check-fluid-mount-ready"
+	appConfigMapName = appVolName
 )
 
-type ScriptGeneratorForApp struct {
-	name      string
-	namespace string
-	mountType string
+var contentCheckMountReadyScript = `#!/bin/bash
 
-	enablePostStartInjection bool
+set -e
+
+if [[ "$#" -ne 2 ]]; then
+  echo -e "Usage:"
+  echo -e "  check-fluid-mount-ready.sh <path>[:<path>...] <runtime_type>[:<runtime_type>...]"
+  echo -e "  (e.g. check-fluid-mount-ready.sh /data1:/data2:/data3 alluxio:jindo:juicefs)"
+  exit 1
+fi
+
+mountPaths=( $(echo "$1" | tr ":" " ") )
+mountTypes=( $(echo "$2" | tr ":" " ") )
+
+if [[ "${#mountPaths[@]}" -ne "${#mountTypes[@]}" ]]; then
+  echo "Error: length of mount paths must be equal to length of runtime types"
+  exit 1
+fi
+
+for idx in "${!mountPaths[@]}"; do
+	mp=${mountPaths[$idx]}
+    mt=${mountTypes[$idx]}
+	count=0
+	while ! mount | grep $mp | grep $mt
+	do
+    	sleep 3
+    	count=¬expr $count + 1¬
+    	if test $count -eq 10
+    	then
+    	    echo "timed out!"
+    	    exit 1
+    	fi
+	done
+	echo "succeed in checking mount point $mp with runtimeType $mt"
+done
+
+`
+
+type ScriptGeneratorForApp struct {
+	namespace string
 }
 
-func NewScriptGeneratorForApp(namespacedKey types.NamespacedName, mountType string, enablePostStartInjection bool) *ScriptGeneratorForApp {
+func NewScriptGeneratorForApp(namespace string) *ScriptGeneratorForApp {
 	return &ScriptGeneratorForApp{
-		name:                     namespacedKey.Name,
-		namespace:                namespacedKey.Namespace,
-		mountType:                mountType,
-		enablePostStartInjection: enablePostStartInjection,
+		namespace: namespace,
 	}
 }
 
-func (a *ScriptGeneratorForApp) BuildConfigmap(ownerReference metav1.OwnerReference) *corev1.ConfigMap {
+func (a *ScriptGeneratorForApp) BuildConfigmap() *corev1.ConfigMap {
 	data := map[string]string{}
-	content := contentPrivilegedSidecar
+	content := contentCheckMountReadyScript
 
 	data[appScriptName] = replacer.Replace(content)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            a.getConfigmapName(),
-			Namespace:       a.namespace,
-			OwnerReferences: []metav1.OwnerReference{ownerReference},
+			Name:      a.getConfigmapName(),
+			Namespace: a.namespace,
 		},
 		Data: data,
 	}
 }
 
 func (a *ScriptGeneratorForApp) getConfigmapName() string {
-	return a.name + "-" + strings.ToLower(a.mountType) + "-app-" + configMapName
+	return appConfigMapName
 }
 
-func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPath string) (handler *corev1.LifecycleHandler) {
+func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPaths string, mountTypes string) (handler *corev1.LifecycleHandler) {
 	// Return non-null post start command only when PostStartInjeciton is enabled
-	if a.enablePostStartInjection {
-		// https://github.com/kubernetes/kubernetes/issues/25766
-		cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", appScriptPath, mountPath, a.mountType)}
-		handler = &corev1.LifecycleHandler{
-			Exec: &corev1.ExecAction{Command: cmd},
-		}
+	// https://github.com/kubernetes/kubernetes/issues/25766
+	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", appScriptPath, mountPaths, mountTypes)}
+	handler = &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{Command: cmd},
 	}
 
 	return
