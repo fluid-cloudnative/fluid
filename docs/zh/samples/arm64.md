@@ -3,7 +3,7 @@
 ## 环境准备
 
 ### 获取Fluid最新源码
-
+Fluid 社区目前提供了多平台的 Fluid 官方镜像，您可以直接参考[这篇文档](../userguide/get_started.md)部署 Fluid 并且直接跳到*运行实例*步骤.
 ```shell
 $ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
 $ cd $GOPATH/src/github.com/fluid-cloudnative
