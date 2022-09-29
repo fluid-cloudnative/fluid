@@ -1,8 +1,8 @@
 # Steps to build Juicefs open source environment
 
-In order to quickly start Fluid + JuiceFS, you can quickly build an open source version of JuiceFS environment in Kubernetes by following the steps below. This environment is only used for functional verification, without any tuning, and is not recommended for production environments.
+In order to get started with Fluid + JuiceFS, you can quickly build community version of JuiceFS environment in Kubernetes by following the steps below. This environment is only used for functional verification, without any tuning, and is not recommended for production environments.
 
-The following example uses minIO as the back-end object storage and Redis as the metadata service.
+The following example uses MinIO as the back-end object storage and Redis as the metadata service.
 
 1. Create Minio Service
 
