@@ -220,7 +220,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								{
 									Name:      "duplicate-0",
 									MountPath: "/mnt/disk1",
-								}, {
+								},
+								{
 									Name:      "fuse-device-0",
 									MountPath: "/dev/fuse",
 								}, {
@@ -242,6 +243,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -251,6 +258,17 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/duplicate/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -491,6 +509,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -543,6 +567,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -552,6 +582,17 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/dataset1/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
@@ -803,6 +844,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -862,6 +909,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath:        "/data",
 									MountPropagation: &mountPropagationHostToContainer,
 								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
 							},
 						},
 					},
@@ -871,6 +924,17 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/runtime-mnt/jindo/big-data/customizedenv/jindofs-fuse",
+								},
+							},
+						},
+						{
+							Name: "check-fluid-mount-ready",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "check-fluid-mount-ready",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
 						},
