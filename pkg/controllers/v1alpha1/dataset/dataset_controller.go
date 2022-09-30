@@ -62,8 +62,10 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		Log:            r.Log.WithValues("dataset", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 	}
-
-	notFound := false
+	var (
+		notFound    = false
+		needRequeue = false
+	)
 	ctx.Log.V(1).Info("process the request", "request", req)
 
 	/*
@@ -71,7 +73,9 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	*/
 	if controller, scaleout, err := deploy.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
 		// ctx.Log.Error(err, "Not able to scale out the runtime controller on demand due to runtime is not found", "RuntimeController", ctx)
-		ctx.Log.Info("Not able to scale out the runtime controller on demand due to runtime is not found", "RuntimeController", ctx, "error", err.Error())
+		ctx.Log.Info("Not able to scale out the runtime controller on demand due to runtime is not found", "error", err.Error())
+		
+		needRequeue = true
 		// return utils.RequeueIfError(err)
 	} else {
 		if scaleout {
@@ -88,12 +92,12 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		ctx.Log.Info("Unable to fetch Dataset", "reason", err)
 		if utils.IgnoreNotFound(err) != nil {
 			r.Log.Error(err, "failed to get dataset")
-			return ctrl.Result{}, err
-		} else {
-			notFound = true
+			return utils.RequeueIfError(err)
 		}
+		// if the error is NotFoundError, set notFound to true
+		notFound = true
 	} else {
-		return r.reconcileDataset(ctx)
+		return r.reconcileDataset(ctx, needRequeue)
 	}
 
 	/*
@@ -108,7 +112,7 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 }
 
 // reconcile Dataset
-func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.Result, error) {
+func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRequeue bool) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileDataset")
 	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
 	// 1. Check if need to delete dataset
@@ -134,6 +138,11 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext) (ctrl.
 		} else {
 			ctx.Log.V(1).Info("Update the status of the dataset successfully", "phase", dataset.Status.Phase)
 		}
+	}
+
+	// 4. Check if needRequeue
+	if needRequeue {
+		return utils.RequeueAfterInterval(r.ResyncPeriod)
 	}
 
 	// return utils.RequeueAfterInterval(r.ResyncPeriod)
