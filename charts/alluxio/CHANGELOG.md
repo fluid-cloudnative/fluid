@@ -222,3 +222,7 @@
 0.9.5
 
 - Support emptyDir volume source
+
+0.9.6
+
+- Make fuse tolerate any taint
