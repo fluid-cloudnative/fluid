@@ -62,10 +62,8 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		Log:            r.Log.WithValues("dataset", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 	}
-	var (
-		notFound    = false
-		needRequeue = false
-	)
+
+	var notFound, needRequeue bool
 	ctx.Log.V(1).Info("process the request", "request", req)
 
 	/*
@@ -74,7 +72,6 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	if controller, scaleout, err := deploy.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
 		// ctx.Log.Error(err, "Not able to scale out the runtime controller on demand due to runtime is not found", "RuntimeController", ctx)
 		ctx.Log.Info("Not able to scale out the runtime controller on demand due to runtime is not found", "error", err.Error())
-		
 		needRequeue = true
 		// return utils.RequeueIfError(err)
 	} else {
