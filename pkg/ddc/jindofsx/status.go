@@ -103,7 +103,10 @@ func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if workers.Status.ReadyReplicas > 0 {
+		if runtime.Replicas() == 0 {
+			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+			workerReady = true
+		} else if workers.Status.ReadyReplicas > 0 {
 			if runtime.Replicas() == workers.Status.ReadyReplicas {
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 				workerReady = true
