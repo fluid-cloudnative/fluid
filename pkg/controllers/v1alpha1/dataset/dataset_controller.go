@@ -70,8 +70,8 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		### 1. Scale out runtime controller if possible
 	*/
 	if controller, scaleout, err := deploy.ScaleoutRuntimeContollerOnDemand(r.Client, req.NamespacedName, ctx.Log); err != nil {
-		ctx.Log.Error(err, "Failed to scale out the runtime controller on demand", "RuntimeController", ctx)
-		return utils.RequeueIfError(err)
+		ctx.Log.Error(err, "Not able to scale out the runtime controller on demand due to runtime is not found", "RuntimeController", ctx)
+		// return utils.RequeueIfError(err)
 	} else {
 		if scaleout {
 			ctx.Log.Info("scale out the runtime controller on demand successfully", "controller", controller)
