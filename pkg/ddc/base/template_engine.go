@@ -31,7 +31,7 @@ import (
 const (
 	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
 
-	defaultSyncRetryDuration time.Duration = time.Duration(60 * time.Second)
+	defaultSyncRetryDuration time.Duration = time.Duration(5 * time.Second)
 )
 
 // Use compiler to check if the struct implements all the interface
