@@ -56,10 +56,8 @@ spec:
       {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
-      {{- if .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      {{- end }}
+        - operator: Exists
       containers:
         - name: juicefs-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}

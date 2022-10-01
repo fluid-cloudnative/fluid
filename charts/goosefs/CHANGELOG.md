@@ -5,3 +5,6 @@
 - Support fuse lazy start
 - Support fuse critical pod
 - Change worker from Daemonset to Statefulset
+
+1.1.1
+- Make fuse tolerate any taint
