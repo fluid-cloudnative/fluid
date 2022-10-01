@@ -217,4 +217,13 @@
 
 0.9.4
 
-- Remove host pid and hostPath volume for backup
+- Remove host pid and hostPath volume for backup- Remove host pid and hostPath volume for backup
+
+0.9.5
+
+- Support emptyDir volume source
+
+0.9.6
+
+- Make fuse tolerate any taint
+

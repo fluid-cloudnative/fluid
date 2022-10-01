@@ -37,6 +37,8 @@ spec:
         heritage: {{ .Release.Service }}
         role: alluxio-fuse-client
     spec:
+      tolerations:
+        - operator: Exists
       containers:
         - name: alluxio-fuse-client
           image: alpine:latest

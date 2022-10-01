@@ -52,3 +52,16 @@ Support configurable tieredstore's volume type
 0.8.11
 
 Support configurable pod metadata
+
+0.8.12
+
+Support emptyDir volume source
+
+0.8.13
+
+Repair preRead and meta access issue
+
+0.8.14
+
+Make fuse tolerate any taint
+
