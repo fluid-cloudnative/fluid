@@ -26,6 +26,8 @@ spec:
         heritage: {{ .Release.Service }}
         role: goosefs-fuse-client
     spec:
+      tolerations:
+        - operator: Exists
       containers:
         - name: goosefs-fuse-client
           image: alpine:latest
