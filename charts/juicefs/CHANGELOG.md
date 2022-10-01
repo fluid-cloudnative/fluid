@@ -25,3 +25,7 @@
 0.2.5
 
 - Support configurable resource and privileged
+
+0.2.6
+
+- Make fuse tolerate any taint

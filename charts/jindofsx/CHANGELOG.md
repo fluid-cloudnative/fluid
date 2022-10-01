@@ -60,3 +60,7 @@ Support emptyDir volume source
 0.8.13
 
 Repair preRead and meta access issue
+
+0.8.14
+
+Make fuse tolerate any taint
