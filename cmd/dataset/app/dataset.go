@@ -18,6 +18,7 @@ package app
 
 import (
 	"os"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -101,10 +102,11 @@ func handle() {
 	}
 
 	if err = (&datasetctl.DatasetReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("datasetctl").WithName("Dataset"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Dataset"),
+		Client:       mgr.GetClient(),
+		Log:          ctrl.Log.WithName("datasetctl").WithName("Dataset"),
+		Scheme:       mgr.GetScheme(),
+		Recorder:     mgr.GetEventRecorderFor("Dataset"),
+		ResyncPeriod: time.Duration(5 * time.Second),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
