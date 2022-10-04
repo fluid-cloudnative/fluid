@@ -18,6 +18,7 @@ package thin
 
 import (
 	"fmt"
+
 	"github.com/go-logr/logr"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -60,15 +61,15 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template
-	if ctx.Runtime != nil {
-		runtime, ok := ctx.Runtime.(*datav1alpha1.ThinRuntime)
-		if !ok {
-			return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
-		}
-		engine.runtime = runtime
-	} else {
-		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
+	if ctx.Runtime == nil {
+		return nil, fmt.Errorf("engine %s is failed due to runtime is nil", ctx.Name)
 	}
+
+	runtime, ok := ctx.Runtime.(*datav1alpha1.ThinRuntime)
+	if !ok {
+		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
+	}
+	engine.runtime = runtime
 
 	// Build and setup runtime info
 	runtimeInfo, err := engine.getRuntimeInfo()
@@ -77,10 +78,10 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
-	template := base.NewTemplateEngine(engine, id, ctx)
+	templateEngine := base.NewTemplateEngine(engine, id, ctx)
 
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
-	return template, err
+	return templateEngine, err
 }
 
 func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
