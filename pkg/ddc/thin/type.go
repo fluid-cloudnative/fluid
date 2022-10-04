@@ -17,6 +17,7 @@
 package thin
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -71,4 +72,14 @@ type Fuse struct {
 	ReadinessProbe  *corev1.Probe          `yaml:"readinessProbe,omitempty"`
 	CacheDir        string                 `yaml:"cacheDir,omitempty"`
 	ConfigValue     string                 `yaml:"configValue"`
+}
+
+type Config struct {
+	Mounts         []datav1alpha1.Mount `json:"mounts"`
+	RuntimeOptions map[string]string    `json:"runtimeOptions"`
+}
+
+type RuntimeStatus struct {
+	Workers []string `json:"workers"`
+	Fuses   []string `json:"fuses"`
 }
