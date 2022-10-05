@@ -148,3 +148,35 @@ func (e *Helper) CleanUpFuse() (count int, err error) {
 
 	return
 }
+
+// GetFuseNodes gets the node of fuses
+func (e *Helper) GetFuseNodes(runtime base.RuntimeInterface) (nodes []corev1.Node, err error) {
+	var (
+		nodeList     = &corev1.NodeList{}
+		fuseLabelKey = common.LabelAnnotationFusePrefix + e.runtimeInfo.GetNamespace() + "-" + e.runtimeInfo.GetName()
+	)
+
+	labelNames := []string{fuseLabelKey}
+	e.log.Info("check node labels", "labelNames", labelNames)
+	fuseLabelSelector, err := labels.Parse(fmt.Sprintf("%s=true", fuseLabelKey))
+	if err != nil {
+		return
+	}
+
+	err = e.client.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: fuseLabelSelector,
+	})
+	if err != nil {
+		return nodes, err
+	}
+
+	nodes = nodeList.Items
+	if len(nodes) == 0 {
+		e.log.Info("No node with fuse label is found")
+		return
+	} else {
+		e.log.Info("Find the fuse label for nodes", "len", len(nodes))
+	}
+
+	return
+}

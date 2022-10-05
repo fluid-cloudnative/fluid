@@ -112,8 +112,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 12. config
 	// config := make(map[string]string)
 	// config[value.Fuse.MountPath] = options
-	config := Config{
-		Mounts: dataset.Spec.Mounts,
+	config, err := t.transformConfig(runtime,
+		profile,
+		dataset)
+	if err != nil {
+		return err
 	}
 	var configStr []byte
 	configStr, err = json.Marshal(config)

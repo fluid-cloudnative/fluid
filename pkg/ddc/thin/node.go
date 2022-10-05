@@ -19,6 +19,8 @@ package thin
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
@@ -29,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 func (t ThinEngine) AssignNodesToCache(desiredNum int32) (currentNum int32, err error) {
@@ -51,7 +52,14 @@ func (t ThinEngine) AssignNodesToCache(desiredNum int32) (currentNum int32, err 
 }
 
 func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", t.name, "namespace", t.namespace)
+	err = t.syncScheduleInfoToCacheNodes()
+	if err != nil {
+		return
+	}
+}
+
+func (t ThinEngine) syncScheduleInfoToCacheNodes() (err error) {
+	defer utils.TimeTrack(time.Now(), "syncScheduleInfoToCacheNodes", "name", t.name, "namespace", t.namespace)
 
 	var (
 		currentCacheNodenames  []string

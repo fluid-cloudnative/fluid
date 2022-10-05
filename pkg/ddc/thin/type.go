@@ -75,8 +75,8 @@ type Fuse struct {
 }
 
 type Config struct {
-	Mounts         []datav1alpha1.Mount `json:"mounts"`
-	RuntimeOptions map[string]string    `json:"runtimeOptions"`
+	Mounts         []datav1alpha1.Mount `json:"mounts,omitempty"`
+	RuntimeOptions map[string]string    `json:"runtimeOptions,omitempty"`
 }
 
 type RuntimeStatus struct {

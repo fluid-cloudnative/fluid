@@ -29,6 +29,8 @@ image: ""
 imageTag: ""
 imagePullPolicy: IfNotPresent
 
+runtimeValue: ""
+
 ## WORKER ##
 worker:
   image: ""
