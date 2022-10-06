@@ -20,7 +20,7 @@ import datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 
 func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	profile *datav1alpha1.ThinRuntimeProfile,
-	dataset *datav1alpha1.Dataset) (config Config, err error) {
+	dataset *datav1alpha1.Dataset, targetPath string) (config Config, err error) {
 	mounts := []datav1alpha1.Mount{}
 	for _, m := range dataset.Spec.Mounts {
 		m.Options, err = t.genUFSMountOptions(m)
@@ -33,6 +33,7 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 
 	config.Mounts = mounts
 	config.RuntimeOptions = runtime.Spec.Fuse.Options
+	config.TargetPath = targetPath
 	return
 }
 

@@ -83,8 +83,8 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 9. network
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
 
-	// 10. mountpath
-	value.Fuse.MountPath = t.getMountPoint()
+	// 10. targetPath to mount
+	value.Fuse.TargetPath = t.getTargetPath()
 
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
@@ -98,7 +98,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	value.Fuse.Envs = append(value.Fuse.Envs, runtime.Spec.Fuse.Env...)
 	value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
 		Name:  common.ThinFusePointEnvKey,
-		Value: value.Fuse.MountPath,
+		Value: value.Fuse.TargetPath,
 	})
 
 	// If Fuse options is not set, skip it.
@@ -111,10 +111,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 
 	// 12. config
 	// config := make(map[string]string)
-	// config[value.Fuse.MountPath] = options
+	// config[value.Fuse.TargetPath] = options
 	config, err := t.transformConfig(runtime,
 		profile,
-		dataset)
+		dataset,
+		value.Fuse.TargetPath)
 	if err != nil {
 		return err
 	}

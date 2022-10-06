@@ -30,7 +30,7 @@ func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
 		return
 	}
 	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinFuseContainer, t.namespace, t.Log)
-	total, err = fileUtils.GetUsedSpace(t.getMountPoint())
+	total, err = fileUtils.GetUsedSpace(t.getTargetPath())
 	if err != nil {
 		return
 	}
@@ -45,7 +45,7 @@ func (t *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
 		return
 	}
 	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinFuseContainer, t.namespace, t.Log)
-	fileCount, err = fileUtils.GetFileCount(t.getMountPoint())
+	fileCount, err = fileUtils.GetFileCount(t.getTargetPath())
 	if err != nil {
 		return
 	}
@@ -60,7 +60,7 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 		return
 	}
 	fileUtils := operations.NewThinFileUtils(pods[0].Name, common.ThinFuseContainer, t.namespace, t.Log)
-	usedSpace, err = fileUtils.GetUsedSpace(t.getMountPoint())
+	usedSpace, err = fileUtils.GetUsedSpace(t.getTargetPath())
 	if err != nil {
 		return
 	}

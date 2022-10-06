@@ -17,15 +17,16 @@
 package thin
 
 import (
+	"reflect"
+	"strings"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 func TestThinEngine_parseFromProfileFuse(t1 *testing.T) {
@@ -387,6 +388,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			Image:           "test",
 			ImageTag:        "v1",
 			ImagePullPolicy: "Always",
+			TargetPath:      "/thin/fluid/test/thin-fuse",
 			Resources: common.Resources{
 				Requests: map[corev1.ResourceName]string{},
 				Limits:   map[corev1.ResourceName]string{},
@@ -458,8 +460,9 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 				Name:      "b",
 				MountPath: "/b",
 			}},
-			ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
-			MountPath:   "/thin/fluid/test/thin-fuse",
+			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
+			// MountPath:   "/thin/fluid/test/thin-fuse",
+			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
 		},
 	}
 	value := &ThinValue{}
@@ -468,8 +471,8 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
-		if !reflect.DeepEqual(value.Fuse, wantValue.Fuse) {
-			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", value, wantValue)
+		if !reflect.DeepEqual(value.Fuse.ConfigValue, wantValue.Fuse.ConfigValue) {
+			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", value.Fuse, wantValue.Fuse)
 		}
 	})
 }

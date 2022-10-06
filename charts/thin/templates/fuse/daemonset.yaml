@@ -81,7 +81,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
+                command: ["sh", "-c", "umount {{ .Values.fuse.targetPath }}"]
           {{- if .Values.fuse.livenessProbe }}
           livenessProbe:
 {{ toYaml .Values.fuse.livenessProbe | trim | indent 12  }}
@@ -92,7 +92,7 @@ spec:
           {{- end }}
           volumeMounts:
           - name: thin-fuse-mount
-            mountPath: {{ .Values.fuse.mountPath | dir }}
+            mountPath: {{ .Values.fuse.targetPath | dir }}
             mountPropagation: Bidirectional
           - mountPath: /etc/fluid/config.json
             subPath: config.json
@@ -113,7 +113,7 @@ spec:
       volumes:
         - name: thin-fuse-mount
           hostPath:
-            path: {{ .Values.fuse.mountPath | dir }}
+            path: {{ .Values.fuse.targetPath | dir }}
             type: DirectoryOrCreate
         {{- if .Values.fuse.cacheDir }}
         - name: cache-dir

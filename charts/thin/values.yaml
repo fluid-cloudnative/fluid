@@ -63,8 +63,8 @@ fuse:
   envs:
   nodeSelector:
   dnsPolicy: ClusterFirstWithHostNet
-  # Mount path in the host
-  mountPath: ""
+  # Target path to mount in the host
+  targetPath: ""
   command: []
   args: []
   livenessProbe:
