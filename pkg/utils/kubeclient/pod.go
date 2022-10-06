@@ -1,16 +1,17 @@
 /*
+  Copyright 2022 The Fluid Authors.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
 
 package kubeclient
@@ -18,7 +19,6 @@ package kubeclient
 import (
 	"context"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -89,23 +89,18 @@ func isRunningAndReady(pod *corev1.Pod) bool {
 	return pod.Status.Phase == corev1.PodRunning && podutil.IsPodReady(pod)
 }
 
-// GetIpAddressesOfPods gets the ipAddresses of nodes
-func GetIpAddressesOfPods(pods []corev1.Pod) (ipAddresses []string) {
-
+// GetIpAddressesOfPods gets the ipAddresses of pods
+func GetIpAddressesOfPods(client client.Client, pods []corev1.Pod) (ipAddresses []string, err error) {
+	// nodes := []corev1.Node{}
+	nodes := make([]corev1.Node, 0, len(pods))
 	for _, pod := range pods {
-
+		nodeName := pod.Spec.NodeName
+		node, err := GetNode(client, nodeName)
+		if err != nil {
+			return ipAddresses, err
+		}
+		nodes = append(nodes, *node)
 	}
-	// realIPs = make([]net.IP, 0, len(nodes))
-	// for _, node := range nodes {
-	// 	for _, address := range node.Status.Addresses {
-	// 		if address.Type == corev1.NodeInternalIP {
-	// 			if address.Address != "" {
-	// 				ipAddresses = append(ipAddresses, address.Address)
-	// 			} else {
-	// 				log.Info("Failed to get ipAddresses from the node", "node", node.Name)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	return utils.SortIpAddresses(ipAddresses)
+
+	return GetIpAddressesOfNodes(nodes), err
 }

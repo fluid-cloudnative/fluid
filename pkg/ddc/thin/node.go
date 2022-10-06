@@ -56,6 +56,8 @@ func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	if err != nil {
 		return
 	}
+
+	return
 }
 
 func (t ThinEngine) syncScheduleInfoToCacheNodes() (err error) {

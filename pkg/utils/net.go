@@ -8,9 +8,14 @@ import (
 
 func SortIpAddresses(ips []string) (orderedIps []string) {
 	realIPs := make([]net.IP, 0, len(ips))
+	keys := make(map[string]bool)
 
 	for _, ip := range ips {
-		realIPs = append(realIPs, net.ParseIP(ip))
+		// Avoid duplicated keys
+		if _, value := keys[ip]; !value {
+			keys[ip] = true
+			realIPs = append(realIPs, net.ParseIP(ip))
+		}
 	}
 
 	sort.Slice(realIPs, func(i, j int) bool {
