@@ -87,7 +87,7 @@ func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]string
 			return mOptions, err
 		}
 
-		e.Log.Info("get value from secret", "mount name", m.Name, "secret key", sRef.Key)
+		t.Log.Info("get value from secret", "mount name", m.Name, "secret key", sRef.Key)
 
 		v := secret.Data[sRef.Key]
 		mOptions[item.Name] = string(v)
