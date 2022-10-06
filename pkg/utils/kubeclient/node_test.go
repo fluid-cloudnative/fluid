@@ -16,9 +16,11 @@ limitations under the License.
 package kubeclient
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -138,6 +140,26 @@ func TestIsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if want := IsReady(tt.args.node); want != tt.want {
 				t.Errorf("testcase %v IsReady()'s wanted %v, actual %v", tt.args.node.Name, tt.want, want)
+			}
+		})
+	}
+}
+
+func TestGetIpAddressesOfNodes(t *testing.T) {
+	type args struct {
+		nodes []corev1.Node
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantIpAddresses []string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotIpAddresses := GetIpAddressesOfNodes(tt.args.nodes); !reflect.DeepEqual(gotIpAddresses, tt.wantIpAddresses) {
+				t.Errorf("GetIpAddressesOfNodes() = %v, want %v", gotIpAddresses, tt.wantIpAddresses)
 			}
 		})
 	}

@@ -180,3 +180,15 @@ func (e *Helper) GetFuseNodes(runtime base.RuntimeInterface) (nodes []corev1.Nod
 
 	return
 }
+
+// GetIpAddressesOfFuse gets Ipaddresses from the Fuse Node
+func (e *Helper) GetIpAddressesOfFuse(runtime base.RuntimeInterface) (ipAddresses []string, err error) {
+	nodes, err := e.GetFuseNodes(runtime)
+	if err != nil {
+		return
+	}
+	ipAddresses = kubeclient.GetIpAddressesOfNodes(nodes)
+
+	return
+
+}

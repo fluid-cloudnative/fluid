@@ -18,7 +18,8 @@ package kubeclient
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,7 +28,7 @@ import (
 )
 
 // IsCompletePod determines if the pod is complete
-func IsCompletePod(pod *v1.Pod) bool {
+func IsCompletePod(pod *corev1.Pod) bool {
 	if pod == nil {
 		return false
 	}
@@ -36,30 +37,30 @@ func IsCompletePod(pod *v1.Pod) bool {
 		return true
 	}
 
-	if pod.Status.Phase == v1.PodSucceeded || pod.Status.Phase == v1.PodFailed {
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		return true
 	}
 	return false
 }
 
 // IsSucceededPod determines if the pod is Succeeded
-func IsSucceededPod(pod *v1.Pod) bool {
-	return pod != nil && pod.Status.Phase == v1.PodSucceeded
+func IsSucceededPod(pod *corev1.Pod) bool {
+	return pod != nil && pod.Status.Phase == corev1.PodSucceeded
 }
 
 // IsFailedPod determines if the pod is failed
-func IsFailedPod(pod *v1.Pod) bool {
-	return pod != nil && pod.Status.Phase == v1.PodFailed
+func IsFailedPod(pod *corev1.Pod) bool {
+	return pod != nil && pod.Status.Phase == corev1.PodFailed
 }
 
 // GetPodByName gets pod with given name and namespace of the pod.
-func GetPodByName(client client.Client, name, namespace string) (pod *v1.Pod, err error) {
+func GetPodByName(client client.Client, name, namespace string) (pod *corev1.Pod, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
 
-	pod = &v1.Pod{}
+	pod = &corev1.Pod{}
 
 	if err = client.Get(context.TODO(), key, pod); err != nil {
 		if apierrs.IsNotFound(err) {
@@ -73,7 +74,7 @@ func GetPodByName(client client.Client, name, namespace string) (pod *v1.Pod, er
 }
 
 // GetPVCNamesFromPod get names of pvc mounted by Pod
-func GetPVCNamesFromPod(pod *v1.Pod) (pvcNames []string) {
+func GetPVCNamesFromPod(pod *corev1.Pod) (pvcNames []string) {
 	for _, volume := range pod.Spec.Volumes {
 		if volume.PersistentVolumeClaim == nil {
 			continue
@@ -84,6 +85,27 @@ func GetPVCNamesFromPod(pod *v1.Pod) (pvcNames []string) {
 }
 
 // isRunningAndReady returns true if pod is in the PodRunning Phase, if it has a condition of PodReady.
-func isRunningAndReady(pod *v1.Pod) bool {
-	return pod.Status.Phase == v1.PodRunning && podutil.IsPodReady(pod)
+func isRunningAndReady(pod *corev1.Pod) bool {
+	return pod.Status.Phase == corev1.PodRunning && podutil.IsPodReady(pod)
+}
+
+// GetIpAddressesOfPods gets the ipAddresses of nodes
+func GetIpAddressesOfPods(pods []corev1.Pod) (ipAddresses []string) {
+
+	for _, pod := range pods {
+
+	}
+	// realIPs = make([]net.IP, 0, len(nodes))
+	// for _, node := range nodes {
+	// 	for _, address := range node.Status.Addresses {
+	// 		if address.Type == corev1.NodeInternalIP {
+	// 			if address.Address != "" {
+	// 				ipAddresses = append(ipAddresses, address.Address)
+	// 			} else {
+	// 				log.Info("Failed to get ipAddresses from the node", "node", node.Name)
+	// 			}
+	// 		}
+	// 	}
+	// }
+	return utils.SortIpAddresses(ipAddresses)
 }

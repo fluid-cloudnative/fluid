@@ -18,19 +18,20 @@ package kubeclient
 import (
 	"context"
 
-	"k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GetNode gets the latest node info
-func GetNode(client client.Reader, name string) (node *v1.Node, err error) {
+func GetNode(client client.Reader, name string) (node *corev1.Node, err error) {
 	key := types.NamespacedName{
 		Name: name,
 	}
 
-	node = &v1.Node{}
+	node = &corev1.Node{}
 
 	if err = client.Get(context.TODO(), key, node); err != nil {
 		return nil, err
@@ -40,13 +41,30 @@ func GetNode(client client.Reader, name string) (node *v1.Node, err error) {
 
 // IsReady checks if the node is ready
 // If the node is ready,it returns True.Otherwise,it returns False.
-func IsReady(node v1.Node) (ready bool) {
+func IsReady(node corev1.Node) (ready bool) {
 	ready = true
 	for _, condition := range node.Status.Conditions {
-		if condition.Type == v1.NodeReady && condition.Status != v1.ConditionTrue {
+		if condition.Type == corev1.NodeReady && condition.Status != corev1.ConditionTrue {
 			ready = false
 			break
 		}
 	}
 	return ready
+}
+
+// GetIpAddressesOfNodes gets the ipAddresses of nodes
+func GetIpAddressesOfNodes(nodes []corev1.Node) (ipAddresses []string) {
+	// realIPs = make([]net.IP, 0, len(nodes))
+	for _, node := range nodes {
+		for _, address := range node.Status.Addresses {
+			if address.Type == corev1.NodeInternalIP {
+				if address.Address != "" {
+					ipAddresses = append(ipAddresses, address.Address)
+				} else {
+					log.Info("Failed to get ipAddresses from the node", "node", node.Name)
+				}
+			}
+		}
+	}
+	return utils.SortIpAddresses(ipAddresses)
 }
