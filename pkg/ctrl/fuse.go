@@ -150,7 +150,7 @@ func (e *Helper) CleanUpFuse() (count int, err error) {
 }
 
 // GetFuseNodes gets the node of fuses
-func (e *Helper) GetFuseNodes(runtime base.RuntimeInterface) (nodes []corev1.Node, err error) {
+func (e *Helper) GetFuseNodes() (nodes []corev1.Node, err error) {
 	var (
 		nodeList     = &corev1.NodeList{}
 		fuseLabelKey = common.LabelAnnotationFusePrefix + e.runtimeInfo.GetNamespace() + "-" + e.runtimeInfo.GetName()
@@ -182,13 +182,11 @@ func (e *Helper) GetFuseNodes(runtime base.RuntimeInterface) (nodes []corev1.Nod
 }
 
 // GetIpAddressesOfFuse gets Ipaddresses from the Fuse Node
-func (e *Helper) GetIpAddressesOfFuse(runtime base.RuntimeInterface) (ipAddresses []string, err error) {
-	nodes, err := e.GetFuseNodes(runtime)
+func (e *Helper) GetIpAddressesOfFuse() (ipAddresses []string, err error) {
+	nodes, err := e.GetFuseNodes()
 	if err != nil {
 		return
 	}
 	ipAddresses = kubeclient.GetIpAddressesOfNodes(nodes)
-
 	return
-
 }
