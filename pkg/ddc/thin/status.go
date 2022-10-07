@@ -114,11 +114,16 @@ func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (err error) {
 		return
 	}
 
-	configMapName := t.runtime.Name + "-runtime-set"
+	configMapName := t.runtime.Name + "-runtimeset"
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cm, err := kubeclient.GetConfigmapByName(t.Client, configMapName, t.namespace)
 		if err != nil {
 			return err
+		}
+
+		if cm == nil {
+			t.Log.Info("configmap is not found", "key", configMapName)
+			return nil
 		}
 
 		cmToUpdate := cm.DeepCopy()
