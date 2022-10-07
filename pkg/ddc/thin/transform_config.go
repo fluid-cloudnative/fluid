@@ -16,7 +16,11 @@
 
 package thin
 
-import datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+import (
+	"encoding/json"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+)
 
 func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	profile *datav1alpha1.ThinRuntimeProfile,
@@ -37,14 +41,23 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	return
 }
 
-func (t *ThinEngine) initRuntimeStatus(runtime *datav1alpha1.ThinRuntime,
-	profile *datav1alpha1.ThinRuntimeProfile,
-	dataset *datav1alpha1.Dataset) (status RuntimeStatus) {
-
-	status.Workers = []string{}
-
-	return RuntimeStatus{
-		Workers: []string{},
-		Fuses:   []string{},
+func (t *ThinEngine) toRuntimeSetConfig(workers []string, fuses []string) (result string, err error) {
+	if workers == nil {
+		workers = []string{}
 	}
+
+	if fuses == nil {
+		fuses = []string{}
+	}
+
+	status := RuntimeSetConfig{
+		Workers: workers,
+		Fuses:   fuses,
+	}
+	var runtimeStr []byte
+	runtimeStr, err = json.Marshal(status)
+	if err != nil {
+		return
+	}
+	return string(runtimeStr), err
 }

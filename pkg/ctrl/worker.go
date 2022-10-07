@@ -182,7 +182,7 @@ func (e *Helper) GetWorkerNodes() (nodes []corev1.Node, err error) {
 }
 
 // GetIpAddressesOfWorker gets Ipaddresses from the Worker Node
-func (e *Helper) GetIpAddressesOfWorker(runtime base.RuntimeInterface) (ipAddresses []string, err error) {
+func (e *Helper) GetIpAddressesOfWorker() (ipAddresses []string, err error) {
 	nodes, err := e.GetWorkerNodes()
 	if err != nil {
 		return

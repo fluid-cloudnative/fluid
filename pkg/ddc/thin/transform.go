@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"encoding/json"
 	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -41,13 +40,11 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 
 	value.FullnameOverride = t.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
-	runtimeStatus := t.initRuntimeStatus(runtime, profile, dataset)
-	var runtimeStr []byte
-	runtimeStr, err = json.Marshal(runtimeStatus)
+	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
 	if err != nil {
 		return
 	}
-	value.RuntimeValue = string(runtimeStr)
+	value.RuntimeValue = toRuntimeSetConfig
 
 	// transform toleration
 	t.transformTolerations(dataset, value)

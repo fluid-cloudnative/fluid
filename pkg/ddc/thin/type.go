@@ -81,7 +81,8 @@ type Config struct {
 	RuntimeOptions map[string]string    `json:"runtimeOptions,omitempty"`
 }
 
-type RuntimeStatus struct {
+// RuntimeSetConfig is with the info of the workers and fuses
+type RuntimeSetConfig struct {
 	Workers []string `json:"workers"`
 	Fuses   []string `json:"fuses"`
 }

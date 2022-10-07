@@ -57,17 +57,7 @@ func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		return
 	}
 
-	fuseAddresses, err := t.Helper.GetIpAddressesOfFuse()
-	if err != nil {
-		return
-	}
-
-	workerAddresses, err := t.Helper.GetIpAddressesOfWorker()
-	if err != nil {
-		return
-	}
-
-	return
+	return t.UpdateRuntimeSetConfigIfNeeded()
 }
 
 func (t ThinEngine) syncScheduleInfoToCacheNodes() (err error) {

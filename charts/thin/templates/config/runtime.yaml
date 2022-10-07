@@ -4,7 +4,7 @@ metadata:
   annotations:
     "helm.sh/hook": "pre-install"
     "helm.sh/hook-delete-policy": before-hook-creation
-  name: {{ template "thin.fullname" . }}-runtime-info
+  name: {{ template "thin.fullname" . }}-runtime-set
   labels:
     app: {{ template "thin.name" . }}
     chart: {{ template "thin.chart" . }}
