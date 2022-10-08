@@ -481,7 +481,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					"runtime.json": "{\"workers\":[],\"fuses\":[]}",
 				},
 			}, want: "{\"workers\":[],\"fuses\":[]}",
-			wantUpdated: true,
+			wantUpdated: false,
 		},
 	}
 
