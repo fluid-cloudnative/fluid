@@ -344,7 +344,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 			wantUpdated: true,
 		},
 		{
-			name: "add",
+			name: "nochange_configmap",
 			fields: fields{
 				name:      "hbase",
 				namespace: "big-data",
@@ -380,6 +380,11 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 				nodes: []*corev1.Node{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node3",
+						Labels: map[string]string{
+							"fluid.io/f-big-data-hbase":      "true",
+							"fluid.io/s-big-data-hbase":      "true",
+							"fluid.io/s-thin-big-data-hbase": "true",
+						},
 					},
 					Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
@@ -391,8 +396,9 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 				}, {
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "node4",
-						Labels: map[string]string{"fluid.io/s-default-hbase": "true"},
+						Name: "node4",
+						Labels: map[string]string{"fluid.io/s-default-hbase": "true",
+							"fluid.io/s-thin-big-data-hbase": "true"},
 					}, Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
@@ -405,15 +411,16 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 			},
 			configMap: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
+					Name:      "hbase-runtimeset",
 					Namespace: "big-data",
 				}, Data: map[string]string{
-					"runtime.json": "",
+					"runtime.json": "{\"workers\":[\"10.0.0.2\",\"172.17.0.9\"],\"fuses\":[\"10.0.0.2\"]}",
 				},
-			}, want: "{\"workers\":[\"192.168.0.2\"],\"fuses\":[\"192.168.0.1\",\"192.168.0.2\"]}",
+			}, want: "{\"workers\":[\"10.0.0.2\",\"172.17.0.9\"],\"fuses\":[\"10.0.0.2\"]}",
+			wantUpdated: false,
 		},
 		{
-			name: "noController",
+			name: "nomatch",
 			fields: fields{
 				name:      "hbase-a",
 				namespace: "big-data",
@@ -473,7 +480,8 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 				}, Data: map[string]string{
 					"runtime.json": "",
 				},
-			}, want: "{\"workers\":[\"192.168.0.2\"],\"fuses\":[\"192.168.0.1\",\"192.168.0.2\"]}",
+			}, want: "",
+			wantUpdated: true,
 		},
 	}
 
@@ -553,7 +561,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wanted %v, actual %v",
 				testcase.name, testcase.want, got)
 		}
-		if !updated {
+		if updated {
 			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wantUpdated false, actual %v",
 				testcase.name, updated)
 		}
