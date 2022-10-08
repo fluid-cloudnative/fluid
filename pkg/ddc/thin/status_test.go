@@ -29,7 +29,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -254,9 +254,9 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 	type fields struct {
 		worker    *appsv1.StatefulSet
-		pods      []*v1.Pod
+		pods      []*corev1.Pod
 		ds        *appsv1.DaemonSet
-		nodes     []*v1.Node
+		nodes     []*corev1.Node
 		name      string
 		namespace string
 	}
@@ -278,7 +278,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				pods: []*v1.Pod{{
+				pods: []*corev1.Pod{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker-0",
 						Namespace: "big-data",
@@ -295,18 +295,37 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 							"fluid.io/dataset": "big-data-spark",
 						},
 					},
-					Spec: v1.PodSpec{
+					Spec: corev1.PodSpec{
 						NodeName: "node1",
 					},
 				}},
-				nodes: []*v1.Node{{
+				nodes: []*corev1.Node{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
-					}, Status: v1.NodeStatus{
+						Labels: map[string]string{
+							"fluid.io/f-big-data-spark": "true",
+						},
+					}, Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
 								Address: "192.168.0.1",
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node2",
+						Labels: map[string]string{
+							"fluid.io/f-big-data-spark":      "true",
+							"fluid.io/s-big-data-spark":      "true",
+							"fluid.io/s-thin-big-data-spark": "true",
+						},
+					}, Status: corev1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "192.168.0.2",
 							},
 						},
 					},
@@ -334,7 +353,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				pods: []*v1.Pod{
+				pods: []*corev1.Pod{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "hbase-worker-0",
@@ -352,14 +371,14 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
-						Spec: v1.PodSpec{NodeName: "node3"},
+						Spec: corev1.PodSpec{NodeName: "node3"},
 					},
 				},
-				nodes: []*v1.Node{{
+				nodes: []*corev1.Node{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node3",
 					},
-					Status: v1.NodeStatus{
+					Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
@@ -369,9 +388,9 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 				}, {
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "node2",
+						Name:   "node4",
 						Labels: map[string]string{"fluid.io/s-default-hbase": "true"},
-					}, Status: v1.NodeStatus{
+					}, Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
@@ -403,7 +422,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 					Spec: appsv1.StatefulSetSpec{},
 				},
-				pods: []*v1.Pod{
+				pods: []*corev1.Pod{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "hbase-a-worker-0",
@@ -414,13 +433,13 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
-						Spec: v1.PodSpec{NodeName: "node5"},
+						Spec: corev1.PodSpec{NodeName: "node5"},
 					},
 				},
-				nodes: []*v1.Node{{
+				nodes: []*corev1.Node{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node5",
-					}, Status: v1.NodeStatus{
+					}, Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
@@ -430,11 +449,11 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					},
 				}, {
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node4",
+						Name: "node6",
 						Labels: map[string]string{
 							"fluid.io/s-default-hbase-a": "true",
 						},
-					}, Status: v1.NodeStatus{
+					}, Status: corev1.NodeStatus{
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
@@ -502,7 +521,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 		if err != nil {
 			t.Errorf("Got error %t.", err)
 		}
-		got := cm.Data["rutnime.json"]
+		got := cm.Data["runtime.json"]
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wanted %v, actual %v",
 				testcase.name, want, got)

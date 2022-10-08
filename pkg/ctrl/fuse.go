@@ -157,7 +157,7 @@ func (e *Helper) GetFuseNodes() (nodes []corev1.Node, err error) {
 	)
 
 	labelNames := []string{fuseLabelKey}
-	e.log.Info("check node labels", "labelNames", labelNames)
+	e.log.V(1).Info("check node labels", "labelNames", labelNames)
 	fuseLabelSelector, err := labels.Parse(fmt.Sprintf("%s=true", fuseLabelKey))
 	if err != nil {
 		return

@@ -114,7 +114,7 @@ func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (err error) {
 		return
 	}
 
-	configMapName := t.runtime.Name + "-runtimeset"
+	configMapName := t.runtimeInfo.GetName() + "-runtimeset"
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cm, err := kubeclient.GetConfigmapByName(t.Client, configMapName, t.namespace)
 		if err != nil {
