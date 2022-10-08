@@ -17,17 +17,23 @@
 package thin
 
 import (
+	"context"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
-	"testing"
 )
 
 func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
@@ -243,4 +249,266 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 		})
 	})
 
+}
+
+func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
+	type fields struct {
+		worker    *appsv1.StatefulSet
+		pods      []*v1.Pod
+		ds        *appsv1.DaemonSet
+		nodes     []*v1.Node
+		name      string
+		namespace string
+	}
+	testcases := []struct {
+		name      string
+		fields    fields
+		configMap *corev1.ConfigMap
+	}{
+		{
+			name: "create",
+			fields: fields{
+				name:      "spark",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-worker",
+						Namespace: "big-data",
+						UID:       "uid1",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*v1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-worker-0",
+						Namespace: "big-data",
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "apps/v1",
+							Name:       "spark-worker",
+							UID:        "uid1",
+							Controller: utilpointer.BoolPtr(true),
+						}},
+						Labels: map[string]string{
+							"app":              "thin",
+							"role":             "thin-worker",
+							"fluid.io/dataset": "big-data-spark",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "node1",
+					},
+				}},
+				nodes: []*v1.Node{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node1",
+					}, Status: v1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "192.168.0.1",
+							},
+						},
+					},
+				}},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark-runtimeset",
+					Namespace: "big-data",
+				}, Data: map[string]string{
+					"runtime.json": "",
+				},
+			},
+		},
+		{
+			name: "add",
+			fields: fields{
+				name:      "hbase",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-worker",
+						Namespace: "big-data",
+						UID:       "uid2",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hbase-worker-0",
+							Namespace: "big-data",
+							OwnerReferences: []metav1.OwnerReference{{
+								Kind:       "StatefulSet",
+								APIVersion: "apps/v1",
+								Name:       "hbase-worker",
+								UID:        "uid2",
+								Controller: utilpointer.BoolPtr(true),
+							}},
+							Labels: map[string]string{
+								"app":              "thin",
+								"role":             "thin-worker",
+								"fluid.io/dataset": "big-data-hbase",
+							},
+						},
+						Spec: v1.PodSpec{NodeName: "node3"},
+					},
+				},
+				nodes: []*v1.Node{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node3",
+					},
+					Status: v1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "10.0.0.2",
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "node2",
+						Labels: map[string]string{"fluid.io/s-default-hbase": "true"},
+					}, Status: v1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "172.17.0.9",
+							},
+						},
+					},
+				}},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "big-data",
+				}, Data: map[string]string{
+					"runtime.json": "",
+				},
+			},
+		},
+		{
+			name: "noController",
+			fields: fields{
+				name:      "hbase-a",
+				namespace: "big-data",
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-a-worker",
+						Namespace: "big-data",
+						UID:       "uid3",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hbase-a-worker-0",
+							Namespace: "big-data",
+							Labels: map[string]string{
+								"app":              "thin",
+								"role":             "thin-worker",
+								"fluid.io/dataset": "big-data-hbase-a",
+							},
+						},
+						Spec: v1.PodSpec{NodeName: "node5"},
+					},
+				},
+				nodes: []*v1.Node{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node5",
+					}, Status: v1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "10.0.0.1",
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node4",
+						Labels: map[string]string{
+							"fluid.io/s-default-hbase-a": "true",
+						},
+					}, Status: v1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "10.0.0.2",
+							},
+						},
+					},
+				}},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-a-runtimeset",
+					Namespace: "big-data",
+				}, Data: map[string]string{
+					"runtime.json": "",
+				},
+			},
+		},
+	}
+
+	runtimeObjs := []runtime.Object{}
+
+	for _, testcase := range testcases {
+		runtimeObjs = append(runtimeObjs, testcase.fields.worker)
+
+		if testcase.fields.ds != nil {
+			runtimeObjs = append(runtimeObjs, testcase.fields.ds)
+		}
+		for _, pod := range testcase.fields.pods {
+			runtimeObjs = append(runtimeObjs, pod)
+		}
+
+		for _, node := range testcase.fields.nodes {
+			runtimeObjs = append(runtimeObjs, node)
+		}
+
+		runtimeObjs = append(runtimeObjs, testcase.configMap)
+
+		// runtimeObjs = append(runtimeObjs, testcase.fields.pods)
+	}
+	c := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
+
+	for _, testcase := range testcases {
+		engine := getTestThinEngineNode(c, testcase.fields.name, testcase.fields.namespace, true)
+		runtimeInfo, err := base.BuildRuntimeInfo(testcase.fields.name,
+			testcase.fields.namespace,
+			"thin",
+			datav1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("BuildRuntimeInfo() error = %v", err)
+		}
+
+		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, c, engine.Log)
+		err = engine.UpdateRuntimeSetConfigIfNeeded()
+		if err != nil {
+			t.Errorf("Got error %t.", err)
+		}
+
+		want := testcase.configMap.Data["rutnime.json"]
+		cm := corev1.ConfigMap{}
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Namespace: testcase.configMap.Namespace,
+			Name:      testcase.configMap.Name,
+		}, &cm)
+		if err != nil {
+			t.Errorf("Got error %t.", err)
+		}
+		got := cm.Data["rutnime.json"]
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wanted %v, actual %v",
+				testcase.name, want, got)
+		}
+
+		// if reflect.DeepEqual()
+
+	}
 }
