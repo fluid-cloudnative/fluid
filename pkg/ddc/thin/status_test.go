@@ -261,9 +261,11 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 		namespace string
 	}
 	testcases := []struct {
-		name      string
-		fields    fields
-		configMap *corev1.ConfigMap
+		name        string
+		fields      fields
+		configMap   *corev1.ConfigMap
+		want        string
+		wantUpdated bool
 	}{
 		{
 			name: "create",
@@ -338,7 +340,8 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 				}, Data: map[string]string{
 					"runtime.json": "",
 				},
-			},
+			}, want: "{\"workers\":[\"192.168.0.2\"],\"fuses\":[\"192.168.0.1\",\"192.168.0.2\"]}",
+			wantUpdated: true,
 		},
 		{
 			name: "add",
@@ -407,7 +410,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 				}, Data: map[string]string{
 					"runtime.json": "",
 				},
-			},
+			}, want: "{\"workers\":[\"192.168.0.2\"],\"fuses\":[\"192.168.0.1\",\"192.168.0.2\"]}",
 		},
 		{
 			name: "noController",
@@ -470,7 +473,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 				}, Data: map[string]string{
 					"runtime.json": "",
 				},
-			},
+			}, want: "{\"workers\":[\"192.168.0.2\"],\"fuses\":[\"192.168.0.1\",\"192.168.0.2\"]}",
 		},
 	}
 
@@ -507,12 +510,11 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 		}
 
 		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, c, engine.Log)
-		err = engine.UpdateRuntimeSetConfigIfNeeded()
+		updated, err := engine.UpdateRuntimeSetConfigIfNeeded()
 		if err != nil {
 			t.Errorf("Got error %t.", err)
 		}
 
-		want := testcase.configMap.Data["rutnime.json"]
 		cm := corev1.ConfigMap{}
 		err = c.Get(context.TODO(), types.NamespacedName{
 			Namespace: testcase.configMap.Namespace,
@@ -522,11 +524,39 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 			t.Errorf("Got error %t.", err)
 		}
 		got := cm.Data["runtime.json"]
-		if !reflect.DeepEqual(want, got) {
+		if !reflect.DeepEqual(testcase.want, got) {
 			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wanted %v, actual %v",
-				testcase.name, want, got)
+				testcase.name, testcase.want, got)
 		}
 
+		if testcase.wantUpdated != updated {
+			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wantUpdated %v, actual %v",
+				testcase.name, testcase.wantUpdated, updated)
+		}
+
+		// 2.Try the second time to make sure it idempotent and no update
+
+		updated, err = engine.UpdateRuntimeSetConfigIfNeeded()
+		if err != nil {
+			t.Errorf("Got error %t.", err)
+		}
+		cm = corev1.ConfigMap{}
+		err = c.Get(context.TODO(), types.NamespacedName{
+			Namespace: testcase.configMap.Namespace,
+			Name:      testcase.configMap.Name,
+		}, &cm)
+		if err != nil {
+			t.Errorf("Got error %t.", err)
+		}
+		got = cm.Data["runtime.json"]
+		if !reflect.DeepEqual(testcase.want, got) {
+			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wanted %v, actual %v",
+				testcase.name, testcase.want, got)
+		}
+		if !updated {
+			t.Errorf("testcase %v UpdateRuntimeSetConfigIfNeeded()'s wantUpdated false, actual %v",
+				testcase.name, updated)
+		}
 		// if reflect.DeepEqual()
 
 	}

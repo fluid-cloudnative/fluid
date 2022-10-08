@@ -103,7 +103,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	return
 }
 
-func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (err error) {
+func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (updated bool, err error) {
 	fuseAddresses, err := t.Helper.GetIpAddressesOfFuse()
 	if err != nil {
 		return
@@ -139,6 +139,7 @@ func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (err error) {
 			if err != nil {
 				t.Log.Error(err, "Failed to update the ip addresses of runtime")
 			}
+			updated = true
 		} else {
 			t.Log.Info("Do nothing because the ip addresses of runtime are not changed.")
 		}
