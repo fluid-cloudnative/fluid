@@ -478,9 +478,9 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					Name:      "hbase-a-runtimeset",
 					Namespace: "big-data",
 				}, Data: map[string]string{
-					"runtime.json": "",
+					"runtime.json": "{\"workers\":[],\"fuses\":[]}",
 				},
-			}, want: "",
+			}, want: "{\"workers\":[],\"fuses\":[]}",
 			wantUpdated: true,
 		},
 	}
