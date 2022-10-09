@@ -113,7 +113,6 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// config := make(map[string]string)
 	// config[value.Fuse.TargetPath] = options
 	config, err := t.transformConfig(runtime,
-		profile,
 		dataset,
 		value.Fuse.TargetPath)
 	if err != nil {

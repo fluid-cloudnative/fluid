@@ -23,7 +23,6 @@ import (
 )
 
 func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
-	profile *datav1alpha1.ThinRuntimeProfile,
 	dataset *datav1alpha1.Dataset, targetPath string) (config Config, err error) {
 	mounts := []datav1alpha1.Mount{}
 	for _, m := range dataset.Spec.Mounts {
@@ -31,7 +30,8 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 		if err != nil {
 			return
 		}
-		m.EncryptOptions = []datav1alpha1.EncryptOption{}
+		// clean up the EncryptOptions in config.json
+		m.EncryptOptions = nil
 		mounts = append(mounts, m)
 	}
 
