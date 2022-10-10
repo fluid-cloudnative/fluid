@@ -18,6 +18,10 @@ package thin
 
 import (
 	"fmt"
+	"os"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
@@ -25,10 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestThinEngine_getRuntime(t *testing.T) {
@@ -215,8 +216,8 @@ func TestThinEngine_getMountPoint(t *testing.T) {
 			}
 			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			wantMountPath := fmt.Sprintf("%s/%s/%s/thin-fuse", tt.fields.MountRoot+"/thin", tt.fields.namespace, e.name)
-			if gotMountPath := e.getMountPoint(); gotMountPath != wantMountPath {
-				t.Errorf("ThinEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
+			if gotMountPath := e.getTargetPath(); gotMountPath != wantMountPath {
+				t.Errorf("ThinEngine.getTargetPath() = %v, want %v", gotMountPath, wantMountPath)
 			}
 		})
 	}

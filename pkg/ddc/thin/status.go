@@ -18,13 +18,14 @@ package thin
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
@@ -97,6 +98,54 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		return err
+	})
+
+	return
+}
+
+func (t *ThinEngine) UpdateRuntimeSetConfigIfNeeded() (updated bool, err error) {
+	fuseAddresses, err := t.Helper.GetIpAddressesOfFuse()
+	if err != nil {
+		return
+	}
+
+	workerAddresses, err := t.Helper.GetIpAddressesOfWorker()
+	if err != nil {
+		return
+	}
+
+	configMapName := t.runtimeInfo.GetName() + "-runtimeset"
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cm, err := kubeclient.GetConfigmapByName(t.Client, configMapName, t.namespace)
+		if err != nil {
+			return err
+		}
+
+		if cm == nil {
+			t.Log.Info("configmap is not found", "key", configMapName)
+			return nil
+		}
+
+		cmToUpdate := cm.DeepCopy()
+		result, err := t.toRuntimeSetConfig(workerAddresses,
+			fuseAddresses)
+		if err != nil {
+			return err
+		}
+		cmToUpdate.Data["runtime.json"] = result
+
+		if !reflect.DeepEqual(cm, cmToUpdate) {
+			err = t.Client.Update(context.TODO(), cmToUpdate)
+			if err != nil {
+				t.Log.Error(err, "Failed to update the ip addresses of runtime")
+			}
+			updated = true
+		} else {
+			t.Log.Info("Do nothing because the ip addresses of runtime are not changed.")
+		}
+
+		return nil
+
 	})
 
 	return

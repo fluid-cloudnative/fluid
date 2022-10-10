@@ -19,6 +19,8 @@ package thin
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	options "sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // getRuntime gets thin runtime
@@ -68,7 +69,7 @@ func (t *ThinEngine) getWorkerName() (dsName string) {
 	return t.name + "-worker"
 }
 
-func (t *ThinEngine) getMountPoint() (mountPath string) {
+func (t *ThinEngine) getTargetPath() (targetPath string) {
 	mountRoot := getMountRoot()
 	t.Log.Info("mountRoot", "path", mountRoot)
 	return fmt.Sprintf("%s/%s/%s/thin-fuse", mountRoot, t.namespace, t.name)
