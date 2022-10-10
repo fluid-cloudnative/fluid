@@ -5,3 +5,7 @@
 0.1.1
 
 - Make fuse tolerate any taint
+
+0.1.2
+
+- Add configMap

@@ -142,7 +142,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		// If dataset is nil, need to wait because the user may have not created dataset
 		ctx.Log.Info("No dataset can be bound to the runtime, waiting.")
 		r.Recorder.Event(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "No dataset can be bound to the runtime, waiting.")
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		return utils.RequeueAfterInterval(time.Duration(5 * time.Second))
 	}
 
 	// 8.Start to reconcile runtime

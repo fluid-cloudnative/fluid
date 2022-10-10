@@ -81,7 +81,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
+                command: ["sh", "-c", "umount {{ .Values.fuse.targetPath }}"]
           {{- if .Values.fuse.livenessProbe }}
           livenessProbe:
 {{ toYaml .Values.fuse.livenessProbe | trim | indent 12  }}
@@ -92,10 +92,16 @@ spec:
           {{- end }}
           volumeMounts:
           - name: thin-fuse-mount
-            mountPath: {{ .Values.fuse.mountPath | dir }}
+            mountPath: {{ .Values.fuse.targetPath | dir }}
             mountPropagation: Bidirectional
-          - mountPath: /etc/fluid
+          - mountPath: /etc/fluid/config.json
+            subPath: config.json
             name: thin-conf
+            readOnly: true
+          - mountPath: /etc/fluid/runtime.json
+            subPath: runtime.json
+            name: runtime
+            readOnly: true
           {{- if .Values.fuse.cacheDir }}
           - name: cache-dir
             mountPath: {{ .Values.fuse.cacheDir }}
@@ -107,7 +113,7 @@ spec:
       volumes:
         - name: thin-fuse-mount
           hostPath:
-            path: {{ .Values.fuse.mountPath | dir }}
+            path: {{ .Values.fuse.targetPath | dir }}
             type: DirectoryOrCreate
         {{- if .Values.fuse.cacheDir }}
         - name: cache-dir
@@ -118,23 +124,12 @@ spec:
         - name: thin-conf
           secret:
             secretName: {{ template "thin.fullname" . }}-fuse-conf
-            defaultMode: 0755
+            defaultMode: 0444
+        - name: runtime
+          configMap:
+            name: {{ template "thin.fullname" . }}-runtimeset
+            defaultMode: 0444
         {{- if .Values.fuse.volumes }}
 {{ toYaml .Values.fuse.volumes | indent 8 }}
         {{- end }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ template "thin.fullname" . }}-fuse-conf
-  labels:
-    app: {{ template "thin.name" . }}
-    chart: {{ template "thin.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    role: thin-fuse
-type: Opaque
-stringData:
-  config.json: |
-    {{ .Values.fuse.configValue }}
 {{- end }}
