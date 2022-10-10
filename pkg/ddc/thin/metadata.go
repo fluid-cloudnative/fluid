@@ -19,12 +19,13 @@ package thin
 import (
 	"context"
 	"errors"
+	"reflect"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 // MetadataSyncResult describes result for asynchronous metadata sync
@@ -169,7 +170,7 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 
 				// load metadata
 				// ls -al /runtime-mnt/thin/namespace/name/thin-fuse/
-				err = fileUtils.LoadMetadataWithoutTimeout(t.getMountPoint())
+				err = fileUtils.LoadMetadataWithoutTimeout(t.getTargetPath())
 				if err != nil {
 					t.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", t.name, "namespace", t.namespace)
 					result.Err = err

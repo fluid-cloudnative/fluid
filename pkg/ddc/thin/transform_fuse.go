@@ -20,11 +20,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
@@ -82,8 +83,8 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 9. network
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
 
-	// 10. mountpath
-	value.Fuse.MountPath = t.getMountPoint()
+	// 10. targetPath to mount
+	value.Fuse.TargetPath = t.getTargetPath()
 
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
@@ -96,16 +97,27 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 	value.Fuse.Envs = append(value.Fuse.Envs, runtime.Spec.Fuse.Env...)
 	value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
-		Name:  common.ThinFuseOptionEnvKey,
-		Value: options,
-	}, corev1.EnvVar{
 		Name:  common.ThinFusePointEnvKey,
-		Value: value.Fuse.MountPath,
+		Value: value.Fuse.TargetPath,
 	})
 
+	// If Fuse options is not set, skip it.
+	if len(options) > 0 {
+		value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
+			Name:  common.ThinFuseOptionEnvKey,
+			Value: options,
+		})
+	}
+
 	// 12. config
-	config := make(map[string]string)
-	config[value.Fuse.MountPath] = options
+	// config := make(map[string]string)
+	// config[value.Fuse.TargetPath] = options
+	config, err := t.transformConfig(runtime,
+		dataset,
+		value.Fuse.TargetPath)
+	if err != nil {
+		return err
+	}
 	var configStr []byte
 	configStr, err = json.Marshal(config)
 	if err != nil {

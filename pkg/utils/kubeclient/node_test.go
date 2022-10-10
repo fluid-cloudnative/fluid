@@ -16,16 +16,18 @@ limitations under the License.
 package kubeclient
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestGetNode(t *testing.T) {
-	testNodeInputs := []*v1.Node{{
+	testNodeInputs := []*corev1.Node{{
 		ObjectMeta: metav1.ObjectMeta{Name: "test1"},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "test2"},
@@ -45,7 +47,7 @@ func TestGetNode(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *v1.Node
+		want *corev1.Node
 	}{
 		{
 			name: "Node doesn't exist",
@@ -84,13 +86,13 @@ func TestGetNode(t *testing.T) {
 
 func TestIsReady(t *testing.T) {
 
-	testNodeInputs := []*v1.Node{{
+	testNodeInputs := []*corev1.Node{{
 		ObjectMeta: metav1.ObjectMeta{Name: "test1"},
-		Status: v1.NodeStatus{
-			Conditions: []v1.NodeCondition{
+		Status: corev1.NodeStatus{
+			Conditions: []corev1.NodeCondition{
 				{
-					Type:               v1.NodeReady,
-					Status:             v1.ConditionTrue,
+					Type:               corev1.NodeReady,
+					Status:             corev1.ConditionTrue,
 					Reason:             "FakeReady",
 					LastTransitionTime: metav1.Now(),
 					LastHeartbeatTime:  metav1.Now(),
@@ -99,11 +101,11 @@ func TestIsReady(t *testing.T) {
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "test2"},
-		Status: v1.NodeStatus{
-			Conditions: []v1.NodeCondition{
+		Status: corev1.NodeStatus{
+			Conditions: []corev1.NodeCondition{
 				{
-					Type:               v1.NodeReady,
-					Status:             v1.ConditionFalse,
+					Type:               corev1.NodeReady,
+					Status:             corev1.ConditionFalse,
 					Reason:             "FakePending",
 					LastTransitionTime: metav1.Now(),
 					LastHeartbeatTime:  metav1.Now(),
@@ -113,7 +115,7 @@ func TestIsReady(t *testing.T) {
 	}}
 
 	type args struct {
-		node v1.Node
+		node corev1.Node
 	}
 	tests := []struct {
 		name string
@@ -138,6 +140,191 @@ func TestIsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if want := IsReady(tt.args.node); want != tt.want {
 				t.Errorf("testcase %v IsReady()'s wanted %v, actual %v", tt.args.node.Name, tt.want, want)
+			}
+		})
+	}
+}
+
+func TestGetIpAddressesOfNodes(t *testing.T) {
+	type args struct {
+		nodes []corev1.Node
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantIpAddresses []string
+	}{
+		// TODO: Add test cases.
+		{
+			name: "duplicateNodes",
+			args: args{
+				nodes: []corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.1",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.1.1",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.1-1",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.1.1",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.4",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.1.4",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.2.101",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.2.101",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.51",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.2.51",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "10.152.16.23",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "10.152.16.23",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantIpAddresses: []string{
+				"10.152.16.23",
+				"192.168.1.1",
+				"192.168.1.4",
+				"192.168.2.51",
+				"192.168.2.101",
+			},
+		},
+		{
+			name: "noDuplicateNodes",
+			args: args{
+				nodes: []corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.1",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.1.1",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.4",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.1.4",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.2.101",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.2.101",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "192.168.1.51",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "192.168.2.51",
+								},
+							},
+						},
+					}, {
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "10.152.16.23",
+						},
+						Status: corev1.NodeStatus{
+							Addresses: []corev1.NodeAddress{
+								{
+									Type:    corev1.NodeInternalIP,
+									Address: "10.152.16.23",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantIpAddresses: []string{
+				"10.152.16.23",
+				"192.168.1.1",
+				"192.168.1.4",
+				"192.168.2.51",
+				"192.168.2.101",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotIpAddresses := GetIpAddressesOfNodes(tt.args.nodes); !reflect.DeepEqual(gotIpAddresses, tt.wantIpAddresses) {
+				t.Errorf("Name %v GetIpAddressesOfNodes() = %v, want %v",
+					tt.name,
+					gotIpAddresses,
+					tt.wantIpAddresses)
 			}
 		})
 	}

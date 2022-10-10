@@ -19,7 +19,11 @@ package thin
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,9 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func getTestThinEngineNode(client client.Client, name string, namespace string, withRunTime bool) *ThinEngine {
@@ -324,7 +326,16 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 
 	for _, testcase := range testcases {
 		engine := getTestThinEngineNode(c, testcase.fields.name, testcase.fields.namespace, true)
-		err := engine.SyncScheduleInfoToCacheNodes()
+		runtimeInfo, err := base.BuildRuntimeInfo(testcase.fields.name,
+			testcase.fields.namespace,
+			"thin",
+			datav1alpha1.TieredStore{})
+		if err != nil {
+			t.Errorf("BuildRuntimeInfo() error = %v", err)
+		}
+
+		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, c, engine.Log)
+		err = engine.SyncScheduleInfoToCacheNodes()
 		if err != nil {
 			t.Errorf("Got error %t.", err)
 		}

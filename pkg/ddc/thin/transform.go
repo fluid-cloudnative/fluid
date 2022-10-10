@@ -18,6 +18,7 @@ package thin
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
@@ -39,6 +40,11 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 
 	value.FullnameOverride = t.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
+	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
+	if err != nil {
+		return
+	}
+	value.RuntimeValue = toRuntimeSetConfig
 
 	// transform toleration
 	t.transformTolerations(dataset, value)
