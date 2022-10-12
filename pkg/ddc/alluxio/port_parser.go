@@ -19,13 +19,14 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
+	"sigs.k8s.io/yaml"
 )
 
 var propertiesToCheck = []string{

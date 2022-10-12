@@ -14,11 +14,13 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	"sigs.k8s.io/yaml"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -27,7 +29,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 )
 

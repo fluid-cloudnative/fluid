@@ -22,96 +22,96 @@ import (
 )
 
 type Jindo struct {
-	Image           string                 `yaml:"image"`
-	ImageTag        string                 `yaml:"imageTag"`
-	ImagePullPolicy string                 `yaml:"imagePullPolicy"`
-	FuseImage       string                 `yaml:"fuseImage"`
-	FuseImageTag    string                 `yaml:"fuseImageTag"`
-	User            int                    `yaml:"user"`
-	Group           int                    `yaml:"group"`
-	FsGroup         int                    `yaml:"fsGroup"`
-	UseHostNetwork  bool                   `yaml:"useHostNetwork"`
-	UseHostPID      bool                   `yaml:"useHostPID"`
-	Properties      map[string]string      `yaml:"properties"`
-	Master          Master                 `yaml:"master"`
-	Worker          Worker                 `yaml:"worker"`
-	Fuse            Fuse                   `yaml:"fuse"`
-	Mounts          Mounts                 `yaml:"mounts"`
-	HadoopConfig    HadoopConfig           `yaml:"hadoopConfig,omitempty"`
-	Secret          string                 `yaml:"secret,omitempty"`
-	Tolerations     []v1.Toleration        `yaml:"tolerations,omitempty"`
-	InitPortCheck   common.InitPortCheck   `yaml:"initPortCheck,omitempty"`
-	Labels          map[string]string      `yaml:"labels,omitempty"`
-	LogConfig       map[string]string      `yaml:"logConfig,omitempty"`
-	PlacementMode   string                 `yaml:"placement,omitempty"`
-	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
-	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity"`
+	Image           string                 `json:"image"`
+	ImageTag        string                 `json:"imageTag"`
+	ImagePullPolicy string                 `json:"imagePullPolicy"`
+	FuseImage       string                 `json:"fuseImage"`
+	FuseImageTag    string                 `json:"fuseImageTag"`
+	User            int                    `json:"user"`
+	Group           int                    `json:"group"`
+	FsGroup         int                    `json:"fsGroup"`
+	UseHostNetwork  bool                   `json:"useHostNetwork"`
+	UseHostPID      bool                   `json:"useHostPID"`
+	Properties      map[string]string      `json:"properties"`
+	Master          Master                 `json:"master"`
+	Worker          Worker                 `json:"worker"`
+	Fuse            Fuse                   `json:"fuse"`
+	Mounts          Mounts                 `json:"mounts"`
+	HadoopConfig    HadoopConfig           `json:"hadoopConfig,omitempty"`
+	Secret          string                 `json:"secret,omitempty"`
+	Tolerations     []v1.Toleration        `json:"tolerations,omitempty"`
+	InitPortCheck   common.InitPortCheck   `json:"initPortCheck,omitempty"`
+	Labels          map[string]string      `json:"labels,omitempty"`
+	LogConfig       map[string]string      `json:"logConfig,omitempty"`
+	PlacementMode   string                 `json:"placement,omitempty"`
+	Owner           *common.OwnerReference `json:"owner,omitempty"`
+	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
 }
 
 type HadoopConfig struct {
-	ConfigMap       string `yaml:"configMap"`
-	IncludeHdfsSite bool   `yaml:"includeHdfsSite"`
-	IncludeCoreSite bool   `yaml:"includeCoreSite"`
+	ConfigMap       string `json:"configMap"`
+	IncludeHdfsSite bool   `json:"includeHdfsSite"`
+	IncludeCoreSite bool   `json:"includeCoreSite"`
 }
 
 type Master struct {
-	ReplicaCount     int               `yaml:"replicaCount"`
-	Resources        Resources         `yaml:"resources"`
-	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
-	MasterProperties map[string]string `yaml:"properties"`
-	TokenProperties  map[string]string `yaml:"secretProperties"`
-	Port             Ports             `yaml:"ports,omitempty"`
-	OssKey           string            `yaml:"osskey,omitempty"`
-	OssSecret        string            `yaml:"osssecret,omitempty"`
-	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
-	DnsServer        string            `yaml:"dnsServer,omitempty"`
-	NameSpace        string            `yaml:"namespace,omitempty"`
-	Labels           map[string]string `yaml:"labels,omitempty"`
+	ReplicaCount     int               `json:"replicaCount"`
+	Resources        Resources         `json:"resources"`
+	NodeSelector     map[string]string `json:"nodeSelector,omitempty"`
+	MasterProperties map[string]string `json:"properties"`
+	TokenProperties  map[string]string `json:"secretProperties"`
+	Port             Ports             `json:"ports,omitempty"`
+	OssKey           string            `json:"osskey,omitempty"`
+	OssSecret        string            `json:"osssecret,omitempty"`
+	Tolerations      []v1.Toleration   `json:"tolerations,omitempty"`
+	DnsServer        string            `json:"dnsServer,omitempty"`
+	NameSpace        string            `json:"namespace,omitempty"`
+	Labels           map[string]string `json:"labels,omitempty"`
 }
 
 type Worker struct {
-	Resources        Resources         `yaml:"resources,omitempty"`
-	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
-	WorkerProperties map[string]string `yaml:"properties"`
-	Port             Ports             `yaml:"ports,omitempty"`
-	Tolerations      []v1.Toleration   `yaml:"tolerations,omitempty"`
-	// Affinity         v1.Affinity       `yaml:"affinity,omitempty"`
-	Labels map[string]string `yaml:"labels,omitempty"`
+	Resources        Resources         `json:"resources,omitempty"`
+	NodeSelector     map[string]string `json:"nodeSelector,omitempty"`
+	WorkerProperties map[string]string `json:"properties"`
+	Port             Ports             `json:"ports,omitempty"`
+	Tolerations      []v1.Toleration   `json:"tolerations,omitempty"`
+	// Affinity         v1.Affinity       `json:"affinity,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 type Ports struct {
-	Rpc  int `yaml:"rpc,omitempty"`
-	Raft int `yaml:"raft,omitempty"`
+	Rpc  int `json:"rpc,omitempty"`
+	Raft int `json:"raft,omitempty"`
 }
 
 type Fuse struct {
-	Args              []string          `yaml:"args"`
-	HostPath          string            `yaml:"hostPath"`
-	NodeSelector      map[string]string `yaml:"nodeSelector,omitempty"`
-	FuseProperties    map[string]string `yaml:"properties"`
-	Global            bool              `yaml:"global,omitempty"`
-	RunAs             string            `yaml:"runAs,omitempty"`
-	Tolerations       []v1.Toleration   `yaml:"tolerations,omitempty"`
-	Labels            map[string]string `yaml:"labels,omitempty"`
-	CriticalPod       bool              `yaml:"criticalPod,omitempty"`
-	Resources         Resources         `yaml:"resources,omitempty"`
-	MountPath         string            `yaml:"mountPath,omitempty"`
-	VirtualFuseDevice bool              `yaml:"virtualFuseDevice"`
+	Args              []string          `json:"args"`
+	HostPath          string            `json:"hostPath"`
+	NodeSelector      map[string]string `json:"nodeSelector,omitempty"`
+	FuseProperties    map[string]string `json:"properties"`
+	Global            bool              `json:"global,omitempty"`
+	RunAs             string            `json:"runAs,omitempty"`
+	Tolerations       []v1.Toleration   `json:"tolerations,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	CriticalPod       bool              `json:"criticalPod,omitempty"`
+	Resources         Resources         `json:"resources,omitempty"`
+	MountPath         string            `json:"mountPath,omitempty"`
+	VirtualFuseDevice bool              `json:"virtualFuseDevice"`
 }
 
 type Mounts struct {
-	Master            map[string]string `yaml:"master"`
-	WorkersAndClients map[string]string `yaml:"workersAndClients"`
+	Master            map[string]string `json:"master"`
+	WorkersAndClients map[string]string `json:"workersAndClients"`
 }
 
 type Resources struct {
-	Limits   Resource `yaml:"limits"`
-	Requests Resource `yaml:"requests"`
+	Limits   Resource `json:"limits"`
+	Requests Resource `json:"requests"`
 }
 
 type Resource struct {
-	CPU    string `yaml:"cpu"`
-	Memory string `yaml:"memory"`
+	CPU    string `json:"cpu"`
+	Memory string `json:"memory"`
 }
 
 type cacheStates struct {
