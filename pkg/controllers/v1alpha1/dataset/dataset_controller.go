@@ -14,6 +14,7 @@ package dataset
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -64,7 +65,6 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 	}
 
 	var notFound, needRequeue bool
-	ctx.Log.V(1).Info("process the request", "request", req)
 
 	/*
 		### 1. Scale out runtime controller if possible
@@ -94,7 +94,12 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		// if the error is NotFoundError, set notFound to true
 		notFound = true
 	} else {
-		return r.reconcileDataset(ctx, needRequeue)
+		if notRefDataset(ctx.Dataset) {
+			return r.reconcileDataset(ctx, needRequeue)
+		} else {
+			ctx.Log.V(1).Info("not handle dataset has reference")
+			return utils.NoRequeue()
+		}
 	}
 
 	/*
@@ -106,6 +111,16 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		ctx.Log.V(1).Info("Not found.")
 	}
 	return ctrl.Result{}, nil
+}
+
+func notRefDataset(dataset datav1alpha1.Dataset) bool {
+	mounts := dataset.Spec.Mounts
+	for _, mount := range mounts {
+		if common.IsFluidRefSchema(mount.MountPoint) {
+			return false
+		}
+	}
+	return true
 }
 
 // reconcile Dataset
@@ -142,6 +157,37 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 		return utils.RequeueAfterInterval(r.ResyncPeriod)
 	}
 
+	// 5. synchronize status to dataset referenced to it
+	refDatasets := ctx.Dataset.Status.DatasetRef
+	allUpdated := true
+	if refDatasets != nil {
+		for _, rds := range refDatasets {
+			namespaceAndName := strings.Split(rds, "#")
+			ns := types.NamespacedName{Name: namespaceAndName[1], Namespace: namespaceAndName[0]}
+			dataset := datav1alpha1.Dataset{}
+			err := r.Get(ctx, ns, &dataset)
+			if err != nil {
+				// the reference dataset not found(may be deleted), then no need to update
+				if utils.IgnoreNotFound(err) != nil {
+					log.Error(err, "Failed to update get the dataset", "dataset", namespaceAndName)
+					allUpdated = false
+				}
+			} else {
+				log.Info("Update ref dataset", "status", dataset.Status, "new status", ctx.Dataset.Status)
+				dataset.Status = *ctx.Dataset.Status.DeepCopy()
+				dataset.Status.DatasetRef = nil
+				if err := r.Status().Update(context.TODO(), &dataset); err != nil {
+					log.Error(err, "Failed to update the dataset status", "dataset", namespaceAndName)
+					allUpdated = false
+				}
+			}
+		}
+	}
+	// if referenced dataset are not update successful, then requeue
+	if !allUpdated {
+		return utils.RequeueImmediately()
+	}
+
 	// return utils.RequeueAfterInterval(r.ResyncPeriod)
 	return utils.NoRequeue()
 }
@@ -166,6 +212,13 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 		ctx.Log.Error(err, "Failed to delete dataset", "DatasetDeleteError", ctx)
 		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "Failed to delete dataset because err: %s", err.Error())
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+	}
+	// 1.1 if there are datasets mounted this dataset, then requeue
+	if ctx.Dataset.Status.DatasetRef != nil && len(ctx.Dataset.Status.DatasetRef) > 0 {
+		ctx.Log.Error(err, "Failed to delete dataset with reference", "DatasetDeleteError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
+			"Failed to delete dataset because there are datasets mounted to it")
+		return utils.RequeueAfterInterval(10 * time.Second)
 	}
 
 	// 2. Remove finalizer

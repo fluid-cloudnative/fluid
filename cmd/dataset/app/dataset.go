@@ -112,6 +112,17 @@ func handle() {
 		os.Exit(1)
 	}
 
+	if err = (&datasetctl.RefDatasetReconciler{
+		Client:       mgr.GetClient(),
+		Log:          ctrl.Log.WithName("datasetrefctl").WithName("DatasetRef"),
+		Scheme:       mgr.GetScheme(),
+		Recorder:     mgr.GetEventRecorderFor("DatasetRef"),
+		ResyncPeriod: time.Duration(5 * time.Second),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DatasetRef")
+		os.Exit(1)
+	}
+
 	if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
 		ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
 		mgr.GetScheme(),

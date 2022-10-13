@@ -17,6 +17,8 @@ package dataset
 
 import (
 	"context"
+	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"path/filepath"
 	"testing"
@@ -128,5 +130,48 @@ var _ = Describe("dataset", func() {
 		By("delete dataset")
 		err = k8sClient.Delete(testCtx, &dataset)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("Should create ref dataset successfully", func() {
+		refDataset := datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ref-test-name",
+				Namespace: "ref-default",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "dataset://" + dataset.Namespace + "/" + dataset.Name,
+					Name:       "test-MountName",
+				},
+				},
+			},
+		}
+		By("create dataset")
+		err := k8sClient.Create(testCtx, &dataset)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("create ref dataset")
+		refNameSpace := v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ref-default",
+				Namespace: "ref-default",
+			},
+		}
+		err = k8sClient.Create(testCtx, &refNameSpace)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = k8sClient.Create(testCtx, &refDataset)
+		Expect(err).NotTo(HaveOccurred())
+
+		// TODO:
+		By("check ref-dataset status")
+		var createdDataset datav1alpha1.Dataset
+		var name = types.NamespacedName{
+			Namespace: refDataset.Namespace,
+			Name:      refDataset.Name,
+		}
+		err = k8sClient.Get(testCtx, name, &createdDataset)
+		Expect(err).NotTo(HaveOccurred())
+		fmt.Printf("%+v\n", createdDataset.Status)
 	})
 })
