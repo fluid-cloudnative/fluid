@@ -226,3 +226,7 @@
 0.9.6
 
 - Make fuse tolerate any taint
+
+0.9.7
+
+- Support pass image pull secrets from fluid charts to alluxioruntime controller 
