@@ -100,6 +100,8 @@ type ImageInfo struct {
 	ImageTag string `json:"imageTag" yaml:"imageTag"`
 	// ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy" yaml:"imagePullPolicy"`
+	// ImagePullSecrets
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets" yaml:"imagePullSecrets"`
 }
 
 // Phase is a valid value of a task stage
