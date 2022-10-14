@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -148,8 +149,23 @@ func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *Th
 	}
 }
 
-func (t ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string, err error) {
+func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string, err error) {
 	options := make(map[string]string)
+	runtimeInfo := t.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(t.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			t.Log.Info("Error:", "err", err)
+		}
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == corev1.ReadOnlyMany {
+					options["ro"] = ""
+					break
+				}
+			}
+		}
+	}
 	if profile != nil && profile.Spec.Fuse.Options != nil {
 		options = profile.Spec.Fuse.Options
 	}

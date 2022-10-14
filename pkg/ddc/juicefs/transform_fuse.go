@@ -21,7 +21,9 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 	"strconv"
 	"strings"
 )
@@ -199,6 +201,23 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 	if optionMap == nil {
 		optionMap = map[string]string{}
 	}
+	readonly := false
+	runtimeInfo := j.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(j.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			j.Log.Info("Error:", "err", err)
+		}
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == corev1.ReadOnlyMany {
+					optionMap["ro"] = ""
+					readonly = true
+					break
+				}
+			}
+		}
+	}
 	// gen worker option
 	for k, v := range optionMap {
 		workerOptionMap[k] = v
@@ -210,6 +229,10 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 		}
 	}
 	if value.Edition == CommunityEdition {
+		if readonly {
+			optionMap["attr-cache"] = "7200"
+			optionMap["entry-cache"] = "7200"
+		}
 		if _, ok := optionMap["metrics"]; !ok {
 			optionMap["metrics"] = "0.0.0.0:9567"
 		}
@@ -219,6 +242,10 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
 		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}
 	} else {
+		if readonly {
+			optionMap["attrcacheto"] = "7200"
+			optionMap["entrycacheto"] = "7200"
+		}
 		optionMap["foreground"] = ""
 		workerOptionMap["foreground"] = ""
 
