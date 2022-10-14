@@ -22,6 +22,7 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -53,6 +54,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
 		return errors.New("fail to install dataload chart")
+	}
+	mockGetClusterDomain := func() (string, error) {
+		return "cluster.local", nil
 	}
 
 	wrappedUnhookCreateConfigMapFromFile := func() {
@@ -134,6 +138,10 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+	err = gohook.Hook(common.GetClusterDomain, mockGetClusterDomain, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	err = engine.setupMasterInternal()
 	if err != nil {
 		t.Errorf("fail to exec check helm release")
@@ -189,6 +197,9 @@ func TestGenerateAlluxioValueFile(t *testing.T) {
 	}
 	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
 		return errors.New("fail to exec command")
+	}
+	mockGetClusterDomain := func() (string, error) {
+		return "cluster.local", nil
 	}
 
 	wrappedUnhookCreateConfigMapFromFile := func() {
@@ -253,9 +264,13 @@ func TestGenerateAlluxioValueFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+	err = gohook.Hook(common.GetClusterDomain, mockGetClusterDomain, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	_, err = engine.generateAlluxioValueFile(allixioruntime)
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("fail to generateAlluxioValueFile %v", err)
 	}
 	wrappedUnhookCreateConfigMapFromFile()
 }
