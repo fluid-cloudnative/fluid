@@ -24,7 +24,7 @@
 {{- $alluxioJavaOpts := list }}
 {{- /* Specify master hostname if single master */}}
 {{- if $isSingleMaster }}
-  {{- $alluxioJavaOpts = printf "-Dalluxio.master.hostname=%v-%v" $fullName $defaultMasterName | append $alluxioJavaOpts }}
+  {{- $alluxioJavaOpts = printf "-Dalluxio.master.hostname=%v-%v.%v.svc.%v" $fullName $defaultMasterName .Values.runtimeIdentity.namespace .Values.clusterDomain   | append $alluxioJavaOpts }}
 {{- end }}
 {{ if .Values.fuse.enabled -}}
   {{- $alluxioJavaOpts = print "-Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME}" | append $alluxioJavaOpts }}
