@@ -26,18 +26,18 @@ const (
 
 // The InitContainer to init the users for other Containers
 type InitUsers struct {
-	ImageInfo      `yaml:",inline"`
-	EnvUsers       string `yaml:"envUsers"`
-	Dir            string `yaml:"dir"`
-	Enabled        bool   `yaml:"enabled,omitempty"`
-	EnvTieredPaths string `yaml:"envTieredPaths"`
+	ImageInfo      `json:",inline"`
+	EnvUsers       string `json:"envUsers"`
+	Dir            string `json:"dir"`
+	Enabled        bool   `json:"enabled,omitempty"`
+	EnvTieredPaths string `json:"envTieredPaths"`
 }
 
 // InitPortCheck defines a init container reports port status usage
 type InitPortCheck struct {
-	ImageInfo    `yaml:",inline"`
-	Enabled      bool   `yaml:"enabled,omitempty"`
-	PortsToCheck string `yaml:"portsToCheck,omitempty"`
+	ImageInfo    `json:",inline"`
+	Enabled      bool   `json:"enabled,omitempty"`
+	PortsToCheck string `json:"portsToCheck,omitempty"`
 }
 
 func PortCheckEnabled() bool {

@@ -30,8 +30,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // CreateDataLoadJob creates the job to load data
