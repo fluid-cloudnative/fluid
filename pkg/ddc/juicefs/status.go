@@ -49,6 +49,7 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if err != nil {
 			return err
 		}
+		j.runtime = runtime
 
 		runtimeToUpdate := runtime.DeepCopy()
 		if reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
