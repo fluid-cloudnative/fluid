@@ -81,6 +81,10 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- if .Values.image.imagePullSecrets }}
+          - name: IMAGE_PULL_SECRETS
+            value: {{ join "," .Values.image.imagePullSecrets }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics

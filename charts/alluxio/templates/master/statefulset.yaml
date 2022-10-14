@@ -60,6 +60,10 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       enableServiceLinks: false
       {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ $hostNetwork }}

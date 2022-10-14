@@ -2,12 +2,14 @@ package docker
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"os"
 	"regexp"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 const ImageTagEnvRegexFormat = "^\\S+:\\S+$"
@@ -51,6 +53,16 @@ func GetImageTagFromEnv(envName string) (tag string) {
 			if len(v) > 0 {
 				tag = v
 			}
+		}
+	}
+	return
+}
+
+// get docker pull secrets from environment variables, if it's not existed, return ""
+func GetImagePullSecretsFromEnv(envName string) (pullSecretsStr string) {
+	if value, existed := os.LookupEnv(envName); existed {
+		if len(value) > 0 {
+			pullSecretsStr = value
 		}
 	}
 	return

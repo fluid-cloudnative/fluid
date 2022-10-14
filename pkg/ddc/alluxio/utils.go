@@ -21,14 +21,15 @@ import (
 	"strconv"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func (e *AlluxioEngine) getDataSetFileNum() (string, error) {
@@ -188,7 +189,7 @@ func isPortInUsed(port int, usedPorts []int) bool {
 	return false
 }
 
-func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string, imagePullSecrets []v1.LocalObjectReference) (string, string, string, []v1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -217,7 +218,17 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		eValues := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+		secrets := strings.Split(eValues, ",")
+		for _, item := range secrets {
+			imagePullSecrets = append(imagePullSecrets, v1.LocalObjectReference{Name: item})
+		}
+
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
 func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
