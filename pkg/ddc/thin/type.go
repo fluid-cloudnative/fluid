@@ -77,9 +77,15 @@ type Fuse struct {
 }
 
 type Config struct {
-	Mounts         []datav1alpha1.Mount `json:"mounts,omitempty"`
-	TargetPath     string               `json:"targetPath,omitempty"`
-	RuntimeOptions map[string]string    `json:"runtimeOptions,omitempty"`
+	Mounts                []datav1alpha1.Mount    `json:"mounts,omitempty"`
+	TargetPath            string                  `json:"targetPath,omitempty"`
+	RuntimeOptions        map[string]string       `json:"runtimeOptions,omitempty"`
+	PersistentVolumeAttrs map[string]PVAttributes `json:"persistentVolumeAttrs,omitempty"`
+}
+
+type PVAttributes struct {
+	FsType           string            `json:"fsType,omitempty"`
+	VolumeAttributes map[string]string `json:"volumeAttributes,omitempty"`
 }
 
 // RuntimeSetConfig is with the info of the workers and fuses
