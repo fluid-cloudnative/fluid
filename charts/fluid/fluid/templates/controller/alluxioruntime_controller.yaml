@@ -83,7 +83,13 @@ spec:
           {{- end }}
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
-            value: {{ join "," .Values.image.imagePullSecrets }}
+            {{- $secretList := list }}
+            {{- range .Values.image.imagePullSecrets }}
+              {{- range $name,$v := . }}
+                {{- $secretList = append $secretList $v }}
+              {{- end }}
+            {{- end }}
+            value: {{ join "," $secretList | quote }}
           {{- end }}
         ports:
         - containerPort: 8080
@@ -97,4 +103,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-
