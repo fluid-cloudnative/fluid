@@ -2,13 +2,15 @@ package docker
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 var (
@@ -111,6 +113,33 @@ func TestGetImageTagFromEnv(t *testing.T) {
 	for _, test := range testCase {
 		if result := GetImageTagFromEnv(test.envName); result != test.want {
 			t.Errorf("expected %v, got %v", test.want, result)
+		}
+	}
+}
+
+func TestGetImagePullSecrets(t *testing.T) {
+	testCases := map[string]struct {
+		envName       string
+		envMockValues string
+		want          string
+	}{
+		"test with env value case 1": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: "test1,test2",
+			want:          "test1,test2",
+		},
+		"test with env value case 2": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: "",
+			want:          "",
+		},
+	}
+
+	for k, v := range testCases {
+		os.Setenv(v.envName, v.envMockValues)
+		got := GetImagePullSecretsFromEnv(v.envName)
+		if !reflect.DeepEqual(got, v.want) {
+			t.Errorf("%s: expected: %s, got: %s", k, v.want, got)
 		}
 	}
 }
