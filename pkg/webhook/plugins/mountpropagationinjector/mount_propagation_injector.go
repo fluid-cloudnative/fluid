@@ -53,17 +53,18 @@ func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[stri
 	if len(runtimeInfos) == 0 {
 		return
 	}
-	runtimeNames := make([]string, len(runtimeInfos))
-	for _, runtimeInfo := range runtimeInfos {
+	datasetNames := make([]string, len(runtimeInfos))
+	for name, runtimeInfo := range runtimeInfos {
 		if runtimeInfo == nil {
 			err = fmt.Errorf("RuntimeInfo is nil")
 			shouldStop = true
 			return
 		}
-		runtimeNames = append(runtimeNames, runtimeInfo.GetName())
+		// do not use the runtime name, as the pvc may be the virtual dataset
+		datasetNames = append(datasetNames, name)
 	}
-	log.V(1).Info("InjectMountPropagation", "runtimeNames", runtimeNames)
-	utils.InjectMountPropagation(runtimeNames, pod)
+	log.V(1).Info("InjectMountPropagation", "datasetNames", datasetNames)
+	utils.InjectMountPropagation(datasetNames, pod)
 
 	return
 }

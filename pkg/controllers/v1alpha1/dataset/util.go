@@ -86,7 +86,6 @@ func createPersistentVolumeClaimForRefDataset(client client.Client, virtualName 
 	}
 
 	if !found {
-		// for accessMode
 		runtimePVC, err := kubeclient.GetPersistentVolumeClaim(client, runtime.GetName(), runtime.GetNamespace())
 		if err != nil {
 			return err
@@ -96,8 +95,10 @@ func createPersistentVolumeClaimForRefDataset(client client.Client, virtualName 
 				Name:      virtualName,
 				Namespace: virtualNameSpace,
 				Labels: map[string]string{
-					//
-					runtime.GetCommonLabelName(): "true",
+					// see 'pkg/util/webhook/scheduler/mutating/schedule_pod_handler.go' 'CheckIfPVCIsDataset' function usage
+					common.LabelAnnotationStorageCapacityPrefix + virtualNameSpace + "-" + virtualName: "true",
+					common.LabelAnnotationReferringName:                                                runtimePVC.Name,
+					common.LabelAnnotationReferringNameSpace:                                           runtimePVC.Namespace,
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},
