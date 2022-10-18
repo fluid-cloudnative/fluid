@@ -72,6 +72,8 @@ type Alluxio struct {
 	PlacementMode string `json:"placement,omitempty"`
 
 	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
+
+	ClusterDomain string `json:"clusterDomain,omitempty"`
 }
 
 type HadoopConfig struct {

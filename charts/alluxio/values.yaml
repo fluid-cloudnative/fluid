@@ -443,3 +443,4 @@ runtimeIdentity:
   namespace: default
   name: xxx
 
+clusterDomain: cluster.local
