@@ -94,7 +94,7 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		// if the error is NotFoundError, set notFound to true
 		notFound = true
 	} else {
-		if notRefDataset(ctx.Dataset) {
+		if !utils.IsRefDataset(&ctx.Dataset) {
 			return r.reconcileDataset(ctx, needRequeue)
 		} else {
 			ctx.Log.V(1).Info("not handle dataset has reference")
@@ -111,16 +111,6 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		ctx.Log.V(1).Info("Not found.")
 	}
 	return ctrl.Result{}, nil
-}
-
-func notRefDataset(dataset datav1alpha1.Dataset) bool {
-	mounts := dataset.Spec.Mounts
-	for _, mount := range mounts {
-		if common.IsFluidRefSchema(mount.MountPoint) {
-			return false
-		}
-	}
-	return true
 }
 
 // reconcile Dataset

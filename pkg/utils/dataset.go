@@ -204,3 +204,13 @@ func (u *UFSToUpdate) AddMountPaths(mountPaths []string) {
 		}
 	}
 }
+
+func IsRefDataset(dataset *datav1alpha1.Dataset) bool {
+	mounts := dataset.Spec.Mounts
+	for _, mount := range mounts {
+		if common.IsFluidRefSchema(mount.MountPoint) {
+			return true
+		}
+	}
+	return false
+}

@@ -96,6 +96,11 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 		}
 	}
+	// 4.1 check if the dataset mounting another dataset, record error and no requeue
+	if utils.IsRefDataset(dataset) {
+		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Runtime can not bind to the dataset which mount another dataset")
+		return utils.NoRequeue()
+	}
 	ctx.Dataset = dataset
 
 	// 5.Reconcile delete the runtime

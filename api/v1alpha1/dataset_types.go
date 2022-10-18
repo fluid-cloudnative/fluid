@@ -205,7 +205,7 @@ type DatasetStatus struct {
 	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
 	DataBackupRef string `json:"dataBackupRef,omitempty"`
 
-	// DatasetRef specifies the datasets mounting this Dataset.
+	// DatasetRef specifies the datasets namespaced name mounting this Dataset.
 	// This is mainly for update ref dataset's status
 	DatasetRef []string `json:"datasetRef,omitempty"`
 }

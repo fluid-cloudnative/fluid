@@ -590,3 +590,75 @@ func TestAddMountPaths(t *testing.T) {
 		}
 	}
 }
+
+func TestIsRefDataset(t *testing.T) {
+	testCases := []struct {
+		dataset *datav1alpha1.Dataset
+		result  bool
+	}{
+		{
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "dataset:///namespace/name",
+							Name:       "test",
+						},
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "dataset:///namespace/name",
+							Name:       "test",
+						},
+						{
+							MountPoint: "local:///namespace/name",
+							Name:       "test",
+						},
+					},
+				},
+			},
+			result: true,
+		},
+
+		{
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "local:///namespace/name",
+							Name:       "test",
+						},
+					},
+				},
+			},
+			result: false,
+		},
+	}
+
+	for k, item := range testCases {
+		result := IsRefDataset(item.dataset)
+		if item.result != result {
+			t.Errorf("%d check fail, expected is %t, get %t", k, item.result, result)
+		}
+
+	}
+}

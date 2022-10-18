@@ -204,8 +204,8 @@ func createPersistentVolumeClaimForRefDataset(client client.Client, virtualName 
 				Labels: map[string]string{
 					// see 'pkg/util/webhook/scheduler/mutating/schedule_pod_handler.go' 'CheckIfPVCIsDataset' function usage
 					common.LabelAnnotationStorageCapacityPrefix + virtualNameSpace + "-" + virtualName: "true",
-					common.LabelAnnotationReferringName:                                                runtimePVC.Name,
-					common.LabelAnnotationReferringNameSpace:                                           runtimePVC.Namespace,
+					common.LabelAnnotationDatasetReferringName:                                         runtimePVC.Name,
+					common.LabelAnnotationDatasetReferringNameSpace:                                    runtimePVC.Namespace,
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},

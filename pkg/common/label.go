@@ -33,8 +33,9 @@ const (
 	// fluid adminssion webhook inject flag
 	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
 
-	LabelAnnotationReferringName      = LabelAnnotationPrefix + "referring-name"
-	LabelAnnotationReferringNameSpace = LabelAnnotationPrefix + "referring-namespace"
+	// use two lables for name and namespace
+	LabelAnnotationDatasetReferringName      = LabelAnnotationDataset + ".referring-name"
+	LabelAnnotationDatasetReferringNameSpace = LabelAnnotationDataset + ".referring-namespace"
 
 	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
 )
