@@ -53,10 +53,10 @@ func init() {
 }
 
 // GetTemplateToInjectForFuse gets template for fuse injection
-func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option common.FuseSidecarInjectOption) (template *common.FuseInjectionTemplate, err error) {
+func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace string, option common.FuseSidecarInjectOption) (template *common.FuseInjectionTemplate, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetTemplateToInjectForFuse",
-			"pvc.name", pvcName, "pvc.namespace", info.GetNamespace())
+			"pvc.name", pvcName, "pvc.namespace", pvcNamespace)
 	}
 	// TODO: create fuse container
 	ds, err := info.getFuseDaemonset()
@@ -64,16 +64,17 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 		return template, err
 	}
 
-	dataset, err := utils.GetDataset(info.client, info.name, info.namespace)
+	// Note: get the pvc corresponding dataset
+	pvcDataset, err := utils.GetDataset(info.client, pvcName, pvcNamespace)
 	if err != nil {
 		return template, err
 	}
 
 	ownerReference := metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
+		APIVersion: pvcDataset.APIVersion,
+		Kind:       pvcDataset.Kind,
+		Name:       pvcDataset.Name,
+		UID:        pvcDataset.UID,
 	}
 
 	// 0. remove the cache dir if required
@@ -103,7 +104,8 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 	// template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
-	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, info.namespace)
+	// get the pvc attributes using pvc name/namespace
+	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, pvcNamespace)
 	if err != nil {
 		return
 	}
@@ -117,9 +119,10 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 		mountPathInContainer = volumeMountInContainer.MountPath
 	}
 
+	// TODO(lzq) use pvc's namespace
 	gen := poststart.NewGenerator(types.NamespacedName{
-		Name:      info.name,
-		Namespace: info.namespace,
+		Name:      pvcName,
+		Namespace: pvcNamespace,
 	}, mountPathInContainer, mountType, option)
 	cm := gen.BuildConfigmap(ownerReference)
 	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)

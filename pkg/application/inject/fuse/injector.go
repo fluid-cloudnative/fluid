@@ -104,12 +104,15 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		return result, nil
 	}
 
+	var namespace = ""
+
 	switch v := out.(type) {
 	case *corev1.Pod:
 		pod := v
 		typeMeta = pod.TypeMeta
 		objectMeta = pod.ObjectMeta
 		application = podapp.NewApplication(pod)
+		namespace = pod.GetNamespace()
 	case *unstructuredtype.Unstructured:
 		obj := v
 		typeMeta = metav1.TypeMeta{
@@ -123,12 +126,14 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			Labels:      obj.GetLabels(),
 		}
 		application = unstructured.NewApplication(obj)
+		namespace = obj.GetNamespace()
 	case runtime.Object:
 		obj := v
 		outValue := reflect.ValueOf(obj).Elem()
 		typeMeta = outValue.FieldByName("TypeMeta").Interface().(metav1.TypeMeta)
 		objectMeta = outValue.FieldByName("ObjectMeta").Interface().(metav1.ObjectMeta)
 		application = defaultapp.NewApplication(obj)
+		namespace = objectMeta.GetNamespace()
 	default:
 		s.log.Info("No supported K8s Type", "v", v)
 		return out, fmt.Errorf("no supported K8s Type %v", v)
@@ -156,7 +161,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		if err = s.injectCheckMountReadyScript(pod, runtimeInfos); err != nil {
+		if err = s.injectCheckMountReadyScript(pod, runtimeInfos, namespace); err != nil {
 			return out, err
 		}
 
@@ -165,7 +170,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
-			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix); err != nil {
+			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix, namespace); err != nil {
 				return out, err
 			}
 
@@ -194,9 +199,10 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 3. Handle mutations on the PodSpec's volumes
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
-func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
+func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface,
+	containerNameSuffix string, pvcNamespace string) (err error) {
 	var (
-		pvcKey   = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
 		template *common.FuseInjectionTemplate
 	)
 
@@ -233,7 +239,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
 	if !exist {
-		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, option)
+		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
 		if err != nil {
 			return err
 		}

@@ -27,22 +27,15 @@ import (
 	"strings"
 )
 
-func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
+func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface, namespace string) error {
 	objMeta, err := pod.GetMetaObject()
 	if err != nil {
 		return err
 	}
 
-	var namespace string
 	if len(runtimeInfos) == 0 {
 		// Skip if no need to inject because no dataset pvc is mounted
 		return nil
-	}
-
-	// Choose the first runtime info's namespace
-	for _, v := range runtimeInfos {
-		namespace = v.GetNamespace()
-		break
 	}
 
 	appScriptGenerator, err := s.ensureScriptConfigMapExists(namespace)

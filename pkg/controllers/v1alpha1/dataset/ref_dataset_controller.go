@@ -151,7 +151,33 @@ func (r *RefDatasetReconciler) reconcileRefDataset(ctx refReconcileRequestContex
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
-	// 3. add to its referenced dataset' spec DatasetRef field
+	// 3. create pv, pvc and runtime configmap
+	for _, dataset := range pDatasets {
+		// Note: the virtual dataset will wait until the physical runtime created
+		runtimeInfo, err := base.GetRuntimeInfo(r.Client, dataset.Name, dataset.Namespace)
+		if err != nil {
+			log.Error(err, "get the runtime failed")
+			return utils.RequeueAfterInterval(r.ResyncPeriod)
+		}
+		err = createPersistentVolumeForRefDataset(r.Client, ctx.Dataset.Name, ctx.Dataset.Namespace, runtimeInfo, log)
+		if err != nil {
+			log.Error(err, "create the pv failed")
+			return utils.RequeueAfterInterval(r.ResyncPeriod)
+		}
+		err = createPersistentVolumeClaimForRefDataset(r.Client, ctx.Dataset.Name, ctx.Dataset.Namespace, runtimeInfo)
+		if err != nil {
+			log.Error(err, "create the pvc failed")
+			return utils.RequeueAfterInterval(r.ResyncPeriod)
+		}
+		// cm is for the fuse sidecar container
+		err = createConfigMapForRefDataset(r.Client, ctx.Dataset, runtimeInfo)
+		if err != nil {
+			log.Error(err, "create the configmap failed")
+			return utils.RequeueAfterInterval(r.ResyncPeriod)
+		}
+	}
+
+	// 4. add to its referenced dataset' spec DatasetRef field, status will be synchronized.
 	datasetRefName := getDatasetRef(ctx.Dataset.Name, ctx.Dataset.Namespace)
 	allUpdated := true
 	for _, dataset := range pDatasets {
@@ -171,24 +197,6 @@ func (r *RefDatasetReconciler) reconcileRefDataset(ctx refReconcileRequestContex
 		return utils.RequeueImmediately()
 	}
 
-	// 4. create pv and pvc
-	for _, dataset := range pDatasets {
-		runtimeInfo, err := base.GetRuntimeInfo(r.Client, dataset.Name, dataset.Namespace)
-		if err != nil {
-			log.Error(err, "get the runtime failed")
-			return utils.RequeueAfterInterval(r.ResyncPeriod)
-		}
-		err = createPersistentVolumeForRefDataset(r.Client, ctx.Dataset.Name, ctx.Dataset.Namespace, runtimeInfo, log)
-		if err != nil {
-			log.Error(err, "get the pv failed")
-			return utils.RequeueAfterInterval(r.ResyncPeriod)
-		}
-		err = createPersistentVolumeClaimForRefDataset(r.Client, ctx.Dataset.Name, ctx.Dataset.Namespace, runtimeInfo)
-		if err != nil {
-			log.Error(err, "get the pvc failed")
-			return utils.RequeueAfterInterval(r.ResyncPeriod)
-		}
-	}
 	// return utils.RequeueAfterInterval(r.ResyncPeriod)
 	return utils.NoRequeue()
 }
@@ -223,14 +231,14 @@ func (r *RefDatasetReconciler) reconcileDatasetDeletion(ctx refReconcileRequestC
 				newDataset.Status.DatasetRef = utils.RemoveString(newDataset.Status.DatasetRef, datasetRefName)
 				err := r.Status().Update(context.TODO(), newDataset)
 				if err != nil {
-					log.Error(err, "modify dataset ref failed, requeue and retry")
+					log.Error(err, "delete dataset ref failed, requeue and retry")
 					return utils.RequeueAfterInterval(r.ResyncPeriod)
 				}
 			}
 		}
 	}
 
-	// 3. delete pv and pvc
+	// 3. delete pv, pvc, configmap(through owner reference field), ignore not found error
 	err = kubeclient.DeletePersistentVolume(r.Client, getPvName(ctx.Dataset.Name, ctx.Dataset.Namespace))
 	if err != nil {
 		log.Error(err, "delete pv failed, requeue and retry")
