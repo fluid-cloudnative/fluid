@@ -21,7 +21,12 @@
 
 ## 什么是Fluid
 
-Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。通过定义数据集资源的抽象，实现如下功能：
+Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。
+
+Fluid现在是[Cloud Native Computing Foundation](https://cncf.io) (CNCF) 开源基金会旗下的一个沙箱项目。关于Fluid更多的原理性介绍, 可以参见我们的论文: Rong Gu, et al. [Fluid: Dataset Abstraction and Elastic Acceleration for Cloud-native Deep Learning Training Jobs](https://ieeexplore.ieee.org/abstract/document/9835158). IEEE ICDE. pp. 2183-2196, May. 2022. 
+
+
+通过定义数据集资源的抽象，实现如下功能：
 
 <div align="center">
   <img src="static/architecture.png" title="architecture" width="60%" height="60%" alt="">
