@@ -20,7 +20,7 @@ func getDatasetRef(name, namespace string) string {
 }
 
 func getPvName(name, namespace string) string {
-	return fmt.Sprintf("%s-%s", name, namespace)
+	return fmt.Sprintf("%s-%s", namespace, name)
 }
 
 func getRuntimeType(dataset datav1alpha1.Dataset) (string, error) {
