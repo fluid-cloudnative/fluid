@@ -239,6 +239,12 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	e.transformShortCircuit(runtimeInfo, value)
 
+	clusterDomain, err := common.GetClusterDomain()
+	if err != nil {
+		return err
+	}
+	value.ClusterDomain = clusterDomain
+
 	return
 }
 
