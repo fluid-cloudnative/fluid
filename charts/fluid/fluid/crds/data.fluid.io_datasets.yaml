@@ -385,8 +385,8 @@ spec:
                   DataLoad jobs.
                 type: string
               datasetRef:
-                description: DatasetRef specifies the datasets mounting this Dataset.
-                  This is mainly for update ref dataset's status
+                description: DatasetRef specifies the datasets namespaced name mounting
+                  this Dataset. This is mainly for update ref dataset's status
                 items:
                   type: string
                 type: array

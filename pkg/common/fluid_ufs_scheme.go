@@ -53,8 +53,5 @@ func IsFluidWebScheme(s string) bool {
 }
 
 func IsFluidRefSchema(s string) bool {
-	if strings.HasPrefix(s, RefSchema.String()) {
-		return true
-	}
-	return false
+	return strings.HasPrefix(s, RefSchema.String())
 }
