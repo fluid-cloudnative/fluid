@@ -104,7 +104,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		return result, nil
 	}
 
-	var namespace = ""
+	var namespace string
 
 	switch v := out.(type) {
 	case *corev1.Pod:

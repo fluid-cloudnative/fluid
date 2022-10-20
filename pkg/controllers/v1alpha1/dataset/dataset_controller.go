@@ -150,7 +150,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 	// 5. synchronize status to dataset referenced to it
 	refDatasets := ctx.Dataset.Status.DatasetRef
 	allUpdated := true
-	if refDatasets != nil {
+	if refDatasets != nil && len(refDatasets) != 0 {
 		for _, rds := range refDatasets {
 			namespaceAndName := strings.Split(rds, "#")
 			ns := types.NamespacedName{Name: namespaceAndName[1], Namespace: namespaceAndName[0]}

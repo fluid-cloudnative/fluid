@@ -23,13 +23,6 @@ func getPvName(name, namespace string) string {
 	return fmt.Sprintf("%s-%s", namespace, name)
 }
 
-func getRuntimeType(dataset datav1alpha1.Dataset) (string, error) {
-	if len(dataset.Status.Runtimes) != 0 {
-		return dataset.Status.Runtimes[0].Type, nil
-	}
-	return "", fmt.Errorf("dataset %s do not bind the runtime", dataset.Name)
-}
-
 // TODO make configmap getter/setter to be a runtime interface
 func createConfigMapForRefDataset(client client.Client, virtualDataset datav1alpha1.Dataset, runtime base.RuntimeInfoInterface) error {
 	runtimeType := runtime.GetRuntimeType()
