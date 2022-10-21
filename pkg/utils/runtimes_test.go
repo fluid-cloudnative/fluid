@@ -247,6 +247,65 @@ func TestGetGooseFSRuntime(t *testing.T) {
 	}
 }
 
+func TestGetThinRuntime(t *testing.T) {
+	runtimeNamespace := "default"
+	runtimeName := "thin-runtime-1"
+	thinRuntime := &datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: runtimeNamespace,
+		},
+	}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
+
+	fakeClient := fake.NewFakeClientWithScheme(s, thinRuntime)
+
+	tests := []struct {
+		name      string
+		namespace string
+		wantName  string
+		notFound  bool
+	}{
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace,
+			wantName:  runtimeName,
+			notFound:  false,
+		},
+		{
+			name:      runtimeName + "not-exist",
+			namespace: runtimeNamespace,
+			wantName:  "",
+			notFound:  true,
+		},
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace + "not-exist",
+			wantName:  "",
+			notFound:  true,
+		},
+	}
+
+	for k, item := range tests {
+		gotRuntime, err := GetThinRuntime(fakeClient, item.name, item.namespace)
+		if item.notFound {
+			if err == nil || gotRuntime != nil {
+				t.Errorf("%d check failure, want to got nil", k)
+			} else {
+				if !apierrs.IsNotFound(err) {
+					t.Errorf("%d check failure, want notFound err but got %s", k, err)
+				}
+			}
+		} else {
+			if gotRuntime.Name != item.wantName {
+				t.Errorf("%d check failure, got JuiceFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+			}
+		}
+	}
+}
+
 func TestAddRuntimesIfNotExist(t *testing.T) {
 	var runtime1 = datav1alpha1.Runtime{
 		Name:     "imagenet",
