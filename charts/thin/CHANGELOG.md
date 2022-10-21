@@ -9,3 +9,7 @@
 0.1.2
 
 - Add configMap
+
+0.1.3
+
+- Add runtime identity environments
