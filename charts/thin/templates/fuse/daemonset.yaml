@@ -73,6 +73,12 @@ spec:
 {{ toYaml .Values.fuse.args | trim | indent 12 }}
           {{- end }}
           env:
+            - name: FLUID_RUNTIME_TYPE
+              value: "thin"
+            - name: FLUID_RUNTIME_NS
+              value: {{ .Values.runtimeIdentity.namespace | quote }}
+            - name: FLUID_RUNTIME_NAME
+              value: {{ .Values.runtimeIdentity.name | quote }}
           {{- if .Values.fuse.envs }}
 {{ toYaml .Values.fuse.envs | trim | indent 12 }}
           {{- end }}

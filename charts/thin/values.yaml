@@ -80,3 +80,7 @@ fuse:
     limits:
 #      cpu: "4"
 #      memory: "4G"
+
+runtimeIdentity:
+  namespace: default
+  name: thin-dataset

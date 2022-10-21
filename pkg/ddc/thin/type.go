@@ -28,13 +28,14 @@ type ThinValue struct {
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`
 
-	Fuse          Fuse                   `json:"fuse,omitempty"`
-	Worker        Worker                 `json:"worker,omitempty"`
-	NodeSelector  map[string]string      `json:"nodeSelector,omitempty"`
-	Tolerations   []corev1.Toleration    `json:"tolerations,omitempty"`
-	PlacementMode string                 `json:"placement,omitempty"`
-	Owner         *common.OwnerReference `json:"owner,omitempty"`
-	RuntimeValue  string                 `json:"runtimeValue"`
+	Fuse            Fuse                   `json:"fuse,omitempty"`
+	Worker          Worker                 `json:"worker,omitempty"`
+	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
+	Tolerations     []corev1.Toleration    `json:"tolerations,omitempty"`
+	PlacementMode   string                 `json:"placement,omitempty"`
+	Owner           *common.OwnerReference `json:"owner,omitempty"`
+	RuntimeValue    string                 `json:"runtimeValue"`
+	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
 }
 
 type Worker struct {
