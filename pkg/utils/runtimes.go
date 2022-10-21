@@ -108,3 +108,16 @@ func GetJuiceFSRuntime(client client.Client, name, namespace string) (*data.Juic
 	}
 	return &runtime, nil
 }
+
+func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRuntime, error) {
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.ThinRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+
+	return &runtime, nil
+}
