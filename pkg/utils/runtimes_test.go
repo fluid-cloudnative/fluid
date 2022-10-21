@@ -300,7 +300,7 @@ func TestGetThinRuntime(t *testing.T) {
 			}
 		} else {
 			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got JuiceFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+				t.Errorf("%d check failure, got ThinRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
 			}
 		}
 	}
