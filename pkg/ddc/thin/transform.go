@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,12 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 		return value, err
 	}
 
-	value = &ThinValue{}
+	value = &ThinValue{
+		RuntimeIdentity: common.RuntimeIdentity{
+			Namespace: runtime.Namespace,
+			Name:      runtime.Name,
+		},
+	}
 
 	value.FullnameOverride = t.name
 	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
