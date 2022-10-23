@@ -31,6 +31,7 @@
     - [How to ensure the completion of serverless tasks](samples/application_controller.md)
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
   - [Using Fluid on ARM64 platform](samples/arm64.md)
+  - [Support Image Pull Secrets](samples/image_pull_secrets.md)
 + Troubleshooting
   - [Collecting logs](userguide/troubleshooting.md)
 + Developer Guide
