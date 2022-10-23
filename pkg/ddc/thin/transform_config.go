@@ -18,30 +18,28 @@ package thin
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	dataset *datav1alpha1.Dataset, targetPath string) (config Config, err error) {
 	mounts := []datav1alpha1.Mount{}
-	pvAttributes := map[string]PVAttributes{}
+	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
 	for _, m := range dataset.Spec.Mounts {
 		if strings.HasPrefix(m.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(m.MountPoint, common.VolumeScheme.String())
-			fsType, volumeAttrs, err := t.extractVolumeAttributes(pvcName)
+			csiInfo, err := t.extractCSIVolumeSourceInfo(pvcName)
 			if err != nil {
 				return config, err
 			}
 
-			pvAttributes[pvcName] = PVAttributes{
-				FsType: fsType,
-				VolumeAttributes: volumeAttrs,
-			}
+			pvAttributes[pvcName] = csiInfo
 		}
 
 		m.Options, err = t.genUFSMountOptions(m)
@@ -60,14 +58,14 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	return
 }
 
-func (t *ThinEngine) extractVolumeAttributes(pvcName string) (fsType string, volumeAttr map[string]string, err error) {
+func (t *ThinEngine) extractCSIVolumeSourceInfo(pvcName string) (csiInfo *corev1.CSIPersistentVolumeSource, err error) {
 	pvc, err := kubeclient.GetPersistentVolumeClaim(t.Client, pvcName, t.namespace)
 	if err != nil {
 		return
 	}
 
 	if len(pvc.Spec.VolumeName) == 0 {
-		err = errors.New(pvcName + " Not Bounded yet")
+		err = fmt.Errorf("persistent volume claim %s not bounded yet", pvcName)
 		return
 	}
 
@@ -76,10 +74,12 @@ func (t *ThinEngine) extractVolumeAttributes(pvcName string) (fsType string, vol
 		return
 	}
 
-	fsType = pv.Spec.CSI.FSType
-	volumeAttr = pv.Spec.CSI.VolumeAttributes
+	if pv.Spec.CSI == nil {
+		err = fmt.Errorf("persistent volume %s has unsupported volume source. only CSI is supported", pv.Name)
+		return
+	}
 
-	return
+	return pv.Spec.CSI, nil
 }
 
 func (t *ThinEngine) toRuntimeSetConfig(workers []string, fuses []string) (result string, err error) {
