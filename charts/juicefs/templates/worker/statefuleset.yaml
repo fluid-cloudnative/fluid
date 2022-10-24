@@ -112,17 +112,6 @@ spec:
                 name: {{ .Values.configs.tokenSecret }}
                 key: token
           {{- end }}
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - 'if [ x$({{ .Values.worker.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
-            failureThreshold: 3
-            initialDelaySeconds: 1
-            periodSeconds: 1
-            successThreshold: 1
-            timeoutSeconds: 1
           lifecycle:
             preStop:
               exec:
