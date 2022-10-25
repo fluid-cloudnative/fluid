@@ -83,11 +83,6 @@ type Config struct {
 	PersistentVolumeAttrs map[string]*corev1.CSIPersistentVolumeSource `json:"persistentVolumeAttrs,omitempty"`
 }
 
-type PVAttributes struct {
-	FsType           string            `json:"fsType,omitempty"`
-	VolumeAttributes map[string]string `json:"volumeAttributes,omitempty"`
-}
-
 // RuntimeSetConfig is with the info of the workers and fuses
 type RuntimeSetConfig struct {
 	Workers []string `json:"workers"`

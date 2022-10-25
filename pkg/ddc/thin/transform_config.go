@@ -30,6 +30,7 @@ import (
 func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	dataset *datav1alpha1.Dataset, targetPath string) (config Config, err error) {
 	mounts := []datav1alpha1.Mount{}
+	// todo: support passing flexVolume info
 	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
 	for _, m := range dataset.Spec.Mounts {
 		if strings.HasPrefix(m.MountPoint, common.VolumeScheme.String()) {
