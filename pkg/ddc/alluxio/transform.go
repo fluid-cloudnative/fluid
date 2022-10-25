@@ -18,12 +18,14 @@ package alluxio
 import (
 	"errors"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"os"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
@@ -127,7 +129,10 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	imageTag := runtime.Spec.AlluxioVersion.ImageTag
 	imagePullPolicy := runtime.Spec.AlluxioVersion.ImagePullPolicy
 
-	value.Image, value.ImageTag, value.ImagePullPolicy = e.parseRuntimeImage(image, imageTag, imagePullPolicy)
+	// TODO: support imagePullSecrets by AlluxioRuntime
+	imagePullSecrets := []corev1.LocalObjectReference{}
+
+	value.Image, value.ImageTag, value.ImagePullPolicy, value.ImagePullSecrets = e.parseRuntimeImage(image, imageTag, imagePullPolicy, imagePullSecrets)
 
 	value.UserInfo = common.UserInfo{
 		User:    0,
@@ -183,6 +188,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	var levels []Level
 	for _, level := range runtimeInfo.GetTieredStoreInfo().Levels {
 
+		mediumType := e.getMediumTypeFromVolumeSource(string(level.MediumType), level)
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
 		var paths []string
@@ -194,7 +200,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 		pathConfigStr := strings.Join(paths, ",")
 		quotaConfigStr := strings.Join(quotas, ",")
-		mediumTypeConfigStr := strings.Join(*utils.FillSliceWithString(string(level.MediumType), len(paths)), ",")
+		mediumTypeConfigStr := strings.Join(*utils.FillSliceWithString(mediumType, len(paths)), ",")
 
 		levels = append(levels, Level{
 			Alias:      string(level.MediumType),
@@ -232,6 +238,12 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	e.transformTolerations(dataset, value)
 
 	e.transformShortCircuit(runtimeInfo, value)
+
+	clusterDomain, err := common.GetClusterDomain()
+	if err != nil {
+		return err
+	}
+	value.ClusterDomain = clusterDomain
 
 	return
 }
@@ -504,4 +516,16 @@ func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterf
 	if !enableShortCircuit {
 		value.Properties["alluxio.user.short.circuit.enabled"] = "false"
 	}
+}
+
+func (e *AlluxioEngine) getMediumTypeFromVolumeSource(defaultMediumType string, level base.Level) string {
+	mediumType := defaultMediumType
+
+	if level.VolumeType == common.VolumeTypeEmptyDir {
+		if level.VolumeSource.EmptyDir != nil {
+			mediumType = string(level.VolumeSource.EmptyDir.Medium)
+		}
+	}
+
+	return mediumType
 }

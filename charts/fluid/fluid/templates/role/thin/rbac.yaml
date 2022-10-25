@@ -1,0 +1,86 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: thinruntime-controller
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - persistentvolumes
+      - services
+      - endpoints
+      - configmaps
+      - events
+      - namespaces
+      - pods
+      - pods/exec
+      - secrets
+      - nodes
+    verbs:
+      - '*'
+  - apiGroups:
+      - data.fluid.io
+    resources:
+      - thinruntimes
+      - thinruntimeprofiles
+      - datasets
+      - thinruntimes/status
+      - thinruntimeprofiles/status
+      - datasets/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - list
+      - get
+      - delete
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - create
+      - list
+      - get
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - statefulsets
+      - daemonsets/status
+      - statefulsets/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: thinruntime-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: thinruntime-controller
+subjects:
+  - kind: ServiceAccount
+    name: thinruntime-controller
+    namespace: fluid-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thinruntime-controller
+  namespace: fluid-system

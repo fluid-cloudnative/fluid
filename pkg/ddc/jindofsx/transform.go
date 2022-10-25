@@ -128,7 +128,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
-			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, mediumType, volumeType),
+			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
 		},
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
@@ -644,6 +644,7 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		properties["fs.oss.credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
 		properties["aliyun.oss.provider.url"] = "secrets:///token/"
 		properties["fs.oss.provider.endpoint"] = "secrets:///token/"
+		properties["fs.oss.provider.format"] = "JSON"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
@@ -719,13 +720,13 @@ func (e *JindoFSxEngine) transformMasterMountPath(metaPath string, mediumType co
 	return properties
 }
 
-func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string, quotas []string, mediumType common.MediumType, volumeType common.VolumeType) map[string]*Level {
+func (e *JindoFSxEngine) transformWorkerMountPath(originPath []string, quotas []string, mediumType string, volumeType common.VolumeType) map[string]*Level {
 	properties := map[string]*Level{}
 	for index, value := range originPath {
 		mountVol := &Level{
 			Path:       strings.TrimRight(value, "/"),
 			Type:       string(volumeType),
-			MediumType: string(mediumType),
+			MediumType: mediumType,
 			Quota:      quotas[index],
 		}
 		//properties[strconv.Itoa(index+1)] = strings.TrimRight(value, "/")
@@ -770,13 +771,13 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
 		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "4.5.1"
+		defaultTag       = "4.5.2"
 		defaultDnsServer = "1.1.1.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_SMARTDATA_IMAGE_ENV)
-	dnsServer = os.Getenv(common.JINDO_DNS_SERVER)
+	image = docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
+	dnsServer = os.Getenv(common.JindoDnsServer)
 	if len(image) == 0 {
 		image = defaultImage
 	}
@@ -794,11 +795,11 @@ func (e *JindoFSxEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 func (e *JindoFSxEngine) parseFuseImage() (image, tag string) {
 	var (
 		defaultImage = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag   = "4.5.1"
+		defaultTag   = "4.5.2"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JINDO_FUSE_IMAGE_ENV)
-	tag = docker.GetImageTagFromEnv(common.JINDO_FUSE_IMAGE_ENV)
+	image = docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)
+	tag = docker.GetImageTagFromEnv(common.JindoFuseImageEnv)
 	if len(image) == 0 {
 		image = defaultImage
 	}
@@ -1005,4 +1006,18 @@ func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime,
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		value.Fuse.Mode = FuseOnly
 	}
+}
+
+func (e *JindoFSxEngine) getMediumTypeFromVolumeSource(defaultMediumType string, levels []datav1alpha1.Level) string {
+	var mediumType = defaultMediumType
+
+	if len(levels) > 0 {
+		if levels[0].VolumeType == common.VolumeTypeEmptyDir {
+			if levels[0].VolumeSource.EmptyDir != nil {
+				mediumType = string(levels[0].VolumeSource.EmptyDir.Medium)
+			}
+		}
+	}
+
+	return mediumType
 }

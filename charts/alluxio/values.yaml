@@ -15,6 +15,9 @@ fullnameOverride: alluxio
 
 ## Common ##
 
+## global image pull secrets
+imagePullSecrets: []
+
 # Docker Image
 image: alluxio/alluxio
 imageTag: 2.4.0-SNAPSHOT
@@ -22,7 +25,7 @@ imagePullPolicy: IfNotPresent
 
 # Create User Docker Image // TODO make it configurable
 initUsers:
-  enabled: false 
+  enabled: false
   image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
   imageTag: v0.3.0-1467caa
   imagePullPolicy: IfNotPresent
@@ -165,8 +168,8 @@ jobMaster:
 journal:
   # Setting journal type, "UFS" or "EMBEDDED"
   # In commit 2c125dee25f8d4566ae23646a999c16c530ffbc9, in order to support master raft embeeded journal mode, change default value from UFS to EMBEDDED
-  # TODO (@xieydd), will support journalClaimTemplates configure the journal setting   
-  type: "EMBEDDED" 
+  # TODO (@xieydd), will support journalClaimTemplates configure the journal setting
+  type: "EMBEDDED"
   ufsType: "local" # Ignored if type is "EMBEDDED". "local" or "HDFS"
   folder: "/journal" # Master journal folder
   # volumeType controls the type of journal volume.
@@ -261,7 +264,7 @@ worker:
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
   volumes: []
-    
+
 
 jobWorker:
   args:
@@ -406,7 +409,7 @@ fuse:
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
   volumes: []
-    
+
 
 
 ## HDFS Configuraions ##
@@ -440,3 +443,4 @@ runtimeIdentity:
   namespace: default
   name: xxx
 
+clusterDomain: cluster.local

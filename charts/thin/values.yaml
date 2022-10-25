@@ -1,0 +1,86 @@
+# This should not be modified in the usual case.
+fullnameOverride: thin
+
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
+##
+## Example:
+##   - key: "toleration=key"
+##     operator: "Equal"
+##     value: "value"
+##     effect: "NoSchedule"
+##
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: [ ]
+
+tieredstore:
+  path: ""
+
+# Docker Image
+image: ""
+imageTag: ""
+imagePullPolicy: IfNotPresent
+
+runtimeValue: ""
+
+## WORKER ##
+worker:
+  image: ""
+  imageTag: ""
+  imagePullPolicy: ""
+  nodeSelector: ""
+  envs: []
+  volumes: []
+  volumeMounts: []
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+  replicaCount: 0
+  hostNetwork: true
+  livenessProbe:
+  readinessProbe:
+
+## FUSE ##
+
+fuse:
+  criticalPod: false
+  enabled: true
+  image: ""
+  imageTag: ""
+  imagePullPolicy: IfNotPresent
+  envs:
+  nodeSelector:
+  dnsPolicy: ClusterFirstWithHostNet
+  # Target path to mount in the host
+  targetPath: ""
+  command: []
+  args: []
+  livenessProbe:
+  readinessProbe:
+  hostNetwork: true
+  configValue: ""
+  volumes:
+  volumeMounts:
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+#      cpu: "4"
+#      memory: "4G"
+
+runtimeIdentity:
+  namespace: default
+  name: thin-dataset

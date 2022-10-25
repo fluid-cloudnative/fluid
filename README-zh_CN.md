@@ -12,18 +12,24 @@
 
 [English](./README.md) | 简体中文
 
-|![更新](http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/bell-outline-badge.svg) 最新进展：|
+|![更新](static/bell-outline-badge.svg) 最新进展：|
 |------------------|
+|Sep. 03th, 2022. Fluid v0.8.0  **发布**! 提供一系列新功能，包括基于Fluid边车支持的Serverlesss作业生命周期管理，按需启动Runtime controller，自动化CRD更新, 严格的pod与数据集节点的调度机制， JuicefsRuntime的Arm64支持, Alluxio Runtime的GCS支持等等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Mar. 16th, 2021. Fluid v0.5.0 **发布**! 提供一系列新功能，包括提供数据集缓存的在线弹性扩缩容，元数据备份与恢复，Fuse全局模式部署等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Nov. 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Oct. 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
 
 ## 什么是Fluid
 
-Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。通过定义数据集资源的抽象，实现如下功能：
+Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。
+
+Fluid现在是[Cloud Native Computing Foundation](https://cncf.io) (CNCF) 开源基金会旗下的一个沙箱项目。关于Fluid更多的原理性介绍, 可以参见我们的论文: Rong Gu, et al. [Fluid: Dataset Abstraction and Elastic Acceleration for Cloud-native Deep Learning Training Jobs](https://ieeexplore.ieee.org/abstract/document/9835158). IEEE ICDE. pp. 2183-2196, May. 2022. 
+
+
+通过定义数据集资源的抽象，实现如下功能：
 
 <div align="center">
-  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/architecture.png" title="architecture" width="60%" height="60%" alt="">
+  <img src="static/architecture.png" title="architecture" width="60%" height="60%" alt="">
 </div>
 
 ## 核心功能
@@ -80,14 +86,14 @@ Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引�
 <details>
 <summary>演示 1: 加速文件访问</summary>
 <pre>
-<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/2ee9ef7de9eeb386f365a5d10f5defd12f08457f/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f72656d6f74655f66696c655f616363657373696e672e706e67" alt="" data-canonical-src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/remote_file_accessing.png" style="max-width:100%;"></a>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/2ee9ef7de9eeb386f365a5d10f5defd12f08457f/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f72656d6f74655f66696c655f616363657373696e672e706e67" alt="" data-canonical-src="static/remote_file_accessing.png" style="max-width:100%;"></a>
 </pre>
 </details>
 
 <details>
 <summary>演示 2: 加速机器学习</summary>
 <pre>
-<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/5688ab788da9f8cd057e32f3764784ce616ff0fd/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f6d616368696e655f6c6561726e696e672e706e67" alt="" data-canonical-src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/machine_learning.png" style="max-width:100%;"></a>
+<a href="http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4" rel="nofollow"><img src="https://camo.githubusercontent.com/5688ab788da9f8cd057e32f3764784ce616ff0fd/687474703a2f2f6b756265666c6f772e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5374617469632f6d616368696e655f6c6561726e696e672e706e67" alt="" data-canonical-src="static/machine_learning.png" style="max-width:100%;"></a>
 </pre>
 </details>
 
@@ -122,7 +128,7 @@ Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只�
 
 钉钉讨论群
 <div>
-  <img src="http://kubeflow.oss-cn-beijing.aliyuncs.com/Static/dingtalk.png" width="280" title="dingtalk">
+  <img src="static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
 Slack 讨论群

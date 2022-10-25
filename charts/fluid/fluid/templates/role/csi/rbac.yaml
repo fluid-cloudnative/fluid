@@ -16,11 +16,13 @@ rules:
       - jindoruntimes
       - goosefsruntimes
       - juicefsruntimes
+      - thinruntimes
       - datasets
       - alluxioruntimes/status
       - jindoruntimes/status
       - goosefsruntimes/status
       - juicefsruntimes/status
+      - thinruntimes/status
       - datasets/status
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]

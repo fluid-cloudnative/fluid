@@ -34,7 +34,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 			err = e
 			return
 		}
-		states.cacheCapacity = utils.BytesSize(float64(cachesize))
+		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Spec.Replicas)))
 	}
 
 	var pods []v1.Pod
@@ -91,11 +91,22 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 
 // get cacheHitRatio & cacheThroughputRatio from fuse pod
 func (j *JuiceFSEngine) getCacheRatio(edition string, states *cacheStates) (err error) {
-	containerName := common.JuiceFSFuseContainer
-	stsName := j.getFuseDaemonsetName()
-	pods, err := j.GetRunningPodsOfDaemonset(stsName, j.namespace)
-	if err != nil || len(pods) == 0 {
-		return
+	var containerName string
+	var pods []v1.Pod
+	if edition == EnterpriseEdition {
+		containerName = common.JuiceFSWorkerContainer
+		stsName := j.getWorkerName()
+		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
+	} else {
+		containerName = common.JuiceFSFuseContainer
+		dsName := j.getFuseDaemonsetName()
+		pods, err = j.GetRunningPodsOfDaemonset(dsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
 	}
 
 	podMetrics := []fuseMetrics{}

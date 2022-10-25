@@ -81,6 +81,16 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- if .Values.image.imagePullSecrets }}
+          - name: IMAGE_PULL_SECRETS
+            {{- $secretList := list }}
+            {{- range .Values.image.imagePullSecrets }}
+              {{- range $name,$v := . }}
+                {{- $secretList = append $secretList $v }}
+              {{- end }}
+            {{- end }}
+            value: {{ join "," $secretList | quote }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics
@@ -93,4 +103,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-

@@ -258,7 +258,7 @@ resources:
           {{- else }}
         - name: {{ $mediumName }}
           emptyDir:
-            medium: {{ eq .mediumtype "MEM" | ternary "Memory" "" }}
+            medium: {{ eq .mediumtype "MEM" | ternary "Memory" (or (eq .mediumtype "SSD") (eq .mediumtype "HDD") | ternary "" (.mediumtype | quote)) }}
             {{- if .quota }}
             {{- /* quota should be transformed to match resource.Quantity. e.g. 20GB -> 20Gi */}}
             sizeLimit: {{ .quota | replace "B" "i" }}

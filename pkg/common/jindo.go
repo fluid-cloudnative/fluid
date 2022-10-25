@@ -24,11 +24,11 @@ const (
 
 	JindoMountType = "fuse.jindofs-fuse"
 
-	JINDO_SMARTDATA_IMAGE_ENV = "JINDO_SMARTDATA_IMAGE_ENV"
+	JindoSmartDataImageEnv = "JINDO_SMARTDATA_IMAGE_ENV"
 
-	JINDO_FUSE_IMAGE_ENV = "JINDO_FUSE_IMAGE_ENV"
+	JindoFuseImageEnv = "JINDO_FUSE_IMAGE_ENV"
 
-	JINDO_DNS_SERVER = "JINDO_DNS_SERVER_ENV"
+	JindoDnsServer = "JINDO_DNS_SERVER_ENV"
 
 	JindoFuseMountVolumeName = "jindofs-fuse-mount"
 )

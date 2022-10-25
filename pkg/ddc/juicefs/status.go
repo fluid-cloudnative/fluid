@@ -49,6 +49,7 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if err != nil {
 			return err
 		}
+		j.runtime = runtime
 
 		runtimeToUpdate := runtime.DeepCopy()
 		if reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
@@ -66,12 +67,8 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
-
-		// Todo:show this infomathion when complete dataload function
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage
 		runtimeToUpdate.Status.CacheStates[common.Cached] = states.cached
-		//runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = "N/A"
-		//runtimeToUpdate.Status.CacheStates[common.Cached] = "N/A"
 		// 1. Update cache hit ratio
 		runtimeToUpdate.Status.CacheStates[common.CacheHitRatio] = states.cacheHitRatio
 
@@ -81,7 +78,10 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if workers.Status.ReadyReplicas > 0 {
+		if runtime.Replicas() == 0 {
+			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+			workerReady = true
+		} else if workers.Status.ReadyReplicas > 0 {
 			if runtime.Replicas() == workers.Status.ReadyReplicas {
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 				workerReady = true

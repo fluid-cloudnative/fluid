@@ -51,3 +51,6 @@
 * Update mutating webhook configuration rules
 * Support configurable pod metadata of runtimes
 * Scale runtime controllers on demand
+
+### 0.9.0
+* Support pass image pull secrets from fluid charts to alluxioruntime controller

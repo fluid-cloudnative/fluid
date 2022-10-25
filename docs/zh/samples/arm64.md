@@ -3,7 +3,7 @@
 ## 环境准备
 
 ### 获取Fluid最新源码
-
+Fluid 社区目前提供了多平台的 Fluid 官方镜像，您可以直接参考[这篇文档](../userguide/get_started.md)部署 Fluid 并且直接跳到*运行实例*步骤.
 ```shell
 $ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
 $ cd $GOPATH/src/github.com/fluid-cloudnative
@@ -26,7 +26,7 @@ $ make docker-buildx-all-push
 ### 修改helm chart中镜像版本
 
 ```shell
-$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/fluid
+$ cd $GOPATH/src/github.com/fluid-cloudnative/fluid/charts/fluid/fluid
 $ vim values.yaml
 ```
 
@@ -45,6 +45,7 @@ cn-beijing.192.168.3.185   Ready    <none>   6d3h   v1.22.10
 #### 安装
 
 ```
+$ kubectl create ns fluid-system
 $ helm install fluid fluid
 NAME: fluid
 LAST DEPLOYED: Sat Aug 20 21:43:27 2022
@@ -225,3 +226,14 @@ jfsdemo-worker-0                                               1/1     Running  
 ```
 
 可以看到 pod 已经创建成功，同时 JuiceFS 的 FUSE 组件也启动成功。
+
+登陆到应用pod中可以看到挂载成功，并且该环境是ARM64
+
+```bash
+root@demo-app:/# mount | grep fuse.juicefs
+JuiceFS:minio on /data type fuse.juicefs (rw,relatime,user_id=0,group_id=0,default_permissions,allow_other)
+root@demo-app:/# arch
+aarch64
+root@demo-app:/# lscpu | grep -i arm
+Vendor ID:                       ARM
+```

@@ -56,10 +56,8 @@ spec:
       {{- else if .Values.nodeSelector }}
 {{ toYaml .Values.nodeSelector | trim | indent 8  }}
       {{- end }}
-      {{- if .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      {{- end }}
+        - operator: Exists
       containers:
         - name: juicefs-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -124,8 +122,10 @@ spec:
           - containerPort: 9567
             name: metrics
             protocol: TCP
+          {{- if .Values.fuse.privileged }}
           securityContext:
             privileged: true
+          {{- end }}
           lifecycle:
             preStop:
               exec:
