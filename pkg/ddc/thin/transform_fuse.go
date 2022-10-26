@@ -134,6 +134,12 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		value.Fuse.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
 	}
+
+	// 15. mount related node publish secret to fuse if the dataset specifies any mountpoint with pvc type.
+	err = t.transfromSecretsForPersistentVolumeClaimMounts(dataset, value)
+	if err != nil {
+		return err
+	}
 	return
 }
 

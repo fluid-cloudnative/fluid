@@ -65,7 +65,7 @@ func (t *ThinEngine) extractCSIVolumeSourceInfo(pvcName string) (csiInfo *corev1
 		return
 	}
 
-	if len(pvc.Spec.VolumeName) == 0 {
+	if len(pvc.Spec.VolumeName) == 0 || pvc.Status.Phase != corev1.ClaimBound {
 		err = fmt.Errorf("persistent volume claim %s not bounded yet", pvcName)
 		return
 	}
