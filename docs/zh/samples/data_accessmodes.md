@@ -30,10 +30,10 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
-  name: serverless-data
+  name: demo
 spec:
   mounts:
-    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
+    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/2.4.14/
       name: hbase
       path: "/"
   accessModes:
