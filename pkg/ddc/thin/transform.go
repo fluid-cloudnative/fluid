@@ -83,10 +83,6 @@ func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile
 
 	// 1. image
 	t.parseWorkerImage(runtime, value)
-	if len(value.Worker.Image) == 0 {
-		err = fmt.Errorf("worker %s image is nil", runtime.Name)
-		return
-	}
 
 	// 2. env
 	if len(runtime.Spec.Worker.Env) != 0 {
