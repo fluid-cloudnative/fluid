@@ -16,16 +16,12 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 在不指定 Dataset 的访问模式时，Dataset 的访问模式被默认设置为 **ReadOnlyMany（只读）**。如果想要修改 Dataset 的访问模式，需要在创建时在 spec.accessModes[] 中进行指定。
 
 目前支持的访问模式有：
-- `ReadWriteOnce` : 以可读可写的方式挂载到单个节点，该节点上的多个 pod 可访问
 - `ReadOnlyMany` : 能够以只读的方式挂载到多个节点
 - `ReadWriteMany` : 能够以可读可写的方式挂载到多个节点
-- `ReadWriteOncePod` : 只可以被一个 pod 读写
-
-您可以参考[这篇文章](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)获取更多信息。
 
 
 ## 示例
-该示例设置 Dataset 的访问方式为 ReadWriteOncePod。
+该示例设置 Dataset 的访问方式为 ReadWriteMany。
 ```
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -37,5 +33,5 @@ spec:
       name: hbase
       path: "/"
   accessModes:
-    - ReadWriteOncePod
+    - ReadWriteMany
 ```

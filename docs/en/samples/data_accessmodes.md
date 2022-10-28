@@ -18,16 +18,12 @@ The num of "csi-nodeplugin" Pods depends on how many nodes your Kubernetes clust
 The access mode of the dataset is set to **ReadOnlyMany** when user doesn`t specif the access mode. If there is a need to modify the default access mode, you need to specify it in spec.accessModes[] before creating it.
 
 The currently supported access modes are：
-- `ReadWriteOnce` : the volume can be mounted as read-write by a single node. ReadWriteOnce access mode still can allow multiple pods to access the volume when the pods are running on the same node
 - `ReadOnlyMany` : the volume can be mounted as read-only by many nodes
 - `ReadWriteMany` : the volume can be mounted as read-write by many nodes
-- `ReadWriteOncePod` : the volume can be mounted as read-write by a single Pod. Use ReadWriteOncePod access mode if you want to ensure that only one pod across whole cluster can read that PVC or write to it. This is only supported for CSI volumes and Kubernetes version 1.22+
-
-Refer to the [document](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for more infomation.
 
 
 ## Demo
-This demo sets the access method of the dataset to ReadWriteOncePod.
+This demo sets the access method of the dataset to ReadWriteMany.
 ```
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -39,5 +35,5 @@ spec:
       name: hbase
       path: "/"
   accessModes:
-    - ReadWriteOncePod
+    - ReadWriteMany
 ```
