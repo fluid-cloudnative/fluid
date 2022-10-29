@@ -50,14 +50,12 @@ var (
 )
 
 var (
-	development             bool
-	fullGoProfile           bool
-	metricsAddr             string
-	webhookPort             int
-	certDir                 string
-	pprofAddr               string
-	enableLeaderElection    bool
-	leaderElectionNamespace string
+	development   bool
+	fullGoProfile bool
+	metricsAddr   string
+	webhookPort   int
+	certDir       string
+	pprofAddr     string
 )
 
 var webhookCmd = &cobra.Command{
@@ -79,8 +77,6 @@ func init() {
 	webhookCmd.Flags().IntVar(&webhookPort, "webhook-port", 9443, "Admission webhook listen address.")
 	webhookCmd.Flags().StringVar(&certDir, "webhook-cert-dir", "/etc/k8s-webhook-server/certs", "Admission webhook cert/key dir.")
 	webhookCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
-	webhookCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	webhookCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	webhookCmd.Flags().AddGoFlagSet(flag.CommandLine)
 }
 
@@ -114,13 +110,12 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
-		Port:                    webhookPort,
-		CertDir:                 certDir,
-		LeaderElection:          enableLeaderElection,
-		LeaderElectionNamespace: leaderElectionNamespace,
-		LeaderElectionID:        "webhook.data.fluid.io",
+		Scheme:             scheme,
+		MetricsBindAddress: metricsAddr,
+		Port:               webhookPort,
+		CertDir:            certDir,
+		LeaderElection:     false,
+		LeaderElectionID:   "webhook.data.fluid.io",
 		NewCache: cache.BuilderWithOptions(cache.Options{
 			Scheme: scheme,
 			SelectorsByObject: cache.SelectorsByObject{

@@ -23,6 +23,7 @@
   + 安全
     - [使用参数加密](samples/use_encryptoptions.md)
     - [以non-root用户身份使用](samples/nonroot_access.md)
+    - [修改访问模式](samples/data_accessmodes.md)
 + 底层存储
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)

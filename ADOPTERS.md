@@ -27,3 +27,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [Metaapp](https://www.metaapp.cn/)  | [@xzbcodelife](xzbzxcasdf@163.com) | Testing | Recommendation |
 | [Baidu AI Cloud](https://cloud.baidu.com/)  | [@abowloflrf](https://github.com/abowloflrf) | Staging | Cloud Container Engine |
 | [Envision](https://www.envision-group.com/cn/digital.html)  | [@shaoxuefeng](https://github.com/shaoxuefeng) | Testing | AI Platform on k8s |
+| [Metabit Trading](https://www.metabit-trading.com)  | [@jianhong](https://github.com/jianhong-metabit) | Production | AI Platform on k8s |
+| [Zhejiang Lab](https://www.zhejianglab.com)  | [@hongchen](https://github.com/hongchenokok) | Testing | AI Platform on k8s |

@@ -29,7 +29,6 @@ spec:
           - --development=false
           - --full-go-profile=false
           - --pprof-addr=:6060
-          - --enable-leader-election
         env:
           - name: MY_POD_NAMESPACE
             valueFrom:
