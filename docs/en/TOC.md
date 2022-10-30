@@ -20,6 +20,7 @@
   + Security
     - [Encrypted options for Dataset](samples/use_encryptoptions.md)
     - [Using Fluid to access non-root user's data](samples/nonroot_access.md)
+    - [Set Access Mode](samples/data_accessmodes.md)
 + Storage
     - [Accelerate HostPath with Fluid](samples/hostpath.md)
     - [Accelerate PVC with Fluid](samples/accelerate_pvc.md)
@@ -32,6 +33,7 @@
     - [How to ensure the completion of serverless tasks](samples/application_controller.md)
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
   - [Using Fluid on ARM64 platform](samples/arm64.md)
+  - [Support Image Pull Secrets](samples/image_pull_secrets.md)
 + Troubleshooting
   - [Collecting logs](userguide/troubleshooting.md)
 + Developer Guide

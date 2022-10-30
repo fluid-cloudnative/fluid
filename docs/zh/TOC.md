@@ -23,6 +23,7 @@
   + 安全
     - [使用参数加密](samples/use_encryptoptions.md)
     - [以non-root用户身份使用](samples/nonroot_access.md)
+    - [修改访问模式](samples/data_accessmodes.md)
 + 底层存储
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)
@@ -32,6 +33,7 @@
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
   - [面向 ARM 架构的使用](samples/arm64.md)
   - [设置 FUSE 清理策略](samples/fuse_clean_policy.md)
+  - [镜像拉取密钥](samples/image_pull_secrets.md)
   + 无服务器场景
     - [如何在Knative环境运行](samples/knative.md)
     - [如何保障 erverless 任务顺利完成](samples/application_controller.md)
