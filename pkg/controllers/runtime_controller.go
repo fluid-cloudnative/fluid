@@ -17,6 +17,9 @@ package controllers
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -64,10 +67,17 @@ func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.C
 
 // ReconcileInternal handles the logic of reconcile runtime
 func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
-	// 1.Get the runtime
+	// 0.Get the runtime
 	runtime := ctx.Runtime
 	if runtime == nil {
 		return utils.RequeueIfError(fmt.Errorf("failed to find the runtime"))
+	}
+
+	// 1.Validate name is prefixed with a number such as "20-hbase".
+	if errs := validation.IsDNS1035Label(runtime.GetName()); len(runtime.GetName()) > 0 && len(errs) > 0 {
+		err := field.Invalid(field.NewPath("metadata").Child("name"), runtime.GetName(), strings.Join(errs, ","))
+		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
+		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
 	// 2.Get or create the engine
