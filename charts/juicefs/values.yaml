@@ -42,6 +42,7 @@ worker:
   command: ""
   mountPath: /mnt/jfs
   statCmd: "stat -c %i /mnt/jfs"
+  podManagementPolicy: Parallel
   resources:
     requests:
 #      cpu: "0.5"
