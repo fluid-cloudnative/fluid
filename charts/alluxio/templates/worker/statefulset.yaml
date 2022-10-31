@@ -33,6 +33,7 @@ spec:
       role: alluxio-worker
   serviceName: {{ template "alluxio.fullname" . }}-worker
   replicas: {{ .Values.worker.replicaCount }}
+  podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   template:
     metadata:
       {{- if .Values.worker.annotations }}
