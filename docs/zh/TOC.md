@@ -27,6 +27,7 @@
 + 底层存储
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)
+  - [加速不同的底层存储](samples/accelerate_different_storage.md)
 + 进阶使用
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_global.md)
