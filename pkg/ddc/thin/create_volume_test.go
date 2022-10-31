@@ -62,6 +62,9 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 				Namespace: "fluid",
 			},
 		},
+		runtimeProfile: &datav1alpha1.ThinRuntimeProfile{
+			Spec: datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test"},
+		},
 	}
 
 	err = engine.CreateVolume()

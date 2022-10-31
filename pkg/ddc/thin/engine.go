@@ -34,12 +34,12 @@ import (
 )
 
 type ThinEngine struct {
-	runtime     *datav1alpha1.ThinRuntime
+	runtime        *datav1alpha1.ThinRuntime
 	runtimeProfile *datav1alpha1.ThinRuntimeProfile
-	name        string
-	namespace   string
-	runtimeType string
-	Log         logr.Logger
+	name           string
+	namespace      string
+	runtimeType    string
+	Log            logr.Logger
 	client.Client
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
