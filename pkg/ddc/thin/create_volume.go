@@ -50,7 +50,7 @@ func (t *ThinEngine) createFusePersistentVolume() (err error) {
 	return volumehelper.CreatePersistentVolumeForRuntime(t.Client,
 		runtimeInfo,
 		t.getTargetPath(),
-		t.runtime.Spec.FileSystemType,
+		t.runtimeProfile.Spec.FileSystemType,
 		t.Log)
 }
 

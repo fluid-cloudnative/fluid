@@ -34,9 +34,6 @@ type ThinRuntimeSpec struct {
 
 	ThinRuntimeProfileName string `json:"profileName,omitempty"`
 
-	// file system of thinRuntime
-	FileSystemType string `json:"fileSystemType"`
-
 	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`
 
