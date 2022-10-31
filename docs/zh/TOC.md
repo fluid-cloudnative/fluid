@@ -28,6 +28,7 @@
   - [主机目录加速](samples/hostpath.md)
   - [数据卷加速](samples/accelerate_pvc.md)
 + 进阶使用
+  - [使用内存加速和SSD加速配置](samples/accelerate_data_by_mem_or_ssd.md)
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_global.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
