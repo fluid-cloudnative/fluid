@@ -29,3 +29,6 @@
 0.2.6
 
 - Make fuse tolerate any taint
+
+0.2.7
+- Change podManagementPolicy from OrderedReady to Parallel
