@@ -22,6 +22,7 @@ metadata:
 spec:
   replicas: {{ .Values.worker.replicas }}
   serviceName: {{ template "juicefs.fullname" . }}-worker
+  podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   selector:
     matchLabels:
       app: {{ template "juicefs.name" . }}
