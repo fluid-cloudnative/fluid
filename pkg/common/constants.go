@@ -17,6 +17,8 @@ package common
 
 //Reason for Fluid events
 const (
+	ErrorCreateDataset = "ErrorCreateDataset"
+
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
 	ErrorDeleteDataset = "ErrorDeleteDataset"
