@@ -32,6 +32,7 @@ type ThinRuntimeProfileSpec struct {
 	Version VersionSpec `json:"version,omitempty"`
 
 	// file system of thinRuntime
+	// +required
 	FileSystemType string `json:"fileSystemType"`
 
 	// The component spec of worker
