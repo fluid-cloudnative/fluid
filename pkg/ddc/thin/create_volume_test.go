@@ -28,7 +28,7 @@ import (
 )
 
 func TestThinEngine_CreateVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -37,7 +37,7 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "thin",
+				Name:      "test",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{},
@@ -54,7 +54,7 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 		Client:      client,
 		Log:         fake.NullLogger(),
 		namespace:   "fluid",
-		name:        "hbase",
+		name:        "test",
 		runtimeInfo: runtimeInfo,
 		runtime: &datav1alpha1.ThinRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -147,7 +147,7 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 }
 
 func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -156,7 +156,7 @@ func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "thin",
+				Name:      "test",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{},
