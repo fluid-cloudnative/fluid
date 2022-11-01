@@ -16,7 +16,17 @@
 
 package thin
 
-import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+import (
+	"context"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
 func (t ThinEngine) DeleteVolume() (err error) {
 	if t.runtime == nil {
@@ -56,5 +66,33 @@ func (t *ThinEngine) deleteFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
+	err = t.unwrapMountedPersistentVolumeClaims()
+	if err != nil {
+		return errors.Wrapf(err, "failed to unwrap pvcs for runtime %s", t.name)
+	}
+
 	return volumehelper.DeleteFusePersistentVolumeClaim(t.Client, runtimeInfo, t.Log)
+}
+
+func (t *ThinEngine) unwrapMountedPersistentVolumeClaims() (err error) {
+	selector := labels.SelectorFromSet(labels.Set{common.LabelAnnotationWrappedBy: t.name})
+
+	var list corev1.PersistentVolumeClaimList
+	err = t.Client.List(context.TODO(), &list, &client.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return
+	}
+
+	labelsToModify := common.LabelsToModify{}
+	labelsToModify.Delete(common.LabelAnnotationWrappedBy)
+
+	for _, pvc := range list.Items {
+		if _, err = utils.PatchLabels(t.Client, &pvc, labelsToModify); err != nil {
+			return errors.Wrapf(err, "failed to remove label when unwrapping pvc %s", pvc.Name)
+		}
+	}
+
+	return
 }
