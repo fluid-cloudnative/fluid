@@ -45,6 +45,13 @@ func TestBuild(t *testing.T) {
 		},
 	}
 	testObjs = append(testObjs, dataset.DeepCopy())
+	var runtimeProfile = datav1alpha1.ThinRuntimeProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-profile",
+		},
+		Spec: datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test-fstype"},
+	}
+	testObjs = append(testObjs, runtimeProfile.DeepCopy())
 
 	var runtime = datav1alpha1.ThinRuntime{
 		ObjectMeta: metav1.ObjectMeta{
@@ -52,7 +59,8 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.ThinRuntimeSpec{
-			Fuse: datav1alpha1.ThinFuseSpec{},
+			ThinRuntimeProfileName: "test-profile",
+			Fuse:                   datav1alpha1.ThinFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{
@@ -67,7 +75,8 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.ThinRuntimeSpec{
-			Fuse: datav1alpha1.ThinFuseSpec{},
+			ThinRuntimeProfileName: "test-profile",
+			Fuse:                   datav1alpha1.ThinFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{

@@ -4353,6 +4353,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref comm
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
 						},
 					},
+					"fileSystemType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "file system of thinRuntime",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"worker": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The component spec of worker",
@@ -4382,6 +4390,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref comm
 						},
 					},
 				},
+				Required: []string{"fileSystemType"},
 			},
 		},
 		Dependencies: []string{
@@ -4411,14 +4420,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
-						},
-					},
-					"fileSystemType": {
-						SchemaProps: spec.SchemaProps{
-							Description: "file system of thinRuntime",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
 						},
 					},
 					"version": {
@@ -4484,7 +4485,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 						},
 					},
 				},
-				Required: []string{"fileSystemType"},
 			},
 		},
 		Dependencies: []string{

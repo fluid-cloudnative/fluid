@@ -352,3 +352,48 @@ func TestAddRuntimesIfNotExist(t *testing.T) {
 		}
 	}
 }
+
+func TestGetThinRuntimeProfile(t *testing.T) {
+	runtimeProfileName := "test-profile"
+	thinRuntimeProfile := &datav1alpha1.ThinRuntimeProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: runtimeProfileName,
+		},
+	}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntimeProfile)
+
+	fakeClient := fake.NewFakeClientWithScheme(s, thinRuntimeProfile)
+
+	tests := []struct {
+		name     string
+		wantName string
+		notFound bool
+	}{
+		{
+			name:     runtimeProfileName,
+			wantName: runtimeProfileName,
+			notFound: false,
+		},
+		{
+			name:     runtimeProfileName + "not-exist",
+			wantName: "",
+			notFound: true,
+		},
+	}
+	for _, tt := range tests {
+		got, err := GetThinRuntimeProfile(fakeClient, tt.name)
+		if tt.notFound {
+			if err == nil || !apierrs.IsNotFound(err) {
+				t.Errorf("check failure, expect not found, but got error: %v", err)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("check failure, expect got thinruntime profile, but got error: %v", err)
+			} else if got.Name != tt.wantName {
+				t.Errorf("check failure, want thinruntime name: %s, but got name: %s", tt.wantName, got.Name)
+			}
+		}
+	}
+}

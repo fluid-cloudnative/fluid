@@ -39,9 +39,6 @@ spec:
                 description: Disable monitoring for Runtime Prometheus is enabled
                   by default
                 type: boolean
-              fileSystemType:
-                description: file system of thinRuntime
-                type: string
               fuse:
                 description: The component spec of thinRuntime
                 properties:
@@ -4324,8 +4321,6 @@ spec:
                       type: object
                     type: array
                 type: object
-            required:
-            - fileSystemType
             type: object
           status:
             description: RuntimeStatus defines the observed state of Runtime

@@ -36,6 +36,9 @@ spec:
           spec:
             description: ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile
             properties:
+              fileSystemType:
+                description: file system of thinRuntime
+                type: string
               fuse:
                 description: The component spec of thinRuntime
                 properties:
@@ -2624,6 +2627,8 @@ spec:
                       type: object
                     type: array
                 type: object
+            required:
+            - fileSystemType
             type: object
           status:
             description: ThinRuntimeProfileStatus defines the observed state of ThinRuntimeProfile
