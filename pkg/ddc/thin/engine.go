@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,11 +34,12 @@ import (
 )
 
 type ThinEngine struct {
-	runtime     *datav1alpha1.ThinRuntime
-	name        string
-	namespace   string
-	runtimeType string
-	Log         logr.Logger
+	runtime        *datav1alpha1.ThinRuntime
+	runtimeProfile *datav1alpha1.ThinRuntimeProfile
+	name           string
+	namespace      string
+	runtimeType    string
+	Log            logr.Logger
 	client.Client
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
@@ -70,6 +72,12 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
 	}
 	engine.runtime = runtime
+
+	runtimeProfile, err := utils.GetThinRuntimeProfile(ctx.Client, runtime.Spec.ThinRuntimeProfileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when getting thinruntime profile %s", runtime.Spec.ThinRuntimeProfileName)
+	}
+	engine.runtimeProfile = runtimeProfile
 
 	// Build and setup runtime info
 	runtimeInfo, err := engine.getRuntimeInfo()

@@ -62,6 +62,9 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 				Namespace: "fluid",
 			},
 		},
+		runtimeProfile: &datav1alpha1.ThinRuntimeProfile{
+			Spec: datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test"},
+		},
 	}
 
 	err = engine.CreateVolume()
@@ -120,7 +123,10 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 		name:        "test",
 		runtimeInfo: runtimeInfo,
 		runtime: &datav1alpha1.ThinRuntime{
-			Spec: datav1alpha1.ThinRuntimeSpec{FileSystemType: "test"},
+			Spec: datav1alpha1.ThinRuntimeSpec{},
+		},
+		runtimeProfile: &datav1alpha1.ThinRuntimeProfile{
+			Spec: datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test"},
 		},
 	}
 

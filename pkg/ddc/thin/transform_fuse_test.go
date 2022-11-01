@@ -295,6 +295,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
 			},
+			FileSystemType: "test",
 			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
@@ -326,7 +327,6 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 		},
 		Spec: datav1alpha1.ThinRuntimeSpec{
 			ThinRuntimeProfileName: "test",
-			FileSystemType:         "test",
 			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name: "b",

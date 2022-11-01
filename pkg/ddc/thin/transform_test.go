@@ -246,6 +246,7 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
 			},
+			FileSystemType: "test",
 			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
@@ -277,7 +278,6 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 		},
 		Spec: datav1alpha1.ThinRuntimeSpec{
 			ThinRuntimeProfileName: "test",
-			FileSystemType:         "test",
 			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Replicas: 1,
 				Env: []corev1.EnvVar{{
