@@ -103,7 +103,9 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, option commo
 	// template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
-	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, info.namespace)
+
+	// Fluid assumes pvc name is the same as runtime's name
+	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
 	if err != nil {
 		return
 	}
