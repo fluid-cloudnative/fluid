@@ -46,6 +46,7 @@
   - [JVM性能分析](dev/profiling.md)
   - [自动弹性伸缩](operation/dataset_auto_scaling.md)
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)
+  - [pprof性能分析](dev/pprof.md)
 + 问题诊断
   - [日志收集](userguide/troubleshooting.md)
   - [数据卷挂载问题](troubleshooting/debug-fuse.md)
