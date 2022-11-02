@@ -153,6 +153,38 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 		testObjs = append(testObjs, pvcInput)
 	}
 
+	testRuntimeInputs := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dataset1",
+				Namespace: "default",
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				DatasetMounts: []datav1alpha1.DatasetMount{
+					{
+						MountPoint: "pvc://my-pvc-1",
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dataset2",
+				Namespace: "default",
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				DatasetMounts: []datav1alpha1.DatasetMount{
+					{
+						MountPoint: "pvc://my-pvc-2",
+					},
+				},
+			},
+		},
+	}
+	for _, runtimeInput := range testRuntimeInputs {
+		testObjs = append(testObjs, runtimeInput)
+	}
+
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	type fields struct {
@@ -169,15 +201,6 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 		{
 			name: "unwrap_native_pvc",
 			fields: fields{
-				runtime: &datav1alpha1.ThinRuntime{
-					Status: datav1alpha1.RuntimeStatus{
-						DatasetMounts: []datav1alpha1.DatasetMount{
-							{
-								MountPoint: "pvc://my-pvc-1",
-							},
-						},
-					},
-				},
 				name:      "dataset1",
 				namespace: "default",
 			},
@@ -187,15 +210,6 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 		{
 			name: "unwrap_native_pvc_without_label",
 			fields: fields{
-				runtime: &datav1alpha1.ThinRuntime{
-					Status: datav1alpha1.RuntimeStatus{
-						DatasetMounts: []datav1alpha1.DatasetMount{
-							{
-								MountPoint: "pvc://my-pvc-2",
-							},
-						},
-					},
-				},
 				name:      "dataset2",
 				namespace: "default",
 			},

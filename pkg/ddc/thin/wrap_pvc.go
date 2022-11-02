@@ -49,7 +49,7 @@ func (t *ThinEngine) unwrapMountedPersistentVolumeClaims() (err error) {
 		if strings.HasPrefix(datasetMount.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(datasetMount.MountPoint, common.VolumeScheme.String())
 			pvc, err := kubeclient.GetPersistentVolumeClaim(t.Client, pvcName, t.namespace)
-			if err != nil {
+			if utils.IgnoreNotFound(err) != nil {
 				return errors.Wrapf(err, "failed to get pvc when unwrapping pvc %s", pvcName)
 			}
 
