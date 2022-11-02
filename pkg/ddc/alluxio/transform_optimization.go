@@ -140,6 +140,37 @@ func (e *AlluxioEngine) optimizeDefaultPropertiesAndFuseForHTTP(runtime *datav1a
 func setDefaultProperties(runtime *datav1alpha1.AlluxioRuntime, alluxioValue *Alluxio, key string, value string) {
 	if _, found := runtime.Spec.Properties[key]; !found {
 		alluxioValue.Properties[key] = value
+	} else {
+		setFinalPortToValue(key, alluxioValue)
+	}
+}
+
+func setFinalPortToValue(key string, alluxioValue *Alluxio) {
+	switch key {
+	case "alluxio.master.rpc.port":
+		alluxioValue.Master.Ports.Rpc, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.master.web.port":
+		alluxioValue.Master.Ports.Web, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.worker.rpc.port":
+		alluxioValue.Worker.Ports.Rpc, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.worker.web.port":
+		alluxioValue.Worker.Ports.Web, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.master.rpc.port":
+		alluxioValue.JobMaster.Ports.Rpc, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.master.web.port":
+		alluxioValue.JobMaster.Ports.Web, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.worker.rpc.port":
+		alluxioValue.JobWorker.Ports.Rpc, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.worker.web.port":
+		alluxioValue.JobWorker.Ports.Web, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.worker.data.port":
+		alluxioValue.JobWorker.Ports.Data, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.proxy.web.port":
+		alluxioValue.APIGateway.Ports.Rest, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.master.embedded.journal.port":
+		alluxioValue.Master.Ports.Embedded, _ = strconv.Atoi(alluxioValue.Properties[key])
+	case "alluxio.job.master.embedded.journal.port":
+		alluxioValue.JobMaster.Ports.Embedded, _ = strconv.Atoi(alluxioValue.Properties[key])
 	}
 }
 
