@@ -35,6 +35,11 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		namespace   string = t.namespace
 	)
 
+	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
+	if err != nil {
+		return ready, err
+	}
+
 	// 1. Worker should be ready
 	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
 	if err != nil {
@@ -89,6 +94,10 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		// Update the setup time of thinFS runtime
 		if ready && runtimeToUpdate.Status.SetupDuration == "" {
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
+		}
+
+		for _, mount := range dataset.Status.Mounts {
+			runtimeToUpdate.Status.DatasetMounts = append(runtimeToUpdate.Status.DatasetMounts, data.DatasetMount{MountPoint: mount.MountPoint})
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {

@@ -4427,6 +4427,12 @@ spec:
               masterReason:
                 description: Reason for Master's condition transition
                 type: string
+              mountPoints:
+                description: MountPoints represents the mount points specified in
+                  the bounded dataset
+                items:
+                  type: string
+                type: array
               mountTime:
                 description: MountTime represents time last mount happened if Mounttime
                   is earlier than master starting time, remount will be required

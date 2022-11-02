@@ -50,6 +50,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetMount":             schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetMount(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":            schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
@@ -1391,6 +1392,24 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref common.Referenc
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetMount(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mountPoint": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -3769,12 +3788,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"datasetMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountPoints represents the mount points specified in the bounded dataset",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetMount"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"valueFile", "masterPhase", "workerPhase", "desiredWorkerNumberScheduled", "currentWorkerNumberScheduled", "workerNumberReady", "desiredMasterNumberScheduled", "currentMasterNumberScheduled", "masterNumberReady", "fusePhase", "currentFuseNumberScheduled", "desiredFuseNumberScheduled", "fuseNumberReady"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetMount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
