@@ -40,7 +40,12 @@ func (t *ThinEngine) wrapMountedPersistentVolumeClaim() (err error) {
 }
 
 func (t *ThinEngine) unwrapMountedPersistentVolumeClaims() (err error) {
-	for _, datasetMount := range t.runtime.Status.DatasetMounts {
+	runtime, err := utils.GetThinRuntime(t.Client, t.name, t.namespace)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get runtime %s/%s when unwrapping mounted pvcs", t.namespace, t.name)
+	}
+
+	for _, datasetMount := range runtime.Status.DatasetMounts {
 		if strings.HasPrefix(datasetMount.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(datasetMount.MountPoint, common.VolumeScheme.String())
 			pvc, err := kubeclient.GetPersistentVolumeClaim(t.Client, pvcName, t.namespace)
