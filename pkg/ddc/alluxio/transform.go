@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -444,37 +445,39 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 	}
 
 	index := 0
-	value.Master.Ports.Rpc = allocatedPorts[index]
-	index++
-	value.Master.Ports.Web = allocatedPorts[index]
-	index++
-	value.Worker.Ports.Rpc = allocatedPorts[index]
-	index++
-	value.Worker.Ports.Web = allocatedPorts[index]
-	index++
-	value.JobMaster.Ports.Rpc = allocatedPorts[index]
-	index++
-	value.JobMaster.Ports.Web = allocatedPorts[index]
-	index++
-	value.JobWorker.Ports.Rpc = allocatedPorts[index]
-	index++
-	value.JobWorker.Ports.Web = allocatedPorts[index]
-	index++
-	value.JobWorker.Ports.Data = allocatedPorts[index]
-	index++
+
+	value.Master.Ports.Rpc, index = e.allocateSinglePort(value, "alluxio.master.rpc.port", allocatedPorts, index)
+	value.Master.Ports.Web, index = e.allocateSinglePort(value, "alluxio.master.web.port", allocatedPorts, index)
+	value.Worker.Ports.Rpc, index = e.allocateSinglePort(value, "alluxio.worker.rpc.port", allocatedPorts, index)
+	value.Worker.Ports.Web, index = e.allocateSinglePort(value, "alluxio.worker.web.port", allocatedPorts, index)
+	value.JobMaster.Ports.Rpc, index = e.allocateSinglePort(value, "alluxio.job.master.rpc.port", allocatedPorts, index)
+	value.JobMaster.Ports.Web, index = e.allocateSinglePort(value, "alluxio.job.master.web.port", allocatedPorts, index)
+	value.JobWorker.Ports.Rpc, index = e.allocateSinglePort(value, "alluxio.job.worker.rpc.port", allocatedPorts, index)
+	value.JobWorker.Ports.Web, index = e.allocateSinglePort(value, "alluxio.job.worker.web.port", allocatedPorts, index)
+	value.JobWorker.Ports.Data, index = e.allocateSinglePort(value, "alluxio.job.worker.data.port", allocatedPorts, index)
 
 	if e.runtime.Spec.APIGateway.Enabled {
-		value.APIGateway.Ports.Rest = allocatedPorts[index]
-		index++
+		value.APIGateway.Ports.Rest, index = e.allocateSinglePort(value, "alluxio.proxy.web.port", allocatedPorts, index)
 	}
 
 	if e.runtime.Spec.Master.Replicas > 1 {
-		value.Master.Ports.Embedded = allocatedPorts[index]
-		index++
-		value.JobMaster.Ports.Embedded = allocatedPorts[index]
+		value.Master.Ports.Embedded, index = e.allocateSinglePort(value, "alluxio.master.embedded.journal.port", allocatedPorts, index)
+		value.JobMaster.Ports.Embedded, index = e.allocateSinglePort(value, "alluxio.job.master.embedded.journal.port", allocatedPorts, index)
 	}
 
 	return nil
+}
+
+func (e *AlluxioEngine) allocateSinglePort(value *Alluxio, key string, allocatedPorts []int, index int) (newPort, newIndex int) {
+	var port int
+	if newVal, found := value.Properties[key]; found {
+		port, _ = strconv.Atoi(newVal)
+	}else {
+		port = allocatedPorts[index]
+		index++
+	}
+
+	return port, index
 }
 
 func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRuntime) map[string]string {
