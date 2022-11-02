@@ -17,12 +17,7 @@
 package thin
 
 import (
-	"strings"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (t ThinEngine) CreateVolume() (err error) {
@@ -72,31 +67,4 @@ func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
 	}
 
 	return t.wrapMountedPersistentVolumeClaim()
-}
-
-func (t *ThinEngine) wrapMountedPersistentVolumeClaim() (err error) {
-	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
-	if err != nil {
-		return err
-	}
-
-	for _, mount := range dataset.Spec.Mounts {
-		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
-			pvcName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())
-
-			mountedPvc, err := kubeclient.GetPersistentVolumeClaim(t.Client, pvcName, t.namespace)
-			if err != nil {
-				return err
-			}
-
-			labelsToModify := common.LabelsToModify{}
-			labelsToModify.Add(common.LabelAnnotationWrappedBy, t.name)
-			_, err = utils.PatchLabels(t.Client, mountedPvc, labelsToModify)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
