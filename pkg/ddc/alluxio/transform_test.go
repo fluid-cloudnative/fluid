@@ -576,7 +576,7 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 				t.Errorf("port %s expected %d, got %d", "alluxio.worker.rpc.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Rpc)
 			}
 			preIndex = index
-			tt.args.alluxioValue.Worker.Ports.Web, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index)
+			tt.args.alluxioValue.Worker.Ports.Web, _ = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index)
 			if tt.args.alluxioValue.Worker.Ports.Web != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.worker.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Web)
 			}

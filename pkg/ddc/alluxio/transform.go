@@ -462,7 +462,7 @@ func (e *AlluxioEngine) allocatePorts(value *Alluxio) error {
 
 	if e.runtime.Spec.Master.Replicas > 1 {
 		value.Master.Ports.Embedded, index = e.allocateSinglePort(value, "alluxio.master.embedded.journal.port", allocatedPorts, index)
-		value.JobMaster.Ports.Embedded, index = e.allocateSinglePort(value, "alluxio.job.master.embedded.journal.port", allocatedPorts, index)
+		value.JobMaster.Ports.Embedded, _ = e.allocateSinglePort(value, "alluxio.job.master.embedded.journal.port", allocatedPorts, index)
 	}
 
 	return nil
