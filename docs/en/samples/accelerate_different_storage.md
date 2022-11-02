@@ -31,8 +31,10 @@ metadata:
   name: my-hdfs
 spec:
   mounts:
-    - mountPoint: hdfs://<namenode>:<port>
-      name: hdfs
+    - mountPoint: hdfs://<namenode>:<port>/path1
+      name: hdfs-file1
+    - mountPoint: hdfs://<namenode>:<port>/path2
+      name: hdfs-file2
 EOF
 ```
 
@@ -40,17 +42,24 @@ EOF
 $ kubectl create -f dataset.yaml
 ```
 
-Here, we will create a resource object whose *kind* is `Dataset` , Dataset is a Custom Resource Definition (CRD) defined by Fluid. The CRD is used to tell Fluid where to find the data you need.
 
 Fluid mounts the `mountPoint` attribute defined in the CRD object to Alluxio, so this attribute can be any legal **UFS address** that can be recognized by Alluxio.
 
-You can modify the `spec. mounts` field as required. It is generally set to the access path of the underlying storage, for example:
+In addition, multiple `mountPoint` can be set for each `Dataset`, so that you can mount all of the `mountPoint` to the specified directory. At the same time, you can also set `subPath` when mounting `PVC` to specify a `mountPoint` or its subdirectory set in the mount dataset. For example, in the above example, when mounting `PVC` to your pod, you can set `subPath: hdfs-file1`, so that only the `hdfs://<namenode>:<port>/path1` directory will be mounted.
+
+You can modify the `spec.mounts` field as required. It is generally set to the access path of the underlying storage, for example:
 
 * HDFS：`- mountPoint: hdfs://<namenode>:<port>`；
 
 * AWS S3：
 
     ``` yaml
+    apiVersion: data.fluid.io/v1alpha1
+    kind: Dataset
+    metadata:
+      name: my-s3
+    spec:
+      mounts:
         - mountPoint: s3://<bucket-name>/<path-to-data>/
           name: s3
           options:
@@ -75,7 +84,7 @@ You can modify the `spec. mounts` field as required. It is generally set to the 
 
 * GCS：`- mountPoint: gs://<bucket-name>/<path-to-data>`
 
-You need to specify the storage location in `spec. mounts. mountPoint`; In `spec. mounts. options`, specify the region, endpoint, and key required to access the storage（Refer to [List of Configuration Properties - Alluxio v2.8.1 (stable) Documentation](https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html) for more options）
+You need to specify the storage location in `spec.mounts.mountPoint`; In `spec.mounts.options`, specify the region, endpoint, and key required to access the storage（Refer to [List of Configuration Properties - Alluxio v2.8.1 (stable) Documentation](https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html) for more options）
 
 
 

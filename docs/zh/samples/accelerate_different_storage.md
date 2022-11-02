@@ -31,8 +31,10 @@ metadata:
   name: my-hdfs
 spec:
   mounts:
-    - mountPoint: hdfs://<namenode>:<port>
-      name: hdfs
+    - mountPoint: hdfs://<namenode>:<port>/path1
+      name: hdfs-file1
+    - mountPoint: hdfs://<namenode>:<port>/path2
+      name: hdfs-file2
 EOF
 ```
 
@@ -40,9 +42,10 @@ EOF
 $ kubectl create -f dataset.yaml
 ```
 
-在这里，我们将要创建一个kind为`Dataset`的资源对象(Resource object)。`Dataset`是Fluid所定义的一个Custom Resource Definition(CRD)，该CRD被用来告知Fluid在哪里可以找到你所需要的数据。
 
 Fluid将该CRD对象中定义的`mountPoint`属性挂载到Alluxio之上，因此该属性可以是任何合法的能够被Alluxio识别的UFS地址。
+
+而且每个`Dataset`可以设置多个`mountPoint`，这样当用户利用`PVC`挂载该目录时，所有的`mountPoint`都会被挂载在指定的目录下。同时用户也可以在挂载`PVC`时设置`subPath`来指定挂载Dataset中设置的某个`mountPoint`或者其子目录。例如，上述例子中，在挂载`PVC`时，你可以设置`subPath: hdfs-file1`，这样就只会挂载`hdfs://<namenode>:<port>/path1`目录。
 
 用户可以根据需要修改`spec.mounts`字段，一般设置为底层存储的访问路径，例如：
 
@@ -51,6 +54,12 @@ Fluid将该CRD对象中定义的`mountPoint`属性挂载到Alluxio之上，因�
 * AWS S3：
 
     ~~~ yaml
+    apiVersion: data.fluid.io/v1alpha1
+    kind: Dataset
+    metadata:
+      name: my-s3
+    spec:
+      mounts:
         - mountPoint: s3://<bucket-name>/<path-to-data>/
           name: s3
           options:
