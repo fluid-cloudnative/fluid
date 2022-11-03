@@ -4,6 +4,26 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: fluid-pod-admission-webhook
 webhooks:
+  - name: fuse.sidecar.inject.fluid.io
+    rules:
+      - apiGroups:   [""]
+        apiVersions: ["v1"]
+        operations:  ["CREATE"]
+        resources:   ["pods"]
+    clientConfig:
+      service:
+        namespace: fluid-system
+        name: fluid-pod-admission-webhook
+        path: "/mutate-fluid-io-v1alpha1-schedulepod"
+        port: 9443
+      caBundle: Cg==
+    timeoutSeconds: 20
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1","v1beta1"]
+    objectSelector:
+      matchLabels:
+        serverless.fluid.io/inject: "true"
   - name: schedulepod.fluid.io
     rules:
       - apiGroups:   [""]
@@ -21,7 +41,7 @@ webhooks:
     failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
-    namespaceSelector:
+    objectSelector:
       matchLabels:
-        fluid.io/enable-injection: "true"
+        dataset.affinity.fluid.io/inject: "true"
 {{- end }}
