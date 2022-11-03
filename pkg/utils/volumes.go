@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"reflect"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -67,44 +66,4 @@ func FindVolumeByVolumeMount(volumeMount corev1.VolumeMount, volumes []corev1.Vo
 	}
 
 	return nil
-}
-
-func AppendOrOverrideVolume(volumes []corev1.Volume, vol corev1.Volume) []corev1.Volume {
-	var existed bool
-	for idx, v := range volumes {
-		if v.Name == vol.Name {
-			if !reflect.DeepEqual(v, vol) {
-				// override existing volume
-				volumes[idx] = vol
-			}
-			existed = true
-			break
-		}
-	}
-
-	if !existed {
-		volumes = append(volumes, vol)
-	}
-
-	return volumes
-}
-
-func AppendOrOverrideVolumeMounts(volumeMounts []corev1.VolumeMount, vm corev1.VolumeMount) []corev1.VolumeMount {
-	var existed bool
-	for idx, m := range volumeMounts {
-		if m.Name == vm.Name {
-			if !reflect.DeepEqual(m, vm) {
-				// override existing volume mount
-				volumeMounts[idx] = vm
-			}
-			existed = true
-			break
-		}
-	}
-
-	if !existed {
-		volumeMounts = append(volumeMounts, vm)
-	}
-
-	return volumeMounts
 }
