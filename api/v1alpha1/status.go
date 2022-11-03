@@ -126,11 +126,7 @@ type RuntimeStatus struct {
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
 
 	// MountPoints represents the mount points specified in the bounded dataset
-	DatasetMounts []DatasetMount `json:"datasetMounts,omitempty"`
-}
-
-type DatasetMount struct {
-	MountPoint string `json:"mountPoint,omitempty"`
+	Mounts []Mount `json:"mounts,omitempty"`
 }
 
 type RuntimePhase string

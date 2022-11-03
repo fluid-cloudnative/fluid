@@ -160,7 +160,7 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 				Namespace: "default",
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				DatasetMounts: []datav1alpha1.DatasetMount{
+				Mounts: []datav1alpha1.Mount{
 					{
 						MountPoint: "pvc://my-pvc-1",
 					},
@@ -173,7 +173,7 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 				Namespace: "default",
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				DatasetMounts: []datav1alpha1.DatasetMount{
+				Mounts: []datav1alpha1.Mount{
 					{
 						MountPoint: "pvc://my-pvc-2",
 					},

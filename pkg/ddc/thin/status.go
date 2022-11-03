@@ -97,7 +97,10 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		for _, mount := range dataset.Status.Mounts {
-			runtimeToUpdate.Status.DatasetMounts = append(runtimeToUpdate.Status.DatasetMounts, data.DatasetMount{MountPoint: mount.MountPoint})
+			optionExcludedMount := mount.DeepCopy()
+			optionExcludedMount.EncryptOptions = nil
+			optionExcludedMount.Options = nil
+			runtimeToUpdate.Status.Mounts = append(runtimeToUpdate.Status.Mounts, *optionExcludedMount)
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
