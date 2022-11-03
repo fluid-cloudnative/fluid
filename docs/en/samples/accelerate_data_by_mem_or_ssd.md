@@ -29,7 +29,7 @@ $ cd <any-path>/mem
 
 Here is an typical example for accelerating data by **MEM** using AlluxioRuntime:
 ```yaml
-> runtime-mem.yaml
+cat<<EOF >runtime-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -41,13 +41,14 @@ spec:
       - mediumtype: MEM
         path: /dev/shm
         quota: 2Gi
+EOF
 ```
 > Note that `mediumtype` is `MEM`，which means accelerate data by mem.  
 > `quota: 2Gi` specifies maximium cache capacity.
 
 Create the corresponding dataset bound to the above AlluxioRuntime:
 ```yaml
-> dataset-mem.yaml
+cat<<EOF >dataset-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -56,6 +57,7 @@ spec:
   mounts:
     - mountPoint: https://downloads.apache.org/hbase/stable/
       name: hbase-mem
+EOF
 ```
 ```shell
 $ kubectl create -f dataset-mem.yaml
@@ -64,7 +66,7 @@ $ kubectl create -f runtime-mem.yaml
 
 **data warm-up**（more details about data warmup please refer to [data warmup](./data_warmup.md)）：
 ```yaml
-> dataload-mem.yaml
+cat<<EOF >dataload-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
@@ -73,6 +75,7 @@ spec:
   dataset:
     name: hbase-mem
     namespace: default
+EOF
 ```
 ```shell
 $ kubectl create -f dataload-mem.yaml
@@ -87,7 +90,7 @@ hbase-mem   569.12MiB        569.12MiB   2.00GiB          100.0%              Bo
 
 **Create a job to test accelerate data by mem：**
 ```yaml
-> app-mem.yaml
+cat<<EOF >app-mem.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -110,6 +113,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase-mem
+EOF
 ```
 ```shell
 $ kubectl apply -f app-mem.yaml
@@ -144,7 +148,7 @@ $ cd <any-path>/ssd
 
 Here is an typical example for accelerating data by **SSD** using AlluxioRuntime:
 ```yaml
-> runtime-ssd.yaml
+cat<<EOF >runtime-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -156,12 +160,13 @@ spec:
       - mediumtype: SSD
         path: /mnt/ssd
         quota: 2Gi
+EOF
 ```
 Note that `mediumtype` is `SSD`，which means accelerate data by SSD.
 
 Create the corresponding dataset bound to the above AlluxioRuntime:
 ```yaml
-> dataset-ssd.yaml
+cat<<EOF >dataset-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -170,6 +175,7 @@ spec:
   mounts:
     - mountPoint: https://downloads.apache.org/hbase/stable/
       name: hbase-ssd
+EOF
 ```
 ```shell
 $ kubectl create -f runtime-ssd.yaml
@@ -179,7 +185,7 @@ $ kubectl create -f dataset-ssd.yaml
 
 **data warmup：**
 ```yaml
-> dataload-ssd.yaml
+cat<<EOF >dataload-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
@@ -188,6 +194,7 @@ spec:
   dataset:
     name: hbase-ssd
     namespace: default
+EOF
 ```
 ```shell
 $ kubectl create -f dataload-ssd.yaml
@@ -202,7 +209,7 @@ hbase-ssd   569.12MiB        569.12MiB   2.00GiB          100.0%              Bo
 
 **Create a job to test accelerate data by ssd:**
 ```yaml
-> app-ssd.yaml
+cat<<EOF >app-ssd.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -225,6 +232,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase-ssd
+EOF
 ```
 ```shell
 $ kubectl apply -f app-ssd.yaml

@@ -29,7 +29,7 @@ $ cd <any-path>/mem
 ```
 这里通过一个例子来演示使用AlluxioRuntime通过内存加速数据：
 ```yaml
-> runtime-mem.yaml
+cat<<EOF >runtime-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -41,13 +41,14 @@ spec:
       - mediumtype: MEM
         path: /dev/shm
         quota: 2Gi
+EOF
 ```
 > 注意这里`mediumtype`类型为`MEM`，即通过内存来加速数据访问。  
 > `quota: 2Gi`指最大缓存容量。
 
 创建相应的dataset与上述AlluxioRuntime绑定：
 ```yaml
-> dataset-mem.yaml
+cat<<EOF >dataset-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -56,6 +57,7 @@ spec:
   mounts:
     - mountPoint: https://downloads.apache.org/hbase/stable/
       name: hbase-mem
+EOF
 ```
 创建dataset和runtime：
 ```shell
@@ -65,7 +67,7 @@ $ kubectl create -f runtime-mem.yaml
 
 进行数据预热（详见[数据预加载](./data_warmup.md)）：
 ```yaml
-> dataload-mem.yaml
+cat<<EOF >dataload-mem.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
@@ -74,6 +76,7 @@ spec:
   dataset:
     name: hbase-mem
     namespace: default
+EOF
 ```
 执行数据预热：
 ```shell
@@ -89,7 +92,7 @@ hbase-mem   569.12MiB        569.12MiB   2.00GiB          100.0%              Bo
 
 创建作业测试内存加速效果：
 ```yaml
-> app-mem.yaml
+cat<<EOF >app-mem.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -112,6 +115,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase-mem
+EOF
 ```
 
 执行作业查看内存加速效果：
@@ -149,7 +153,7 @@ $ cd <any-path>/ssd
 ```
 这里通过一个例子来演示使用AlluxioRuntime通过SSD加速数据：
 ```yaml
-> runtime-ssd.yaml
+cat<<EOF >runtime-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
 metadata:
@@ -161,12 +165,13 @@ spec:
       - mediumtype: SSD
         path: /mnt/ssd
         quota: 2Gi
+EOF
 ```
 注意这里`mediumtype`类型为`SSD`，即通过SSD来加速数据访问。
 
 创建相应的dataset与上述AlluxioRuntime绑定：
 ```yaml
-> dataset-ssd.yaml
+cat<<EOF >dataset-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -175,6 +180,7 @@ spec:
   mounts:
     - mountPoint: https://downloads.apache.org/hbase/stable/
       name: hbase-ssd
+EOF
 ```
 创建dataset和runtime：
 ```shell
@@ -185,7 +191,7 @@ $ kubectl create -f dataset-ssd.yaml
 
 进行数据预热：
 ```yaml
-> dataload-ssd.yaml
+cat<<EOF >dataload-ssd.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
@@ -194,6 +200,7 @@ spec:
   dataset:
     name: hbase-ssd
     namespace: default
+EOF
 ```
 执行数据预测：
 ```shell
@@ -209,7 +216,7 @@ hbase-ssd   569.12MiB        569.12MiB   2.00GiB          100.0%              Bo
 
 创建作业测试SSD加速效果：
 ```yaml
-> app-ssd.yaml
+cat<<EOF >app-ssd.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -232,6 +239,7 @@ spec:
         - name: hbase-vol
           persistentVolumeClaim:
             claimName: hbase-ssd
+EOF
 ```
 执行作业:
 ```shell
