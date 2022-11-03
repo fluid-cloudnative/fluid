@@ -29,6 +29,8 @@ const (
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
+	// LabelAnnotationWrappedBy indicates the resource is wrapped by some dataset
+	LabelAnnotationWrappedBy = LabelAnnotationPrefix + "wrapped-by"
 
 	// fluid adminssion webhook inject flag
 	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"

@@ -61,5 +61,10 @@ func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
+	err = volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
+	if err != nil {
+		return err
+	}
+
+	return t.wrapMountedPersistentVolumeClaim()
 }

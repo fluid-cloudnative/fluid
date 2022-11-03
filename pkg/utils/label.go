@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -53,10 +54,7 @@ func ChangeNodeLabelWithUpdateMode(client client.Client, node *v1.Node, labelsTo
 	return modifiedLabels, nil
 }
 
-//TODO(chenguowang) support multiple types of runtime.
-
-// ChangeNodeLabelWithPatchMode updates the input labels in PATCH mode.
-func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
+func PatchLabels(cli client.Client, obj client.Object, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
 	labels := labelsToModify.GetLabels()
 	labelValuePair := map[string]interface{}{}
 
@@ -87,9 +85,14 @@ func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModi
 	if err != nil {
 		return nil, err
 	}
-	err = cli.Patch(context.TODO(), node, client.RawPatch(types.StrategicMergePatchType, patchByteData))
+	err = cli.Patch(context.TODO(), obj, client.RawPatch(types.StrategicMergePatchType, patchByteData))
 	if err != nil {
-		return nil, errors.Wrapf(err, "patch node labels failed, node name: %s, labels: %v", node.Name, node.Labels)
+		return nil, errors.Wrapf(err, "patch node labels failed, node name: %s, labels: %v", obj.GetName(), obj.GetLabels())
 	}
 	return modifiedLabels, nil
+}
+
+// ChangeNodeLabelWithPatchMode updates the input labels in PATCH mode.
+func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
+	return PatchLabels(cli, node, labelsToModify)
 }

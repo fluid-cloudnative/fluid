@@ -119,10 +119,29 @@ func TestThinEngine_DeleteVolume(t *testing.T) {
 		tests = append(tests, pvcInput.DeepCopy())
 	}
 
+	testRuntimeInputs := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "thin",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "error",
+				Namespace: "fluid",
+			},
+		},
+	}
+
+	for _, runtimeInput := range testRuntimeInputs {
+		tests = append(tests, runtimeInput)
+	}
+
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	ThinEngineCommon := newTestThinEngine(fakeClient, "thin", "fluid", true)
 	ThinEngineErr := newTestThinEngine(fakeClient, "error", "fluid", true)
-	ThinEngineNoRunTime := newTestThinEngine(fakeClient, "thin", "fluid", false)
+	ThinEngineNoRunTime := newTestThinEngine(fakeClient, "thin-no-runtime", "fluid", false)
 	var testCases = []TestCase{
 		{
 			engine:    ThinEngineCommon,
@@ -162,9 +181,22 @@ func TestThinEngine_deleteFusePersistentVolume(t *testing.T) {
 		tests = append(tests, pvInput.DeepCopy())
 	}
 
+	testRuntimeInputs := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "thin",
+				Namespace: "fluid",
+			},
+		},
+	}
+
+	for _, runtimeInput := range testRuntimeInputs {
+		tests = append(tests, runtimeInput)
+	}
+
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	ThinEngine := newTestThinEngine(fakeClient, "thin", "fluid", true)
-	ThinEngineNoRuntime := newTestThinEngine(fakeClient, "thin", "fluid", false)
+	ThinEngineNoRuntime := newTestThinEngine(fakeClient, "thin-no-runtime", "fluid", false)
 	testCases := []TestCase{
 		{
 			engine:    ThinEngine,
@@ -198,9 +230,22 @@ func TestThinEngine_deleteFusePersistentVolumeClaim(t *testing.T) {
 		tests = append(tests, pvcInput.DeepCopy())
 	}
 
+	testRuntimeInputs := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+	}
+
+	for _, runtimeInput := range testRuntimeInputs {
+		tests = append(tests, runtimeInput)
+	}
+
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	ThinEngine := newTestThinEngine(fakeClient, "hbase", "fluid", true)
-	ThinEngineNoRuntime := newTestThinEngine(fakeClient, "hbase", "fluid", false)
+	ThinEngineNoRuntime := newTestThinEngine(fakeClient, "hbase-no-runtime", "fluid", false)
 	testCases := []TestCase{
 		{
 			engine:    ThinEngine,

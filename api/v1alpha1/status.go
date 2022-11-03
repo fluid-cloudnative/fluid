@@ -124,6 +124,9 @@ type RuntimeStatus struct {
 	// MountTime represents time last mount happened
 	// if Mounttime is earlier than master starting time, remount will be required
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
+
+	// MountPoints represents the mount points specified in the bounded dataset
+	Mounts []Mount `json:"mounts,omitempty"`
 }
 
 type RuntimePhase string
