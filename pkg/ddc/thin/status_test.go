@@ -191,6 +191,35 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 				},
 			}
 
+			var datasetInputs = []*datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "thin1",
+						Namespace: "fluid",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "ceph://myceph",
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "thin2",
+						Namespace: "fluid",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "pvc://my-pvc",
+							},
+						},
+					},
+				},
+			}
+
 			objs := []runtime.Object{}
 
 			for _, workerInput := range workerInputs {
@@ -203,6 +232,10 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 
 			for _, fuseInput := range fuseInputs {
 				objs = append(objs, fuseInput.DeepCopy())
+			}
+
+			for _, datasetInput := range datasetInputs {
+				objs = append(objs, datasetInput)
 			}
 
 			fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)

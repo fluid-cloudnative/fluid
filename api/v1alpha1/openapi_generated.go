@@ -3769,12 +3769,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"mounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountPoints represents the mount points specified in the bounded dataset",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"valueFile", "masterPhase", "workerPhase", "desiredWorkerNumberScheduled", "currentWorkerNumberScheduled", "workerNumberReady", "desiredMasterNumberScheduled", "currentMasterNumberScheduled", "masterNumberReady", "fusePhase", "currentFuseNumberScheduled", "desiredFuseNumberScheduled", "fuseNumberReady"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
