@@ -43,6 +43,10 @@ func init() {
 	}
 }
 
+func DatasetAffinityInjectEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectDatasetAffinity)
+}
+
 func ServerlessPlatformMatched(infos map[string]string) (match bool) {
 	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
 		return

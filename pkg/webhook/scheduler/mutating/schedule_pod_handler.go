@@ -142,15 +142,15 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	}
 
 	// handle the pods interact with fluid
-	if len(runtimeInfos) == 0 {
-		pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
-	} else {
-		if utils.ServerlessEnabled(pod.GetLabels()) {
-			pluginsList = pluginsRegistry.GetServerlessPodHandler()
+	switch {
+	case utils.ServerlessEnabled(pod.GetLabels()):
+		pluginsList = pluginsRegistry.GetServerlessPodHandler()
+	case utils.DatasetAffinityInjectEnabled(pod.GetLabels()):
+		if len(runtimeInfos) == 0 {
+			pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 		} else {
 			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
 		}
-
 	}
 
 	// call every plugin in the plugins list in the defined order
