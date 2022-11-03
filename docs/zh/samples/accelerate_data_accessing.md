@@ -36,6 +36,19 @@ spec:
       name: hbase
 EOF
 ```
+上述`mountPoint`的链接为Hbase镜像源，点开该链接后，你应该可以看到Hbase相关的部分数据文件，例如：
+
+```
+CHANGES.md                           2022-10-14 03:12  136K  
+RELEASENOTES.md                      2022-10-14 03:12  1.0M  
+api_compare_2.4.14_to_2.4.15RC0.html 2022-10-14 03:12   20K  
+hbase-2.4.15-bin.tar.gz              2022-10-14 03:12  271M  
+hbase-2.4.15-client-bin.tar.gz       2022-10-14 03:12  260M  
+hbase-2.4.15-src.tar.gz              2022-10-14 03:12   35M  
+```
+
+在本示例中，我们将会使用Alluxio的WebUFS功能访问上述文件。
+
 > 注意: 上述`mountPoint`中使用了Apache清华镜像源进行演示，如果当前的镜像源失效了，你可以使用该镜像源站点下Hbase的[其他版本](https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/)进行尝试，或者你可以尝试其他的镜像源(e.g. [中科大镜像源](http://mirrors.ustc.edu.cn/apache/hbase/stable/))。如果你的环境位于海外，请更换为`https://downloads.apache.org/hbase/stable/`进行尝试
 
 在这里，我们将要创建一个kind为`Dataset`的资源对象(Resource object)。`Dataset`是Fluid所定义的一个Custom Resource Definition(CRD)，该CRD被用来告知Fluid在哪里可以找到你所需要的数据。Fluid将该CRD对象中定义的`mountPoint`属性挂载到Alluxio之上，因此该属性可以是任何合法的能够被Alluxio识别的UFS地址。在本示例中，为了简单，我们使用[WebUFS](https://docs.alluxio.io/os/user/stable/cn/ufs/WEB.html)进行演示。
