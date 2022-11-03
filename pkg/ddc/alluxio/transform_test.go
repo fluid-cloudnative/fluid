@@ -23,8 +23,10 @@ import (
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -579,6 +581,85 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 			tt.args.alluxioValue.Worker.Ports.Web, _ = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index)
 			if tt.args.alluxioValue.Worker.Ports.Web != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.worker.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Web)
+			}
+
+		})
+	}
+}
+
+func TestAlluxioEngine_allocatePorts(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("20000-21000")
+	portallocator.SetupRuntimePortAllocator(nil, pr, dummy)
+	type fields struct {
+		runtime                *datav1alpha1.AlluxioRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		initImage              string
+		MetadataSyncDoneCh     chan MetadataSyncResult
+	}
+	type args struct {
+		allocatedPorts []int
+		alluxioValue *Alluxio
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		wantPorts []int
+	}{
+		{
+			name: "test_set_Properties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						APIGateway: datav1alpha1.AlluxioCompTemplateSpec {
+							Enabled: true,
+						},
+					},
+				},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20001, 20001, 20001},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{
+						"alluxio.master.rpc.port": strconv.Itoa(30001),
+						"alluxio.master.web.port": strconv.Itoa(30001),
+						"alluxio.worker.rpc.port": strconv.Itoa(30001),
+						"alluxio.worker.web.port": strconv.Itoa(30001),
+						"alluxio.proxy.web.port": strconv.Itoa(30001),
+					},
+				},
+			},
+			wantPorts: []int{30001},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				initImage:              tt.fields.initImage,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+			}
+
+			err := e.allocatePorts(tt.args.alluxioValue)
+			if err != nil {
+				t.Errorf("allocatePorts err: %v", err)
+			}
+			if tt.args.alluxioValue.APIGateway.Ports.Rest != tt.wantPorts[0] {
+				t.Errorf("expect %d got %d", tt.wantPorts[0], tt.args.alluxioValue.APIGateway.Ports.Rest)
 			}
 
 		})
