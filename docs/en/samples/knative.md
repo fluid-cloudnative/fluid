@@ -1,21 +1,21 @@
-# 示例 - 如何运行在以Knative为例的Serverless环境中
+# Demo - How to run in a Serverless environment with Knative as an example
 
-本示例以开源框架Knative为例子，演示如何在Serverless环境中通过Fluid进行统一的数据加速，本例子以AlluxioRuntime为例，实际上Fluid支持所有的Runtime运行在Serverless环境。
+This example uses the open source framework Knative as an example to demonstrate how to perform unified data acceleration via Fluid in a Serverless environment. This example uses AlluxioRuntime as an example, and in fact Fluid supports all Runtime running in a Serverless environment.
 
-## 安装
+## Installation
 
-1.根据[Knative文档](https://knative.dev/docs/install/serving/install-serving-with-yaml/)安装Knative Serving v1.2，需要开启[kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156)。
+1.Install Knative Serving v1.2 according to the [Knative documentation](https://knative.dev/docs/install/serving/install-serving-with-yaml/), you need to enable the [kubernetes.Deploymentspec-persistent-volume-claim](https://github.com/knative/serving/blob/main/config/core/configmaps/features.yaml#L156) option.
 
-检查 Knative的组件是否正常运行
+
+Check if Knative's components are working properly
 
 ```
 kubectl get Deployments -n knative-serving
 ```
 
-> 注：本文只是作为演示目的，关于Knative的生产系统安装请参考Knative文档最佳实践进行部署。另外由于Knative的容器镜像都在gcr.io镜像仓库，请确保镜像可达。
-如果您使用的是阿里云，您也可以直接使用[阿里云ACK的托管服务](https://help.aliyun.com/document_detail/121508.html)降低配置Knative的复杂度。
+> Note: This document is just for demonstration purpose, please refer to the best practices of Knative documentation for Knative deployment in production environment. Also, since the container images of Knative are in the gcr.io image repository, please make sure the images are reachable. If you are using AliCloud, you can also use [AliCloud ACK](https://help.aliyun.com/document_detail/121508.html) hosting service directly to reduce the complexity of configuring Knative.
 
-2. 请参考[安装文档](../userguide/install.md)安装Fluid最新版, 安装后检查 Fluid 各组件正常运行（本文以 AlluxioRuntime 为例）：
+2.Please refer to the [installation documentation](../userguide/install.md) to install the latest Fluid, and check that the Fluid components are working properly after installation (this document uses AlluxioRuntime as an example):
 
 ```shell
 $ kubectl get deploy -n fluid-system
@@ -25,23 +25,23 @@ dataset-controller          1/1     1            1           18m
 fluid-webhook               1/1     1            1           18m
 ```
 
-通常来说，可以看到一个名为 `dataset-controller` 的 Deployment、一个名为 `alluxioruntime-controller` 的 Deployment以及一个名为 `fluid-webhook` 的 Deployment。
+Typically, you can see a Deployment named `dataset-controller`, a Deployment named `alluxioruntime-controller`, and a Deployment named `fluid-webhook`.
 
-## 配置
+## Configuration
 
-**为namespace添加标签**
+**Adding label to namespace**
 
-为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
+Adding the tag fluid.io/enable-injection to the namespace enables scheduling optimization for Pods under this namespace.
 
 ```bash
 $ kubectl label namespace default fluid.io/enable-injection=true
 ```
 
-## 运行示例
+## Running
 
-**创建 dataset 和 runtime**
+**Create dataset and runtime**
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例, 以下为Dataset内容
+Create Runtime resources for different types of Runtime, as well as a Dataset with the same name. Here is the example of AlluxioRuntime, the following is the Dataset content:
 
 ```yaml
 $ cat<<EOF >dataset.yaml
@@ -73,14 +73,13 @@ spec:
 EOF
 ```
 
-执行创建Dataset操作
+Execute the Create Dataset operation:
 
 ```
 $ kubectl create -f dataset.yaml
 ```
 
-查看Dataset状态
-
+Check Dataset Status:
 
 ```shell
 $ kubectl get alluxio
@@ -91,7 +90,7 @@ NAME              UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE  
 serverless-data   566.22MiB        0.00B    4.00GiB          0.0%                Bound   4m52s
 ```
 
-**创建 Knative Serving 资源对象**
+**Creating Knative Serving Resource Objects**
 
 ```yaml
 $ cat<<EOF >serving.yaml
@@ -132,10 +131,10 @@ $ kubectl create -f serving.yaml
 service.serving.knative.dev/model-serving created
 ```
 
-请在podSpec或者podTemplateSpec中的label中配置`serverless.fluid.io/inject: "true"`
+Please configure `serverless.fluid.io/inject: "true"` in the label of the podSpec or podTemplateSpec.
 
 
-**查看 Knative Serving 是否创建，并检查 fuse-container 是否注入**
+**Check if Knative Serving is created and check if fuse-container is injected**
 
 ```shell
 $ kubectl get po
@@ -151,7 +150,7 @@ $ kubectl get po model-serving-00001-deployment-64d674d75f-46vvf -oyaml| grep -i
     name: fluid-fuse
 ```
 
-查看 Knative Serving 启动速度,可以看到启动加载数据的时间是**92s**
+Checking the Knative Serving startup speed, you can see that the startup data loading time is **92s**.
 
 ```shell
 $ kubectl logs model-serving-00001-deployment-64d674d75f-46vvf -c user-container
@@ -164,15 +163,15 @@ Finish loading models at 16:29:45
 2022-02-15 16:29:45 INFO Hello world sample started.
 ```
 
-**清理knative serving实例**
+**Clean up Knative serving instances**
 
 ```
 $ kubectl delete -f serving.yaml
 ```
 
-**执行数据预热**
+**Execute data warm-up**
 
-创建dataload对象，并查看状态：
+Create the dataload object and check its status:
 
 ```yaml
 $ cat<<EOF >dataload.yaml
@@ -192,7 +191,7 @@ NAME                  DATASET           PHASE      AGE     DURATION
 serverless-dataload   serverless-data   Complete   2m43s   34s
 ```
 
-检查此时的缓存状态, 目前已经将数据完全缓存到集群中
+Check the cache status at this point, the data is now fully cached in the cluster.
 
 ```
 $ kubectl get dataset
@@ -200,14 +199,15 @@ NAME              UFS TOTAL SIZE   CACHED      CACHE CAPACITY   CACHED PERCENTAG
 serverless-data   566.22MiB        566.22MiB   4.00GiB          100.0%              Bound   33m
 ```
 
-再次创建Knative服务：
+Create Knative service again：
 
 ```shell
 $ kubectl create -f serving.yaml
 service.serving.knative.dev/model-serving created
 ```
 
-此时查看启动时间发现当前启动加载数据的时间是**3.66s**, 变成没有预热的情况下性能的**1/20**
+Checking the boot time at this point reveals that the current boot time for loading data is **3.66s**, which becomes **1/20** of the performance without warm-up.
+
 
 ```
 kubectl logs model-serving-00001-deployment-6cb54f94d7-dbgxf -c user-container
@@ -220,7 +220,7 @@ Finish loading models at 18:38:25
 2022-02-15 18:38:25 INFO Hello world sample started.
 ```
 
-> 注： 本例子使用的是Knative serving，如果您没有Knative环境，也可以使用Deployment进行实验。
+> Note: This example uses Knative serving. If you don't have a Knative environment, you can also experiment with Deployment.
 
 ```yaml
 apiVersion: apps/v1
@@ -255,7 +255,7 @@ spec:
             claimName: serverless-data
 ```
 
-> 注：默认的sidecar注入模式是不会开启缓存目录短路读，如果您需要开启该能力，可以在labels中通过配置参数`cachedir.sidecar.fluid.io/inject`为`true`
+> Note: The default sidecar injection mode does not enable cached directory short-circuit reads, if you need to enable this capability, you can configure the parameter `cachedir.sidecar.fluid.io/inject` to `true` in the labels. 
 
 ```yaml
 apiVersion: apps/v1
