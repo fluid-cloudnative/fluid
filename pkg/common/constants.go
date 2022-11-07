@@ -140,6 +140,8 @@ const (
 	App                           = "app"
 	InjectAppPostStart            = "app.poststart" + inject
 
+	InjectDatasetAffinity = "dataset.affinity" + inject
+
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
 	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"

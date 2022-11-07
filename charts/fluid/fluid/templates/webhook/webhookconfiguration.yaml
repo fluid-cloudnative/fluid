@@ -4,7 +4,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: fluid-pod-admission-webhook
 webhooks:
-  - name: schedulepod.fluid.io
+  - name: sidecar.fuse.fluid.io
     rules:
       - apiGroups:   [""]
         apiVersions: ["v1"]
@@ -21,7 +21,7 @@ webhooks:
     failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
-    namespaceSelector:
+    objectSelector:
       matchLabels:
-        fluid.io/enable-injection: "true"
+        serverless.fluid.io/inject: "true"
 {{- end }}
