@@ -4,7 +4,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: fluid-pod-admission-webhook
 webhooks:
-  - name: fuse.sidecar.inject.fluid.io
+  - name: sidecar.fuse.fluid.io
     rules:
       - apiGroups:   [""]
         apiVersions: ["v1"]
