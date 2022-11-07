@@ -24,6 +24,7 @@
 + Storage
     - [Accelerate HostPath with Fluid](samples/hostpath.md)
     - [Accelerate PVC with Fluid](samples/accelerate_pvc.md)
+    - [Accelerate different Storage with Fluid](samples/accelerate_different_storage.md)
 + Workload
   - [Machine Learning](samples/machinelearning.md)
 + Advanced   
