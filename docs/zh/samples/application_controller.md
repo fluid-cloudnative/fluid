@@ -24,18 +24,6 @@ juicefsruntime-controller-65d54bb48f-vnzpj   1/1     Running   0          99s
 
 ## 运行示例
 
-**为 namespace 开启 webhook**
-
-Fluid webhook 提供了在 Serverless 场景中为 pod 注入 FUSE Sidecar 的功能，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
-
-```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
-```
-
 **创建 dataset 和 runtime**
 
 针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
