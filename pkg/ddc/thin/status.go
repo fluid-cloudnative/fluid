@@ -96,12 +96,14 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
 
+		var statusMountsToUpdate []data.Mount
 		for _, mount := range dataset.Status.Mounts {
 			optionExcludedMount := mount.DeepCopy()
 			optionExcludedMount.EncryptOptions = nil
 			optionExcludedMount.Options = nil
-			runtimeToUpdate.Status.Mounts = append(runtimeToUpdate.Status.Mounts, *optionExcludedMount)
+			statusMountsToUpdate = append(statusMountsToUpdate, *optionExcludedMount)
 		}
+		runtimeToUpdate.Status.Mounts = statusMountsToUpdate
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = t.Client.Status().Update(context.TODO(), runtimeToUpdate)
