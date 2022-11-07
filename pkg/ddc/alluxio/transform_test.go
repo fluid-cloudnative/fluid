@@ -504,13 +504,13 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	}
 	type args struct {
 		allocatedPorts []int
-		alluxioValue *Alluxio
+		alluxioValue   *Alluxio
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name      string
+		fields    fields
+		args      args
 		wantPorts []int
 	}{
 		{
@@ -604,13 +604,13 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	}
 	type args struct {
 		allocatedPorts []int
-		alluxioValue *Alluxio
+		alluxioValue   *Alluxio
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name      string
+		fields    fields
+		args      args
 		wantPorts []int
 	}{
 		{
@@ -618,7 +618,7 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 			fields: fields{
 				runtime: &datav1alpha1.AlluxioRuntime{
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
-						APIGateway: datav1alpha1.AlluxioCompTemplateSpec {
+						APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
 							Enabled: true,
 						},
 					},
@@ -632,7 +632,7 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 						"alluxio.master.web.port": strconv.Itoa(30001),
 						"alluxio.worker.rpc.port": strconv.Itoa(30001),
 						"alluxio.worker.web.port": strconv.Itoa(30001),
-						"alluxio.proxy.web.port": strconv.Itoa(30001),
+						"alluxio.proxy.web.port":  strconv.Itoa(30001),
 					},
 				},
 			},
