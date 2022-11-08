@@ -257,6 +257,7 @@ worker:
   jvmOptions:
   nodeSelector: {}
   replicaCount: 0
+  podManagementPolicy: Parallel
   volumeMounts: []
   # volumeMounts:
   # - name: mySecretVolume
