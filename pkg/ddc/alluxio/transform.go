@@ -472,7 +472,7 @@ func (e *AlluxioEngine) allocateSinglePort(value *Alluxio, key string, allocated
 	var port int
 	if newVal, found := value.Properties[key]; found {
 		port, _ = strconv.Atoi(newVal)
-	}else {
+	} else {
 		port = allocatedPorts[index]
 		index++
 	}
