@@ -50,7 +50,7 @@ func (t *ThinEngine) createFusePersistentVolume() (err error) {
 	return volumehelper.CreatePersistentVolumeForRuntime(t.Client,
 		runtimeInfo,
 		t.getTargetPath(),
-		t.runtime.Spec.FileSystemType,
+		t.runtimeProfile.Spec.FileSystemType,
 		t.Log)
 }
 
@@ -61,5 +61,10 @@ func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
+	err = volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
+	if err != nil {
+		return err
+	}
+
+	return t.wrapMountedPersistentVolumeClaim()
 }

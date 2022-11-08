@@ -35,6 +35,11 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		namespace   string = t.namespace
 	)
 
+	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
+	if err != nil {
+		return ready, err
+	}
+
 	// 1. Worker should be ready
 	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
 	if err != nil {
@@ -90,6 +95,15 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if ready && runtimeToUpdate.Status.SetupDuration == "" {
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
+
+		var statusMountsToUpdate []data.Mount
+		for _, mount := range dataset.Status.Mounts {
+			optionExcludedMount := mount.DeepCopy()
+			optionExcludedMount.EncryptOptions = nil
+			optionExcludedMount.Options = nil
+			statusMountsToUpdate = append(statusMountsToUpdate, *optionExcludedMount)
+		}
+		runtimeToUpdate.Status.Mounts = statusMountsToUpdate
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = t.Client.Status().Update(context.TODO(), runtimeToUpdate)

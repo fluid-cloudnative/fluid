@@ -359,5 +359,10 @@ func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
 		namespace = v1.NamespaceDefault
 	}
 	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+
+	if _, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; exists {
+		isDataset = true
+	}
+
 	return
 }

@@ -16,12 +16,18 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
+	"strconv"
+	"testing"
+
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"reflect"
-	"testing"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -480,5 +486,182 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 		if got != tt.wantMediumType {
 			t.Fatalf("test name: %s. Expected value=%s, but got value=%s", tt.name, tt.wantMediumType, got)
 		}
+	}
+}
+
+func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
+	type fields struct {
+		runtime                *datav1alpha1.AlluxioRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		initImage              string
+		MetadataSyncDoneCh     chan MetadataSyncResult
+	}
+	type args struct {
+		allocatedPorts []int
+		alluxioValue   *Alluxio
+	}
+
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantPorts []int
+	}{
+		{
+			name: "test_set_Properties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20001, 20001, 20001},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{
+						"alluxio.master.rpc.port": strconv.Itoa(30001),
+						"alluxio.master.web.port": strconv.Itoa(30001),
+						"alluxio.worker.rpc.port": strconv.Itoa(30001),
+						"alluxio.worker.web.port": strconv.Itoa(30001),
+					},
+				},
+			},
+			wantPorts: []int{30001},
+		},
+		{
+			name: "test_unset_Properties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20002, 20003, 20004},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{},
+				},
+			},
+			wantPorts: []int{20001, 20002, 20003, 20004},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				initImage:              tt.fields.initImage,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+			}
+
+			index := 0
+			preIndex := 0
+
+			tt.args.alluxioValue.Master.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.rpc.port", tt.args.allocatedPorts, index)
+			if tt.args.alluxioValue.Master.Ports.Rpc != tt.wantPorts[preIndex] {
+				t.Errorf("port %s expected %d, got %d", "alluxio.master.rpc.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Master.Ports.Rpc)
+			}
+			preIndex = index
+			tt.args.alluxioValue.Master.Ports.Web, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.web.port", tt.args.allocatedPorts, index)
+			if tt.args.alluxioValue.Master.Ports.Web != tt.wantPorts[preIndex] {
+				t.Errorf("port %s expected %d, got %d", "alluxio.master.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Master.Ports.Web)
+			}
+			preIndex = index
+			tt.args.alluxioValue.Worker.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.rpc.port", tt.args.allocatedPorts, index)
+			if tt.args.alluxioValue.Worker.Ports.Rpc != tt.wantPorts[preIndex] {
+				t.Errorf("port %s expected %d, got %d", "alluxio.worker.rpc.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Rpc)
+			}
+			preIndex = index
+			tt.args.alluxioValue.Worker.Ports.Web, _ = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index)
+			if tt.args.alluxioValue.Worker.Ports.Web != tt.wantPorts[preIndex] {
+				t.Errorf("port %s expected %d, got %d", "alluxio.worker.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Web)
+			}
+
+		})
+	}
+}
+
+func TestAlluxioEngine_allocatePorts(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("20000-21000")
+	portallocator.SetupRuntimePortAllocator(nil, pr, dummy)
+	type fields struct {
+		runtime                *datav1alpha1.AlluxioRuntime
+		name                   string
+		namespace              string
+		runtimeType            string
+		Log                    logr.Logger
+		Client                 client.Client
+		gracefulShutdownLimits int32
+		retryShutdown          int32
+		initImage              string
+		MetadataSyncDoneCh     chan MetadataSyncResult
+	}
+	type args struct {
+		allocatedPorts []int
+		alluxioValue   *Alluxio
+	}
+
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantPorts []int
+	}{
+		{
+			name: "test_set_Properties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
+							Enabled: true,
+						},
+					},
+				},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20001, 20001, 20001},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{
+						"alluxio.master.rpc.port": strconv.Itoa(30001),
+						"alluxio.master.web.port": strconv.Itoa(30001),
+						"alluxio.worker.rpc.port": strconv.Itoa(30001),
+						"alluxio.worker.web.port": strconv.Itoa(30001),
+						"alluxio.proxy.web.port":  strconv.Itoa(30001),
+					},
+				},
+			},
+			wantPorts: []int{30001},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:                tt.fields.runtime,
+				name:                   tt.fields.name,
+				namespace:              tt.fields.namespace,
+				runtimeType:            tt.fields.runtimeType,
+				Log:                    tt.fields.Log,
+				Client:                 tt.fields.Client,
+				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				retryShutdown:          tt.fields.retryShutdown,
+				initImage:              tt.fields.initImage,
+				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+			}
+
+			err := e.allocatePorts(tt.args.alluxioValue)
+			if err != nil {
+				t.Errorf("allocatePorts err: %v", err)
+			}
+			if tt.args.alluxioValue.APIGateway.Ports.Rest != tt.wantPorts[0] {
+				t.Errorf("expect %d got %d", tt.wantPorts[0], tt.args.alluxioValue.APIGateway.Ports.Rest)
+			}
+
+		})
 	}
 }

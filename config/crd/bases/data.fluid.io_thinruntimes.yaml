@@ -39,9 +39,6 @@ spec:
                 description: Disable monitoring for Runtime Prometheus is enabled
                   by default
                 type: boolean
-              fileSystemType:
-                description: file system of thinRuntime
-                type: string
               fuse:
                 description: The component spec of thinRuntime
                 properties:
@@ -4324,8 +4321,6 @@ spec:
                       type: object
                     type: array
                 type: object
-            required:
-            - fileSystemType
             type: object
           status:
             description: RuntimeStatus defines the observed state of Runtime
@@ -4452,6 +4447,63 @@ spec:
                   is earlier than master starting time, remount will be required
                 format: date-time
                 type: string
+              mounts:
+                description: MountPoints represents the mount points specified in
+                  the bounded dataset
+                items:
+                  description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
+                    Storage Integrations</a> for more info
+                  properties:
+                    encryptOptions:
+                      description: The secret information
+                      items:
+                        properties:
+                          name:
+                            description: The name of encryptOption
+                            type: string
+                          valueFrom:
+                            description: The valueFrom of encryptOption
+                            properties:
+                              secretKeyRef:
+                                description: The encryptInfo obtained from secret
+                                properties:
+                                  key:
+                                    description: The required key in the secret
+                                    type: string
+                                  name:
+                                    description: The name of required secret
+                                    type: string
+                                type: object
+                            type: object
+                        type: object
+                      type: array
+                    mountPoint:
+                      description: MountPoint is the mount point of source.
+                      minLength: 5
+                      type: string
+                    name:
+                      description: The name of mount
+                      minLength: 0
+                      type: string
+                    options:
+                      additionalProperties:
+                        type: string
+                      description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
+                        Options</a>.  <br> The option has Prefix 'fs.' And you can
+                        Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
+                        Storage Integrations</a>
+                      type: object
+                    path:
+                      description: The path of mount, if not set will be /{Name}
+                      type: string
+                    readOnly:
+                      description: 'Optional: Defaults to false (read-write).'
+                      type: boolean
+                    shared:
+                      description: 'Optional: Defaults to false (shared).'
+                      type: boolean
+                  type: object
+                type: array
               selector:
                 description: Selector is used for auto-scaling
                 type: string

@@ -24,6 +24,7 @@
 + Storage
     - [Accelerate HostPath with Fluid](samples/hostpath.md)
     - [Accelerate PVC with Fluid](samples/accelerate_pvc.md)
+    - [Accelerate different Storage with Fluid](samples/accelerate_different_storage.md)
 + Workload
   - [Machine Learning](samples/machinelearning.md)
 + Advanced   
@@ -31,6 +32,7 @@
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
   - [Set FUSE clean policy](samples/fuse_clean_policy.md)
   + Serverless
+    - [How to run in Knative environment](samples/knative.md)
     - [How to ensure the completion of serverless tasks](samples/application_controller.md)
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
   - [Using Fluid on ARM64 platform](samples/arm64.md)

@@ -27,16 +27,6 @@ fluid-webhook               1/1     1            1           18m
 
 通常来说，可以看到一个名为 `dataset-controller` 的 Deployment、一个名为 `alluxioruntime-controller` 的 Deployment以及一个名为 `fluid-webhook` 的 Deployment。
 
-## 配置
-
-**为namespace添加标签**
-
-为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
-
-```bash
-$ kubectl label namespace default fluid.io/enable-injection=true
-```
-
 ## 运行示例
 
 **创建 dataset 和 runtime**

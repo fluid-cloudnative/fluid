@@ -3,6 +3,7 @@ package mutating
 import (
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
@@ -21,7 +22,11 @@ func buildRuntimeInfoInternal(client client.Client,
 	if len(namespace) == 0 {
 		namespace = corev1.NamespaceDefault
 	}
-	runtimeInfo, err = base.GetRuntimeInfo(client, pvc.GetName(), namespace)
+	pvcName := pvc.GetName()
+	if wrapperName, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; exists {
+		pvcName = wrapperName
+	}
+	runtimeInfo, err = base.GetRuntimeInfo(client, pvcName, namespace)
 	if err != nil {
 		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", namespace)
 		return

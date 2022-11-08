@@ -30,18 +30,6 @@ named `fluid-webhook` and a Pod named `fluidapp-controller`.
 
 ## Demo
 
-**Enable webhook for namespace**
-
-Fluid webhook provides the ability to inject FUSE sidecars for pods in serverless scenarios. To enable this function, you need to set label `fluid.io/enable-injection=true` in the corresponding namespace. The operation is as follows:
-
-```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
-```
-
 **Create dataset and runtime**
 
 Create corresponding Runtime resources and Datasets with the same name for different types of runtimes. Take JuiceFSRuntime as an example here. For details, please refer to [Documentation](juicefs_runtime.md), as follows:

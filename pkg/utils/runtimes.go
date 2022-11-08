@@ -121,3 +121,15 @@ func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRun
 
 	return &runtime, nil
 }
+
+func GetThinRuntimeProfile(client client.Client, name string) (*data.ThinRuntimeProfile, error) {
+	key := types.NamespacedName{
+		Name: name,
+	}
+	var runtimeProfile data.ThinRuntimeProfile
+	if err := client.Get(context.TODO(), key, &runtimeProfile); err != nil {
+		return nil, err
+	}
+
+	return &runtimeProfile, nil
+}

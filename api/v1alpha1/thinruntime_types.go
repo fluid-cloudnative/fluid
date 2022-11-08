@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,9 +34,6 @@ type ThinRuntimeSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	ThinRuntimeProfileName string `json:"profileName,omitempty"`
-
-	// file system of thinRuntime
-	FileSystemType string `json:"fileSystemType"`
 
 	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`

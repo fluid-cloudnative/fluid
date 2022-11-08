@@ -16,7 +16,10 @@
 
 package thin
 
-import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+import (
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/pkg/errors"
+)
 
 func (t ThinEngine) DeleteVolume() (err error) {
 	if t.runtime == nil {
@@ -54,6 +57,11 @@ func (t *ThinEngine) deleteFusePersistentVolumeClaim() (err error) {
 	runtimeInfo, err := t.getRuntimeInfo()
 	if err != nil {
 		return err
+	}
+
+	err = t.unwrapMountedPersistentVolumeClaims()
+	if err != nil {
+		return errors.Wrapf(err, "failed to unwrap pvcs for runtime %s", t.name)
 	}
 
 	return volumehelper.DeleteFusePersistentVolumeClaim(t.Client, runtimeInfo, t.Log)

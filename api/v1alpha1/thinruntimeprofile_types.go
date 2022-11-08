@@ -31,6 +31,10 @@ type ThinRuntimeProfileSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version,
 	Version VersionSpec `json:"version,omitempty"`
 
+	// file system of thinRuntime
+	// +required
+	FileSystemType string `json:"fileSystemType"`
+
 	// The component spec of worker
 	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
 

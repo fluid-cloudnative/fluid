@@ -17,6 +17,8 @@ package common
 
 //Reason for Fluid events
 const (
+	ErrorCreateDataset = "ErrorCreateDataset"
+
 	ErrorProcessDatasetReason = "ErrorProcessDataset"
 
 	ErrorDeleteDataset = "ErrorDeleteDataset"
@@ -137,6 +139,8 @@ const (
 	InjectSidecarDone             = "done" + injectSidecar
 	App                           = "app"
 	InjectAppPostStart            = "app.poststart" + inject
+
+	InjectDatasetAffinity = "dataset.affinity" + inject
 
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
