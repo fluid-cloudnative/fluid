@@ -75,15 +75,14 @@ func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNa
 	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", fromNamespace, secretName)
 	if ownerReference != nil {
 		secretToCreate.OwnerReferences = append(secretToCreate.OwnerReferences, metav1.OwnerReference{
-			APIVersion: ownerReference.APIVersion,
-			Kind: ownerReference.Kind,
-			Name: ownerReference.Name,
-			UID: types.UID(ownerReference.UID),
-			Controller: &ownerReference.Controller,
+			APIVersion:         ownerReference.APIVersion,
+			Kind:               ownerReference.Kind,
+			Name:               ownerReference.Name,
+			UID:                types.UID(ownerReference.UID),
+			Controller:         &ownerReference.Controller,
 			BlockOwnerDeletion: &ownerReference.BlockOwnerDeletion,
 		})
 	}
-	
 
 	if err = CreateSecret(client, secretToCreate); err != nil {
 		return err
