@@ -17,7 +17,10 @@ package kubeclient
 
 import (
 	"context"
+	"fmt"
+
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -48,5 +51,34 @@ func UpdateSecret(client client.Client, secret *v1.Secret) error {
 	if err := client.Update(context.TODO(), secret); err != nil {
 		return err
 	}
+	return nil
+}
+
+func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNamespace string) error {
+	if _, err := GetSecret(client, secretName, toNamespace); err == nil {
+		// secret already exists, skip
+		return nil
+	}
+
+	secret, err := GetSecret(client, secretName, fromNamespace)
+	if err != nil {
+		if apierrs.IsNotFound(err) {
+			// original secret not found, ignore & skip
+			return nil
+		}
+		return err
+	}
+
+	secretToCreate := secret.DeepCopy()
+	secretToCreate.Namespace = toNamespace
+	if len(secretToCreate.Labels) == 0 {
+		secretToCreate.Labels = map[string]string{}
+	}
+	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", fromNamespace, secretName)
+
+	if err = CreateSecret(client, secretToCreate); err != nil {
+		return err
+	}
+
 	return nil
 }
