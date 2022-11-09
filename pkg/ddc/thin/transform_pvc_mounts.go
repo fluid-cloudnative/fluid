@@ -8,11 +8,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *datav1alpha1.Dataset, value *ThinValue) error {
+	owner := transfromer.GenerateOwnerReferenceFromObject(t.runtime)
 	for _, mount := range dataset.Spec.Mounts {
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())
@@ -48,7 +50,7 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 					secretNamespace = "default"
 				}
 
-				err = kubeclient.CopySecretToNamespace(t.Client, secretName, secretNamespace, t.namespace)
+				err = kubeclient.CopySecretToNamespace(t.Client, secretName, secretNamespace, t.namespace, owner)
 				if err != nil {
 					return errors.Wrapf(err, "failed to copy secret \"%s\" from namespace \"%s\" to namespace \"%s\"", secretName, secretNamespace, t.namespace)
 				}

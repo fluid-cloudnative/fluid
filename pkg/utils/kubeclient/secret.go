@@ -19,8 +19,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,7 +55,7 @@ func UpdateSecret(client client.Client, secret *v1.Secret) error {
 	return nil
 }
 
-func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNamespace string) error {
+func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNamespace string, ownerReference *common.OwnerReference) error {
 	if _, err := GetSecret(client, secretName, toNamespace); err == nil {
 		// secret already exists, skip
 		return nil
@@ -62,19 +63,27 @@ func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNa
 
 	secret, err := GetSecret(client, secretName, fromNamespace)
 	if err != nil {
-		if apierrs.IsNotFound(err) {
-			// original secret not found, ignore & skip
-			return nil
-		}
 		return err
 	}
 
-	secretToCreate := secret.DeepCopy()
+	secretToCreate := &v1.Secret{}
 	secretToCreate.Namespace = toNamespace
-	if len(secretToCreate.Labels) == 0 {
-		secretToCreate.Labels = map[string]string{}
-	}
+	secretToCreate.Name = secretName
+	secretToCreate.Data = secret.Data
+	secretToCreate.StringData = secret.StringData
+	secretToCreate.Labels = map[string]string{}
 	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", fromNamespace, secretName)
+	if ownerReference != nil {
+		secretToCreate.OwnerReferences = append(secretToCreate.OwnerReferences, metav1.OwnerReference{
+			APIVersion: ownerReference.APIVersion,
+			Kind: ownerReference.Kind,
+			Name: ownerReference.Name,
+			UID: types.UID(ownerReference.UID),
+			Controller: &ownerReference.Controller,
+			BlockOwnerDeletion: &ownerReference.BlockOwnerDeletion,
+		})
+	}
+	
 
 	if err = CreateSecret(client, secretToCreate); err != nil {
 		return err
