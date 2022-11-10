@@ -1599,7 +1599,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 					},
 					"datasetRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DatasetRef specifies the datasets namespaced name mounting this Dataset. This is mainly for update ref dataset's status",
+							Description: "DatasetRef specifies the datasets namespaced name mounting this Dataset.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
