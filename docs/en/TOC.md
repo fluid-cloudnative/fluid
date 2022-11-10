@@ -44,3 +44,4 @@
   - [API_Doc](dev/api_doc.md)
   - [Develop with Kind on MacOS](dev/dev_with_kind.md)
   - [How to use client other than Go client](dev/multiple-client-support.md)
+  - [Performance Analyze with pprof](dev/pprof.md)
