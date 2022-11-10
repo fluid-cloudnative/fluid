@@ -55,24 +55,28 @@ func UpdateSecret(client client.Client, secret *v1.Secret) error {
 	return nil
 }
 
-func CopySecretToNamespace(client client.Client, secretName, fromNamespace, toNamespace string, ownerReference *common.OwnerReference) error {
-	if _, err := GetSecret(client, secretName, toNamespace); err == nil {
-		// secret already exists, skip
-		return nil
+func CopySecretToNamespace(client client.Client, from types.NamespacedName, to types.NamespacedName, ownerReference *common.OwnerReference) error {
+	if copiedSecret, err := GetSecret(client, to.Name, to.Namespace); err == nil {
+		if len(copiedSecret.Labels) != 0 {
+			if _, ok := copiedSecret.Labels["fluid.io/copied-from"]; ok {
+				return nil
+			}
+		}
+		return fmt.Errorf("secret \"%s\" in namespace \"%s\" already exists", to.Name, to.Namespace)
 	}
 
-	secret, err := GetSecret(client, secretName, fromNamespace)
+	secret, err := GetSecret(client, from.Name, from.Namespace)
 	if err != nil {
 		return err
 	}
 
 	secretToCreate := &v1.Secret{}
-	secretToCreate.Namespace = toNamespace
-	secretToCreate.Name = secretName
+	secretToCreate.Namespace = to.Namespace
+	secretToCreate.Name = to.Name
 	secretToCreate.Data = secret.Data
 	secretToCreate.StringData = secret.StringData
 	secretToCreate.Labels = map[string]string{}
-	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", fromNamespace, secretName)
+	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", from.Namespace, from.Name)
 	if ownerReference != nil {
 		secretToCreate.OwnerReferences = append(secretToCreate.OwnerReferences, metav1.OwnerReference{
 			APIVersion:         ownerReference.APIVersion,

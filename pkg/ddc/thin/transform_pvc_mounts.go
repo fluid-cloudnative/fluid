@@ -11,6 +11,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *datav1alpha1.Dataset, value *ThinValue) error {
@@ -47,26 +48,29 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 
 				secretNamespace := pv.Spec.CSI.NodePublishSecretRef.Namespace
 				if len(secretNamespace) == 0 {
-					secretNamespace = "default"
+					secretNamespace = corev1.NamespaceDefault
 				}
 
-				err = kubeclient.CopySecretToNamespace(t.Client, secretName, secretNamespace, t.namespace, owner)
+				fromNamespacedName := types.NamespacedName{Namespace: secretNamespace, Name: secretName}
+				toNamespacedName := types.NamespacedName{Namespace: t.namespace, Name: fmt.Sprintf("%s-%s-publish-secret", t.name, t.runtimeType)}
+
+				err = kubeclient.CopySecretToNamespace(t.Client, fromNamespacedName, toNamespacedName, owner)
 				if err != nil {
 					return errors.Wrapf(err, "failed to copy secret \"%s\" from namespace \"%s\" to namespace \"%s\"", secretName, secretNamespace, t.namespace)
 				}
 
 				volumeToAdd := corev1.Volume{
-					Name: secretName,
+					Name: toNamespacedName.Name,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName: toNamespacedName.Name,
 						},
 					},
 				}
 				value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
 
 				volumeMountToAdd := corev1.VolumeMount{
-					Name:      secretName,
+					Name:      toNamespacedName.Name,
 					ReadOnly:  true,
 					MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secretName),
 				}
