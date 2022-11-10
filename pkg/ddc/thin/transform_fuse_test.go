@@ -467,7 +467,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 	}
 	value := &ThinValue{}
 	t1.Run("test", func(t1 *testing.T) {
-		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test"}
+		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test", runtime: runtime}
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
