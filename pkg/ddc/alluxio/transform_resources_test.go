@@ -162,16 +162,52 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		alluxioValue *Alluxio
 	}{
 		{&datav1alpha1.AlluxioRuntime{
-			Spec: datav1alpha1.AlluxioRuntimeSpec{},
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				TieredStore: datav1alpha1.TieredStore{},
+			},
 		}, &Alluxio{
 			Properties: map[string]string{},
 		}},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
 		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if result, found := test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
+		}
+	}
+}
+
+func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
+	result := resource.MustParse("20Gi")
+
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+					}},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
+		if result, found := test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
+			t.Errorf("expected nil, got %v", result)
+		}
+		if test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory] != "20Gi" {
+			t.Errorf("expected 20Gi, got %v", test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
 	}
 }
@@ -221,9 +257,139 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		if test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory])
 		}
+		if test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory] != "21Gi" {
+			t.Errorf("expected 21Gi, got %v", test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
+		}
 	}
 }
 
+func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
+
+	resources := corev1.ResourceRequirements{}
+	resources.Requests = make(corev1.ResourceList)
+	resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
+	resources.Requests[corev1.ResourceCPU] = resource.MustParse("500m")
+
+	result := resource.MustParse("20Gi")
+
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		wantRes string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				JobWorker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+					}},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Master:     Master{},
+			JobMaster:  JobMaster{},
+		}, "21Gi"},
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				JobWorker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				TieredStore: datav1alpha1.TieredStore{},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Master:     Master{},
+			JobMaster:  JobMaster{},
+		}, "1Gi"},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.UnitTest = true
+		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
+		if result, found := test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
+			t.Errorf("expected nil, got %v", result)
+		}
+		if test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory] != test.wantRes {
+			t.Errorf("expected %s, got %v", test.wantRes, test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
+		}
+	}
+}
+
+func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
+
+	resources := corev1.ResourceRequirements{}
+	resources.Limits = make(corev1.ResourceList)
+	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+	resources.Limits[corev1.ResourceCPU] = resource.MustParse("500m")
+
+	result := resource.MustParse("20Gi")
+
+	var tests = []struct {
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		wantRes []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				JobWorker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.Memory,
+						Quota:      &result,
+					}},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Master:     Master{},
+			JobMaster:  JobMaster{},
+		}, []string{"22Gi", "20Gi"}},
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				JobWorker: datav1alpha1.AlluxioCompTemplateSpec{
+					Resources: resources,
+				},
+				TieredStore: datav1alpha1.TieredStore{},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+			Master:     Master{},
+			JobMaster:  JobMaster{},
+		}, []string{"2Gi", "nil"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.UnitTest = true
+		engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
+		if test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory] != test.wantRes[0] {
+			t.Errorf("expected %s, got %v", test.wantRes[0], test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory])
+		}
+		if result, found := test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory]; (found && result != test.wantRes[1]) || (!found && test.wantRes[1] != "nil") {
+			t.Errorf("expected %s, got %v", test.wantRes[1], test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
+		}
+	}
+}
 func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime

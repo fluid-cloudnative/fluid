@@ -40,14 +40,16 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
+	skipSetLimit := false
+
 	if runtime.Spec.Worker.Resources.Limits == nil {
 		e.Log.Info("skip setting memory limit")
-		return
+		skipSetLimit = true
 	}
 
 	if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
 		e.Log.Info("skip setting memory limit")
-		return
+		skipSetLimit = true
 	}
 
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
@@ -66,19 +68,30 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 	e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
 
 	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("20Gi")
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
+	memLimit := resource.MustParse("0Gi")
+	memRequest := resource.MustParse("0Gi")
+	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() && !skipSetLimit {
 		memLimit = quantity
 	}
+	if quantity, exists := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]; exists && !quantity.IsZero() {
+		memRequest = quantity
+	}
 
+	if value.Worker.Resources.Limits == nil {
+		value.Worker.Resources.Limits = make(common.ResourceList)
+	}
+	if value.Worker.Resources.Requests == nil {
+		value.Worker.Resources.Requests = make(common.ResourceList)
+	}
 	for key, requirement := range storageMap {
-		if value.Worker.Resources.Limits == nil {
-			value.Worker.Resources.Limits = make(common.ResourceList)
-		}
 		if key == common.MemoryCacheStore {
 			req := requirement.DeepCopy()
 
-			memLimit.Add(req)
+			if !skipSetLimit {
+				memLimit.Add(req)
+			}
+
+			memRequest.Add(req)
 
 			e.Log.Info("update the requirement for memory", "requirement", memLimit)
 
@@ -92,7 +105,14 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 		// }
 	}
 
-	value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	if !memLimit.IsZero() {
+		value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	}
+	if !memRequest.IsZero() {
+		value.Worker.Resources.Requests[corev1.ResourceMemory] = memRequest.String()
+	}
+
+
 }
 
 func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
