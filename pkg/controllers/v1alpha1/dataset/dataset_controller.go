@@ -180,7 +180,15 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
-	// 2. Remove finalizer
+	// 2. if there are datasets mounted this dataset, then requeue
+	if ctx.Dataset.Status.DatasetRef != nil && len(ctx.Dataset.Status.DatasetRef) > 0 {
+		ctx.Log.Error(err, "Failed to delete dataset with reference", "DatasetDeleteError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
+			"Failed to delete dataset because there are datasets mounted to it")
+		return utils.RequeueAfterInterval(10 * time.Second)
+	}
+
+	// 3. Remove finalizer
 	if !ctx.Dataset.ObjectMeta.GetDeletionTimestamp().IsZero() {
 		ctx.Dataset.ObjectMeta.Finalizers = utils.RemoveString(ctx.Dataset.ObjectMeta.Finalizers, finalizer)
 		if err := r.Update(ctx, &ctx.Dataset); err != nil {

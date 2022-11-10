@@ -23,6 +23,10 @@ rules:
   - apiGroups:
       - data.fluid.io
     resources:
+      - alluxioruntimes
+      - jindoruntimes
+      - juicefsruntimes
+      - goosefsruntimes
       - thinruntimes
       - thinruntimeprofiles
       - datasets

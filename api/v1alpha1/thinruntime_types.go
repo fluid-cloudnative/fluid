@@ -33,6 +33,7 @@ type ThinRuntimeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// The specific runtime profile name, empty value is used for handling datasets which mount another dataset
 	ThinRuntimeProfileName string `json:"profileName,omitempty"`
 
 	// The version information that instructs fluid to orchestrate a particular version,

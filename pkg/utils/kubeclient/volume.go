@@ -366,3 +366,11 @@ func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
 
 	return
 }
+
+// GetReferringDatasetPVCInfo check whether the PVC is a referring dataset PVC
+func GetReferringDatasetPVCInfo(pvc *v1.PersistentVolumeClaim) (ok bool, name string, namespace string) {
+	name = pvc.Labels[common.LabelAnnotationDatasetReferringName]
+	namespace, ok = pvc.Labels[common.LabelAnnotationDatasetReferringNameSpace]
+
+	return
+}
