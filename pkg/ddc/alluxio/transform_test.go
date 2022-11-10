@@ -183,6 +183,7 @@ func TestTransformWorkers(t *testing.T) {
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
 						NetworkMode: datav1alpha1.HostNetworkMode,
 					},
+					TieredStore: datav1alpha1.TieredStore{},
 				},
 			},
 			wantValue: &Alluxio{
@@ -196,6 +197,7 @@ func TestTransformWorkers(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 	for k, v := range testCases {
 		gotValue := &Alluxio{}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", v.runtime.Spec.TieredStore)
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
 			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
 				t.Errorf("check %s failure, got:%t,want:%t",
