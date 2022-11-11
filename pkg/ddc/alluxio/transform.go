@@ -390,7 +390,11 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	// parse work pod network mode
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 
-	e.transformResourcesForWorker(runtime, value)
+	err = e.transformResourcesForWorker(runtime, value)
+	if err != nil {
+		e.Log.Error(err, "failed to transform resource for worker")
+		return err
+	}
 
 	// transform volumes for worker
 	err = e.transformWorkerVolumes(runtime, value)

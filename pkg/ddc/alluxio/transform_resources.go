@@ -16,12 +16,19 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
+	"fmt"
+	"reflect"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
@@ -38,18 +45,9 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 
 }
 
-func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
+func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) error {
 
-	if runtime.Spec.Worker.Resources.Limits == nil {
-		e.Log.Info("skip setting memory limit")
-		return
-	}
-
-	if _, found := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; !found {
-		e.Log.Info("skip setting memory limit")
-		return
-	}
-
+	//for worker
 	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 
 	// for job worker
@@ -60,39 +58,75 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		e.Log.Error(err, "failed to transformResourcesForWorker")
+		return err
 	}
 	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
 
 	e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
 
-	// TODO(iluoeli): it should be xmx + direct memory
-	memLimit := resource.MustParse("20Gi")
-	if quantity, exists := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
-		memLimit = quantity
-	}
+
+	// mem set request
+	needUpdated := false
+	var needSetMem resource.Quantity
 
 	for key, requirement := range storageMap {
-		if value.Worker.Resources.Limits == nil {
-			value.Worker.Resources.Limits = make(common.ResourceList)
-		}
 		if key == common.MemoryCacheStore {
 			req := requirement.DeepCopy()
 
-			memLimit.Add(req)
+			if runtime.Spec.Worker.Resources.Requests == nil ||
+				runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
+				runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
+				req.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
+				needUpdated = true
+				needSetMem.Add(req)
+			}
 
-			e.Log.Info("update the requirement for memory", "requirement", memLimit)
+			if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
+				req.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
+				err = fmt.Errorf("the memory tierdStore's size %v is greater than worker limits memory %v", req, runtime.Spec.Worker.Resources.Limits.Memory())
+				e.Log.Error(err, "the memory tierdStore's size is is greater than worker limits memory")
+				return err
+			}
 
 		}
-		// } else if key == common.DiskCacheStore {
-		// 	req := requirement.DeepCopy()
 
-		// 	e.Log.Info("update the requiremnet for disk", "requirement", req)
-
-		// 	value.Worker.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
-		// }
 	}
 
-	value.Worker.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
+	if needUpdated {
+		if value.Worker.Resources.Requests == nil {
+			value.Worker.Resources.Requests = make(common.ResourceList)
+		}
+		value.Worker.Resources.Requests[corev1.ResourceMemory] = needSetMem.String()
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			runtime, err := e.getRuntime()
+			if err != nil {
+				return err
+			}
+			runtimeToUpdate := runtime.DeepCopy()
+			if len(runtimeToUpdate.Spec.Worker.Resources.Requests) == 0 {
+				runtimeToUpdate.Spec.Worker.Resources.Requests = make(corev1.ResourceList)
+			}
+			runtimeToUpdate.Spec.Worker.Resources.Requests[corev1.ResourceMemory] = needSetMem
+			if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+				err = e.Client.Update(context.TODO(), runtimeToUpdate)
+				if err != nil {
+					if apierrors.IsConflict(err) {
+						time.Sleep(3 * time.Second)
+					}
+					return err
+				}
+				time.Sleep(1 * time.Second)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
