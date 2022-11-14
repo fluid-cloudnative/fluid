@@ -64,7 +64,6 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 
 	e.Log.Info("transformResourcesForWorker", "storageMap", storageMap)
 
-
 	// mem set request
 	needUpdated := false
 	var needSetMem resource.Quantity
