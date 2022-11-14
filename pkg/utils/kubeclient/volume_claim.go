@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,11 +42,13 @@ func GetPersistentVolumeClaim(client client.Client, name, namespace string) (pvc
 func GetMountInfoFromVolumeClaim(client client.Client, name, namespace string) (path string, mountType string, err error) {
 	pvc, err := GetPersistentVolumeClaim(client, name, namespace)
 	if err != nil {
+		err = errors.Wrapf(err, "failed to get persistent volume claim")
 		return
 	}
 
 	pv, err := GetPersistentVolume(client, pvc.Spec.VolumeName)
 	if err != nil {
+		err = errors.Wrapf(err, "cannot find pvc \"%s/%s\"'s bounded PV", pvc.Namespace, pvc.Name)
 		return
 	}
 
