@@ -7,6 +7,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -98,27 +99,33 @@ func (e *VirtualDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (read
 		return false, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
 	}
 	namespacedName := physicalNameSpacedNames[0]
-	mountedDataset, err := utils.GetDataset(ctx.Client, namespacedName.Name, namespacedName.Namespace)
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		mountedDataset, err := utils.GetDataset(ctx.Client, namespacedName.Name, namespacedName.Namespace)
+		if err != nil {
+			return err
+		}
+
+		// 2. get runtime according to dataset status runtimes field
+		runtimes := mountedDataset.Status.Runtimes
+		if len(runtimes) == 0 {
+			return fmt.Errorf("mounting dataset is not bound to a runtime yet")
+		}
+
+		// 3. add this dataset to mounted dataset DatasetRef field
+		datasetRefName := getDatasetRefName(dataset.Name, dataset.Namespace)
+		if !utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
+			newDataset := mountedDataset.DeepCopy()
+			newDataset.Status.DatasetRef = append(newDataset.Status.DatasetRef, datasetRefName)
+			err := e.Client.Status().Update(context.TODO(), newDataset)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return false, err
-	}
-
-	// 2. get runtime according to dataset status runtimes field
-	runtimes := mountedDataset.Status.Runtimes
-
-	if len(runtimes) == 0 {
-		return false, fmt.Errorf("mounting dataset is not bound to a runtime yet")
-	}
-
-	// 3. add this dataset to mounted dataset DatasetRef field
-	datasetRefName := getDatasetRefName(dataset.Name, dataset.Namespace)
-	if !utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
-		newDataset := mountedDataset.DeepCopy()
-		newDataset.Status.DatasetRef = append(newDataset.Status.DatasetRef, datasetRefName)
-		err := e.Client.Status().Update(context.TODO(), newDataset)
-		if err != nil {
-			return false, err
-		}
 	}
 	return true, nil
 }

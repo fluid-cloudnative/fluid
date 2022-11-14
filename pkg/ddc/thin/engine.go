@@ -66,7 +66,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 }
 
-// buildVirtualDatasetThinEngine build engine for handling file system dataset
+// buildThinEngine build engine for handling file system dataset
 func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &ThinEngine{
 		name:                   ctx.Name,
