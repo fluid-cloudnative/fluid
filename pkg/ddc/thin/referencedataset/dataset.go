@@ -1,4 +1,4 @@
-package virtualdataset
+package referencedataset
 
 import (
 	"fmt"

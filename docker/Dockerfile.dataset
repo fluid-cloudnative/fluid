@@ -1,8 +1,6 @@
 # Build the dataset-controller manager binary
 FROM golang:1.17.8 as builder
 
-ENV GOPROXY=https://goproxy.io,direct
-
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 

@@ -18,7 +18,7 @@ package thin
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/virtualdataset"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 
@@ -60,7 +60,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	}
 
 	if isVirtualDatasetRuntime(runtime) {
-		return virtualdataset.BuildVirtualDatasetThinEngine(id, ctx)
+		return referencedataset.BuildVirtualDatasetThinEngine(id, ctx)
 	} else {
 		return buildThinEngine(id, ctx)
 	}

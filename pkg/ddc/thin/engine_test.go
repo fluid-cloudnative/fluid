@@ -142,3 +142,51 @@ func TestBuild(t *testing.T) {
 		t.Errorf("expect err, but no err got %v", gott)
 	}
 }
+
+func TestIsVirtualDatasetRuntime(t *testing.T) {
+	tests := []struct {
+		runtime *datav1alpha1.ThinRuntime
+		want    bool
+	}{
+		{
+			runtime: &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{},
+			},
+			want: true,
+		},
+		{
+			runtime: &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "",
+				},
+			},
+			want: true,
+		},
+
+		{
+			runtime: &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "1",
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		if got := isVirtualDatasetRuntime(tt.runtime); got != tt.want {
+			t.Errorf("isVirtualDatasetRuntime() = %v, want %v", got, tt.want)
+		}
+	}
+}

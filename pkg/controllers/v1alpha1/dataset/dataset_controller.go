@@ -182,9 +182,10 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 
 	// 2. if there are datasets mounted this dataset, then requeue
 	if ctx.Dataset.Status.DatasetRef != nil && len(ctx.Dataset.Status.DatasetRef) > 0 {
-		ctx.Log.Error(err, "Failed to delete dataset with reference", "DatasetDeleteError", ctx)
+		ctx.Log.Error(err, "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
+			"MountedDataset", ctx.Dataset.Status.DatasetRef)
 		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
-			"Failed to delete dataset because there are datasets mounted to it")
+			"Failed to delete dataset because there are datasets %s mounted to it", ctx.Dataset.Status.DatasetRef)
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
 

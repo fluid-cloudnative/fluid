@@ -1,4 +1,4 @@
-package virtualdataset
+package referencedataset
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
