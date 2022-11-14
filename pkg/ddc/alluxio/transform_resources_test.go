@@ -177,8 +177,8 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log: fake.NullLogger(),
-			name: "test",
+			Log:       fake.NullLogger(),
+			name:      "test",
 			namespace: "test",
 		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
@@ -225,8 +225,8 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log: fake.NullLogger(),
-			name: "test",
+			Log:       fake.NullLogger(),
+			name:      "test",
 			namespace: "test",
 		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
@@ -274,7 +274,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
 		alluxioValue *Alluxio
-		wantRes []string
+		wantRes      []string
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -299,7 +299,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			Properties: map[string]string{},
 			Master:     Master{},
 			JobMaster:  JobMaster{},
-		},[]string{
+		}, []string{
 			"err", "2Gi", "1Gi",
 		}},
 		{&datav1alpha1.AlluxioRuntime{
@@ -325,14 +325,14 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			Properties: map[string]string{},
 			Master:     Master{},
 			JobMaster:  JobMaster{},
-		},[]string{
+		}, []string{
 			"nil", "20Gi", "20Gi",
 		}},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log: fake.NullLogger(),
-			name: "test",
+			Log:       fake.NullLogger(),
+			name:      "test",
 			namespace: "test",
 		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
@@ -369,7 +369,7 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
 		alluxioValue *Alluxio
-		wantRes string
+		wantRes      string
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -417,8 +417,8 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log: fake.NullLogger(),
-			name: "test",
+			Log:       fake.NullLogger(),
+			name:      "test",
 			namespace: "test",
 		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
@@ -455,7 +455,7 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
 		alluxioValue *Alluxio
-		wantRes []string
+		wantRes      []string
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -503,8 +503,8 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{
-			Log: fake.NullLogger(),
-			name: "test",
+			Log:       fake.NullLogger(),
+			name:      "test",
 			namespace: "test",
 		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
