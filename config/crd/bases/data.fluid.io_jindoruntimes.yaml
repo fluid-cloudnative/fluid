@@ -121,6 +121,10 @@ spec:
                       this is a deprecated field. Please use PodMetadata.Labels instead.
                       Note: this field is set to be exclusive with PodMetadata.Labels'
                     type: object
+                  logConfig:
+                    additionalProperties:
+                      type: string
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string

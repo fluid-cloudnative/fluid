@@ -42,6 +42,7 @@ type Jindo struct {
 	Tolerations     []v1.Toleration        `yaml:"tolerations,omitempty"`
 	InitPortCheck   common.InitPortCheck   `yaml:"initPortCheck,omitempty"`
 	LogConfig       map[string]string      `yaml:"logConfig,omitempty"`
+	FuseLogConfig   map[string]string      `yaml:"fuseLogConfig,omitempty"`
 	PlacementMode   string                 `yaml:"placement,omitempty"`
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
 	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity"`
