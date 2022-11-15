@@ -2295,21 +2295,6 @@ spec:
                       type: object
                     type: array
                 type: object
-              version:
-                description: The version information that instructs fluid to orchestrate
-                  a particular version,
-                properties:
-                  image:
-                    description: Image (e.g. alluxio/alluxio)
-                    type: string
-                  imagePullPolicy:
-                    description: 'One of the three policies: `Always`, `IfNotPresent`,
-                      `Never`'
-                    type: string
-                  imageTag:
-                    description: Image tag (e.g. 2.3.0-SNAPSHOT)
-                    type: string
-                type: object
               volumes:
                 description: Volumes is the list of Kubernetes volumes that can be
                   mounted by runtime components and/or fuses.
@@ -3902,6 +3887,16 @@ spec:
                       - name
                       type: object
                     type: array
+                  image:
+                    description: Image for thinRuntime fuse
+                    type: string
+                  imagePullPolicy:
+                    description: 'One of the three policies: `Always`, `IfNotPresent`,
+                      `Never`'
+                    type: string
+                  imageTag:
+                    description: Image for thinRuntime fuse
+                    type: string
                   livenessProbe:
                     description: livenessProbe of thin fuse pod
                     properties:

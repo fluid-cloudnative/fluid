@@ -130,14 +130,14 @@ func (t *ThinEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value
 }
 
 func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
-	if len(runtime.Spec.Version.Image) != 0 {
-		value.Worker.Image = runtime.Spec.Version.Image
+	if len(runtime.Spec.Worker.Image) != 0 {
+		value.Worker.Image = runtime.Spec.Worker.Image
 	}
-	if len(runtime.Spec.Version.ImageTag) != 0 {
-		value.Worker.ImageTag = runtime.Spec.Version.ImageTag
+	if len(runtime.Spec.Worker.ImageTag) != 0 {
+		value.Worker.ImageTag = runtime.Spec.Worker.ImageTag
 	}
-	if len(runtime.Spec.Version.ImagePullPolicy) != 0 {
-		value.Worker.ImagePullPolicy = runtime.Spec.Version.ImagePullPolicy
+	if len(runtime.Spec.Worker.ImagePullPolicy) != 0 {
+		value.Worker.ImagePullPolicy = runtime.Spec.Worker.ImagePullPolicy
 	}
 }
 
@@ -146,9 +146,9 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 		return
 	}
 	// 1. image
-	value.Worker.Image = profile.Spec.Version.Image
-	value.Worker.ImageTag = profile.Spec.Version.ImageTag
-	value.Worker.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	value.Worker.Image = profile.Spec.Worker.Image
+	value.Worker.ImageTag = profile.Spec.Worker.ImageTag
+	value.Worker.ImagePullPolicy = profile.Spec.Worker.ImagePullPolicy
 	// 2. volumes
 	err := t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
 	if err != nil {
