@@ -8,7 +8,7 @@ import (
 
 // GetClusterDomain get cluster domain: cluster.local from /etc/resolv.conf
 func GetClusterDomain() (string, error) {
-	resolveConf, err := os.ReadFile("/etc/resolv.conf")
+	resolveConf, err := os.ReadFile("/etc/resolv.conf.bak")
 	if err != nil {
 		return "", err
 	}

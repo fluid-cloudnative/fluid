@@ -68,12 +68,12 @@ data:
         {{- if $isSingleMaster }}
         <property>
             <name>fs.jindofsx.namespace.rpc.address</name>
-            <value>{{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}</value>
+            <value>{{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}</value>
         </property>
         {{- else if $isRaftHa }}
         <property>
             <name>fs.jindofsx.namespace.rpc.address</name>
-            <value>{{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}</value>
+            <value>{{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}</value>
         </property>
         {{- end }}
         {{- range $key, $val := .Values.fuse.properties }}
@@ -94,9 +94,9 @@ data:
 
     [jindosdk]
     {{- if $isSingleMaster }}
-    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
     {{- else if $isRaftHa }}
-    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+    fs.jindofsx.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
     {{- end }}
     {{- range $key, $val := .Values.fuse.properties }}
     {{ $key }} = {{ $val }}
