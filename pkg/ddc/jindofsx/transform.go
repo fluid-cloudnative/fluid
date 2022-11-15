@@ -659,7 +659,7 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 }
 
 func (e *JindoFSxEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
-	fsxProPerties := map[string]string{
+	fsxProperties := map[string]string{
 		"application.report.on":  "true",
 		"metric.report.on":       "true",
 		"logger.dir":             "/tmp/jindofsx-log",
@@ -670,7 +670,7 @@ func (e *JindoFSxEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, 
 		"logger.verbose":         "0",
 	}
 
-	fuseProPreties := map[string]string{
+	fusePropreties := map[string]string{
 		"logger.dir":            "/tmp/fuse-log",
 		"logger.consolelogger":  "true",
 		"logger.level":          "2",
@@ -681,18 +681,18 @@ func (e *JindoFSxEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, 
 
 	if len(runtime.Spec.LogConfig) > 0 {
 		for k, v := range runtime.Spec.LogConfig {
-			fsxProPerties[k] = v
+			fsxProperties[k] = v
 		}
 	}
 
 	if len(runtime.Spec.Fuse.LogConfig) > 0 {
 		for k, v := range runtime.Spec.Fuse.LogConfig {
-			fuseProPreties[k] = v
+			fusePropreties[k] = v
 		}
 	}
 
-	value.LogConfig = fsxProPerties
-	value.FuseLogConfig = fuseProPreties
+	value.LogConfig = fsxProperties
+	value.FuseLogConfig = fusePropreties
 }
 
 func (e *JindoFSxEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
