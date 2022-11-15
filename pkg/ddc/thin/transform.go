@@ -146,9 +146,9 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 		return
 	}
 	// 1. image
-	value.Worker.Image = profile.Spec.Version.Image
-	value.Worker.ImageTag = profile.Spec.Version.ImageTag
-	value.Worker.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	value.Worker.Image = profile.Spec.Worker.Image
+	value.Worker.ImageTag = profile.Spec.Worker.ImageTag
+	value.Worker.ImagePullPolicy = profile.Spec.Worker.ImagePullPolicy
 	// 2. volumes
 	err := t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
 	if err != nil {

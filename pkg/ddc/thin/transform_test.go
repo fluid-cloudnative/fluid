@@ -79,12 +79,10 @@ func TestThinEngine_parseFromProfile(t1 *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
@@ -241,13 +239,11 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 			Name: "test",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			FileSystemType: "test",
+			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			FileSystemType: "test",
-			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",

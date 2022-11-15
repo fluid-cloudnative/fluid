@@ -36,12 +36,10 @@ func TestThinEngine_parseFromProfileFuse(t1 *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			Fuse: datav1alpha1.ThinFuseSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
@@ -290,13 +288,11 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			Name: "test",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			FileSystemType: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			FileSystemType: "test",
-			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
