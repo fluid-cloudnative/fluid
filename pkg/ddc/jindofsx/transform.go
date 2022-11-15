@@ -172,7 +172,16 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	value.Master.NameSpace = e.namespace
 	value.Fuse.MountPath = JINDO_FUSE_MONNTPATH
 	clusterDomain, err := common.GetClusterDomain()
-	value.ClusterDomain = clusterDomain
+	// to catch get clusterDomain err
+	if err != nil {
+		switch {
+		case errors.Is(err, common.ErrCantFindResolvConf):
+			e.Log.Info("failed to parse cluster domain from resolv.conf")
+			err = nil
+		}
+	} else {
+		value.ClusterDomain = clusterDomain
+	}
 	return value, err
 }
 
