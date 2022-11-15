@@ -186,7 +186,7 @@ func TestThinEngine_parseFuseImage(t1 *testing.T) {
 			if tt.args.value.Fuse.Image != tt.args.runtime.Spec.Fuse.Image ||
 				tt.args.value.Fuse.ImageTag != tt.args.runtime.Spec.Fuse.ImageTag ||
 				tt.args.value.Fuse.ImagePullPolicy != tt.args.runtime.Spec.Fuse.ImagePullPolicy {
-				t1.Errorf("got %v, want %v", tt.args.value.Worker, tt.args.runtime.Spec.Version)
+				t1.Errorf("got %v, want %v", tt.args.value.Fuse, tt.args.runtime.Spec.Fuse)
 			}
 		})
 	}

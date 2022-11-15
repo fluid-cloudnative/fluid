@@ -211,7 +211,7 @@ func TestThinEngine_parseWorkerImage(t1 *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.ThinRuntime{
 					Spec: datav1alpha1.ThinRuntimeSpec{
-						Version: datav1alpha1.VersionSpec{
+						Worker: datav1alpha1.ThinCompTemplateSpec{
 							Image:           "test",
 							ImageTag:        "v1",
 							ImagePullPolicy: "Always",
@@ -226,10 +226,10 @@ func TestThinEngine_parseWorkerImage(t1 *testing.T) {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &ThinEngine{}
 			t.parseWorkerImage(tt.args.runtime, tt.args.value)
-			if tt.args.value.Worker.Image != tt.args.runtime.Spec.Version.Image ||
-				tt.args.value.Worker.ImageTag != tt.args.runtime.Spec.Version.ImageTag ||
-				tt.args.value.Worker.ImagePullPolicy != tt.args.runtime.Spec.Version.ImagePullPolicy {
-				t1.Errorf("got %v, want %v", tt.args.value.Worker, tt.args.runtime.Spec.Version)
+			if tt.args.value.Worker.Image != tt.args.runtime.Spec.Worker.Image ||
+				tt.args.value.Worker.ImageTag != tt.args.runtime.Spec.Worker.ImageTag ||
+				tt.args.value.Worker.ImagePullPolicy != tt.args.runtime.Spec.Worker.ImagePullPolicy {
+				t1.Errorf("got %v, want %v", tt.args.value.Worker, tt.args.runtime.Spec.Worker)
 			}
 		})
 	}

@@ -130,14 +130,14 @@ func (t *ThinEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value
 }
 
 func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *ThinValue) {
-	if len(runtime.Spec.Version.Image) != 0 {
-		value.Worker.Image = runtime.Spec.Version.Image
+	if len(runtime.Spec.Worker.Image) != 0 {
+		value.Worker.Image = runtime.Spec.Worker.Image
 	}
-	if len(runtime.Spec.Version.ImageTag) != 0 {
-		value.Worker.ImageTag = runtime.Spec.Version.ImageTag
+	if len(runtime.Spec.Worker.ImageTag) != 0 {
+		value.Worker.ImageTag = runtime.Spec.Worker.ImageTag
 	}
-	if len(runtime.Spec.Version.ImagePullPolicy) != 0 {
-		value.Worker.ImagePullPolicy = runtime.Spec.Version.ImagePullPolicy
+	if len(runtime.Spec.Worker.ImagePullPolicy) != 0 {
+		value.Worker.ImagePullPolicy = runtime.Spec.Worker.ImagePullPolicy
 	}
 }
 
