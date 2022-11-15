@@ -60,7 +60,7 @@ func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[stri
 			shouldStop = true
 			return
 		}
-		// do not use the runtime name, as the pvc may be the virtual dataset
+		// do not use the runtime name, as the pvc may be the dataset mounting another dataset
 		datasetNames = append(datasetNames, name)
 	}
 	log.V(1).Info("InjectMountPropagation", "datasetNames", datasetNames)

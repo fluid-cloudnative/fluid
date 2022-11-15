@@ -10,7 +10,7 @@ import (
 )
 
 // getMountedDatasetRuntimeStatus get the runtime status of the mounted dataset
-func (e *VirtualDatasetEngine) getMountedDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
+func (e *ReferenceDatasetEngine) getMountedDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
 	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
 	if err != nil {
 		return status, err
@@ -21,7 +21,7 @@ func (e *VirtualDatasetEngine) getMountedDatasetRuntimeStatus() (status *datav1a
 }
 
 // getRuntime get the current runtime
-func (e *VirtualDatasetEngine) getRuntime() (*datav1alpha1.ThinRuntime, error) {
+func (e *ReferenceDatasetEngine) getRuntime() (*datav1alpha1.ThinRuntime, error) {
 	key := types.NamespacedName{
 		Name:      e.name,
 		Namespace: e.namespace,
@@ -35,7 +35,7 @@ func (e *VirtualDatasetEngine) getRuntime() (*datav1alpha1.ThinRuntime, error) {
 	return &runtime, nil
 }
 
-func (e *VirtualDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
+func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.runtimeInfo != nil {
 		return e.runtimeInfo, nil
 	}
@@ -77,7 +77,7 @@ func (e *VirtualDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, erro
 
 }
 
-func (e *VirtualDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterface, error) {
+func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.mountedRuntimeInfo != nil {
 		return e.mountedRuntimeInfo, nil
 	}

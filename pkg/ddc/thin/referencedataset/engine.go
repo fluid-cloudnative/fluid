@@ -18,10 +18,10 @@ const (
 )
 
 // Use compiler to check if the struct implements all the interface
-var _ base.Engine = (*VirtualDatasetEngine)(nil)
+var _ base.Engine = (*ReferenceDatasetEngine)(nil)
 
-// VirtualDatasetEngine is used for handling datasets mounting another dataset
-type VirtualDatasetEngine struct {
+// ReferenceDatasetEngine is used for handling datasets mounting another dataset
+type ReferenceDatasetEngine struct {
 	Id string
 	client.Client
 	Log logr.Logger
@@ -40,14 +40,14 @@ type VirtualDatasetEngine struct {
 }
 
 // ID returns the id of the engine
-func (e *VirtualDatasetEngine) ID() string {
+func (e *ReferenceDatasetEngine) ID() string {
 	return e.Id
 }
 
-// BuildVirtualDatasetThinEngine build engine for handling virtual dataset
-func BuildVirtualDatasetThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
+// BuildReferenceDatasetThinEngine build engine for handling virtual dataset
+func BuildReferenceDatasetThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	// currently, ctx has no dataset
-	engine := &VirtualDatasetEngine{
+	engine := &ReferenceDatasetEngine{
 		Id:          id,
 		Client:      ctx.Client,
 		name:        ctx.Name,
@@ -90,7 +90,7 @@ func BuildVirtualDatasetThinEngine(id string, ctx cruntime.ReconcileRequestConte
 	return engine, err
 }
 
-func (e *VirtualDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error) {
+func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error) {
 	// 1. get the physical datasets according the virtual dataset
 	dataset := ctx.Dataset
 
@@ -131,7 +131,7 @@ func (e *VirtualDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (read
 }
 
 //Shutdown and clean up the engine
-func (e *VirtualDatasetEngine) Shutdown() (err error) {
+func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	// 1. delete this dataset to mounted dataset DatasetRef field
 	datasetRefName := getDatasetRefName(e.name, e.namespace)
 
@@ -155,7 +155,7 @@ func (e *VirtualDatasetEngine) Shutdown() (err error) {
 	return
 }
 
-func (e *VirtualDatasetEngine) checkDatasetMountSupport() error {
+func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
 		return err

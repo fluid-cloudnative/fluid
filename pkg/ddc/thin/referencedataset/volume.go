@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *VirtualDatasetEngine) CreateVolume() (err error) {
+func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (e *VirtualDatasetEngine) CreateVolume() (err error) {
 	return err
 }
 
-func (e *VirtualDatasetEngine) DeleteVolume() (err error) {
+func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err

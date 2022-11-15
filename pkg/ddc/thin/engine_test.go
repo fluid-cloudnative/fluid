@@ -143,7 +143,96 @@ func TestBuild(t *testing.T) {
 	}
 }
 
-func TestIsVirtualDatasetRuntime(t *testing.T) {
+func TestBuildReferenceDatasetEngine(t *testing.T) {
+	var namespace = v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "fluid",
+		},
+	}
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, namespace.DeepCopy())
+
+	var dataset = datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "done",
+			Namespace: "big-data",
+		},
+		Status: datav1alpha1.DatasetStatus{
+			Runtimes: []datav1alpha1.Runtime{
+				{
+					Name:      "done",
+					Namespace: "big-data",
+					Type:      common.AlluxioRuntime,
+				},
+			},
+		},
+	}
+	var runtime = datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "done",
+			Namespace: "big-data",
+		},
+	}
+
+	var refRuntime = datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+	}
+	var refDataset = datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "dataset://big-data/done",
+				},
+			},
+		},
+	}
+
+	testObjs = append(testObjs, &dataset, &refDataset)
+
+	testObjs = append(testObjs, &runtime, &refRuntime)
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	var ctx = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         fake.NullLogger(),
+		RuntimeType: "thin",
+		Runtime:     &refRuntime,
+	}
+
+	engine, err := Build("testId", ctx)
+	if err != nil || engine == nil {
+		t.Errorf("fail to exec the build function with the eror %v", err)
+	}
+
+	var errCtx = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         fake.NullLogger(),
+		RuntimeType: "thin",
+		Runtime:     &runtime,
+	}
+
+	got, err := Build("testId", errCtx)
+	if err == nil {
+		t.Errorf("expect err, but no err got %v", got)
+	}
+}
+
+func TestIsReferenceDatasetRuntime(t *testing.T) {
 	tests := []struct {
 		runtime *datav1alpha1.ThinRuntime
 		want    bool
@@ -185,8 +274,8 @@ func TestIsVirtualDatasetRuntime(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		if got := isVirtualDatasetRuntime(tt.runtime); got != tt.want {
-			t.Errorf("isVirtualDatasetRuntime() = %v, want %v", got, tt.want)
+		if got := isReferenceDatasetRuntime(tt.runtime); got != tt.want {
+			t.Errorf("isReferenceDatasetRuntime() = %v, want %v", got, tt.want)
 		}
 	}
 }

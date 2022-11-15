@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func (e *VirtualDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
+func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// Avoid the retires too frequently
 	if !e.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: ctx.Namespace}) {
 		return
@@ -102,7 +102,7 @@ func getSyncRetryDuration() (d *time.Duration, err error) {
 	return
 }
 
-func (e *VirtualDatasetEngine) permitSync(key types.NamespacedName) (permit bool) {
+func (e *ReferenceDatasetEngine) permitSync(key types.NamespacedName) (permit bool) {
 	if time.Since(e.timeOfLastSync) < e.syncRetryDuration {
 		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v) since timeOfLastSync %v.",
 			e.timeOfLastSync.Add(e.syncRetryDuration),
@@ -121,7 +121,7 @@ func (e *VirtualDatasetEngine) permitSync(key types.NamespacedName) (permit bool
 	return
 }
 
-func (e *VirtualDatasetEngine) setTimeOfLastSync() {
+func (e *ReferenceDatasetEngine) setTimeOfLastSync() {
 	e.timeOfLastSync = time.Now()
 	e.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", e.timeOfLastSync)
 }

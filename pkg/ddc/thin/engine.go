@@ -59,8 +59,8 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
 	}
 
-	if isVirtualDatasetRuntime(runtime) {
-		return referencedataset.BuildVirtualDatasetThinEngine(id, ctx)
+	if isReferenceDatasetRuntime(runtime) {
+		return referencedataset.BuildReferenceDatasetThinEngine(id, ctx)
 	} else {
 		return buildThinEngine(id, ctx)
 	}
@@ -106,8 +106,8 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 	return utils.CheckObject(client, key, &obj)
 }
 
-// isVirtualDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
-func isVirtualDatasetRuntime(runtime *datav1alpha1.ThinRuntime) bool {
+// isReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
+func isReferenceDatasetRuntime(runtime *datav1alpha1.ThinRuntime) bool {
 	profileName := runtime.Spec.ThinRuntimeProfileName
 	return profileName == ""
 }

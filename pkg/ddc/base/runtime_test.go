@@ -1088,6 +1088,146 @@ func TestGetRuntimeInfo(t *testing.T) {
 	}
 }
 
+func TestGetRuntimeStatus(t *testing.T) {
+	s := runtime.NewScheme()
+
+	alluxioRuntime := v1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alluxio",
+			Namespace: "default",
+		},
+	}
+
+	goosefsRuntime := v1alpha1.GooseFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "goosefs",
+			Namespace: "default",
+		},
+	}
+
+	jindoRuntime := v1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jindo",
+			Namespace: "default",
+		},
+	}
+
+	juicefsRuntime := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "juice",
+			Namespace: "default",
+		},
+	}
+
+	thinRuntime := v1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thin",
+			Namespace: "default",
+		},
+	}
+
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ThinRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
+
+	_ = v1.AddToScheme(s)
+	alluxioRuntimeObjs := []runtime.Object{}
+	goosefsRuntimeObjs := []runtime.Object{}
+	jindoRuntimeObjs := []runtime.Object{}
+	juicefsRuntimeObjs := []runtime.Object{}
+	thinRuntimeObjs := []runtime.Object{}
+
+	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
+	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime)
+	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
+	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
+	thinRuntimeObjs = append(thinRuntimeObjs, &thinRuntime)
+	type args struct {
+		client      client.Client
+		name        string
+		namespace   string
+		runtimeType string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "alluxio_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:        "alluxio",
+				namespace:   "default",
+				runtimeType: common.AlluxioRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "goosefs_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:        "goosefs",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "jindo_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:        "jindo",
+				namespace:   "default",
+				runtimeType: common.JindoRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "juicefs_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:        "juice",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "thin_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin",
+				namespace:   "default",
+				runtimeType: common.ThinRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "thin_test_err",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin-not-exit",
+				namespace:   "default",
+				runtimeType: "thin-not-exit",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GetRuntimeStatus(tt.args.client, tt.args.runtimeType, tt.args.name, tt.args.namespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
 func TestGetSyncRetryDuration(t *testing.T) {
 
 	_, err := getSyncRetryDuration()

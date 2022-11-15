@@ -5,17 +5,17 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-func (t *VirtualDatasetEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
+func (t *ReferenceDatasetEngine) LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
 	//TODO implement me
 	return nil
 }
 
-func (t *VirtualDatasetEngine) CheckRuntimeReady() (ready bool) {
+func (t *ReferenceDatasetEngine) CheckRuntimeReady() (ready bool) {
 	//TODO implement me
 	return true
 }
 
-func (t *VirtualDatasetEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
+func (t *ReferenceDatasetEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
 	//TODO implement me
 	return true, nil
 }
