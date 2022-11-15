@@ -3898,6 +3898,27 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref common
 				Description: "ThinCompTemplateSpec is a description of the thinRuntime components",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for thinRuntime fuse",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for thinRuntime fuse",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
@@ -4375,13 +4396,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref comm
 				Description: "ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The version information that instructs fluid to orchestrate a particular version,",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
-						},
-					},
 					"fileSystemType": {
 						SchemaProps: spec.SchemaProps{
 							Description: "file system of thinRuntime",
@@ -4423,7 +4437,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -4449,13 +4463,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
-						},
-					},
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The version information that instructs fluid to orchestrate a particular version,",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
 						},
 					},
 					"worker": {
@@ -4517,7 +4524,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
