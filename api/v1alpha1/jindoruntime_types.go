@@ -139,6 +139,9 @@ type JindoFuseSpec struct {
 	// If disable JindoFS fuse
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
+
+	// +optional
+	LogConfig map[string]string `json:"logConfig,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime
