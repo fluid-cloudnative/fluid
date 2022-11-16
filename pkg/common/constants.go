@@ -140,7 +140,8 @@ const (
 	App                           = "app"
 	InjectAppPostStart            = "app.poststart" + inject
 
-	InjectDatasetAffinity = "dataset.affinity" + inject
+	injectServerfull     = ".serverfull" + inject
+	InjectServerfullFuse = "fuse" + injectServerfull
 
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
