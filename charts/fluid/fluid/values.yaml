@@ -87,7 +87,7 @@ runtime:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/thinruntime-controller:v0.8.0-661212c
+      image: fluidcloudnative/thinruntime-controller:v0.9.0-f525bda
 
 webhook:
   enabled: true
