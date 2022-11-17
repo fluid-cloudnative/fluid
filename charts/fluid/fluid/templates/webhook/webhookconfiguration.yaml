@@ -24,7 +24,7 @@ webhooks:
     objectSelector:
       matchLabels:
         serverless.fluid.io/inject: "true"
-  - name: fuse.serverfull.fluid.io
+  - name: fuse.serverful.fluid.io
     rules:
       - apiGroups:   [""]
         apiVersions: ["v1"]
@@ -43,5 +43,5 @@ webhooks:
     admissionReviewVersions: ["v1","v1beta1"]
     objectSelector:
       matchLabels:
-        fuse.serverfull.fluid.io/inject: "true"
+        fuse.serverful.fluid.io/inject: "true"
 {{- end }}

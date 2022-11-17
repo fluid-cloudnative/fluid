@@ -43,8 +43,8 @@ func init() {
 	}
 }
 
-func ServerfullFuseEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectServerfullFuse)
+func ServerfulFuseEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectServerfulFuse)
 }
 
 func ServerlessPlatformMatched(infos map[string]string) (match bool) {
