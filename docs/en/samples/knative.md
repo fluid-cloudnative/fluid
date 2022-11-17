@@ -29,14 +29,6 @@ Typically, you can see a Deployment named `dataset-controller`, a Deployment nam
 
 ## Configuration
 
-**Adding label to namespace**
-
-Adding the tag fluid.io/enable-injection to the namespace enables scheduling optimization for Pods under this namespace.
-
-```bash
-$ kubectl label namespace default fluid.io/enable-injection=true
-```
-
 ## Running
 
 **Create dataset and runtime**
