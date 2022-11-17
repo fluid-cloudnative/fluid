@@ -1167,6 +1167,16 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "alluxio_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:        "alluxio-error",
+				namespace:   "default",
+				runtimeType: common.AlluxioRuntime,
+			},
+			wantErr: true,
+		},
+		{
 			name: "goosefs_test",
 			args: args{
 				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
@@ -1175,6 +1185,16 @@ func TestGetRuntimeStatus(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 			},
 			wantErr: false,
+		},
+		{
+			name: "goosefs_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
+				name:        "goosefs-error",
+				namespace:   "default",
+				runtimeType: common.GooseFSRuntime,
+			},
+			wantErr: true,
 		},
 		{
 			name: "jindo_test",
@@ -1187,6 +1207,16 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "jindo_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:        "jindo-error",
+				namespace:   "default",
+				runtimeType: common.JindoRuntime,
+			},
+			wantErr: true,
+		},
+		{
 			name: "juicefs_test",
 			args: args{
 				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
@@ -1195,6 +1225,16 @@ func TestGetRuntimeStatus(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 			},
 			wantErr: false,
+		},
+		{
+			name: "juicefs_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:        "juice-error",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			wantErr: true,
 		},
 		{
 			name: "thin_test",
@@ -1207,7 +1247,17 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "thin_test_err",
+			name: "thin_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin-error",
+				namespace:   "default",
+				runtimeType: common.ThinRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "default_error",
 			args: args{
 				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
 				name:        "thin-not-exit",
