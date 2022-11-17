@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	pvcDeleteTimeoutSeconds = 30 * time.Second
+	pvcDeleteTimeout = 30 * time.Second
 )
 
 func GetPersistentVolume(client client.Reader, name string) (pv *v1.PersistentVolume, err error) {
@@ -311,7 +311,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	}
 
 	// only force remove finalizer after 30 seconds' Terminating state
-	then := pvc.DeletionTimestamp.Add(pvcDeleteTimeoutSeconds)
+	then := pvc.DeletionTimestamp.Add(pvcDeleteTimeout)
 	now := time.Now()
 	if now.Before(then) {
 		log.V(1).Info("can not remove pvc-protection finalizer before reached expected timeout",
@@ -381,5 +381,5 @@ func GetReferringDatasetPVCInfo(pvc *v1.PersistentVolumeClaim) (ok bool, name st
 
 // SetPVCDeleteTimeout is only for test case usage
 func SetPVCDeleteTimeout(timeout time.Duration) {
-	pvcDeleteTimeoutSeconds = timeout
+	pvcDeleteTimeout = timeout
 }
