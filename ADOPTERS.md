@@ -31,3 +31,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [Zhejiang Lab](https://www.zhejianglab.com)  | [@hongchen](https://github.com/hongchenokok) | Testing | AI Platform on k8s |
 | [XIAOMI](https://www.mi.com/)  | [@PeterChg](https://github.com/PeterChg) | Staging | Cloudml AI Platform |
 | [Soul APP](https://soulapp.cn/)  | [@mornight](zhanyu@soulapp.cn) | Testing | AI Platform on k8s |
+| [HUYA](https://www.huya.com)  | [@BobLiu20](liubofang@huya.com) | Staging | AI Platform on k8s |
