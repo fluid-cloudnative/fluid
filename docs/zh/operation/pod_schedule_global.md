@@ -18,26 +18,6 @@
 注意如果您的集群之前已经配置了其他的准入控制器，只需要增加 MutatingAdmissionWebhook 这个参数
 
 ## 使用方法
-**为namespace添加标签**
-
-为namespace添加标签fluid.io/enable-injection后，可以开启此namespace下Pod的调度优化功能
-
-```bash
-$ kubectl label namespace default fluid.io/enable-injection=true
-```
-
-如果您**不希望**该命名空间下的某些Pod开启调度优化功能，只需为Pod打上标签fluid.io/enable-injection=false
-
-例如，使用yaml文件方式创建一个nginx-1 Pod时，应对yaml文件做如下修改：
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-1
-  labels:
-    fluid.io/enable-injection: false
-```
 
 **查看全部结点**
 ```shell
@@ -109,6 +89,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: nginx-1
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
     - name: nginx-1
@@ -116,6 +98,9 @@ spec:
 EOF
 $ kubectl create -f nginx-1.yaml
 ```
+
+示例中`metadata.labels`中新增`fuse.serverful.fluid.io/inject=true`以对该Pod开启Fluid的调度优化功能。
+
 **查看Pod**
 
 查看Pod的yaml文件，发现被注入了如下亲和性约束信息：
@@ -150,6 +135,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: nginx-2
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
     - name: nginx-2
@@ -164,6 +151,8 @@ spec:
 EOF
 $ kubectl create -f nginx-2.yaml
 ```
+
+示例中`metadata.labels`中新增`fuse.serverful.fluid.io/inject=true`以对该Pod开启Fluid的调度优化功能。
 
 **查看Pod**
 
