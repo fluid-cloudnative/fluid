@@ -178,9 +178,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		case errors.Is(err, common.ErrCantFindResolvConf):
 			e.Log.Info("failed to parse cluster domain from resolv.conf")
 			err = nil
+			value.ClusterDomain = ""
 		}
 	} else {
-		value.ClusterDomain = clusterDomain
+		value.ClusterDomain = "." + clusterDomain
 	}
 	return value, err
 }
