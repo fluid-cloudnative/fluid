@@ -43,8 +43,8 @@ func init() {
 	}
 }
 
-func DatasetAffinityInjectEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectDatasetAffinity)
+func ServerfulFuseEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectServerfulFuse)
 }
 
 func ServerlessPlatformMatched(infos map[string]string) (match bool) {

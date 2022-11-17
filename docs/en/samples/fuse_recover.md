@@ -23,20 +23,6 @@ and multiple pods named `csi-nodeplugin` are running. Among them, the number of 
 
 ## Demo
 
-**Enable webhook for namespace**
-
-The FUSE mount point auto-recovery feature requires the pod's mountPropagation to be set to `HostToContainer` or `Bidirectional` to pass the mount point information between the container and the host. 
-And `Bidirectional` requires the container to be a privileged container.
-Fluid webhook provides to automatically set the pod's mountPropagation to `HostToContainer`. To enable this function, you need to set label `fluid.io/enable-injection=true` in the corresponding namespace. The operation is as follows:
-
-```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
-```
-
 **Create dataset and runtime**
 
 Create corresponding Runtime resources and Datasets with the same name for different types of runtimes. Take JuiceFSRuntime as an example here. For details, please refer to [Documentation](juicefs_runtime.md), as follows:
@@ -58,6 +44,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: demo-app
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
     - name: demo
@@ -73,6 +61,11 @@ spec:
 $ kubectl create -f sample.yaml
 pod/demo-app created
 ```
+
+The FUSE mount point auto-recovery feature requires the pod's mountPropagation to be set to `HostToContainer` or `Bidirectional` to pass the mount point information between the container and the host. 
+And `Bidirectional` requires the container to be a privileged container.
+Fluid webhook helps automatically set the pod's mountPropagation to `HostToContainer`. To enable this function, you need to set label `fuse.serverful.fluid.io/inject=true` on the corresponding Pod's metadata (See the sample mentioned above).
+
 
 **See if the Pod is created and check its mountPropagation**
 
