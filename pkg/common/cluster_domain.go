@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var ErrCantFindResolvConf = errors.New("failed to parse cluster domain from resolv.conf")
+
 // GetClusterDomain get cluster domain: cluster.local from /etc/resolv.conf
 func GetClusterDomain() (string, error) {
 	resolveConf, err := os.ReadFile("/etc/resolv.conf")
@@ -29,5 +31,5 @@ func parseResolvConf(conf string) (string, error) {
 			}
 		}
 	}
-	return "", errors.New("failed to parse cluster domain from resolv.conf")
+	return "", ErrCantFindResolvConf
 }

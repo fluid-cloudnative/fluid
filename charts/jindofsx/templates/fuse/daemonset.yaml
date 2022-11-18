@@ -102,7 +102,7 @@ spec:
           {{- end }}
           env:
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
           {{- if .Values.fuse.runAs }}
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}
