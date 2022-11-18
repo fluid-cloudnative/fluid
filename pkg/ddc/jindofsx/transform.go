@@ -175,7 +175,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	// to catch get clusterDomain err
 	if err != nil {
 		if errors.Is(err, common.ErrCantFindResolvConf) {
-			e.Log.Info("failed to parse cluster domain from resolv.conf")
+			e.Log.Info("Warning: failed to parse cluster domain from resolv.conf", "details", err)
 			err = nil
 			value.ClusterDomain = ""
 		}
