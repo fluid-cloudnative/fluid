@@ -340,6 +340,6 @@ spec:
             claimName: "{{ .name }}"
           {{- end }}
         {{- end }}
-        {{- if .Values.master.volumes }}
-{{ toYaml .Values.master.volumes | indent 8 }}
+        {{- if .Values.worker.volumes }}
+{{ toYaml .Values.worker.volumes | indent 8 }}
         {{- end }}
