@@ -64,3 +64,7 @@ Repair preRead and meta access issue
 0.8.14
 
 Make fuse tolerate any taint
+
+0.8.15
+
+Add Cluster domain 
