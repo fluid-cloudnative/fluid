@@ -230,3 +230,7 @@
 0.9.7
 
 - Support pass image pull secrets from fluid charts to alluxioruntime controller 
+
+0.9.8
+
+- Fix worker volumes in Alluxio's helm chart
