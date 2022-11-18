@@ -760,8 +760,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 					Name:      "test",
 					Namespace: "ref",
 					Labels: map[string]string{
-						common.InjectSidecarDone:      common.True,
-						common.InjectDatasetAffinity:  common.True,
+						common.InjectServerfulFuse:    common.True,
 						"fluid.io/dataset.done.sched": "required",
 					},
 				},
@@ -949,8 +948,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 					Name:      "test",
 					Namespace: "ref",
 					Labels: map[string]string{
-						common.InjectSidecarDone:      common.True,
-						common.InjectDatasetAffinity:  common.True,
+						common.InjectServerfulFuse:    common.True,
 						"fluid.io/dataset.done.sched": "required",
 					},
 				},
