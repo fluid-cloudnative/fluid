@@ -12,7 +12,7 @@ var ErrCantFindResolvConf = errors.New("failed to parse cluster domain from reso
 func GetClusterDomain() (string, error) {
 	resolveConf, err := os.ReadFile("/etc/resolv.conf")
 	if err != nil {
-		return "", err
+		return "", ErrCantFindResolvConf
 	}
 	return parseResolvConf(string(resolveConf))
 }
