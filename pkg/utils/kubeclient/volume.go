@@ -32,6 +32,10 @@ const (
 	persistentVolumeClaimProtectionFinalizerName = "kubernetes.io/pvc-protection"
 )
 
+var (
+	pvcDeleteTimeout = 30 * time.Second
+)
+
 func GetPersistentVolume(client client.Reader, name string) (pv *v1.PersistentVolume, err error) {
 	pv = &v1.PersistentVolume{}
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name}, pv)
@@ -307,7 +311,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	}
 
 	// only force remove finalizer after 30 seconds' Terminating state
-	then := pvc.DeletionTimestamp.Add(30 * time.Second)
+	then := pvc.DeletionTimestamp.Add(pvcDeleteTimeout)
 	now := time.Now()
 	if now.Before(then) {
 		log.V(1).Info("can not remove pvc-protection finalizer before reached expected timeout",
@@ -365,4 +369,17 @@ func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
 	}
 
 	return
+}
+
+// GetReferringDatasetPVCInfo check whether the PVC is a referring dataset PVC
+func GetReferringDatasetPVCInfo(pvc *v1.PersistentVolumeClaim) (ok bool, name string, namespace string) {
+	name = pvc.Labels[common.LabelAnnotationDatasetReferringName]
+	namespace, ok = pvc.Labels[common.LabelAnnotationDatasetReferringNameSpace]
+
+	return
+}
+
+// SetPVCDeleteTimeout is only for test case usage
+func SetPVCDeleteTimeout(timeout time.Duration) {
+	pvcDeleteTimeout = timeout
 }

@@ -645,3 +645,62 @@ func TestIsDatasetPVC(t *testing.T) {
 		})
 	}
 }
+
+func TestGetReferringDatasetPVCInfo(t *testing.T) {
+	type args struct {
+		pvc *v1.PersistentVolumeClaim
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantOk        bool
+		wantName      string
+		wantNamespace string
+	}{
+		{
+			name: "is-referring-pvc",
+			args: args{
+				pvc: &v1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "demo",
+						Namespace: "ref",
+						Labels: map[string]string{
+							common.LabelAnnotationDatasetReferringName:      "dataset",
+							common.LabelAnnotationDatasetReferringNameSpace: "fluid",
+						},
+					},
+				},
+			},
+			wantOk:        true,
+			wantName:      "dataset",
+			wantNamespace: "fluid",
+		},
+		{
+			name: "is-referring-pvc",
+			args: args{
+				pvc: &v1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "demo-error",
+						Namespace: "ref",
+						Labels:    map[string]string{},
+					},
+				},
+			},
+			wantOk: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOk, gotName, gotNamespace := GetReferringDatasetPVCInfo(tt.args.pvc)
+			if gotOk != tt.wantOk {
+				t.Errorf("GetReferringDatasetPVCInfo() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotName != tt.wantName {
+				t.Errorf("GetReferringDatasetPVCInfo() gotName = %v, want %v", gotName, tt.wantName)
+			}
+			if gotNamespace != tt.wantNamespace {
+				t.Errorf("GetReferringDatasetPVCInfo() gotNamespace = %v, want %v", gotNamespace, tt.wantNamespace)
+			}
+		})
+	}
+}

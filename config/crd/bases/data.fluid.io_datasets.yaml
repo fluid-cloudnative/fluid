@@ -384,6 +384,12 @@ spec:
                   this Dataset. This is mainly used as a lock to prevent concurrent
                   DataLoad jobs.
                 type: string
+              datasetRef:
+                description: DatasetRef specifies the datasets namespaced name mounting
+                  this Dataset.
+                items:
+                  type: string
+                type: array
               fileNum:
                 description: FileNum represents the file numbers of the dataset
                 type: string

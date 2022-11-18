@@ -205,6 +205,9 @@ type DatasetStatus struct {
 	// DataBackupRef specifies the running Backup job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
 	DataBackupRef string `json:"dataBackupRef,omitempty"`
+
+	// DatasetRef specifies the datasets namespaced name mounting this Dataset.
+	DatasetRef []string `json:"datasetRef,omitempty"`
 }
 
 // DatasetConditionType defines all kinds of types of cacheStatus.<br>

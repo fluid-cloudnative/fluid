@@ -382,3 +382,41 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 	}
 	return runtimeInfo, err
 }
+
+func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string) (status *datav1alpha1.RuntimeStatus, err error) {
+	switch runtimeType {
+	case common.AlluxioRuntime:
+		runtime, err := utils.GetAlluxioRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.JindoRuntime:
+		runtime, err := utils.GetJindoRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.GooseFSRuntime:
+		runtime, err := utils.GetGooseFSRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.JuiceFSRuntime:
+		runtime, err := utils.GetJuiceFSRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.ThinRuntime:
+		runtime, err := utils.GetThinRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	default:
+		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
+		return nil, err
+	}
+}
