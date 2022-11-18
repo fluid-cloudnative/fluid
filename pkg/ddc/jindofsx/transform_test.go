@@ -728,3 +728,35 @@ func TestJindoFSxEngine_transformPodMetadata(t *testing.T) {
 		}
 	}
 }
+
+func TestTransformLogConfig(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     string
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				LogConfig: map[string]string{"logger.level": "6"},
+				Fuse: datav1alpha1.JindoFuseSpec{
+					LogConfig: map[string]string{"logger.level": "6"},
+				},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, &Jindo{}, "6"},
+	}
+	for _, test := range tests {
+		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		engine.transformLogConfig(test.runtime, test.jindoValue)
+		if test.jindoValue.LogConfig["logger.level"] != test.expect || test.jindoValue.FuseLogConfig["logger.level"] != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+		}
+	}
+}

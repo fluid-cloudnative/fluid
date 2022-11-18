@@ -145,7 +145,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	switch {
 	case utils.ServerlessEnabled(pod.GetLabels()):
 		pluginsList = pluginsRegistry.GetServerlessPodHandler()
-	case utils.DatasetAffinityInjectEnabled(pod.GetLabels()):
+	case utils.ServerfulFuseEnabled(pod.GetLabels()):
 		if len(runtimeInfos) == 0 {
 			pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()
 		} else {

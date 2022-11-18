@@ -183,6 +183,7 @@ func TestTransformWorkers(t *testing.T) {
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
 						NetworkMode: datav1alpha1.HostNetworkMode,
 					},
+					TieredStore: datav1alpha1.TieredStore{},
 				},
 			},
 			wantValue: &Alluxio{
@@ -196,6 +197,7 @@ func TestTransformWorkers(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 	for k, v := range testCases {
 		gotValue := &Alluxio{}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", v.runtime.Spec.TieredStore)
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
 			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
 				t.Errorf("check %s failure, got:%t,want:%t",
@@ -544,6 +546,34 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 			},
 			wantPorts: []int{20001, 20002, 20003, 20004},
 		},
+		{
+			name: "test_set_runtime",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 20005,
+								"web": 20005,
+							},
+						},
+						Worker: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 20005,
+								"web": 20005,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20002, 20003, 20004},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{},
+				},
+			},
+			wantPorts: []int{20005},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -563,22 +593,22 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 			index := 0
 			preIndex := 0
 
-			tt.args.alluxioValue.Master.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.rpc.port", tt.args.allocatedPorts, index)
+			tt.args.alluxioValue.Master.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.rpc.port", tt.args.allocatedPorts, index, tt.fields.runtime.Spec.Master.Ports, "rpc")
 			if tt.args.alluxioValue.Master.Ports.Rpc != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.master.rpc.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Master.Ports.Rpc)
 			}
 			preIndex = index
-			tt.args.alluxioValue.Master.Ports.Web, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.web.port", tt.args.allocatedPorts, index)
+			tt.args.alluxioValue.Master.Ports.Web, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.master.web.port", tt.args.allocatedPorts, index, tt.fields.runtime.Spec.Master.Ports, "web")
 			if tt.args.alluxioValue.Master.Ports.Web != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.master.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Master.Ports.Web)
 			}
 			preIndex = index
-			tt.args.alluxioValue.Worker.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.rpc.port", tt.args.allocatedPorts, index)
+			tt.args.alluxioValue.Worker.Ports.Rpc, index = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.rpc.port", tt.args.allocatedPorts, index, tt.fields.runtime.Spec.Worker.Ports, "rpc")
 			if tt.args.alluxioValue.Worker.Ports.Rpc != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.worker.rpc.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Rpc)
 			}
 			preIndex = index
-			tt.args.alluxioValue.Worker.Ports.Web, _ = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index)
+			tt.args.alluxioValue.Worker.Ports.Web, _ = e.allocateSinglePort(tt.args.alluxioValue, "alluxio.worker.web.port", tt.args.allocatedPorts, index, tt.fields.runtime.Spec.Worker.Ports, "web")
 			if tt.args.alluxioValue.Worker.Ports.Web != tt.wantPorts[preIndex] {
 				t.Errorf("port %s expected %d, got %d", "alluxio.worker.web.port", tt.wantPorts[preIndex], tt.args.alluxioValue.Worker.Ports.Web)
 			}
@@ -638,6 +668,80 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 			},
 			wantPorts: []int{30001},
 		},
+		{
+			name: "test_set_runtime_Properties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 30002,
+								"web": 30002,
+							},
+						},
+						Worker: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 30002,
+								"web": 30002,
+							},
+						},
+						APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
+							Enabled: true,
+							Ports: map[string]int{
+								"web": 30002,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20001, 20001, 20001},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{
+						"alluxio.master.rpc.port": strconv.Itoa(30001),
+						"alluxio.master.web.port": strconv.Itoa(30001),
+						"alluxio.worker.rpc.port": strconv.Itoa(30001),
+						"alluxio.worker.web.port": strconv.Itoa(30001),
+						"alluxio.proxy.web.port":  strconv.Itoa(30001),
+					},
+				},
+			},
+			wantPorts: []int{30001},
+		},
+		{
+			name: "test_set_runtime_NoProperties",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 30002,
+								"web": 30002,
+							},
+						},
+						Worker: datav1alpha1.AlluxioCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc": 30002,
+								"web": 30002,
+							},
+						},
+						APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
+							Enabled: true,
+							Ports: map[string]int{
+								"web": 30002,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				allocatedPorts: []int{20001, 20001, 20001, 20001},
+				alluxioValue: &Alluxio{
+					Properties: map[string]string{},
+				},
+			},
+			wantPorts: []int{30002},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -654,7 +758,7 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
 			}
 
-			err := e.allocatePorts(tt.args.alluxioValue)
+			err := e.allocatePorts(tt.args.alluxioValue, e.runtime)
 			if err != nil {
 				t.Errorf("allocatePorts err: %v", err)
 			}

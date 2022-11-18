@@ -25,19 +25,6 @@ fluid-webhook-844dcb995f-nfmjl              1/1     Running   0          20m
 
 ## 运行示例
 
-**为 namespace 开启 webhook**
-
-FUSE 挂载点自动恢复功能需要 pod 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
-Fluid webhook 提供了自动将 pod 的 mountPropagation 设置为 `HostToContainer`，为了开启该功能，需要将对应的 namespace 打上 `fluid.io/enable-injection=true` 的标签。操作如下：
-
-```shell
-$ kubectl patch ns default -p '{"metadata": {"labels": {"fluid.io/enable-injection": "true"}}}'
-namespace/default patched
-$ kubectl get ns default --show-labels
-NAME      STATUS   AGE     LABELS
-default   Active   4d12h   fluid.io/enable-injection=true,kubernetes.io/metadata.name=default
-```
-
 **创建 dataset 和 runtime**
 
 针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 AlluxioRuntime 为例，具体可参考 [文档](../dataset_usage/accelerate_data_accessing.md)，如下：
@@ -89,6 +76,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: demo-app
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
     - name: demo
@@ -104,6 +93,9 @@ EOF
 $ kubectl create -f sample.yaml
 pod/demo-app created
 ```
+
+FUSE 挂载点自动恢复功能需要 pod 的 mountPropagation 设置为 `HostToContainer` 或 `Bidirectional`，才能将挂载点信息在容器和宿主机之间传递。而 `Bidirectional` 需要容器为特权容器。
+Fluid webhook 提供了自动将 pod 的 mountPropagation 设置为 `HostToContainer`的功能，为了开启该功能，需要将对应的 Pod Metadata 打上 `fuse.serverful.fluid.io/inject=true` 的标签(参考上述Pod YAML示例)。
 
 **查看 Pod 是否创建，并检查其 mountPropagation**
 

@@ -35,9 +35,6 @@ type ThinRuntimeSpec struct {
 
 	ThinRuntimeProfileName string `json:"profileName,omitempty"`
 
-	// The version information that instructs fluid to orchestrate a particular version,
-	Version VersionSpec `json:"version,omitempty"`
-
 	// The component spec of worker
 	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
 
@@ -65,6 +62,15 @@ type ThinRuntimeSpec struct {
 
 // ThinCompTemplateSpec is a description of the thinRuntime components
 type ThinCompTemplateSpec struct {
+	// Image for thinRuntime fuse
+	Image string `json:"image,omitempty"`
+
+	// Image for thinRuntime fuse
+	ImageTag string `json:"imageTag,omitempty"`
+
+	// One of the three policies: `Always`, `IfNotPresent`, `Never`
+	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
 	// +kubebuilder:validation:Minimum=1

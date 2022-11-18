@@ -36,12 +36,10 @@ func TestThinEngine_parseFromProfileFuse(t1 *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			Fuse: datav1alpha1.ThinFuseSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
@@ -186,7 +184,7 @@ func TestThinEngine_parseFuseImage(t1 *testing.T) {
 			if tt.args.value.Fuse.Image != tt.args.runtime.Spec.Fuse.Image ||
 				tt.args.value.Fuse.ImageTag != tt.args.runtime.Spec.Fuse.ImageTag ||
 				tt.args.value.Fuse.ImagePullPolicy != tt.args.runtime.Spec.Fuse.ImagePullPolicy {
-				t1.Errorf("got %v, want %v", tt.args.value.Worker, tt.args.runtime.Spec.Version)
+				t1.Errorf("got %v, want %v", tt.args.value.Fuse, tt.args.runtime.Spec.Fuse)
 			}
 		})
 	}
@@ -290,13 +288,11 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			Name: "test",
 		},
 		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			Version: datav1alpha1.VersionSpec{
+			FileSystemType: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
-			},
-			FileSystemType: "test",
-			Fuse: datav1alpha1.ThinFuseSpec{
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
@@ -467,7 +463,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 	}
 	value := &ThinValue{}
 	t1.Run("test", func(t1 *testing.T) {
-		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test"}
+		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test", runtime: runtime}
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}

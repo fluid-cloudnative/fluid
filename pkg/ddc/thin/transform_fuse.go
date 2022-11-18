@@ -134,6 +134,12 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		value.Fuse.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
 	}
+
+	// 15. mount related node publish secret to fuse if the dataset specifies any mountpoint with pvc type.
+	err = t.transfromSecretsForPersistentVolumeClaimMounts(dataset, value)
+	if err != nil {
+		return err
+	}
 	return
 }
 
@@ -212,9 +218,9 @@ func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfi
 		return
 	}
 	// 1. image
-	value.Fuse.Image = profile.Spec.Version.Image
-	value.Fuse.ImageTag = profile.Spec.Version.ImageTag
-	value.Fuse.ImagePullPolicy = profile.Spec.Version.ImagePullPolicy
+	value.Fuse.Image = profile.Spec.Fuse.Image
+	value.Fuse.ImageTag = profile.Spec.Fuse.ImageTag
+	value.Fuse.ImagePullPolicy = profile.Spec.Fuse.ImagePullPolicy
 	if len(profile.Spec.Fuse.Image) != 0 {
 		value.Fuse.Image = profile.Spec.Fuse.Image
 	}
