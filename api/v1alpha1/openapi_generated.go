@@ -1597,6 +1597,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 							Format:      "",
 						},
 					},
+					"datasetRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DatasetRef specifies the datasets namespaced name mounting this Dataset.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"conditions"},
 			},
@@ -4461,8 +4476,9 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"profileName": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "The specific runtime profile name, empty value is used for handling datasets which mount another dataset",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"worker": {

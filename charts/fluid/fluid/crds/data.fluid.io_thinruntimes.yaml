@@ -602,6 +602,8 @@ spec:
                     type: array
                 type: object
               profileName:
+                description: The specific runtime profile name, empty value is used
+                  for handling datasets which mount another dataset
                 type: string
               replicas:
                 description: The replicas of the worker, need to be specified
