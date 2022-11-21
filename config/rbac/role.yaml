@@ -48,26 +48,6 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - eacruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - eacruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - goosefsruntimes
   verbs:
   - create
