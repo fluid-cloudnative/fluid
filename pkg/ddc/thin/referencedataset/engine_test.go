@@ -20,6 +20,7 @@ import (
 	"context"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -84,8 +85,32 @@ func TestBuildReferenceDatasetThinEngine(t *testing.T) {
 		},
 	}
 
-	testObjs = append(testObjs, &dataset, &refDataset)
-	testObjs = append(testObjs, &runtime, &refRuntime)
+	var multipleRefDataset = datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid-mul",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "dataset://big-data/done",
+				},
+				{
+					MountPoint: "http://big-test/done",
+				},
+			},
+		},
+	}
+
+	var multipleRefRuntime = datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid-mul",
+		},
+	}
+
+	testObjs = append(testObjs, &dataset, &refDataset, &multipleRefDataset)
+	testObjs = append(testObjs, &runtime, &refRuntime, &multipleRefRuntime)
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	testcases := []struct {
@@ -118,6 +143,20 @@ func TestBuildReferenceDatasetThinEngine(t *testing.T) {
 				Log:         fake.NullLogger(),
 				RuntimeType: common.ThinRuntime,
 				Runtime:     &runtime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "dataset-with-different-format",
+			ctx: cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{
+					Name:      "hbase",
+					Namespace: "fluid-mul",
+				},
+				Client:      client,
+				Log:         fake.NullLogger(),
+				RuntimeType: common.ThinRuntime,
+				Runtime:     &multipleRefRuntime,
 			},
 			wantErr: true,
 		},
@@ -252,7 +291,7 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 					t.Errorf("Get dataset error %v", err)
 					return
 				}
-				if !utils.ContainsString(updatedDataset.Status.DatasetRef, getDatasetRefName(e.name, e.namespace)) {
+				if !utils.ContainsString(updatedDataset.Status.DatasetRef, base.GetDatasetRefName(e.name, e.namespace)) {
 					t.Errorf("Setup() not add dataset field DatasetRef")
 				}
 			}
@@ -369,7 +408,7 @@ func TestReferenceDatasetEngine_Shutdown(t *testing.T) {
 			t.Errorf("Get dataset error %v", err)
 			return
 		}
-		if utils.ContainsString(updatedDataset.Status.DatasetRef, getDatasetRefName(e.name, e.namespace)) {
+		if utils.ContainsString(updatedDataset.Status.DatasetRef, base.GetDatasetRefName(e.name, e.namespace)) {
 			t.Errorf("Shutdown() not remove dataset field DatasetRef")
 		}
 	}

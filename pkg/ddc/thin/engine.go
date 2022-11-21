@@ -17,6 +17,7 @@
 package thin
 
 import (
+	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	"github.com/go-logr/logr"
@@ -59,7 +60,12 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
 	}
 
-	if isReferenceDatasetRuntime(runtime) {
+	isRef, err := isReferenceDatasetRuntime(ctx.Client, runtime)
+	if err != nil {
+		return nil, err
+	}
+
+	if isRef {
 		return referencedataset.BuildReferenceDatasetThinEngine(id, ctx)
 	} else {
 		return buildThinEngine(id, ctx)
@@ -107,7 +113,20 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 }
 
 // isReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
-func isReferenceDatasetRuntime(runtime *datav1alpha1.ThinRuntime) bool {
-	profileName := runtime.Spec.ThinRuntimeProfileName
-	return profileName == ""
+func isReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.ThinRuntime) (bool, error) {
+	dataset := &datav1alpha1.Dataset{}
+
+	err := client.Get(context.TODO(), types.NamespacedName{Namespace: runtime.Namespace, Name: runtime.Name}, dataset)
+
+	if err != nil {
+		return false, err
+	}
+
+	mounted := base.GetMountedDatasetNamespacedName(dataset)
+	// not mount other datasets
+	if len(mounted) == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }

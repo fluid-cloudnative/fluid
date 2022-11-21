@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-package referencedataset
+package base
 
 import (
 	"fmt"
@@ -24,11 +24,11 @@ import (
 	"strings"
 )
 
-func getDatasetRefName(name, namespace string) string {
+func GetDatasetRefName(name, namespace string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func getMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []types.NamespacedName {
+func GetMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []types.NamespacedName {
 	// virtual dataset can only mount dataset
 	var physicalNameSpacedName []types.NamespacedName
 	for _, mount := range virtualDataset.Spec.Mounts {

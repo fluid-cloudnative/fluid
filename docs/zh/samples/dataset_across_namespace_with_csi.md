@@ -1,4 +1,4 @@
-# 示例 - Dataset缓存跨Namespace访问
+# 示例 - Dataset缓存跨Namespace访问(CSI机制)
 本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
 - Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
 - Namespace ns-b 创建 Dataset demo-ref 和 ThinRuntime demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
@@ -52,8 +52,11 @@ $ kubectl create -f ds.yaml
 ### 2. 创建引用的Dataset和Runtime
 在 ref 名空间下，创建：
 - 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
-- ThinRuntime `refdemo`，其 profileName 不能填写（即空值）；
-注：当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败）。
+- ThinRuntime `refdemo`，其Spec字段不用填写；
+
+注：
+1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
+2. 引用数据集对应的Runtime，其Spec中字段无效；
 ```shell
 $ kubectl create ns ref
 
