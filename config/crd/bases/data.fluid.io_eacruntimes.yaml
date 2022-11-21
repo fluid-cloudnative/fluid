@@ -212,11 +212,11 @@ spec:
                     description: Configurable properties for the EAC component.
                     type: object
                   replicas:
-                    default: 1
                     description: Replicas is the desired number of replicas of the
                       given template. If unspecified, defaults to 1. replicas is the
                       min replicas of dataset in the cluster
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     description: Resources that will be requested by the EAC component.
@@ -1962,11 +1962,11 @@ spec:
                     description: Configurable properties for the EAC component.
                     type: object
                   replicas:
-                    default: 1
                     description: Replicas is the desired number of replicas of the
                       given template. If unspecified, defaults to 1. replicas is the
                       min replicas of dataset in the cluster
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     description: Resources that will be requested by the EAC component.

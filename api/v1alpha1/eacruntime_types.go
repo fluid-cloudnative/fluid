@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2022 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,31 +35,38 @@ type InitAlifuseSpec struct {
 type EACCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
-	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
 	// replicas is the min replicas of dataset in the cluster
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
+
 	// The version information that instructs fluid to orchestrate a particular version of EAC Comp
 	Version VersionSpec `json:"version,omitempty"`
+
 	// Configurable properties for the EAC component.
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
+
 	// Ports used by EAC(e.g. rpc: 19998 for master).
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
+
 	// Resources that will be requested by the EAC component. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// Enabled or Disabled for the components.
 	// Default enable.
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
+
 	// NodeSelector is a selector which must be true for the master to fit on a node.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// Whether to use host network or not.
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
@@ -70,23 +77,28 @@ type EACCompTemplateSpec struct {
 type EACFuseSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of EAC Fuse
 	Version VersionSpec `json:"version,omitempty"`
+
 	// Configurable properties for EAC fuse
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
+
 	// Resources that will be requested by EAC Fuse. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// If the fuse client should be deployed in global mode,
 	// otherwise the affinity should be considered
 	// +optional
 	Global bool `json:"global,omitempty"`
+
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// CleanPolicy decides when to clean EAC Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
@@ -94,6 +106,7 @@ type EACFuseSpec struct {
 	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+
 	// Whether to use hostnetwork or not
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
@@ -104,23 +117,31 @@ type EACFuseSpec struct {
 type EACRuntimeSpec struct {
 	// The component spec of EAC master
 	Master EACCompTemplateSpec `json:"master,omitempty"`
+
 	// The component spec of EAC worker
 	Worker EACCompTemplateSpec `json:"worker,omitempty"`
+
 	// The spec of init alifuse
 	InitAlifuse InitAlifuseSpec `json:"initAlifuse,omitempty"`
+
 	// The component spec of EAC Fuse
 	Fuse EACFuseSpec `json:"fuse,omitempty"`
+
 	// Tiered storage used by EAC worker
 	TieredStore TieredStore `json:"tieredstore,omitempty"`
+
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
+
 	// Enable OS other than AliyunOS
 	// Non-AliyunOS is not enabled by default
 	// +optional
 	EnableNoneAliyunOS bool `json:"enableNoneAliyunOS,omitempty"`
+
 	// Aliyun AccessKey ID for DirQuota API
 	// +optional
 	AccessKeyID string `json:"accessKeyID,omitempty"`
+
 	// Aliyun AccessKey Secret for DirQuota API
 	// +optional
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
@@ -142,16 +163,19 @@ type EACRuntimeSpec struct {
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=eac
 // +genclient
+
 // EACRuntime is the Schema for the eacruntimes API
 type EACRuntime struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              EACRuntimeSpec `json:"spec,omitempty"`
-	Status            RuntimeStatus  `json:"status,omitempty"`
+
+	Spec   EACRuntimeSpec `json:"spec,omitempty"`
+	Status RuntimeStatus  `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced
+
 // EACRuntimeList contains a list of EACRuntime
 type EACRuntimeList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -162,6 +186,7 @@ type EACRuntimeList struct {
 func init() {
 	SchemeBuilder.Register(&EACRuntime{}, &EACRuntimeList{})
 }
+
 func (runtime *EACRuntime) Enabled() bool {
 	return !runtime.Spec.Worker.Disabled
 }
@@ -173,15 +198,21 @@ func (runtime *EACRuntime) Replicas() int32 {
 	}
 	return runtime.Spec.Replicas
 }
+
 func (runtime *EACRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
 }
+
 func (runtime *EACRuntime) MasterEnabled() bool {
 	return !runtime.Spec.Master.Disabled
 }
+
 func (runtime *EACRuntime) MasterReplicas() int32 {
 	if !runtime.MasterEnabled() {
 		return 0
+	}
+	if runtime.Spec.Master.Replicas < 1 {
+		return 1
 	}
 	return runtime.Spec.Master.Replicas
 }
