@@ -3,6 +3,7 @@ package thin
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -39,6 +40,7 @@ func (t *ThinEngine) bindDatasetToMountedPersistentVolumeClaim() (err error) {
 		}
 	}
 
+	// bind dataset only when there is specified pvc:// scheme mount point
 	if pvc != nil {
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			ds, err := utils.GetDataset(t.Client, dataset.Name, dataset.Namespace)
@@ -46,15 +48,28 @@ func (t *ThinEngine) bindDatasetToMountedPersistentVolumeClaim() (err error) {
 				return err
 			}
 
-			dsToUpdate := ds.DeepCopy()
-			dsToUpdate.OwnerReferences = append(dsToUpdate.OwnerReferences, metav1.OwnerReference{
+			pvcOwnerReference := metav1.OwnerReference{
 				APIVersion: pvc.APIVersion,
 				Kind:       pvc.Kind,
 				Name:       pvc.Name,
 				UID:        pvc.UID,
-			})
+			}
 
-			return t.Client.Update(context.TODO(), dsToUpdate)
+			var exists bool
+			for _, refer := range ds.OwnerReferences {
+				if reflect.DeepEqual(refer, pvcOwnerReference) {
+					exists = true
+				}
+			}
+
+			if !exists {
+				dsToUpdate := ds.DeepCopy()
+				dsToUpdate.OwnerReferences = append(dsToUpdate.OwnerReferences, pvcOwnerReference)
+
+				return t.Client.Update(context.TODO(), dsToUpdate)
+			}
+
+			return nil
 		})
 
 		if err != nil {
