@@ -17,8 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // JuiceFS The value yaml file
@@ -31,7 +32,7 @@ type JuiceFS struct {
 	common.UserInfo  `yaml:",inline"`
 
 	NodeSelector map[string]string   `yaml:"nodeSelector,omitempty"`
-	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+	Tolerations  []corev1.Toleration `yaml:"tolerations,omitempty"`
 	Configs      Configs             `yaml:"configs,omitempty"`
 	Fuse         Fuse                `yaml:"fuse,omitempty"`
 	Worker       Worker              `yaml:"worker,omitempty"`
@@ -64,6 +65,7 @@ type Worker struct {
 	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
 	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
+	HostNetwork     bool                   `yaml:"hostNetwork,omitempty"`
 
 	MountPath   string            `yaml:"mountPath,omitempty"`
 	StatCmd     string            `yaml:"statCmd,omitempty"`
@@ -84,6 +86,7 @@ type Fuse struct {
 	CriticalPod     bool                 `yaml:"criticalPod,omitempty"`
 	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
+	HostNetwork     bool                 `yaml:"hostNetwork,omitempty"`
 
 	SubPath       string            `yaml:"subPath,omitempty"`
 	MountPath     string            `yaml:"mountPath,omitempty"`

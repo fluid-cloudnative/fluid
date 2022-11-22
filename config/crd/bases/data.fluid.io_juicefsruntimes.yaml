@@ -209,6 +209,13 @@ spec:
                   imageTag:
                     description: Image for JuiceFS fuse
                     type: string
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -467,6 +474,13 @@ spec:
                       - name
                       type: object
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -735,6 +749,13 @@ spec:
                       - name
                       type: object
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -4170,6 +4191,13 @@ spec:
                       - name
                       type: object
                     type: array
+                  networkMode:
+                    description: Whether to use hostnetwork or not
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string

@@ -1,3 +1,4 @@
+{{- $hostNetwork := .Values.worker.hostNetwork }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -52,6 +53,10 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.worker.hostNetwork }}
+      hostNetwork: {{ $hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
