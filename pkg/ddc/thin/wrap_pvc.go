@@ -33,7 +33,7 @@ func (t *ThinEngine) bindDatasetToMountedPersistentVolumeClaim() (err error) {
 			}
 
 			if pvc != nil {
-				return fmt.Errorf("Dataset \"%s/%s\" can only contain one pvc:// mount point", dataset.Namespace, dataset.Name)
+				return fmt.Errorf("dataset \"%s/%s\" can only contain one pvc:// mount point", dataset.Namespace, dataset.Name)
 			}
 			pvc = mountedPvc
 		}
