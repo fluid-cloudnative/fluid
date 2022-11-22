@@ -39,25 +39,27 @@ func (t *ThinEngine) bindDatasetToMountedPersistentVolumeClaim() (err error) {
 		}
 	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		ds, err := utils.GetDataset(t.Client, dataset.Name, dataset.Namespace)
-		if err != nil {
-			return err
-		}
+	if pvc != nil {
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			ds, err := utils.GetDataset(t.Client, dataset.Name, dataset.Namespace)
+			if err != nil {
+				return err
+			}
 
-		dsToUpdate := ds.DeepCopy()
-		dsToUpdate.OwnerReferences = append(dsToUpdate.OwnerReferences, metav1.OwnerReference{
-			APIVersion: pvc.APIVersion,
-			Kind:       pvc.Kind,
-			Name:       pvc.Name,
-			UID:        pvc.UID,
+			dsToUpdate := ds.DeepCopy()
+			dsToUpdate.OwnerReferences = append(dsToUpdate.OwnerReferences, metav1.OwnerReference{
+				APIVersion: pvc.APIVersion,
+				Kind:       pvc.Kind,
+				Name:       pvc.Name,
+				UID:        pvc.UID,
+			})
+
+			return t.Client.Update(context.TODO(), dsToUpdate)
 		})
 
-		return t.Client.Update(context.TODO(), dsToUpdate)
-	})
-
-	if err != nil {
-		return errors.Wrapf(err, "failed to update dataset \"%s/%s\"'s ownerReference", dataset.Namespace, dataset.Name)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update dataset \"%s/%s\"'s ownerReference", dataset.Namespace, dataset.Name)
+		}
 	}
 
 	return nil
