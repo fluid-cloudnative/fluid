@@ -66,5 +66,15 @@ func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
+	// If the dataset contains pvc:// scheme mount point, set owner reference to the
+	// dataset with the mounted pvc as its owner. If no pvc:// scheme mount point is specified,
+	// it takes no effect.
+	err = t.bindDatasetToMountedPersistentVolumeClaim()
+	if err != nil {
+		return err
+	}
+
+	// If the dataset contains pvc:// scheme mount point, wrap the mounted PVC, otherwise
+	// it takes no effect.
 	return t.wrapMountedPersistentVolumeClaim()
 }
