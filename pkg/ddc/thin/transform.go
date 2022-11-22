@@ -28,11 +28,11 @@ import (
 )
 
 func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (value *ThinValue, err error) {
-	defer utils.TimeTrack(time.Now(), "ThinRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the thinRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "ThinRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
 	if err != nil {

@@ -36,11 +36,11 @@ import (
 )
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
-	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the jindoRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		err = fmt.Errorf("the TieredStore is null")

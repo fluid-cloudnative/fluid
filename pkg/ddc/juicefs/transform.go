@@ -28,11 +28,11 @@ import (
 )
 
 func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *JuiceFS, err error) {
-	defer utils.TimeTrack(time.Now(), "JuiceFSRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the juicefsRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JuiceFSRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
 	if err != nil {

@@ -31,11 +31,11 @@ import (
 )
 
 func (e *GooseFSEngine) transform(runtime *datav1alpha1.GooseFSRuntime) (value *GooseFS, err error) {
-	defer utils.TimeTrack(time.Now(), "GooseFSRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the goosefsRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "GooseFSRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
