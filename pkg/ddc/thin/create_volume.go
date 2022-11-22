@@ -66,5 +66,10 @@ func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
 		return err
 	}
 
+	err = t.bindDatasetToMountedPersistentVolumeClaim()
+	if err != nil {
+		return err
+	}
+
 	return t.wrapMountedPersistentVolumeClaim()
 }
