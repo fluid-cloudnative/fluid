@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -30,6 +31,7 @@ import (
 )
 
 func (e *GooseFSEngine) transform(runtime *datav1alpha1.GooseFSRuntime) (value *GooseFS, err error) {
+	defer utils.TimeTrack(time.Now(), "GooseFSRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the goosefsRuntime is null")
 		return

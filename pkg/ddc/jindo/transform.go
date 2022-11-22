@@ -22,6 +22,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
@@ -35,6 +36,7 @@ import (
 )
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
+	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the jindoRuntime is null")
 		return

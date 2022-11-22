@@ -42,6 +42,7 @@ import (
 )
 
 func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
+	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 	if runtime == nil {
 		err = fmt.Errorf("the jindoRuntime is null")
 		return
