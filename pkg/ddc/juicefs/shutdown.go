@@ -19,14 +19,15 @@ package juicefs
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
-	"path/filepath"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
+	"sigs.k8s.io/yaml"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
