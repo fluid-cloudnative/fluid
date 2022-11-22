@@ -18,8 +18,10 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -108,6 +110,8 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 		j.Log.Error(err, "failed to transform volumes for worker")
 	}
 
+	// parse work pod network mode
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 	return
 }
 

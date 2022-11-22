@@ -49,7 +49,10 @@ spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
       {{- end }}
-      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      {{- if .Values.fuse.hostNetwork }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       nodeSelector:
       {{- if .Values.fuse.nodeSelector }}
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}

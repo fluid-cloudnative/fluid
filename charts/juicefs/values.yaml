@@ -43,6 +43,7 @@ worker:
   mountPath: /mnt/jfs
   statCmd: "stat -c %i /mnt/jfs"
   podManagementPolicy: Parallel
+  hostNetwork: false
   resources:
     requests:
 #      cpu: "0.5"
@@ -67,6 +68,7 @@ configs:
 ## FUSE ##
 
 fuse:
+  hostNetwork: false
   subPath: ""
   criticalPod: false
   enabled: true
@@ -75,7 +77,6 @@ fuse:
   imagePullPolicy: IfNotPresent
   envs: []
   nodeSelector: {}
-  dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host
   mountPath: /mnt/jfs
   cacheDir: ""

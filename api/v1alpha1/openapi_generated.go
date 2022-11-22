@@ -2940,6 +2940,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref com
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -3045,6 +3052,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 							Description: "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
