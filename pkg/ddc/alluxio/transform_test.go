@@ -192,6 +192,27 @@ func TestTransformWorkers(t *testing.T) {
 				},
 			},
 		},
+		"test network mode case 4": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+						NodeSelector: map[string]string{
+							"workerSelector": "true",
+						},
+					},
+					TieredStore: datav1alpha1.TieredStore{},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					HostNetwork: true,
+					NodeSelector: map[string]string{
+						"workerSelector": "true",
+					},
+				},
+			},
+		},
 	}
 
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
@@ -205,6 +226,15 @@ func TestTransformWorkers(t *testing.T) {
 					gotValue.Worker.HostNetwork,
 					v.wantValue.Worker.HostNetwork,
 				)
+			}
+			if len(v.wantValue.Worker.NodeSelector) > 0 {
+				if !reflect.DeepEqual(v.wantValue.Worker.NodeSelector, gotValue.Worker.NodeSelector) {
+					t.Errorf("check %s failure, got:%v,want:%v",
+						k,
+						gotValue.Worker.NodeSelector,
+						v.wantValue.Worker.NodeSelector,
+					)
+				}
 			}
 		}
 	}
