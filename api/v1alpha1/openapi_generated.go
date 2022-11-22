@@ -28,77 +28,78 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus":         schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec":  schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":           schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation":           schema_fluid_cloudnative_fluid_api_v1alpha1_BackupLocation(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":    schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupList":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupStatus":         schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":      schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime":               schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeList":           schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":            schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":      schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":  schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":           schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":               schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitAlifuseSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_InitAlifuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec":  schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntime":           schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":              schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":        schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":            schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":               schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntime":              schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeList":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfile":       schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfile(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileList":   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileStatus": schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":              schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                     schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":             schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":              schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":          schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation":              schema_fluid_cloudnative_fluid_api_v1alpha1_BackupLocation(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":       schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                   schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                        schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":                  schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupList":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                    schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":                schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":         schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":            schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":               schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime":                  schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeList":              schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":         schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":              schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":          schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":                  schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntime":                schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeList":            schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntime":              schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":          schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                       schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                       schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationSystemOptimization": schema_fluid_cloudnative_fluid_api_v1alpha1_OperationSystemOptimization(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                 schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":            schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":               schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":           schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":               schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                  schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntime":                 schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeList":             schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfile":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfile(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileList":      schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileStatus":    schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":                 schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                        schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":                schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
 	}
 }
 
@@ -1696,7 +1697,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref common.
 					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "NodeSelector is a selector which must be true for the master to fit on a node.",
+							Description: "NodeSelector is a selector which must be true for the component to fit on a node.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -1760,13 +1761,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref common.Referenc
 							Description: "Resources that will be requested by EAC Fuse. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
 						},
 					},
 					"nodeSelector": {
@@ -1924,11 +1918,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.Refer
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec"),
 						},
 					},
-					"initAlifuse": {
+					"initFuse": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The spec of init alifuse",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.InitAlifuseSpec"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec"),
 						},
 					},
 					"fuse": {
@@ -1952,32 +1946,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.Refer
 							Format:      "int32",
 						},
 					},
-					"enableNoneAliyunOS": {
+					"operationSystemOptimization": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Enable OS other than AliyunOS Non-AliyunOS is not enabled by default",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"accessKeyID": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Aliyun AccessKey ID for DirQuota API",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"accessKeySecret": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Aliyun AccessKey Secret for DirQuota API",
-							Type:        []string{"string"},
-							Format:      "",
+							Description: "Operation system optimization for EAC",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationSystemOptimization"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitAlifuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationSystemOptimization", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
 	}
 }
 
@@ -2578,11 +2558,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref common.Reference
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_InitAlifuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "InitAlifuseSpec is a description of initialize the fuse kernel module for runtime",
+				Description: "InitFuseSpec is a description of initialize the fuse kernel module for runtime",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
@@ -3803,6 +3783,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationSystemOptimization(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OperationSystemOptimization is a description of choices to have optimization on specific operating system",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"osVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specific operation system version that can have optimization.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enable operation system optimization not enabled by default.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

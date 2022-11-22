@@ -76,16 +76,6 @@ spec:
           spec:
             description: EACRuntimeSpec defines the desired state of EACRuntime
             properties:
-              accessKeyID:
-                description: Aliyun AccessKey ID for DirQuota API
-                type: string
-              accessKeySecret:
-                description: Aliyun AccessKey Secret for DirQuota API
-                type: string
-              enableNoneAliyunOS:
-                description: Enable OS other than AliyunOS Non-AliyunOS is not enabled
-                  by default
-                type: boolean
               fuse:
                 description: The component spec of EAC Fuse
                 properties:
@@ -96,10 +86,6 @@ spec:
                       needed OnRuntimeDeleted cleans fuse pod only when the cache
                       runtime is deleted Defaults to OnRuntimeDeleted'
                     type: string
-                  global:
-                    description: If the fuse client should be deployed in global mode,
-                      otherwise the affinity should be considered
-                    type: boolean
                   networkMode:
                     description: Whether to use hostnetwork or not
                     enum:
@@ -163,7 +149,7 @@ spec:
                         type: string
                     type: object
                 type: object
-              initAlifuse:
+              initFuse:
                 description: The spec of init alifuse
                 properties:
                   version:
@@ -199,7 +185,7 @@ spec:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector which must be true for
-                      the master to fit on a node.
+                      the component to fit on a node.
                     type: object
                   ports:
                     additionalProperties:
@@ -262,6 +248,17 @@ spec:
                         description: Image tag (e.g. 2.3.0-SNAPSHOT)
                         type: string
                     type: object
+                type: object
+              operationSystemOptimization:
+                description: Operation system optimization for EAC
+                properties:
+                  enabled:
+                    description: Enable operation system optimization not enabled
+                      by default.
+                    type: boolean
+                  osVersion:
+                    description: Specific operation system version that can have optimization.
+                    type: string
                 type: object
               replicas:
                 description: The replicas of the worker, need to be specified
@@ -1949,7 +1946,7 @@ spec:
                     additionalProperties:
                       type: string
                     description: NodeSelector is a selector which must be true for
-                      the master to fit on a node.
+                      the component to fit on a node.
                     type: object
                   ports:
                     additionalProperties:

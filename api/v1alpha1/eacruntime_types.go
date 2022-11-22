@@ -22,13 +22,26 @@ import (
 )
 
 const (
+	// EAC(Elastic Accelerate Client) is a fuse filesystem for NAS with distributed cache
 	EACRuntimeKind = "EACRuntime"
 )
 
-// InitAlifuseSpec is a description of initialize the fuse kernel module for runtime
-type InitAlifuseSpec struct {
+// InitFuseSpec is a description of initialize the fuse kernel module for runtime
+type InitFuseSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alifuse
 	Version VersionSpec `json:"version,omitempty"`
+}
+
+// OperationSystemOptimization is a description of choices to have optimization on specific operating system
+type OperationSystemOptimization struct {
+	// Specific operation system version that can have optimization.
+	// +optional
+	OSVersion string `json:"osVersion,omitempty"`
+
+	// Enable operation system optimization
+	// not enabled by default.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // EACCompTemplateSpec is a description of the EAC components
@@ -63,7 +76,7 @@ type EACCompTemplateSpec struct {
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 
-	// NodeSelector is a selector which must be true for the master to fit on a node.
+	// NodeSelector is a selector which must be true for the component to fit on a node.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
@@ -88,11 +101,6 @@ type EACFuseSpec struct {
 	// already allocated to the pod.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// If the fuse client should be deployed in global mode,
-	// otherwise the affinity should be considered
-	// +optional
-	Global bool `json:"global,omitempty"`
 
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled
@@ -122,7 +130,7 @@ type EACRuntimeSpec struct {
 	Worker EACCompTemplateSpec `json:"worker,omitempty"`
 
 	// The spec of init alifuse
-	InitAlifuse InitAlifuseSpec `json:"initAlifuse,omitempty"`
+	InitFuse InitFuseSpec `json:"initFuse,omitempty"`
 
 	// The component spec of EAC Fuse
 	Fuse EACFuseSpec `json:"fuse,omitempty"`
@@ -133,18 +141,8 @@ type EACRuntimeSpec struct {
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Enable OS other than AliyunOS
-	// Non-AliyunOS is not enabled by default
-	// +optional
-	EnableNoneAliyunOS bool `json:"enableNoneAliyunOS,omitempty"`
-
-	// Aliyun AccessKey ID for DirQuota API
-	// +optional
-	AccessKeyID string `json:"accessKeyID,omitempty"`
-
-	// Aliyun AccessKey Secret for DirQuota API
-	// +optional
-	AccessKeySecret string `json:"accessKeySecret,omitempty"`
+	// Operation system optimization for EAC
+	OperationSystemOptimization OperationSystemOptimization `json:"operationSystemOptimization,omitempty"`
 }
 
 // +kubebuilder:object:root=true
