@@ -36,8 +36,6 @@ import (
 	"time"
 )
 
-const controllerName string = "EACRuntimeController"
-
 // Use compiler to check if the struct implements all the interface
 var _ controllers.RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
 
@@ -75,9 +73,9 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    runtimeType,
+		RuntimeType:    common.EACRuntimeType,
 		Client:         r.Client,
-		FinalizerName:  runtimeResourceFinalizerName,
+		FinalizerName:  common.EACRuntimeResourceFinalizerName,
 	}
 
 	ctx.Log.V(1).Info("process the request", "request", req)
@@ -113,7 +111,7 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 }
 
 func (r *RuntimeReconciler) ControllerName() string {
-	return controllerName
+	return common.EACRuntimeControllerName
 }
 
 func (r *RuntimeReconciler) ManagedResource() client.Object {

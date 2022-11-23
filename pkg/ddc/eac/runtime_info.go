@@ -19,7 +19,6 @@ package eac
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // getRuntimeInfo gets runtime info
@@ -37,13 +36,7 @@ func (e *EACEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 
 		if !e.UnitTest {
 			e.runtimeInfo.SetDeprecatedNodeLabel(false)
-
-			// Check if the runtime is using deprecated naming style for PersistentVolumes
-			isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(e.Client, e.runtimeInfo, e.Log)
-			if err != nil {
-				return e.runtimeInfo, err
-			}
-			e.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
+			e.runtimeInfo.SetDeprecatedPVName(false)
 
 			e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
 

@@ -24,11 +24,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
-const (
-	runtimeType                  = "eac"
-	runtimeResourceFinalizerName = "eac-runtime-controller-finalizer"
-)
-
 // getRuntime gets the runtime
 func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.EACRuntime, error) {
 	var runtime datav1alpha1.EACRuntime
