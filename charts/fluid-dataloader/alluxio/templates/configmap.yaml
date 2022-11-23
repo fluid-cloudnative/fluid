@@ -44,12 +44,12 @@ data:
     
     function checkPathExsitence() {
         local path=$1
-        local result=$(alluxio fs ls "$path" | tail -1)
+        local result=$(timeout 30s alluxio fs ls "$path" | tail -1)
         strUnexistence="does not exist"
         if [[ $result =~ $strUnexistence ]]; then
             echo -e "distributedLoad on $path failed as path not exist."
             exit
-          fi
+        fi
     } 
 
     function distributedLoad() {
