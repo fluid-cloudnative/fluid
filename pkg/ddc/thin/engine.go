@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	"github.com/go-logr/logr"
@@ -114,10 +113,7 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 
 // isReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
 func isReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.ThinRuntime) (bool, error) {
-	dataset := &datav1alpha1.Dataset{}
-
-	err := client.Get(context.TODO(), types.NamespacedName{Namespace: runtime.Namespace, Name: runtime.Name}, dataset)
-
+	dataset, err := utils.GetDataset(client, runtime.Name, runtime.Namespace)
 	if err != nil {
 		return false, err
 	}
