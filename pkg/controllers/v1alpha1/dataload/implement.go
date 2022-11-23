@@ -325,6 +325,7 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 								+ echo 'distributedLoad on /spark/unexistencePath failed as path not exist.'
 								+ exit`
 							*/
+
 							logstrSplit := strings.Split(logstr, "\n")
 							for _, s := range logstrSplit {
 								if s[0] != '+' {
