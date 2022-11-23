@@ -18,6 +18,9 @@ package dataload
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"strings"
 
 	"reflect"
 	"sync"
@@ -331,7 +334,43 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 				if jobCondition.Type == batchv1.JobFailed {
 					dataloadToUpdate.Status.Phase = common.PhaseFailed
 				} else {
-					dataloadToUpdate.Status.Phase = common.PhaseComplete
+					//  `job.Status.Conditions[0].Type == batchv1.JobComplete` means job has been completed.
+					//  Then check existence of the targetPath in alluxio && check dataLoad completely by pod's logs.
+					isComplete := true
+					podList, err := kubeclient.GetPodListByLabel(ctx, job.Namespace, job.Spec.Template.Labels)
+					if err != nil {
+						if apierrs.IsNotFound(err) {
+							log.Error(err, "can't find podList ", "targetDataLoad", targetDataload.Name)
+							isComplete = false
+						}
+					}
+					if len(podList.Items) > 0 {
+						pod := podList.Items[0]
+						logstr, err := kubeclient.GetPodLogs(pod.Name, pod.Namespace, 3)
+						if err != nil {
+							log.Error(err, "Get Pod Logs Error", "targetDataLoad", targetDataload.Name)
+							isComplete = false
+						}
+						if strings.Contains(logstr, "failed as path not exist") {
+							isComplete = false
+							// There is no fixed order for last three lines of log ,e.g:
+							// `distributedLoad on /spark/unexistencePath failed as path not exist.
+							// + echo 'distributedLoad on /spark/unexistencePath failed as path not exist.'
+							// + exit`
+							logstrSplit := strings.Split(logstr, "\n")
+							for _, s := range logstrSplit {
+								if s[0] != '+' {
+									r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.DataLoadJobFailed, "DataLoad incomplete because: %s", s)
+									break
+								}
+							}
+						}
+					}
+					if isComplete {
+						dataloadToUpdate.Status.Phase = common.PhaseComplete
+					} else {
+						dataloadToUpdate.Status.Phase = common.PhaseFailed
+					}
 				}
 				dataloadToUpdate.Status.Duration = utils.CalculateDuration(dataloadToUpdate.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 
