@@ -250,14 +250,14 @@ spec:
                     type: object
                 type: object
               osAdvise:
-                description: Operation system optimization for EAC
+                description: Operating system optimization for EAC
                 properties:
                   enabled:
-                    description: Enable operation system optimization not enabled
+                    description: Enable operating system optimization not enabled
                       by default.
                     type: boolean
                   osVersion:
-                    description: Specific operation system version that can have optimization.
+                    description: Specific operating system version that can have optimization.
                     type: string
                 type: object
               replicas:

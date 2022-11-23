@@ -32,13 +32,13 @@ type InitFuseSpec struct {
 	Version VersionSpec `json:"version,omitempty"`
 }
 
-// OperationSystemOptimization is a description of choices to have optimization on specific operating system
-type OperationSystemOptimization struct {
-	// Specific operation system version that can have optimization.
+// OSAdvise is a description of choices to have optimization on specific operating system
+type OSAdvise struct {
+	// Specific operating system version that can have optimization.
 	// +optional
 	OSVersion string `json:"osVersion,omitempty"`
 
-	// Enable operation system optimization
+	// Enable operating system optimization
 	// not enabled by default.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
@@ -141,8 +141,8 @@ type EACRuntimeSpec struct {
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Operation system optimization for EAC
-	OSAdvise OperationSystemOptimization `json:"osAdvise,omitempty"`
+	// Operating system optimization for EAC
+	OSAdvise OSAdvise `json:"osAdvise,omitempty"`
 }
 
 // +kubebuilder:object:root=true
