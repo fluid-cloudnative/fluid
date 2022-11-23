@@ -142,7 +142,7 @@ type EACRuntimeSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Operation system optimization for EAC
-	OperationSystemOptimization OperationSystemOptimization `json:"operationSystemOptimization,omitempty"`
+	OSAdvise OperationSystemOptimization `json:"osAdvise,omitempty"`
 }
 
 // +kubebuilder:object:root=true

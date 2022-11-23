@@ -249,7 +249,7 @@ spec:
                         type: string
                     type: object
                 type: object
-              operationSystemOptimization:
+              osAdvise:
                 description: Operation system optimization for EAC
                 properties:
                   enabled:

@@ -1946,7 +1946,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.Refer
 							Format:      "int32",
 						},
 					},
-					"operationSystemOptimization": {
+					"osAdvise": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Operation system optimization for EAC",
 							Default:     map[string]interface{}{},
