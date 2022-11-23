@@ -41,10 +41,21 @@ data:
   dataloader.distributedLoad: |
     #!/usr/bin/env bash
     set -xe
+    
+    function checkPathExsitence() {
+        local path=$1
+        local result=$(alluxio fs ls "$path" | tail -1)
+        strUnexistence="does not exist"
+        if [[ $result =~ $strUnexistence ]]; then
+            echo -e "distributedLoad on $path failed as path not exist."
+            exit
+          fi
+    } 
 
     function distributedLoad() {
         local path=$1
         local replica=$2
+        checkPathExsitence "$path"
         alluxio fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
             time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path

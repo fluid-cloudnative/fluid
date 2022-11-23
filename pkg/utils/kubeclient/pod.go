@@ -17,7 +17,11 @@
 package kubeclient
 
 import (
+	"bytes"
 	"context"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -51,6 +55,43 @@ func IsSucceededPod(pod *corev1.Pod) bool {
 // IsFailedPod determines if the pod is failed
 func IsFailedPod(pod *corev1.Pod) bool {
 	return pod != nil && pod.Status.Phase == corev1.PodFailed
+}
+
+// GetPodLogs gets pod's logs.
+// @Param name,namespace of pod.
+// @Param lines ,eq "tail -<lines>".
+func GetPodLogs(name, namespace string, lines int64) (logstr string, err error) {
+	err = initClient()
+	if err != nil {
+		return "", err
+	}
+	req := clientset.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{TailLines: &lines})
+	podLogs, err := req.Stream(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	logstr = buf.String()
+	return
+}
+
+// GetPodListByLabel gets podList with given namespace and labels.
+func GetPodListByLabel(ctx context.Context, namespace string, label map[string]string) (podList *corev1.PodList, err error) {
+	err = initClient()
+	if err != nil {
+		return nil, err
+	}
+	podList, err = clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: labels.FormatLabels(label)})
+	if err != nil {
+		return nil, err
+	}
+	return
 }
 
 // GetPodByName gets pod with given name and namespace of the pod.

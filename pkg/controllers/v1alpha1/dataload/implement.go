@@ -18,6 +18,9 @@ package dataload
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"strings"
 
 	"reflect"
 	"sync"
@@ -212,41 +215,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
-	// 5. Check existence of the targetPath in alluxio
-	notExisted, err := engine.CheckExistenceOfPath(targetDataload)
-	if err != nil {
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}
-	if notExisted {
-		r.Recorder.Eventf(&targetDataload,
-			v1.EventTypeWarning,
-			common.TargetDatasetPathNotFound,
-			"Dataload target dataset's path is not existed")
-
-		// Update DataLoad's phase to Failed, and no requeue
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
-			if err != nil {
-				return err
-			}
-			dataloadToUpdate := dataload.DeepCopy()
-			dataloadToUpdate.Status.Phase = common.PhaseFailed
-
-			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
-				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			log.Error(err, "can't update dataload's phase status to Failed")
-			return utils.RequeueIfError(err)
-		}
-		return utils.NoRequeue()
-	}
-
-	// 6. lock the target dataset. Make sure only one DataLoad can win the lock and
+	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and
 	// the losers have to requeue and go through the whole reconciliation loop.
 	log.Info("No conflicts detected, try to lock the target dataset")
 	datasetToUpdate := targetDataset.DeepCopy()
@@ -259,7 +228,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 		}
 	}
 
-	// 7. update phase to Executing
+	// 6. update phase to Executing
 	// We offload the helm install logic to `reconcileExecutingDataLoad` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataLoad job will never start and all other DataLoads will be blocked forever.
@@ -331,10 +300,47 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 				if jobCondition.Type == batchv1.JobFailed {
 					dataloadToUpdate.Status.Phase = common.PhaseFailed
 				} else {
-					dataloadToUpdate.Status.Phase = common.PhaseComplete
-				}
-				dataloadToUpdate.Status.Duration = utils.CalculateDuration(dataloadToUpdate.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 
+					//  Check existence of the targetPath in alluxio && check dataLoad completely by pod's logs.
+					isComplete := true
+					podList, err := kubeclient.GetPodListByLabel(ctx, job.Namespace, job.Spec.Template.Labels)
+					if err != nil {
+						if apierrs.IsNotFound(err) {
+							log.Error(err, "can't find podList ", "targetDataLoad", targetDataload.Name)
+							isComplete = false
+						}
+					}
+					if len(podList.Items) > 0 {
+						pod := podList.Items[0]
+						logstr, err := kubeclient.GetPodLogs(pod.Name, pod.Namespace, 3)
+						if err != nil {
+							log.Error(err, "Get Pod Logs Error", "targetDataLoad", targetDataload.Name)
+							isComplete = false
+						}
+						if strings.Contains(logstr, "failed as path not exist") {
+							isComplete = false
+							/*
+								There is no fixed order for last three lines of log ,e.g:
+								`distributedLoad on /spark/unexistencePath failed as path not exist.
+								+ echo 'distributedLoad on /spark/unexistencePath failed as path not exist.'
+								+ exit`
+							*/
+							logstrSplit := strings.Split(logstr, "\n")
+							for _, s := range logstrSplit {
+								if s[:1] != "+" {
+									r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.DataLoadJobFailed, "DataLoad incomplete because: %s", s)
+								}
+							}
+						}
+					}
+					if isComplete {
+						dataloadToUpdate.Status.Phase = common.PhaseComplete
+					} else {
+						dataloadToUpdate.Status.Phase = common.PhaseFailed
+					}
+				}
+
+				dataloadToUpdate.Status.Duration = utils.CalculateDuration(dataloadToUpdate.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 				if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
 					if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
 						return err
@@ -384,7 +390,7 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx cruntime.Recon
 	// 2. record event and no requeue
 	log.Info("DataLoad failed, won't requeue")
 	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
-	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
+	r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
 	return utils.NoRequeue()
 }
 
