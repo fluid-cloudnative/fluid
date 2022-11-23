@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-package referencedataset
+package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -77,15 +77,15 @@ func TestGetMountedDatasetNamespacedName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		if got := getMountedDatasetNamespacedName(tt.virtualDataset); len(got) != tt.want {
-			t.Errorf("getMountedDatasetNamespacedName() len = %v, want %v", got, tt.want)
+		if got := GetMountedDatasetNamespacedName(tt.virtualDataset); len(got) != tt.want {
+			t.Errorf("GetMountedDatasetNamespacedName() len = %v, want %v", got, tt.want)
 		}
 	}
 }
 
 func TestGetDatasetRefName(t *testing.T) {
-	refNameA := getDatasetRefName("a-b", "c")
-	refNameB := getDatasetRefName("a", "bc")
+	refNameA := GetDatasetRefName("a-b", "c")
+	refNameB := GetDatasetRefName("a", "bc")
 
 	if refNameB == refNameA {
 		t.Errorf("RefName is equal for different name and namespace")

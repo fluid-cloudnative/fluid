@@ -133,6 +133,14 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 				dataset.Name)
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
+		// check reference dataset support
+		isSupport, reason := r.CheckIfReferenceDatasetIsSupported(ctx)
+		if !isSupport {
+			ctx.Log.Info(reason, "dataset", dataset.Name)
+			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, reason)
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		}
+
 		// 7. Add Finalizer of runtime and requeue
 		if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
 			return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
@@ -324,6 +332,15 @@ func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*d
 		return nil, err
 	}
 	return &dataset, nil
+}
+
+func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, string) {
+	mounted := base.GetMountedDatasetNamespacedName(ctx.Dataset)
+
+	if len(mounted) > 0 && ctx.RuntimeType != common.ThinRuntime {
+		return false, "dataset mounting another dataset can only use thin runtime"
+	}
+	return true, ""
 }
 
 // The interface of RuntimeReconciler

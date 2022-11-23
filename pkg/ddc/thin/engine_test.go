@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
 
@@ -234,10 +235,28 @@ func TestBuildReferenceDatasetEngine(t *testing.T) {
 
 func TestIsReferenceDatasetRuntime(t *testing.T) {
 	tests := []struct {
+		name    string
+		dataset *datav1alpha1.Dataset
 		runtime *datav1alpha1.ThinRuntime
+		client  client.Client
 		want    bool
+		wantErr bool
 	}{
 		{
+			name: "ref-dataset",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "dataset://test/test",
+						},
+					},
+				},
+			},
 			runtime: &datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
@@ -245,9 +264,17 @@ func TestIsReferenceDatasetRuntime(t *testing.T) {
 				},
 				Spec: datav1alpha1.ThinRuntimeSpec{},
 			},
-			want: true,
+			want:    true,
+			wantErr: false,
 		},
 		{
+			name: "not-ref-dataset",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+			},
 			runtime: &datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
@@ -257,10 +284,17 @@ func TestIsReferenceDatasetRuntime(t *testing.T) {
 					ThinRuntimeProfileName: "",
 				},
 			},
-			want: true,
+			want:    false,
+			wantErr: false,
 		},
-
 		{
+			name: "dataset-not-exist",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-no-use",
+					Namespace: "fluid",
+				},
+			},
 			runtime: &datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
@@ -270,12 +304,24 @@ func TestIsReferenceDatasetRuntime(t *testing.T) {
 					ThinRuntimeProfileName: "1",
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
-		if got := isReferenceDatasetRuntime(tt.runtime); got != tt.want {
-			t.Errorf("isReferenceDatasetRuntime() = %v, want %v", got, tt.want)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClient := fake.NewFakeClientWithScheme(testScheme, tt.dataset, tt.runtime)
+
+			isRef, err := isReferenceDatasetRuntime(fakeClient, tt.runtime)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("expect has error %t, but get error %v", tt.wantErr, err)
+				return
+			}
+
+			if isRef != tt.want {
+				t.Errorf(" expect is ref dataset %t, but get %t", tt.want, err)
+			}
+		})
 	}
 }

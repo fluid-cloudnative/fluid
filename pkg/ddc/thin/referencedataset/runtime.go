@@ -103,7 +103,7 @@ func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterf
 		return e.mountedRuntimeInfo, err
 	}
 
-	mountedNameSpacedNames := getMountedDatasetNamespacedName(dataset)
+	mountedNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset)
 	if len(mountedNameSpacedNames) != 1 {
 		return e.mountedRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
 	}
