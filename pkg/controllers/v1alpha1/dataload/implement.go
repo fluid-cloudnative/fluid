@@ -329,6 +329,7 @@ func (r *DataLoadReconcilerImplement) reconcileExecutingDataLoad(ctx cruntime.Re
 							for _, s := range logstrSplit {
 								if s[0] != '+' {
 									r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.DataLoadJobFailed, "DataLoad incomplete because: %s", s)
+									break
 								}
 							}
 						}
