@@ -215,41 +215,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
-	// 5. Check existence of the targetPath in alluxio
-	notExisted, err := engine.CheckExistenceOfPath(targetDataload)
-	if err != nil {
-		return utils.RequeueAfterInterval(20 * time.Second)
-	}
-	if notExisted {
-		r.Recorder.Eventf(&targetDataload,
-			v1.EventTypeWarning,
-			common.TargetDatasetPathNotFound,
-			"Dataload target dataset's path is not existed")
-
-		// Update DataLoad's phase to Failed, and no requeue
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			dataload, err := utils.GetDataLoad(r.Client, targetDataload.Name, targetDataload.Namespace)
-			if err != nil {
-				return err
-			}
-			dataloadToUpdate := dataload.DeepCopy()
-			dataloadToUpdate.Status.Phase = common.PhaseFailed
-
-			if !reflect.DeepEqual(dataloadToUpdate.Status, dataload.Status) {
-				if err := r.Status().Update(ctx, dataloadToUpdate); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			log.Error(err, "can't update dataload's phase status to Failed")
-			return utils.RequeueIfError(err)
-		}
-		return utils.NoRequeue()
-	}
-
-	// 6. lock the target dataset. Make sure only one DataLoad can win the lock and
+	// 5. lock the target dataset. Make sure only one DataLoad can win the lock and
 	// the losers have to requeue and go through the whole reconciliation loop.
 	log.Info("No conflicts detected, try to lock the target dataset")
 	datasetToUpdate := targetDataset.DeepCopy()
@@ -262,7 +228,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 		}
 	}
 
-	// 7. update phase to Executing
+	// 6. update phase to Executing
 	// We offload the helm install logic to `reconcileExecutingDataLoad` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataLoad job will never start and all other DataLoads will be blocked forever.
