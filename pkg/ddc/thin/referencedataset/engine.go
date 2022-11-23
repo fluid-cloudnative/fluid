@@ -110,7 +110,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	// 1. get the physical datasets according the virtual dataset
 	dataset := ctx.Dataset
 
-	physicalNameSpacedNames := getMountedDatasetNamespacedName(dataset)
+	physicalNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset)
 	if len(physicalNameSpacedNames) != 1 {
 		return false, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
 	}
@@ -129,7 +129,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 		}
 
 		// 3. add this dataset to mounted dataset DatasetRef field
-		datasetRefName := getDatasetRefName(dataset.Name, dataset.Namespace)
+		datasetRefName := base.GetDatasetRefName(dataset.Name, dataset.Namespace)
 		if !utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
 			newDataset := mountedDataset.DeepCopy()
 			newDataset.Status.DatasetRef = append(newDataset.Status.DatasetRef, datasetRefName)
@@ -149,7 +149,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 //Shutdown and clean up the engine
 func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	// 1. delete this dataset to mounted dataset DatasetRef field
-	datasetRefName := getDatasetRefName(e.name, e.namespace)
+	datasetRefName := base.GetDatasetRefName(e.name, e.namespace)
 
 	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
 	if err != nil {
@@ -177,19 +177,27 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 		return err
 	}
 
-	mountedNamespacedName := getMountedDatasetNamespacedName(dataset)
+	mountedNamespacedName := base.GetMountedDatasetNamespacedName(dataset)
+	mountedSize := len(mountedNamespacedName)
+
 	// currently only support dataset mounting only one dataset
-	if len(mountedNamespacedName) != 1 {
-		return fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
+	if mountedSize > 1 || mountedSize == 0 {
+		return fmt.Errorf("ThinRuntime can only handle dataset only mounting one dataset")
+	}
+
+	// currently not support both 'dataset://' and other mount schema in one dataset
+	if len(mountedNamespacedName) != len(dataset.Spec.Mounts) {
+		return fmt.Errorf("dataset with 'dataset://' mount point can not has other mount format")
 	}
 
 	mountedDataset, err := utils.GetDataset(e.Client, mountedNamespacedName[0].Name, mountedNamespacedName[0].Namespace)
 	if err != nil {
 		return err
 	}
+
 	// currently not support mounted dataset mounting another dataset
-	if len(getMountedDatasetNamespacedName(mountedDataset)) != 0 {
-		return fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
+	if len(base.GetMountedDatasetNamespacedName(mountedDataset)) != 0 {
+		return fmt.Errorf("ThinRuntime with no profile name can only handle dataset only mounting one dataset")
 	}
 
 	return nil
