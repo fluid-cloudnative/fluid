@@ -46,6 +46,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		err = fmt.Errorf("the jindoRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {

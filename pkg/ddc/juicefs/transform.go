@@ -18,14 +18,13 @@ package juicefs
 
 import (
 	"fmt"
-
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *JuiceFS, err error) {
@@ -33,6 +32,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		err = fmt.Errorf("the juicefsRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JuiceFSRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
 	if err != nil {
