@@ -14,21 +14,22 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 )
 
 // CreateDataLoadJob creates the job to load data
