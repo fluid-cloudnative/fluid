@@ -32,3 +32,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [XIAOMI](https://www.mi.com/)  | [@PeterChg](https://github.com/PeterChg) | Staging | Cloudml AI Platform |
 | [Soul APP](https://soulapp.cn/)  | [@mornight](zhanyu@soulapp.cn) | Testing | AI Platform on k8s |
 | [HUYA](https://www.huya.com)  | [@BobLiu20](liubofang@huya.com) | Staging | AI Platform on k8s |
+| [OPPO](https://www.oppo.com) | [@laibruce](laiyanhui@oppo.com) | Production | Data acceleration |
