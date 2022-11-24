@@ -21,6 +21,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -37,6 +38,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		err = fmt.Errorf("the alluxioRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "AlluxioRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
