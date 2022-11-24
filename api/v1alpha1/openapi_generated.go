@@ -52,6 +52,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime":               schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeList":           schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":            schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":      schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":  schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
@@ -60,6 +65,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":               schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref),
@@ -73,6 +79,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                 schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":              schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
@@ -1621,6 +1628,339 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EACCompTemplateSpec is a description of the EAC components",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The version information that instructs fluid to orchestrate a particular version of EAC Comp",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"properties": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurable properties for the EAC component.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports used by EAC(e.g. rpc: 19998 for master).",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: 0,
+										Type:    []string{"integer"},
+										Format:  "int32",
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by the EAC component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled or Disabled for the components. Default enable.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the component to fit on a node.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use host network or not.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.ResourceRequirements"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EACFuseSpec is a description of the EAC Fuse",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The version information that instructs fluid to orchestrate a particular version of EAC Fuse",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"properties": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurable properties for EAC fuse",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by EAC Fuse. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy decides when to clean EAC Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.ResourceRequirements"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntime(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EACRuntime is the Schema for the eacruntimes API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EACRuntimeList contains a list of EACRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EACRuntimeSpec defines the desired state of EACRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The component spec of EAC master",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The component spec of EAC worker",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec"),
+						},
+					},
+					"initFuse": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The spec of init alifuse",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec"),
+						},
+					},
+					"fuse": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The component spec of EAC Fuse",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec"),
+						},
+					},
+					"tieredstore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tiered storage used by EAC worker",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The replicas of the worker, need to be specified",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"osAdvise": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Operating system optimization for EAC",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2215,6 +2555,28 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref common.Reference
 				},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InitFuseSpec is a description of initialize the fuse kernel module for runtime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The version information that instructs fluid to orchestrate a particular version of Alifuse",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -3435,6 +3797,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OSAdvise is a description of choices to have optimization on specific operating system",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"osVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specific operating system version that can have optimization.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enable operating system optimization not enabled by default.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
