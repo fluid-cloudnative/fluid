@@ -54,6 +54,8 @@ worker:
   replicas: 0
   labels: {}
   annotations: {}
+  volumes: []
+  volumeMounts: []
 
 configs:
   name: ""
@@ -92,6 +94,8 @@ fuse:
 #      memory: "4G"
   labels: {}
   annotations: {}
+  volumes: []
+  volumeMounts: []
 
 runtimeIdentity:
   namespace: default

@@ -18,11 +18,13 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+
+	"sigs.k8s.io/yaml"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"

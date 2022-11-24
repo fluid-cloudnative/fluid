@@ -47,7 +47,6 @@ const (
 	JuiceSecretKey = "secret-key"
 	JuiceToken     = "token"
 
-	CacheDir               = "cachedir"
 	MountPath              = "mountpath"
 	Edition                = "edition"
 	DefaultDataLoadTimeout = "30m"
