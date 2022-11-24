@@ -19,11 +19,12 @@ package juicefs
 import (
 	"fmt"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // GetCacheInfoFromConfigmap get cache info from configmap
