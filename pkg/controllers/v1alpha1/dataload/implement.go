@@ -354,15 +354,21 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx cruntime.Recon
 	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
 	jobName := utils.GetDataLoadJobName(releaseName)
 	job, err := utils.GetDataLoadJob(r.Client, jobName, ctx.Namespace)
+	if err != nil {
+		log.Error(err, "Get DataLoad Job Error", "namespace", ctx.Namespace, "jobName", jobName)
+		return utils.RequeueIfError(err)
+	}
 	podList, err := kubeclient.GetPodListByLabel(ctx, job.Namespace, job.Spec.Template.Labels)
 	if err != nil {
 		log.Error(err, "Get podList Error", "targetDataLoadJob", job.Name)
+		return utils.RequeueIfError(err)
 	}
 	if len(podList.Items) > 0 {
 		pod := podList.Items[0]
 		logstr, err := kubeclient.GetPodLogs(pod.Name, pod.Namespace, 3)
 		if err != nil {
 			log.Error(err, "Get Pod Logs Error", "targetDataLoadJob", job.Name)
+			return utils.RequeueIfError(err)
 		}
 		if strings.Contains(logstr, "failed as path not exist") {
 			//	There is no fixed order for last three lines of log ,e.g:
