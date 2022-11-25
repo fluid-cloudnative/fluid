@@ -24,7 +24,10 @@ import (
 // getRuntimeInfo gets runtime info
 func (e *EACEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error) {
 	if e.runtimeInfo == nil {
-		runtime := e.runtime
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return e.runtimeInfo, err
+		}
 
 		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore)
 		if err != nil {

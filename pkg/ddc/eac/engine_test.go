@@ -116,4 +116,36 @@ func TestBuild(t *testing.T) {
 	if err == nil {
 		t.Errorf("expect err, but no err got %v", got)
 	}
+
+	var errCtx2 = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase2",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         fake.NullLogger(),
+		RuntimeType: common.EACRuntimeType,
+		Runtime:     &runtime,
+	}
+
+	got2, err2 := Build("testId", errCtx2)
+	if err2 == nil {
+		t.Errorf("expect err, but no err got %v", got2)
+	}
+
+	var errCtx3 = cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+		Client:      client,
+		Log:         fake.NullLogger(),
+		RuntimeType: common.EACRuntimeType,
+		Runtime:     &datav1alpha1.JindoRuntime{},
+	}
+
+	got3, err3 := Build("testId", errCtx3)
+	if err3 == nil {
+		t.Errorf("expect err, but no err got %v", got3)
+	}
 }

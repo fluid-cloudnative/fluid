@@ -34,7 +34,7 @@ import (
 func newEACEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *EACEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
-		runtime:     &datav1alpha1.EACRuntime{},
+		runtime:     nil,
 		name:        name,
 		namespace:   namespace,
 		Client:      client,
@@ -70,6 +70,25 @@ func TestEACEngine_getRuntimeInfo(t *testing.T) {
 			Spec: datav1alpha1.EACRuntimeSpec{
 				Fuse: datav1alpha1.EACFuseSpec{
 					CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "runtime3",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.EACRuntimeSpec{
+				Fuse: datav1alpha1.EACFuseSpec{
+					CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
+				},
+				TieredStore: datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{
+						{
+							Path:      "/mnt/cache1,/mnt/cache2",
+							QuotaList: "100ST,50Gi",
+						},
+					},
 				},
 			},
 		},
@@ -160,6 +179,22 @@ func TestEACEngine_getRuntimeInfo(t *testing.T) {
 			unittest:        false,
 			isErr:           false,
 			isNil:           false,
+		},
+		{
+			name:            "runtime3",
+			namespace:       "fluid",
+			withRuntimeInfo: false,
+			unittest:        false,
+			isErr:           true,
+			isNil:           true,
+		},
+		{
+			name:            "runtime4",
+			namespace:       "fluid",
+			withRuntimeInfo: false,
+			unittest:        false,
+			isErr:           true,
+			isNil:           true,
 		},
 	}
 	for _, testCase := range testCases {
