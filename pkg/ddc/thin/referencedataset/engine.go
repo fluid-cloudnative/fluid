@@ -112,7 +112,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 
 	physicalNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset)
 	if len(physicalNameSpacedNames) != 1 {
-		return false, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
+		return false, fmt.Errorf("ThinEngine can only handle dataset only mounting one dataset")
 	}
 	namespacedName := physicalNameSpacedNames[0]
 
@@ -143,6 +143,18 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	if err != nil {
 		return false, err
 	}
+
+	// config map is for the fuse sidecar container
+	runtimeInfo, err := e.getMountedRuntimeInfo()
+	if err != nil {
+		return false, err
+	}
+
+	err = createConfigMapForRefDataset(e.Client, dataset, runtimeInfo)
+	if err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
 

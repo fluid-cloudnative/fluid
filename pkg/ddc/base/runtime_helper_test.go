@@ -502,7 +502,7 @@ func TestGetTemplateToInjectForFuse(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
@@ -871,7 +871,7 @@ func TestGetTemplateToInjectForFuseForCacheDir(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
+		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}
@@ -1080,7 +1080,7 @@ func TestGetTemplateToInjectForFuseWithVirtualFuseDevice(t *testing.T) {
 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 		}
 		runtimeInfo.SetClient(fakeClient)
-		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, options)
+		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 		if (err == nil) == testcase.expectErr {
 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
 		}

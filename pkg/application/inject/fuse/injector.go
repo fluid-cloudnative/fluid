@@ -195,8 +195,13 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
+	objMeta, err := pod.GetMetaObject()
+	if err != nil {
+		return err
+	}
+	pvcNamespace := objMeta.Namespace
 	var (
-		pvcKey   = types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: pvcName}
+		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
 		template *common.FuseInjectionTemplate
 	)
 
@@ -233,7 +238,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 
 	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
 	if !exist {
-		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, option)
+		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
 		if err != nil {
 			return err
 		}
