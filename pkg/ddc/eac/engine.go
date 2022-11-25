@@ -42,7 +42,7 @@ type EACEngine struct {
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	retryShutdown          int32
-	initImage              string
+	// initImage              string
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
