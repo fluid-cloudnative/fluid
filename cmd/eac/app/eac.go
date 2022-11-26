@@ -17,10 +17,11 @@
 package app
 
 import (
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac"
 	"k8s.io/apimachinery/pkg/util/net"
-	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
@@ -126,7 +127,11 @@ func handle() {
 	}
 	setupLog.Info("port range parsed", "port range", pr.String())
 
-	portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, eac.GetReservedPorts)
+	// portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, eac.GetReservedPorts)
+	portallocator.SetupRuntimePortAllocatorWithType(mgr.GetClient(),
+		pr,
+		portallocator.Random,
+		eac.GetReservedPorts)
 
 	setupLog.Info("starting eacruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
