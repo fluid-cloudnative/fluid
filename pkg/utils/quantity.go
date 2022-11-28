@@ -59,6 +59,15 @@ func TransformQuantityToGooseFSUnit(q *resource.Quantity) (value string) {
 
 }
 
+func TransformQuantityToEACUnit(q *resource.Quantity) (value string) {
+	return units.HumanSize(float64(q.Value()))
+}
+
+func TransformEACUnitToQuantity(value string) (q *resource.Quantity) {
+	v, _ := units.FromHumanSize(value)
+	return resource.NewQuantity(v, resource.BinarySI)
+}
+
 // TransformQuantityToUnits returns a human-readable size in bytes, kibibytes,
 // mebibytes, gibibytes, or tebibytes (eg. "44kiB", "17MiB").
 func TranformQuantityToUnits(q *resource.Quantity) (value string) {

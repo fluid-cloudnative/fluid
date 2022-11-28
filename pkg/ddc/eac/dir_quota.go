@@ -42,7 +42,11 @@ func (e *EACEngine) setDirQuota() (response *nas.SetDirQuotaResponse, err error)
 	}
 
 	config := sdk.NewConfig()
-	credential := credentials.NewAccessKeyCredential(runtime.Spec.AccessKeyID, runtime.Spec.AccessKeySecret)
+	accessKeyID, accessKeySecret, err := e.getEACSecret()
+	if err != nil {
+		return nil, err
+	}
+	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
 	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
 	if err != nil {
 		return nil, err
@@ -82,7 +86,11 @@ func (e *EACEngine) describeDirQuota() (response *nas.DescribeDirQuotasResponse,
 	}
 
 	config := sdk.NewConfig()
-	credential := credentials.NewAccessKeyCredential(runtime.Spec.AccessKeyID, runtime.Spec.AccessKeySecret)
+	accessKeyID, accessKeySecret, err := e.getEACSecret()
+	if err != nil {
+		return nil, err
+	}
+	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
 	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
 	if err != nil {
 		return nil, err

@@ -18,9 +18,9 @@ package eac
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strings"
 	"time"
 )
 
@@ -31,7 +31,7 @@ type EAC struct {
 	Master           Master          `yaml:"master"`
 	Worker           Worker          `yaml:"worker"`
 	Fuse             Fuse            `yaml:"fuse"`
-	InitAlifuse      InitAlifuse     `yaml:"initAlifuse"`
+	InitFuse         InitFuse        `yaml:"initFuse"`
 	Tolerations      []v1.Toleration `yaml:"tolerations,omitempty"`
 }
 
@@ -71,7 +71,7 @@ type Fuse struct {
 	CriticalPod      bool              `yaml:"criticalPod"`
 }
 
-type InitAlifuse struct {
+type InitFuse struct {
 	common.ImageInfo `yaml:",inline"`
 }
 
@@ -158,6 +158,5 @@ func (value *EAC) getTiredStoreLevel0QuotaString() (quota string) {
 
 func (value *EAC) getTiredStoreLevel0Quota() resource.Quantity {
 	quotaString := value.getTiredStoreLevel0QuotaString()
-	quotaString = strings.TrimSuffix(quotaString, "B")
-	return resource.MustParse(quotaString)
+	return *utils.TransformEACUnitToQuantity(quotaString)
 }

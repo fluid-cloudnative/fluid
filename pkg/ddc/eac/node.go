@@ -32,7 +32,6 @@ import (
 
 // AssignNodesToCache finds nodes to place the cache engine
 func (e *EACEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
-
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return currentScheduleNum, err
@@ -99,7 +98,6 @@ func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
 
 	if len(addedCacheNodenames) > 0 {
-
 		for _, nodeName := range addedCacheNodenames {
 			node := v1.Node{}
 			err = e.Get(context.TODO(), types.NamespacedName{

@@ -64,14 +64,11 @@ func (e *EACEngine) generateEACValueFile(runtime *datav1alpha1.EACRuntime) (valu
 
 	//0. Check if the configmap exists
 	err = kubeclient.DeleteConfigMap(e.Client, e.getConfigmapName(), e.namespace)
-
 	if err != nil {
 		e.Log.Error(err, "Failed to clean value files")
 		return
 	}
 
-	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
-	// configmapName := e.name + "-" + e.runtimeType + "-values"
 	//1. Transform the runtime to value
 	value, err := e.transform(runtime)
 	if err != nil {

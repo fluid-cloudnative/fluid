@@ -39,6 +39,7 @@ import (
 
 func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 	value *EAC) error {
+	// TODO: set master tiered store according to master properties
 	//eacPageCapacity := EACDefaultPageCapacity
 	//eacJournalCapacity := EACDefaultJournalCapacity
 	//eacFileCapacity := EACDefaultFileCapacity
@@ -62,7 +63,7 @@ func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 		Type:       string(common.VolumeTypeEmptyDir),
 		Path:       "/dev/shm",
 		MediumType: string(common.Memory),
-		//Quota:      resource.NewQuantity(int64(eacShmSize), resource.DecimalSI).String(),
+		// Quota:      utils.TransformQuantityToEACUnit(resource.NewQuantity(int64(eacShmSize), resource.DecimalSI)),
 	})
 	value.Master.TieredStore.Levels = levels
 
@@ -71,6 +72,7 @@ func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 
 func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
 	value *EAC) error {
+	// TODO: set fuse tiered store according to fuse properties
 	//eacPageCapacity := EACDefaultPageCapacity
 	//eacJournalCapacity := EACDefaultJournalCapacity
 	//eacFileCapacity := EACDefaultFileCapacity
@@ -94,7 +96,7 @@ func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
 		Type:       string(common.VolumeTypeEmptyDir),
 		Path:       "/dev/shm",
 		MediumType: string(common.Memory),
-		//Quota:      resource.NewQuantity(int64(eacShmSize), resource.DecimalSI).String(),
+		// Quota:      utils.TransformQuantityToEACUnit(resource.NewQuantity(int64(eacShmSize), resource.DecimalSI)),
 	})
 	value.Fuse.TieredStore.Levels = levels
 
@@ -115,10 +117,10 @@ func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
 		if l != 0 {
-			return fmt.Errorf("eac worker currently only support one level of tiered store")
+			return fmt.Errorf("eac worker only support one level of tiered store")
 		}
 		if len(level.CachePaths) != 1 {
-			return fmt.Errorf("eac worker currently only support one cache path")
+			return fmt.Errorf("eac worker only support one cache path")
 		}
 
 		var paths []string
@@ -144,7 +146,7 @@ func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
 		})
 	}
 
-	// default worker  tiered store
+	// default worker tiered store
 	if len(levels) == 0 {
 		levels = append(levels, Level{
 			Level:      0,

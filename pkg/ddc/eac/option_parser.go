@@ -17,7 +17,6 @@
 package eac
 
 import (
-	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -32,19 +31,16 @@ var (
 
 func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-
 	var (
 		masterName   = e.namespace + "-" + e.name + "-master"
 		commonOption = "client_owner=" + masterName + ",assign_uuid=" + masterName + ","
-		cacheOption  = ""
 		portOption   = ""
 	)
 
 	commonOption += "g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true,"
 
 	value.Master.Options += commonOption
-	value.Master.Options += cacheOption
-	// TODO: set portOption according to master port
+	// TODO: set portOption according to master ports
 	value.Master.Options += portOption
 
 	for o := range runtime.Spec.Master.Properties {
@@ -58,18 +54,15 @@ func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 
 func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-
 	var (
 		fuseName     = e.namespace + "-" + e.name + "-fuse"
 		commonOption = "assign_uuid=" + fuseName + ","
-		cacheOption  = ""
 		portOption   = ""
 	)
 
 	commonOption += "g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true,"
 
 	value.Fuse.Options += commonOption
-	value.Fuse.Options += cacheOption
 	// TODO: set portOption according to fuse port
 	value.Fuse.Options += portOption
 
@@ -84,7 +77,6 @@ func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 
 func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-
 	var (
 		commonOption = ""
 		cacheOption  = ""
@@ -92,19 +84,18 @@ func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
 	)
 
 	if value.Worker.TieredStore.Levels[0].Quota != "" {
-		quota := resource.MustParse(strings.TrimSuffix(value.Worker.TieredStore.Levels[0].Quota, "B"))
+		quota := value.getTiredStoreLevel0Quota()
 		if miniWorkerQuota.Cmp(quota) > 0 {
-			return errors.New(fmt.Sprintf("minimum worker tired store size is %s, current size is %s, please increase size.", miniWorkerQuota.String(), quota.String()))
+			return fmt.Errorf("minimum worker tired store size is %s, current size is %s, please increase size.", miniWorkerQuota.String(), quota.String())
 		}
 		quotaValue := quota.Value() / miniWorkerQuota.Value()
 		cacheOption += "cache_capacity_gb=" + strconv.Itoa(int(quotaValue)) + ","
 	}
-
 	if value.Worker.TieredStore.Levels[0].MediumType == string(common.Memory) {
 		cacheOption += "tmpfs=true,"
 	}
-
 	cacheOption += "cache_media=" + value.getTiredStoreLevel0Path() + ","
+
 	portOption += "server_port=" + strconv.Itoa(value.Worker.Port.Rpc) + ","
 
 	value.Worker.Options += commonOption

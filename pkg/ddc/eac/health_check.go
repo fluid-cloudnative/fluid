@@ -86,11 +86,8 @@ func (e *EACEngine) CheckRuntimeHealthy() (err error) {
 
 // checkMasterHealthy checks the master healthy
 func (e *EACEngine) checkMasterHealthy() (err error) {
-	masterName := e.getMasterName()
-
 	healthy := false
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
-
+	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -102,34 +99,28 @@ func (e *EACEngine) checkMasterHealthy() (err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
+		if len(runtimeToUpdate.Status.Conditions) == 0 {
+			runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
+		}
+
+		var cond data.RuntimeCondition
 		if master.Status.Replicas != master.Status.ReadyReplicas {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is not ready.",
+			cond = utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is not ready.",
 				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), corev1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
-
-			return err
+			e.Log.Error(err, "the master are not ready")
 		} else {
-			cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is ready.",
-				"The master is ready.", corev1.ConditionTrue)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 			healthy = true
+			cond = utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is ready.",
+				"The master is ready.", corev1.ConditionTrue)
+			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
+		}
+
+		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+		if oldCond == nil || oldCond.Type != cond.Type {
+			runtimeToUpdate.Status.Conditions =
+				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+					cond)
 		}
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
@@ -161,58 +152,56 @@ func (e *EACEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *EACEngine) checkWorkersHealthy() (err error) {
-	// Check the status of workers
+	healthy := false
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		return err
 	}
 
-	healthy := false
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
+		if len(runtimeToUpdate.Status.Conditions) == 0 {
+			runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
+		}
+
+		var cond data.RuntimeCondition
 		if workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0 {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
+			cond = utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
 				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
 					*workers.Spec.Replicas-workers.Status.ReadyReplicas), corev1.ConditionFalse)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
-
 			e.Log.Error(err, "the workers are not ready")
 		} else {
 			healthy = true
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
-				"The workers are ready", corev1.ConditionTrue)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
+			if workers.Status.ReadyReplicas == *workers.Spec.Replicas {
+				cond = utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
+					"The workers are ready", corev1.ConditionTrue)
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+			} else {
+				cond = utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are partial ready.",
+					"The workers are partial ready", corev1.ConditionTrue)
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
 			}
 		}
+
+		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+		if oldCond == nil || oldCond.Type != cond.Type {
+			runtimeToUpdate.Status.Conditions =
+				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+					cond)
+		}
+
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
@@ -240,55 +229,45 @@ func (e *EACEngine) checkWorkersHealthy() (err error) {
 
 // checkFuseHealthy check fuses number changed
 func (e *EACEngine) checkFuseHealthy() (err error) {
-	fuseName := e.getFuseName()
-
-	fuses, err := e.getDaemonset(fuseName, e.namespace)
+	healthy := false
+	fuses, err := e.getDaemonset(e.getFuseName(), e.namespace)
 	if err != nil {
 		return err
 	}
 
-	healthy := false
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
+		if len(runtimeToUpdate.Status.Conditions) == 0 {
+			runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
+		}
 
+		var cond data.RuntimeCondition
 		if fuses.Status.NumberUnavailable > 0 ||
 			(fuses.Status.DesiredNumberScheduled > 0 && fuses.Status.NumberAvailable == 0) {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are not ready.",
+			cond = utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are not ready.",
 				fmt.Sprintf("The daemonset %s in %s are not ready, the unhealthy number %d",
 					fuses.Name,
 					fuses.Namespace,
 					fuses.Status.UpdatedNumberScheduled), v1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
 			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
 			e.Log.Error(err, "Failed to check the fuse healthy")
 		} else {
 			healthy = true
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are ready.",
+			cond = utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are ready.",
 				"The fuses are ready", v1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
+		}
 
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
+		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+		if oldCond == nil || oldCond.Type != cond.Type {
+			runtimeToUpdate.Status.Conditions =
+				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+					cond)
 		}
 
 		runtimeToUpdate.Status.DesiredFuseNumberScheduled = int32(fuses.Status.DesiredNumberScheduled)

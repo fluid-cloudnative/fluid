@@ -47,19 +47,18 @@ func (e *EACEngine) ShouldSetupMaster() (should bool, err error) {
 // It will print the information in the Debug window according to the Master status
 // It return any cache error encountered
 func (e *EACEngine) SetupMaster() (err error) {
-
-	// Setup the eac cluster
+	// 1. Setup the eac cluster
 	masterName := e.getMasterName()
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
-		//1. Is not found error
+		// Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", e.getMasterName())
 		return e.setupMasterInternal()
 	} else if err != nil {
-		//2. Other errors
+		// Other errors
 		return
 	} else {
-		//3.The master has been set up
+		// The master has been set up
 		e.Log.V(1).Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
 	}
 
@@ -105,14 +104,13 @@ func (e *EACEngine) SetupMaster() (err error) {
 }
 
 func (e *EACEngine) CheckMasterReady() (ready bool, err error) {
-	masterName := e.getMasterName()
 	// 1. Check the status
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return
 	}
 
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
 	if err != nil {
 		return
 	}
@@ -135,7 +133,6 @@ func (e *EACEngine) CheckMasterReady() (ready bool, err error) {
 			runtimeToUpdate := runtime.DeepCopy()
 
 			runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.ReadyReplicas)
-
 			runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseReady
 
 			if len(runtimeToUpdate.Status.Conditions) == 0 {

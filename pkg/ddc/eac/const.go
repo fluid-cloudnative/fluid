@@ -22,4 +22,7 @@ const (
 
 	MasterMountPath = "/eac/eac-master"
 	FuseMountDir    = "eac-fuse"
+
+	AccessKeyIDName     = "eac.nas.accessKeyId"
+	AccessKeySecretName = "eac.nas.accessKeySecret"
 )

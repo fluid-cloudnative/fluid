@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,13 +63,13 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 }
 
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
-	//var value EAC
-	//if v, ok := configMap.Data["data"]; ok {
-	//	if err := yaml.Unmarshal([]byte(v), &value); err != nil {
-	//		return nil, err
-	//	}
-	//	ports = append(ports, value.Worker.Port.Rpc)
-	//	ports = append(ports, value.Fuse.Port.Monitor)
-	//}
+	var value EAC
+	if v, ok := configMap.Data["data"]; ok {
+		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
+			return nil, err
+		}
+		ports = append(ports, value.Worker.Port.Rpc)
+		ports = append(ports, value.Fuse.Port.Monitor)
+	}
 	return ports, nil
 }

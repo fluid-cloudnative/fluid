@@ -37,11 +37,12 @@ func (e *EACEngine) SyncMetadata() (err error) {
 
 func (e *EACEngine) syncMetadataInternal() (err error) {
 	datasetUFSTotalBytes, err := e.TotalStorageBytes()
-	ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
 	if err != nil {
 		e.Log.Error(err, "Failed to get UfsTotal")
 		return err
 	}
+	ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
+
 	fileNum, err := e.getDataSetFileNum()
 	if err != nil {
 		e.Log.Error(err, "Failed to get FileNum")

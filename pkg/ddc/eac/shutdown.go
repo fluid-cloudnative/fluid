@@ -38,7 +38,6 @@ import (
 
 // Shutdown shuts down the EAC engine
 func (e *EACEngine) Shutdown() (err error) {
-
 	if e.retryShutdown < e.gracefulShutdownLimits {
 		err = e.cleanupCache()
 		if err != nil {

@@ -103,18 +103,6 @@ func (e *EACEngine) getDataSetFileNum() (string, error) {
 	return strconv.FormatInt(fileCount, 10), err
 }
 
-func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
-	var value EAC
-	if v, ok := configMap.Data["data"]; ok {
-		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
-			return nil, err
-		}
-		ports = append(ports, value.Worker.Port.Rpc)
-		ports = append(ports, value.Fuse.Port.Monitor)
-	}
-	return ports, nil
-}
-
 func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cacheType common.VolumeType, err error) {
 	var value EAC
 	if v, ok := configMap.Data["data"]; ok {

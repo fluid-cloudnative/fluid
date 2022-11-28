@@ -17,7 +17,10 @@
 package eac
 
 import (
+	"errors"
+	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (e *EACEngine) UsedStorageBytes() (int64, error) {
@@ -45,14 +48,15 @@ func (e *EACEngine) TotalFileNums() (int64, error) {
 }
 
 func (e *EACEngine) ShouldCheckUFS() (should bool, err error) {
-	runtime, err := e.getRuntime()
+	accessKeyID, accessKeySecret, err := e.getEACSecret()
 	if err != nil {
 		return false, err
 	}
-	if runtime.Spec.AccessKeyID != "" {
-		return true, nil
+	if len(accessKeyID) == 0 || len(accessKeySecret) == 0 {
+		return false, nil
 	}
-	return false, nil
+
+	return true, nil
 }
 
 func (e *EACEngine) PrepareUFS() (err error) {
@@ -71,4 +75,47 @@ func (e *EACEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 
 func (e *EACEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
 	return true, nil
+}
+
+func (e *EACEngine) getEACSecret() (accessKeyID string, accessKeySecret string, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return
+	}
+
+	if len(dataset.Spec.Mounts) == 0 {
+		err = errors.New("empty mount point")
+		return
+	}
+
+	for _, encryptOption := range dataset.Spec.Mounts[0].EncryptOptions {
+		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+		secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+		if err != nil {
+			e.Log.Info("can't get the secret",
+				"namespace", e.namespace,
+				"name", e.name,
+				"secretName", secretKeyRef.Name)
+			return "", "", err
+		}
+
+		value, ok := secret.StringData[secretKeyRef.Key]
+		if !ok {
+			err = fmt.Errorf("can't get %s from secret %s namespace %s", secretKeyRef.Key, secretKeyRef.Name, e.namespace)
+			return "", "", err
+		}
+
+		switch encryptOption.Name {
+		case AccessKeyIDName:
+			accessKeyID = value
+			break
+		case AccessKeySecretName:
+			accessKeySecret = value
+			break
+		default:
+			break
+		}
+	}
+
+	return
 }

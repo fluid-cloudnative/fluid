@@ -34,7 +34,7 @@ const (
 
 	EACWorkerImageEnv = "EAC_WORKER_IMAGE_ENV"
 
-	EACInitAlifuseImageEnv = "EAC_INIT_ALIFUSE_IMAGE_ENV"
+	EACInitFuseImageEnv = "EAC_INIT_ALIFUSE_IMAGE_ENV"
 
 	DefaultEACMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
 
@@ -42,5 +42,5 @@ const (
 
 	DefaultEACWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img:update"
 
-	DefaultEACInitAlifuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
+	DefaultEACInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
 )

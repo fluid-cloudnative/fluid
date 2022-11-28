@@ -20,6 +20,7 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -52,26 +53,28 @@ func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime
 		}
 	}
 
-	//cacheQuota := resource.MustParse(strings.TrimSuffix(value.Master.TieredStore.Levels[0].Quota, "B"))
-	//needUpdated := false
-	//if runtime.Spec.Master.Resources.Requests == nil ||
-	//	runtime.Spec.Master.Resources.Requests.Memory() == nil ||
-	//	runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
-	//	cacheQuota.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
-	//	needUpdated = true
-	//}
-	//
-	//if runtime.Spec.Master.Resources.Limits != nil &&
-	//	runtime.Spec.Master.Resources.Limits.Memory() != nil &&
-	//	!runtime.Spec.Master.Resources.Limits.Memory().IsZero() &&
-	//	cacheQuota.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
-	//	return fmt.Errorf("the master memory tierdStore's size %v is greater than master limits memory %v",
-	//		cacheQuota, runtime.Spec.Master.Resources.Limits.Memory())
-	//}
-	//
-	//if needUpdated {
-	//	value.Master.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
-	//}
+	if len(value.Master.TieredStore.Levels[0].Quota) > 0 {
+		cacheQuota := utils.TransformEACUnitToQuantity(value.Master.TieredStore.Levels[0].Quota)
+		needUpdated := false
+		if runtime.Spec.Master.Resources.Requests == nil ||
+			runtime.Spec.Master.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Master.Resources.Requests.Memory().IsZero() ||
+			cacheQuota.Cmp(*runtime.Spec.Master.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
+		}
+
+		if runtime.Spec.Master.Resources.Limits != nil &&
+			runtime.Spec.Master.Resources.Limits.Memory() != nil &&
+			!runtime.Spec.Master.Resources.Limits.Memory().IsZero() &&
+			cacheQuota.Cmp(*runtime.Spec.Master.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the master memory tierdStore's size %v is greater than master limits memory %v",
+				cacheQuota, runtime.Spec.Master.Resources.Limits.Memory())
+		}
+
+		if needUpdated {
+			value.Master.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
+		}
+	}
 
 	return nil
 }
@@ -105,26 +108,28 @@ func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EACRuntime, 
 		}
 	}
 
-	//cacheQuota := resource.MustParse(strings.TrimSuffix(value.Fuse.TieredStore.Levels[0].Quota, "B"))
-	//needUpdated := false
-	//if runtime.Spec.Fuse.Resources.Requests == nil ||
-	//	runtime.Spec.Fuse.Resources.Requests.Memory() == nil ||
-	//	runtime.Spec.Fuse.Resources.Requests.Memory().IsZero() ||
-	//	cacheQuota.Cmp(*runtime.Spec.Fuse.Resources.Requests.Memory()) > 0 {
-	//	needUpdated = true
-	//}
-	//
-	//if runtime.Spec.Fuse.Resources.Limits != nil &&
-	//	runtime.Spec.Fuse.Resources.Limits.Memory() != nil &&
-	//	!runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
-	//	cacheQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
-	//	return fmt.Errorf("the fuse memory tierdStore's size %v is greater than master limits memory %v",
-	//		cacheQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
-	//}
-	//
-	//if needUpdated {
-	//	value.Fuse.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
-	//}
+	if len(value.Fuse.TieredStore.Levels[0].Quota) > 0 {
+		cacheQuota := utils.TransformEACUnitToQuantity(value.Fuse.TieredStore.Levels[0].Quota)
+		needUpdated := false
+		if runtime.Spec.Fuse.Resources.Requests == nil ||
+			runtime.Spec.Fuse.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Fuse.Resources.Requests.Memory().IsZero() ||
+			cacheQuota.Cmp(*runtime.Spec.Fuse.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
+		}
+
+		if runtime.Spec.Fuse.Resources.Limits != nil &&
+			runtime.Spec.Fuse.Resources.Limits.Memory() != nil &&
+			!runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
+			cacheQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than master limits memory %v",
+				cacheQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
+		}
+
+		if needUpdated {
+			value.Fuse.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
+		}
+	}
 
 	return nil
 }

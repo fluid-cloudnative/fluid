@@ -31,7 +31,6 @@ import (
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *EACEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
-
 	var (
 		masterReady, workerReady bool
 		masterName               string = e.getMasterName()
@@ -83,7 +82,6 @@ func (e *EACEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
 		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)
-
 		if *master.Spec.Replicas == master.Status.ReadyReplicas {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 			masterReady = true

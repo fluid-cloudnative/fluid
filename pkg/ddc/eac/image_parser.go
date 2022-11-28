@@ -118,15 +118,15 @@ func (e *EACEngine) parseFuseImage(image string, tag string, imagePullPolicy str
 	return image, tag, imagePullPolicy
 }
 
-func (e *EACEngine) parseInitAlifuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *EACEngine) parseInitFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.EACInitAlifuseImageEnv)
+		image = docker.GetImageRepoFromEnv(common.EACInitFuseImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACInitAlifuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEACInitFuseImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default eac init alifuse image!")
 			} else {
@@ -136,9 +136,9 @@ func (e *EACEngine) parseInitAlifuseImage(image string, tag string, imagePullPol
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.EACInitAlifuseImageEnv)
+		tag = docker.GetImageTagFromEnv(common.EACInitFuseImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACInitAlifuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEACInitFuseImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default eac init alifuse image!")
 			} else {

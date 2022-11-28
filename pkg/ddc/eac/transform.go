@@ -240,12 +240,12 @@ func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
 
 func (e *EACEngine) transformInitAliFuse(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-	value.InitAlifuse = InitAlifuse{}
+	value.InitFuse = InitFuse{}
 
-	image := runtime.Spec.InitAlifuse.Version.Image
-	tag := runtime.Spec.InitAlifuse.Version.ImageTag
-	imagePullPolicy := runtime.Spec.InitAlifuse.Version.ImagePullPolicy
-	value.InitAlifuse.Image, value.InitAlifuse.ImageTag, value.InitAlifuse.ImagePullPolicy = e.parseInitAlifuseImage(image, tag, imagePullPolicy)
+	image := runtime.Spec.InitFuse.Version.Image
+	tag := runtime.Spec.InitFuse.Version.ImageTag
+	imagePullPolicy := runtime.Spec.InitFuse.Version.ImagePullPolicy
+	value.InitFuse.Image, value.InitFuse.ImageTag, value.InitFuse.ImagePullPolicy = e.parseInitFuseImage(image, tag, imagePullPolicy)
 
 	return nil
 }
@@ -261,7 +261,7 @@ func (e *EACEngine) transformMountPoint(mountpoint *string, dataset *datav1alpha
 	var (
 		eacPrefix = "eac://"
 	)
-	if len(dataset.Spec.Mounts) <= 0 {
+	if len(dataset.Spec.Mounts) == 0 {
 		return errors.New("empty mount point")
 	}
 	mount := dataset.Spec.Mounts[0]
