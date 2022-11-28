@@ -372,6 +372,40 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 			},
 			wantReady: false,
 		},
+		{
+			name: "test-err2",
+			fields: fields{
+				name:      "eac-test",
+				namespace: "fluid",
+			},
+			sts: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "eac-test-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"a": "b"},
+					},
+				},
+			},
+			podList: v1.PodList{
+				Items: []v1.Pod{{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "fluid",
+						Labels:    map[string]string{"nota": "notb"},
+					},
+					Status: v1.PodStatus{
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{{
+							Type:   v1.PodReady,
+							Status: v1.ConditionTrue,
+						}},
+					},
+				}},
+			},
+			wantReady: true,
+		},
 	}
 
 	ReadyCommon := func(a operations.EACFileUtils) (ready bool) {
