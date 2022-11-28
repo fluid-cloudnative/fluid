@@ -21,4 +21,26 @@ const (
 	EACRuntimeType                  = "eac"
 	EACRuntimeResourceFinalizerName = "eac-runtime-controller-finalizer"
 	EACRuntimeControllerName        = "EACRuntimeController"
+
+	EACRuntime = EACRuntimeType
+
+	EACChart = EACRuntime
+
+	EACMountType = "alifuse.aliyun-alinas-eac"
+
+	EACMasterImageEnv = "EAC_MASTER_IMAGE_ENV"
+
+	EACFuseImageEnv = "EAC_FUSE_IMAGE_ENV"
+
+	EACWorkerImageEnv = "EAC_WORKER_IMAGE_ENV"
+
+	EACInitAlifuseImageEnv = "EAC_INIT_ALIFUSE_IMAGE_ENV"
+
+	DefaultEACMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
+
+	DefaultEACFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
+
+	DefaultEACWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img:update"
+
+	DefaultEACInitAlifuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
 )
