@@ -238,10 +238,10 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	mockNotExist := func(eacSubPath string) (found bool, err error) {
+	mockNotExist := func(a operations.EACFileUtils, eacSubPath string) (found bool, err error) {
 		return false, errors.New("other error")
 	}
-	mockExist := func(eacSubPath string) (found bool, err error) {
+	mockExist := func(a operations.EACFileUtils, eacSubPath string) (found bool, err error) {
 		return true, nil
 	}
 	wrappedUnhook := func() {
