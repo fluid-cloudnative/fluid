@@ -404,7 +404,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 					},
 				}},
 			},
-			wantReady: true,
+			wantReady: false,
 		},
 	}
 
