@@ -24,7 +24,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -245,7 +244,7 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 		return true, nil
 	}
 	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
+		err := gohook.UnHook(operations.EACFileUtils.IsExist)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
