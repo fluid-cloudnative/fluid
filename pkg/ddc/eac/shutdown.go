@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -30,7 +29,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,8 +96,7 @@ func (e *EACEngine) cleanupCache() (err error) {
 		return
 	}
 
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	workerPods, err := e.getWorkerPods()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
@@ -107,16 +104,6 @@ func (e *EACEngine) cleanupCache() (err error) {
 		} else {
 			return err
 		}
-	}
-
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=eac,role=eac-worker", e.namespace, e.name))
-	if err != nil {
-		return err
-	}
-
-	workerPods, err := kubeclient.GetPodsForStatefulSet(e.Client, workers, workerSelector)
-	if err != nil {
-		return err
 	}
 
 	for _, pod := range workerPods {

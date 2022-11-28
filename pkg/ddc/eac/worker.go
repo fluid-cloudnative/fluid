@@ -29,7 +29,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
@@ -191,18 +190,7 @@ func (e *EACEngine) syncWorkersEndpoints() (err error) {
 		return err
 	}
 
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-	if err != nil {
-		return err
-	}
-
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=eac,role=eac-worker", e.namespace, e.name))
-	if err != nil {
-		return err
-	}
-
-	workerPods, err := kubeclient.GetPodsForStatefulSet(e.Client, workers, workerSelector)
+	workerPods, err := e.getWorkerPods()
 	if err != nil {
 		return err
 	}

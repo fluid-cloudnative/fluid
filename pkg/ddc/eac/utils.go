@@ -22,12 +22,14 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
+	options "sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 )
@@ -129,4 +131,21 @@ func parseDirInfoFromConfigMap(configMap *v1.ConfigMap) (serviceAddr string, fil
 		return
 	}
 	return "", "", "", errors.New("fail to parseDirInfoFromConfigMap")
+}
+
+func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {
+	sts, err := kubeclient.GetStatefulSet(e.Client, e.getWorkerName(), e.namespace)
+	if err != nil {
+		return pods, err
+	}
+
+	selector := sts.Spec.Selector.MatchLabels
+
+	podList := &v1.PodList{}
+	err = e.Client.List(context.TODO(), podList, options.InNamespace(e.namespace), options.MatchingLabels(selector))
+	if err != nil {
+		return pods, err
+	}
+
+	return podList.Items, nil
 }

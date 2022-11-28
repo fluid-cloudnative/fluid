@@ -19,10 +19,8 @@ package eac
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -59,18 +57,7 @@ func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		previousCacheNodenames []string
 	)
 
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-	if err != nil {
-		return err
-	}
-
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=eac,role=eac-worker", e.namespace, e.name))
-	if err != nil {
-		return err
-	}
-
-	workerPods, err := kubeclient.GetPodsForStatefulSet(e.Client, workers, workerSelector)
+	workerPods, err := e.getWorkerPods()
 	if err != nil {
 		return err
 	}

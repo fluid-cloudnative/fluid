@@ -18,18 +18,53 @@ package eac
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/pkg/errors"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	v1 "k8s.io/api/core/v1"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"path/filepath"
 )
 
 // CreateDataLoadJob creates the job to load data
 func (e *EACEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
-	return errors.New("EAC currently not support load data")
+	log := ctx.Log.WithName("createDataLoadJob")
+
+	// 1. Check if the helm release already exists
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
+	var existed bool
+	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
+	if err != nil {
+		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataload.Namespace)
+		return err
+	}
+
+	// 2. install the helm chart if not exists
+	if !existed {
+		log.Info("DataLoad job helm chart not installed yet, will install")
+		valueFileName, err := e.generateDataLoadValueFile(ctx, targetDataload)
+		if err != nil {
+			log.Error(err, "failed to generate dataload chart's value file")
+			return err
+		}
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JuiceFSRuntime
+		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
+		if err != nil {
+			log.Error(err, "failed to install dataload chart")
+			return err
+		}
+		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
+		ctx.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
+	}
+	return err
 }
 
 func (e *EACEngine) CheckRuntimeReady() (ready bool) {
+	// 1. check master ready
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewEACFileUtils(podName, containerName, e.namespace, e.Log)
 	ready = fileUtils.Ready()
@@ -37,7 +72,24 @@ func (e *EACEngine) CheckRuntimeReady() (ready bool) {
 		e.Log.Info("runtime not ready", "runtime", ready)
 		return false
 	}
-	return true
+
+	// 2. check worker ready
+	workerPods, err := e.getWorkerPods()
+	if err != nil {
+		e.Log.Error(err, "Fail to get worker pods")
+		return false
+	}
+
+	readyCount := 0
+	for _, pod := range workerPods {
+		if podutil.IsPodReady(&pod) {
+			readyCount++
+		}
+	}
+	if readyCount > 0 {
+		return true
+	}
+	return false
 }
 
 func (e *EACEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
@@ -55,4 +107,11 @@ func (e *EACEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (
 		}
 	}
 	return false, nil
+}
+
+// generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
+// marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
+func (e *EACEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+	// TODO: generate dataload value file
+	return "", nil
 }
