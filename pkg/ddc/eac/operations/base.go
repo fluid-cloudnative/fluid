@@ -19,6 +19,7 @@ package operations
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
@@ -115,6 +116,14 @@ func (a EACFileUtils) DeleteDir(dir string) (err error) {
 }
 
 func (a EACFileUtils) Ready() (ready bool) {
-	// TODO: check runtime ready
-	return true
+	var (
+		command = []string{"mount", "|", "grep", common.EACMountType}
+	)
+
+	_, _, err := a.exec(command, true)
+	if err == nil {
+		ready = true
+	}
+
+	return ready
 }
