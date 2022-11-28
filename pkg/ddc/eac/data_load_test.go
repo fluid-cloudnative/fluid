@@ -238,11 +238,11 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	mockExecNotExist := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "does not exist", "", errors.New("other error")
+	mockNotExist := func(eacSubPath string) (found bool, err error) {
+		return false, errors.New("other error")
 	}
-	mockExec := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "", "", nil
+	mockExist := func(eacSubPath string) (found bool, err error) {
+		return true, nil
 	}
 	wrappedUnhook := func() {
 		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
@@ -258,10 +258,6 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 		Client:    client,
 	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecNotExist, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	targetDataload := datav1alpha1.DataLoad{
 		Spec: datav1alpha1.DataLoadSpec{
 			Dataset: datav1alpha1.TargetDataset{
@@ -275,11 +271,18 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 			},
 		},
 	}
+
+	err := gohook.Hook(operations.EACFileUtils.IsExist, mockNotExist, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	notExist, err := engine.CheckExistenceOfPath(targetDataload)
 	if !(err != nil && notExist == true) {
 		t.Errorf("fail to exec the function")
 	}
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	wrappedUnhook()
+
+	err = gohook.Hook(operations.EACFileUtils.IsExist, mockExist, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
