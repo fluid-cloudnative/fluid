@@ -17,15 +17,13 @@
 package referencedataset
 
 import (
-	"context"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,36 +53,48 @@ func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1
 	//       but duplicated name error can occurs if the dst namespace has same named runtime.
 	case common.AlluxioRuntime:
 		configMapName := mountedRuntimeName + "-config"
-		err := copyConfigMap(client, configMapName, mountedRuntimeNamespace, configMapName, refNameSpace, ownerReference)
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JuiceFSRuntime:
 		configMapName := mountedRuntimeName + "-config"
-		err := copyConfigMap(client, configMapName, mountedRuntimeNamespace, configMapName, refNameSpace, ownerReference)
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
+		if err != nil {
+			return err
+		}
+		fuseScriptConfigMapName := mountedRuntimeName + "-fuse-script"
+		err = kubeclient.CopyConfigMap(client, types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.GooseFSRuntime:
 		configMapName := mountedRuntimeName + "-config"
-		err := copyConfigMap(client, configMapName, mountedRuntimeNamespace, configMapName, refNameSpace, ownerReference)
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JindoRuntime:
 		clientConfigMapName := mountedRuntimeName + "-jindofs-client-config"
-		err := copyConfigMap(client, clientConfigMapName, mountedRuntimeNamespace, clientConfigMapName, refNameSpace, ownerReference)
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: clientConfigMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: clientConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 		configMapName := mountedRuntimeName + "-jindofs-config"
-		err = copyConfigMap(client, configMapName, mountedRuntimeNamespace, configMapName, refNameSpace, ownerReference)
+		err = kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.ThinRuntime:
 		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
-		err := copyConfigMap(client, runtimesetConfigMapName, mountedRuntimeNamespace, runtimesetConfigMapName, refNameSpace, ownerReference)
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: mountedRuntimeNamespace},
+			types.NamespacedName{Name: runtimesetConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
@@ -93,46 +103,5 @@ func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1
 		return err
 	}
 
-	return nil
-}
-
-func copyConfigMap(client client.Client, srcName string, srcNameSpace string, dstName string, dstNameSpace string, reference metav1.OwnerReference) error {
-	found, err := kubeclient.IsConfigMapExist(client, srcName, dstNameSpace)
-	if err != nil {
-		return err
-	}
-	if found {
-		return nil
-	}
-
-	// copy configmap
-	srcConfigMap, err := kubeclient.GetConfigmapByName(client, srcName, srcNameSpace)
-	if err != nil {
-		return err
-	}
-	// if the source dataset configmap not found, return error and requeue
-	if srcConfigMap == nil {
-		return fmt.Errorf("runtime configmap %s do not exist", srcName)
-	}
-	// create the virtual dataset configmap if not exist
-	copiedConfigMap := srcConfigMap.DeepCopy()
-
-	dstConfigMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            dstName,
-			Namespace:       dstNameSpace,
-			Labels:          copiedConfigMap.Labels,
-			Annotations:     copiedConfigMap.Annotations,
-			OwnerReferences: []metav1.OwnerReference{reference},
-		},
-		Data: copiedConfigMap.Data,
-	}
-
-	err = client.Create(context.TODO(), dstConfigMap)
-	if err != nil {
-		if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
-			return err
-		}
-	}
 	return nil
 }

@@ -65,16 +65,16 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	}
 
 	// Note: get the pvc corresponding dataset
-	pvcDataset, err := utils.GetDataset(info.client, pvcName, pvcNamespace)
+	dataset, err := utils.GetDataset(info.client, pvcName, pvcNamespace)
 	if err != nil {
 		return template, err
 	}
 
 	ownerReference := metav1.OwnerReference{
-		APIVersion: pvcDataset.APIVersion,
-		Kind:       pvcDataset.Kind,
-		Name:       pvcDataset.Name,
-		UID:        pvcDataset.UID,
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
 	}
 
 	// 0. remove the cache dir if required
