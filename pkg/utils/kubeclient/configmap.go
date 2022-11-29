@@ -17,6 +17,9 @@ package kubeclient
 
 import (
 	"context"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/api/core/v1"
 
@@ -91,4 +94,45 @@ func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 	}
 
 	return err
+}
+
+func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.NamespacedName, reference metav1.OwnerReference) error {
+	found, err := IsConfigMapExist(client, dst.Name, dst.Namespace)
+	if err != nil {
+		return err
+	}
+	if found {
+		return nil
+	}
+
+	// copy configmap
+	srcConfigMap, err := GetConfigmapByName(client, src.Name, src.Namespace)
+	if err != nil {
+		return err
+	}
+	// if the source dataset configmap not found, return error and requeue
+	if srcConfigMap == nil {
+		return fmt.Errorf("runtime configmap %v do not exist", src)
+	}
+	// create the virtual dataset configmap if not exist
+	copiedConfigMap := srcConfigMap.DeepCopy()
+
+	dstConfigMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            dst.Name,
+			Namespace:       dst.Namespace,
+			Labels:          copiedConfigMap.Labels,
+			Annotations:     copiedConfigMap.Annotations,
+			OwnerReferences: []metav1.OwnerReference{reference},
+		},
+		Data: copiedConfigMap.Data,
+	}
+
+	err = client.Create(context.TODO(), dstConfigMap)
+	if err != nil {
+		if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+			return err
+		}
+	}
+	return nil
 }

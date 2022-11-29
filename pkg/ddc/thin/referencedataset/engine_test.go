@@ -223,10 +223,18 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 			},
 		},
 	}
+	var configCM = v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtime.Name + "-config",
+			Namespace: runtime.Namespace,
+		},
+		Data: map[string]string{
+			"check.sh": "/bin/sh check",
+		},
+	}
 
-	testObjs = append(testObjs, &dataset, &refDataset)
+	testObjs = append(testObjs, &dataset, &refDataset, &configCM, &runtime, &refRuntime)
 
-	testObjs = append(testObjs, &runtime, &refRuntime)
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	type fields struct {
@@ -245,6 +253,7 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 		ctx       cruntime.ReconcileRequestContext
 		wantReady bool
 		wantErr   bool
+		wantCMs   int
 	}{
 		{
 			name: "setup",
@@ -259,6 +268,7 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 			},
 			wantReady: true,
 			wantErr:   false,
+			wantCMs:   1,
 		},
 	}
 
@@ -293,6 +303,16 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 				}
 				if !utils.ContainsString(updatedDataset.Status.DatasetRef, base.GetDatasetRefName(e.name, e.namespace)) {
 					t.Errorf("Setup() not add dataset field DatasetRef")
+				}
+				cmList := &v1.ConfigMapList{}
+				err = fakeClient.List(context.TODO(), cmList, &client.ListOptions{Namespace: e.namespace})
+				if err != nil {
+					t.Errorf("Get dataset error %v", err)
+					return
+				}
+				items := len(cmList.Items)
+				if items != tt.wantCMs {
+					t.Errorf("copy configmap wrong, expect %d, but got %d", tt.wantCMs, items)
 				}
 			}
 		})

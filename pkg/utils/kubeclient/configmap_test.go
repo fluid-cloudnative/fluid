@@ -16,6 +16,8 @@ limitations under the License.
 package kubeclient
 
 import (
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -176,6 +178,55 @@ func TestDeleteConfigMap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := DeleteConfigMap(client, tt.args.name, tt.args.namespace); err != nil {
 				t.Errorf("testcase %v DeleteConfigMap()'s err is %v", tt.name, err)
+			}
+		})
+	}
+}
+
+func TestCopyConfigMap(t *testing.T) {
+	type args struct {
+		client    client.Client
+		src       types.NamespacedName
+		dst       types.NamespacedName
+		reference metav1.OwnerReference
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "copy success",
+			args: args{
+				client: fake.NewFakeClient(&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "src-config",
+						Namespace: "src",
+					},
+					Data: map[string]string{
+						"check.sh": "/bin/sh check",
+					},
+				}),
+				src: types.NamespacedName{
+					Name:      "src-config",
+					Namespace: "src",
+				},
+				dst: types.NamespacedName{
+					Name:      "src-config",
+					Namespace: "dst",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CopyConfigMap(tt.args.client, tt.args.src, tt.args.dst, tt.args.reference); (err != nil) != tt.wantErr {
+				t.Errorf("CopyConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				_, err := GetConfigmapByName(tt.args.client, tt.args.dst.Name, tt.args.dst.Namespace)
+				if err != nil {
+					t.Errorf("Get copyied configmap error: %v", err)
+				}
 			}
 		})
 	}
