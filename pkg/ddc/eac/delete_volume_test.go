@@ -73,7 +73,6 @@ func doTestCases(testCases []TestCase, t *testing.T) {
 		nullPV := v1.PersistentVolume{}
 		keyPV := types.NamespacedName{
 			Name: fmt.Sprintf("%s-%s", test.engine.namespace, test.engine.name),
-			//Namespace: test.engine.namespace,
 		}
 		_ = test.engine.Client.Get(context.TODO(), keyPV, pv)
 		if test.isDeleted != reflect.DeepEqual(nullPV, *pv) {
@@ -137,94 +136,21 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	eacEngineCommon := newTestEACEngine(fakeClient, "eacdemo", "fluid", true)
-	//eacEngineErr := newTestEACEngine(fakeClient, "error", "fluid", true)
-	//eacEngineNoRunTime := newTestEACEngine(fakeClient, "eacdemo", "fluid", false)
+	eacEngineErr := newTestEACEngine(fakeClient, "error", "fluid", true)
+	eacEngineNoRunTime := newTestEACEngine(fakeClient, "eacdemo", "fluid", false)
 	var testCases = []TestCase{
 		{
 			engine:    eacEngineCommon,
 			isDeleted: true,
 			isErr:     false,
 		},
-		//{
-		//	engine:    eacEngineErr,
-		//	isDeleted: true,
-		//	isErr:     true,
-		//},
-		//{
-		//	engine:    eacEngineNoRunTime,
-		//	isDeleted: true,
-		//	isErr:     true,
-		//},
-	}
-	doTestCases(testCases, t)
-}
-
-func TestEACEngine_deleteFusePersistentVolume(t *testing.T) {
-	testPVInputs := []*v1.PersistentVolume{
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "fluid-eacdemo",
-				Annotations: map[string]string{
-					"CreatedBy": "fluid",
-				},
-			},
-			Spec: v1.PersistentVolumeSpec{},
-		},
-	}
-
-	tests := []runtime.Object{}
-
-	for _, pvInput := range testPVInputs {
-		tests = append(tests, pvInput.DeepCopy())
-	}
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	eacEngine := newTestEACEngine(fakeClient, "eacdemo", "fluid", true)
-	eacEngineNoRuntime := newTestEACEngine(fakeClient, "eacdemo", "fluid", false)
-	testCases := []TestCase{
-		{
-			engine:    eacEngine,
-			isDeleted: true,
-			isErr:     false,
-		},
-		{
-			engine:    eacEngineNoRuntime,
-			isDeleted: true,
+			engine:    eacEngineErr,
+			isDeleted: false,
 			isErr:     true,
 		},
-	}
-	doTestCases(testCases, t)
-}
-
-func TestEACEngine_deleteFusePersistentVolumeClaim(t *testing.T) {
-	testPVCInputs := []*v1.PersistentVolumeClaim{
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "eac",
-				Namespace:  "fluid",
-				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err
-			},
-			Spec: v1.PersistentVolumeClaimSpec{},
-		},
-	}
-
-	tests := []runtime.Object{}
-
-	for _, pvcInput := range testPVCInputs {
-		tests = append(tests, pvcInput.DeepCopy())
-	}
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	eacEngine := newTestEACEngine(fakeClient, "hbase", "fluid", true)
-	eacEngineNoRuntime := newTestEACEngine(fakeClient, "hbase", "fluid", false)
-	testCases := []TestCase{
-		{
-			engine:    eacEngine,
-			isDeleted: true,
-			isErr:     false,
-		},
-		{
-			engine:    eacEngineNoRuntime,
+			engine:    eacEngineNoRunTime,
 			isDeleted: true,
 			isErr:     true,
 		},
