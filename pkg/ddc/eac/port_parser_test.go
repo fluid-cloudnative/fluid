@@ -26,12 +26,6 @@ import (
 	"testing"
 )
 
-var valuesConfigMapData = `
-`
-
-func Test_parsePortsFromConfigMap(t *testing.T) {
-}
-
 func TestGetReservedPorts(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
