@@ -19,6 +19,8 @@ package eac
 import (
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"k8s.io/apimachinery/pkg/util/net"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -115,6 +117,8 @@ func TestSetupMasterInternal(t *testing.T) {
 		Log:       fake.NullLogger(),
 		runtime:   eacruntime,
 	}
+
+	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
 
 	// check release found
 	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
@@ -242,6 +246,8 @@ func TestGenerateEACValueFile(t *testing.T) {
 		runtime:   eacruntime,
 	}
 
+	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+	
 	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
 		t.Fatal(err.Error())
