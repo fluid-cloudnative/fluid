@@ -41,11 +41,9 @@ runtime:
     controller:
       image: fluidcloudnative/alluxioruntime-controller:v0.9.0-5fe0498
     runtime:
-      # image: fluidcloudnative/alluxio:release-2.7.3-SNAPSHOT-a7154f1
-      image: fluidcloudnative/alluxio:release-2.8.1-SNAPSHOT-0433ade
+      image: fluidcloudnative/alluxio:release-2.9.0-SNAPSHOT-5a63178
     fuse:
-      # image: fluidcloudnative/alluxio-fuse:release-2.7.3-SNAPSHOT-a7154f1
-      image: fluidcloudnative/alluxio-fuse:release-2.8.1-SNAPSHOT-0433ade
+      image: fluidcloudnative/alluxio-fuse:release-2.9.0-SNAPSHOT-5a63178
   jindo:
     replicas: 1
     runtimeWorkers: 3
