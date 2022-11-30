@@ -47,9 +47,10 @@ func (e *EACEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err er
 			return err
 		}
 		datasetToUpdate := dataset.DeepCopy()
-		var cond datav1alpha1.DatasetCondition
 
 		if phase != dataset.Status.Phase {
+			var cond datav1alpha1.DatasetCondition
+
 			switch phase {
 			case datav1alpha1.BoundDatasetPhase:
 				if len(datasetToUpdate.Status.Mounts) == 0 {
