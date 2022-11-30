@@ -184,10 +184,12 @@ func (e *EACEngine) checkDisabledWorkersReady(runtime base.RuntimeInterface,
 }
 
 func (e *EACEngine) syncWorkersEndpoints() (err error) {
-	configMapName := fmt.Sprintf("%s-worker-endpoints", e.name)
-	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, e.namespace)
+	configMap, err := kubeclient.GetConfigmapByName(e.Client, e.getWorkersEndpointsConfigmapName(), e.namespace)
 	if err != nil {
 		return err
+	}
+	if configMap == nil {
+		return fmt.Errorf("fail to find ConfigMap name:%s, namespace:%s ", e.getWorkersEndpointsConfigmapName(), e.namespace)
 	}
 
 	workerPods, err := e.getWorkerPods()
@@ -216,7 +218,7 @@ func (e *EACEngine) syncWorkersEndpoints() (err error) {
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		configMapToUpdate := configMap.DeepCopy()
-		configMapToUpdate.Data["eac-worker-endpoints.json"] = string(b)
+		configMapToUpdate.Data[WorkerEndpointsDataName] = string(b)
 		if !reflect.DeepEqual(configMapToUpdate, configMap) {
 			err = e.Client.Update(context.TODO(), configMapToUpdate)
 			if err != nil {

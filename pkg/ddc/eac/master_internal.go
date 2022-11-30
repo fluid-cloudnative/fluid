@@ -105,7 +105,3 @@ func (e *EACEngine) generateEACValueFile(runtime *datav1alpha1.EACRuntime) (valu
 
 	return valueFileName, err
 }
-
-func (e *EACEngine) getConfigmapName() string {
-	return e.name + "-" + e.runtimeType + "-values"
-}

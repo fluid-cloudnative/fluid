@@ -149,3 +149,11 @@ func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {
 
 	return podList.Items, nil
 }
+
+func (e *EACEngine) getConfigmapName() string {
+	return e.name + "-" + e.runtimeType + "-values"
+}
+
+func (e *EACEngine) getWorkersEndpointsConfigmapName() string {
+	return fmt.Sprintf("%s-worker-endpoints", e.name)
+}

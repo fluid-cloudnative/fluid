@@ -25,4 +25,6 @@ const (
 
 	AccessKeyIDName     = "eac.nas.accessKeyId"
 	AccessKeySecretName = "eac.nas.accessKeySecret"
+
+	WorkerEndpointsDataName = "eac-worker-endpoints.json"
 )

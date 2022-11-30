@@ -32,7 +32,6 @@ import (
 
 // CheckRuntimeHealthy checks the healthy of the runtime
 func (e *EACEngine) CheckRuntimeHealthy() (err error) {
-
 	// 1. Check the healthy of the master
 	err = e.checkMasterHealthy()
 	if err != nil {
@@ -116,12 +115,7 @@ func (e *EACEngine) checkMasterHealthy() (err error) {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 		}
 
-		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-		if oldCond == nil || oldCond.Type != cond.Type {
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-		}
+		runtimeToUpdate.Status.Conditions = utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
@@ -192,12 +186,7 @@ func (e *EACEngine) checkWorkersHealthy() (err error) {
 			}
 		}
 
-		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-		if oldCond == nil || oldCond.Type != cond.Type {
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-		}
+		runtimeToUpdate.Status.Conditions = utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
@@ -263,12 +252,7 @@ func (e *EACEngine) checkFuseHealthy() (err error) {
 			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
 		}
 
-		_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-		if oldCond == nil || oldCond.Type != cond.Type {
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-		}
+		runtimeToUpdate.Status.Conditions = utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
 
 		runtimeToUpdate.Status.DesiredFuseNumberScheduled = int32(fuses.Status.DesiredNumberScheduled)
 
