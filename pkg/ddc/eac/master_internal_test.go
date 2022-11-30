@@ -18,7 +18,6 @@ package eac
 
 import (
 	"errors"
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"k8s.io/apimachinery/pkg/util/net"
 	"testing"
@@ -184,7 +183,6 @@ func TestSetupMasterInternal(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	err = engine.setupMasterInternal()
-	fmt.Println(err)
 	if err != nil {
 		t.Errorf("fail to install release")
 	}
@@ -247,7 +245,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 	}
 
 	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-	
+
 	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
 		t.Fatal(err.Error())
