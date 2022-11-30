@@ -27,27 +27,27 @@ import (
 )
 
 func TestSyncMetadataInternal(t *testing.T) {
-	mockTotalStorageBytesCommon := func() (int64, error) {
+	mockTotalStorageBytesCommon := func(e *EACEngine) (int64, error) {
 		return 0, nil
 	}
-	mockTotalStorageBytesError := func() (int64, error) {
+	mockTotalStorageBytesError := func(e *EACEngine) (int64, error) {
 		return 0, errors.New("other error")
 	}
 	wrappedUnhookTotalStorageBytes := func(e *EACEngine) {
-		err := gohook.UnHook(e.TotalStorageBytes)
+		err := gohook.UnHookMethod(e, "TotalStorageBytes")
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	mockTotalFileNumsCommon := func() (int64, error) {
+	mockTotalFileNumsCommon := func(e *EACEngine) (int64, error) {
 		return 0, nil
 	}
-	mockTotalFileNumsError := func() (int64, error) {
+	mockTotalFileNumsError := func(e *EACEngine) (int64, error) {
 		return 0, errors.New("other error")
 	}
 	wrappedUnhookTotalFileNums := func(e *EACEngine) {
-		err := gohook.UnHook(e.TotalFileNums)
+		err := gohook.UnHookMethod(e, "TotalFileNums")
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -92,7 +92,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(engine.TotalStorageBytes, mockTotalStorageBytesError, nil)
+	err := gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -102,11 +102,11 @@ func TestSyncMetadataInternal(t *testing.T) {
 	}
 	wrappedUnhookTotalStorageBytes(engine)
 
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalStorageBytesCommon, nil)
+	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalFileNumsError, nil)
+	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsError, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -117,11 +117,11 @@ func TestSyncMetadataInternal(t *testing.T) {
 	wrappedUnhookTotalStorageBytes(engine)
 	wrappedUnhookTotalFileNums(engine)
 
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalStorageBytesCommon, nil)
+	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalFileNumsCommon, nil)
+	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -134,31 +134,31 @@ func TestSyncMetadataInternal(t *testing.T) {
 }
 
 func TestSyncMetadata(t *testing.T) {
-	mockShouldCheckUFSCommon := func() (should bool, err error) {
+	mockShouldCheckUFSCommon := func(e *EACEngine) (should bool, err error) {
 		return true, nil
 	}
 	wrappedUnhookShouldCheckUFS := func(e *EACEngine) {
-		err := gohook.UnHook(e.ShouldCheckUFS)
+		err := gohook.UnHookMethod(e, "ShouldCheckUFS")
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	mockTotalStorageBytesCommon := func() (int64, error) {
+	mockTotalStorageBytesCommon := func(e *EACEngine) (int64, error) {
 		return 0, nil
 	}
 	wrappedUnhookTotalStorageBytes := func(e *EACEngine) {
-		err := gohook.UnHook(e.TotalStorageBytes)
+		err := gohook.UnHookMethod(e, "TotalStorageBytes")
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	mockTotalFileNumsCommon := func() (int64, error) {
+	mockTotalFileNumsCommon := func(e *EACEngine) (int64, error) {
 		return 0, nil
 	}
 	wrappedUnhookTotalFileNums := func(e *EACEngine) {
-		err := gohook.UnHook(e.TotalFileNums)
+		err := gohook.UnHookMethod(e, "TotalFileNums")
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -203,15 +203,15 @@ func TestSyncMetadata(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(engine.ShouldCheckUFS, mockShouldCheckUFSCommon, nil)
+	err := gohook.HookMethod(engine, "ShouldCheckUFS", mockShouldCheckUFSCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalStorageBytesCommon, nil)
+	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(engine.TotalStorageBytes, mockTotalFileNumsCommon, nil)
+	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
