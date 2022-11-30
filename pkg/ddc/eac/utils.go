@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	options "sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 	"strings"
 )
 
@@ -96,14 +95,6 @@ func getMountRoot() (path string) {
 		path = path + "/" + common.EACRuntime
 	}
 	return
-}
-
-func (e *EACEngine) getDataSetFileNum() (string, error) {
-	fileCount, err := e.TotalFileNums()
-	if err != nil {
-		return "", err
-	}
-	return strconv.FormatInt(fileCount, 10), err
 }
 
 func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {

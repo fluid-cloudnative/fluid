@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 	"reflect"
+	"strconv"
 )
 
 func (e *EACEngine) SyncMetadata() (err error) {
@@ -43,11 +44,12 @@ func (e *EACEngine) syncMetadataInternal() (err error) {
 	}
 	ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
 
-	fileNum, err := e.getDataSetFileNum()
+	fileCount, err := e.TotalFileNums()
 	if err != nil {
 		e.Log.Error(err, "Failed to get FileNum")
 		return err
 	}
+	fileNum := strconv.FormatInt(fileCount, 10)
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
