@@ -234,3 +234,7 @@
 0.9.8
 
 - Fix worker volumes in Alluxio's helm chart
+
+0.9.9
+
+- Support fuse Daemonset use onDelete updateStrategy
