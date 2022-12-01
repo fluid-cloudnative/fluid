@@ -238,3 +238,7 @@
 0.9.9
 
 - Support fuse Daemonset use onDelete updateStrategy
+
+0.9.10
+
+- Use `name.namespace` instead of full svc cluster domain
