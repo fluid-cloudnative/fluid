@@ -10,6 +10,7 @@
 + Get Started
   - [Quick Start](userguide/get_started.md)
   - [Installation](userguide/install.md)
+  - [Trubleshooting](userguide/troubleshooting.md)
 + Dataset
   + Creation
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
