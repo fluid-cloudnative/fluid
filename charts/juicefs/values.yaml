@@ -85,6 +85,8 @@ fuse:
   hostMountPath: /mnt/jfs
   command: "/usr/local/bin/juicefs mount /mnt/jfs"
   statCmd: "stat -c %i /mnt/jfs"
+  updateStrategy:
+    type: OnDelete
   resources:
     requests:
 #      cpu: "0.5"
