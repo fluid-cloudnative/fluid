@@ -19,6 +19,8 @@ metadata:
       uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
   selector:
     matchLabels:
       app: {{ template "juicefs.name" . }}
