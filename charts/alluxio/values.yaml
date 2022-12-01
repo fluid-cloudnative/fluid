@@ -410,6 +410,8 @@ fuse:
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
   volumes: []
+  updateStrategy:
+    type: OnDelete
 
 
 

@@ -24,6 +24,8 @@ metadata:
     heritage: {{ .Release.Service }}
     role: alluxio-fuse
 spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
   selector:
     matchLabels:
       app: {{ template "alluxio.name" . }}
