@@ -19,7 +19,6 @@ package base_test
 import (
 	"context"
 	"os"
-
 	"reflect"
 	"testing"
 
@@ -131,6 +130,7 @@ var _ = Describe("TemplateEngine", func() {
 		Context("When all mount points are synced", func() {
 			It("Should sync successfully", func() {
 				gomock.InOrder(
+					impl.EXPECT().CheckExistenceOfEngine().Return(nil).Times(1),
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					// impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					// impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
@@ -166,6 +166,7 @@ var _ = Describe("TemplateEngine", func() {
 				ufsToUpdate.AnalyzePathsDelta()
 
 				gomock.InOrder(
+					impl.EXPECT().CheckExistenceOfEngine().Return(nil).Times(1),
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					// impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					// impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),

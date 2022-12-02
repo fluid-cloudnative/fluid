@@ -599,10 +599,11 @@ func (mr *MockImplementMockRecorder) SyncScheduleInfoToCacheNodes() *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncScheduleInfoToCacheNodes", reflect.TypeOf((*MockImplement)(nil).SyncScheduleInfoToCacheNodes))
 }
 
+
 // CheckExistenceOfEngine indicates an expected call of CheckExistenceOfEngine.
-func (mr *MockImplementMockRecorder) CheckExistenceOfEngine(ctx interface{}) *gomock.Call {
+func (mr *MockImplementMockRecorder) CheckExistenceOfEngine() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckExistenceOfEngine", reflect.TypeOf((*MockImplement)(nil).CheckExistenceOfEngine), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckExistenceOfEngine", reflect.TypeOf((*MockImplement)(nil).CheckExistenceOfEngine))
 }
 
 // CheckExistenceOfEngine mocks base method.
