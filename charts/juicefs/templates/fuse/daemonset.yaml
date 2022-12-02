@@ -19,6 +19,8 @@ metadata:
       uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
   selector:
     matchLabels:
       app: {{ template "juicefs.name" . }}
@@ -49,7 +51,10 @@ spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
       {{- end }}
-      dnsPolicy: {{ .Values.fuse.dnsPolicy }}
+      {{- if .Values.fuse.hostNetwork }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       nodeSelector:
       {{- if .Values.fuse.nodeSelector }}
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
@@ -140,6 +145,9 @@ spec:
           - name: cache-dir-{{ $name }}
             mountPath: "{{ $mount.path }}"
           {{- end }}
+          {{- if .Values.fuse.volumeMounts }}
+{{ toYaml .Values.fuse.volumeMounts | indent 12 }}
+          {{- end }}
       restartPolicy: Always
       volumes:
         - name: juicefs-fuse-mount
@@ -162,6 +170,9 @@ spec:
           configMap:
             name: {{ template "juicefs.fullname" . }}-fuse-script
             defaultMode: 0755
+        {{- if .Values.fuse.volumes }}
+{{ toYaml .Values.fuse.volumes | indent 8 }}
+        {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

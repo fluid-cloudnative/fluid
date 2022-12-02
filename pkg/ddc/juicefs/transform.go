@@ -18,12 +18,13 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
-	corev1 "k8s.io/api/core/v1"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *JuiceFS, err error) {
@@ -31,6 +32,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		err = fmt.Errorf("the juicefsRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JuiceFSRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
 	if err != nil {
@@ -108,6 +110,8 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 		j.Log.Error(err, "failed to transform volumes for worker")
 	}
 
+	// parse work pod network mode
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 	return
 }
 

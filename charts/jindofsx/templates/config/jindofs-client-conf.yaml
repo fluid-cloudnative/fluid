@@ -17,9 +17,9 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   {{- if $isSingleMaster }}
-  STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
-  CLIENT_NAMESPACE_RPC_ADDRESS:  {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }}
+  STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
+  CLIENT_NAMESPACE_RPC_ADDRESS:  {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
   {{- else if $isRaftHa }}
-  STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
-  CLIENT_NAMESPACE_RPC_ADDRESS:  {{ template "jindofs.fullname" . }}-master-0:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2:{{ .Values.master.ports.rpc }}
+  STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
+  CLIENT_NAMESPACE_RPC_ADDRESS:  {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
   {{- end }}

@@ -16,6 +16,11 @@ GooseFS:
 
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh```
 
+JindoFS:
+
+```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-jindo.sh```
+
+
 ## Diagnose Fluid using Script
 
 1. Fluid provides different diagnostic scripts for different Runtimes, but the usage is the same. You can download the runtime diagnostic scripts you use:

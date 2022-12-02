@@ -15,6 +15,8 @@
    wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh
    # GooseFS:
    wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh
+   # JindoFS:
+   wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-jindo.sh
    ```
 
 2. 确保shell脚本有运行权限，以 `diagnose-fluid-alluxio.sh` 为例：

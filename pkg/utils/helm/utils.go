@@ -17,15 +17,19 @@ package helm
 
 import (
 	"fmt"
+	"time"
 
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // InstallRelease installs the release with cmd: helm install -f values.yaml chart_name, support helm v3
 func InstallRelease(name string, namespace string, valueFile string, chartName string) error {
+	defer utils.TimeTrack(time.Now(), "Helm.InstallRelease", "name", name, "namespace", namespace)
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
 		return err

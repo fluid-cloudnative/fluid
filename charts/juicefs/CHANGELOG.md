@@ -32,3 +32,9 @@
 
 0.2.7
 - Change podManagementPolicy from OrderedReady to Parallel
+
+0.2.8
+- Add volumes and volumeMounts to worker and fuse
+ 
+0.2.9
+- Add updateStrategy for fuse

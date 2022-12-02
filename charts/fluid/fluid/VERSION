@@ -107,3 +107,9 @@ release-2.8.1-SNAPSHOT-0433ade
 Version: https://github.com/Alluxio/alluxio/commit/0433aded47b69a9bc34bdf7676cb3224a1ddb2a1
 Branch: https://github.com/Alluxio/alluxio/tree/release-2.8.0
 
+20221202:
+
+alluxio/alluxio-dev:2.9.0
+
+Version: https://github.com/Alluxio/alluxio/commit/9b78c5b16f855bf22744e8fcad584f47322da9ce
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.9.0

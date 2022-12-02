@@ -115,6 +115,11 @@ type JuiceFSCompTemplateSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 type JuiceFSFuseSpec struct {
@@ -158,6 +163,11 @@ type JuiceFSFuseSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -25,6 +25,8 @@ const (
 	// web
 	HttpScheme  FluidUFSScheme = "http://"
 	HttpsScheme FluidUFSScheme = "https://"
+	// ref
+	RefSchema FluidUFSScheme = "dataset://"
 )
 
 func (fns FluidUFSScheme) String() string {
@@ -48,4 +50,8 @@ func IsFluidWebScheme(s string) bool {
 		return true
 	}
 	return false
+}
+
+func IsFluidRefSchema(s string) bool {
+	return strings.HasPrefix(s, RefSchema.String())
 }

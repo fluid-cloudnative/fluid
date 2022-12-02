@@ -46,6 +46,7 @@ type Jindo struct {
 	PlacementMode   string                 `yaml:"placement,omitempty"`
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
 	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity"`
+	ClusterDomain   string                 `yaml:"clusterDomain,omitempty"`
 }
 
 type HadoopConfig struct {

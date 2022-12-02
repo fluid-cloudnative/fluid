@@ -18,7 +18,7 @@ package thin
 
 import (
 	"fmt"
-
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 
@@ -51,6 +51,28 @@ type ThinEngine struct {
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
+	if ctx.Runtime == nil {
+		return nil, fmt.Errorf("engine %s is failed due to runtime is nil", ctx.Name)
+	}
+	runtime, ok := ctx.Runtime.(*datav1alpha1.ThinRuntime)
+	if !ok {
+		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
+	}
+
+	isRef, err := isReferenceDatasetRuntime(ctx.Client, runtime)
+	if err != nil {
+		return nil, err
+	}
+
+	if isRef {
+		return referencedataset.BuildReferenceDatasetThinEngine(id, ctx)
+	} else {
+		return buildThinEngine(id, ctx)
+	}
+}
+
+// buildThinEngine build engine for handling file system dataset
+func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &ThinEngine{
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
@@ -61,16 +83,8 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
 	}
-	// var implement base.Implement = engine
-	// engine.TemplateEngine = template
-	if ctx.Runtime == nil {
-		return nil, fmt.Errorf("engine %s is failed due to runtime is nil", ctx.Name)
-	}
 
-	runtime, ok := ctx.Runtime.(*datav1alpha1.ThinRuntime)
-	if !ok {
-		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
-	}
+	runtime := ctx.Runtime.(*datav1alpha1.ThinRuntime)
 	engine.runtime = runtime
 
 	runtimeProfile, err := utils.GetThinRuntimeProfile(ctx.Client, runtime.Spec.ThinRuntimeProfileName)
@@ -95,4 +109,20 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
 	var obj datav1alpha1.ThinRuntime
 	return utils.CheckObject(client, key, &obj)
+}
+
+// isReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
+func isReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.ThinRuntime) (bool, error) {
+	dataset, err := utils.GetDataset(client, runtime.Name, runtime.Namespace)
+	if err != nil {
+		return false, err
+	}
+
+	mounted := base.GetMountedDatasetNamespacedName(dataset)
+	// not mount other datasets
+	if len(mounted) == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }

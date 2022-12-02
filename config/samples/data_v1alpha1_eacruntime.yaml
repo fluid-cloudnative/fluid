@@ -1,0 +1,6 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: EACRuntime
+metadata:
+  name: eacruntime-sample
+spec:
+  # TODO(user): Add fields here

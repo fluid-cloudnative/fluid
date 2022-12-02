@@ -234,3 +234,11 @@
 0.9.8
 
 - Fix worker volumes in Alluxio's helm chart
+
+0.9.9
+
+- Support fuse Daemonset use onDelete updateStrategy
+
+0.9.10
+
+- Use `name.namespace` instead of full svc cluster domain

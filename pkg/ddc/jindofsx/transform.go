@@ -46,6 +46,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		err = fmt.Errorf("the jindoRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "JindoRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -171,6 +172,17 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
 	value.Fuse.MountPath = JINDO_FUSE_MONNTPATH
+	clusterDomain, err := common.GetClusterDomain()
+	// to catch get clusterDomain err
+	if err != nil {
+		if errors.Is(err, common.ErrCantFindResolvConf) {
+			e.Log.Info("Warning: failed to parse cluster domain from resolv.conf", "details", err)
+			err = nil
+			value.ClusterDomain = ""
+		}
+	} else {
+		value.ClusterDomain = "." + clusterDomain
+	}
 	return value, err
 }
 

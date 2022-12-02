@@ -18,6 +18,7 @@ package thin
 
 import (
 	"fmt"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -31,6 +32,7 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 		err = fmt.Errorf("the thinRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "ThinRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
 	if err != nil {

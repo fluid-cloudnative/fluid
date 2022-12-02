@@ -21,6 +21,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -37,6 +38,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		err = fmt.Errorf("the alluxioRuntime is null")
 		return
 	}
+	defer utils.TimeTrack(time.Now(), "AlluxioRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -363,7 +365,9 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	value.Worker = Worker{}
 	e.optimizeDefaultForWorker(runtime, value)
 
-	if len(value.Worker.NodeSelector) == 0 {
+	if len(runtime.Spec.Worker.NodeSelector) > 0 {
+		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
+	} else {
 		value.Worker.NodeSelector = map[string]string{}
 	}
 
