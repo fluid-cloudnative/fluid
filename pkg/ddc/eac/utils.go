@@ -28,9 +28,9 @@ import (
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
-	options "sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
 
@@ -103,15 +103,17 @@ func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {
 		return pods, err
 	}
 
-	selector := sts.Spec.Selector.MatchLabels
-
-	podList := &v1.PodList{}
-	err = e.Client.List(context.TODO(), podList, options.InNamespace(e.namespace), options.MatchingLabels(selector))
+	selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 	if err != nil {
 		return pods, err
 	}
 
-	return podList.Items, nil
+	pods, err = kubeclient.GetPodsForStatefulSet(e.Client, sts, selector)
+	if err != nil {
+		return pods, err
+	}
+
+	return pods, nil
 }
 
 func (e *EACEngine) getConfigmapName() string {
