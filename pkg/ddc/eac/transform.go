@@ -99,15 +99,9 @@ func (e *EACEngine) transformMasters(runtime *datav1alpha1.EACRuntime,
 	}
 
 	// ports
-	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) {
-		e.Log.Info("allocateMasterPorts for hostnetwork mode")
-		err = e.allocateMasterPorts(value)
-		if err != nil {
-			return
-		}
-	} else {
-		e.Log.Info("skip allocateMasterPorts for container network mode")
-		e.generateMasterStaticPorts(value)
+	err = e.transformPortForMaster(runtime, value)
+	if err != nil {
+		return
 	}
 
 	// resources
@@ -151,15 +145,9 @@ func (e *EACEngine) transformWorkers(runtime *datav1alpha1.EACRuntime,
 	}
 
 	// ports
-	if datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
-		e.Log.Info("allocateWorkerPorts for hostnetwork mode")
-		err = e.allocateWorkerPorts(value)
-		if err != nil {
-			return
-		}
-	} else {
-		e.Log.Info("skip allocateWorkerPorts for container network mode")
-		e.generateWorkerStaticPorts(value)
+	err = e.transformPortForWorker(runtime, value)
+	if err != nil {
+		return
 	}
 
 	// resources
@@ -212,15 +200,9 @@ func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
 	}
 
 	// ports
-	if datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode) {
-		e.Log.Info("allocateFusePorts for hostnetwork mode")
-		err = e.allocateFusePorts(value)
-		if err != nil {
-			return
-		}
-	} else {
-		e.Log.Info("skip allocateFusePorts for container network mode")
-		e.generateFuseStaticPorts(value)
+	err = e.transformPortForFuse(runtime, value)
+	if err != nil {
+		return
 	}
 
 	// resources
