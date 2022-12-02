@@ -22,18 +22,11 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
 )
 
-func (e *EACEngine) setDirQuota() (response *nas.SetDirQuotaResponse, err error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return nil, err
-	}
+func (e *EACEngine) setDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
+	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 
 	config := sdk.NewConfig()
-	accessKeyID, accessKeySecret, err := e.getEACSecret()
-	if err != nil {
-		return nil, err
-	}
 	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
 	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
 	if err != nil {
@@ -56,18 +49,11 @@ func (e *EACEngine) setDirQuota() (response *nas.SetDirQuotaResponse, err error)
 	return
 }
 
-func (e *EACEngine) describeDirQuota() (response *nas.DescribeDirQuotasResponse, err error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return nil, err
-	}
+func (e *EACEngine) describeDirQuota(mountInfo MountInfo) (response *nas.DescribeDirQuotasResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
+	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 
 	config := sdk.NewConfig()
-	accessKeyID, accessKeySecret, err := e.getEACSecret()
-	if err != nil {
-		return nil, err
-	}
 	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
 	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
 	if err != nil {

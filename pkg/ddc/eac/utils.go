@@ -278,10 +278,12 @@ func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cache
 }
 
 type MountInfo struct {
-	MountPoint   string
-	ServiceAddr  string
-	FileSystemId string
-	DirPath      string
+	MountPoint      string
+	ServiceAddr     string
+	FileSystemId    string
+	DirPath         string
+	AccessKeyID     string
+	AccessKeySecret string
 }
 
 func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
@@ -321,6 +323,44 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 		info.DirPath = strings.Split(info.MountPoint, "nas.aliyuncs.com:")[1]
 	}
 
-	e.Log.Info("EACRuntime MountInfo", "mountPoint", info.MountPoint, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath)
+	info.AccessKeyID, info.AccessKeySecret, err = e.getEACSecret(mount)
+	if err != nil {
+		return info, err
+	}
+
+	e.Log.Info("EACRuntime MountInfo", "mountPoint", info.MountPoint, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath, "AccessKeyID", info.AccessKeyID, "AccessKeySecret", info.AccessKeySecret)
 	return info, nil
+}
+
+func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, accessKeySecret string, err error) {
+	for _, encryptOption := range mount.EncryptOptions {
+		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+		secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+		if err != nil {
+			e.Log.Info("can't get the secret",
+				"namespace", e.namespace,
+				"name", e.name,
+				"secretName", secretKeyRef.Name)
+			return "", "", err
+		}
+
+		value, ok := secret.StringData[secretKeyRef.Key]
+		if !ok {
+			err = fmt.Errorf("can't get %s from secret %s namespace %s", secretKeyRef.Key, secretKeyRef.Name, e.namespace)
+			return "", "", err
+		}
+
+		switch encryptOption.Name {
+		case AccessKeyIDName:
+			accessKeyID = value
+			break
+		case AccessKeySecretName:
+			accessKeySecret = value
+			break
+		default:
+			break
+		}
+	}
+
+	return
 }
