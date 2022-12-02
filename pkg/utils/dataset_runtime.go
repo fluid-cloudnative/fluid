@@ -46,7 +46,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 			dataset.GetNamespace())
 		// 1. if err is null, which indicates that the runtime exists, then return
 		if err == nil {
-			return err
+			return nil
 		}
 
 		// 2. If the runtime doesn't exist
