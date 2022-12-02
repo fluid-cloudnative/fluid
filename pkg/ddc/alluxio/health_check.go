@@ -419,6 +419,6 @@ func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
 	})
 
 	//the totalErr promise the sync will return and Requeue
-	totalErr := errors1.New("the engine is not existed")
+	totalErr := errors1.New(fmt.Sprintf("the engine is not existed %v", err))
 	return totalErr
 }
