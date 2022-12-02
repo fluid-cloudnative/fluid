@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	utilpointer "k8s.io/utils/pointer"
 	"testing"
 )
 
@@ -305,7 +306,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 		wantReady bool
 	}{
 		{
-			name: "test",
+			name: "eac-test",
 			fields: fields{
 				name:      "eac-test",
 				namespace: "fluid",
@@ -314,6 +315,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "eac-test-worker",
 					Namespace: "fluid",
+					UID:       "uid1",
 				},
 				Spec: appsv1.StatefulSetSpec{
 					Selector: &metav1.LabelSelector{
@@ -326,6 +328,13 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
 						Labels:    map[string]string{"a": "b"},
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "apps/v1",
+							Name:       "eac-test-worker",
+							UID:        "uid1",
+							Controller: utilpointer.BoolPtr(true),
+						}},
 					},
 					Status: v1.PodStatus{
 						Phase: v1.PodRunning,
@@ -339,15 +348,16 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 			wantReady: true,
 		},
 		{
-			name: "test-err",
+			name: "eac-test-err",
 			fields: fields{
-				name:      "eac",
+				name:      "eac-test-err",
 				namespace: "fluid",
 			},
 			sts: appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "eac-worker",
+					Name:      "eac-test-err-worker",
 					Namespace: "fluid",
+					UID:       "uid2",
 				},
 				Spec: appsv1.StatefulSetSpec{
 					Selector: &metav1.LabelSelector{
@@ -360,6 +370,13 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
 						Labels:    map[string]string{"a": "b"},
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "apps/v1",
+							Name:       "eac-test-err-worker",
+							UID:        "uid2",
+							Controller: utilpointer.BoolPtr(true),
+						}},
 					},
 					Status: v1.PodStatus{
 						Phase: v1.PodRunning,
@@ -373,15 +390,16 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 			wantReady: false,
 		},
 		{
-			name: "test-err2",
+			name: "eac-test-err2",
 			fields: fields{
-				name:      "eac-test",
+				name:      "eac-test-err2",
 				namespace: "fluid",
 			},
 			sts: appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "eac-test-worker",
+					Name:      "eac-test-err2-worker",
 					Namespace: "fluid",
+					UID:       "uid3",
 				},
 				Spec: appsv1.StatefulSetSpec{
 					Selector: &metav1.LabelSelector{
@@ -394,6 +412,13 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
 						Labels:    map[string]string{"nota": "notb"},
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "apps/v1",
+							Name:       "eac-test-err2-worker",
+							UID:        "uid3",
+							Controller: utilpointer.BoolPtr(true),
+						}},
 					},
 					Status: v1.PodStatus{
 						Phase: v1.PodRunning,
