@@ -17,14 +17,16 @@ package alluxio
 
 import (
 	"context"
+	errors1 "errors"
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"reflect"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -321,4 +323,102 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 			fuses.Status.UpdatedNumberScheduled)
 	}
 	return err
+}
+
+
+// CheckExistenceOfEngine check engine existed
+func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
+
+	master, masterErr := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
+
+	_, workerErr := ctrl.GetWorkersAsStatefulset(e.Client, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+
+	_, fuseErr := e.getDaemonset(e.getFuseDaemonsetName(), e.namespace)
+
+	var condList []data.RuntimeCondition
+
+	if (masterErr != nil && errors.IsNotFound(masterErr)) || *master.Spec.Replicas <= 0 {
+		cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master are not ready.",
+			fmt.Sprintf("The statefulset %s in %s is not found, or the replicas is <= 0 ,please fix it.",
+				e.getMasterName(),
+				e.namespace), corev1.ConditionFalse)
+
+		condList = append(condList, cond)
+	}
+
+	if workerErr != nil && errors.IsNotFound(workerErr) {
+		cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
+			fmt.Sprintf("The statefulset %s in %s is not found, please fix it.",
+				e.getWorkerName(),
+				e.namespace), corev1.ConditionFalse)
+
+		condList = append(condList, cond)
+	}
+
+	if fuseErr != nil && errors.IsNotFound(fuseErr) {
+		cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The fuses are not ready.",
+			fmt.Sprintf("The daemonset %s in %s is not found, please fix it.",
+				e.getFuseDaemonsetName(),
+				e.namespace), corev1.ConditionFalse)
+
+		condList = append(condList, cond)
+	}
+
+	// no error is notFound and the master replicas is > 0, so the engine is existed
+	if len(condList) == 0 {
+		return nil
+	}
+
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		runtimeToUpdate := runtime.DeepCopy()
+
+		for _, cond := range condList {
+			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+
+			if oldCond == nil || oldCond.Type != cond.Type {
+				runtimeToUpdate.Status.Conditions =
+					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+						cond)
+			}
+
+			switch cond.Type {
+			case data.RuntimeMasterReady:
+				runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
+				e.Log.Error(err, "the master are not ready")
+			case data.RuntimeWorkersReady:
+				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
+				e.Log.Error(err, "the workers are not ready")
+			case data.RuntimeFusesReady:
+				runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
+				e.Log.Error(err, "the fuses are not ready")
+			}
+
+		}
+
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+			if updateErr != nil {
+				return updateErr
+			}
+
+			updateErr = e.UpdateDatasetStatus(data.FailedDatasetPhase)
+			if updateErr != nil {
+				e.Log.Error(updateErr, "Failed to update dataset")
+				return updateErr
+			}
+		}
+
+		return err
+	})
+
+	//the totalErr promise the sync will return and Requeue
+	totalErr := errors1.New("the engine is not existed")
+	return totalErr
 }

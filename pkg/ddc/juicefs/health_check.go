@@ -219,3 +219,8 @@ func (j *JuiceFSEngine) checkFuseHealthy() (err error) {
 	}
 	return err
 }
+
+
+func (j *JuiceFSEngine) CheckExistenceOfEngine() (err error) {
+	return
+}

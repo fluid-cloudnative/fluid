@@ -19,11 +19,12 @@ package goosefs
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -323,4 +324,10 @@ func (e *GooseFSEngine) checkFuseHealthy() (err error) {
 			fuses.Status.UpdatedNumberScheduled)
 	}
 	return err
+}
+
+
+// CheckExistenceOfEngine check the engine existed
+func (e *GooseFSEngine) CheckExistenceOfEngine() (err error) {
+	return
 }

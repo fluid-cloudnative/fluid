@@ -19,12 +19,13 @@ package thin
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 func (t ThinEngine) CheckRuntimeHealthy() (err error) {
@@ -213,4 +214,9 @@ func (t *ThinEngine) checkFuseHealthy() (err error) {
 			fuses.Status.UpdatedNumberScheduled)
 	}
 	return err
+}
+
+// CheckExistenceOfEngine check the engine existed
+func (t *ThinEngine) CheckExistenceOfEngine() (err error) {
+	return
 }

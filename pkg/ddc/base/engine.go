@@ -143,6 +143,9 @@ type Implement interface {
 
 	// Sync the scheduleInfo to cacheNodes
 	SyncScheduleInfoToCacheNodes() (err error)
+
+	// CheckExistenceOfEngine check the engine existed
+	CheckExistenceOfEngine() (err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

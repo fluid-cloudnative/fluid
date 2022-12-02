@@ -158,3 +158,8 @@ func (e *JindoFSxEngine) checkFuseHealthy() (err error) {
 
 	return
 }
+
+// CheckExistenceOfEngine check the engine existed
+func (e *JindoFSxEngine) CheckExistenceOfEngine() (err error) {
+	return
+}

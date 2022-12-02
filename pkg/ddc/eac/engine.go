@@ -18,6 +18,7 @@ package eac
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -233,6 +234,11 @@ func (e *EACEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (
 }
 
 func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e *EACEngine) CheckExistenceOfEngine() (err error) {
 	//TODO implement me
 	panic("implement me")
 }
