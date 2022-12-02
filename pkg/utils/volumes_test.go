@@ -168,7 +168,7 @@ func TestAppendOrOverrideVolume(t *testing.T) {
 			name: "volume_not_existed",
 			args: args{
 				volumes: []corev1.Volume{
-					corev1.Volume{
+					{
 						Name: "vol-1",
 						VolumeSource: corev1.VolumeSource{
 							EmptyDir: &corev1.EmptyDirVolumeSource{

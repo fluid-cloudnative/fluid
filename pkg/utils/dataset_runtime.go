@@ -18,7 +18,6 @@ package utils
 import (
 	"context"
 
-	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +50,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 
 		// 2. If the runtime doesn't exist
 		if IgnoreNotFound(err) == nil {
-			var runtime data.ThinRuntime = datav1alpha1.ThinRuntime{
+			var runtime datav1alpha1.ThinRuntime = datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      dataset.Name,
 					Namespace: dataset.Namespace,
