@@ -71,4 +71,4 @@ Add Cluster domain
 
 0.8.16
 
-Remove Cluster domain 
+Use datasetName.datasetNamespace for service discovery
