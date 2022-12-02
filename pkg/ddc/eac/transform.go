@@ -54,7 +54,7 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 		return
 	}
 
-	err = e.transformInitAliFuse(runtime, value)
+	err = e.transformInitFuse(runtime, value)
 	if err != nil {
 		return
 	}
@@ -220,7 +220,7 @@ func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformInitAliFuse(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformInitFuse(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	value.InitFuse = InitFuse{}
 
