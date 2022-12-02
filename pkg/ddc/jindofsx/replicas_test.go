@@ -321,16 +321,24 @@ func TestSyncReplicas(t *testing.T) {
 			isErr:          false,
 			condtionLength: 0,
 		}, {
-			testName:       "deprecated",
-			name:           "deprecated",
+			testName:       "disabled",
+			name:           "disabled",
 			namespace:      "fluid",
 			Type:           "",
 			isErr:          false,
 			condtionLength: 0,
-			deprecated:     true,
+			deprecated:     false,
 		}, {
-			testName:       "disabled",
-			name:           "disabled",
+			testName:       "notFound",
+			name:           "notFound",
+			namespace:      "fluid",
+			Type:           "",
+			isErr:          true,
+			condtionLength: 0,
+			deprecated:     false,
+		}, {
+			testName:       "deprecated",
+			name:           "deprecated",
 			namespace:      "fluid",
 			Type:           "",
 			isErr:          false,
@@ -345,12 +353,15 @@ func TestSyncReplicas(t *testing.T) {
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {
+			if testCase.isErr {
+				continue
+			}
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 		rt, _ := engine.getRuntime()
 		found := false
 		if testCase.deprecated {
-			break
+			continue
 		}
 
 		for _, cond := range rt.Status.Conditions {

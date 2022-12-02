@@ -31,7 +31,7 @@ func (e JindoFSxEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		if err != nil {
 			return err
 		}
-		if e.runtime.Spec.Worker.Disabled {
+		if runtime.Spec.Worker.Disabled {
 			e.Log.Info("Skip syncing replicas for worker when it's disabled")
 			return nil
 		}
