@@ -17,13 +17,11 @@
 package eac
 
 import (
-	"errors"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err error) {
@@ -71,10 +69,11 @@ func (e *EACEngine) transformMasters(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	value.Master = Master{}
 
-	err = e.transformMountPoint(&value.Master.MountPoint, dataset)
+	mountInfo, err := e.getMountInfo()
 	if err != nil {
 		return
 	}
+	value.Master.MountPoint = mountInfo.MountPoint
 
 	value.Master.Replicas = runtime.MasterReplicas()
 	value.Master.Enabled = runtime.MasterEnabled()
@@ -170,10 +169,11 @@ func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	value.Fuse = Fuse{}
 
-	err = e.transformMountPoint(&value.Fuse.MountPoint, dataset)
+	mountInfo, err := e.getMountInfo()
 	if err != nil {
 		return
 	}
+	value.Fuse.MountPoint = mountInfo.MountPoint
 
 	value.Fuse.HostMountPath = e.getHostMountPath()
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
@@ -237,24 +237,6 @@ func (e *EACEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value 
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
-}
-
-func (e *EACEngine) transformMountPoint(mountpoint *string, dataset *datav1alpha1.Dataset) error {
-	var (
-		eacPrefix = "eac://"
-	)
-	if len(dataset.Spec.Mounts) == 0 {
-		return errors.New("empty mount point")
-	}
-	mount := dataset.Spec.Mounts[0]
-	if !strings.HasSuffix(mount.MountPoint, "/") {
-		mount.MountPoint = mount.MountPoint + "/"
-	}
-	if !strings.HasPrefix(mount.MountPoint, eacPrefix) {
-		return errors.New("invalid mount point prefix, must be eac://")
-	}
-	*mountpoint = strings.TrimPrefix(mount.MountPoint, eacPrefix)
-	return nil
 }
 
 func (e *EACEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *EAC) {

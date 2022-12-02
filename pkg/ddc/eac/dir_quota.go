@@ -20,26 +20,14 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/pkg/errors"
 )
 
 func (e *EACEngine) setDirQuota() (response *nas.SetDirQuotaResponse, err error) {
-	runtime, err := e.getRuntime()
+	mountInfo, err := e.getMountInfo()
 	if err != nil {
 		return nil, err
 	}
-
-	configMapName := e.getConfigmapName()
-	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, runtime.Namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetConfigMapByName fail when setDirQuota")
-	}
-
-	serviceAddr, fileSystemId, dirPath, err := parseDirInfoFromConfigMap(configMap)
-	if err != nil {
-		return nil, errors.Wrap(err, "parseDirInfoFromConfigMap fail when setDirQuota")
-	}
+	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 
 	config := sdk.NewConfig()
 	accessKeyID, accessKeySecret, err := e.getEACSecret()
@@ -69,21 +57,11 @@ func (e *EACEngine) setDirQuota() (response *nas.SetDirQuotaResponse, err error)
 }
 
 func (e *EACEngine) describeDirQuota() (response *nas.DescribeDirQuotasResponse, err error) {
-	runtime, err := e.getRuntime()
+	mountInfo, err := e.getMountInfo()
 	if err != nil {
 		return nil, err
 	}
-
-	configMapName := e.getConfigmapName()
-	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, runtime.Namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetConfigMapByName fail when describeDirQuota")
-	}
-
-	serviceAddr, fileSystemId, dirPath, err := parseDirInfoFromConfigMap(configMap)
-	if err != nil {
-		return nil, errors.Wrap(err, "parseDirInfoFromConfigMap fail when describeDirQuota")
-	}
+	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 
 	config := sdk.NewConfig()
 	accessKeyID, accessKeySecret, err := e.getEACSecret()

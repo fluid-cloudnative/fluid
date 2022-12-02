@@ -277,17 +277,50 @@ func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cache
 	return "", "", errors.New("fail to parseCacheDirFromConfigMap")
 }
 
-func parseDirInfoFromConfigMap(configMap *v1.ConfigMap) (serviceAddr string, fileSystemId string, dirPath string, err error) {
-	var value EAC
-	if v, ok := configMap.Data["data"]; ok {
-		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
-			return "", "", "", err
-		}
-		mountPoint := value.Fuse.MountPoint
-		serviceAddr = strings.Split(mountPoint, ".")[1]
-		fileSystemId = strings.Split(mountPoint, "-")[0]
-		dirPath = strings.Split(mountPoint, "nas.aliyuncs.com:")[1]
-		return
+type MountInfo struct {
+	MountPoint   string
+	ServiceAddr  string
+	FileSystemId string
+	DirPath      string
+}
+
+func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return info, err
 	}
-	return "", "", "", errors.New("fail to parseDirInfoFromConfigMap")
+	if len(dataset.Spec.Mounts) == 0 {
+		return info, fmt.Errorf("empty mount point for EACRuntime name:%s, namespace:%s", e.name, e.namespace)
+	}
+	mount := dataset.Spec.Mounts[0]
+	if !strings.HasSuffix(mount.MountPoint, "/") {
+		mount.MountPoint = mount.MountPoint + "/"
+	}
+
+	if !strings.HasPrefix(mount.MountPoint, MountPointPrefix) {
+		return info, fmt.Errorf("invalid mountpoint prefix for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+	} else {
+		info.MountPoint = strings.TrimPrefix(mount.MountPoint, MountPointPrefix)
+	}
+
+	if len(strings.Split(info.MountPoint, ".")) < 2 {
+		return info, fmt.Errorf("fail to parse serviceaddr for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+	} else {
+		info.ServiceAddr = strings.Split(info.MountPoint, ".")[1]
+	}
+
+	if len(strings.Split(info.MountPoint, "-")) < 1 {
+		return info, fmt.Errorf("fail to parse filesystemid for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+	} else {
+		info.FileSystemId = strings.Split(info.MountPoint, "-")[0]
+	}
+
+	if len(strings.Split(info.MountPoint, "nas.aliyuncs.com:")) < 2 {
+		return info, fmt.Errorf("fail to parse dirpath for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+	} else {
+		info.DirPath = strings.Split(info.MountPoint, "nas.aliyuncs.com:")[1]
+	}
+
+	e.Log.Info("EACRuntime MountInfo", "mountPoint", info.MountPoint, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath)
+	return info, nil
 }
