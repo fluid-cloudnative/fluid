@@ -111,16 +111,16 @@ spec:
           env:
           {{- if $isSingleMaster }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
           - name: NAMESPACE_BACKEND_RAFT_HOSTNAME
-            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}
           {{- else if $isRaftHa }}
           - name: CLIENT_NAMESPACE_RPC_ADDRESS
-            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.rpc }}
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
           - name: NAMESPACE_BACKEND_RAFT_INITIAL_CONF
-            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}:{{ .Values.master.ports.raft }}:0
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.raft }}:0,{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.raft }}:0
           - name: NAMESPACE_BACKEND_RAFT_HOSTNAME
-            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}.svc{{ .Values.clusterDomain }}
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}
           {{- end }}
           {{- if .Values.fuse.runAs }}
           - name: RUN_AS_USER

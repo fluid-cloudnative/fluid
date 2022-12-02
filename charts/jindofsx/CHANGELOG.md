@@ -68,3 +68,7 @@ Make fuse tolerate any taint
 0.8.15
 
 Add Cluster domain 
+
+0.8.16
+
+Use datasetName.datasetNamespace for service discovery
