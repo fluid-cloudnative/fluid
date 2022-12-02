@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"context"
-	errors1 "errors"
 	"fmt"
 	"reflect"
 
@@ -419,6 +418,6 @@ func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
 	})
 
 	//the totalErr promise the sync will return and Requeue
-	totalErr := errors1.New(fmt.Sprintf("the engine is not existed %v", err))
+	totalErr := fmt.Errorf("the engine is not existed %v", err)
 	return totalErr
 }
