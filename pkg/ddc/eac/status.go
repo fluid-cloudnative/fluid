@@ -89,6 +89,7 @@ func (e *EACEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
+		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = int32(workers.Status.Replicas)
 		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
 		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
