@@ -18,10 +18,11 @@ package base
 
 import (
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
-	"strings"
 )
 
 func GetDatasetRefName(name, namespace string) string {
@@ -44,4 +45,8 @@ func GetMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []typ
 		}
 	}
 	return physicalNameSpacedName
+}
+
+func IsReferenceDataset(dataset *datav1alpha1.Dataset) bool {
+	return len(GetMountedDatasetNamespacedName(dataset)) > 0
 }
