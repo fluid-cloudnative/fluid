@@ -327,6 +327,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 				Items: []v1.Pod{{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
+						Name:      "eac-test-worker-0",
 						Labels:    map[string]string{"a": "b"},
 						OwnerReferences: []metav1.OwnerReference{{
 							Kind:       "StatefulSet",
@@ -369,6 +370,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 				Items: []v1.Pod{{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
+						Name:      "eac-test-err-worker-0",
 						Labels:    map[string]string{"a": "b"},
 						OwnerReferences: []metav1.OwnerReference{{
 							Kind:       "StatefulSet",
@@ -411,6 +413,7 @@ func TestEACEngine_CheckRuntimeReady(t *testing.T) {
 				Items: []v1.Pod{{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "fluid",
+						Name:      "eac-test-err2-worker-0",
 						Labels:    map[string]string{"nota": "notb"},
 						OwnerReferences: []metav1.OwnerReference{{
 							Kind:       "StatefulSet",
