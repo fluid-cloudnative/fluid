@@ -47,6 +47,19 @@ func GetMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []typ
 	return physicalNameSpacedName
 }
 
-func IsReferenceDataset(dataset *datav1alpha1.Dataset) bool {
-	return len(GetMountedDatasetNamespacedName(dataset)) > 0
+func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error) {
+	mounts := len(GetMountedDatasetNamespacedName(dataset))
+	totalMounts := len(dataset.Spec.Mounts)
+	switch {
+	case mounts == 1:
+		if totalMounts == mounts {
+			check = true
+		} else {
+			err = fmt.Errorf("the dataset is not validated, since it has 1 dataset mounts but also contains other types of mounts %v", dataset.Spec.Mounts)
+		}
+	case mounts > 1:
+		err = fmt.Errorf("the dataset is not validated, since it has %v dataset mounts which only expects 1", mounts)
+	}
+
+	return
 }

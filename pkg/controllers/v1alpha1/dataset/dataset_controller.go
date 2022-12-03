@@ -140,10 +140,16 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 
 	// 3. Update the phase to NotBoundDatasetPhase
 	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
-		if base.IsReferenceDataset(&ctx.Dataset) {
+		checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
+		if err != nil {
+			ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
+			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
+			return utils.RequeueIfError(err)
+		}
+		if checkReferenceDataset {
 			err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
 			if err != nil {
-				ctx.Log.Error(err, "Failed to create thinRuntime", "StatusUpdateError", ctx)
+				ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
 				return utils.RequeueIfError(err)
 			}
 		}
