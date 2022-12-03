@@ -47,7 +47,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 						e.getWorkerName(),
 						e.namespace), corev1.ConditionFalse)
 
-				retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				updateErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
 					runtime, err := e.getRuntime()
 					if err != nil {
@@ -82,6 +82,8 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 
 					return err
 				})
+				totalErr := fmt.Errorf("the master engine is not existed %v", updateErr)
+				return totalErr
 			}
 			return err
 		}

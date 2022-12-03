@@ -16,11 +16,10 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
-
-	"reflect"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -29,9 +28,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
@@ -236,6 +237,7 @@ func TestPrepareUFS(t *testing.T) {
 		namespace          string
 		Log                logr.Logger
 		MetadataSyncDoneCh chan MetadataSyncResult
+		master             *appsv1.StatefulSet
 	}
 	tests := []struct {
 		name    string
@@ -246,6 +248,19 @@ func TestPrepareUFS(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.AlluxioRuntime{},
+				master: &appsv1.StatefulSet{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "hbase-master",
+							Namespace: "fluid",
+						},
+						Spec: appsv1.StatefulSetSpec{
+							Replicas: utilpointer.Int32(2),
+						},
+						Status: appsv1.StatefulSetStatus{
+							Replicas:      3,
+							ReadyReplicas: 2,
+						},
+					},
 				dataset: &datav1alpha1.Dataset{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "spark",
@@ -278,8 +293,9 @@ func TestPrepareUFS(t *testing.T) {
 			s := runtime.NewScheme()
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.master)
 			_ = corev1.AddToScheme(s)
-			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.fields.dataset)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.fields.dataset, tt.fields.master)
 
 			var afsUtils operations.AlluxioFileUtils
 			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
