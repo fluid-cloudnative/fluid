@@ -33,10 +33,6 @@ import (
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 )
 
-var workerEndpointsConfigMapData = `
-{"containerendpoints":[]}
-`
-
 func TestCheckRuntimeHealthy(t *testing.T) {
 	type fields struct {
 		runtime         *datav1alpha1.EACRuntime
