@@ -22,7 +22,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
 )
 
-func SetDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaResponse, err error) {
+func (mountInfo MountInfo) SetDirQuota() (response *nas.SetDirQuotaResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 
@@ -48,7 +48,7 @@ func SetDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaResponse, err er
 	return
 }
 
-func DescribeDirQuota(mountInfo MountInfo) (response *nas.DescribeDirQuotasResponse, err error) {
+func (mountInfo MountInfo) DescribeDirQuota() (response *nas.DescribeDirQuotasResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 

@@ -124,7 +124,7 @@ func TestPrepareUFS(t *testing.T) {
 		return nil, errors.New("other error")
 	}
 	wrappedUnhookSetDirQuota := func() {
-		err := gohook.UnHook(SetDirQuota)
+		err := gohook.UnHook(MountInfo.SetDirQuota)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -203,7 +203,7 @@ func TestPrepareUFS(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	e := newEACEngine(fakeClient, "check", "fluid")
 
-	err := gohook.Hook(SetDirQuota, mockSetDirQuotaCommon, nil)
+	err := gohook.Hook(MountInfo.SetDirQuota, mockSetDirQuotaCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -214,8 +214,8 @@ func TestPrepareUFS(t *testing.T) {
 	}
 	wrappedUnhookSetDirQuota()
 
-	err = gohook.Hook(SetDirQuota, mockSetDirQuotaError, nil)
-	if err == nil {
+	err = gohook.Hook(MountInfo.SetDirQuota, mockSetDirQuotaError, nil)
+	if err != nil {
 		t.Fatal(err.Error())
 	}
 
@@ -240,7 +240,7 @@ func TestTotalFileNumsAndTotalStorageBytes(t *testing.T) {
 		return nil, errors.New("other error")
 	}
 	wrappedUnhookDescribeDirQuota := func() {
-		err := gohook.UnHook(DescribeDirQuota)
+		err := gohook.UnHook(MountInfo.DescribeDirQuota)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -319,7 +319,7 @@ func TestTotalFileNumsAndTotalStorageBytes(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	e := newEACEngine(fakeClient, "check", "fluid")
 
-	err := gohook.Hook(DescribeDirQuota, mockDescribeDirQuotaCommon, nil)
+	err := gohook.Hook(MountInfo.DescribeDirQuota, mockDescribeDirQuotaCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -334,8 +334,8 @@ func TestTotalFileNumsAndTotalStorageBytes(t *testing.T) {
 	}
 	wrappedUnhookDescribeDirQuota()
 
-	err = gohook.Hook(DescribeDirQuota, mockDescribeDirQuotaError, nil)
-	if err == nil {
+	err = gohook.Hook(MountInfo.DescribeDirQuota, mockDescribeDirQuotaError, nil)
+	if err != nil {
 		t.Fatal(err.Error())
 	}
 

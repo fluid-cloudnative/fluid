@@ -35,7 +35,7 @@ func (e *EACEngine) TotalStorageBytes() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	response, err := DescribeDirQuota(mountInfo)
+	response, err := mountInfo.DescribeDirQuota()
 	if err != nil {
 		return 0, err
 	}
@@ -51,7 +51,7 @@ func (e *EACEngine) TotalFileNums() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	response, err := DescribeDirQuota(mountInfo)
+	response, err := mountInfo.DescribeDirQuota()
 	if err != nil {
 		return 0, err
 	}
@@ -78,7 +78,7 @@ func (e *EACEngine) PrepareUFS() (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = SetDirQuota(mountInfo)
+	_, err = mountInfo.SetDirQuota()
 	if err != nil {
 		e.Log.Error(err, "Failed to set dir quota")
 		return err
