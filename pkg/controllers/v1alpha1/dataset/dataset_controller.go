@@ -16,13 +16,15 @@ package dataset
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -138,6 +140,20 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 
 	// 3. Update the phase to NotBoundDatasetPhase
 	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
+		checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
+		if err != nil {
+			ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
+			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
+			return utils.RequeueIfError(err)
+		}
+		if checkReferenceDataset {
+			err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
+			if err != nil {
+				ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
+				return utils.RequeueIfError(err)
+			}
+		}
+
 		dataset := ctx.Dataset.DeepCopy()
 		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
 		if len(dataset.Status.Conditions) == 0 {

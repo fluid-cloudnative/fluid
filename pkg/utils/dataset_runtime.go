@@ -16,8 +16,13 @@ limitations under the License.
 package utils
 
 import (
+	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Category) (index int, runtime *datav1alpha1.Runtime) {
@@ -30,4 +35,32 @@ func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Categ
 		}
 	}
 	return -1, nil
+}
+
+// CreateRuntimeForReferenceDatasetIfNotExist creates runtime for ReferenceDataset
+func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *datav1alpha1.Dataset) (err error) {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		_, err = GetThinRuntime(client,
+			dataset.GetName(),
+			dataset.GetNamespace())
+		// 1. if err is null, which indicates that the runtime exists, then return
+		if err == nil {
+			return nil
+		}
+
+		// 2. If the runtime doesn't exist
+		if IgnoreNotFound(err) == nil {
+			var runtime datav1alpha1.ThinRuntime = datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dataset.Name,
+					Namespace: dataset.Namespace,
+				},
+			}
+			err = client.Create(context.TODO(), &runtime)
+		}
+		return err
+
+	})
+
+	return
 }

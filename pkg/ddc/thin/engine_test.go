@@ -17,6 +17,8 @@
 package thin
 
 import (
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestBuild(t *testing.T) {
@@ -233,7 +234,7 @@ func TestBuildReferenceDatasetEngine(t *testing.T) {
 	}
 }
 
-func TestIsReferenceDatasetRuntime(t *testing.T) {
+func TestCheckReferenceDatasetRuntime(t *testing.T) {
 	tests := []struct {
 		name    string
 		dataset *datav1alpha1.Dataset
@@ -312,7 +313,7 @@ func TestIsReferenceDatasetRuntime(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := fake.NewFakeClientWithScheme(testScheme, tt.dataset, tt.runtime)
 
-			isRef, err := isReferenceDatasetRuntime(fakeClient, tt.runtime)
+			isRef, err := CheckReferenceDatasetRuntime(fakeClient, tt.runtime)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("expect has error %t, but get error %v", tt.wantErr, err)
