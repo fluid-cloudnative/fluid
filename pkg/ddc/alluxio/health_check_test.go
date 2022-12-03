@@ -716,20 +716,6 @@ func TestCheckExistenceOfEngine(t *testing.T) {
 				Replicas: utilpointer.Int32Ptr(2),
 			},
 		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-worker",
-				Namespace: "fluid",
-			},
-			Status: appsv1.StatefulSetStatus{
-				Replicas:        1,
-				ReadyReplicas:   1,
-				CurrentReplicas: 1,
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
-			},
-		},
 	}
 
 	testObjs := []runtime.Object{}
@@ -745,17 +731,6 @@ func TestCheckExistenceOfEngine(t *testing.T) {
 			},
 			Status: appsv1.DaemonSetStatus{
 				NumberUnavailable: 1,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
 				NumberReady:       1,
 				NumberAvailable:   1,
 			},
@@ -879,8 +854,8 @@ func TestCheckExistenceOfEngine(t *testing.T) {
 			engine:              engines[1],
 			expectedErrorNil:    false,
 			expectedRuntimeMasterPhase: datav1alpha1.RuntimePhaseNotReady,
-			expectedRuntimeWorkerPhase: datav1alpha1.RuntimePhaseReady,
-			expectedRuntimeFusePhase: datav1alpha1.RuntimePhaseReady,
+			expectedRuntimeWorkerPhase: datav1alpha1.RuntimePhaseNotReady,
+			expectedRuntimeFusePhase: datav1alpha1.RuntimePhaseNotReady,
 			expectedDatasetPhase: datav1alpha1.FailedDatasetPhase,
 		},
 	}
