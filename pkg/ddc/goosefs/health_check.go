@@ -325,9 +325,3 @@ func (e *GooseFSEngine) checkFuseHealthy() (err error) {
 	}
 	return err
 }
-
-
-// CheckExistenceOfEngine check the engine existed
-func (e *GooseFSEngine) CheckExistenceOfEngine() (err error) {
-	return
-}

@@ -324,17 +324,10 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 	return err
 }
 
-
-// CheckExistenceOfEngine check engine existed
-func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
+// checkExistenceOfMaster check engine existed
+func (e *AlluxioEngine) checkExistenceOfMaster() (err error) {
 
 	master, masterErr := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
-
-	_, workerErr := ctrl.GetWorkersAsStatefulset(e.Client, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-
-	_, fuseErr := e.getDaemonset(e.getFuseDaemonsetName(), e.namespace)
-
-	var condList []data.RuntimeCondition
 
 	if (masterErr != nil && errors.IsNotFound(masterErr)) || *master.Spec.Replicas <= 0 {
 		cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master are not ready.",
@@ -342,43 +335,15 @@ func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
 				e.getMasterName(),
 				e.namespace), corev1.ConditionFalse)
 
-		condList = append(condList, cond)
-	}
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
-	if workerErr != nil && errors.IsNotFound(workerErr) {
-		cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-			fmt.Sprintf("The statefulset %s in %s is not found, please fix it.",
-				e.getWorkerName(),
-				e.namespace), corev1.ConditionFalse)
+			runtime, err := e.getRuntime()
+			if err != nil {
+				return err
+			}
 
-		condList = append(condList, cond)
-	}
+			runtimeToUpdate := runtime.DeepCopy()
 
-	if fuseErr != nil && errors.IsNotFound(fuseErr) {
-		cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The fuses are not ready.",
-			fmt.Sprintf("The daemonset %s in %s is not found, please fix it.",
-				e.getFuseDaemonsetName(),
-				e.namespace), corev1.ConditionFalse)
-
-		condList = append(condList, cond)
-	}
-
-	// no error is notFound and the master replicas is > 0, so the engine is existed
-	if len(condList) == 0 {
-		return nil
-	}
-
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
-
-		runtimeToUpdate := runtime.DeepCopy()
-
-		for _, cond := range condList {
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {
@@ -387,37 +352,32 @@ func (e *AlluxioEngine) CheckExistenceOfEngine() (err error) {
 						cond)
 			}
 
-			switch cond.Type {
-			case data.RuntimeMasterReady:
-				runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
-				e.Log.Error(err, "the master are not ready")
-			case data.RuntimeWorkersReady:
-				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
-				e.Log.Error(err, "the workers are not ready")
-			case data.RuntimeFusesReady:
-				runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
-				e.Log.Error(err, "the fuses are not ready")
+			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
+			//when master is not ready, the worker and fuse should be not ready.
+			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
+			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
+			e.Log.Error(err, "the master are not ready")
+
+			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+				updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+				if updateErr != nil {
+					return updateErr
+				}
+
+				updateErr = e.UpdateDatasetStatus(data.FailedDatasetPhase)
+				if updateErr != nil {
+					e.Log.Error(updateErr, "Failed to update dataset")
+					return updateErr
+				}
 			}
 
-		}
+			return err
+		})
 
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if updateErr != nil {
-				return updateErr
-			}
-
-			updateErr = e.UpdateDatasetStatus(data.FailedDatasetPhase)
-			if updateErr != nil {
-				e.Log.Error(updateErr, "Failed to update dataset")
-				return updateErr
-			}
-		}
-
-		return err
-	})
-
-	//the totalErr promise the sync will return and Requeue
-	totalErr := fmt.Errorf("the engine is not existed %v", err)
-	return totalErr
+		//the totalErr promise the sync will return and Requeue
+		totalErr := fmt.Errorf("the master engine is not existed %v", err)
+		return totalErr
+	}else {
+		return nil
+	}
 }

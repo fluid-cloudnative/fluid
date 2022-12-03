@@ -35,11 +35,6 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
 	defer t.setTimeOfLastSync()
 
-	err = t.Implement.CheckExistenceOfEngine()
-	if err != nil {
-		return
-	}
-
 	err = t.Implement.SyncMetadata()
 	if err != nil {
 		return

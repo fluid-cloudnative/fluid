@@ -151,8 +151,3 @@ func (e *JindoEngine) checkFuseHealthy() (err error) {
 
 	return
 }
-
-// CheckExistenceOfEngine check the engine existed
-func (e *JindoEngine) CheckExistenceOfEngine() (err error) {
-	return
-}

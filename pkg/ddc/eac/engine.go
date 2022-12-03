@@ -238,7 +238,3 @@ func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	panic("implement me")
 }
 
-func (e *EACEngine) CheckExistenceOfEngine() (err error) {
-	//TODO implement me
-	panic("implement me")
-}

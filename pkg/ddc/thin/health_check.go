@@ -215,8 +215,3 @@ func (t *ThinEngine) checkFuseHealthy() (err error) {
 	}
 	return err
 }
-
-// CheckExistenceOfEngine check the engine existed
-func (t *ThinEngine) CheckExistenceOfEngine() (err error) {
-	return
-}
