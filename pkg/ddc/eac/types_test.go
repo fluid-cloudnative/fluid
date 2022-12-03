@@ -1,0 +1,80 @@
+/*
+Copyright 2022 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package eac
+
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"testing"
+)
+
+func TestGetTiredStoreLevel0(t *testing.T) {
+	testCases := map[string]struct {
+		name            string
+		namespace       string
+		eac             *EAC
+		wantPath        string
+		wantType        string
+		wantQuotaString string
+		wantQuota       resource.Quantity
+	}{
+		"test getTiredStoreLevel0Path case 1": {
+			name:      "eac-01",
+			namespace: "default",
+			eac: &EAC{
+				Worker: Worker{
+					TieredStore: TieredStore{
+						Levels: []Level{
+							{
+								Level: 0,
+								Path:  "/mnt/demo/data",
+								Type:  string(common.VolumeTypeEmptyDir),
+								Quota: "1GB",
+							},
+						},
+					},
+				},
+			},
+			wantPath:        "/mnt/demo/data",
+			wantType:        string(common.VolumeTypeEmptyDir),
+			wantQuotaString: "1GB",
+			wantQuota:       resource.MustParse("1G"),
+		},
+	}
+
+	for k, item := range testCases {
+		got := item.eac.getTiredStoreLevel0Path()
+		if got != item.wantPath {
+			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, got)
+		}
+
+		gott := item.eac.getTiredStoreLevel0Type()
+		if gott != item.wantType {
+			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantType, gott)
+		}
+
+		gottt := item.eac.getTiredStoreLevel0QuotaString()
+		if gottt != item.wantQuotaString {
+			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantQuotaString, gottt)
+		}
+
+		gotttt := item.eac.getTiredStoreLevel0Quota()
+		if !gotttt.Equal(item.wantQuota) {
+			t.Errorf("%s check failure, want:%v,got:%v", k, item.wantQuota, gotttt)
+		}
+	}
+}
