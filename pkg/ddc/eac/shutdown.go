@@ -77,13 +77,13 @@ func (e *EACEngine) cleanupCache() (err error) {
 	configMapName := e.getConfigmapName()
 	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, runtime.Namespace)
 	if err != nil {
-		if err != nil {
-			if utils.IgnoreNotFound(err) == nil {
-				return nil
-			} else {
-				return errors.Wrap(err, "GetConfigMapByName fail when cleanupCache")
-			}
-		}
+		return errors.Wrap(err, "GetConfigMapByName fail when cleanupCache")
+	}
+
+	// The value configMap is not found
+	if configMap == nil {
+		e.Log.Info("value configMap not found, there might be some uncleaned up cache", "valueConfigMapName", configMapName)
+		return nil
 	}
 
 	cacheDir, cacheType, err := parseCacheDirFromConfigMap(configMap)
