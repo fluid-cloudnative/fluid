@@ -66,6 +66,12 @@ func (e *EACEngine) getMasterPodInfo() (podName string, containerName string) {
 	return
 }
 
+func (e *EACEngine) getWorkerPodInfo() (podName string, containerName string) {
+	podName = e.getWorkerName() + "-0"
+	containerName = "eac-worker"
+	return
+}
+
 func (e *EACEngine) getDaemonset(name string, namespace string) (daemonset *appsv1.DaemonSet, err error) {
 	daemonset = &appsv1.DaemonSet{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{

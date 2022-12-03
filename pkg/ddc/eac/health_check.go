@@ -65,7 +65,7 @@ func (e *EACEngine) CheckRuntimeHealthy() (err error) {
 		return
 	}
 
-	err = e.syncWorkersEndpoints()
+	_, err = e.syncWorkersEndpoints()
 	if err != nil {
 		e.Log.Error(err, "The worker endpoints is not healthy")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)

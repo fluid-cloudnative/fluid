@@ -106,6 +106,18 @@ func (e *EACEngine) setupDisabledWorkers(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 
+	desireReplicas := runtime.Replicas() // 0
+	if *workers.Spec.Replicas != desireReplicas {
+		workerToUpdate := workers.DeepCopy()
+		workerToUpdate.Spec.Replicas = &desireReplicas
+		err = e.Client.Update(context.TODO(), workerToUpdate)
+		if err != nil {
+			return err
+		}
+	} else {
+		e.Log.V(1).Info("Nothing to do for syncing")
+	}
+
 	statusToUpdate := runtime.GetStatus()
 	statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
 
@@ -143,11 +155,7 @@ func (e *EACEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		if runtimeToUpdate.Replicas() != 0 {
-			ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		} else {
-			ready, err = e.checkDisabledWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		}
+		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}
@@ -157,53 +165,20 @@ func (e *EACEngine) CheckWorkersReady() (ready bool, err error) {
 	return
 }
 
-func (e *EACEngine) checkDisabledWorkersReady(runtime base.RuntimeInterface,
-	currentStatus datav1alpha1.RuntimeStatus,
-	workers *appsv1.StatefulSet) (ready bool, err error) {
-	var (
-		phase datav1alpha1.RuntimePhase     = datav1alpha1.RuntimePhaseReady
-		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
-	)
-	ready = true
-
-	statusToUpdate := runtime.GetStatus()
-	statusToUpdate.WorkerPhase = phase
-	if len(statusToUpdate.Conditions) == 0 {
-		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-	}
-	cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-		"The workers are ready.", corev1.ConditionTrue)
-	statusToUpdate.Conditions =
-		utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-			cond)
-
-	if !reflect.DeepEqual(currentStatus, statusToUpdate) {
-		err = e.Client.Status().Update(context.TODO(), runtime)
-	}
-	return
-}
-
-func (e *EACEngine) syncWorkersEndpoints() (err error) {
-	configMap, err := kubeclient.GetConfigmapByName(e.Client, e.getWorkersEndpointsConfigmapName(), e.namespace)
-	if err != nil {
-		return err
-	}
-	if configMap == nil {
-		return fmt.Errorf("fail to find ConfigMap name:%s, namespace:%s ", e.getWorkersEndpointsConfigmapName(), e.namespace)
-	}
-
+func (e *EACEngine) syncWorkersEndpoints() (count int, err error) {
 	workerPods, err := e.getWorkerPods()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
+	_, containerName := e.getWorkerPodInfo()
 	workersEndpoints := WorkerEndPoints{}
 	for _, pod := range workerPods {
 		if !podutil.IsPodReady(&pod) {
 			continue
 		}
 		for _, container := range pod.Spec.Containers {
-			if container.Name == "eac-worker" {
+			if container.Name == containerName {
 				for _, port := range container.Ports {
 					if port.Name == "rpc" {
 						workersEndpoints.ContainerEndPoints = append(workersEndpoints.ContainerEndPoints, pod.Status.PodIP+":"+strconv.Itoa(int(port.ContainerPort)))
@@ -212,10 +187,18 @@ func (e *EACEngine) syncWorkersEndpoints() (err error) {
 			}
 		}
 	}
+	count = len(workersEndpoints.ContainerEndPoints)
 
 	b, _ := json.Marshal(workersEndpoints)
 	e.Log.Info("Sync worker endpoints", "worker-endpoints", string(b))
 
+	configMap, err := kubeclient.GetConfigmapByName(e.Client, e.getWorkersEndpointsConfigmapName(), e.namespace)
+	if err != nil {
+		return count, err
+	}
+	if configMap == nil {
+		return count, fmt.Errorf("fail to find ConfigMap name:%s, namespace:%s ", e.getWorkersEndpointsConfigmapName(), e.namespace)
+	}
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		configMapToUpdate := configMap.DeepCopy()
 		configMapToUpdate.Data[WorkerEndpointsDataName] = string(b)
@@ -229,8 +212,8 @@ func (e *EACEngine) syncWorkersEndpoints() (err error) {
 	})
 
 	if err != nil {
-		return err
+		return count, err
 	}
 
-	return nil
+	return count, nil
 }
