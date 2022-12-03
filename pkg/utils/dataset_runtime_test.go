@@ -1,10 +1,9 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +18,9 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestGetRuntimeByCategory(t *testing.T) {
@@ -74,4 +76,57 @@ func mockThreeRuntimes(index int, category common.Category) []datav1alpha1.Runti
 	}
 
 	return list
+}
+
+func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
+
+	thinRuntimes := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "ThinRuntimeExists",
+				Namespace: "default",
+			},
+		},
+	}
+	objs := []runtime.Object{}
+	for _, thinRuntime := range thinRuntimes {
+		objs = append(objs, thinRuntime.DeepCopy())
+	}
+	datasetScheme := runtime.NewScheme()
+	_ = datav1alpha1.AddToScheme(datasetScheme)
+	fakeClient := fake.NewFakeClientWithScheme(datasetScheme, objs...)
+
+	tests := []struct {
+		name    string
+		dataset *datav1alpha1.Dataset
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "ThinRuntimeExists",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeExists",
+					Namespace: "default",
+				},
+			},
+			wantErr: false,
+		}, {
+			name: "ThinRuntimeDoesnotExist",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeDoesnotExist",
+					Namespace: "default",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CreateRuntimeForReferenceDatasetIfNotExist(fakeClient, tt.dataset); (err != nil) != tt.wantErr {
+				t.Errorf("CreateRuntimeForReferenceDatasetIfNotExist() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
