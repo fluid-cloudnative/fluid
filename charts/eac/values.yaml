@@ -1,0 +1,92 @@
+# Default values for eac.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: [name: regcred]
+nodeSelector: {}
+tolerations: []
+EnableNoneAliyunOS: false
+
+initAlifuse:
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
+  imageTag: update
+  imagePullPolicy: Always
+
+worker:
+  enabled: true
+  count: 0
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img
+  imageTag: update
+  imagePullPolicy: Always
+  option: cache_media=/dev/shm,cache_capacity_gb=1
+  hostNetwork: false
+  nodeSelector: {}
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  port:
+    rpc: 14555
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+
+fuse:
+  criticalPod: false
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  imageTag: update
+  imagePullPolicy: Always
+  option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
+  mountPoint:
+  # eac will mount mountPoint on /eac/eac-fuse in container which will be shared at hostMountPath/eac-fuse on host
+  hostMountPath: /test-mnt/eac-mnt/charts
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  hostNetwork: false
+  nodeSelector: {}
+  port:
+    monitor:
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+
+master:
+  enabled: true
+  count: 1
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  imageTag: update
+  imagePullPolicy: Always
+  option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
+  mountPoint:
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  hostNetwork: false
+  nodeSelector: {}
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
