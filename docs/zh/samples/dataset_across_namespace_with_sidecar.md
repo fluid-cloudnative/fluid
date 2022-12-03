@@ -1,7 +1,7 @@
 # 示例 - Dataset缓存跨Namespace访问(Sidecar机制)
 本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
 - Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref 和 ThinRuntime demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+- Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
  
 ## 前提条件
 在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
@@ -69,12 +69,7 @@ spec:
   mounts:
     - mountPoint: dataset://default/phy
       name: fusedemo
----
-apiVersion: data.fluid.io/v1alpha1
-kind: ThinRuntime
-metadata:
-  name: refdemo
-spec:
+      path: "/"
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref
