@@ -126,6 +126,15 @@ type cacheStates struct {
 	// nonCacheable     string
 }
 
+type MountInfo struct {
+	MountPoint      string
+	ServiceAddr     string
+	FileSystemId    string
+	DirPath         string
+	AccessKeyID     string
+	AccessKeySecret string
+}
+
 func (value *EAC) getTiredStoreLevel0Path() (path string) {
 	for _, level := range value.Worker.TieredStore.Levels {
 		if level.Level == 0 {

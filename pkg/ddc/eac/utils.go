@@ -277,15 +277,6 @@ func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cache
 	return "", "", errors.New("fail to parseCacheDirFromConfigMap")
 }
 
-type MountInfo struct {
-	MountPoint      string
-	ServiceAddr     string
-	FileSystemId    string
-	DirPath         string
-	AccessKeyID     string
-	AccessKeySecret string
-}
-
 func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {

@@ -22,7 +22,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
 )
 
-func (e *EACEngine) SetDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaResponse, err error) {
+func SetDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 
@@ -44,12 +44,11 @@ func (e *EACEngine) SetDirQuota(mountInfo MountInfo) (response *nas.SetDirQuotaR
 	if err != nil {
 		return nil, err
 	}
-	e.Log.Info("SetDirQuota success", "ServiceAddr", serviceAddr, "FileSystemId", fileSystemId, "DirPath", dirPath, "Response", response)
 
 	return
 }
 
-func (e *EACEngine) DescribeDirQuota(mountInfo MountInfo) (response *nas.DescribeDirQuotasResponse, err error) {
+func DescribeDirQuota(mountInfo MountInfo) (response *nas.DescribeDirQuotasResponse, err error) {
 	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
 	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
 
@@ -69,7 +68,6 @@ func (e *EACEngine) DescribeDirQuota(mountInfo MountInfo) (response *nas.Describ
 	if err != nil {
 		return nil, err
 	}
-	e.Log.Info("DescribeDirQuota success", "ServiceAddr", serviceAddr, "FileSystemId", fileSystemId, "DirPath", dirPath, "Response", response)
 
 	return
 }
