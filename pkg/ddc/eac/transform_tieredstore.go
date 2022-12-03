@@ -25,37 +25,10 @@ import (
 	"strings"
 )
 
-//const (
-//	EACDefaultPageCapacity    = 32000
-//	EACDefaultJournalCapacity = 16000
-//	EACDefaultFileCapacity    = 201649
-//	EACDefaultVolumeCapacity  = 1
-//
-//	EACPageSize    = 0
-//	EACJournalSize = 0
-//	EACFileSize    = 0
-//	EACVolumeSize  = 0
-//)
-
 func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 	value *EAC) error {
-	// TODO: set master tiered store according to master properties
-	//eacPageCapacity := EACDefaultPageCapacity
-	//eacJournalCapacity := EACDefaultJournalCapacity
-	//eacFileCapacity := EACDefaultFileCapacity
-	//eacVolumeCapacity := EACDefaultVolumeCapacity
-	//
-	//if val, ok := runtime.Spec.Master.Properties["g_unas_ShmPageCapacity"]; ok {
-	//	eacPageCapacity, _ = strconv.Atoi(val)
-	//}
-	//if val, ok := runtime.Spec.Master.Properties["g_unas_ShmJournalCapacity"]; ok {
-	//	eacJournalCapacity, _ = strconv.Atoi(val)
-	//}
-	//if val, ok := runtime.Spec.Master.Properties["g_unas_ShmFileCapacity"]; ok {
-	//	eacFileCapacity, _ = strconv.Atoi(val)
-	//}
-	//
-	//eacShmSize := eacPageCapacity*EACPageSize + eacJournalCapacity*EACJournalSize + eacFileCapacity*EACFileSize + eacVolumeCapacity*EACVolumeSize
+	// TODO: set master tiered store quota according to master properties
+	// TODO: allow user to config tiered store type
 
 	var levels []Level
 	levels = append(levels, Level{
@@ -63,7 +36,7 @@ func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 		Type:       string(common.VolumeTypeEmptyDir),
 		Path:       "/dev/shm",
 		MediumType: string(common.Memory),
-		// Quota:      utils.TransformQuantityToEACUnit(resource.NewQuantity(int64(eacShmSize), resource.DecimalSI)),
+		// Quota:
 	})
 	value.Master.TieredStore.Levels = levels
 
@@ -73,22 +46,7 @@ func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
 	value *EAC) error {
 	// TODO: set fuse tiered store according to fuse properties
-	//eacPageCapacity := EACDefaultPageCapacity
-	//eacJournalCapacity := EACDefaultJournalCapacity
-	//eacFileCapacity := EACDefaultFileCapacity
-	//eacVolumeCapacity := EACDefaultVolumeCapacity
-	//
-	//if val, ok := runtime.Spec.Fuse.Properties["g_unas_ShmPageCapacity"]; ok {
-	//	eacPageCapacity, _ = strconv.Atoi(val)
-	//}
-	//if val, ok := runtime.Spec.Fuse.Properties["g_unas_ShmJournalCapacity"]; ok {
-	//	eacJournalCapacity, _ = strconv.Atoi(val)
-	//}
-	//if val, ok := runtime.Spec.Fuse.Properties["g_unas_ShmFileCapacity"]; ok {
-	//	eacFileCapacity, _ = strconv.Atoi(val)
-	//}
-	//
-	//eacShmSize := eacPageCapacity*EACPageSize + eacJournalCapacity*EACJournalSize + eacFileCapacity*EACFileSize + eacVolumeCapacity*EACVolumeSize
+	// TODO: allow user to config tiered store type
 
 	var levels []Level
 	levels = append(levels, Level{
@@ -96,7 +54,7 @@ func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
 		Type:       string(common.VolumeTypeEmptyDir),
 		Path:       "/dev/shm",
 		MediumType: string(common.Memory),
-		// Quota:      utils.TransformQuantityToEACUnit(resource.NewQuantity(int64(eacShmSize), resource.DecimalSI)),
+		// Quota:
 	})
 	value.Fuse.TieredStore.Levels = levels
 
