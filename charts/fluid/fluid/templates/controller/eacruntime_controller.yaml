@@ -1,0 +1,87 @@
+{{ if .Values.runtime.eac.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eacruntime-controller
+  namespace: fluid-system
+  labels:
+    control-plane: eacruntime-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: eacruntime-controller
+  replicas: {{ .Values.runtime.eac.replicas }}
+  template:
+    metadata:
+      labels:
+        control-plane: eacruntime-controller
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: eacruntime-controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
+      tolerations:
+      - operator: Exists
+      #hostNetwork: true
+      containers:
+      - image: "{{ .Values.runtime.eac.controller.image }}"
+        imagePullPolicy: {{ .Values.runtime.eac.controller.imagePullPolicy }}
+        name: manager
+        args:
+          - --development=true
+          - --pprof-addr=:6060
+          - --enable-leader-election
+        command: ["eacruntime-controller", "start"]
+        env:
+          {{- if .Values.runtime.mountRoot }}
+          - name: MOUNT_ROOT
+            value: {{ .Values.runtime.mountRoot | quote }}
+          {{- end }}
+          {{- if .Values.runtime.criticalFusePod }}
+          - name: CRITICAL_FUSE_POD
+            value: {{ ternary "true" "false" (semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version) | quote }}
+          {{- end }}
+          {{- if .Values.runtime.syncRetryDuration }}
+          - name: FLUID_SYNC_RETRY_DURATION
+            value: {{ .Values.runtime.syncRetryDuration | quote }}
+          {{- end }}
+          {{- if .Values.runtime.eac.init.image }}
+          - name: EACInitFuseImageEnv
+            value: {{ .Values.runtime.eac.init.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.eac.master.image }}
+          - name: EACMasterImageEnv
+            value: {{ .Values.runtime.eac.master.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.eac.worker.image }}
+          - name: EACWorkerImageEnv
+            value: {{ .Values.runtime.eac.worker.image | quote }}
+          {{- end }}
+          {{- if .Values.runtime.eac.fuse.image }}
+          - name: EACFuseImageEnv
+            value: {{ .Values.runtime.eac.fuse.image | quote }}
+          {{- end }}
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 1536Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10
+{{- end }}
