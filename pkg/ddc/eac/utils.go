@@ -133,10 +133,9 @@ func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	var value EAC
 	if v, ok := configMap.Data["data"]; ok {
 		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
-			return nil, err
+			return ports, err
 		}
 		ports = append(ports, value.Worker.Port.Rpc)
-		ports = append(ports, value.Fuse.Port.Monitor)
 	}
 	return ports, nil
 }

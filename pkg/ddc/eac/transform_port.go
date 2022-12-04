@@ -89,23 +89,6 @@ func (e *EACEngine) allocateWorkerPorts(value *EAC) error {
 }
 
 func (e *EACEngine) allocateFusePorts(value *EAC) error {
-	expectedPortNum := 1
-
-	allocator, err := portallocator.GetRuntimePortAllocator()
-	if err != nil {
-		e.Log.Error(err, "can't get runtime port allocator")
-		return err
-	}
-
-	allocatedPorts, err := allocator.GetAvailablePorts(expectedPortNum)
-	if err != nil {
-		e.Log.Error(err, "can't get available ports", "expected port num", expectedPortNum)
-		return err
-	}
-
-	index := 0
-	value.Fuse.Port.Monitor = allocatedPorts[index]
-
 	return nil
 }
 
@@ -117,5 +100,4 @@ func (e *EACEngine) generateWorkerStaticPorts(value *EAC) {
 }
 
 func (e *EACEngine) generateFuseStaticPorts(value *EAC) {
-	value.Fuse.Port.Monitor = 15000
 }
