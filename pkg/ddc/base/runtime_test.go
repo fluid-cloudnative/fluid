@@ -925,21 +925,46 @@ func TestGetRuntimeInfo(t *testing.T) {
 			},
 		},
 	}
+
+	eacRuntime := v1alpha1.EACRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "eac",
+			Namespace: "default",
+		},
+	}
+	dataEAC := v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "eac",
+			Namespace: "default",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "eac",
+					Namespace: "default",
+					Type:      common.EACRuntime,
+				},
+			},
+		},
+	}
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EACRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
 	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
+	eacRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
 	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime, &dataJuice)
+	eacRuntimeObjs = append(eacRuntimeObjs, &eacRuntime, &dataEAC)
 	type args struct {
 		client    client.Client
 		name      string
@@ -1057,6 +1082,44 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "juice-fake",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "eac_test",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				name:      "eac",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "eac",
+				namespace:   "default",
+				runtimeType: common.EACRuntime,
+				// fuse global is set to true since v0.7.0
+				fuse: Fuse{
+					Global:      true,
+					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "eac_test_err",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				name:      "eac-fake",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "eac-fake",
+				namespace:   "default",
+				runtimeType: common.EACRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,

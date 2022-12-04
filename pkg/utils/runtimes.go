@@ -122,6 +122,20 @@ func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRun
 	return &runtime, nil
 }
 
+// GetEACRuntime gets EAC Runtime object with the given name and namespace
+func GetEACRuntime(client client.Client, name, namespace string) (*data.EACRuntime, error) {
+
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var runtime data.EACRuntime
+	if err := client.Get(context.TODO(), key, &runtime); err != nil {
+		return nil, err
+	}
+	return &runtime, nil
+}
+
 func GetThinRuntimeProfile(client client.Client, name string) (*data.ThinRuntimeProfile, error) {
 	key := types.NamespacedName{
 		Name: name,

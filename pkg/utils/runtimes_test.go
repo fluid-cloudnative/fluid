@@ -397,3 +397,62 @@ func TestGetThinRuntimeProfile(t *testing.T) {
 		}
 	}
 }
+
+func TestGetEACRuntime(t *testing.T) {
+	runtimeNamespace := "default"
+	runtimeName := "eac-runtime-1"
+	eacRuntime := &datav1alpha1.EACRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: runtimeNamespace,
+		},
+	}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, eacRuntime)
+
+	fakeClient := fake.NewFakeClientWithScheme(s, eacRuntime)
+
+	tests := []struct {
+		name      string
+		namespace string
+		wantName  string
+		notFound  bool
+	}{
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace,
+			wantName:  runtimeName,
+			notFound:  false,
+		},
+		{
+			name:      runtimeName + "not-exist",
+			namespace: runtimeNamespace,
+			wantName:  "",
+			notFound:  true,
+		},
+		{
+			name:      runtimeName,
+			namespace: runtimeNamespace + "not-exist",
+			wantName:  "",
+			notFound:  true,
+		},
+	}
+
+	for k, item := range tests {
+		gotRuntime, err := GetEACRuntime(fakeClient, item.name, item.namespace)
+		if item.notFound {
+			if err == nil || gotRuntime != nil {
+				t.Errorf("%d check failure, want to got nil", k)
+			} else {
+				if !apierrs.IsNotFound(err) {
+					t.Errorf("%d check failure, want notFound err but got %s", k, err)
+				}
+			}
+		} else {
+			if gotRuntime.Name != item.wantName {
+				t.Errorf("%d check failure, got EACRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+			}
+		}
+	}
+}
