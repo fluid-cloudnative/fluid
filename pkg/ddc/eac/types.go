@@ -31,7 +31,13 @@ type EAC struct {
 	Worker           Worker          `yaml:"worker"`
 	Fuse             Fuse            `yaml:"fuse"`
 	InitFuse         InitFuse        `yaml:"initFuse"`
+	OSAdvise         OSAdvise        `yaml:"osAdvise"`
 	Tolerations      []v1.Toleration `yaml:"tolerations,omitempty"`
+}
+
+type OSAdvise struct {
+	OSVersion string `yaml:"osVersion,omitempty"`
+	Enabled   bool   `yaml:"enabled"`
 }
 
 type Master struct {

@@ -59,6 +59,7 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 		return
 	}
 
+	e.transformOSAdvice(runtime, value)
 	e.transformPlacementMode(dataset, value)
 	e.transformTolerations(dataset, value)
 	return
@@ -230,6 +231,12 @@ func (e *EACEngine) transformInitFuse(runtime *datav1alpha1.EACRuntime,
 	value.InitFuse.Image, value.InitFuse.ImageTag, value.InitFuse.ImagePullPolicy = e.parseInitFuseImage(image, tag, imagePullPolicy)
 
 	return nil
+}
+
+func (e *EACEngine) transformOSAdvice(runtime *datav1alpha1.EACRuntime,
+	value *EAC) {
+	value.OSAdvise.OSVersion = runtime.Spec.OSAdvise.OSVersion
+	value.OSAdvise.Enabled = runtime.Spec.OSAdvise.Enabled
 }
 
 func (e *EACEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *EAC) {

@@ -102,6 +102,9 @@ initFuse:
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
+osAdvise:
+  osVersion: centos
+  enabled: true
 `
 
 var workerEndpointsConfigMapData = `
