@@ -201,8 +201,6 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 
 func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, accessKeySecret string, err error) {
 	for _, encryptOption := range mount.EncryptOptions {
-		e.Log.Info("going to get ", "namespace", e.namespace, "name", e.name, "encryptOption.Name", encryptOption.Name)
-
 		var result *string
 		switch encryptOption.Name {
 		case AccessKeyIDName:
@@ -224,7 +222,6 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 				"secretName", secretKeyRef.Name)
 			return "", "", err
 		}
-		e.Log.Info("get the secret", "namespace", e.namespace, "name", e.name, "secretName", secretKeyRef.Name)
 
 		value, ok := secret.Data[secretKeyRef.Key]
 		if !ok {
@@ -232,7 +229,6 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 			return "", "", err
 		}
 		*result = string(value)
-		e.Log.Info("get the secret result", "namespace", e.namespace, "name", e.name, "secretName", secretKeyRef.Name, "key", secretKeyRef.Key, "result", *result)
 	}
 
 	return
