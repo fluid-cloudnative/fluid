@@ -770,7 +770,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath || info.AccessKeyID != info.AccessKeyID || info.AccessKeySecret != te.AccessKeySecret {
+		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath || info.AccessKeyID != te.AccessKeyID || info.AccessKeySecret != te.AccessKeySecret {
 			t.Errorf("fail to exec func")
 		}
 

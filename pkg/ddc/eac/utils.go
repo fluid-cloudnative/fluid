@@ -205,10 +205,8 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 		switch encryptOption.Name {
 		case AccessKeyIDName:
 			result = &accessKeyID
-			break
 		case AccessKeySecretName:
 			result = &accessKeySecret
-			break
 		default:
 			continue
 		}

@@ -21,7 +21,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"time"
 )
 
 // The value yaml file
@@ -108,11 +107,11 @@ type cacheHitStates struct {
 	remoteThroughputRatio string
 	cacheThroughputRatio  string
 
-	bytesReadLocal  int64
-	bytesReadRemote int64
-	bytesReadUfsAll int64
+	//bytesReadLocal int64
+	//bytesReadRemote int64
+	//bytesReadUfsAll int64
 
-	timestamp time.Time
+	//timestamp time.Time
 }
 
 type cacheStates struct {

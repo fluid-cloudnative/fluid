@@ -86,10 +86,7 @@ func (e *EACEngine) CheckRuntimeReady() (ready bool) {
 			readyCount++
 		}
 	}
-	if readyCount > 0 {
-		return true
-	}
-	return false
+	return readyCount > 0
 }
 
 func (e *EACEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
