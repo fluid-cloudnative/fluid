@@ -114,8 +114,6 @@ spec:
               mountPath: /etc/localtime
             - name: eac-sock
               mountPath: /var/run/eac
-            - name: eac-conn
-              mountPath: /sys/fs/alifuse/connections
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -136,6 +134,4 @@ spec:
             path: /etc/os-release
             type: FileOrCreate
         - name: eac-sock
-          emptyDir: {}
-        - name: eac-conn
           emptyDir: {}
