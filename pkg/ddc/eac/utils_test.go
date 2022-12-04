@@ -628,20 +628,20 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
-								Name: AccessKeyIDName,
+								Name: "eac.nas.accessKeyId",
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "check",
-										Key:  "id",
+										Name: "mysecret",
+										Key:  "eac.nas.accessKeyId",
 									},
 								},
 							},
 							{
-								Name: AccessKeySecretName,
+								Name: "eac.nas.accessKeySecret",
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "check",
-										Key:  "secret",
+										Name: "mysecret",
+										Key:  "eac.nas.accessKeySecret",
 									},
 								},
 							},
@@ -701,12 +701,12 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 	secretInputs := []corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "check",
+				Name:      "mysecret",
 				Namespace: "fluid",
 			},
 			Data: map[string][]byte{
-				"id":     []byte("123"),
-				"secret": []byte("321"),
+				"eac.nas.accessKeyId":     []byte("123"),
+				"eac.nas.accessKeySecret": []byte("321"),
 			},
 		},
 	}

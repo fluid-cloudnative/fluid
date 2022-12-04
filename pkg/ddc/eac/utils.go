@@ -201,6 +201,20 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 
 func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, accessKeySecret string, err error) {
 	for _, encryptOption := range mount.EncryptOptions {
+		e.Log.Info("going to get ", "namespace", e.namespace, "name", e.name, "encryptOption.Name", encryptOption.Name)
+
+		var result *string
+		switch encryptOption.Name {
+		case AccessKeyIDName:
+			result = &accessKeyID
+			break
+		case AccessKeySecretName:
+			result = &accessKeySecret
+			break
+		default:
+			continue
+		}
+
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 		secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 		if err != nil {
@@ -210,23 +224,15 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 				"secretName", secretKeyRef.Name)
 			return "", "", err
 		}
+		e.Log.Info("get the secret", "namespace", e.namespace, "name", e.name, "secretName", secretKeyRef.Name)
 
 		value, ok := secret.Data[secretKeyRef.Key]
 		if !ok {
 			err = fmt.Errorf("can't get %s from secret %s namespace %s", secretKeyRef.Key, secretKeyRef.Name, e.namespace)
 			return "", "", err
 		}
-
-		switch encryptOption.Name {
-		case AccessKeyIDName:
-			accessKeyID = string(value)
-			break
-		case AccessKeySecretName:
-			accessKeySecret = string(value)
-			break
-		default:
-			break
-		}
+		*result = string(value)
+		e.Log.Info("get the secret result", "namespace", e.namespace, "name", e.name, "secretName", secretKeyRef.Name, "key", secretKeyRef.Key, "result", *result)
 	}
 
 	return
