@@ -27,6 +27,15 @@ import (
 func (e JindoFSxEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		if runtime.Spec.Worker.Disabled {
+			e.Log.Info("Skip syncing replicas for worker when it's disabled")
+			return nil
+		}
+
 		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 		if err != nil {
@@ -37,10 +46,6 @@ func (e JindoFSxEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			return err
 		}
 
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
 		runtimeToUpdate := runtime.DeepCopy()
 		// err = e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)

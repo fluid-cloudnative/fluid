@@ -164,6 +164,41 @@ func TestSyncReplicas(t *testing.T) {
 				WorkerPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
 			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "deprecated",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Replicas: 3, // 2
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CurrentWorkerNumberScheduled: 0,
+				CurrentMasterNumberScheduled: 0, // 0
+				CurrentFuseNumberScheduled:   0,
+				DesiredMasterNumberScheduled: 0,
+				DesiredWorkerNumberScheduled: 0,
+				DesiredFuseNumberScheduled:   0,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "disabled",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Replicas: 3, // 2
+				Worker: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: true,
+				},
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CurrentWorkerNumberScheduled: 0,
+				CurrentMasterNumberScheduled: 0, // 0
+				CurrentFuseNumberScheduled:   0,
+				DesiredMasterNumberScheduled: 0,
+				DesiredWorkerNumberScheduled: 0,
+				DesiredFuseNumberScheduled:   0,
+			},
 		},
 	}
 	workersInputs := []*appsv1.StatefulSet{
@@ -286,6 +321,22 @@ func TestSyncReplicas(t *testing.T) {
 			isErr:          false,
 			condtionLength: 0,
 		}, {
+			testName:       "disabled",
+			name:           "disabled",
+			namespace:      "fluid",
+			Type:           "",
+			isErr:          false,
+			condtionLength: 0,
+			deprecated:     false,
+		}, {
+			testName:       "notFound",
+			name:           "notFound",
+			namespace:      "fluid",
+			Type:           "",
+			isErr:          true,
+			condtionLength: 0,
+			deprecated:     false,
+		}, {
 			testName:       "deprecated",
 			name:           "deprecated",
 			namespace:      "fluid",
@@ -302,12 +353,15 @@ func TestSyncReplicas(t *testing.T) {
 			Recorder: record.NewFakeRecorder(300),
 		})
 		if err != nil {
+			if testCase.isErr {
+				continue
+			}
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 		rt, _ := engine.getRuntime()
 		found := false
 		if testCase.deprecated {
-			break
+			continue
 		}
 
 		for _, cond := range rt.Status.Conditions {
