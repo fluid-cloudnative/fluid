@@ -85,28 +85,6 @@ def createDatasetAndRuntime():
 
     print("Created alluxioruntime.")
 
-def patchDatasetStatus():
-    api = client.CustomObjectsApi()
-
-    resource = api.get_namespaced_custom_object_status(
-            group="data.fluid.io",
-            version="v1alpha1",
-            name="hbase",
-            namespace="default",
-            plural="datasets"
-        )
-
-    resource['status']['cacheStates']['cacheCapacity'] = '5.00GiB'
-    api.replace_namespaced_custom_object_status(
-        group="data.fluid.io",
-        version="v1alpha1",
-        name="hbase",
-        namespace="default",
-        plural="datasets",
-        body=resource
-    )
-    print(resource)
-
 
 def checkDatasetBound():
     api = client.CustomObjectsApi()
@@ -148,28 +126,6 @@ def checkVolumeResourcesReady():
 
         print("PersistentVolume & PersistentVolumeClaim Ready.")
         break
-
-
-def checkRuntimePodMetadata():
-    while True:
-        try:
-            master_pod = client.CoreV1Api().read_namespaced_pod(name="hbase-master-0", namespace="default")
-            if master_pod.metadata.labels["foo"] != "bar2" or master_pod.metadata.labels["test1"] != "master-value":
-                print("failed to add labels to master pod")
-                break
-
-            worker_pod = client.CoreV1Api().read_namespaced_pod(name="hbase-worker-0", namespace="default")
-            if worker_pod.metadata.labels["foo"] != "bar2" or worker_pod.metadata.labels["test1"] != "worker-value":
-                print("failed to add labels to worker pod")
-                break
-
-            print("checkRuntimePodMetadata done")
-            break
-
-        except client.exceptions.ApiException as e:
-            if e.status == 404:
-                time.sleep(1)
-                continue
 
 
 def createDataReadJob():
@@ -266,16 +222,12 @@ def main():
     # config.load_kube_config()
     config.load_incluster_config()
 
-
     createDatasetAndRuntime()
     checkDatasetBound()
     checkVolumeResourcesReady()
-    # checkRuntimePodMetadata()
     createDataReadJob()
     checkDataReadJobStatus()
     cleanUp()
-
-    # patchDatasetStatus()
 
 
 if __name__ == '__main__':
