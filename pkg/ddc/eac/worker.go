@@ -23,11 +23,8 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -89,55 +86,12 @@ func (e *EACEngine) SetupWorkers() (err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		if runtimeToUpdate.Replicas() != 0 {
-			return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		} else {
-			return e.setupDisabledWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		}
+		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to setup workers", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return err
 	}
-	return
-}
-
-func (e *EACEngine) setupDisabledWorkers(runtime base.RuntimeInterface,
-	currentStatus datav1alpha1.RuntimeStatus,
-	workers *appsv1.StatefulSet) (err error) {
-
-	desireReplicas := runtime.Replicas() // 0
-	if *workers.Spec.Replicas != desireReplicas {
-		workerToUpdate := workers.DeepCopy()
-		workerToUpdate.Spec.Replicas = &desireReplicas
-		err = e.Client.Update(context.TODO(), workerToUpdate)
-		if err != nil {
-			return err
-		}
-	} else {
-		e.Log.V(1).Info("Nothing to do for syncing")
-	}
-
-	statusToUpdate := runtime.GetStatus()
-	statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-
-	statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-	statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
-
-	if len(statusToUpdate.Conditions) == 0 {
-		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-	}
-	cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-		"The workers are initialized.", corev1.ConditionTrue)
-	statusToUpdate.Conditions =
-		utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-			cond)
-
-	status := *statusToUpdate
-	if !reflect.DeepEqual(status, currentStatus) {
-		return e.Client.Status().Update(context.TODO(), runtime)
-	}
-
 	return
 }
 
