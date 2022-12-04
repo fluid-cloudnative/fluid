@@ -23,7 +23,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -105,13 +104,13 @@ func (e *EACEngine) checkMasterHealthy() (err error) {
 		var cond data.RuntimeCondition
 		if master.Status.Replicas != master.Status.ReadyReplicas {
 			cond = utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is not ready.",
-				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), corev1.ConditionFalse)
+				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), v1.ConditionFalse)
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 			e.Log.Error(err, "the master are not ready")
 		} else {
 			healthy = true
 			cond = utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is ready.",
-				"The master is ready.", corev1.ConditionTrue)
+				"The master is ready.", v1.ConditionTrue)
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 		}
 
@@ -170,18 +169,18 @@ func (e *EACEngine) checkWorkersHealthy() (err error) {
 				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
 					workers.Name,
 					workers.Namespace,
-					*workers.Spec.Replicas-workers.Status.ReadyReplicas), corev1.ConditionFalse)
+					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 			e.Log.Error(err, "the workers are not ready")
 		} else {
 			healthy = true
 			if workers.Status.ReadyReplicas == *workers.Spec.Replicas {
 				cond = utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
-					"The workers are ready", corev1.ConditionTrue)
+					"The workers are ready", v1.ConditionTrue)
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 			} else {
 				cond = utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are partial ready.",
-					"The workers are partial ready", corev1.ConditionTrue)
+					"The workers are partial ready", v1.ConditionTrue)
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
 			}
 		}

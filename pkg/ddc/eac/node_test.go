@@ -24,7 +24,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,8 +46,8 @@ func getTestEACEngineNode(client client.Client, name string, namespace string, w
 		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
-		engine.runtime = &v1alpha1.EACRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, v1alpha1.TieredStore{})
+		engine.runtime = &datav1alpha1.EACRuntime{}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	}
 	return engine
 }

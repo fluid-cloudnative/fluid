@@ -86,7 +86,7 @@ func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
 	if value.Worker.TieredStore.Levels[0].Quota != "" {
 		quota := value.getTiredStoreLevel0Quota()
 		if miniWorkerQuota.Cmp(quota) > 0 {
-			return fmt.Errorf("minimum worker tired store size is %s, current size is %s, please increase size.", miniWorkerQuota.String(), quota.String())
+			return fmt.Errorf("minimum worker tired store size is %s, current size is %s, please increase size", miniWorkerQuota.String(), quota.String())
 		}
 		quotaValue := quota.Value() / miniWorkerQuota.Value()
 		cacheOption += "cache_capacity_gb=" + strconv.Itoa(int(quotaValue)) + ","

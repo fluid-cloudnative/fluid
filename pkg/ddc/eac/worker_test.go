@@ -17,7 +17,6 @@
 package eac
 
 import (
-	ctrll "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"k8s.io/apimachinery/pkg/types"
 	"testing"
 
@@ -292,7 +291,7 @@ func TestEACEngine_SetupWorkers(t *testing.T) {
 			if err != nil {
 				t.Errorf("EACEngine.SetupWorkers() error = %v", err)
 			}
-			workers, err := ctrll.GetWorkersAsStatefulset(e.Client,
+			workers, err := ctrlhelper.GetWorkersAsStatefulset(e.Client,
 				types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 			if err != nil {
 				t.Errorf("ctrll.GetWorkersAsStatefulset error = %v", err)

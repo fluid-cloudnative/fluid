@@ -31,15 +31,14 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 func newEACEngineREP(client client.Client, name string, namespace string) *EACEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
-		runtime:     &v1alpha1.EACRuntime{},
+		runtime:     &datav1alpha1.EACRuntime{},
 		name:        name,
 		namespace:   namespace,
 		Client:      client,
