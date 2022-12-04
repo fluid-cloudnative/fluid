@@ -7,7 +7,7 @@ nodeSelector: {}
 tolerations: []
 EnableNoneAliyunOS: false
 
-initAlifuse:
+initFuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
   imageTag: update
   imagePullPolicy: Always

@@ -47,9 +47,9 @@ spec:
 {{ toYaml .Values.master.affinity | indent 8  }}
       {{- end }}
       initContainers:
-        - name: init-alifuse
-          image: {{ .Values.initAlifuse.image }}:{{ .Values.initAlifuse.imageTag }}
-          imagePullPolicy: {{ .Values.initAlifuse.imagePullPolicy }}
+        - name: init-fuse
+          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
+          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
           command: [ "/entrypoint.sh" ]
           args:
             - "init_alifuse"
