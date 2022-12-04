@@ -19,9 +19,11 @@ package eac
 import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +38,70 @@ import (
 )
 
 var valuesConfigMapData = `
+fullnameOverride: eacdemo
+placement: Exclusive
+master:
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  imageTag: update
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
+  count: 1
+  enabled: true
+  option: client_owner=default-eacdemo-master,assign_uuid=default-eacdemo-master,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
+  hostNetwork: true
+  tieredstore:
+    levels:
+    - level: 0
+      mediumtype: MEM
+      type: emptyDir
+      path: /dev/shm
+worker:
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img
+  imageTag: update
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  port:
+    rpc: 17673
+  enabled: true
+  option: cache_capacity_gb=2,cache_media=/dev/eac-worker-cache-path/default/eacdemo,server_port=17673
+  resources:
+    requests:
+      memory: 1953125Ki
+  hostNetwork: true
+  tieredstore:
+    levels:
+    - alias: SSD
+      level: 0
+      mediumtype: SSD
+      type: emptyDir
+      path: /dev/eac-worker-cache-path/default/eacdemo
+      quota: 2GB
+fuse:
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  imageTag: update
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
+  hostMountPath: /runtime-mnt/eac/default/eacdemo
+  port:
+    monitor: 17645
+  option: assign_uuid=default-eacdemo-fuse,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
+  nodeSelector:
+    fluid.io/f-default-eacdemo: "true"
+  hostNetwork: true
+  tieredstore:
+    levels:
+    - level: 0
+      mediumtype: MEM
+      type: emptyDir
+      path: /dev/shm
+  criticalPod: true
+initFuse:
+  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
+  imageTag: update
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
 `
 
 var workerEndpointsConfigMapData = `
@@ -43,9 +109,83 @@ var workerEndpointsConfigMapData = `
 `
 
 func Test_parsePortsFromConfigMap(t *testing.T) {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase-eac-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": valuesConfigMapData,
+		},
+	}
+	runtimeObjs := []runtime.Object{}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(corev1.SchemeGroupVersion, configMap)
+	_ = corev1.AddToScheme(s)
+
+	runtimeObjs = append(runtimeObjs, configMap)
+	mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+	e := &EACEngine{
+		name:        "hbase",
+		namespace:   "fluid",
+		Client:      mockClient,
+		runtimeType: common.EACRuntimeType,
+		Log:         ctrl.Log.WithName("hbase"),
+	}
+	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
+	if err != nil {
+		t.Errorf("fail to exec")
+	}
+
+	if configMap == nil {
+		t.Errorf("fail to exec")
+	}
+
+	reservedPorts, err := parsePortsFromConfigMap(configMap)
+	if err != nil || len(reservedPorts) != 1 || reservedPorts[0] != 17673 {
+		t.Errorf("fail to exec")
+	}
 }
 
 func Test_parseCacheDirFromConfigMap(t *testing.T) {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase-eac-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": valuesConfigMapData,
+		},
+	}
+	runtimeObjs := []runtime.Object{}
+
+	s := runtime.NewScheme()
+	s.AddKnownTypes(corev1.SchemeGroupVersion, configMap)
+	_ = corev1.AddToScheme(s)
+
+	runtimeObjs = append(runtimeObjs, configMap)
+	mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+	e := &EACEngine{
+		name:        "hbase",
+		namespace:   "fluid",
+		Client:      mockClient,
+		runtimeType: common.EACRuntimeType,
+		Log:         ctrl.Log.WithName("hbase"),
+	}
+	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
+	if err != nil {
+		t.Errorf("fail to exec")
+	}
+
+	if configMap == nil {
+		t.Errorf("fail to exec")
+	}
+
+	cacheDir, cacheType, err := parseCacheDirFromConfigMap(configMap)
+	if err != nil || cacheDir != "/dev/eac-worker-cache-path/default/eacdemo" || cacheType != common.VolumeTypeEmptyDir {
+		t.Errorf("fail to exec")
+	}
 }
 
 func TestEACEngine_getDaemonset(t *testing.T) {
