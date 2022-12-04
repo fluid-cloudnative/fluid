@@ -212,7 +212,7 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 			return "", "", err
 		}
 
-		value, ok := secret.StringData[secretKeyRef.Key]
+		value, ok := secret.Data[secretKeyRef.Key]
 		if !ok {
 			err = fmt.Errorf("can't get %s from secret %s namespace %s", secretKeyRef.Key, secretKeyRef.Name, e.namespace)
 			return "", "", err
@@ -220,10 +220,10 @@ func (e *EACEngine) getEACSecret(mount datav1alpha1.Mount) (accessKeyID string, 
 
 		switch encryptOption.Name {
 		case AccessKeyIDName:
-			accessKeyID = value
+			accessKeyID = string(value)
 			break
 		case AccessKeySecretName:
-			accessKeySecret = value
+			accessKeySecret = string(value)
 			break
 		default:
 			break

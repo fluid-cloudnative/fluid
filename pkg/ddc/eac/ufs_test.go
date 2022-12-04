@@ -86,9 +86,9 @@ func TestShouldCheckUFS(t *testing.T) {
 				Name:      "check",
 				Namespace: "fluid",
 			},
-			StringData: map[string]string{
-				"id":     "123",
-				"secret": "321",
+			Data: map[string][]byte{
+				"id":     []byte("123"),
+				"secret": []byte("321"),
 			},
 		},
 	}
@@ -185,9 +185,9 @@ func TestPrepareUFS(t *testing.T) {
 				Name:      "check",
 				Namespace: "fluid",
 			},
-			StringData: map[string]string{
-				"id":     "123",
-				"secret": "321",
+			Data: map[string][]byte{
+				"id":     []byte("123"),
+				"secret": []byte("321"),
 			},
 		},
 	}
@@ -301,9 +301,9 @@ func TestTotalFileNumsAndTotalStorageBytes(t *testing.T) {
 				Name:      "check",
 				Namespace: "fluid",
 			},
-			StringData: map[string]string{
-				"id":     "123",
-				"secret": "321",
+			Data: map[string][]byte{
+				"id":     []byte("123"),
+				"secret": []byte("321"),
 			},
 		},
 	}
