@@ -19,7 +19,7 @@ package deploy
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -65,7 +65,7 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.Namespac
 	}
 
 	// no matched controller
-	return controllerName, scaleout, errors.New("no matched controller")
+	return controllerName, scaleout, fmt.Errorf("no matched controller for dataset %s", datasetKey)
 }
 
 // scale out deployment If needed

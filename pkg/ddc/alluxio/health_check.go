@@ -377,7 +377,7 @@ func (e *AlluxioEngine) checkExistenceOfMaster() (err error) {
 		//the totalErr promise the sync will return and Requeue
 		totalErr := fmt.Errorf("the master engine is not existed %v", err)
 		return totalErr
-	}else {
+	} else {
 		return nil
 	}
 }
