@@ -23,6 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Category) (index int, runtime *datav1alpha1.Runtime) {
@@ -54,6 +56,15 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      dataset.Name,
 					Namespace: dataset.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       dataset.GetObjectKind().GroupVersionKind().Kind,
+							APIVersion: dataset.APIVersion,
+							Name:       dataset.GetName(),
+							UID:        dataset.GetUID(),
+							Controller: utilpointer.BoolPtr(true),
+						},
+					},
 				},
 			}
 			err = client.Create(context.TODO(), &runtime)
