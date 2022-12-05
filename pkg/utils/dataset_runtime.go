@@ -17,6 +17,7 @@ package utils
 
 import (
 	"context"
+	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -42,12 +43,24 @@ func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Categ
 // CreateRuntimeForReferenceDatasetIfNotExist creates runtime for ReferenceDataset
 func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *datav1alpha1.Dataset) (err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		_, err = GetThinRuntime(client,
+		runtime, err := GetThinRuntime(client,
 			dataset.GetName(),
 			dataset.GetNamespace())
 		// 1. if err is null, which indicates that the runtime exists, then return
 		if err == nil {
-			return nil
+			runtimeToUpdate := runtime.DeepCopy()
+			runtimeToUpdate.SetOwnerReferences([]metav1.OwnerReference{
+				{
+					Kind:       dataset.GetObjectKind().GroupVersionKind().Kind,
+					APIVersion: dataset.APIVersion,
+					Name:       dataset.GetName(),
+					UID:        dataset.GetUID(),
+					Controller: utilpointer.BoolPtr(true),
+				}})
+			if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+				err = client.Update(context.TODO(), runtimeToUpdate)
+				return err
+			}
 		}
 
 		// 2. If the runtime doesn't exist

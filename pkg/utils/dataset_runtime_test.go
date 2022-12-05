@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestGetRuntimeByCategory(t *testing.T) {
@@ -85,6 +86,20 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "ThinRuntimeExists",
 				Namespace: "default",
+				OwnerReferences: []v1.OwnerReference{
+					{
+						// Kind:       "Dataset",
+						// APIVersion: "data.fluid.io/v1alpha1",
+						Name:       "ThinRuntimeExists",
+						Controller: utilpointer.BoolPtr(true),
+						UID:        "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
+					},
+				},
+			},
+		}, {
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "ThinRuntimeExistWithOwnerReference",
+				Namespace: "default",
 			},
 		},
 	}
@@ -107,6 +122,16 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "ThinRuntimeExists",
+					Namespace: "default",
+					UID:       "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
+				},
+			},
+			wantErr: false,
+		}, {
+			name: "ThinRuntimeExistWithOwnerReference",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeExistWithOwnerReference",
 					Namespace: "default",
 				},
 			},
