@@ -45,7 +45,7 @@ fuse:
   image: image-work-in-progress
   imageTag: update
   imagePullPolicy: Always
-  option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
   mountPoint: eac://nas-mount-point
   # eac will mount mountPoint on /eac/eac-fuse in container which will be shared at hostMountPath/eac-fuse on host
   hostMountPath: /test-mnt/eac-mnt/charts
@@ -74,7 +74,7 @@ master:
   image: image-work-in-progress
   imageTag: update
   imagePullPolicy: Always
-  option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
   mountPoint: eac://nas-mount-point
   tieredstore:
     levels:
