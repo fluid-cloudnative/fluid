@@ -37,7 +37,7 @@ func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 		portOption   = ""
 	)
 
-	commonOption += "g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true,"
+	commonOption += "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,"
 
 	value.Master.Options += commonOption
 	// TODO: set portOption according to master ports
@@ -60,7 +60,7 @@ func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 		portOption   = ""
 	)
 
-	commonOption += "g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true,"
+	commonOption += "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,"
 
 	value.Fuse.Options += commonOption
 	// TODO: set portOption according to fuse port
