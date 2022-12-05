@@ -16,58 +16,52 @@
 
 package eac
 
-import (
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
-)
-
-func (mountInfo MountInfo) SetDirQuota() (response *nas.SetDirQuotaResponse, err error) {
-	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
-	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
-
-	config := sdk.NewConfig()
-	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
-	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
-	if err != nil {
-		return nil, err
-	}
-
-	request := nas.CreateSetDirQuotaRequest()
-	request.Scheme = "https"
-	request.QuotaType = "Accounting"
-	request.UserType = "AllUsers"
-	request.FileSystemId = fileSystemId
-	request.Path = dirPath
-
-	response, err = client.SetDirQuota(request)
-	if err != nil {
-		return nil, err
-	}
-
-	return
-}
-
-func (mountInfo MountInfo) DescribeDirQuota() (response *nas.DescribeDirQuotasResponse, err error) {
-	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
-	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
-
-	config := sdk.NewConfig()
-	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
-	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
-	if err != nil {
-		return nil, err
-	}
-
-	request := nas.CreateDescribeDirQuotasRequest()
-	request.Scheme = "https"
-	request.FileSystemId = fileSystemId
-	request.Path = dirPath
-
-	response, err = client.DescribeDirQuotas(request)
-	if err != nil {
-		return nil, err
-	}
-
-	return
-}
+//func (mountInfo MountInfo) SetDirQuota() (response *nas.SetDirQuotaResponse, err error) {
+//	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
+//	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
+//
+//	config := sdk.NewConfig()
+//	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
+//	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	request := nas.CreateSetDirQuotaRequest()
+//	request.Scheme = "https"
+//	request.QuotaType = "Accounting"
+//	request.UserType = "AllUsers"
+//	request.FileSystemId = fileSystemId
+//	request.Path = dirPath
+//
+//	response, err = client.SetDirQuota(request)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return
+//}
+//
+//func (mountInfo MountInfo) DescribeDirQuota() (response *nas.DescribeDirQuotasResponse, err error) {
+//	serviceAddr, fileSystemId, dirPath := mountInfo.ServiceAddr, mountInfo.FileSystemId, mountInfo.DirPath
+//	accessKeyID, accessKeySecret := mountInfo.AccessKeyID, mountInfo.AccessKeySecret
+//
+//	config := sdk.NewConfig()
+//	credential := credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret)
+//	client, err := nas.NewClientWithOptions(serviceAddr, config, credential)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	request := nas.CreateDescribeDirQuotasRequest()
+//	request.Scheme = "https"
+//	request.FileSystemId = fileSystemId
+//	request.Path = dirPath
+//
+//	response, err = client.DescribeDirQuotas(request)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return
+//}

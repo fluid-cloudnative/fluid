@@ -17,9 +17,7 @@
 package eac
 
 import (
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func (e *EACEngine) UsedStorageBytes() (int64, error) {
@@ -31,59 +29,61 @@ func (e *EACEngine) FreeStorageBytes() (int64, error) {
 }
 
 func (e *EACEngine) TotalStorageBytes() (int64, error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return 0, err
-	}
-	response, err := mountInfo.DescribeDirQuota()
-	if err != nil {
-		return 0, err
-	}
-	if len(response.DirQuotaInfos) == 0 || len(response.DirQuotaInfos[0].UserQuotaInfos) == 0 {
-		return 0, fmt.Errorf("invalid DescribeDirQuotasResponse size")
-	}
-	base := resource.MustParse("1Gi")
-	return response.DirQuotaInfos[0].UserQuotaInfos[0].SizeReal * base.Value(), nil
+	//mountInfo, err := e.getMountInfo()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//response, err := mountInfo.DescribeDirQuota()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//if len(response.DirQuotaInfos) == 0 || len(response.DirQuotaInfos[0].UserQuotaInfos) == 0 {
+	//	return 0, fmt.Errorf("invalid DescribeDirQuotasResponse size")
+	//}
+	//base := resource.MustParse("1Gi")
+	//return response.DirQuotaInfos[0].UserQuotaInfos[0].SizeReal * base.Value(), nil
+	return 0, nil
 }
 
 func (e *EACEngine) TotalFileNums() (int64, error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return 0, err
-	}
-	response, err := mountInfo.DescribeDirQuota()
-	if err != nil {
-		return 0, err
-	}
-	if len(response.DirQuotaInfos) == 0 || len(response.DirQuotaInfos[0].UserQuotaInfos) == 0 {
-		return 0, fmt.Errorf("invalid DescribeDirQuotasResponse size")
-	}
-	return response.DirQuotaInfos[0].UserQuotaInfos[0].FileCountReal, nil
+	//mountInfo, err := e.getMountInfo()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//response, err := mountInfo.DescribeDirQuota()
+	//if err != nil {
+	//	return 0, err
+	//}
+	//if len(response.DirQuotaInfos) == 0 || len(response.DirQuotaInfos[0].UserQuotaInfos) == 0 {
+	//	return 0, fmt.Errorf("invalid DescribeDirQuotasResponse size")
+	//}
+	//return response.DirQuotaInfos[0].UserQuotaInfos[0].FileCountReal, nil
+	return 0, nil
 }
 
 func (e *EACEngine) ShouldCheckUFS() (should bool, err error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return false, err
-	}
-	if len(mountInfo.AccessKeyID) == 0 || len(mountInfo.AccessKeySecret) == 0 {
-		return false, nil
-	}
+	//mountInfo, err := e.getMountInfo()
+	//if err != nil {
+	//	return false, err
+	//}
+	//if len(mountInfo.AccessKeyID) == 0 || len(mountInfo.AccessKeySecret) == 0 {
+	//	return false, nil
+	//}
 
-	return true, nil
+	return false, nil
 }
 
 func (e *EACEngine) PrepareUFS() (err error) {
-	mountInfo, err := e.getMountInfo()
-	if err != nil {
-		return err
-	}
-	_, err = mountInfo.SetDirQuota()
-	if err != nil {
-		e.Log.Error(err, "Failed to set dir quota")
-		return err
-	}
-	return
+	//mountInfo, err := e.getMountInfo()
+	//if err != nil {
+	//	return err
+	//}
+	//_, err = mountInfo.SetDirQuota()
+	//if err != nil {
+	//	e.Log.Error(err, "Failed to set dir quota")
+	//	return err
+	//}
+	return nil
 }
 
 // ShouldUpdateUFS EACEngine hasn't support UpdateOnUFSChange

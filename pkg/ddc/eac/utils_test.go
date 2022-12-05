@@ -111,6 +111,20 @@ var workerEndpointsConfigMapData = `
 {"containerendpoints":[]}
 `
 
+func newEACEngine(client client.Client, name string, namespace string) *EACEngine {
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+	engine := &EACEngine{
+		runtime:     &datav1alpha1.EACRuntime{},
+		name:        name,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: runTimeInfo,
+		Log:         fake.NullLogger(),
+	}
+	engine.Helper = ctrlhelper.BuildHelper(runTimeInfo, client, engine.Log)
+	return engine
+}
+
 func Test_parsePortsFromConfigMap(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
