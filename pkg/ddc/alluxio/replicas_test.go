@@ -326,10 +326,8 @@ func TestSyncReplicas(t *testing.T) {
 	}
 }
 
-
 func TestSyncReplicasWithoutWorker(t *testing.T) {
-	var statefulsetInputs = []appsv1.StatefulSet{
-	}
+	var statefulsetInputs = []appsv1.StatefulSet{}
 
 	testObjs := []runtime.Object{}
 	for _, statefulset := range statefulsetInputs {
@@ -354,7 +352,6 @@ func TestSyncReplicasWithoutWorker(t *testing.T) {
 		testObjs = append(testObjs, daemonSet.DeepCopy())
 	}
 
-
 	var alluxioruntimeInputs = []v1alpha1.AlluxioRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -364,7 +361,7 @@ func TestSyncReplicasWithoutWorker(t *testing.T) {
 			Status: v1alpha1.RuntimeStatus{
 				MasterPhase: v1alpha1.RuntimePhaseReady,
 				WorkerPhase: v1alpha1.RuntimePhaseReady,
-				FusePhase: v1alpha1.RuntimePhaseReady,
+				FusePhase:   v1alpha1.RuntimePhaseReady,
 			},
 		},
 	}
@@ -410,21 +407,20 @@ func TestSyncReplicasWithoutWorker(t *testing.T) {
 	}
 
 	var testCase = []struct {
-		engine              AlluxioEngine
-		expectedErrorNil    bool
+		engine                     AlluxioEngine
+		expectedErrorNil           bool
 		expectedRuntimeMasterPhase v1alpha1.RuntimePhase
 		expectedRuntimeWorkerPhase v1alpha1.RuntimePhase
-		expectedRuntimeFusePhase v1alpha1.RuntimePhase
-		expectedDatasetPhase v1alpha1.DatasetPhase
+		expectedRuntimeFusePhase   v1alpha1.RuntimePhase
+		expectedDatasetPhase       v1alpha1.DatasetPhase
 	}{
 		{
-			engine:              engines[0],
-			expectedErrorNil:    false,
+			engine:                     engines[0],
+			expectedErrorNil:           false,
 			expectedRuntimeMasterPhase: v1alpha1.RuntimePhaseReady,
 			expectedRuntimeWorkerPhase: v1alpha1.RuntimePhaseNotReady,
-			expectedRuntimeFusePhase: v1alpha1.RuntimePhaseReady,
-			expectedDatasetPhase: v1alpha1.FailedDatasetPhase,
-
+			expectedRuntimeFusePhase:   v1alpha1.RuntimePhaseReady,
+			expectedDatasetPhase:       v1alpha1.FailedDatasetPhase,
 		},
 	}
 
@@ -439,7 +435,6 @@ func TestSyncReplicasWithoutWorker(t *testing.T) {
 			t.Errorf("fail to exec the SyncReplicas function with err %v", err)
 			return
 		}
-
 
 		alluxioruntime, err := test.engine.getRuntime()
 		if err != nil {
@@ -473,7 +468,7 @@ func TestSyncReplicasWithoutWorker(t *testing.T) {
 			t.Errorf("fail to get the dataset with error %v", err)
 			return
 		}
-		if !reflect.DeepEqual(dataset.Status.Phase, test.expectedDatasetPhase)  {
+		if !reflect.DeepEqual(dataset.Status.Phase, test.expectedDatasetPhase) {
 			t.Errorf("fail to update the dataset status, get %s, expect %s", dataset.Status.Phase, test.expectedDatasetPhase)
 			return
 		}
