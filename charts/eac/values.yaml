@@ -7,18 +7,18 @@ nodeSelector: {}
 tolerations: []
 osAdvise:
   enabled: false
-  osVersion:
+  osVersion: none
 
 initFuse:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
-  imageTag: update
+  image:
+  imageTag:
   imagePullPolicy: Always
 
 worker:
   enabled: true
   count: 0
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img
-  imageTag: update
+  image:
+  imageTag:
   imagePullPolicy: Always
   option: cache_media=/dev/shm,cache_capacity_gb=1
   hostNetwork: false
@@ -42,8 +42,8 @@ worker:
 
 fuse:
   criticalPod: false
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
-  imageTag: update
+  image:
+  imageTag:
   imagePullPolicy: Always
   option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
   mountPoint:
@@ -71,8 +71,8 @@ fuse:
 master:
   enabled: true
   count: 1
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
-  imageTag: update
+  image:
+  imageTag:
   imagePullPolicy: Always
   option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
   mountPoint:
