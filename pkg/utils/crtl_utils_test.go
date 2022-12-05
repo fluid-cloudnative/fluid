@@ -2,13 +2,15 @@ package utils
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"testing"
-	"time"
 )
 
 func TestNoRequeue(t *testing.T) {
@@ -328,6 +330,40 @@ func TestIgnoreNotFound(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := IgnoreNotFound(tt.err); (err != nil) != tt.wantErr {
 				t.Errorf("IgnoreNotFound() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestIgnoreNoKindMatchError(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		wantErr bool
+	}{
+		{
+			name: "not_found_error",
+			err: apierrs.NewNotFound(schema.GroupResource{
+				Group:    "",
+				Resource: "pod",
+			}, "mypod"),
+			wantErr: true,
+		},
+		{
+			name: "no_kind_match_error",
+			err: &apimeta.NoKindMatchError{
+				GroupKind: schema.GroupKind{
+					Group: "data.fluid.io",
+					Kind:  "AlluxioRuntime",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := IgnoreNoKindMatchError(tt.err); (err != nil) != tt.wantErr {
+				t.Errorf("IgnoreNoKindMatchError() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
