@@ -10,15 +10,15 @@ osAdvise:
   osVersion: none
 
 initFuse:
-  image:
-  imageTag:
+  image: image-work-in-progress
+  imageTag: update
   imagePullPolicy: Always
 
 worker:
   enabled: true
   count: 0
-  image:
-  imageTag:
+  image: image-work-in-progress
+  imageTag: update
   imagePullPolicy: Always
   option: cache_media=/dev/shm,cache_capacity_gb=1
   hostNetwork: false
@@ -42,11 +42,11 @@ worker:
 
 fuse:
   criticalPod: false
-  image:
-  imageTag:
+  image: image-work-in-progress
+  imageTag: update
   imagePullPolicy: Always
   option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
-  mountPoint:
+  mountPoint: eac://nas-mount-point
   # eac will mount mountPoint on /eac/eac-fuse in container which will be shared at hostMountPath/eac-fuse on host
   hostMountPath: /test-mnt/eac-mnt/charts
   tieredstore:
@@ -71,11 +71,11 @@ fuse:
 master:
   enabled: true
   count: 1
-  image:
-  imageTag:
+  image: image-work-in-progress
+  imageTag: update
   imagePullPolicy: Always
   option: g_tier_EnableDadi=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
-  mountPoint:
+  mountPoint: eac://nas-mount-point
   tieredstore:
     levels:
       - level: 0
@@ -92,3 +92,5 @@ master:
     limits:
   #      cpu: "4"
   #      memory: "4G"
+
+placement: Inclusive
