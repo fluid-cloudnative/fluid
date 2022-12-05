@@ -49,8 +49,9 @@ spec:
           imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
           command: [ "/entrypoint.sh" ]
           args:
-            - "init_alifuse"
-            - {{ .Values.EnableNoneAliyunOS | quote }}
+            - "init_fuse"
+            - {{ .Values.osAdvise.enabled | quote }}
+            - {{ .Values.osAdvise.osVersion | quote }}
           securityContext:
             privileged: true
           volumeMounts:

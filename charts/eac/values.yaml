@@ -5,7 +5,9 @@
 imagePullSecrets: [name: regcred]
 nodeSelector: {}
 tolerations: []
-EnableNoneAliyunOS: false
+osAdvise:
+  enabled: false
+  osVersion:
 
 initFuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
