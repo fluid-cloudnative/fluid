@@ -9,8 +9,8 @@ import (
 
 func CheckObject(client client.Client, key types.NamespacedName, obj client.Object) (found bool, err error) {
 	if err = client.Get(context.TODO(), key, obj); err != nil {
-		if IgnoreNotFound(err) == nil {
-			log.V(1).Info("Failed in finding the object, skip.", "runtime", obj)
+		if IgnoreNoKindMatchError(err) == nil || IgnoreNotFound(err) == nil {
+			log.V(1).Info("Object not exists yet, skip.", "runtime", obj)
 			err = nil
 		}
 		return

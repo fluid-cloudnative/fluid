@@ -16,11 +16,13 @@ limitations under the License.
 package utils
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"strings"
 	"time"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -36,6 +38,13 @@ func IgnoreAlreadyExists(err error) error {
 // IgnoreNotFound ignores not found
 func IgnoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
+func IgnoreNoKindMatchError(err error) error {
+	if apimeta.IsNoMatchError(err) {
 		return nil
 	}
 	return err
