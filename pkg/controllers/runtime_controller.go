@@ -17,10 +17,11 @@ package controllers
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -78,12 +79,20 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		err := field.Invalid(field.NewPath("metadata").Child("name"), runtime.GetName(), strings.Join(errs, ","))
 		ctx.Log.Error(err, "Failed to validate runtime name")
 		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to create ddc engine due to error %v", err)
+		// clean up the engine which is failed to recover
+		if !runtime.GetDeletionTimestamp().IsZero() {
+			return r.reconcileFailedRuntimeDeletion(ctx)
+		}
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
 	// 2.Get or create the engine
 	engine, err := r.implement.GetOrCreateEngine(ctx)
 	if err != nil {
+		// clean up the engine which is failed to recover
+		if !runtime.GetDeletionTimestamp().IsZero() {
+			return r.reconcileFailedRuntimeDeletion(ctx)
+		}
 		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
@@ -162,46 +171,47 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileRuntimeDeletion")
 	log.V(1).Info("process the Runtime Deletion", "Runtime", ctx.NamespacedName)
+	if engine != nil {
+		// 0. Delete the volume
+		err := engine.DeleteVolume()
+		if err != nil {
+			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
+			// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
+			log.Error(err, "Failed to delete volume", "Runtime", ctx.NamespacedName)
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		}
 
-	// 0. Delete the volume
-	err := engine.DeleteVolume()
-	if err != nil {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
-		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
-		log.Error(err, "Failed to delete volume", "Runtime", ctx.NamespacedName)
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-	}
+		// 1. Delete the implementation of the the runtime
+		err = engine.Shutdown()
+		if err != nil {
+			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
+			// return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
+			log.Error(err, "Failed to shutdown the engine", "Runtime", ctx.NamespacedName)
+			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+		}
 
-	// 1. Delete the implementation of the the runtime
-	err = engine.Shutdown()
-	if err != nil {
-		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
-		// return utils.RequeueIfError(errors.Wrap(err, "Failed to shutdown the engine"))
-		log.Error(err, "Failed to shutdown the engine", "Runtime", ctx.NamespacedName)
-		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-	}
+		// 2. Set the dataset's status as unbound
+		r.implement.RemoveEngine(ctx)
+		// r.removeEngine(engine.ID())
+		dataset := ctx.Dataset.DeepCopy()
+		if dataset != nil {
+			dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
+			dataset.Status.UfsTotal = ""
+			dataset.Status.Conditions = []datav1alpha1.DatasetCondition{}
+			dataset.Status.CacheStates = common.CacheStateList{}
+			// dataset.Status.RuntimeName = ""
+			// dataset.Status.RuntimeType = ""
+			// dataset.Status.RuntimeNamespace = ""
+			// if len(dataset.Status.Runtimes) == 0 {
+			dataset.Status.Runtimes = []datav1alpha1.Runtime{}
+			dataset.Status.HCFSStatus = nil
+			dataset.Status.FileNum = ""
+			// }
 
-	// 2. Set the dataset's status as unbound
-	r.implement.RemoveEngine(ctx)
-	// r.removeEngine(engine.ID())
-	dataset := ctx.Dataset.DeepCopy()
-	if dataset != nil {
-		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
-		dataset.Status.UfsTotal = ""
-		dataset.Status.Conditions = []datav1alpha1.DatasetCondition{}
-		dataset.Status.CacheStates = common.CacheStateList{}
-		// dataset.Status.RuntimeName = ""
-		// dataset.Status.RuntimeType = ""
-		// dataset.Status.RuntimeNamespace = ""
-		// if len(dataset.Status.Runtimes) == 0 {
-		dataset.Status.Runtimes = []datav1alpha1.Runtime{}
-		dataset.Status.HCFSStatus = nil
-		dataset.Status.FileNum = ""
-		// }
-
-		if err := r.Status().Update(ctx, dataset); err != nil {
-			log.Error(err, "Failed to unbind the dataset", "dataset", dataset.Name)
-			return utils.RequeueIfError(err)
+			if err := r.Status().Update(ctx, dataset); err != nil {
+				log.Error(err, "Failed to unbind the dataset", "dataset", dataset.Name)
+				return utils.RequeueIfError(err)
+			}
 		}
 	}
 
@@ -341,6 +351,12 @@ func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.Reco
 		return false, "dataset mounting another dataset can only use thin runtime"
 	}
 	return true, ""
+}
+
+// cleanFailedRuntime cleans the runtime which is not recovered
+func (r *RuntimeReconciler) reconcileFailedRuntimeDeletion(ctx cruntime.ReconcileRequestContext) (result ctrl.Result, err error) {
+	r.implement.RemoveEngine(ctx)
+	return r.implement.ReconcileRuntimeDeletion(nil, ctx)
 }
 
 // The interface of RuntimeReconciler

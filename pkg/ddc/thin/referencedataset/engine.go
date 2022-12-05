@@ -19,13 +19,14 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -158,7 +159,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	return true, nil
 }
 
-//Shutdown and clean up the engine
+// Shutdown and clean up the engine
 func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	// 1. delete this dataset to mounted dataset DatasetRef field
 	datasetRefName := base.GetDatasetRefName(e.name, e.namespace)
@@ -204,7 +205,7 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 
 	mountedDataset, err := utils.GetDataset(e.Client, mountedNamespacedName[0].Name, mountedNamespacedName[0].Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build dataset reference due to %v", err)
 	}
 
 	// currently not support mounted dataset mounting another dataset
