@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-imagePullSecrets: [name: regcred]
+imagePullSecrets: []
 nodeSelector: {}
 tolerations: []
 osAdvise:
