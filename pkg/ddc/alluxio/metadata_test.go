@@ -88,7 +88,6 @@ func TestSyncMetadata(t *testing.T) {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
-
 	var statefulsetInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -135,7 +134,6 @@ func TestSyncMetadata(t *testing.T) {
 		testObjs = append(testObjs, statefulset.DeepCopy())
 	}
 
-
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	engines := []AlluxioEngine{
@@ -179,8 +177,7 @@ func TestSyncMetadata(t *testing.T) {
 }
 
 func TestSyncMetadataWithoutMaster(t *testing.T) {
-	var statefulsetInputs = []appsv1.StatefulSet{
-	}
+	var statefulsetInputs = []appsv1.StatefulSet{}
 
 	testObjs := []runtime.Object{}
 	for _, statefulset := range statefulsetInputs {
@@ -205,7 +202,6 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 		testObjs = append(testObjs, daemonSet.DeepCopy())
 	}
 
-
 	var alluxioruntimeInputs = []datav1alpha1.AlluxioRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -215,7 +211,7 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 			Status: datav1alpha1.RuntimeStatus{
 				MasterPhase: datav1alpha1.RuntimePhaseReady,
 				WorkerPhase: datav1alpha1.RuntimePhaseReady,
-				FusePhase: datav1alpha1.RuntimePhaseReady,
+				FusePhase:   datav1alpha1.RuntimePhaseReady,
 			},
 		},
 	}
@@ -261,21 +257,20 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 	}
 
 	var testCase = []struct {
-		engine              AlluxioEngine
-		expectedErrorNil    bool
+		engine                     AlluxioEngine
+		expectedErrorNil           bool
 		expectedRuntimeMasterPhase datav1alpha1.RuntimePhase
 		expectedRuntimeWorkerPhase datav1alpha1.RuntimePhase
-		expectedRuntimeFusePhase datav1alpha1.RuntimePhase
-		expectedDatasetPhase datav1alpha1.DatasetPhase
+		expectedRuntimeFusePhase   datav1alpha1.RuntimePhase
+		expectedDatasetPhase       datav1alpha1.DatasetPhase
 	}{
 		{
-			engine:              engines[0],
-			expectedErrorNil:    false,
+			engine:                     engines[0],
+			expectedErrorNil:           false,
 			expectedRuntimeMasterPhase: datav1alpha1.RuntimePhaseNotReady,
 			expectedRuntimeWorkerPhase: datav1alpha1.RuntimePhaseNotReady,
-			expectedRuntimeFusePhase: datav1alpha1.RuntimePhaseNotReady,
-			expectedDatasetPhase: datav1alpha1.FailedDatasetPhase,
-
+			expectedRuntimeFusePhase:   datav1alpha1.RuntimePhaseNotReady,
+			expectedDatasetPhase:       datav1alpha1.FailedDatasetPhase,
 		},
 	}
 
@@ -287,7 +282,6 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 			t.Errorf("fail to exec the SyncMetadata function with err %v", err)
 			return
 		}
-
 
 		alluxioruntime, err := test.engine.getRuntime()
 		if err != nil {
@@ -321,7 +315,7 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 			t.Errorf("fail to get the dataset with error %v", err)
 			return
 		}
-		if !reflect.DeepEqual(dataset.Status.Phase, test.expectedDatasetPhase)  {
+		if !reflect.DeepEqual(dataset.Status.Phase, test.expectedDatasetPhase) {
 			t.Errorf("fail to update the dataset status, get %s, expect %s", dataset.Status.Phase, test.expectedDatasetPhase)
 			return
 		}

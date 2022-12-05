@@ -249,18 +249,18 @@ func TestPrepareUFS(t *testing.T) {
 			fields: fields{
 				runtime: &datav1alpha1.AlluxioRuntime{},
 				master: &appsv1.StatefulSet{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "hbase-master",
-							Namespace: "fluid",
-						},
-						Spec: appsv1.StatefulSetSpec{
-							Replicas: utilpointer.Int32(2),
-						},
-						Status: appsv1.StatefulSetStatus{
-							Replicas:      3,
-							ReadyReplicas: 2,
-						},
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase-master",
+						Namespace: "fluid",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32(2),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      3,
+						ReadyReplicas: 2,
+					},
+				},
 				dataset: &datav1alpha1.Dataset{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "spark",
