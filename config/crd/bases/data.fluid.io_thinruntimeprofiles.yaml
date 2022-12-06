@@ -601,6 +601,12 @@ spec:
                       type: object
                     type: array
                 type: object
+              nodePublishSecretPolicy:
+                default: MountNodePublishSecretIfExists
+                description: NodePublishSecretPolicy describes the policy to decide
+                  which to do with node publish secret when mounting an existing persistent
+                  volume.
+                type: string
               volumes:
                 description: Volumes is the list of Kubernetes volumes that can be
                   mounted by runtime components and/or fuses.

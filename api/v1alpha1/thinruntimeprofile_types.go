@@ -21,8 +21,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type NodePublishSecretPolicy string
+
+const (
+	NotMountNodePublishSecret        NodePublishSecretPolicy = "NotMountNodePublishSecret"
+	MountNodePublishSecretIfExists   NodePublishSecretPolicy = "MountNodePublishSecretIfExists"
+	CopyNodePublishSecretIfNotExists NodePublishSecretPolicy = "CopyNodePublishSecretIfNotExists"
+)
 
 // ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile
 type ThinRuntimeProfileSpec struct {
@@ -39,6 +44,10 @@ type ThinRuntimeProfileSpec struct {
 	// Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.
+	// +kubebuilder:default=MountNodePublishSecretIfExists
+	NodePublishSecretPolicy NodePublishSecretPolicy `json:"nodePublishSecretPolicy,omitempty"`
 }
 
 // ThinRuntimeProfileStatus defines the observed state of ThinRuntimeProfile
