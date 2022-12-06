@@ -138,22 +138,23 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
-	// 3. Update the phase to NotBoundDatasetPhase
-	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
-		checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
+	// 3. Create Runtime if it's reference dataset
+	checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
+	if err != nil {
+		ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
+		return utils.RequeueIfError(err)
+	}
+	if checkReferenceDataset {
+		err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
 		if err != nil {
-			ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
-			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
+			ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
 			return utils.RequeueIfError(err)
 		}
-		if checkReferenceDataset {
-			err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
-			if err != nil {
-				ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
-				return utils.RequeueIfError(err)
-			}
-		}
+	}
 
+	// 4. Update the phase to NotBoundDatasetPhase
+	if ctx.Dataset.Status.Phase == datav1alpha1.NoneDatasetPhase {
 		dataset := ctx.Dataset.DeepCopy()
 		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
 		if len(dataset.Status.Conditions) == 0 {
