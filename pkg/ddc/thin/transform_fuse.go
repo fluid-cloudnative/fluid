@@ -136,7 +136,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	// 15. mount related node publish secret to fuse if the dataset specifies any mountpoint with pvc type.
-	err = t.transfromSecretsForPersistentVolumeClaimMounts(dataset, value)
+	err = t.transfromSecretsForPersistentVolumeClaimMounts(dataset, profile.Spec.NodePublishSecretPolicy, value)
 	if err != nil {
 		return err
 	}
