@@ -29,6 +29,11 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	ufsPath.HostPath = "/mnt/test"
 	ufsPath.ContainerPath = "/underFSStorage/test"
 
+	var ufsPath1 = UFSPath{}
+	ufsPath1.Name = "test"
+	ufsPath1.HostPath = "/mnt/test"
+	ufsPath1.ContainerPath = "/underFSStorage/"
+
 	var tests = []struct {
 		runtime *datav1alpha1.GooseFSRuntime
 		dataset *datav1alpha1.Dataset
@@ -43,12 +48,22 @@ func TestTransformDatasetToVolume(t *testing.T) {
 				}},
 			},
 		}, &GooseFS{}, ufsPath},
+		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			},
+		}, &GooseFS{}, ufsPath1},
+
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSPaths[0].HostPath != ufsPath.HostPath ||
-			test.value.UFSPaths[0].ContainerPath != ufsPath.ContainerPath {
+		if test.value.UFSPaths[0].HostPath != test.expect.HostPath ||
+			test.value.UFSPaths[0].ContainerPath != test.expect.ContainerPath {
 			t.Errorf("expected %v, got %v", test.expect, test.value.UFSPaths[0])
 		}
 	}
@@ -57,7 +72,11 @@ func TestTransformDatasetToVolume(t *testing.T) {
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
 	ufsVolume.Name = "test2"
-	ufsVolume.ContainerPath = "/opt/goosefs/underFSStorage/test2"
+	ufsVolume.ContainerPath = "/underFSStorage/test2"
+
+	var ufsVolume1 = UFSVolume{}
+	ufsVolume1.Name = "test1"
+	ufsVolume1.ContainerPath = "/underFSStorage/"
 
 	var tests = []struct {
 		runtime *datav1alpha1.GooseFSRuntime
@@ -73,12 +92,21 @@ func TestTransformDatasetToPVC(t *testing.T) {
 				}},
 			},
 		}, &GooseFS{}, ufsVolume},
+		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "pvc://test1",
+					Name:       "test1",
+					Path:       "/",
+				}},
+			},
+		}, &GooseFS{}, ufsVolume1},
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSVolumes[0].ContainerPath != ufsVolume.ContainerPath &&
-			test.value.UFSVolumes[0].Name != ufsVolume.Name {
+		if test.value.UFSVolumes[0].ContainerPath != test.expect.ContainerPath ||
+			test.value.UFSVolumes[0].Name != test.expect.Name {
 			t.Errorf("expected %v, got %v", test.expect, test.value)
 		}
 	}
