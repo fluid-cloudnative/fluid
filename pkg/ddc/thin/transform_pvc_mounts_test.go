@@ -48,7 +48,17 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 		},
 	}
 
-	secret := &corev1.Secret{
+	mySecret := &corev1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "my-secret",
+			Namespace: "fluid",
+		},
+		StringData: map[string]string{
+			"encryptedValue": "test",
+		},
+	}
+
+	nodePublishSecret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "my-secret",
 			Namespace: "node-publish-secrets",
@@ -58,7 +68,7 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 		},
 	}
 
-	client := fake.NewFakeClientWithScheme(testScheme, pvc, pv, secret)
+	client := fake.NewFakeClientWithScheme(testScheme, pvc, pv, nodePublishSecret)
 
 	engine := ThinEngine{
 		Client:      client,
@@ -88,7 +98,7 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 		Fuse: Fuse{},
 	}
 
-	t.Run("testing transformSecretsForpersistentVOlumeClaimMounts", func(t *testing.T) {
+	t.Run("testing transformSecretsForpersistentVolumeClaimMounts with CopyNodePublishSecretIfNotExists policy", func(t *testing.T) {
 		if err := engine.transfromSecretsForPersistentVolumeClaimMounts(dataset, datav1alpha1.CopyNodePublishSecretIfNotExists, thinValue); err != nil {
 			t.Fatalf("expect no error, but got error %v", err)
 		}
@@ -99,7 +109,7 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 			t.Fatalf("expect found copied secret \"%s\", but got error: %v", expectPublishSecretName, err)
 		}
 
-		if !reflect.DeepEqual(copiedSecret.StringData, secret.StringData) {
+		if !reflect.DeepEqual(copiedSecret.StringData, nodePublishSecret.StringData) {
 			t.Fatalf("expect copied secret \"%s\" has same content, but not equal", copiedSecret.Name)
 		}
 
@@ -111,4 +121,44 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 			t.Fatalf("expect appended volumeMounts to fuse, but got %v", thinValue.Fuse.VolumeMounts)
 		}
 	})
+
+	thinValue = &ThinValue{
+		Fuse: Fuse{},
+	}
+	engine.Client = fake.NewFakeClientWithScheme(testScheme, pvc, pv, nodePublishSecret, mySecret)
+
+	t.Run("testing transformSecretsForpersistentVolumeClaimMounts with MountNodePublishSecretIfExists policy", func(t *testing.T) {
+		if err := engine.transfromSecretsForPersistentVolumeClaimMounts(dataset, datav1alpha1.MountNodePublishSecretIfExists, thinValue); err != nil {
+			t.Fatalf("expect no error, but got error %v", err)
+		}
+
+		if len(thinValue.Fuse.Volumes) != 1 {
+			t.Fatalf("expect appended volumes to fuse, but got %v", thinValue.Fuse.Volumes)
+		}
+
+		if len(thinValue.Fuse.VolumeMounts) != 1 {
+			t.Fatalf("expect appended volumeMounts to fuse, but got %v", thinValue.Fuse.VolumeMounts)
+		}
+	})
+
+	thinValue = &ThinValue{
+		Fuse: Fuse{},
+	}
+
+	engine.Client = fake.NewFakeClientWithScheme(testScheme, pvc, pv)
+
+	t.Run("testing transformSecretsForpersistentVolumeClaimMounts with NotMountNodePublishSecret policy", func(t *testing.T) {
+		if err := engine.transfromSecretsForPersistentVolumeClaimMounts(dataset, datav1alpha1.NotMountNodePublishSecret, thinValue); err != nil {
+			t.Fatalf("expect no error, but got error %v", err)
+		}
+
+		if len(thinValue.Fuse.Volumes) != 0 {
+			t.Fatalf("expect no modification to volumes of fuse, but got %v", thinValue.Fuse.Volumes)
+		}
+
+		if len(thinValue.Fuse.VolumeMounts) != 0 {
+			t.Fatalf("expect no modification to volumeMounts of fuse, but got %v", thinValue.Fuse.VolumeMounts)
+		}
+	})
+
 }
