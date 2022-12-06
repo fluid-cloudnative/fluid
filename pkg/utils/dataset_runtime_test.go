@@ -150,7 +150,7 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := CreateRuntimeForReferenceDatasetIfNotExist(fakeClient, tt.dataset); (err != nil) != tt.wantErr {
-				t.Errorf("CreateRuntimeForReferenceDatasetIfNotExist() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Testcase %v CreateRuntimeForReferenceDatasetIfNotExist() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			}
 		})
 	}

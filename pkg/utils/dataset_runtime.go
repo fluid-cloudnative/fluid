@@ -61,6 +61,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 				err = client.Update(context.TODO(), runtimeToUpdate)
 				return err
 			}
+			return nil
 		}
 
 		// 2. If the runtime doesn't exist
