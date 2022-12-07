@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *datav1alpha1.Dataset, value *ThinValue) error {
+func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *datav1alpha1.Dataset, policy datav1alpha1.NodePublishSecretPolicy, value *ThinValue) error {
 	owner := transfromer.GenerateOwnerReferenceFromObject(t.runtime)
 	for _, mount := range dataset.Spec.Mounts {
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
@@ -42,7 +42,6 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 			if pv.Spec.CSI.NodePublishSecretRef != nil {
 				secretName := pv.Spec.CSI.NodePublishSecretRef.Name
 				if len(secretName) == 0 {
-					// skip mounting secret volume
 					continue
 				}
 
@@ -51,30 +50,61 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 					secretNamespace = corev1.NamespaceDefault
 				}
 
-				fromNamespacedName := types.NamespacedName{Namespace: secretNamespace, Name: secretName}
-				toNamespacedName := types.NamespacedName{Namespace: t.namespace, Name: fmt.Sprintf("%s-%s-publish-secret", t.name, t.runtimeType)}
+				switch policy {
+				case datav1alpha1.NotMountNodePublishSecret:
+					break
+				case datav1alpha1.MountNodePublishSecretIfExists:
+					secret, err := kubeclient.GetSecret(t.Client, secretName, t.namespace)
+					if err != nil {
+						if utils.IgnoreNotFound(err) == nil {
+							return fmt.Errorf("failed to transform pvc secret mount because secret \"%s/%s\" not found", t.namespace, secretName)
+						}
+						return err
+					}
 
-				err = kubeclient.CopySecretToNamespace(t.Client, fromNamespacedName, toNamespacedName, owner)
-				if err != nil {
-					return errors.Wrapf(err, "failed to copy secret \"%s\" from namespace \"%s\" to namespace \"%s\"", secretName, secretNamespace, t.namespace)
-				}
-
-				volumeToAdd := corev1.Volume{
-					Name: toNamespacedName.Name,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: toNamespacedName.Name,
+					volumeToAdd := corev1.Volume{
+						Name: secret.Name,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: secret.Name,
+							},
 						},
-					},
-				}
-				value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
+					}
+					value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
 
-				volumeMountToAdd := corev1.VolumeMount{
-					Name:      toNamespacedName.Name,
-					ReadOnly:  true,
-					MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secretName),
+					volumeMountToAdd := corev1.VolumeMount{
+						Name:      secret.Name,
+						ReadOnly:  true,
+						MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secret.Name),
+					}
+					value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
+
+				case datav1alpha1.CopyNodePublishSecretAndMountIfNotExists:
+					fromNamespacedName := types.NamespacedName{Namespace: secretNamespace, Name: secretName}
+					toNamespacedName := types.NamespacedName{Namespace: t.namespace, Name: fmt.Sprintf("%s-%s-publish-secret", t.name, t.runtimeType)}
+
+					err = kubeclient.CopySecretToNamespace(t.Client, fromNamespacedName, toNamespacedName, owner)
+					if err != nil {
+						return errors.Wrapf(err, "failed to copy secret \"%s\" from namespace \"%s\" to namespace \"%s\"", secretName, secretNamespace, t.namespace)
+					}
+
+					volumeToAdd := corev1.Volume{
+						Name: toNamespacedName.Name,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: toNamespacedName.Name,
+							},
+						},
+					}
+					value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
+
+					volumeMountToAdd := corev1.VolumeMount{
+						Name:      toNamespacedName.Name,
+						ReadOnly:  true,
+						MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secretName),
+					}
+					value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
 				}
-				value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
 			}
 		}
 	}
