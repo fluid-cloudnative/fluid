@@ -79,7 +79,7 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 					}
 					value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
 
-				case datav1alpha1.CopyNodePublishSecretIfNotExists:
+				case datav1alpha1.CopyNodePublishSecretAndMountIfNotExists:
 					fromNamespacedName := types.NamespacedName{Namespace: secretNamespace, Name: secretName}
 					toNamespacedName := types.NamespacedName{Namespace: t.namespace, Name: fmt.Sprintf("%s-%s-publish-secret", t.name, t.runtimeType)}
 

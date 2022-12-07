@@ -606,6 +606,10 @@ spec:
                 description: NodePublishSecretPolicy describes the policy to decide
                   which to do with node publish secret when mounting an existing persistent
                   volume.
+                enum:
+                - NotMountNodePublishSecret
+                - MountNodePublishSecretIfExists
+                - CopyNodePublishSecretAndMountIfNotExists
                 type: string
               volumes:
                 description: Volumes is the list of Kubernetes volumes that can be

@@ -99,7 +99,7 @@ func TestThinEngine_transfromSecretsForPersistentVolumeClaimMounts(t *testing.T)
 	}
 
 	t.Run("testing transformSecretsForpersistentVolumeClaimMounts with CopyNodePublishSecretIfNotExists policy", func(t *testing.T) {
-		if err := engine.transfromSecretsForPersistentVolumeClaimMounts(dataset, datav1alpha1.CopyNodePublishSecretIfNotExists, thinValue); err != nil {
+		if err := engine.transfromSecretsForPersistentVolumeClaimMounts(dataset, datav1alpha1.CopyNodePublishSecretAndMountIfNotExists, thinValue); err != nil {
 			t.Fatalf("expect no error, but got error %v", err)
 		}
 

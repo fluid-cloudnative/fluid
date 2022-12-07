@@ -24,9 +24,9 @@ import (
 type NodePublishSecretPolicy string
 
 const (
-	NotMountNodePublishSecret        NodePublishSecretPolicy = "NotMountNodePublishSecret"
-	MountNodePublishSecretIfExists   NodePublishSecretPolicy = "MountNodePublishSecretIfExists"
-	CopyNodePublishSecretIfNotExists NodePublishSecretPolicy = "CopyNodePublishSecretIfNotExists"
+	NotMountNodePublishSecret                NodePublishSecretPolicy = "NotMountNodePublishSecret"
+	MountNodePublishSecretIfExists           NodePublishSecretPolicy = "MountNodePublishSecretIfExists"
+	CopyNodePublishSecretAndMountIfNotExists NodePublishSecretPolicy = "CopyNodePublishSecretAndMountIfNotExists"
 )
 
 // ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile
@@ -47,6 +47,7 @@ type ThinRuntimeProfileSpec struct {
 
 	// NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.
 	// +kubebuilder:default=MountNodePublishSecretIfExists
+	// +kubebuilder:validation:Enum=NotMountNodePublishSecret;MountNodePublishSecretIfExists;CopyNodePublishSecretAndMountIfNotExists
 	NodePublishSecretPolicy NodePublishSecretPolicy `json:"nodePublishSecretPolicy,omitempty"`
 }
 
