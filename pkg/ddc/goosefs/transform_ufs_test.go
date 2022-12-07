@@ -32,7 +32,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	var ufsPath1 = UFSPath{}
 	ufsPath1.Name = "test"
 	ufsPath1.HostPath = "/mnt/test"
-	ufsPath1.ContainerPath = "/underFSStorage/"
+	ufsPath1.ContainerPath = "/underFSStorage"
 
 	var tests = []struct {
 		runtime *datav1alpha1.GooseFSRuntime
@@ -76,7 +76,7 @@ func TestTransformDatasetToPVC(t *testing.T) {
 
 	var ufsVolume1 = UFSVolume{}
 	ufsVolume1.Name = "test1"
-	ufsVolume1.ContainerPath = "/underFSStorage/"
+	ufsVolume1.ContainerPath = "/underFSStorage"
 
 	var tests = []struct {
 		runtime *datav1alpha1.GooseFSRuntime
