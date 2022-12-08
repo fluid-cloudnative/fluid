@@ -72,7 +72,6 @@ spec:
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref
-```
 
 ### 创建Pod并查看数据
 
@@ -125,11 +124,15 @@ EOF
 $ kubectl create -f app-ref.yaml -n ref
 ```
 
-查看 ref 空间下 app nginx pod 状态正常运行：
+查看 ref 空间下 app nginx pod 状态正常运行，并查看挂载的数据：
 ```shell
 $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
+
+# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
+$ kubectl exec nginx -n ref -it -- ls /data_spark
+spark
 ```
 
 查看 default 空间下的pod信息：

@@ -43,6 +43,7 @@ set -ex
 
 ConditionPathIsMountPoint="$1"
 MountType="$2"
+SubPath="$3"
 
 count=0
 # while ! mount | grep alluxio | grep  $ConditionPathIsMountPoint | grep -v grep
@@ -56,6 +57,12 @@ do
         exit 1
     fi
 done
+
+# different with csi, as here the mount point is the parent dir of the fuse mount point, 
+if [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ] ; then
+  echo "sub path [$SubPath] not exist!"
+  exit 2
+fi
 
 echo "succeed in checking mount point $ConditionPathIsMountPoint"
 `
@@ -73,16 +80,18 @@ type ScriptGeneratorForFuse struct {
 	namespace string
 	mountPath string
 	mountType string
+	subPath   string
 
 	option common.FuseSidecarInjectOption
 }
 
-func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, option common.FuseSidecarInjectOption) *ScriptGeneratorForFuse {
+func NewGenerator(namespacedKey types.NamespacedName, mountPath string, mountType string, subPath string, option common.FuseSidecarInjectOption) *ScriptGeneratorForFuse {
 	return &ScriptGeneratorForFuse{
 		name:      namespacedKey.Name,
 		namespace: namespacedKey.Namespace,
 		mountPath: mountPath,
 		mountType: mountType,
+		subPath:   subPath,
 		option:    option,
 	}
 }
@@ -121,7 +130,7 @@ func (f *ScriptGeneratorForFuse) GetPostStartCommand() (handler *corev1.Lifecycl
 		cmd = []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", scriptPath)}
 	} else {
 		// https://github.com/kubernetes/kubernetes/issues/25766
-		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType)}
+		cmd = []string{"bash", "-c", fmt.Sprintf("time %s %s %s %s >> /proc/1/fd/1", scriptPath, f.mountPath, f.mountType, f.subPath)}
 	}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},

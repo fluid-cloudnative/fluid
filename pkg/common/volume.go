@@ -3,6 +3,8 @@ package common
 const (
 	VolumeAttrFluidPath = "fluid_path"
 
+	VolumeAttrFluidSubPath = "fluid_sub_path"
+
 	VolumeAttrMountType = "mount_type"
 
 	VolumeAttrNamespace = "runtime_namespace"
