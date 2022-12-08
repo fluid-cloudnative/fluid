@@ -32,6 +32,8 @@ rules:
     resources:
       - dataloads
       - dataloads/status
+      - databackups
+      - databackups/status
       - datasets
       - datasets/status
       - alluxioruntimes

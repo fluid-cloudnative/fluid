@@ -4,12 +4,13 @@
 resources:
 - bases/data.fluid.io_datasets.yaml
 - bases/data.fluid.io_alluxioruntimes.yaml
+- bases/data.fluid.io_databackups.yaml
 - bases/data.fluid.io_dataloads.yaml
 - bases/data.fluid.io_jindoruntimes.yaml
 - bases/data.fluid.io_goosefsruntimes.yaml
 - bases/data.fluid.io_juicefsruntimes.yaml
 - bases/data.fluid.io_thinruntimes.yaml
-- bases/data.fluid.io_ThinRuntimeProfiles.yaml
+- bases/data.fluid.io_thinruntimeprofiles.yaml
 - bases/data.fluid.io_eacruntimes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
