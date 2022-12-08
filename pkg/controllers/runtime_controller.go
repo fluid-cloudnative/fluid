@@ -362,7 +362,7 @@ func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.Reconcil
 		}
 
 		datasetToUpdate := dataset.DeepCopy()
-		cond := utils.NewDatasetCondition(datav1alpha1.DatasetNotReady, datav1alpha1.DatasetFailToSetupReason, notReadyReason.Error(), corev1.ConditionTrue)
+		cond := utils.NewDatasetCondition(datav1alpha1.DatasetNotReady, datav1alpha1.DatasetFailedToSetupReason, notReadyReason.Error(), corev1.ConditionTrue)
 
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions, cond)
 
