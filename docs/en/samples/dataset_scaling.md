@@ -1,20 +1,20 @@
-# 示例 - Cache Runtime手动扩缩容
+# Demo - Cache Runtime Manual Scaling 
 
-## 前提条件
+## Prerequisites
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)(version >= 0.5.0)
 
-请参考[Fluid安装文档](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md)完成安
+Please refer to the [Fluid installation](../userguide/install.md) to complete the installation
 
-## 新建工作环境
+## Set Up Workspace
 ```shell
 $ mkdir <any-path>/dataset_scale
 $ cd <any-path>/dataset_scale
 ```
 
-## 运行示例
+## Running
 
-**创建Dataset和AlluxioRuntime资源对象**
+**Create Dataset and AlluxioRuntime resource objects**
 ```yaml
 $ cat << EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -42,16 +42,16 @@ spec:
 EOF
 ```
 
-在上述示例中，我们设置`AlluxioRuntime.spec.replicas`为1，这意味着我们将启动一个带有一个Worker的Alluxio集群来缓存数据集中的数据。
+In the above example, we set `AlluxioRuntime.spec.replicas` to 1, which means we will start an Alluxio cluster with one worker to cache the data in the dataset.
 
 ```
 $ kubectl create -f dataset.yaml
 dataset.data.fluid.io/hbase created
 alluxioruntime.data.fluid.io/hbase created
 ```
-待Alluxio集群正常启动后，可以看到此时创建出来的Dataset以及AlluxioRuntime处于如下状态：
+After the Alluxio cluster has started normally, we can see that the Dataset and AlluxioRuntime created before are in the following state:
 
-Alluxio各组件运行状态：
+Status of the Alluxio components:
 ```
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
@@ -59,29 +59,29 @@ hbase-master-0       2/2     Running   0          3m50s
 hbase-worker-0       2/2     Running   0          3m15s
 ```
 
-Dataset状态：
+Status of the Dataset：
 ```
 $ kubectl get dataset hbase
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
 hbase   544.77MiB        0.00B    2.00GiB          0.0%                Bound   3m28s
 ```
 
-AlluxioRuntime状态：
+Status of the AlluxioRuntime:
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
 hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        4m55s
 ```
 
-**Dataset扩容**
+**Scale-up Dataset**
 
 ```
 $ kubectl scale alluxioruntime hbase --replicas=2
 alluxioruntime.data.fluid.io/hbase scaled
 ```
-直接使用`kubectl scale`命令即可完成Dataset的扩容操作。在成功执行上述命令并等待一段时间后可以看到Dataset以及AlluxioRuntime的状态均发生了变化：
+Directly use the `kubectl scale` command to complete the scale-up of Dataset. After successfully executing the above command and waiting for a while, you can see that the status of both Dataset and AlluxioRuntime has changed.
 
-一个新的Alluxio Worker以及对应的Alluxio Fuse组件成功启动：
+A new Alluxio Worker and the corresponding Alluxio Fuse component have been successfully started:
 ```
 $ kubectl get pod
 NAME                 READY   STATUS    RESTARTS   AGE
@@ -90,21 +90,20 @@ hbase-worker-1       2/2     Running   0          6m49s
 hbase-worker-0       2/2     Running   0          13m
 ```
 
-Dataset中的`Cache Capacity`从原来的`2.00GiB`变为`4.00GiB`，表明该Dataset的可用缓存容量增加：
+The `Cache Capacity` in the Dataset changes from `2.00GiB` to `4.00GiB`, indicating an increase in the available cache capacity of the Dataset:
 ```
 $ kubectl get dataset hbase
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
 hbase   544.77MiB        0.00B    4.00GiB          0.0%                Bound   15m
 ```
 
-AlluxioRuntime中的`Ready Workers`以及`Ready Fuses`属性均变为2：
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
 hbase   1               1                 Ready          2               2                 Ready          0             0               Ready        17m
 ```
 
-查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
+Check the AlluxioRuntime description for the latest scaling information:
 ```
 $ kubectl describe alluxioruntime hbase
 ...
@@ -123,17 +122,17 @@ Events:
   Normal  Succeed  2m2s  AlluxioRuntime  Runtime scaled out. current replicas: 2, desired replicas: 2.
 ```
 
-**Dataset缩容**
+**Scale-down Dataset**
 
-与扩容类似，缩容时同样可以使用`kubectl scale`对Runtime的Worker数量进行调整：
+Similar to scale-up, the number of workers in the Runtime can also scale-down using `kubectl scale`.
 ```
 $ kubectl scale alluxioruntime hbase --replicas=1
 alluxioruntime.data.fluid.io/hbase scaled
 ```
 
-成功执行上述命令后，**如果目前环境中没有应用正在尝试访问该数据集**，那么就会触发Runtime的缩容。
+After successful execution of the above command, **if no application is trying to access the dataset currently**, then the Runtime scale-down will be triggered.
 
-超出指定`replicas`数量的Runtime Worker将会被停止：
+Runtime Workers that exceed the specified number of `replicas` will be stopped:
 ```
 NAME                 READY   STATUS        RESTARTS   AGE
 hbase-master-0       2/2     Running       0          22m
@@ -141,23 +140,23 @@ hbase-worker-1       2/2     Terminating   0          17m32s
 hbase-worker-0       2/2     Running       0          21m
 ```
 
-Dataset的缓存容量(`Cache Capacity`)恢复到`2.00GiB`:
+Dataset's cache capacity (`Cache Capacity`) is returned to `2.00GiB`:
 ```
 $ kubectl get dataset hbase
 NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   AGE
 hbase   544.77MiB        0.00B    2.00GiB          0.0%                Bound   30m
 ```
 
-> 注意：在目前版本的Fluid中，缩容时Dataset中`Cache Capacity`属性字段的变化存在几分钟的延迟，因此您可能无法迅速观察到这一属性的变化
+> Note: In the current version of Fluid, there is a delay of a few minutes in the change of the `Cache Capacity` property when scale-down, so you may not be able to observe the change of this property quickly.
 
-AlluxioRuntime中的`Ready Workers`以及`Ready Fuses`字段同样变为`1`：
+The `Ready Workers` and `Ready Fuses` fields in AlluxioRuntime also become `1`:
 ```
 $ kubectl get alluxioruntime hbase -o wide
 NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED WORKERS   WORKER PHASE   READY FUSES   DESIRED FUSES   FUSE PHASE   AGE
 hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        30m
 ```
 
-查看AlluxioRuntime的具体描述信息可以了解最新的扩缩容信息：
+Check the AlluxioRuntime description for the latest scaling information:
 ```
 $ kubectl describe alluxioruntime hbase
 ...
@@ -177,9 +176,9 @@ Events:
   Normal   Succeed              4s     AlluxioRuntime  Alluxio runtime scaled in. current replicas: 1, desired replicas: 1.
 ```
 
-Fluid提供的这种扩缩容能力能够帮助用户或是集群管理员适时地调整数据集缓存所占用的集群资源，减少某个不频繁使用的数据集的缓存容量（缩容），或者按需增加某数据集的缓存容量（扩容），以实现更加精细的资源分配，提高资源利用率。
+The scaling capability provided by Fluid helps users or cluster administrators to adjust the resources occupied by the dataset cache in a timely manner, reducing the cache capacity of an infrequently used dataset (scale-down) or increasing the cache capacity of a dataset on demand (scale-up) to achieve a more fine-grained resource allocation and improve resource utilization.
 
-## 环境清理
+## Clean your environment
 ```shell
 $ kubectl delete -f dataset.yaml
 ```

@@ -19,6 +19,7 @@
     - [Share data across namespace (CSI mode)](samples/dataset_across_namespace_with_csi.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
+    - [Cache Runtime Manual Scaling](samples/dataset_scaling.md)
   + Security
     - [Encrypted options for Dataset](samples/use_encryptoptions.md)
     - [Using Fluid to access non-root user's data](samples/nonroot_access.md)

@@ -21,7 +21,7 @@
     - [跨namespace共享数据(sidecar模式)](samples/dataset_across_namespace_with_sidecar.md)
   + 操作
     - [数据预加载](samples/data_warmup.md)
-    - [手动扩缩容](samples/dataset_scaling.md)
+    - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
   + 安全
     - [使用参数加密](samples/use_encryptoptions.md)
     - [以non-root用户身份使用](samples/nonroot_access.md)
