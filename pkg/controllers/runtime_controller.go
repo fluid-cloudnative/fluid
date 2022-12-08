@@ -16,16 +16,21 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
+	"reflect"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -239,6 +244,11 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 		if err != nil {
 			r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup ddc engine due to error %v", err)
 			log.Error(err, "Failed to setup the ddc engine")
+			reportErr := r.ReportDatasetNotReadyCondition(ctx, err)
+			if reportErr != nil {
+				// ignore report error
+				log.Error(err, "failed to report not ready condition to dataset", "dataset", types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Name})
+			}
 			// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
 		}
 		if !ready {
@@ -341,6 +351,36 @@ func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.Reco
 		return false, "dataset mounting another dataset can only use thin runtime"
 	}
 	return true, ""
+}
+
+func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.ReconcileRequestContext, notReadyReason error) error {
+	datasetToReport := ctx.Dataset
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(r.Client, datasetToReport.Name, datasetToReport.Namespace)
+		if err != nil {
+			return err
+		}
+
+		datasetToUpdate := dataset.DeepCopy()
+		cond := utils.NewDatasetCondition(datav1alpha1.DatasetNotReady, datav1alpha1.DatasetFailToSetupReason, notReadyReason.Error(), corev1.ConditionTrue)
+
+		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions, cond)
+
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			err = r.Client.Status().Update(context.TODO(), datasetToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // The interface of RuntimeReconciler
