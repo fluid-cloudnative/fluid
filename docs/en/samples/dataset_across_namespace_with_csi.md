@@ -1,10 +1,10 @@
-# 示例 - Dataset缓存跨Namespace访问(CSI机制)
-本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
-- Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref 和 ThinRuntime demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo`
+# Demo - Access Dataset cache across Namespace (CSI mechanism)
+This demo is used to show how to use a Dataset cache across Namespace.
+- In Namespace `ns-a`, create Dataset `demo` and AlluxioRuntime `demo`
+- In Namespace `ns-b` create Dataset `demo-ref` and ThinRuntime `demo-ref`. The mountPoint of `demo-ref` is `dataset://ns-a/demo`
  
-## 前提条件
-在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
+## Prerequests
+Before running this demo, please refer to the [installation documentation](../userguide/install.md) to complete the installation and check that the components of Fluid are working properly:
 ```shell
 $ kubectl get pod -n fluid-system
 alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
@@ -14,12 +14,12 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 thinruntime-controller-7dcbf5f45-xsf4p          1/1     Running   0          8h
 ```
 
-其中，`thinruntime-controller`是用来支持Dataset跨Namespace共享，`alluxioruntime-controller`是实际的缓存。
+Where `thinruntime-controller` is used to support Dataset sharing across Namespace and `alluxioruntime-controller` is the actual cache.
 
-## CSI机制跨Namespace共享数据集缓存
-###  1. 创建Dataset和缓存Runtime
+## Share Dataset cache across Namespace through CSI mechanism 
+###  1. Create Dataset and Cache Runtime
 
-在默认名空间下，创建`phy` Dataset和AlluxioRuntime
+In default Namespace，create `phy` Dataset and AlluxioRuntime.
 ```shell
 $ cat<<EOF >ds.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -49,13 +49,13 @@ EOF
 $ kubectl create -f ds.yaml
 ```
 
-### 2. 创建引用的Dataset和Runtime
-在 ref 名空间下，创建：
-- 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
+### 2. Create referenced Dataset and Runtime
+In Namespace `ref`, create:
+- the referenced dataset `refdemo`, whose mountPoint format is `dataset://${origin-dataset-namespace}/${origin-dataset-name}`.
 
-注：
-1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
-2. 引用数据集对应的Runtime，其Spec中字段无效；
+Note:
+1. Currently, the referenced Dataset only supports single mount and its form must be `dataset://` (i.e. the creation of a dataset fails when `dataset://` and other forms both appear), and other fields in the Spec are invalid.
+2. The fields in Spec of the referenced Runtime corresponding to the Dataset are invalid.
 ```shell
 $ kubectl create ns ref
 
@@ -74,9 +74,9 @@ EOF
 $ kubectl create -f ds-ref.yaml -n ref
 ```
 
-### 创建Pod并查看数据
+### Create Pod and Check the data
 
-在 default 名空间下，创建Pod
+In default Namespace, create a Pod
 
 ```shell
 $ cat<<EOF >app.yaml
@@ -101,7 +101,7 @@ $ kubectl create -f app.yaml
 ```
 
 
-在 ref 名空间下，创建Pod：
+In Namespace `ref`, create a Pod：
 
 ```shell
 $ cat<<EOF >app-ref.yaml
@@ -125,16 +125,16 @@ EOF
 $ kubectl create -f app-ref.yaml -n ref
 ```
 
-查看 ref 空间下 app nginx pod 状态正常运行：
+In Namespace `ref`, check the status of the app nginx pod.
 ```shell
 $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
 ```
 
-查看 default 空间下的pod信息：
-- 只存在一个AlluxioRuntime集群，即缓存只有一份；
-- 因为 ref 名空间下的 nginx pod 调度在node133上，因此多了一个`phy-fuse-nmf88`；
+In default Namespace, check the Pod information.
+- Only one AlluxioRuntime cluster exists, i.e. there is only one cache.
+- An extra `phy-fuse-nmf88` because the nginx pod under the `ref` namespace is scheduled on node133.
 ```shell
 $ kubectl get pods -o wide
 NAME             READY   STATUS    RESTARTS   AGE     IP              NODE      NOMINATED NODE   READINESS GATES
