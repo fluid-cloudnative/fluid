@@ -110,7 +110,7 @@ func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
 		levels = append(levels, Level{
 			Level:      0,
 			Type:       string(common.VolumeTypeEmptyDir),
-			Path:       "/cache_dir",
+			Path:       fmt.Sprintf("%s/%s/%s", "/cache_dir", runtime.Namespace, runtime.Name),
 			MediumType: string(common.Memory),
 			Quota:      utils.TransformQuantityToEACUnit(&miniWorkerQuota),
 		})
