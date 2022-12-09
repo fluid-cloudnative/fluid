@@ -17,11 +17,14 @@
 package eac
 
 import (
+	"context"
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 )
 
 func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime, value *EAC) error {
@@ -29,31 +32,13 @@ func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},
 	}
-	if runtime.Spec.Master.Resources.Limits != nil {
-		e.Log.Info("setting master Resources limit")
-		if runtime.Spec.Master.Resources.Limits.Cpu() != nil {
-			quantity := runtime.Spec.Master.Resources.Limits[corev1.ResourceCPU]
-			value.Master.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Master.Resources.Limits.Memory() != nil {
-			quantity := runtime.Spec.Master.Resources.Limits[corev1.ResourceMemory]
-			value.Master.Resources.Limits[corev1.ResourceMemory] = quantity.String()
-		}
+	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
+		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
 	}
 
-	if runtime.Spec.Master.Resources.Requests != nil {
-		e.Log.Info("setting master Resources request")
-		if runtime.Spec.Master.Resources.Requests.Cpu() != nil {
-			quantity := runtime.Spec.Master.Resources.Requests[corev1.ResourceCPU]
-			value.Master.Resources.Requests[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Master.Resources.Requests.Memory() != nil {
-			quantity := runtime.Spec.Master.Resources.Requests[corev1.ResourceMemory]
-			value.Master.Resources.Requests[corev1.ResourceMemory] = quantity.String()
-		}
-	}
-
-	if len(value.Master.TieredStore.Levels[0].Quota) > 0 {
+	if len(value.Master.TieredStore.Levels) > 0 &&
+		len(value.Master.TieredStore.Levels[0].Quota) > 0 &&
+		value.Master.TieredStore.Levels[0].MediumType == string(common.Memory) {
 		cacheQuota := utils.TransformEACUnitToQuantity(value.Master.TieredStore.Levels[0].Quota)
 		needUpdated := false
 		if runtime.Spec.Master.Resources.Requests == nil ||
@@ -73,6 +58,29 @@ func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime
 
 		if needUpdated {
 			value.Master.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
+
+			err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := e.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Master.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Master.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Master.Resources.Requests[corev1.ResourceMemory] = *cacheQuota
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = e.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -84,31 +92,13 @@ func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EACRuntime, 
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},
 	}
-	if runtime.Spec.Fuse.Resources.Limits != nil {
-		e.Log.Info("setting fuse Resources limit")
-		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceCPU]
-			value.Fuse.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
-			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
-		}
+	if len(runtime.Spec.Fuse.Resources.Limits) > 0 || len(runtime.Spec.Fuse.Resources.Requests) > 0 {
+		value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
 	}
 
-	if runtime.Spec.Fuse.Resources.Requests != nil {
-		e.Log.Info("setting fuse Resources request")
-		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceCPU]
-			value.Fuse.Resources.Requests[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
-			quantity := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
-			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
-		}
-	}
-
-	if len(value.Fuse.TieredStore.Levels[0].Quota) > 0 {
+	if len(value.Fuse.TieredStore.Levels) > 0 &&
+		len(value.Fuse.TieredStore.Levels[0].Quota) > 0 &&
+		value.Fuse.TieredStore.Levels[0].MediumType == string(common.Memory) {
 		cacheQuota := utils.TransformEACUnitToQuantity(value.Fuse.TieredStore.Levels[0].Quota)
 		needUpdated := false
 		if runtime.Spec.Fuse.Resources.Requests == nil ||
@@ -122,12 +112,35 @@ func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EACRuntime, 
 			runtime.Spec.Fuse.Resources.Limits.Memory() != nil &&
 			!runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
 			cacheQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than fuse limits memory %v",
 				cacheQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
 		}
 
 		if needUpdated {
 			value.Fuse.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
+
+			err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := e.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Fuse.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Fuse.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Fuse.Resources.Requests[corev1.ResourceMemory] = *cacheQuota
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = e.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -139,49 +152,56 @@ func (e *EACEngine) transformResourcesForWorker(runtime *datav1alpha1.EACRuntime
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},
 	}
-	if runtime.Spec.Worker.Resources.Limits != nil {
-		e.Log.Info("setting worker Resources limit")
-		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
-			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceCPU]
-			value.Worker.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
-			quantity := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
-			value.Worker.Resources.Limits[corev1.ResourceMemory] = quantity.String()
-		}
+	if len(runtime.Spec.Worker.Resources.Limits) > 0 || len(runtime.Spec.Worker.Resources.Requests) > 0 {
+		value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
 	}
 
-	if runtime.Spec.Worker.Resources.Requests != nil {
-		e.Log.Info("setting worker Resources request")
-		if runtime.Spec.Worker.Resources.Requests.Cpu() != nil {
-			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceCPU]
-			value.Worker.Resources.Requests[corev1.ResourceCPU] = quantity.String()
+	if len(value.Worker.TieredStore.Levels) > 0 &&
+		len(value.Worker.TieredStore.Levels[0].Quota) > 0 &&
+		value.Worker.TieredStore.Levels[0].MediumType == string(common.Memory) {
+		cacheQuota := utils.TransformEACUnitToQuantity(value.Worker.TieredStore.Levels[0].Quota)
+		needUpdated := false
+		if runtime.Spec.Worker.Resources.Requests == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
+			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
+			cacheQuota.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
+			needUpdated = true
 		}
-		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
-			quantity := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
-			value.Worker.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+
+		if runtime.Spec.Worker.Resources.Limits != nil &&
+			runtime.Spec.Worker.Resources.Limits.Memory() != nil &&
+			!runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
+			cacheQuota.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
+			return fmt.Errorf("the worker memory tierdStore's size %v is greater than worker limits memory %v",
+				cacheQuota, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
-	}
 
-	cacheQuota := value.getTiredStoreLevel0Quota()
-	needUpdated := false
-	if runtime.Spec.Worker.Resources.Requests == nil ||
-		runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
-		runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
-		cacheQuota.Cmp(*runtime.Spec.Worker.Resources.Requests.Memory()) > 0 {
-		needUpdated = true
-	}
+		if needUpdated {
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
 
-	if runtime.Spec.Worker.Resources.Limits != nil &&
-		runtime.Spec.Worker.Resources.Limits.Memory() != nil &&
-		!runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
-		cacheQuota.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-		return fmt.Errorf("the worker memory tierdStore's size %v is greater than master limits memory %v",
-			cacheQuota, runtime.Spec.Worker.Resources.Limits.Memory())
-	}
+			err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				runtime, err := e.getRuntime()
+				if err != nil {
+					return err
+				}
+				runtimeToUpdate := runtime.DeepCopy()
+				if len(runtimeToUpdate.Spec.Worker.Resources.Requests) == 0 {
+					runtimeToUpdate.Spec.Worker.Resources.Requests = make(corev1.ResourceList)
+				}
+				runtimeToUpdate.Spec.Worker.Resources.Requests[corev1.ResourceMemory] = *cacheQuota
+				if !reflect.DeepEqual(runtimeToUpdate, runtime) {
+					err = e.Client.Update(context.TODO(), runtimeToUpdate)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
 
-	if needUpdated {
-		value.Worker.Resources.Requests[corev1.ResourceMemory] = cacheQuota.String()
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
