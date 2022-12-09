@@ -75,11 +75,12 @@ func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
 		l := tieredstore.GetTieredLevel(runtimeInfo, level.MediumType)
 
 		if l != 0 {
-			return fmt.Errorf("eac worker only support one level of tiered store")
+			continue
 		}
-		if len(level.CachePaths) != 1 {
-			return fmt.Errorf("eac worker only support one cache path")
+		if len(level.CachePaths) == 0 {
+			return fmt.Errorf("eac worker cache path not specificfied")
 		}
+		level.CachePaths = level.CachePaths[0:1]
 
 		var paths []string
 		var quotas []string
@@ -111,7 +112,7 @@ func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
 			Type:       string(common.VolumeTypeEmptyDir),
 			Path:       "/cache_dir",
 			MediumType: string(common.Memory),
-			Quota:      "1GB",
+			Quota:      utils.TransformQuantityToEACUnit(&miniWorkerQuota),
 		})
 	}
 
