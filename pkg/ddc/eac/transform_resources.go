@@ -157,9 +157,9 @@ func (e *EACEngine) transformResourcesForWorker(runtime *datav1alpha1.EACRuntime
 	}
 
 	if len(value.Worker.TieredStore.Levels) > 0 &&
-		len(value.Worker.TieredStore.Levels[0].Quota) > 0 &&
-		value.Worker.TieredStore.Levels[0].MediumType == string(common.Memory) {
-		cacheQuota := utils.TransformEACUnitToQuantity(value.Worker.TieredStore.Levels[0].Quota)
+		len(value.getTiredStoreLevel0Quota()) > 0 &&
+		value.getTiredStoreLevel0MediumType() == string(common.Memory) {
+		cacheQuota := utils.TransformEACUnitToQuantity(value.getTiredStoreLevel0Quota())
 		needUpdated := false
 		if runtime.Spec.Worker.Resources.Requests == nil ||
 			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||

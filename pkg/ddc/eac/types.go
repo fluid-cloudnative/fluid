@@ -158,6 +158,16 @@ func (value *EAC) getTiredStoreLevel0Type() (t string) {
 	return
 }
 
+func (value *EAC) getTiredStoreLevel0MediumType() (t string) {
+	for _, level := range value.Worker.TieredStore.Levels {
+		if level.Level == 0 {
+			t = level.MediumType
+			break
+		}
+	}
+	return
+}
+
 func (value *EAC) getTiredStoreLevel0Quota() (quota string) {
 	for _, level := range value.Worker.TieredStore.Levels {
 		if level.Level == 0 {

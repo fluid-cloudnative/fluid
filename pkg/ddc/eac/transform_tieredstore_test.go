@@ -105,11 +105,11 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 		if test.wantPath != test.eacValue.Worker.TieredStore.Levels[0].Path {
 			t.Errorf("expected %v, got %v", test.wantPath, test.eacValue.Worker.TieredStore.Levels[0].Path)
 		}
-		if test.wantMediumType != test.eacValue.Worker.TieredStore.Levels[0].MediumType {
-			t.Errorf("expected %v, got %v", test.wantMediumType, test.eacValue.Worker.TieredStore.Levels[0].MediumType)
+		if test.wantMediumType != test.eacValue.getTiredStoreLevel0MediumType() {
+			t.Errorf("expected %v, got %v", test.wantMediumType, test.eacValue.getTiredStoreLevel0MediumType())
 		}
-		if test.wantQuota != test.eacValue.Worker.TieredStore.Levels[0].Quota {
-			t.Errorf("expected %v, got %v", test.wantQuota, test.eacValue.Worker.TieredStore.Levels[0].Quota)
+		if test.wantQuota != test.eacValue.getTiredStoreLevel0Quota() {
+			t.Errorf("expected %v, got %v", test.wantQuota, test.eacValue.getTiredStoreLevel0Quota())
 		}
 	}
 }

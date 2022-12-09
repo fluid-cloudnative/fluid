@@ -29,6 +29,7 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 		wantPath        string
 		wantType        string
 		wantQuotaString string
+		wantMediumType  string
 	}{
 		"test getTiredStoreLevel0Path case 1": {
 			name:      "eac-01",
@@ -38,10 +39,11 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 					TieredStore: TieredStore{
 						Levels: []Level{
 							{
-								Level: 0,
-								Path:  "/mnt/demo/data",
-								Type:  string(common.VolumeTypeEmptyDir),
-								Quota: "1GB",
+								Level:      0,
+								Path:       "/mnt/demo/data",
+								Type:       string(common.VolumeTypeEmptyDir),
+								MediumType: string(common.Memory),
+								Quota:      "1GB",
 							},
 						},
 					},
@@ -50,6 +52,7 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 			wantPath:        "/mnt/demo/data",
 			wantType:        string(common.VolumeTypeEmptyDir),
 			wantQuotaString: "1GB",
+			wantMediumType:  string(common.Memory),
 		},
 	}
 
@@ -67,6 +70,11 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 		gottt := item.eac.getTiredStoreLevel0Quota()
 		if gottt != item.wantQuotaString {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantQuotaString, gottt)
+		}
+
+		gotttt := item.eac.getTiredStoreLevel0MediumType()
+		if gotttt != item.wantMediumType {
+			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantMediumType, gotttt)
 		}
 	}
 }
