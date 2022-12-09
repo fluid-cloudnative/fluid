@@ -52,7 +52,7 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 			wantPath:        "/mnt/demo/data",
 			wantType:        string(common.VolumeTypeEmptyDir),
 			wantQuotaString: "1GB",
-			wantQuota:       resource.MustParse("1G"),
+			wantQuota:       resource.MustParse("1Gi"),
 		},
 	}
 

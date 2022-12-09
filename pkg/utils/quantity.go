@@ -59,13 +59,23 @@ func TransformQuantityToGooseFSUnit(q *resource.Quantity) (value string) {
 
 }
 
+// TransformQuantityToEACUnit transform a given input quantity to another one
+// that can be recognized by EAC. This is necessary because EAC takes decimal byte units(e.g. KB, MB, GB, etc.)
+// as binary byte units(e.g. Ki, Mi, Gi)
 func TransformQuantityToEACUnit(q *resource.Quantity) (value string) {
-	return units.HumanSize(float64(q.Value()))
+	value = q.String()
+	if strings.HasSuffix(value, "i") {
+		value = strings.ReplaceAll(value, "i", "B")
+	}
+	return
 }
 
 func TransformEACUnitToQuantity(value string) (q *resource.Quantity) {
-	v, _ := units.FromHumanSize(value)
-	return resource.NewQuantity(v, resource.BinarySI)
+	if strings.HasSuffix(value, "B") {
+		value = strings.ReplaceAll(value, "B", "i")
+	}
+	result := resource.MustParse(value)
+	return &result
 }
 
 // TransformQuantityToUnits returns a human-readable size in bytes, kibibytes,
