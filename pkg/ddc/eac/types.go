@@ -17,7 +17,9 @@
 package eac
 
 import (
+	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -176,4 +178,14 @@ func (value *EAC) getTiredStoreLevel0Quota() (quota string) {
 		}
 	}
 	return
+}
+
+func (e *EACEngine) getDefaultTiredStoreLevel0() Level {
+	return Level{
+		Level:      0,
+		Type:       string(common.VolumeTypeEmptyDir),
+		Path:       fmt.Sprintf("%s/%s/%s", "/cache_dir", e.namespace, e.name),
+		MediumType: string(common.Memory),
+		Quota:      utils.TransformQuantityToEACUnit(&miniWorkerQuota),
+	}
 }

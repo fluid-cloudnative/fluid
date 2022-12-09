@@ -78,7 +78,7 @@ func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
 		quotaValue := quota.Value() / miniWorkerQuota.Value()
 		options = append(options, fmt.Sprintf("cache_capacity_gb=%v", int(quotaValue)))
 	}
-	if value.getTiredStoreLevel0Type() == string(common.Memory) {
+	if value.getTiredStoreLevel0MediumType() == string(common.Memory) {
 		options = append(options, "tmpfs=true")
 	}
 
