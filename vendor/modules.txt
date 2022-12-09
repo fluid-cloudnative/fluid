@@ -8,7 +8,7 @@ github.com/PuerkitoBio/purell
 ## explicit
 github.com/PuerkitoBio/urlesc
 # github.com/agiledragon/gomonkey/v2 v2.2.0
-## explicit; go 1.14
+## explicit
 github.com/agiledragon/gomonkey/v2
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
