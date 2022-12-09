@@ -18,7 +18,6 @@ package eac
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 )
 
@@ -30,7 +29,6 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 		wantPath        string
 		wantType        string
 		wantQuotaString string
-		wantQuota       resource.Quantity
 	}{
 		"test getTiredStoreLevel0Path case 1": {
 			name:      "eac-01",
@@ -52,7 +50,6 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 			wantPath:        "/mnt/demo/data",
 			wantType:        string(common.VolumeTypeEmptyDir),
 			wantQuotaString: "1GB",
-			wantQuota:       resource.MustParse("1Gi"),
 		},
 	}
 
@@ -67,14 +64,9 @@ func TestGetTiredStoreLevel0(t *testing.T) {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantType, gott)
 		}
 
-		gottt := item.eac.getTiredStoreLevel0QuotaString()
+		gottt := item.eac.getTiredStoreLevel0Quota()
 		if gottt != item.wantQuotaString {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantQuotaString, gottt)
-		}
-
-		gotttt := item.eac.getTiredStoreLevel0Quota()
-		if !gotttt.Equal(item.wantQuota) {
-			t.Errorf("%s check failure, want:%v,got:%v", k, item.wantQuota, gotttt)
 		}
 	}
 }

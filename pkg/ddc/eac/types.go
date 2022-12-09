@@ -18,9 +18,7 @@ package eac
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // The value yaml file
@@ -160,7 +158,7 @@ func (value *EAC) getTiredStoreLevel0Type() (t string) {
 	return
 }
 
-func (value *EAC) getTiredStoreLevel0QuotaString() (quota string) {
+func (value *EAC) getTiredStoreLevel0Quota() (quota string) {
 	for _, level := range value.Worker.TieredStore.Levels {
 		if level.Level == 0 {
 			quota = level.Quota
@@ -168,9 +166,4 @@ func (value *EAC) getTiredStoreLevel0QuotaString() (quota string) {
 		}
 	}
 	return
-}
-
-func (value *EAC) getTiredStoreLevel0Quota() resource.Quantity {
-	quotaString := value.getTiredStoreLevel0QuotaString()
-	return *utils.TransformEACUnitToQuantity(quotaString)
 }

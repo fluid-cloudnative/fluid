@@ -20,8 +20,8 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strconv"
 	"strings"
 )
 
@@ -31,82 +31,61 @@ var (
 
 func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-	var (
-		masterName   = e.namespace + "-" + e.name + "-master"
-		commonOption = "client_owner=" + masterName + ",assign_uuid=" + masterName + ","
-		portOption   = ""
-	)
-
-	commonOption += "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,"
-
-	value.Master.Options += commonOption
-	// TODO: set portOption according to master ports
-	value.Master.Options += portOption
+	var options []string
+	options = append(options, "g_tier_EnableClusterCache=true")
+	options = append(options, "g_tier_EnableClusterCachePrefetch=true")
+	options = append(options, fmt.Sprintf("client_owner=%s-%s-master", e.namespace, e.name))
+	options = append(options, fmt.Sprintf("assign_uuid=%s-%s-master", e.namespace, e.name))
 
 	for o := range runtime.Spec.Master.Properties {
-		option := o + "=" + runtime.Spec.Master.Properties[o] + ","
-		value.Master.Options += option
+		options = append(options, fmt.Sprintf("%s=%s", o, runtime.Spec.Master.Properties[o]))
 	}
 
-	value.Master.Options = strings.TrimSuffix(value.Master.Options, ",")
+	value.Master.Options = strings.Join(options, ",")
 	return nil
 }
 
 func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-	var (
-		fuseName     = e.namespace + "-" + e.name + "-fuse"
-		commonOption = "assign_uuid=" + fuseName + ","
-		portOption   = ""
-	)
-
-	commonOption += "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,"
-
-	value.Fuse.Options += commonOption
-	// TODO: set portOption according to fuse port
-	value.Fuse.Options += portOption
+	var options []string
+	options = append(options, "g_tier_EnableClusterCache=true")
+	options = append(options, "g_tier_EnableClusterCachePrefetch=true")
+	options = append(options, fmt.Sprintf("assign_uuid=%s-%s-fuse", e.namespace, e.name))
 
 	for o := range runtime.Spec.Fuse.Properties {
-		option := o + "=" + runtime.Spec.Fuse.Properties[o] + ","
-		value.Fuse.Options += option
+		options = append(options, fmt.Sprintf("%s=%s", o, runtime.Spec.Fuse.Properties[o]))
 	}
 
-	value.Fuse.Options = strings.TrimSuffix(value.Fuse.Options, ",")
+	value.Fuse.Options = strings.Join(options, ",")
 	return nil
 }
 
 func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
-	var (
-		commonOption = ""
-		cacheOption  = ""
-		portOption   = ""
-	)
+	if len(value.Worker.TieredStore.Levels) == 0 {
+		return fmt.Errorf("worker tiered store are not specified")
+	}
 
-	if value.Worker.TieredStore.Levels[0].Quota != "" {
-		quota := value.getTiredStoreLevel0Quota()
+	var options []string
+	options = append(options, fmt.Sprintf("cache_media=%s", value.getTiredStoreLevel0Path()))
+	options = append(options, fmt.Sprintf("server_port=%v", value.Worker.Port.Rpc))
+
+	if len(value.getTiredStoreLevel0Quota()) > 0 {
+		quota := *utils.TransformEACUnitToQuantity(value.getTiredStoreLevel0Quota())
 		if miniWorkerQuota.Cmp(quota) > 0 {
 			return fmt.Errorf("minimum worker tired store size is %s, current size is %s, please increase size", miniWorkerQuota.String(), quota.String())
 		}
 		quotaValue := quota.Value() / miniWorkerQuota.Value()
-		cacheOption += "cache_capacity_gb=" + strconv.Itoa(int(quotaValue)) + ","
+		options = append(options, fmt.Sprintf("cache_capacity_gb=%v", int(quotaValue)))
 	}
-	if value.Worker.TieredStore.Levels[0].MediumType == string(common.Memory) {
-		cacheOption += "tmpfs=true,"
+	if value.getTiredStoreLevel0Type() == string(common.Memory) {
+		options = append(options, "tmpfs=true")
 	}
-	cacheOption += "cache_media=" + value.getTiredStoreLevel0Path() + ","
-
-	portOption += "server_port=" + strconv.Itoa(value.Worker.Port.Rpc) + ","
-
-	value.Worker.Options += commonOption
-	value.Worker.Options += cacheOption
-	value.Worker.Options += portOption
 
 	for o := range runtime.Spec.Worker.Properties {
-		option := o + "=" + runtime.Spec.Worker.Properties[o] + ","
-		value.Worker.Options += option
+		options = append(options, fmt.Sprintf("%s=%s", o, runtime.Spec.Worker.Properties[o]))
 	}
 
-	value.Worker.Options = strings.TrimSuffix(value.Worker.Options, ",")
+	value.Worker.Options = strings.Join(options, ",")
 	return nil
 }
