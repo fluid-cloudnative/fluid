@@ -28,6 +28,11 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	ufsPath.HostPath = "/mnt/test"
 	ufsPath.ContainerPath = "/underFSStorage/test"
 
+	var ufsPath1 = UFSPath{}
+	ufsPath1.Name = "test"
+	ufsPath1.HostPath = "/mnt/test"
+	ufsPath1.ContainerPath = "/underFSStorage"
+
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
 		dataset *datav1alpha1.Dataset
@@ -42,12 +47,21 @@ func TestTransformDatasetToVolume(t *testing.T) {
 				}},
 			},
 		}, &Alluxio{}, ufsPath},
+		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			},
+		}, &Alluxio{}, ufsPath1},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSPaths[0].HostPath != ufsPath.HostPath ||
-			test.value.UFSPaths[0].ContainerPath != ufsPath.ContainerPath {
+		if test.value.UFSPaths[0].HostPath != test.expect.HostPath ||
+			test.value.UFSPaths[0].ContainerPath != test.expect.ContainerPath {
 			t.Errorf("expected %v, got %v", test.expect, test.value.UFSPaths[0])
 		}
 	}
@@ -56,7 +70,11 @@ func TestTransformDatasetToVolume(t *testing.T) {
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
 	ufsVolume.Name = "test2"
-	ufsVolume.ContainerPath = "/opt/alluxio/underFSStorage/test2"
+	ufsVolume.ContainerPath = "/underFSStorage/test2"
+
+	var ufsVolume1 = UFSVolume{}
+	ufsVolume1.Name = "test1"
+	ufsVolume1.ContainerPath = "/underFSStorage"
 
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -72,12 +90,21 @@ func TestTransformDatasetToPVC(t *testing.T) {
 				}},
 			},
 		}, &Alluxio{}, ufsVolume},
+		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "pvc://test1",
+					Name:       "test1",
+					Path:       "/",
+				}},
+			},
+		}, &Alluxio{}, ufsVolume1},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSVolumes[0].ContainerPath != ufsVolume.ContainerPath &&
-			test.value.UFSVolumes[0].Name != ufsVolume.Name {
+		if test.value.UFSVolumes[0].ContainerPath != test.expect.ContainerPath ||
+			test.value.UFSVolumes[0].Name != test.expect.Name {
 			t.Errorf("expected %v, got %v", test.expect, test.value)
 		}
 	}
