@@ -36,7 +36,7 @@ func GetMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []typ
 		if common.IsFluidRefSchema(mount.MountPoint) {
 			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
 			namespaceAndName := strings.Split(datasetPath, "/")
-			if len(namespaceAndName) == 2 {
+			if len(namespaceAndName) >= 2 {
 				physicalNameSpacedName = append(physicalNameSpacedName, types.NamespacedName{
 					Namespace: namespaceAndName[0],
 					Name:      namespaceAndName[1],
@@ -45,6 +45,20 @@ func GetMountedDatasetNamespacedName(virtualDataset *datav1alpha1.Dataset) []typ
 		}
 	}
 	return physicalNameSpacedName
+}
+
+func GetMountedDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
+	var paths []string
+	for _, mount := range virtualDataset.Spec.Mounts {
+		if common.IsFluidRefSchema(mount.MountPoint) {
+			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
+			splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
+			if len(splitsStrings) == 3 {
+				paths = append(paths, splitsStrings[2])
+			}
+		}
+	}
+	return paths
 }
 
 func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error) {

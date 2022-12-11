@@ -438,6 +438,13 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{
 			VolumeName: "nopv",
 		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "subpvc",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: v1.PersistentVolumeClaimSpec{
+			VolumeName: "subpv",
+		},
 	}}
 
 	objs := []runtime.Object{}
@@ -462,6 +469,20 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.ExpectedFluidAnnotations},
 		Spec:       v1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "subpv"},
+		Spec: v1.PersistentVolumeSpec{
+			PersistentVolumeSource: v1.PersistentVolumeSource{
+				CSI: &v1.CSIPersistentVolumeSource{
+					Driver: "fuse.csi.fluid.io",
+					VolumeAttributes: map[string]string{
+						common.VolumeAttrFluidPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+						common.VolumeAttrMountType:    common.JindoRuntime,
+						common.VolumeAttrFluidSubPath: "subtest",
+					},
+				},
+			},
+		},
 	}}
 
 	for _, pv := range testPVInputs {
@@ -475,11 +496,12 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 		namespace string
 	}
 	tests := []struct {
-		name      string
-		args      args
-		wantError bool
-		wantPath  string
-		wantType  string
+		name        string
+		args        args
+		wantError   bool
+		wantPath    string
+		wantType    string
+		wantSubPath string
 	}{{
 		name: "volumeClaim doesn't exist",
 		args: args{
@@ -510,11 +532,21 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 			namespace: namespace,
 		},
 		wantError: true,
+	}, {
+		name: "sub pv",
+		args: args{
+			name:      "subpvc",
+			namespace: namespace,
+		},
+		wantError:   false,
+		wantPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+		wantType:    common.JindoRuntime,
+		wantSubPath: "subtest",
 	}}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			path, mountType, err := GetMountInfoFromVolumeClaim(client, tt.args.name, tt.args.namespace)
+			path, mountType, subpath, err := GetMountInfoFromVolumeClaim(client, tt.args.name, tt.args.namespace)
 			got := err != nil
 
 			if got != tt.wantError {
@@ -539,6 +571,14 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 					tt.args.namespace,
 					mountType,
 					tt.wantType)
+			}
+
+			if subpath != tt.wantSubPath {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got subpath  %v, want subpath = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					subpath,
+					tt.wantSubPath)
 			}
 
 		})

@@ -1,8 +1,9 @@
-# 示例 - Dataset缓存跨Namespace访问(Sidecar机制)
-本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
-- Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
- 
+# 示例 - Dataset 挂载其它 Dataset的子路径
+本示例用来演示如何将Dataset挂载其它Dataset的子路径：
+- Namespace default 创建 Dataset phy 和 AlluxioRuntime phy；
+- Namespace ref 创建 Dataset subpath，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+
+本示例通过Sidecar机制实现，如果要采用CSI机制，可以结合参考[CSI机制挂载Dataset实现缓存共享](./dataset_across_namespace_with_csi.md)。
 ## 前提条件
 在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
 ```shell
@@ -14,7 +15,7 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 thinruntime-controller-7dcbf5f45-xsf4p          1/1     Running   0          8h
 ```
 
-其中，`thinruntime-controller`是用来支持Dataset跨Namespace共享，`alluxioruntime-controller`是实际的缓存。
+其中，`thinruntime-controller`是用来支持mount dataset的功能，`alluxioruntime-controller`是实际的缓存。
 
 ## Sidecar机制跨Namespace共享数据集缓存
 ###  1. 创建Dataset和缓存Runtime
@@ -51,7 +52,7 @@ $ kubectl create -f ds.yaml
 
 ### 2. 创建引用的Dataset和Runtime
 在 ref 名空间下，创建：
-- 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
+- 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}/${subpath}`, `$subpath`支持多级子路径；
 - ThinRuntime `refdemo`，其Spec字段不用填写；
 
 注：
@@ -67,7 +68,7 @@ metadata:
   name: refdemo
 spec:
   mounts:
-    - mountPoint: dataset://default/phy
+    - mountPoint: dataset://default/phy/spark
       name: fusedemo
       path: "/"
 EOF
@@ -103,28 +104,18 @@ EOF
 $ kubectl create -f app-ref.yaml -n ref
 ```
 
-查看 default 空间下的pod信息：
-- 只存在一个AlluxioRuntime集群，即缓存只有一份；
-- 采用sidecar机制，因此不存在fuse的pod；
-```shell
-$ kubectl get pods -o wide
-NAME             READY   STATUS    RESTARTS   AGE     IP              NODE      NOMINATED NODE   READINESS GATES
-phy-master-0     2/2     Running   0          7m2s    172.16.1.10     work02    <none>           <none>
-phy-worker-0     2/2     Running   0          6m29s   172.16.1.10     work02    <none>           <none>
-```
-
 查看 ref 空间下 app nginx pod 状态正常运行，并查看挂载的数据：
 ```shell
 $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
 
-# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
+# 查看pod内的数据路径，显示phy dataset的'spark`子路径下的内容
 $ kubectl exec nginx -c nginx -n ref -it -- ls /data_spark
-spark
+spark-3.1.3   spark-3.2.3  spark-3.3.1
 ```
 
-查看 ref 空间下 app nginx pod的yaml，可以看到被注入`fuse` container：
+查看 ref 空间下 app nginx pod的yaml，可以看到相关volume被改写成具体的子路径信息：
 ```shell
 $ kubectl get pods nginx -n ref -o yaml
 ...
@@ -133,6 +124,16 @@ spec:
     - image: fluidcloudnative/alluxio-fuse:release-2.8.1-SNAPSHOT-0433ade
       ...
     - image: nginx
+      volumeMounts:
+      - mountPath: /data_spark
+        mountPropagation: HostToContainer
+        name: spark-vol
+      ...
+  volumes:
+  - hostPath:
+      path: /runtime-mnt/alluxio/default/phy/alluxio-fuse/spark
+      type: ""
+    name: spark-vol
 ...
 ```
 

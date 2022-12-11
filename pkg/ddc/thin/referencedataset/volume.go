@@ -18,8 +18,10 @@ package referencedataset
 
 import (
 	"context"
+	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -77,6 +79,21 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 			return err
 		}
 
+		copiedPvSpec := physicalPV.Spec.DeepCopy()
+
+		virtualDataset, err := utils.GetDataset(client, virtualRuntime.GetName(), virtualRuntime.GetNamespace())
+		if err != nil {
+			return err
+		}
+		// set the sub path attribute
+		subPaths := base.GetMountedDatasetSubPath(virtualDataset)
+		if len(subPaths) > 1 {
+			return fmt.Errorf("the dataset is not validated, only support dataset mounts which expects 1")
+		}
+		if len(subPaths) == 1 && subPaths[0] != "" {
+			copiedPvSpec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = subPaths[0]
+		}
+
 		pv := &v1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: virtualPvName,
@@ -85,7 +102,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 				},
 				Annotations: physicalPV.ObjectMeta.Annotations,
 			},
-			Spec: *physicalPV.Spec.DeepCopy(),
+			Spec: *copiedPvSpec,
 		}
 		err = client.Create(context.TODO(), pv)
 		if err != nil {

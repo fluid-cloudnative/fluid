@@ -105,6 +105,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
 	mountType := req.GetVolumeContext()[common.VolumeAttrMountType]
+	subPath := req.GetVolumeContext()[common.VolumeAttrFluidSubPath]
+
 	if fluidPath == "" {
 		// fluidPath = fmt.Sprintf("/mnt/%s", req.)
 		return nil, status.Error(codes.InvalidArgument, "fluid_path is not set")
@@ -114,8 +116,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		mountType = common.AlluxioMountType
 	}
 
-	// 1. Wait the runtime fuse ready
-	err = utils.CheckMountReady(fluidPath, mountType)
+	mountPath := fluidPath
+	if subPath != "" {
+		mountPath = fluidPath + "/" + subPath
+	}
+
+	// 1. Wait the runtime fuse ready and check the sub path existence
+	err = utils.CheckMountReadyAndSubPathExist(fluidPath, mountType, subPath)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -126,9 +133,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// }
 
 	if readOnly {
-		args = append(args, "-o", "ro", fluidPath, targetPath)
+		args = append(args, "-o", "ro", mountPath, targetPath)
 	} else {
-		args = append(args, fluidPath, targetPath)
+		args = append(args, mountPath, targetPath)
 	}
 	command := exec.Command("mount", args...)
 
@@ -144,7 +151,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	} else {
-		glog.V(4).Infof("Succeed in binding %s to %s", fluidPath, targetPath)
+		glog.V(4).Infof("Succeed in binding %s to %s", mountPath, targetPath)
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
