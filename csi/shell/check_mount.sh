@@ -4,6 +4,8 @@ set -ex
 
 ConditionPathIsMountPoint="$1"
 MountType="$2"
+SubPath="$3"
+
 #[ -z ${ConditionPathIsMountPoint} ] && ConditionPathIsMountPoint=/alluxio-fuse
 
 count=0
@@ -18,5 +20,10 @@ do
         exit 1
     fi
 done
+
+if [ ! -e  $ConditionPathIsMountPoint/$SubPath ] ; then
+  echo "sub path [$SubPath] not exist!"
+  exit 2
+fi
 
 echo "succeed in checking mount point $ConditionPathIsMountPoint"

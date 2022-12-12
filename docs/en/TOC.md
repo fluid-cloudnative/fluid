@@ -16,6 +16,7 @@
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
     - [Accelerate Data Accessing(via HDFS interface)](samples/accelerate_data_accessing_by_hdfs.md)
     - [Cache Co-locality](samples/data_co_locality.md)
+    - [Share data across namespace (CSI mode)](samples/dataset_across_namespace_with_csi.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
   + Security

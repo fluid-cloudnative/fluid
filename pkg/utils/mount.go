@@ -40,12 +40,12 @@ func GetMountRoot() (string, error) {
 	return mountRoot, nil
 }
 
-func CheckMountReady(fluidPath string, mountType string) error {
+func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) error {
 	glog.Infof("Try to check if the mount target %s is ready", fluidPath)
 	if fluidPath == "" {
 		return errors.New("target is not specified for checking the mount")
 	}
-	args := []string{fluidPath, mountType}
+	args := []string{fluidPath, mountType, subPath}
 	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()

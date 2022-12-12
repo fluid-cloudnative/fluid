@@ -105,12 +105,13 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
 
-	// Fluid assumes pvc name is the same as runtime's name
-	mountPath, mountType, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
+	// get the pv attribute, mountPath is with prefix "/runtime-mnt/..."
+	mountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, pvcNamespace)
 	if err != nil {
 		return
 	}
 
+	// the mountPathInContainer is the parent dir of fuse mount path in the container
 	mountPathInContainer := ""
 	if !option.EnableUnprivilegedSidecar {
 		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
@@ -124,7 +125,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	gen := poststart.NewGenerator(types.NamespacedName{
 		Name:      pvcName,
 		Namespace: pvcNamespace,
-	}, mountPathInContainer, mountType, option)
+	}, mountPathInContainer, mountType, subPath, option)
 	cm := gen.BuildConfigmap(ownerReference)
 	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
 	if err != nil {
@@ -147,7 +148,10 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	}
 	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
 
-	// 5. create a volume with pvcName with mountpath in pv, and add it to VolumesToUpdate
+	// 5. create a volume with pvcName with mountPath in pv, and add it to VolumesToUpdate
+	if subPath != "" {
+		mountPath = mountPath + "/" + subPath
+	}
 	template.VolumesToUpdate = []corev1.Volume{
 		{
 			Name: pvcName,
