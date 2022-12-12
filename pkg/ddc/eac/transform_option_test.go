@@ -104,7 +104,7 @@ func TestTransformWorkerOptions(t *testing.T) {
 								Level:      0,
 								MediumType: "SSD",
 								Type:       "emptyDir",
-								Quota:      "2G",
+								Quota:      "2Gi",
 								Path:       "/test",
 							},
 						},
