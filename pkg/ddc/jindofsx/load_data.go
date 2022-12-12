@@ -18,7 +18,6 @@ package jindofsx
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -154,11 +153,11 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 		return
 	}
 
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0400)
 	if err != nil {
 		return
 	}
