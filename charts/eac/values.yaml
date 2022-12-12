@@ -20,7 +20,7 @@ worker:
   image: image-work-in-progress
   imageTag: update
   imagePullPolicy: Always
-  option: cache_media=/dev/shm,cache_capacity_gb=1
+  option: cache_media=/dev/shm,cache_capacity_gb=1,tmpfs=true
   hostNetwork: false
   nodeSelector: {}
   tieredstore:
@@ -41,6 +41,8 @@ worker:
   #      memory: "4G"
 
 fuse:
+  updateStrategy:
+    type: OnDelete
   criticalPod: false
   image: image-work-in-progress
   imageTag: update

@@ -372,6 +372,17 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		// Fuse global is always set to true
 		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
+	case common.EACRuntime:
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{})
+		if err != nil {
+			return runtimeInfo, err
+		}
+		eacRuntime, err := utils.GetEACRuntime(client, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(true, eacRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(eacRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return
