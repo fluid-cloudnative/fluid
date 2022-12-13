@@ -52,11 +52,9 @@ $ kubectl create -f ds.yaml
 ### 2. 创建引用的Dataset和Runtime
 在 ref 名空间下，创建：
 - 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
-- ThinRuntime `refdemo`，其Spec字段不用填写；
 
 注：
 1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
-2. 引用数据集对应的Runtime，其Spec中字段无效；
 ```shell
 $ kubectl create ns ref
 
@@ -68,8 +66,6 @@ metadata:
 spec:
   mounts:
     - mountPoint: dataset://default/phy
-      name: fusedemo
-      path: "/"
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref

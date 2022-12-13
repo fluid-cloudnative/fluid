@@ -83,7 +83,7 @@ type Mount struct {
 
 	// The name of mount
 	// +kubebuilder:validation:MinLength=0
-	// +required
+	// +optional
 	Name string `json:"name,omitempty"`
 
 	// The path of mount, if not set will be /{Name}
