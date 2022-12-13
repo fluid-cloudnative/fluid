@@ -4850,6 +4850,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref comm
 							},
 						},
 					},
+					"nodePublishSecretPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"fileSystemType"},
 			},

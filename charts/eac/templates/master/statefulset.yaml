@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "eac.fullname" . }}-master
+  labels:
+    name: {{ template "eac.fullname" . }}-master
+    app: {{ template "eac.name" . }}
+    chart: {{ template "eac.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: eac-master
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "eac.name" . }}
+      role: eac-master
+      name: {{ template "eac.fullname" . }}-master
+  replicas: {{ if .Values.master.enabled -}} {{ $.Values.master.count }} {{ else -}} 0 {{ end }}
+  serviceName: {{ template "eac.fullname" . }}-master
+  template:
+    metadata:
+      labels:
+        name: {{ template "eac.fullname" . }}-master
+        app: {{ template "eac.name" . }}
+        chart: {{ template "eac.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: eac-master
+    spec:
+      terminationGracePeriodSeconds: 10000000
+      {{- if .Values.master.hostNetwork }}
+      hostNetwork: {{ .Values.master.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      nodeSelector:
+      {{- if .Values.master.nodeSelector }}
+{{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      affinity:
+      {{- if .Values.master.affinity }}
+{{ toYaml .Values.master.affinity | indent 8  }}
+      {{- end }}
+      initContainers:
+        - name: init-fuse
+          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
+          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "init_fuse"
+            - {{ .Values.osAdvise.enabled | quote }}
+            - {{ .Values.osAdvise.osVersion | quote }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-os
+              mountPath: /etc/host-os-release
+      containers:
+        - name: eac-master
+          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
+          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
+          {{- if .Values.master.resources  }}
+          resources:
+{{ toYaml .Values.master.resources | trim | indent 12  }}
+          {{- end }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "master"
+            - {{ .Values.master.mountPoint | quote }}
+            - "/eac/eac-master"
+            - {{ .Values.master.option | quote }}
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mount | grep {{ .Values.master.mountPoint }} && stat /eac/eac-master"]
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "/entrypoint.sh stop_master /eac/eac-master"]
+          volumeMounts:
+            - name: eac-worker-endpoints
+              mountPath: /etc/eac
+            {{- if .Values.master.tieredstore }}
+{{- include "eac.tieredstoreVolumeMounts" .Values.master }}
+            {{- end }}
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: eac-sock
+              mountPath: /var/run/eac
+        - name: eac-sessmgr
+          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
+          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "sessmgr"
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: eac-sock
+              mountPath: /var/run/eac
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: eac-worker-endpoints
+          configMap:
+            name: {{ template "eac.fullname" . }}-worker-endpoints
+        {{- if .Values.master.tieredstore }}
+{{- include "eac.tieredstoreVolumes" .Values.master }}
+        {{- end }}
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+            type: ''
+        - name: host-os
+          hostPath:
+            path: /etc/os-release
+            type: FileOrCreate
+        - name: eac-sock
+          emptyDir: {}

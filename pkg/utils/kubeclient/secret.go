@@ -56,13 +56,8 @@ func UpdateSecret(client client.Client, secret *v1.Secret) error {
 }
 
 func CopySecretToNamespace(client client.Client, from types.NamespacedName, to types.NamespacedName, ownerReference *common.OwnerReference) error {
-	if copiedSecret, err := GetSecret(client, to.Name, to.Namespace); err == nil {
-		if len(copiedSecret.Labels) != 0 {
-			if _, ok := copiedSecret.Labels["fluid.io/copied-from"]; ok {
-				return nil
-			}
-		}
-		return fmt.Errorf("secret \"%s\" in namespace \"%s\" already exists", to.Name, to.Namespace)
+	if _, err := GetSecret(client, to.Name, to.Namespace); err == nil {
+		return nil
 	}
 
 	secret, err := GetSecret(client, from.Name, from.Namespace)

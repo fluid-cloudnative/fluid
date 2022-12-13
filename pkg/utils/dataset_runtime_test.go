@@ -1,10 +1,9 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +18,10 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestGetRuntimeByCategory(t *testing.T) {
@@ -74,4 +77,81 @@ func mockThreeRuntimes(index int, category common.Category) []datav1alpha1.Runti
 	}
 
 	return list
+}
+
+func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
+
+	thinRuntimes := []*datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "ThinRuntimeExists",
+				Namespace: "default",
+				OwnerReferences: []v1.OwnerReference{
+					{
+						// Kind:       "Dataset",
+						// APIVersion: "data.fluid.io/v1alpha1",
+						Name:       "ThinRuntimeExists",
+						Controller: utilpointer.BoolPtr(true),
+						UID:        "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
+					},
+				},
+			},
+		}, {
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "ThinRuntimeExistWithOwnerReference",
+				Namespace: "default",
+			},
+		},
+	}
+	objs := []runtime.Object{}
+	for _, thinRuntime := range thinRuntimes {
+		objs = append(objs, thinRuntime.DeepCopy())
+	}
+	datasetScheme := runtime.NewScheme()
+	_ = datav1alpha1.AddToScheme(datasetScheme)
+	fakeClient := fake.NewFakeClientWithScheme(datasetScheme, objs...)
+
+	tests := []struct {
+		name    string
+		dataset *datav1alpha1.Dataset
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "ThinRuntimeExists",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeExists",
+					Namespace: "default",
+					UID:       "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
+				},
+			},
+			wantErr: false,
+		}, {
+			name: "ThinRuntimeExistWithOwnerReference",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeExistWithOwnerReference",
+					Namespace: "default",
+				},
+			},
+			wantErr: false,
+		}, {
+			name: "ThinRuntimeDoesnotExist",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "ThinRuntimeDoesnotExist",
+					Namespace: "default",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CreateRuntimeForReferenceDatasetIfNotExist(fakeClient, tt.dataset); (err != nil) != tt.wantErr {
+				t.Errorf("Testcase %v CreateRuntimeForReferenceDatasetIfNotExist() error = %v, wantErr %v", tt.name, err, tt.wantErr)
+			}
+		})
+	}
 }

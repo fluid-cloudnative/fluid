@@ -18,13 +18,14 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"reflect"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -321,4 +322,62 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 			fuses.Status.UpdatedNumberScheduled)
 	}
 	return err
+}
+
+// checkExistenceOfMaster check engine existed
+func (e *AlluxioEngine) checkExistenceOfMaster() (err error) {
+
+	master, masterErr := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
+
+	if (masterErr != nil && errors.IsNotFound(masterErr)) || *master.Spec.Replicas <= 0 {
+		cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master are not ready.",
+			fmt.Sprintf("The statefulset %s in %s is not found, or the replicas is <= 0 ,please fix it.",
+				e.getMasterName(),
+				e.namespace), corev1.ConditionFalse)
+
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+
+			runtime, err := e.getRuntime()
+			if err != nil {
+				return err
+			}
+
+			runtimeToUpdate := runtime.DeepCopy()
+
+			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
+
+			if oldCond == nil || oldCond.Type != cond.Type {
+				runtimeToUpdate.Status.Conditions =
+					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+						cond)
+			}
+
+			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
+			//when master is not ready, the worker and fuse should be not ready.
+			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
+			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
+			e.Log.Error(err, "the master are not ready")
+
+			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+				updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+				if updateErr != nil {
+					return updateErr
+				}
+
+				updateErr = e.UpdateDatasetStatus(data.FailedDatasetPhase)
+				if updateErr != nil {
+					e.Log.Error(updateErr, "Failed to update dataset")
+					return updateErr
+				}
+			}
+
+			return err
+		})
+
+		//the totalErr promise the sync will return and Requeue
+		totalErr := fmt.Errorf("the master engine is not existed %v", err)
+		return totalErr
+	} else {
+		return nil
+	}
 }

@@ -42,6 +42,14 @@ type MetadataSyncResult struct {
 // For Alluxio Engine, metadata sync is an asynchronous operation, which means
 // you should call this function periodically to make sure the function actually takes effect.
 func (e *AlluxioEngine) SyncMetadata() (err error) {
+
+	//check master exist
+	err = e.checkExistenceOfMaster()
+	if err != nil {
+		e.Log.Error(err, "the master is not exist")
+		return
+	}
+
 	should, err := e.shouldSyncMetadata()
 	if err != nil {
 		e.Log.Error(err, "Failed to check if should sync metadata")

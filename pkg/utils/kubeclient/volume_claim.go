@@ -39,7 +39,7 @@ func GetPersistentVolumeClaim(client client.Client, name, namespace string) (pvc
 }
 
 // GetMountInfoFromVolumeClaim gets the mountPath and type for CSI plugin
-func GetMountInfoFromVolumeClaim(client client.Client, name, namespace string) (path string, mountType string, err error) {
+func GetMountInfoFromVolumeClaim(client client.Client, name, namespace string) (path string, mountType string, subpath string, err error) {
 	pvc, err := GetPersistentVolumeClaim(client, name, namespace)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to get persistent volume claim")
@@ -55,6 +55,7 @@ func GetMountInfoFromVolumeClaim(client client.Client, name, namespace string) (
 	if pv.Spec.CSI != nil && len(pv.Spec.CSI.VolumeAttributes) > 0 {
 		path = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidPath]
 		mountType = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountType]
+		subpath = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath]
 	} else {
 		err = fmt.Errorf("the pvc %s in %s is not created by fluid",
 			name,

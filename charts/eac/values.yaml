@@ -1,0 +1,98 @@
+# Default values for eac.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nodeSelector: {}
+tolerations: []
+osAdvise:
+  enabled: false
+  osVersion: none
+
+initFuse:
+  image: image-work-in-progress
+  imageTag: update
+  imagePullPolicy: Always
+
+worker:
+  enabled: true
+  count: 0
+  image: image-work-in-progress
+  imageTag: update
+  imagePullPolicy: Always
+  option: cache_media=/dev/shm,cache_capacity_gb=1,tmpfs=true
+  hostNetwork: false
+  nodeSelector: {}
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  port:
+    rpc: 14555
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+
+fuse:
+  updateStrategy:
+    type: OnDelete
+  criticalPod: false
+  image: image-work-in-progress
+  imageTag: update
+  imagePullPolicy: Always
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
+  mountPoint: eac://nas-mount-point
+  # eac will mount mountPoint on /eac/eac-fuse in container which will be shared at hostMountPath/eac-fuse on host
+  hostMountPath: /test-mnt/eac-mnt/charts
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  hostNetwork: false
+  nodeSelector: {}
+  port:
+    monitor:
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+
+master:
+  enabled: true
+  count: 1
+  image: image-work-in-progress
+  imageTag: update
+  imagePullPolicy: Always
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
+  mountPoint: eac://nas-mount-point
+  tieredstore:
+    levels:
+      - level: 0
+        mediumtype: MEM
+        path: /dev/shm
+        type: emptyDir
+        quota: 1G
+  hostNetwork: false
+  nodeSelector: {}
+  resources:
+    requests:
+    #      cpu: "0.5"
+    #      memory: "1G"
+    limits:
+  #      cpu: "4"
+  #      memory: "4G"
+
+placement: Inclusive

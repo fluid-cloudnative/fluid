@@ -17,9 +17,11 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
+	"reflect"
 	"testing"
 
-	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -29,7 +31,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -319,5 +323,155 @@ func TestSyncReplicas(t *testing.T) {
 		if !found && testCase.condtionLength > 0 {
 			t.Errorf("testCase: %s runtime condition want conditionType %v, got  conditions %v", testCase.testName, testCase.Type, rt.Status.Conditions)
 		}
+	}
+}
+
+func TestSyncReplicasWithoutWorker(t *testing.T) {
+	var statefulsetInputs = []appsv1.StatefulSet{}
+
+	testObjs := []runtime.Object{}
+	for _, statefulset := range statefulsetInputs {
+		testObjs = append(testObjs, statefulset.DeepCopy())
+	}
+
+	var daemonSetInputs = []appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
+				Namespace: "fluid",
+			},
+			Status: appsv1.DaemonSetStatus{
+				NumberUnavailable: 1,
+				NumberReady:       1,
+				NumberAvailable:   1,
+			},
+		},
+	}
+
+	for _, daemonSet := range daemonSetInputs {
+		testObjs = append(testObjs, daemonSet.DeepCopy())
+	}
+
+	var alluxioruntimeInputs = []v1alpha1.AlluxioRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Status: v1alpha1.RuntimeStatus{
+				MasterPhase: v1alpha1.RuntimePhaseReady,
+				WorkerPhase: v1alpha1.RuntimePhaseReady,
+				FusePhase:   v1alpha1.RuntimePhaseReady,
+			},
+		},
+	}
+	for _, alluxioruntimeInput := range alluxioruntimeInputs {
+		testObjs = append(testObjs, alluxioruntimeInput.DeepCopy())
+	}
+
+	var datasetInputs = []*v1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: v1alpha1.DatasetSpec{},
+			Status: v1alpha1.DatasetStatus{
+				Phase: v1alpha1.BoundDatasetPhase,
+				HCFSStatus: &v1alpha1.HCFSStatus{
+					Endpoint:                    "test Endpoint",
+					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+				},
+			},
+		},
+	}
+	for _, dataset := range datasetInputs {
+		testObjs = append(testObjs, dataset.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	engines := []AlluxioEngine{
+		{
+			Client:    client,
+			Log:       fake.NullLogger(),
+			namespace: "fluid",
+			name:      "hbase",
+			runtime: &v1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+			},
+		},
+	}
+
+	var testCase = []struct {
+		engine                     AlluxioEngine
+		expectedErrorNil           bool
+		expectedRuntimeMasterPhase v1alpha1.RuntimePhase
+		expectedRuntimeWorkerPhase v1alpha1.RuntimePhase
+		expectedRuntimeFusePhase   v1alpha1.RuntimePhase
+		expectedDatasetPhase       v1alpha1.DatasetPhase
+	}{
+		{
+			engine:                     engines[0],
+			expectedErrorNil:           false,
+			expectedRuntimeMasterPhase: v1alpha1.RuntimePhaseReady,
+			expectedRuntimeWorkerPhase: v1alpha1.RuntimePhaseNotReady,
+			expectedRuntimeFusePhase:   v1alpha1.RuntimePhaseReady,
+			expectedDatasetPhase:       v1alpha1.FailedDatasetPhase,
+		},
+	}
+
+	for _, test := range testCase {
+		klog.Info("test")
+		err := test.engine.SyncReplicas(cruntime.ReconcileRequestContext{
+			Log:      fake.NullLogger(),
+			Recorder: record.NewFakeRecorder(300),
+		})
+		if err != nil && test.expectedErrorNil == true ||
+			err == nil && test.expectedErrorNil == false {
+			t.Errorf("fail to exec the SyncReplicas function with err %v", err)
+			return
+		}
+
+		alluxioruntime, err := test.engine.getRuntime()
+		if err != nil {
+			t.Errorf("fail to get the runtime with the error %v", err)
+			return
+		}
+
+		if alluxioruntime.Status.MasterPhase != test.expectedRuntimeMasterPhase {
+			t.Errorf("fail to update the runtime master status, get %s, expect %s", alluxioruntime.Status.MasterPhase, test.expectedRuntimeMasterPhase)
+			return
+		}
+
+		if alluxioruntime.Status.WorkerPhase != test.expectedRuntimeWorkerPhase {
+			t.Errorf("fail to update the runtime worker status, get %s, expect %s", alluxioruntime.Status.WorkerPhase, test.expectedRuntimeWorkerPhase)
+			return
+		}
+
+		if alluxioruntime.Status.FusePhase != test.expectedRuntimeFusePhase {
+			t.Errorf("fail to update the runtime fuse status, get %s, expect %s", alluxioruntime.Status.FusePhase, test.expectedRuntimeFusePhase)
+			return
+		}
+
+		var dataset v1alpha1.Dataset
+		key := types.NamespacedName{
+			Name:      alluxioruntime.Name,
+			Namespace: alluxioruntime.Namespace,
+		}
+		err = client.Get(context.TODO(), key, &dataset)
+
+		if err != nil {
+			t.Errorf("fail to get the dataset with error %v", err)
+			return
+		}
+		if !reflect.DeepEqual(dataset.Status.Phase, test.expectedDatasetPhase) {
+			t.Errorf("fail to update the dataset status, get %s, expect %s", dataset.Status.Phase, test.expectedDatasetPhase)
+			return
+		}
+
 	}
 }

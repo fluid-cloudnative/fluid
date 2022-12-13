@@ -68,7 +68,7 @@ func TestCheckMountReady(t *testing.T) {
 			})
 			defer patch1.Reset()
 
-			err := CheckMountReady("/test", "test")
+			err := CheckMountReadyAndSubPathExist("/test", "test", "")
 			So(err, ShouldBeNil)
 		})
 		Convey("CheckMountReady false", func() {
@@ -78,11 +78,11 @@ func TestCheckMountReady(t *testing.T) {
 			})
 			defer patch1.Reset()
 
-			err := CheckMountReady("/test", "test")
+			err := CheckMountReadyAndSubPathExist("/test", "test", "")
 			So(err, ShouldNotBeNil)
 		})
 		Convey("fluidPath nil", func() {
-			err := CheckMountReady("", "test")
+			err := CheckMountReadyAndSubPathExist("", "test", "")
 			So(err, ShouldNotBeNil)
 		})
 	})

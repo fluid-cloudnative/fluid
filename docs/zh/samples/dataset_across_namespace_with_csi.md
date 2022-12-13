@@ -1,7 +1,7 @@
 # 示例 - Dataset缓存跨Namespace访问(CSI机制)
 本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
 - Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref 和 ThinRuntime demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+- Namespace ns-b 创建 Dataset demo-ref 和 ThinRuntime demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo`
  
 ## 前提条件
 在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
@@ -52,7 +52,6 @@ $ kubectl create -f ds.yaml
 ### 2. 创建引用的Dataset和Runtime
 在 ref 名空间下，创建：
 - 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
-- ThinRuntime `refdemo`，其Spec字段不用填写；
 
 注：
 1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
@@ -69,16 +68,10 @@ spec:
   mounts:
     - mountPoint: dataset://default/phy
       name: fusedemo
----
-apiVersion: data.fluid.io/v1alpha1
-kind: ThinRuntime
-metadata:
-  name: refdemo
-spec:
+      path: "/"
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref
-```
 
 ### 创建Pod并查看数据
 
@@ -131,11 +124,15 @@ EOF
 $ kubectl create -f app-ref.yaml -n ref
 ```
 
-查看 ref 空间下 app nginx pod 状态正常运行：
+查看 ref 空间下 app nginx pod 状态正常运行，并查看挂载的数据：
 ```shell
 $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
+
+# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
+$ kubectl exec nginx -n ref -it -- ls /data_spark
+spark
 ```
 
 查看 default 空间下的pod信息：

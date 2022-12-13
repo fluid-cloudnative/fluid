@@ -18,11 +18,11 @@ package eac
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,154 +85,4 @@ func (e *EACEngine) parseRuntime(ctx cruntime.ReconcileRequestContext) error {
 		return fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 	return nil
-}
-
-func (e *EACEngine) UsedStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) FreeStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) TotalStorageBytes() (int64, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) TotalFileNums() (int64, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckMasterReady() (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckWorkersReady() (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) ShouldSetupMaster() (should bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) ShouldSetupWorkers() (should bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) ShouldCheckUFS() (should bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SetupMaster() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SetupWorkers() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) PrepareUFS() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) Shutdown() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) AssignNodesToCache(desiredNum int32) (currentNum int32, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckRuntimeHealthy() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) UpdateCacheOfDataset() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CreateVolume() error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SyncMetadata() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) DeleteVolume() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) BindToDataset() (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckRuntimeReady() (ready bool) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	//TODO implement me
-	panic("implement me")
 }

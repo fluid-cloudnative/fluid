@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "eac.fullname" . }}-fuse
+  labels:
+    app: {{ template "eac.name" . }}
+    chart: {{ template "eac.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: eac-fuse
+spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
+  selector:
+    matchLabels:
+      app: {{ template "eac.name" . }}
+      chart: {{ template "eac.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: eac-fuse
+  template:
+    metadata:
+      labels:
+        app: {{ template "eac.name" . }}
+        chart: {{ template "eac.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: eac-fuse
+    spec:
+      terminationGracePeriodSeconds: 10000000
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
+      {{- if .Values.fuse.hostNetwork }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: init-fuse
+          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
+          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "init_fuse"
+            - {{ .Values.osAdvise.enabled | quote }}
+            - {{ .Values.osAdvise.osVersion | quote }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-os
+              mountPath: /etc/host-os-release
+      containers:
+        - name: eac-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          {{- if .Values.fuse.resources  }}
+          resources:
+{{ toYaml .Values.fuse.resources | trim | indent 12  }}
+          {{- end }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "fuse"
+            - {{ .Values.fuse.mountPoint | quote }}
+            - "/eac/eac-fuse"
+            - {{ .Values.fuse.option | quote }}
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mount | grep {{ .Values.fuse.mountPoint }} && stat /eac/eac-fuse"]
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          {{- if .Values.fuse.port }}
+          ports:
+            {{- if .Values.fuse.port.monitor }}
+            - containerPort: {{ .Values.fuse.port.monitor }}
+              name: monitor
+            {{- end }}
+          {{- end }}
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "/entrypoint.sh stop_fuse /eac/eac-fuse"]
+          volumeMounts:
+            - name: eac-fuse-mount
+              mountPath: /eac
+              mountPropagation: Bidirectional
+            - name: eac-worker-endpoints
+              mountPath: /etc/eac
+            {{- if .Values.fuse.tieredstore }}
+{{- include "eac.tieredstoreVolumeMounts" .Values.fuse }}
+            {{- end }}
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: eac-sock
+              mountPath: /var/run/eac
+        - name: eac-sessmgr
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "sessmgr"
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: eac-sock
+              mountPath: /var/run/eac
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: eac-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.hostMountPath }}
+            type: DirectoryOrCreate
+        - name: eac-worker-endpoints
+          configMap:
+            name: {{ template "eac.fullname" . }}-worker-endpoints
+        {{- if .Values.fuse.tieredstore }}
+{{- include "eac.tieredstoreVolumes" .Values.fuse }}
+        {{- end }}
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+            type: ''
+        - name: host-os
+          hostPath:
+            path: /etc/os-release
+            type: FileOrCreate
+        - name: eac-sock
+          emptyDir: {}
