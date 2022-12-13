@@ -159,6 +159,12 @@ spec:
               mountPath: /token
               readOnly: true
           {{- end }}
+          {{- if .Values.ufsVolumes }}
+          {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+          {{- end }}
+          {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
@@ -189,6 +195,13 @@ spec:
         - emptyDir:
             medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" "" }}
           name: datavolume-{{ $name }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.ufsVolumes }}
+          {{- range .Values.ufsVolumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
           {{- end }}
           {{- end }}
         {{- if .Values.hadoopConfig }}

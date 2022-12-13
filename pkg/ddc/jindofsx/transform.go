@@ -211,22 +211,33 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	propertiesFileStore := map[string]string{}
 
 	for _, mount := range dataset.Spec.Mounts {
-		if !strings.HasSuffix(mount.MountPoint, "/") {
-			mount.MountPoint = mount.MountPoint + "/"
-		}
 		// support nas storage
-		if strings.HasPrefix(mount.MountPoint, "local:///") {
-			value.Mounts.Master[mount.Name] = &Level{
-				Path: mount.MountPoint[8:],
-				Type: "hostPath",
+		if strings.HasPrefix(mount.MountPoint, "pvc://") {
+			if len(value.UFSVolumes) == 0 {
+				value.UFSVolumes = []UFSVolume{}
 			}
-			value.Mounts.WorkersAndClients[mount.Name] = &Level{
-				Path: mount.MountPoint[8:],
-				Type: "hostPath",
+			ufsVolumesName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())
+			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
+			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
+				Name:          ufsVolumesName,
+				ContainerPath: ufsVolumesPath,
+			})
+		} else {
+			if !strings.HasSuffix(mount.MountPoint, "/") {
+				mount.MountPoint = mount.MountPoint + "/"
 			}
-			continue
+			if strings.HasPrefix(mount.MountPoint, "local:///") {
+				value.Mounts.Master[mount.Name] = &Level{
+					Path: mount.MountPoint[8:],
+					Type: "hostPath",
+				}
+				value.Mounts.WorkersAndClients[mount.Name] = &Level{
+					Path: mount.MountPoint[8:],
+					Type: "hostPath",
+				}
+				continue
+			}
 		}
-
 		// TODO support cos storage
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
 			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
