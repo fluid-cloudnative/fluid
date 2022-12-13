@@ -55,7 +55,6 @@ $ kubectl create -f ds.yaml
 
 注：
 1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
-2. 引用数据集对应的Runtime，其Spec中字段无效；
 ```shell
 $ kubectl create ns ref
 
@@ -67,8 +66,6 @@ metadata:
 spec:
   mounts:
     - mountPoint: dataset://default/phy
-      name: fusedemo
-      path: "/"
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref

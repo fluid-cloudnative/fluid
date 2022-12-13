@@ -57,7 +57,6 @@ func TestTransformDatasetToVolume(t *testing.T) {
 				}},
 			},
 		}, &GooseFS{}, ufsPath1},
-
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{}
