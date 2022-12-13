@@ -17,15 +17,58 @@
 package referencedataset
 
 import (
+	"context"
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func copyResourceForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
+	var fuseName string
+	switch mountedRuntime.GetRuntimeType() {
+	case common.JindoRuntime:
+		fuseName = mountedRuntime.GetName() + "-" + common.JindoChartName + "-fuse"
+	default:
+		fuseName = mountedRuntime.GetName() + "-fuse"
+	}
+	ds, err := kubeclient.GetDaemonset(client, fuseName, mountedRuntime.GetNamespace())
+	if err != nil {
+		return err
+	}
+
+	// copy fuse daemonset to refDataset's namespace
+	ownerReference := metav1.OwnerReference{
+		APIVersion: refDataset.APIVersion,
+		Kind:       refDataset.Kind,
+		Name:       refDataset.Name,
+		UID:        refDataset.UID,
+	}
+
+	dsToCreate := &appsv1.DaemonSet{}
+	dsToCreate.Name = refDataset.Name + "-fuse"
+	dsToCreate.Namespace = refDataset.Namespace
+	dsToCreate.OwnerReferences = append(dsToCreate.OwnerReferences, ownerReference)
+	dsToCreate.Spec = *ds.Spec.DeepCopy()
+	if len(dsToCreate.Spec.Template.Spec.NodeSelector) == 0 {
+		dsToCreate.Spec.Template.Spec.NodeSelector = map[string]string{}
+	}
+	dsToCreate.Spec.Template.Spec.NodeSelector["fluid.io/fuse-balloon"] = "true"
+
+	err = client.Create(context.TODO(), dsToCreate)
+	if utils.IgnoreAlreadyExists(err) != nil {
+		return err
+	}
+
+	return nil
+}
 
 func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
 	mountedRuntimeType := mountedRuntime.GetRuntimeType()

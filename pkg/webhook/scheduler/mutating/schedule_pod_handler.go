@@ -210,17 +210,17 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 			}
 			isDatasetPVC = kubeclient.CheckIfPVCIsDataset(pvc)
 			if isDatasetPVC {
-				isReferringPVC, referringName, referringNamespace := kubeclient.GetReferringDatasetPVCInfo(pvc)
-				if isReferringPVC {
-					pvc, err = kubeclient.GetPersistentVolumeClaim(a.Client, referringName, referringNamespace)
-					if err != nil {
-						setupLog.Error(err,
-							"unable to get referring pvc, get failure",
-							"name", referringName,
-							"namespace", referringNamespace)
-						return
-					}
-				}
+				// isReferringPVC, referringName, referringNamespace := kubeclient.GetReferringDatasetPVCInfo(pvc)
+				// if isReferringPVC {
+				// 	pvc, err = kubeclient.GetPersistentVolumeClaim(a.Client, referringName, referringNamespace)
+				// 	if err != nil {
+				// 		setupLog.Error(err,
+				// 			"unable to get referring pvc, get failure",
+				// 			"name", referringName,
+				// 			"namespace", referringNamespace)
+				// 		return
+				// 	}
+				// }
 
 				runtimeInfo, err = buildRuntimeInfoInternal(a.Client, pvc, setupLog)
 				// runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)

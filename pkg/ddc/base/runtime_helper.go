@@ -65,7 +65,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	}
 
 	// Note: get the pvc corresponding dataset
-	dataset, err := utils.GetDataset(info.client, pvcName, pvcNamespace)
+	dataset, err := utils.GetDataset(info.client, info.name, info.namespace)
 	if err != nil {
 		return template, err
 	}
@@ -106,7 +106,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 	// Post start script varies according to privileged or unprivileged sidecar.
 
 	// get the pv attribute, mountPath is with prefix "/runtime-mnt/..."
-	mountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, pvcName, pvcNamespace)
+	mountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
 	if err != nil {
 		return
 	}
@@ -123,8 +123,8 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 
 	// Fluid assumes pvc name is the same as runtime's name
 	gen := poststart.NewGenerator(types.NamespacedName{
-		Name:      pvcName,
-		Namespace: pvcNamespace,
+		Name:      info.name,
+		Namespace: info.namespace,
 	}, mountPathInContainer, mountType, subPath, option)
 	cm := gen.BuildConfigmap(ownerReference)
 	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
