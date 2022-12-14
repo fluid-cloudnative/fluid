@@ -1,8 +1,10 @@
 package mutating
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,6 +28,22 @@ func buildRuntimeInfoInternal(client client.Client,
 	if wrapperName, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; exists {
 		pvcName = wrapperName
 	}
+
+	dataset, err := utils.GetDataset(client, pvcName, namespace)
+	if err != nil {
+		return
+	}
+
+	if dataset.Status.Phase == v1alpha1.NotBoundDatasetPhase || dataset.Status.Phase == v1alpha1.NoneDatasetPhase {
+		_, cond := utils.GetDatasetCondition(dataset.Status.Conditions, v1alpha1.DatasetNotReady)
+		if cond != nil {
+			err = fmt.Errorf("dataset \"%s/%s\" not ready because %s", dataset.Namespace, dataset.Name, cond.Message)
+			return
+		}
+		err = fmt.Errorf("dataset \"%s/%s\" not bound", dataset.Namespace, dataset.Name)
+		return
+	}
+
 	runtimeInfo, err = base.GetRuntimeInfo(client, pvcName, namespace)
 	if err != nil {
 		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", namespace)

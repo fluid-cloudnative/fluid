@@ -83,7 +83,7 @@ type Mount struct {
 
 	// The name of mount
 	// +kubebuilder:validation:MinLength=0
-	// +required
+	// +optional
 	Name string `json:"name,omitempty"`
 
 	// The path of mount, if not set will be /{Name}
@@ -221,6 +221,9 @@ const (
 
 	// DatasetReady means the cache system for the dataset is ready.
 	DatasetReady DatasetConditionType = "Ready"
+
+	// DatasetNotReady means the dataset is not bound due to some unexpected error
+	DatasetNotReady DatasetConditionType = "NotReady"
 
 	// DatasetUpdateReady means the cache system for the dataset is updated.
 	DatasetUpdateReady DatasetConditionType = "UpdateReady"

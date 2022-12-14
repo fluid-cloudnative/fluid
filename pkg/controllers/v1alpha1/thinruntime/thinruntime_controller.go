@@ -18,6 +18,9 @@ package thinruntime
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -30,11 +33,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sync"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -132,15 +134,28 @@ func (r *ThinRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 }
 
 func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	// For reference dataset, controller cares about fuse daemonsets of other runtime types
+	daemonSetSelector := labels.NewSelector()
+	req, err := labels.NewRequirement(common.App, selection.In, []string{
+		common.ThinRuntime,
+		common.AlluxioRuntime,
+		common.JindoRuntime,
+		common.JuiceFSRuntime,
+		common.GooseFSRuntime,
+		common.EACRuntime,
+	})
+	if err != nil {
+		panic(err)
+	}
+	daemonSetSelector.Add(*req)
+
 	return cache.BuilderWithOptions(cache.Options{
 		Scheme: scheme,
 		SelectorsByObject: cache.SelectorsByObject{
 			&appsv1.StatefulSet{}: {Label: labels.SelectorFromSet(labels.Set{
 				common.App: common.ThinRuntime,
 			})},
-			&appsv1.DaemonSet{}: {Label: labels.SelectorFromSet(labels.Set{
-				common.App: common.ThinRuntime,
-			})},
+			&appsv1.DaemonSet{}: {Label: daemonSetSelector},
 		},
 	})
 }

@@ -17,14 +17,17 @@ limitations under the License.
 package v1alpha1
 
 const (
-	// The cache system are ready
+	// The cache system is ready
 	DatasetReadyReason = "DatasetReady"
 
-	// The cache system are updating
+	// The cache system is updating
 	DatasetUpdatingReason = "DatasetUpdating"
 
-	// Resynced means updating with the underlayer filesystem.
+	// The cache system is failing
 	DatasetDataSetFailedReason = "DatasetFailed"
+
+	// The cache system fails to bind
+	DatasetFailedToSetupReason = "DatasetFailedToSetup"
 )
 
 type PlacementMode string
