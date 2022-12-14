@@ -212,7 +212,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 	for _, mount := range dataset.Spec.Mounts {
 		// support nas storage
-		if strings.HasPrefix(mount.MountPoint, "pvc://") {
+		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
