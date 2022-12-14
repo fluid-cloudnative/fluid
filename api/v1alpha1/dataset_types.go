@@ -222,6 +222,9 @@ const (
 	// DatasetReady means the cache system for the dataset is ready.
 	DatasetReady DatasetConditionType = "Ready"
 
+	// DatasetNotReady means the dataset is not bound due to some unexpected error
+	DatasetNotReady DatasetConditionType = "NotReady"
+
 	// DatasetUpdateReady means the cache system for the dataset is updated.
 	DatasetUpdateReady DatasetConditionType = "UpdateReady"
 
