@@ -59,6 +59,9 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 					Name:      "noexist",
 					Namespace: "big-data",
 				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
+				},
 			},
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -188,6 +191,9 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "done",
 					Namespace: "big-data",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 				},
 			},
 			in: &corev1.Pod{
@@ -320,6 +326,9 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 					Name:      "pod-with-csi",
 					Namespace: "big-data",
 				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
+				},
 			},
 			in: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -451,6 +460,7 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 					Name:      "pod-with-fluid",
 					Namespace: "big-data",
 				}, Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 					Runtimes: []datav1alpha1.Runtime{
 						{
 							Type: common.JindoRuntime,
@@ -729,6 +739,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 					Name:      "done",
 					Namespace: "big-data",
 				}, Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 					Runtimes: []datav1alpha1.Runtime{
 						{
 							Type: common.JindoRuntime,
@@ -748,6 +759,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 						},
 					},
 				}, Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 					Runtimes: []datav1alpha1.Runtime{
 						{
 							Type: common.ThinRuntime,
@@ -917,6 +929,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 					Name:      "done-without-ref-pvc",
 					Namespace: "big-data",
 				}, Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 					Runtimes: []datav1alpha1.Runtime{
 						{
 							Type: common.JindoRuntime,
@@ -936,6 +949,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 						},
 					},
 				}, Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
 					Runtimes: []datav1alpha1.Runtime{
 						{
 							Type: common.ThinRuntime,
