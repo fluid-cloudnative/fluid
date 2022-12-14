@@ -312,7 +312,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		return runtimeInfo, err
 	}
 
-	if dataset.Status.Phase == v1alpha1.NotBoundDatasetPhase {
+	if dataset.Status.Phase == v1alpha1.NotBoundDatasetPhase || dataset.Status.Phase == v1alpha1.NoneDatasetPhase {
 		_, cond := utils.GetDatasetCondition(dataset.Status.Conditions, v1alpha1.DatasetNotReady)
 		if cond != nil {
 			err = fmt.Errorf("dataset \"%s/%s\" not ready because %s", dataset.Namespace, dataset.Name, cond.Message)
