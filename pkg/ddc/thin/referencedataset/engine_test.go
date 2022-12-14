@@ -233,7 +233,15 @@ func TestReferenceDatasetEngine_Setup(t *testing.T) {
 		},
 	}
 
-	testObjs = append(testObjs, &dataset, &refDataset, &configCM, &runtime, &refRuntime)
+	var fuseDs = appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "done-fuse",
+			Namespace: "big-data",
+		},
+		Spec: appsv1.DaemonSetSpec{},
+	}
+
+	testObjs = append(testObjs, &dataset, &refDataset, &configCM, &runtime, &refRuntime, &fuseDs)
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
