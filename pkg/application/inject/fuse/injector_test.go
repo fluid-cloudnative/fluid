@@ -2857,8 +2857,8 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 
 			fuse: &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dataset1-jindofs-fuse",
-					Namespace: "big-data",
+					Name:      "subpath-fuse",
+					Namespace: "ref",
 				},
 				Spec: appsv1.DaemonSetSpec{
 					Template: corev1.PodTemplateSpec{
@@ -2922,9 +2922,9 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 
 			infos: map[string]runtimeInfo{
 				"subpath": {
-					name:        "dataset1",
-					namespace:   "big-data",
-					runtimeType: common.JindoRuntime,
+					name:        "subpath",
+					namespace:   "ref",
+					runtimeType: common.ThinRuntime,
 				},
 			},
 
