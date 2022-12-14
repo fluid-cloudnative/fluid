@@ -23,7 +23,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -309,16 +308,6 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
 	dataset, err := utils.GetDataset(client, name, namespace)
 	if err != nil {
-		return runtimeInfo, err
-	}
-
-	if dataset.Status.Phase == v1alpha1.NotBoundDatasetPhase || dataset.Status.Phase == v1alpha1.NoneDatasetPhase {
-		_, cond := utils.GetDatasetCondition(dataset.Status.Conditions, v1alpha1.DatasetNotReady)
-		if cond != nil {
-			err = fmt.Errorf("dataset \"%s/%s\" not ready because %s", dataset.Namespace, dataset.Name, cond.Message)
-			return runtimeInfo, err
-		}
-		err = fmt.Errorf("dataset \"%s/%s\" not bound", dataset.Namespace, dataset.Name)
 		return runtimeInfo, err
 	}
 
