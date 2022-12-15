@@ -195,7 +195,7 @@ def cleanDatasetAndRuntime(*datasets):
 
 
 def main():
-    config.load_kube_config()
+    config.load_incluster_config()
     # 1. patch label
     nodes = getNodes()
     if len(nodes.items) == 0:
