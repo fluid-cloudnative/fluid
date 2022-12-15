@@ -290,7 +290,8 @@ def cleanUp():
 
 
 def main():
-    config.load_kube_config()
+    # config.load_kube_config()
+    config.load_incluster_config()
 
     createDatasetAndRuntime()
     checkDatasetBound()
