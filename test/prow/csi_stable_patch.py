@@ -208,6 +208,7 @@ def main():
     print("Has passed? " + str(True))
     if not res:
         exit(-1)
+    return 0
 
 
 if __name__ == '__main__':
