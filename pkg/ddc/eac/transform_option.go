@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	miniWorkerQuota = resource.MustParse("1G")
+	miniWorkerQuota = resource.MustParse("1Gi")
 )
 
 func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
