@@ -53,7 +53,7 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 			wantType:       string(common.VolumeTypeEmptyDir),
 			wantPath:       "/cache_dir//test",
 			wantMediumType: string(common.Memory),
-			wantQuota:      "1G",
+			wantQuota:      "1GB",
 		},
 		{
 			runtime: &datav1alpha1.EACRuntime{

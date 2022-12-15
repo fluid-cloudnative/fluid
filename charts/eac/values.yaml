@@ -29,7 +29,7 @@ worker:
         mediumtype: MEM
         path: /dev/shm
         type: emptyDir
-        quota: 1G
+        quota: 1GB
   port:
     rpc: 14555
   resources:
@@ -57,7 +57,7 @@ fuse:
         mediumtype: MEM
         path: /dev/shm
         type: emptyDir
-        quota: 1G
+        quota: 1GB
   hostNetwork: false
   nodeSelector: {}
   port:
@@ -84,7 +84,7 @@ master:
         mediumtype: MEM
         path: /dev/shm
         type: emptyDir
-        quota: 1G
+        quota: 1GB
   hostNetwork: false
   nodeSelector: {}
   resources:
