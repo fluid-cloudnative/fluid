@@ -18,6 +18,9 @@ package referencedataset
 
 import (
 	"context"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -25,16 +28,16 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 
@@ -65,12 +68,12 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	var pv = v1.PersistentVolume{
+	var pv = corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: runtimeInfo.GetPersistentVolumeName(),
 		},
 	}
-	var pvc = v1.PersistentVolumeClaim{
+	var pvc = corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      runtime.GetName(),
 			Namespace: runtime.GetNamespace(),
@@ -138,7 +141,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 			t.Errorf("CreateVolume() error = %v, wantErr %v", err, tt.wantErr)
 			return
 		}
-		var pvs v1.PersistentVolumeList
+		var pvs corev1.PersistentVolumeList
 		err = fakeClient.List(context.TODO(), &pvs)
 		if err != nil {
 			t.Errorf("fail to exec the function with error %v", err)
@@ -148,7 +151,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 			t.Errorf("fail to create the pv")
 		}
 
-		var pvcs v1.PersistentVolumeClaimList
+		var pvcs corev1.PersistentVolumeClaimList
 		err = fakeClient.List(context.TODO(), &pvcs)
 		if err != nil {
 			t.Errorf("fail to exec the function with error %v", err)
@@ -162,7 +165,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 
 func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
+	_ = corev1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 
@@ -192,13 +195,13 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	var pv = v1.PersistentVolume{
+	var pv = corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        runtimeInfo.GetPersistentVolumeName(),
 			Annotations: common.ExpectedFluidAnnotations,
 		},
 	}
-	var pvc = v1.PersistentVolumeClaim{
+	var pvc = corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        refRuntime.GetName(),
 			Namespace:   refRuntime.GetNamespace(),
@@ -246,7 +249,7 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 		kubeclient.SetPVCDeleteTimeout(0)
 		// pvc is designed to delete until timeout, so ignore the error
 		_ = e.DeleteVolume()
-		var pvs v1.PersistentVolumeList
+		var pvs corev1.PersistentVolumeList
 		err = fakeClient.List(context.TODO(), &pvs)
 		if err != nil {
 			t.Errorf("fail to exec the function with error %v", err)
@@ -256,7 +259,7 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 			t.Errorf("fail to delete the pv")
 		}
 
-		var pvcs v1.PersistentVolumeClaimList
+		var pvcs corev1.PersistentVolumeClaimList
 		err = fakeClient.List(context.TODO(), &pvcs)
 		if err != nil {
 			t.Errorf("fail to exec the function with error %v", err)
@@ -265,5 +268,69 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 		if len(pvcs.Items) != 0 {
 			t.Errorf("fail to delete the pvc")
 		}
+	}
+}
+
+func Test_accessModesForVirtualDataset(t *testing.T) {
+	type args struct {
+		virtualDataset *datav1alpha1.Dataset
+		copiedPvSpec   *corev1.PersistentVolumeSpec
+	}
+	tests := []struct {
+		name string
+		args args
+		want []corev1.PersistentVolumeAccessMode
+	}{
+		// TODO: Add test cases.
+		{
+			name: "no_access_mode",
+			args: args{
+				virtualDataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "v1",
+					},
+					Spec: datav1alpha1.DatasetSpec{},
+				},
+				copiedPvSpec: &corev1.PersistentVolumeSpec{},
+			},
+			want: []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany},
+		}, {
+			name: "read_access_mode",
+			args: args{
+				virtualDataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "v1",
+					},
+					Spec: datav1alpha1.DatasetSpec{},
+				},
+				copiedPvSpec: &corev1.PersistentVolumeSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+				},
+			},
+			want: []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany},
+		}, {
+			name: "read_access_mode",
+			args: args{
+				virtualDataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "v1",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+					},
+				},
+				copiedPvSpec: &corev1.PersistentVolumeSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+				},
+			},
+			want: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := accessModesForVirtualDataset(tt.args.virtualDataset, tt.args.copiedPvSpec); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("name %v accessModesForVirtualDataset() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
 	}
 }

@@ -19,13 +19,15 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -94,7 +96,12 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 			copiedPvSpec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = subPaths[0]
 		}
 
-		pv := &v1.PersistentVolume{
+		// set the accessModes
+		// only allow readOnly when physical
+		accessModes := accessModesForVirtualDataset(virtualDataset, copiedPvSpec)
+		copiedPvSpec.AccessModes = accessModes
+
+		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: virtualPvName,
 				Labels: map[string]string{
@@ -115,6 +122,26 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 	return err
 }
 
+// accessModesForVirtualDataset generates accessMode based on virtualDataset and copiedPvSpec
+func accessModesForVirtualDataset(virtualDataset *datav1alpha1.Dataset, copiedPvSpec *corev1.PersistentVolumeSpec) []corev1.PersistentVolumeAccessMode {
+	accessModes := virtualDataset.Spec.AccessModes
+	readOnly := false
+	//  If the physcial dataset is readOnly, the virtual dataset's accessMode shouldn't be greater than read
+	for _, accessMode := range copiedPvSpec.AccessModes {
+		if accessMode == corev1.ReadOnlyMany {
+			readOnly = true
+			break
+		}
+	}
+
+	if len(accessModes) == 0 || readOnly {
+		accessModes = []corev1.PersistentVolumeAccessMode{
+			corev1.ReadOnlyMany,
+		}
+	}
+	return accessModes
+}
+
 func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface) (err error) {
 	virtualName := virtualRuntime.GetName()
 	virtualNamespace := virtualRuntime.GetNamespace()
@@ -129,7 +156,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 		if err != nil {
 			return err
 		}
-		pvc := &v1.PersistentVolumeClaim{
+		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      virtualName,
 				Namespace: virtualNamespace,
@@ -141,7 +168,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},
-			Spec: v1.PersistentVolumeClaimSpec{
+			Spec: corev1.PersistentVolumeClaimSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						virtualRuntime.GetCommonLabelName(): "true",
