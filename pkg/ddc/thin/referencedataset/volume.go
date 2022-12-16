@@ -47,9 +47,7 @@ func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
 	if err != nil {
 		return err
 	}
-	err = createFusePersistentVolumeClaim(e.Client, runtimeInfo, mountedRuntimeInfo)
-
-	return err
+	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, mountedRuntimeInfo)
 }
 
 func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
