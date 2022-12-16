@@ -18,6 +18,9 @@ package jindofsx
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -77,6 +80,10 @@ func (e *JindoFSxEngine) mountUFS() (err error) {
 
 		// first to check the path isMounted
 		mounted := false
+		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
+			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
+			mount.MountPoint = "local://" + ufsVolumesPath
+		}
 		if !mounted {
 			if mount.Path != "" {
 				err = fileUitls.Mount(mount.Path, mount.MountPoint)
