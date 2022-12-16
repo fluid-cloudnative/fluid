@@ -17,12 +17,14 @@ rules:
       - goosefsruntimes
       - juicefsruntimes
       - thinruntimes
+      - eacruntimes
       - datasets
       - alluxioruntimes/status
       - jindoruntimes/status
       - goosefsruntimes/status
       - juicefsruntimes/status
       - thinruntimes/status
+      - eacruntimes/status
       - datasets/status
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
