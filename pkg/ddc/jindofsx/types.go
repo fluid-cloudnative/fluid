@@ -47,6 +47,7 @@ type Jindo struct {
 	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
 	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity"`
 	ClusterDomain   string                 `yaml:"clusterDomain,omitempty"`
+	UFSVolumes      []UFSVolume            `yaml:"ufsVolumes,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -137,4 +138,9 @@ type cacheStates struct {
 	cached           string
 	cachedPercentage string
 	// nonCacheable     string
+}
+
+type UFSVolume struct {
+	Name          string `yaml:"name"`
+	ContainerPath string `yaml:"containerPath"`
 }

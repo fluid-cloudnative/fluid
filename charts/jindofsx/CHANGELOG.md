@@ -72,3 +72,7 @@ Add Cluster domain
 0.8.16
 
 Use datasetName.datasetNamespace for service discovery
+
+0.8.17
+
+Add pvc storage type support

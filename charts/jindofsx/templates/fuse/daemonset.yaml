@@ -159,6 +159,12 @@ spec:
               mountPath: /token
               readOnly: true
           {{- end }}
+          {{- if .Values.ufsVolumes }}
+          {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+          {{- end }}
+          {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: ClusterFirstWithHostNet
@@ -188,6 +194,13 @@ spec:
         - name: jindofs-secret-token
           secret:
             secretName: {{ .Values.secret }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}
+        {{- range .Values.ufsVolumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
         {{- end }}
         - name: jindofs-fuse-mount
           hostPath:
