@@ -76,7 +76,7 @@ spec:
             - {{ .Values.master.option | quote }}
           livenessProbe:
             exec:
-              command: ["sh", "-c", "mount | grep {{ .Values.master.mountPoint }} && stat /eac/eac-master"]
+              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.master.mountPoint }} && stat /eac/eac-master"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
