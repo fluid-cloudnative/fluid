@@ -102,7 +102,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 
 		if len(virtualDataset.Spec.AccessModes) > 0 &&
 			!reflect.DeepEqual(virtualDataset.Spec.AccessModes, accessModes) {
-			log.Info("AccessMode to set",
+			log.Info("AccessMode to set, expect and got",
 				"dataset.AccessModes", virtualDataset.Spec.AccessModes,
 				"pv.AccessModes", accessModes)
 		}
