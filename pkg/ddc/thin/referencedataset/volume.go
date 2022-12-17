@@ -44,11 +44,11 @@ func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
 		return err
 	}
 
-	err = createFusePersistentVolume(e.Client, runtimeInfo, mountedRuntimeInfo, e.Log)
+	accessModes, err := createFusePersistentVolume(e.Client, runtimeInfo, mountedRuntimeInfo, e.Log)
 	if err != nil {
 		return err
 	}
-	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, mountedRuntimeInfo)
+	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, mountedRuntimeInfo, accessModes)
 }
 
 func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
@@ -67,29 +67,29 @@ func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
 	return err
 }
 
-func createFusePersistentVolume(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, log logr.Logger) (err error) {
+func createFusePersistentVolume(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, log logr.Logger) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
 	virtualPvName := virtualRuntime.GetPersistentVolumeName()
 	found, err := kubeclient.IsPersistentVolumeExist(client, virtualPvName, common.ExpectedFluidAnnotations)
 	if err != nil {
-		return err
+		return accessModes, err
 	}
 
 	if !found {
 		physicalPV, err := kubeclient.GetPersistentVolume(client, physicalRuntime.GetPersistentVolumeName())
 		if err != nil {
-			return err
+			return accessModes, err
 		}
 
 		copiedPvSpec := physicalPV.Spec.DeepCopy()
 
 		virtualDataset, err := utils.GetDataset(client, virtualRuntime.GetName(), virtualRuntime.GetNamespace())
 		if err != nil {
-			return err
+			return accessModes, err
 		}
 		// set the sub path attribute
 		subPaths := base.GetMountedDatasetSubPath(virtualDataset)
 		if len(subPaths) > 1 {
-			return fmt.Errorf("the dataset is not validated, only support dataset mounts which expects 1")
+			return accessModes, fmt.Errorf("the dataset is not validated, only support dataset mounts which expects 1")
 		}
 		if len(subPaths) == 1 && subPaths[0] != "" {
 			copiedPvSpec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = subPaths[0]
@@ -97,7 +97,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 
 		// set the accessModes
 		// only allow readOnly when physical
-		accessModes := accessModesForVirtualDataset(virtualDataset, copiedPvSpec)
+		accessModes = accessModesForVirtualDataset(virtualDataset, copiedPvSpec.AccessModes)
 		copiedPvSpec.AccessModes = accessModes
 
 		if len(virtualDataset.Spec.AccessModes) > 0 &&
@@ -119,21 +119,21 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 		}
 		err = client.Create(context.TODO(), pv)
 		if err != nil {
-			return err
+			return accessModes, err
 		}
 	} else {
 		log.Info("The ref persistent volume is created", "name", virtualPvName)
 	}
 
-	return err
+	return accessModes, err
 }
 
 // accessModesForVirtualDataset generates accessMode based on virtualDataset and copiedPvSpec
-func accessModesForVirtualDataset(virtualDataset *datav1alpha1.Dataset, copiedPvSpec *corev1.PersistentVolumeSpec) []corev1.PersistentVolumeAccessMode {
+func accessModesForVirtualDataset(virtualDataset *datav1alpha1.Dataset, modes []corev1.PersistentVolumeAccessMode) []corev1.PersistentVolumeAccessMode {
 	accessModes := virtualDataset.Spec.AccessModes
 	readOnly := false
 	//  If the physcial dataset is readOnly, the virtual dataset's accessMode shouldn't be greater than read
-	for _, accessMode := range copiedPvSpec.AccessModes {
+	for _, accessMode := range modes {
 		if accessMode == corev1.ReadOnlyMany {
 			readOnly = true
 			break
@@ -148,7 +148,7 @@ func accessModesForVirtualDataset(virtualDataset *datav1alpha1.Dataset, copiedPv
 	return accessModes
 }
 
-func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface) (err error) {
+func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, accessModes []corev1.PersistentVolumeAccessMode) (err error) {
 	virtualName := virtualRuntime.GetName()
 	virtualNamespace := virtualRuntime.GetNamespace()
 
@@ -162,6 +162,9 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 		if err != nil {
 			return err
 		}
+		// set the accessModes
+		// only allow readOnly when physical
+
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      virtualName,
@@ -181,7 +184,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 					},
 				},
 				StorageClassName: &common.FluidStorageClass,
-				AccessModes:      runtimePVC.Spec.AccessModes,
+				AccessModes:      accessModes,
 				Resources:        *runtimePVC.Spec.Resources.DeepCopy(),
 			},
 		}

@@ -328,7 +328,7 @@ func Test_accessModesForVirtualDataset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := accessModesForVirtualDataset(tt.args.virtualDataset, tt.args.copiedPvSpec); !reflect.DeepEqual(got, tt.want) {
+			if got := accessModesForVirtualDataset(tt.args.virtualDataset, tt.args.copiedPvSpec.AccessModes); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("name %v accessModesForVirtualDataset() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
