@@ -19,6 +19,7 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -98,6 +99,13 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 		// only allow readOnly when physical
 		accessModes := accessModesForVirtualDataset(virtualDataset, copiedPvSpec)
 		copiedPvSpec.AccessModes = accessModes
+
+		if len(virtualDataset.Spec.AccessModes) > 0 &&
+			!reflect.DeepEqual(virtualDataset.Spec.AccessModes, accessModes) {
+			log.Info("AccessMode to set",
+				"dataset.AccessModes", virtualDataset.Spec.AccessModes,
+				"pv.AccessModes", accessModes)
+		}
 
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
