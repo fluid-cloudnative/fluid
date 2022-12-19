@@ -75,7 +75,7 @@ spec:
             - {{ .Values.fuse.option | quote }}
           readinessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }} && stat /eac/eac-fuse"]
+              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }}"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
