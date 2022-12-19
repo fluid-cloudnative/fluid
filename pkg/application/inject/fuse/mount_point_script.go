@@ -18,13 +18,15 @@ package fuse
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
@@ -45,6 +47,12 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		break
 	}
 
+	podName := objMeta.Name
+	if len(podName) == 0 {
+		podName = objMeta.GenerateName
+	}
+
+	s.log.V(1).Info("before inject CheckMountReadyScript volume", "pod namespace", namespace, "pod name", podName)
 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before K8s 1.24.
 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
 	appScriptGenerator, err := s.ensureScriptConfigMapExists(namespace)
@@ -62,6 +70,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
+	s.log.V(1).Info("before inject volume mount to containers", "pod namespace", namespace, "pod name", podName)
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
@@ -98,6 +107,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
+	s.log.V(1).Info("before inject volume mount to initContainers", "pod namespace", namespace, "pod name", podName)
 	initContainers, err := pod.GetInitContainers()
 	if err != nil {
 		return err
@@ -148,14 +158,20 @@ func (s *Injector) ensureScriptConfigMapExists(namespace string) (*poststart.Scr
 	cm := appScriptGen.BuildConfigmap()
 	cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
 	if err != nil {
+		s.log.Error(err, "error when checking configMap's existence", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 		return nil, err
 	}
 
+	cmKey := fmt.Sprintf("%s/%s", cm.Namespace, cm.Name)
+	s.log.V(1).Info("after check configMap existence", "configMap", cmKey, "existence", cmFound)
 	if !cmFound {
 		err = s.client.Create(context.TODO(), cm)
 		if err != nil {
 			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				s.log.Error(err, "error when creating new configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 				return nil, err
+			} else {
+				s.log.V(1).Info("configmap already exists, skip", "configMap", cmKey)
 			}
 		}
 	}
