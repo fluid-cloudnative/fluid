@@ -70,7 +70,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
-	s.log.V(1).Info("before inject volume mount to containers", "pod namespace", namespace, "pod name", podName)
+	s.log.V(1).Info("before inject CheckMountReadyScript volume mount to containers", "pod namespace", namespace, "pod name", podName)
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
-	s.log.V(1).Info("before inject volume mount to initContainers", "pod namespace", namespace, "pod name", podName)
+	s.log.V(1).Info("before inject CheckMountReadyScript volume mount to initContainers", "pod namespace", namespace, "pod name", podName)
 	initContainers, err := pod.GetInitContainers()
 	if err != nil {
 		return err
