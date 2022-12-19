@@ -195,11 +195,9 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
-	objMeta, err := pod.GetMetaObject()
-	if err != nil {
-		return err
-	}
-	pvcNamespace := objMeta.Namespace
+	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
+	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
+	pvcNamespace := runtimeInfo.GetNamespace()
 	var (
 		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
 		template *common.FuseInjectionTemplate
