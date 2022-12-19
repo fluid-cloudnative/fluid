@@ -33,13 +33,21 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
+	var namespace string
 	if len(runtimeInfos) == 0 {
 		// Skip if no need to inject because no dataset pvc is mounted
 		return nil
 	}
 
-	// check the config map in the pod namespace
-	appScriptGenerator, err := s.ensureScriptConfigMapExists(objMeta.Namespace)
+	// Choose the first runtime info's namespace
+	for _, v := range runtimeInfos {
+		namespace = v.GetNamespace()
+		break
+	}
+
+	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before K8s 1.24.
+	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
+	appScriptGenerator, err := s.ensureScriptConfigMapExists(namespace)
 	if err != nil {
 		return err
 	}
