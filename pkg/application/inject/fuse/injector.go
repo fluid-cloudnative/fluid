@@ -18,11 +18,12 @@ package fuse
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
-	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
@@ -134,21 +135,28 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		return out, fmt.Errorf("no supported K8s Type %v", v)
 	}
 
-	namespacedName := types.NamespacedName{
-		Namespace: objectMeta.Namespace,
-		Name:      objectMeta.Name,
-	}
-	kind := typeMeta.Kind
-	s.log = ctrl.Log.WithValues("name", namespacedName.Name, "namespace", namespacedName.Namespace, "kind", kind)
-	s.log.V(1).Info("Inject application")
+	s.log.V(1).Info("Inject Fluid application", "objectMeta.Name", objectMeta.Name, "objectMeta.GenerateName", objectMeta.GenerateName, "objectMeta.Namespace", objectMeta.Namespace, "kind", typeMeta.Kind)
 	pods, err := application.GetPodSpecs()
 	if err != nil {
 		return
 	}
 
 	for _, pod := range pods {
+		podObjMeta, err := pod.GetMetaObject()
+		if err != nil {
+			s.log.Error(err, "failed to getMetaObject of pod", "fluid application name", objectMeta.Name)
+			return out, err
+		}
+
+		// Pod may have either Name or GenerateName set, take it as podName for log messages
+		podName := podObjMeta.Name
+		if len(podName) == 0 {
+			podName = podObjMeta.GenerateName
+		}
+
 		shouldInject, err := s.shouldInject(pod)
 		if err != nil {
+			s.log.Error(err, "failed to check if should inject pod", "pod name", podName)
 			return out, err
 		}
 
@@ -157,15 +165,18 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		}
 
 		if err = s.injectCheckMountReadyScript(pod, runtimeInfos); err != nil {
+			s.log.Error(err, "failed to injectCheckMountReadyScript()", "pod name", podName)
 			return out, err
 		}
 
 		idx := 0
 		for pvcName, runtimeInfo := range runtimeInfos {
+			s.log.Info("Start mutating pvc in pod spec", "pod name", podName, "pvc name", pvcName)
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
 			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix); err != nil {
+				s.log.Error(err, "failed to injectObject()", "pod name", podName, "pvc name", pvcName)
 				return out, err
 			}
 
@@ -173,6 +184,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		}
 
 		if err = s.labelInjectionDone(pod); err != nil {
+			s.log.Error(err, "failed to labelInjectionDone()", "pod name", podName)
 			return out, err
 		}
 	}
@@ -195,11 +207,9 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
-	objMeta, err := pod.GetMetaObject()
-	if err != nil {
-		return err
-	}
-	pvcNamespace := objMeta.Namespace
+	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
+	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
+	pvcNamespace := runtimeInfo.GetNamespace()
 	var (
 		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
 		template *common.FuseInjectionTemplate
