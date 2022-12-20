@@ -60,7 +60,7 @@ func TestThinEngine_wrapMountedPersistentVolumeClaim(t *testing.T) {
 				Name:      "my-pvc-2",
 				Namespace: "default",
 				Labels: map[string]string{
-					common.LabelAnnotationWrappedBy: "dataset2",
+					common.LabelAnnotationManagedBy: "dataset2",
 				},
 			},
 		},
@@ -119,10 +119,10 @@ func TestThinEngine_wrapMountedPersistentVolumeClaim(t *testing.T) {
 				t.Errorf("Got error when checking pvc labels: %v", err)
 			}
 
-			if wrappedBy, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; !exists {
-				t.Errorf("Expect get label \"%s=%s\" on pvc, but not exists", common.LabelAnnotationWrappedBy, engine.name)
+			if wrappedBy, exists := pvc.Labels[common.LabelAnnotationManagedBy]; !exists {
+				t.Errorf("Expect get label \"%s=%s\" on pvc, but not exists", common.LabelAnnotationManagedBy, engine.name)
 			} else if wrappedBy != engine.name {
-				t.Errorf("Expect get label \"%s=%s\" on pvc, but got %s", common.LabelAnnotationWrappedBy, engine.name, wrappedBy)
+				t.Errorf("Expect get label \"%s=%s\" on pvc, but got %s", common.LabelAnnotationManagedBy, engine.name, wrappedBy)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 				Name:      "my-pvc-1",
 				Namespace: "default",
 				Labels: map[string]string{
-					common.LabelAnnotationWrappedBy: "dataset1",
+					common.LabelAnnotationManagedBy: "dataset1",
 				},
 			},
 		},
@@ -236,8 +236,8 @@ func TestThinEngine_unwrapMountedPersistentVolumeClaims(t *testing.T) {
 				t.Errorf("Got error when checking pvc labels: %v", err)
 			}
 
-			if _, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; exists {
-				t.Errorf("Expect no label \"%s\" on pvc, but it exists. pvc Labels: %v", common.LabelAnnotationWrappedBy, pvc.Labels)
+			if _, exists := pvc.Labels[common.LabelAnnotationManagedBy]; exists {
+				t.Errorf("Expect no label \"%s\" on pvc, but it exists. pvc Labels: %v", common.LabelAnnotationManagedBy, pvc.Labels)
 			}
 		})
 	}

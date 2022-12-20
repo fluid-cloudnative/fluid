@@ -98,9 +98,9 @@ func (t *ThinEngine) wrapMountedPersistentVolumeClaim() (err error) {
 				return err
 			}
 
-			if _, exists := mountedPvc.Labels[common.LabelAnnotationWrappedBy]; !exists {
+			if _, exists := mountedPvc.Labels[common.LabelAnnotationManagedBy]; !exists {
 				labelsToModify := common.LabelsToModify{}
-				labelsToModify.Add(common.LabelAnnotationWrappedBy, t.name)
+				labelsToModify.Add(common.LabelAnnotationManagedBy, t.name)
 				_, err = utils.PatchLabels(t.Client, mountedPvc, labelsToModify)
 				if err != nil {
 					return err
@@ -130,9 +130,9 @@ func (t *ThinEngine) unwrapMountedPersistentVolumeClaims() (err error) {
 				return errors.Wrapf(err, "failed to get pvc when unwrapping pvc %s", pvcName)
 			}
 
-			if wrappedBy, exists := pvc.Labels[common.LabelAnnotationWrappedBy]; exists && wrappedBy == t.name {
+			if wrappedBy, exists := pvc.Labels[common.LabelAnnotationManagedBy]; exists && wrappedBy == t.name {
 				labelsToModify := common.LabelsToModify{}
-				labelsToModify.Delete(common.LabelAnnotationWrappedBy)
+				labelsToModify.Delete(common.LabelAnnotationManagedBy)
 				if _, err = utils.PatchLabels(t.Client, pvc, labelsToModify); err != nil {
 					return errors.Wrapf(err, "failed to remove label when unwrapping pvc %s", pvc.Name)
 				}
