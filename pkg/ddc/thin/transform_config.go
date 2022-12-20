@@ -32,15 +32,17 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	mounts := []datav1alpha1.Mount{}
 	// todo: support passing flexVolume info
 	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
+	pvMountOptions := map[string][]string{}
 	for _, m := range dataset.Spec.Mounts {
 		if strings.HasPrefix(m.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(m.MountPoint, common.VolumeScheme.String())
-			csiInfo, err := t.extractCSIVolumeSourceInfo(pvcName)
+			csiInfo, mountOptions, err := t.extractVolumeInfo(pvcName)
 			if err != nil {
 				return config, err
 			}
 
 			pvAttributes[pvcName] = csiInfo
+			pvMountOptions[pvcName] = mountOptions
 		}
 
 		m.Options, err = t.genUFSMountOptions(m)
@@ -56,10 +58,11 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 	config.RuntimeOptions = runtime.Spec.Fuse.Options
 	config.TargetPath = targetPath
 	config.PersistentVolumeAttrs = pvAttributes
+	config.PersistentVolumeMountOptions = pvMountOptions
 	return
 }
 
-func (t *ThinEngine) extractCSIVolumeSourceInfo(pvcName string) (csiInfo *corev1.CSIPersistentVolumeSource, err error) {
+func (t *ThinEngine) extractVolumeInfo(pvcName string) (csiInfo *corev1.CSIPersistentVolumeSource, mountOptions []string, err error) {
 	pvc, err := kubeclient.GetPersistentVolumeClaim(t.Client, pvcName, t.namespace)
 	if err != nil {
 		return
@@ -75,12 +78,30 @@ func (t *ThinEngine) extractCSIVolumeSourceInfo(pvcName string) (csiInfo *corev1
 		return
 	}
 
-	if pv.Spec.CSI == nil {
-		err = fmt.Errorf("persistent volume %s has unsupported volume source. only CSI is supported", pv.Name)
+	if pv.Spec.CSI != nil {
+		csiInfo = pv.Spec.CSI
+	}
+
+	mountOptions, err = t.extractVolumeMountOptions(pv)
+	if err != nil {
 		return
 	}
 
-	return pv.Spec.CSI, nil
+	return
+}
+
+func (t *ThinEngine) extractVolumeMountOptions(pv *corev1.PersistentVolume) (mountOptions []string, err error) {
+	if len(pv.Spec.MountOptions) != 0 {
+		return pv.Spec.MountOptions, nil
+	}
+
+	// fallback to check "volume.beta.kubernetes.io/mount-options", see https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options
+	// e.g. volume.beta.kubernetes.io/mount-options: rw,nfsvers=4,noexec
+	if opts, exists := pv.Annotations[corev1.MountOptionAnnotation]; exists {
+		return strings.Split(opts, ","), nil
+	}
+
+	return
 }
 
 func (t *ThinEngine) toRuntimeSetConfig(workers []string, fuses []string) (result string, err error) {
