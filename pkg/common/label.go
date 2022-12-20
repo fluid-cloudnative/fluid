@@ -29,8 +29,12 @@ const (
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
-	// LabelAnnotationWrappedBy indicates the resource is wrapped by some dataset
-	LabelAnnotationWrappedBy = LabelAnnotationPrefix + "wrapped-by"
+
+	// LabelAnnotationManagedByDeprecated is a deprecated label key for LabelAnnotationManagedBy
+	LabelAnnotationManagedByDeprecated = LabelAnnotationPrefix + "wrapped-by"
+
+	// LabelAnnotationManagedBy indicates a pvc that is managed by Fluid
+	LabelAnnotationManagedBy = LabelAnnotationPrefix + "managed-by"
 
 	// fluid adminssion webhook inject flag
 	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
