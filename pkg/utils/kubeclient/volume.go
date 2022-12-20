@@ -364,12 +364,7 @@ func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
 	}
 	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
 
-	// handle deprecated "fluid.io/wrapped-by" label
-	if _, exists := pvc.Labels[common.LabelAnnotationManagedByDeprecated]; exists {
-		isDataset = true
-	}
-
-	if _, exists := pvc.Labels[common.LabelAnnotationManagedBy]; exists {
+	if _, exists := common.GetManagerDatasetFromLabels(pvc.Labels); exists {
 		isDataset = true
 	}
 

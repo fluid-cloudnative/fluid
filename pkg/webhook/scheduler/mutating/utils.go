@@ -25,9 +25,7 @@ func buildRuntimeInfoInternal(client client.Client,
 		namespace = corev1.NamespaceDefault
 	}
 	pvcName := pvc.GetName()
-	if datasetName, exists := pvc.Labels[common.LabelAnnotationManagedBy]; exists {
-		pvcName = datasetName
-	} else if datasetName, exists = pvc.Labels[common.LabelAnnotationManagedByDeprecated]; exists {
+	if datasetName, exists := common.GetManagerDatasetFromLabels(pvc.Labels); exists {
 		pvcName = datasetName
 	}
 

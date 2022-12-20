@@ -128,3 +128,14 @@ func CheckExpectValue(m map[string]string, key string, targetValue string) bool 
 	}
 	return false
 }
+
+func GetManagerDatasetFromLabels(labels map[string]string) (datasetName string, exists bool) {
+	datasetName, exists = labels[LabelAnnotationManagedBy]
+	if exists {
+		return
+	}
+
+	// fallback to check deprecated "fluid.io/wrapped-by" label
+	datasetName, exists = labels[LabelAnnotationManagedByDeprecated]
+	return
+}
