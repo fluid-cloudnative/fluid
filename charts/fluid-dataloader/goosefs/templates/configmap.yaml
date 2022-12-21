@@ -41,10 +41,21 @@ data:
   dataloader.goosefs.distributedLoad: |
     #!/usr/bin/env bash
     set -xe
+    
+    function checkPathExistence() {
+        local path=$1
+        local checkPathResult=$(timeout 30s goosefs fs ls "$path" | tail -1)
+        local strUnexistence="does not exist"
+        if [[ $checkPathResult =~ $strUnexistence ]]; then
+            echo -e "dataLoad failed because some paths not exist."
+            exit 1
+        fi
+    }
 
     function distributedLoad() {
         local path=$1
         local replica=$2
+        checkPathExistence "$path"
         goosefs fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
             time goosefs fs distributedLoad -Dgoosefs.user.file.metadata.sync.interval=0 --replication $replica $path

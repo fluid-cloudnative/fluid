@@ -42,12 +42,12 @@ data:
     #!/usr/bin/env bash
     set -xe
     
-    function checkPathExsitence() {
+    function checkPathExistence() {
         local path=$1
-        local result=$(timeout 30s alluxio fs ls "$path" | tail -1)
-        strUnexistence="does not exist"
-        if [[ $result =~ $strUnexistence ]]; then
-            echo -e "distributedLoad on $path failed as path not exist."
+        local checkPathResult=$(timeout 30s alluxio fs ls "$path" | tail -1)
+        local strUnexistence="does not exist"
+        if [[ $checkPathResult =~ $strUnexistence ]]; then
+            echo -e "dataLoad failed because some paths not exist."
             exit 1
         fi
     }
@@ -55,7 +55,7 @@ data:
     function distributedLoad() {
         local path=$1
         local replica=$2
-        checkPathExsitence "$path"
+        checkPathExistence "$path"
         alluxio fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
             time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path

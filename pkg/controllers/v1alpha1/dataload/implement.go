@@ -18,6 +18,8 @@ package dataload
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strings"
 
 	"reflect"
 	"sync"
@@ -347,10 +349,31 @@ func (r *DataLoadReconcilerImplement) reconcileFailedDataLoad(ctx cruntime.Recon
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. record event and no requeue
+	// 2. check existence of the targetPath in alluxio  dataLoad completely by pod's logs && record event and no requeue.
 	log.Info("DataLoad failed, won't requeue")
-	jobName := utils.GetDataLoadJobName(utils.GetDataLoadReleaseName(targetDataload.Name))
-	r.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobFailed, "DataLoad job %s failed", jobName)
+	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
+	jobName := utils.GetDataLoadJobName(releaseName)
+	job, err := utils.GetDataLoadJob(r.Client, jobName, ctx.Namespace)
+	if err != nil {
+		log.Error(err, "Get DataLoad Job Error", "namespace", ctx.Namespace, "jobName", jobName)
+		return utils.RequeueIfError(err)
+	}
+	podList, err := kubeclient.ListPodsByLabel(ctx, job.Namespace, job.Spec.Template.Labels)
+	if err != nil {
+		log.Error(err, "Get podList Error", "targetDataLoadJob", job.Name)
+		return utils.RequeueIfError(err)
+	}
+	if len(podList.Items) > 0 {
+		pod := podList.Items[0]
+		logstr, err := kubeclient.TailPodLogs(pod.Name, pod.Namespace, 3)
+		if err != nil {
+			log.Error(err, "Tail Pod Logs Error", "targetDataLoadJob", job.Name)
+			return utils.RequeueIfError(err)
+		}
+		if strings.Contains(logstr, "dataLoad failed because some paths not exist") {
+			r.Recorder.Eventf(&targetDataload, v1.EventTypeWarning, common.DataLoadJobFailed, "DataLoad job failed because some paths not exist.")
+		}
+	}
 	return utils.NoRequeue()
 }
 
