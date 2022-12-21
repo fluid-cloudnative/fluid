@@ -70,6 +70,17 @@ func TestGetFuseMountInContainer(t *testing.T) {
 				},
 			},
 			want: "/runtime_mnt/jfs",
+		}, {
+			mountType: "nfs",
+			container: corev1.Container{
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "thin-fuse-mount",
+						MountPath: "/runtime_mnt/thin",
+					},
+				},
+			},
+			want: "/runtime_mnt/thin",
 		},
 	}
 
