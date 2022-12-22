@@ -17,7 +17,9 @@
 package kubeclient
 
 import (
+	"bytes"
 	"context"
+	"io"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -51,6 +53,39 @@ func IsSucceededPod(pod *corev1.Pod) bool {
 // IsFailedPod determines if the pod is failed
 func IsFailedPod(pod *corev1.Pod) bool {
 	return pod != nil && pod.Status.Phase == corev1.PodFailed
+}
+
+// TailPodLogs tail pod's log.
+// Given name and namespace of pod, lines eq: "tail -n <lines>".
+func TailPodLogs(name, namespace string, lines int64) (logstr string, err error) {
+	err = initClient()
+	if err != nil {
+		return "", err
+	}
+	req := clientset.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{TailLines: &lines})
+	podLogs, err := req.Stream(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	logstr = buf.String()
+	return
+}
+
+// ListPodsByLabel gets podList with given namespace and labels.
+func ListPodsByLabel(clientClient client.Client, namespace string, label map[string]string) (*corev1.PodList, error) {
+	podList := &corev1.PodList{}
+	err := clientClient.List(context.TODO(), podList, client.InNamespace(namespace), client.MatchingLabels(label))
+	if err != nil {
+		return nil, err
+	}
+	return podList, nil
 }
 
 // GetPodByName gets pod with given name and namespace of the pod.
