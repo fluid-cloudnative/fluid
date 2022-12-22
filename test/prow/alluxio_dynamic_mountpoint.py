@@ -12,7 +12,6 @@ Steps:
 8. clean up
 """
 
-import subprocess
 import time
 
 from kubernetes import client, config
@@ -41,10 +40,6 @@ def createDatasetAndRuntime():
         }
     }
 
-    # let alluxio master in current node
-    hostname = subprocess.run("hostname", stdout=subprocess.PIPE)
-    hostname = hostname.stdout.decode().replace('\n', '')
-
     my_alluxioruntime = {
         "apiVersion": "data.fluid.io/v1alpha1",
         "kind": "AlluxioRuntime",
@@ -63,11 +58,6 @@ def createDatasetAndRuntime():
                         "low": "0.7"
                     }
                 ]
-            },
-            "master": {
-                "nodeSelector": {
-                    "kubernetes.io/hostname": hostname
-                }
             }
         }
     }
@@ -112,7 +102,6 @@ def checkDatasetBound():
                 if resource["status"]["phase"] == "Bound":
                     break
         time.sleep(1)
-        print(resource)
 
 
 def checkVolumeResourcesReady():
@@ -171,8 +160,6 @@ def changeDatasetMountpoint():
         }
     }
 
-    hostname = subprocess.run("hostname", stdout=subprocess.PIPE)
-    hostname = hostname.stdout.decode().replace('\n', '')
     new_alluxioruntime = {
         "apiVersion": "data.fluid.io/v1alpha1",
         "kind": "AlluxioRuntime",
@@ -191,11 +178,6 @@ def changeDatasetMountpoint():
                         "low": "0.7"
                     }
                 ]
-            },
-            "master": {
-                "nodeSelector": {
-                    "kubernetes.io/hostname": hostname
-                }
             }
         }
     }
@@ -252,11 +234,13 @@ def checkRecoverAfterCrash():
 
     api = client.CoreV1Api()
     time.sleep(1)
-    response = api.read_namespaced_pod(name="hbase-master-0", namespace="default")
+    response = api.read_namespaced_pod(
+        name="hbase-master-0", namespace="default")
     while response.status.phase != "Running":
         time.sleep(1)
         response = api.read_namespaced_pod(
             name="hbase-master-0", namespace="default")
+        print(response)
 
 
 def cleanUp():
