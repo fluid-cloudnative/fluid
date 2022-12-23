@@ -88,8 +88,8 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 		volumeMountName = prefix + "-fuse-mount"
 	} else {
 		for _, vm := range container.VolumeMounts {
-			if vm.Name == "thin-fuse-mount" {
-				volumeMountName = "thin-fuse-mount"
+			if vm.Name == common.ThinMountType {
+				volumeMountName = common.ThinMountType
 				break
 			}
 		}

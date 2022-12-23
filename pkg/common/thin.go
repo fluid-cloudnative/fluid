@@ -27,4 +27,6 @@ const (
 
 	ThinFuseOptionEnvKey = "MOUNT_OPTIONS"
 	ThinFusePointEnvKey  = "MOUNT_POINT"
+
+	ThinMountType = "thin-fuse-mount"
 )
