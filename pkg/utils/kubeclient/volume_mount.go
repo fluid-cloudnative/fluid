@@ -87,6 +87,14 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 	if prefix, found := kv[mountType]; found {
 		volumeMountName = prefix + "-fuse-mount"
 	} else {
+		for _, vm := range container.VolumeMounts {
+			if vm.Name == common.ThinMountType {
+				volumeMountName = common.ThinMountType
+				break
+			}
+		}
+	}
+	if len(volumeMountName) == 0 {
 		err = fmt.Errorf("failed to find the prefix by mountType %s", mountType)
 		return
 	}
