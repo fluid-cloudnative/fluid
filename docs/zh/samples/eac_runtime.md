@@ -2,9 +2,9 @@
 
 ## 背景介绍
 
-EAC 是一款针对 NAS 的用户态客户端，并在提供分布式缓存的同时，保证多客户端之间的缓存一致性。
+EAC 是一款针对分布式文件系统 NAS 的用户态客户端，并在提供分布式缓存的同时，保证多客户端之间的缓存一致性。EAC现阶段支持阿里云NAS，未来会支持通用NAS和GPFS等高速分布式文件系统。
 
-如何在 ACK（Alibaba Cloud Container Service for Kubernetes）场景中使用 EAC 可以参考文档 [开启 CNFS 文件存储客户端加速特性](https://help.aliyun.com/document_detail/440307.html)。
+如何开启NAS服务能力，可以参考[文档](https://help.aliyun.com/document_detail/148430.html)
 
 ## 安装
 
@@ -237,17 +237,17 @@ total 1G
 
 ```shell
 $ kubectl exec -it mydemo-app-0 -- /bin/sh -c  'time cp /data/* /'
-real	0m 15.25s
-user	0m 0.00s
-sys	0m 1.20s
+real  0m 15.25s
+user  0m 0.00s
+sys 0m 1.20s
 ```
 先在 mydemo-app-0 pod 中执行 cp 操作耗时 15.25s。
 
 ```shell
 $ kubectl exec -it mydemo-app-1 -- /bin/sh -c  'time cp /data/* /'
-real	0m 5.27s
-user	0m 0.00s
-sys	0m 1.27s
+real  0m 5.27s
+user  0m 0.00s
+sys 0m 1.27s
 ```
 后在 mydemo-app-1 pod 中执行 cp 操作耗时 5.27s，加速效果明显。
 
