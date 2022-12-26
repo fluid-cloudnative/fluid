@@ -1,4 +1,4 @@
-# Demo - Dataset Customized Elastic Scaling
+# Demo - Cache Runtime Auto Scaling
 Fluid can disperse data into Kubernetes compute nodes by creating Dataset objects as a medium for data exchange, which can effectively avoid remote writing and reading of data and improve the efficiency of data usage.
 But the problem here is the resource estimation and provisioning of the data cache. Since accurate data prediction is more difficult to meet before data production and consumption, using on-demand scaling is more user-friendly.
 The on-demand scaling technology is similar to page cache, which is transparent to the user, but the acceleration it brings is obvious.
@@ -7,8 +7,8 @@ Fluid introduces cache elasticity scaling capabilities through a custom HPA mech
 
 This document will show you this feature.
 
-## Prerequests
-It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-up and scale-down policies, such as defining the cooling time after a scaling.
+## Prerequisite
+It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-out and scale-in policies, such as defining the cooling time after a scaling.
 
 
 ## Steps
@@ -83,7 +83,7 @@ If you want to visualize monitoring metrics, you can install Grafana to verify m
 
 5. Deploy metrics server
 
-Check if the cluster includes a metrics-server, run kubectl top node with correct output for memory and CPU, then the cluster metrics server is correctly configured.
+Check if the cluster includes a metrics-server, run `kubectl top node` with correct output for memory and CPU, then the cluster metrics server is correctly configured.
 
 ```shell
 $ kubectl top node
@@ -289,9 +289,9 @@ EOF
 First of all, let's explain the configuration from the sample, there are two main parts here: one is the rule of scaling, and the other is the sensitivity of scaling.
 
 - Rule: The condition to trigger the scaling behavior is that the cached data amount of Dataset object accounts for 90% of the total cache capacity; the scaling object is AlluxioRuntime, the minimum number of replicas is 1 and the maximum number of replicas is 4; and the objects of Dataset and AlluxioRuntime need to be in the same namespace.
-- Policy: For K8s version 1.18 or higher, you can set the stability time and the ratio of scaling steps for scale-up and scale-down scenarios respectively. In this example, the scale-up period is 10 minutes (periodSeconds), and 2 replicas are added during the scale-up, which of course cannot exceed the maxReplicas limit; after the scale-up is completed, the cooling time (stabilizationWindowSeconds) is 20 minutes; and the scale-down policy can be chosen to close directly.
+- Policy: For K8s version 1.18 or higher, you can set the stability time and the ratio of scaling steps for scale-out and scale-in scenarios respectively. In this example, the scale-out period is 10 minutes (periodSeconds), and 2 replicas are added during the scale-out, which of course cannot exceed the maxReplicas limit; after the scale-out is completed, the cooling time (stabilizationWindowSeconds) is 20 minutes; and the scale-in policy can be chosen to close directly.
 
-11. Checking the HPA configuration, the current cache space has a data percentage of 0. This is far below the condition that triggers the scale-up.
+11. Checking the HPA configuration, the current cache space has a data percentage of 0. This is far below the condition that triggers the scale-out.
 
 ```shell
 $ kubectl get hpa
@@ -355,7 +355,7 @@ NAME    UFS TOTAL SIZE   CACHED       CACHE CAPACITY   CACHED PERCENTAGE   PHASE
 spark   2.71GiB          1020.92MiB   1.00GiB          36.8%               Bound   5m15s
 ```
 
-From the HPA monitor, we can see that the scale-up of Alluxio Runtime has started, and we can see that the scale-up step is 2
+From the HPA monitor, we can see that the scale-out of Alluxio Runtime has started, and we can see that the scale-out step is 2
 
 ```shell
 $ kubectl get hpa
@@ -404,7 +404,7 @@ NAME    UFS TOTAL SIZE   CACHED    CACHE CAPACITY   CACHED PERCENTAGE   PHASE   
 spark   2.71GiB          2.59GiB   3.00GiB          95.6%               Bound   12m
 ```
 
-15. If we observe the status of the HPA, we can see that the number of replicas of the runtime corresponding to the Dataset is 3, and the ratio of capacity_used_rate to the cache space already used is 85%, which will not trigger the cache scale-up.
+15. If we observe the status of the HPA, we can see that the number of replicas of the runtime corresponding to the Dataset is 3, and the ratio of capacity_used_rate to the cache space already used is 85%, which will not trigger the cache scale-out.
 
 ```shell
 $ kubectl get hpa

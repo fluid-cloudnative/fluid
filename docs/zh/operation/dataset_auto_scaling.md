@@ -84,7 +84,7 @@ prometheus-svc   NodePort   172.16.135.24   <none>        9090:32114/TCP   2m7s
 
 5. 部署 metrics server
 
-检查该集群是否包括 metrics-server, 执行 kubectl top node 有正确输出可以显示内存和 CPU，则该集群 metrics server 配置正确
+检查该集群是否包括 metrics-server, 执行`kubectl top node`有正确输出可以显示内存和 CPU，则该集群 metrics server 配置正确
 
 ```shell
 $ kubectl top node
