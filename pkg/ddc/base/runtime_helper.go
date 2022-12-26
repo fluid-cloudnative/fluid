@@ -42,7 +42,7 @@ var (
 	cacheDirNames = []string{"datavolume-", "volume-localtime", "cache-dir", "mem", "ssd", "hdd"}
 
 	// hostpath fuse mount point for Alluxio, JindoFS, GooseFS and JuiceFS
-	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "goosefs-fuse-mount", "juicefs-fuse-mount", "thin-fuse-mount"}
+	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "goosefs-fuse-mount", "juicefs-fuse-mount", "thin-fuse-mount", "eac-fuse-mount"}
 
 	// fuse devices for Alluxio, JindoFS, GooseFS
 	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device", "thin-fuse-device"}
@@ -77,9 +77,8 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		UID:        dataset.UID,
 	}
 
-	// 0. remove the cache dir if required
-	if len(ds.Spec.Template.Spec.Containers) != 1 {
-		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
+	if len(ds.Spec.Template.Spec.Containers) <= 0 {
+		return template, fmt.Errorf("the length of containers of fuse daemonset \"%s/%s\" should not be 0", ds.Namespace, ds.Name)
 	}
 
 	// 1. set the pvc name
@@ -87,7 +86,8 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		PVCName: pvcName,
 	}
 	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
-	template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
+	// only add volumes that the Fuse container needs
+	template.VolumesToAdd = utils.FilterVolumesByVolumeMounts(ds.Spec.Template.Spec.Volumes, ds.Spec.Template.Spec.Containers[0].VolumeMounts)
 
 	if !option.EnableCacheDir {
 		info.transformTemplateWithCacheDirDisabled(template)
