@@ -158,8 +158,7 @@ spec:
         weight: 100
 ```
 
-Through the Webhook mechanism, the application Pod is injected and caches the weak affinity configuration of the worker.
-
+Through the Webhook mechanism, the application Pod is injected with preferred affinity to the cache worker.
 
 ```shell
 $ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
