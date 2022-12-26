@@ -77,11 +77,6 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		UID:        dataset.UID,
 	}
 
-	// 0. remove the cache dir if required
-	if len(ds.Spec.Template.Spec.Containers) != 1 {
-		return template, fmt.Errorf("the length of containers of fuse %s in namespace %s is not 1", ds.Name, ds.Namespace)
-	}
-
 	// 1. set the pvc name
 	template = &common.FuseInjectionTemplate{
 		PVCName: pvcName,
