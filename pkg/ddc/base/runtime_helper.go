@@ -77,7 +77,7 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		UID:        dataset.UID,
 	}
 
-	if len(ds.Spec.Template.Spec.Containers) == 0 {
+	if len(ds.Spec.Template.Spec.Containers) <= 0 {
 		return template, fmt.Errorf("the length of containers of fuse daemonset \"%s/%s\" should not be 0", ds.Namespace, ds.Name)
 	}
 
