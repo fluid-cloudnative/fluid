@@ -77,12 +77,17 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		UID:        dataset.UID,
 	}
 
+	if len(ds.Spec.Template.Spec.Containers) == 0 {
+		return template, fmt.Errorf("the length of containers of fuse daemonset \"%s/%s\" should not be 0", ds.Namespace, ds.Name)
+	}
+
 	// 1. set the pvc name
 	template = &common.FuseInjectionTemplate{
 		PVCName: pvcName,
 	}
 	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
-	template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
+	// only add volumes that the Fuse container needs
+	template.VolumesToAdd = utils.FilterVolumesByVolumeMounts(ds.Spec.Template.Spec.Volumes, ds.Spec.Template.Spec.Containers[0].VolumeMounts)
 
 	if !option.EnableCacheDir {
 		info.transformTemplateWithCacheDirDisabled(template)

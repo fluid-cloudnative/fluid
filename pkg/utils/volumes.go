@@ -108,3 +108,23 @@ func AppendOrOverrideVolumeMounts(volumeMounts []corev1.VolumeMount, vm corev1.V
 
 	return volumeMounts
 }
+
+// FilterVolumesByVolumeMounts returns volumes that exists in the volumeMounts
+func FilterVolumesByVolumeMounts(volumes []corev1.Volume, volumeMounts []corev1.VolumeMount) []corev1.Volume {
+	retVolumes := []corev1.Volume{}
+	for _, vol := range volumes {
+		var exists bool
+		for _, volMount := range volumeMounts {
+			if volMount.Name == vol.Name {
+				exists = true
+				break
+			}
+		}
+
+		if exists {
+			retVolumes = append(retVolumes, vol)
+		}
+	}
+
+	return retVolumes
+}

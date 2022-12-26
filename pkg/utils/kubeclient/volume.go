@@ -22,7 +22,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +36,8 @@ var (
 	pvcDeleteTimeout = 30 * time.Second
 )
 
-func GetPersistentVolume(client client.Reader, name string) (pv *v1.PersistentVolume, err error) {
-	pv = &v1.PersistentVolume{}
+func GetPersistentVolume(client client.Reader, name string) (pv *corev1.PersistentVolume, err error) {
+	pv = &corev1.PersistentVolume{}
 	err = client.Get(context.TODO(), types.NamespacedName{Name: name}, pv)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func IsPersistentVolumeExist(client client.Client, name string, annotations map[
 		Name: name,
 	}
 
-	pv := &v1.PersistentVolume{}
+	pv := &corev1.PersistentVolume{}
 
 	err = client.Get(context.TODO(), key, pv)
 	if err != nil {
@@ -88,7 +88,7 @@ func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, 
 		Namespace: namespace,
 	}
 
-	pvc := &v1.PersistentVolumeClaim{}
+	pvc := &corev1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
 	if err != nil {
 		if apierrs.IsNotFound(err) {
@@ -123,7 +123,7 @@ func DeletePersistentVolume(client client.Client, name string) (err error) {
 		Name: name,
 	}
 	found := false
-	pv := &v1.PersistentVolume{}
+	pv := &corev1.PersistentVolume{}
 	if err = client.Get(context.TODO(), key, pv); err != nil {
 		if apierrs.IsNotFound(err) {
 			log.V(1).Info("SKip deleteing the PersistentVolume due to it's not found", "name", name)
@@ -153,7 +153,7 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 	}
 
 	found := false
-	pvc := &v1.PersistentVolumeClaim{}
+	pvc := &corev1.PersistentVolumeClaim{}
 	if err = client.Get(context.TODO(), key, pvc); err != nil {
 		if apierrs.IsNotFound(err) {
 			log.V(1).Info("SKip deleting the PersistentVolumeClaim due to it's not found", "name", name,
@@ -178,7 +178,7 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 }
 
 // GetPVCsFromPod get PersistVolumeClaims of pod
-func GetPVCsFromPod(pod v1.Pod) (pvcs []v1.Volume) {
+func GetPVCsFromPod(pod corev1.Pod) (pvcs []corev1.Volume) {
 	for _, volume := range pod.Spec.Volumes {
 		if volume.VolumeSource.PersistentVolumeClaim != nil {
 			pvcs = append(pvcs, volume)
@@ -188,16 +188,16 @@ func GetPVCsFromPod(pod v1.Pod) (pvcs []v1.Volume) {
 }
 
 // GetPvcMountPods get pods that mounted the specific pvc for a given namespace
-func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]v1.Pod, error) {
-	nsPods := v1.PodList{}
+func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]corev1.Pod, error) {
+	nsPods := corev1.PodList{}
 	err := e.List(context.TODO(), &nsPods, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
 		log.Error(err, "Failed to list pods")
-		return []v1.Pod{}, err
+		return []corev1.Pod{}, err
 	}
-	var pods []v1.Pod
+	var pods []corev1.Pod
 	for _, pod := range nsPods.Items {
 		pvcs := GetPVCsFromPod(pod)
 		for _, pvc := range pvcs {
@@ -246,7 +246,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 		Namespace: namespace,
 	}
 
-	pvc := &v1.PersistentVolumeClaim{}
+	pvc := &corev1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
 	if err != nil && !apierrs.IsNotFound(err) {
 		return err
@@ -299,7 +299,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 		Name:      name,
 		Namespace: namespace,
 	}
-	pvc := &v1.PersistentVolumeClaim{}
+	pvc := &corev1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
 	if err != nil {
 		return
@@ -340,7 +340,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 
 // IsDatasetPVC check whether the PVC is a dataset PVC
 func IsDatasetPVC(client client.Reader, name string, namespace string) (find bool, err error) {
-	pvc := &v1.PersistentVolumeClaim{}
+	pvc := &corev1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -353,14 +353,14 @@ func IsDatasetPVC(client client.Reader, name string, namespace string) (find boo
 }
 
 // CheckIfPVCIsDataset checks if the pvc is dataset
-func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
+func CheckIfPVCIsDataset(pvc *corev1.PersistentVolumeClaim) (isDataset bool) {
 	if pvc == nil {
 		return
 	}
 	name := pvc.GetName()
 	namespace := pvc.GetNamespace()
 	if len(namespace) == 0 {
-		namespace = v1.NamespaceDefault
+		namespace = corev1.NamespaceDefault
 	}
 	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
 
@@ -372,7 +372,7 @@ func CheckIfPVCIsDataset(pvc *v1.PersistentVolumeClaim) (isDataset bool) {
 }
 
 // GetReferringDatasetPVCInfo check whether the PVC is a referring dataset PVC
-func GetReferringDatasetPVCInfo(pvc *v1.PersistentVolumeClaim) (ok bool, name string, namespace string) {
+func GetReferringDatasetPVCInfo(pvc *corev1.PersistentVolumeClaim) (ok bool, name string, namespace string) {
 	name = pvc.Labels[common.LabelAnnotationDatasetReferringName]
 	namespace, ok = pvc.Labels[common.LabelAnnotationDatasetReferringNameSpace]
 
