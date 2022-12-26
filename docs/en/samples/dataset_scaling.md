@@ -1,4 +1,4 @@
-# Demo - Cache Runtime Manual Scaling 
+# Demo - Cache Runtime Manually Scaling 
 
 ## Prerequisites
 
@@ -73,13 +73,13 @@ NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED
 hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        4m55s
 ```
 
-**Scale-up Dataset**
+**Scale-out Cache Runtime**
 
 ```
 $ kubectl scale alluxioruntime hbase --replicas=2
 alluxioruntime.data.fluid.io/hbase scaled
 ```
-Directly use the `kubectl scale` command to complete the scale-up of Dataset. After successfully executing the above command and waiting for a while, you can see that the status of both Dataset and AlluxioRuntime has changed.
+Directly use the `kubectl scale` command to complete the scale-out of Cache Runtime. After successfully executing the above command and waiting for a while, you can see that the status of both Dataset and AlluxioRuntime has changed.
 
 A new Alluxio Worker and the corresponding Alluxio Fuse component have been successfully started:
 ```
@@ -122,15 +122,15 @@ Events:
   Normal  Succeed  2m2s  AlluxioRuntime  Runtime scaled out. current replicas: 2, desired replicas: 2.
 ```
 
-**Scale-down Dataset**
+**Scale-in Cache Runtime**
 
-Similar to scale-up, the number of workers in the Runtime can also scale-down using `kubectl scale`.
+Similar to scale-out, the number of workers in the Runtime can also scale-in using `kubectl scale`.
 ```
 $ kubectl scale alluxioruntime hbase --replicas=1
 alluxioruntime.data.fluid.io/hbase scaled
 ```
 
-After successful execution of the above command, **if no application is trying to access the dataset currently**, then the Runtime scale-down will be triggered.
+After successful execution of the above command, **if no application is trying to access the dataset currently**, then the Cache Runtime scale-in will be triggered.
 
 Runtime Workers that exceed the specified number of `replicas` will be stopped:
 ```
@@ -147,7 +147,7 @@ NAME    UFS TOTAL SIZE   CACHED   CACHE CAPACITY   CACHED PERCENTAGE   PHASE   A
 hbase   544.77MiB        0.00B    2.00GiB          0.0%                Bound   30m
 ```
 
-> Note: In the current version of Fluid, there is a delay of a few minutes in the change of the `Cache Capacity` property when scale-down, so you may not be able to observe the change of this property quickly.
+> Note: In the current version of Fluid, there is a delay of a few minutes in the change of the `Cache Capacity` property when scale-in, so you may not be able to observe the change of this property quickly.
 
 The `Ready Workers` and `Ready Fuses` fields in AlluxioRuntime also become `1`:
 ```
@@ -176,7 +176,7 @@ Events:
   Normal   Succeed              4s     AlluxioRuntime  Alluxio runtime scaled in. current replicas: 1, desired replicas: 1.
 ```
 
-The scaling capability provided by Fluid helps users or cluster administrators to adjust the resources occupied by the dataset cache in a timely manner, reducing the cache capacity of an infrequently used dataset (scale-down) or increasing the cache capacity of a dataset on demand (scale-up) to achieve a more fine-grained resource allocation and improve resource utilization.
+The scaling capability provided by Fluid helps users or cluster administrators to adjust the resources occupied by the dataset cache in a timely manner, reducing the cache capacity of an infrequently used dataset (scale-in) or increasing the cache capacity of a dataset on demand (scale-out) to achieve a more fine-grained resource allocation and improve resource utilization.
 
 ## Clean your environment
 ```shell

@@ -73,13 +73,13 @@ NAME    READY MASTERS   DESIRED MASTERS   MASTER PHASE   READY WORKERS   DESIRED
 hbase   1               1                 Ready          1               1                 Ready          0             0               Ready        4m55s
 ```
 
-**Dataset扩容**
+**Cache Runtime扩容**
 
 ```
 $ kubectl scale alluxioruntime hbase --replicas=2
 alluxioruntime.data.fluid.io/hbase scaled
 ```
-直接使用`kubectl scale`命令即可完成Dataset的扩容操作。在成功执行上述命令并等待一段时间后可以看到Dataset以及AlluxioRuntime的状态均发生了变化：
+直接使用`kubectl scale`命令即可完成Cache Runtime的扩容操作。在成功执行上述命令并等待一段时间后可以看到Dataset以及AlluxioRuntime的状态均发生了变化：
 
 一个新的Alluxio Worker以及对应的Alluxio Fuse组件成功启动：
 ```
@@ -123,9 +123,9 @@ Events:
   Normal  Succeed  2m2s  AlluxioRuntime  Runtime scaled out. current replicas: 2, desired replicas: 2.
 ```
 
-**Dataset缩容**
+**Cache Runtime缩容**
 
-与扩容类似，缩容时同样可以使用`kubectl scale`对Runtime的Worker数量进行调整：
+与扩容类似，缩容时同样可以使用`kubectl scale`对Cache Runtime的Worker数量进行调整：
 ```
 $ kubectl scale alluxioruntime hbase --replicas=1
 alluxioruntime.data.fluid.io/hbase scaled
