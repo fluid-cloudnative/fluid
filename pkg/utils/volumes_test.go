@@ -375,3 +375,93 @@ func TestAppendOrOverrideVolumeMounts(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterVolumesByVolumeMounts(t *testing.T) {
+	type args struct {
+		volumes      []corev1.Volume
+		volumeMounts []corev1.VolumeMount
+	}
+	tests := []struct {
+		name string
+		args args
+		want []corev1.Volume
+	}{
+		{
+			name: "all_volumes_needed",
+			args: args{
+				volumes: []corev1.Volume{
+					{
+						Name: "test-vol-1",
+					},
+					{
+						Name: "test-vol-2",
+					},
+					{
+						Name: "test-vol-3",
+					},
+				},
+				volumeMounts: []corev1.VolumeMount{
+					{
+						Name: "test-vol-1",
+					},
+					{
+						Name: "test-vol-2",
+					},
+					{
+						Name: "test-vol-3",
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-vol-1",
+				},
+				{
+					Name: "test-vol-2",
+				},
+				{
+					Name: "test-vol-3",
+				},
+			},
+		},
+		{
+			name: "volumes_partly_needed",
+			args: args{
+				volumes: []corev1.Volume{
+					{
+						Name: "test-vol-1",
+					},
+					{
+						Name: "test-vol-2",
+					},
+					{
+						Name: "test-vol-3",
+					},
+				},
+				volumeMounts: []corev1.VolumeMount{
+					{
+						Name: "test-vol-1",
+					},
+					{
+						Name: "test-vol-2",
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-vol-1",
+				},
+				{
+					Name: "test-vol-2",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FilterVolumesByVolumeMounts(tt.args.volumes, tt.args.volumeMounts); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FilterVolumesByVolumeMounts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
