@@ -104,6 +104,8 @@ set -ex
 export AWS_ACCESS_KEY_ID=$akId
 export AWS_SECRET_ACCESS_KEY=$akSecret
 
+mkdir -p $targetPath
+
 exec goofys -f --endpoint "$url" "$bucket" $targetPath
 """
 
