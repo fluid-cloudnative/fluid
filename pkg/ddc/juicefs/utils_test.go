@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
 
@@ -157,7 +156,7 @@ func TestJuiceFSEngine_getMountPoint(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			wantMountPath := fmt.Sprintf("%s/%s/%s/juicefs-fuse", tt.fields.MountRoot+"/juicefs", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPoint(); gotMountPath != wantMountPath {
 				t.Errorf("JuiceFSEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
@@ -196,7 +195,7 @@ func TestJuiceFSEngine_getHostMountPoint(t *testing.T) {
 				namespace: tt.fields.namespace,
 				Log:       tt.fields.Log,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			if gotMountPath := j.getHostMountPoint(); gotMountPath != tt.wantMountPath {
 				t.Errorf("getHostMountPoint() = %v, want %v", gotMountPath, tt.wantMountPath)
 			}
@@ -368,7 +367,7 @@ func TestJuiceFSEngine_parseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &JuiceFSEngine{}
-			os.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
+			t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("JuiceFSEngine.parseFuseImage() got = %v, want %v", got, tt.want)
@@ -395,7 +394,7 @@ func Test_getMountRoot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("MOUNT_ROOT", "/tmp")
+			t.Setenv("MOUNT_ROOT", "/tmp")
 			if gotPath := getMountRoot(); gotPath != tt.wantPath {
 				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
 			}
@@ -404,6 +403,8 @@ func Test_getMountRoot(t *testing.T) {
 }
 
 func TestJuiceFSEngine_parseRuntimeImage(t *testing.T) {
+	t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
+
 	type args struct {
 		image           string
 		tag             string
@@ -457,6 +458,8 @@ func TestJuiceFSEngine_parseRuntimeImage(t *testing.T) {
 }
 
 func TestJuiceFSEngine_parseRuntimeImage1(t *testing.T) {
+	t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
+
 	type args struct {
 		image           string
 		tag             string

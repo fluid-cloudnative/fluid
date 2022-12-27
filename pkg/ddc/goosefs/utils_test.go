@@ -154,7 +154,7 @@ func TestMountRootWithEnvSet(t *testing.T) {
 		{"/var/lib/mymount", "/var/lib/mymount/goosefs"},
 	}
 	for _, tc := range testCases {
-		os.Setenv(utils.MountRoot, tc.input)
+		t.Setenv(utils.MountRoot, tc.input)
 		if tc.expected != getMountRoot() {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
@@ -687,7 +687,7 @@ func TestGetMountPoint(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			wantMountPath := fmt.Sprintf("%s/%s/%s/goosefs-fuse", tt.fields.MountRoot+"/goosefs", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPoint(); gotMountPath != wantMountPath {
 				t.Errorf("GooseFSEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
@@ -751,7 +751,7 @@ func TestGetMountRoot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("MOUNT_ROOT", "/tmp")
+			t.Setenv("MOUNT_ROOT", "/tmp")
 			if gotPath := getMountRoot(); gotPath != tt.wantPath {
 				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
 			}
@@ -798,7 +798,7 @@ func TestParseRuntimeImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &GooseFSEngine{}
-			os.Setenv(common.GooseFSRuntimeImageEnv, "ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0")
+			t.Setenv(common.GooseFSRuntimeImageEnv, "ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0")
 			got, got1, got2 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("GooseFSEngine.parseRuntimeImage() got = %v, want %v", got, tt.want)
@@ -852,7 +852,7 @@ func TestParseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &GooseFSEngine{}
-			os.Setenv(common.GooseFSFuseImageEnv, "ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0")
+			t.Setenv(common.GooseFSFuseImageEnv, "ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("GooseFSEngine.parseFuseImage() got = %v, want %v", got, tt.want)
