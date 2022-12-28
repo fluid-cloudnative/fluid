@@ -18,7 +18,6 @@ package dataload
 
 import (
 	"context"
-
 	"reflect"
 	"sync"
 	"time"
