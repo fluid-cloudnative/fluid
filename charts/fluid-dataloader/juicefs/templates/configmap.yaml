@@ -23,6 +23,14 @@ data:
         podNames=(${podNames//:/ })
 
         ns="$POD_NAMESPACE"
+    
+        checkPathResult=$(/usr/local/bin/kubectl -n $ns exec -it "${podNames[0]}" -- timeout 30s /bin/ls $targetPath |& head -3)
+        strUnexistence="No such file or directory"
+        if [[ $checkPathResult =~ $strUnexistence ]]; then
+            echo -e "dataLoad failed because some paths not exist."
+            exit 1
+        fi
+    
         if [ $EDITION == 'community' ]
         then
         for((i=0;i<${#podNames[@]};i++)) do

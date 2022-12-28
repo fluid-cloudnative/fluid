@@ -44,7 +44,7 @@ spec:
       {{- end }}
       {{- end }}
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       {{- range $key, $val := .Values.dataloader.options }}
       {{- if eq $key "runtimeName" }}
       serviceAccountName: {{ printf "%s-loader" $val | quote }}
