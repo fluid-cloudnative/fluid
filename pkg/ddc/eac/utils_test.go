@@ -18,6 +18,9 @@ package eac
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -30,11 +33,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 var valuesConfigMapData = `
@@ -297,7 +297,7 @@ func TestEACEngine_getMountPath(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			wantMountPath := fmt.Sprintf("%s/%s/%s/eac-fuse", tt.fields.MountRoot+"/eac", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPath(); gotMountPath != wantMountPath {
 				t.Errorf("EACEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
@@ -336,7 +336,7 @@ func TestEACEngine_getHostMountPath(t *testing.T) {
 				namespace: tt.fields.namespace,
 				Log:       tt.fields.Log,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			if gotMountPath := j.getHostMountPath(); gotMountPath != tt.wantMountPath {
 				t.Errorf("getHostMountPoint() = %v, want %v", gotMountPath, tt.wantMountPath)
 			}
@@ -417,7 +417,7 @@ func Test_getMountRoot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("MOUNT_ROOT", "/tmp")
+			t.Setenv("MOUNT_ROOT", "/tmp")
 			if gotPath := getMountRoot(); gotPath != tt.wantPath {
 				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
 			}

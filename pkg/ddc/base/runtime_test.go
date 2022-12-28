@@ -17,7 +17,6 @@ limitations under the License.
 package base
 
 import (
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -1348,13 +1347,13 @@ func TestGetSyncRetryDuration(t *testing.T) {
 		t.Errorf("Failed to getSyncRetryDuration %v", err)
 	}
 
-	os.Setenv(syncRetryDurationEnv, "s")
+	t.Setenv(syncRetryDurationEnv, "s")
 	_, err = getSyncRetryDuration()
 	if err == nil {
 		t.Errorf("Expect to get err, but got nil")
 	}
 
-	os.Setenv(syncRetryDurationEnv, "3s")
+	t.Setenv(syncRetryDurationEnv, "3s")
 	d, err := getSyncRetryDuration()
 	if err != nil {
 		t.Errorf("Failed to getSyncRetryDuration %v", err)

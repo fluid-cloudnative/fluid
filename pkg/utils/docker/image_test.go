@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -47,15 +46,8 @@ func TestParseDockerImage(t *testing.T) {
 }
 
 func TestGetImageRepoFromEnv(t *testing.T) {
-	err := os.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-	if err != nil {
-		t.Errorf("can't set the environment with error %v", err)
-	}
-
-	err = os.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
-	if err != nil {
-		t.Errorf("can't set the environment with error %v", err)
-	}
+	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
+	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
 
 	var testCase = []struct {
 		envName string
@@ -83,15 +75,8 @@ func TestGetImageRepoFromEnv(t *testing.T) {
 }
 
 func TestGetImageTagFromEnv(t *testing.T) {
-	err := os.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-	if err != nil {
-		t.Errorf("can't set the environment with error %v", err)
-	}
-
-	err = os.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
-	if err != nil {
-		t.Errorf("can't set the environment with error %v", err)
-	}
+	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
+	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
 
 	var testCase = []struct {
 		envName string
@@ -136,7 +121,7 @@ func TestGetImagePullSecrets(t *testing.T) {
 	}
 
 	for k, v := range testCases {
-		os.Setenv(v.envName, v.envMockValues)
+		t.Setenv(v.envName, v.envMockValues)
 		got := GetImagePullSecretsFromEnv(v.envName)
 		if !reflect.DeepEqual(got, v.want) {
 			t.Errorf("%s: expected: %s, got: %s", k, v.want, got)
@@ -145,10 +130,7 @@ func TestGetImagePullSecrets(t *testing.T) {
 }
 
 func TestParseInitImage(t *testing.T) {
-	err := os.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-	if err != nil {
-		t.Errorf("can't set the environment with error %v", err)
-	}
+	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
 
 	var testCase = []struct {
 		image               string

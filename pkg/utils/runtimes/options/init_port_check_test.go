@@ -17,7 +17,6 @@ limitations under the License.
 package options
 
 import (
-	"os"
 	"testing"
 )
 
@@ -50,7 +49,7 @@ func TestPortCheckEnabled(t *testing.T) {
 
 	for _, test := range testCases {
 		for k, v := range test.env {
-			os.Setenv(k, v)
+			t.Setenv(k, v)
 		}
 		setPortCheckOption()
 		got := PortCheckEnabled()
