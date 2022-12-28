@@ -34,3 +34,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [HUYA](https://www.huya.com)  | [@BobLiu20](liubofang@huya.com) | Staging | AI Platform on k8s |
 | [OPPO](https://www.oppo.com) | [@laibruce](laiyanhui@oppo.com) | Production | Data acceleration |
 | [CloudView](https://cloudview.mobi) | [@kastland](kastland@126.com) | Production | AI Platform on k8s |
+| [Inceptio](https://www.inceptio.ai) | [@shajingcheng](shajingcheng@126.com) | Staging | Bigdata Platform on k8s |
