@@ -17,10 +17,10 @@ limitations under the License.
 package mountinfo
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"os"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -175,7 +175,7 @@ func Test_getBrokenBindMounts(t *testing.T) {
 }
 
 func Test_getGlobalMounts(t *testing.T) {
-	os.Setenv(utils.MountRoot, "/runtime-mnt")
+	t.Setenv(utils.MountRoot, "/runtime-mnt")
 	type args struct {
 		mountByPath map[string]*Mount
 	}

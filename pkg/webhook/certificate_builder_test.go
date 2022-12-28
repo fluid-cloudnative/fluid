@@ -97,13 +97,8 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 		},
 	}
 	for _, item := range testCases {
-		if err := os.Unsetenv(common.MyPodNamespace); err != nil {
-			t.Errorf("fail to unset env of ns, ns:%s, err:%v", item.ns, err)
-		}
 		if item.ns != "" {
-			if err := os.Setenv(common.MyPodNamespace, item.ns); err != nil {
-				t.Errorf("fail to set env of ns, ns:%s, err:%v", item.ns, err)
-			}
+			t.Setenv(common.MyPodNamespace, item.ns)
 		}
 
 		certDir, err := ioutil.TempDir("/tmp", item.certPath)

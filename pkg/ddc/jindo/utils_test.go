@@ -59,7 +59,7 @@ func TestMountRootWithEnvSet(t *testing.T) {
 		{"/var/lib/mymount", "/var/lib/mymount/jindo"},
 	}
 	for _, tc := range testCases {
-		os.Setenv(utils.MountRoot, tc.input)
+		t.Setenv(utils.MountRoot, tc.input)
 		if tc.expected != getMountRoot() {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
@@ -114,7 +114,7 @@ func TestJindoFSEngine_getHostMountPoint(t *testing.T) {
 				namespace: tt.fields.namespace,
 				Log:       tt.fields.Log,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			if gotMountPath := j.getHostMountPoint(); gotMountPath != tt.wantMountPath {
 				t.Errorf("getHostMountPoint() = %v, want %v", gotMountPath, tt.wantMountPath)
 			}

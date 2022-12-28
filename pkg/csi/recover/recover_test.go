@@ -18,6 +18,11 @@ package recover
 
 import (
 	"errors"
+	"io/ioutil"
+	"reflect"
+	"testing"
+	"time"
+
 	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -26,18 +31,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 )
 
 const testfuseRecoverPeriod = 30
@@ -82,10 +82,10 @@ func Test_initializeKubeletClient(t *testing.T) {
 			})
 			defer patch1.Reset()
 
-			os.Setenv("NODE_IP", fakeNodeIP)
-			os.Setenv("KUBELET_CLIENT_CERT", fakeClientCert)
-			os.Setenv("KUBELET_CLIENT_KEY", fakeClientKey)
-			os.Setenv("KUBELET_TIMEOUT", fakeKubeletTimeout)
+			t.Setenv("NODE_IP", fakeNodeIP)
+			t.Setenv("KUBELET_CLIENT_CERT", fakeClientCert)
+			t.Setenv("KUBELET_CLIENT_KEY", fakeClientKey)
+			t.Setenv("KUBELET_TIMEOUT", fakeKubeletTimeout)
 
 			kubeletClient, err := initializeKubeletClient()
 			So(err, ShouldBeNil)
@@ -505,8 +505,8 @@ func TestNewFuseRecover(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv(utils.MountRoot, "/runtime-mnt")
-			os.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
+			t.Setenv(utils.MountRoot, "/runtime-mnt")
+			t.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
 
 			patch := ApplyFunc(initializeKubeletClient, func() (*kubelet.KubeletClient, error) {
 				return fakeKubeletClient, nil

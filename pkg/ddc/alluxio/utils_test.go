@@ -155,7 +155,7 @@ func TestMountRootWithEnvSet(t *testing.T) {
 		{"/var/lib/mymount", "/var/lib/mymount/alluxio"},
 	}
 	for _, tc := range testCases {
-		os.Setenv(utils.MountRoot, tc.input)
+		t.Setenv(utils.MountRoot, tc.input)
 		if tc.expected != getMountRoot() {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
@@ -750,7 +750,7 @@ func TestGetMountPoint(t *testing.T) {
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 			}
-			os.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
+			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
 			wantMountPath := fmt.Sprintf("%s/%s/%s/alluxio-fuse", tt.fields.MountRoot+"/alluxio", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPoint(); gotMountPath != wantMountPath {
 				t.Errorf("AlluxioEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
@@ -814,7 +814,7 @@ func TestGetMountRoot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("MOUNT_ROOT", "/tmp")
+			t.Setenv("MOUNT_ROOT", "/tmp")
 			if gotPath := getMountRoot(); gotPath != tt.wantPath {
 				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
 			}
@@ -897,7 +897,7 @@ func TestParseRuntimeImage(t *testing.T) {
 			e := &AlluxioEngine{}
 			for k, v := range tt.envs {
 				// mock env
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
 			got, got1, got2, got3 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy, tt.want3)
 			if got != tt.want {
@@ -955,7 +955,7 @@ func TestParseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
-			os.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
+			t.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseFuseImage() got = %v, want %v", got, tt.want)

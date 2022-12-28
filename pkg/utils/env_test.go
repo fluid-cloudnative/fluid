@@ -17,125 +17,134 @@ limitations under the License.
 package utils
 
 import (
-	"os"
 	"testing"
 	"time"
 )
 
 func TestGetBoolValueFormEnv(t *testing.T) {
-	// 1. env is not set
-	testEnvNameNotFound := "envnotfound"
-	expect := false
+	t.Run("env is not set", func(t *testing.T) {
+		testEnvNameNotFound := "envnotfound"
+		expect := false
 
-	got := GetBoolValueFormEnv(testEnvNameNotFound, false)
+		got := GetBoolValueFormEnv(testEnvNameNotFound, false)
 
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 
-	// 2. env is set in true
-	testEnvNameFound := "envFound"
-	os.Setenv(testEnvNameFound, "true")
-	expect = true
+	t.Run("env is set in true", func(t *testing.T) {
+		testEnvNameFound := "envFound"
+		t.Setenv(testEnvNameFound, "true")
+		expect := true
 
-	got = GetBoolValueFormEnv(testEnvNameFound, false)
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		got := GetBoolValueFormEnv(testEnvNameFound, false)
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 
-	// env is set T, which also means true
-	os.Setenv(testEnvNameFound, "T")
-	expect = true
+	t.Run("env is set T, which also means true", func(t *testing.T) {
+		testEnvNameFound := "envFound"
+		t.Setenv(testEnvNameFound, "T")
+		expect := true
 
-	got = GetBoolValueFormEnv(testEnvNameFound, false)
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		got := GetBoolValueFormEnv(testEnvNameFound, false)
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 }
 
 func TestGetIntValueFormEnv(t *testing.T) {
-	// 1. env is not set
-	testEnvNameNotFound := "envnotfound"
-	expectFound := false
+	t.Run("env is not set", func(t *testing.T) {
+		testEnvNameNotFound := "envnotfound"
+		expectFound := false
 
-	_, found := GetIntValueFormEnv(testEnvNameNotFound)
+		_, found := GetIntValueFormEnv(testEnvNameNotFound)
 
-	if found != expectFound {
-		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
-	}
+		if found != expectFound {
+			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+		}
+	})
 
-	// 2. env is set in true
-	testEnvNameFound := "envFound"
-	os.Setenv(testEnvNameFound, "10")
-	expectFound = true
-	expect := 10
+	t.Run("env is set in true", func(t *testing.T) {
+		testEnvNameFound := "envFound"
+		t.Setenv(testEnvNameFound, "10")
+		expectFound := true
+		expect := 10
 
-	got, found := GetIntValueFormEnv(testEnvNameFound)
+		got, found := GetIntValueFormEnv(testEnvNameFound)
 
-	if found != expectFound {
-		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
-	}
+		if found != expectFound {
+			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+		}
 
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 
-	// env is set with illegal value
-	testEnvNameIllegal := "envIllegal"
-	os.Setenv(testEnvNameIllegal, "illegal")
-	expectFound = false
+	t.Run("env is set with illegal value", func(t *testing.T) {
+		testEnvNameIllegal := "envIllegal"
+		t.Setenv(testEnvNameIllegal, "illegal")
+		expectFound := false
 
-	_, found = GetIntValueFormEnv(testEnvNameIllegal)
+		_, found := GetIntValueFormEnv(testEnvNameIllegal)
 
-	if found != expectFound {
-		t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
-	}
-
+		if found != expectFound {
+			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
+		}
+	})
 }
 
 func TestGetDurationValueFormEnv(t *testing.T) {
-	// 1. env is not set
-	testEnvNameNotFound := "envnotfound"
-	expect := 3 * time.Second
+	t.Run("env is not set", func(t *testing.T) {
+		testEnvNameNotFound := "envnotfound"
+		expect := 3 * time.Second
 
-	got := GetDurationValueFromEnv(testEnvNameNotFound, 3*time.Second)
+		got := GetDurationValueFromEnv(testEnvNameNotFound, 3*time.Second)
 
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 
-	// 2. env is set in true
-	testEnvNameFound := "envFound"
-	os.Setenv(testEnvNameFound, "10s")
-	expect = 10 * time.Second
+	t.Run("env is set in true", func(t *testing.T) {
+		testEnvNameFound := "envFound"
+		t.Setenv(testEnvNameFound, "10s")
+		expect := 10 * time.Second
 
-	got = GetDurationValueFromEnv(testEnvNameFound, 3*time.Second)
+		got := GetDurationValueFromEnv(testEnvNameFound, 3*time.Second)
 
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
-
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 }
 
 func TestGetStringValueFromEnv(t *testing.T) {
 	defaultStringValue := "defaultStringValue"
-	// 1. env is not set
-	testEnvNameNotFound := "envnotfound"
-	expect := defaultStringValue
 
-	got := GetStringValueFromEnv(testEnvNameNotFound, defaultStringValue)
+	t.Run("env is not set", func(t *testing.T) {
+		testEnvNameNotFound := "envnotfound"
+		expect := defaultStringValue
 
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+		got := GetStringValueFromEnv(testEnvNameNotFound, defaultStringValue)
 
-	// 2. env is set in true
-	testEnvNameFound := "envFound"
-	os.Setenv(testEnvNameFound, "stringValue")
-	expect = "stringValue"
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 
-	got = GetStringValueFromEnv(testEnvNameFound, defaultStringValue)
-	if got != expect {
-		t.Errorf("test failed due to expect %v, but got %v", expect, got)
-	}
+	t.Run("env is set in true", func(t *testing.T) {
+		testEnvNameFound := "envFound"
+		t.Setenv(testEnvNameFound, "stringValue")
+		expect := "stringValue"
+
+		got := GetStringValueFromEnv(testEnvNameFound, defaultStringValue)
+		if got != expect {
+			t.Errorf("test failed due to expect %v, but got %v", expect, got)
+		}
+	})
 }
