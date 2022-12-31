@@ -33,6 +33,7 @@
 + Advanced   
   - [Accelerate Data Access by MEM or SSD](samples/accelerate_data_by_mem_or_ssd.md)
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
+  - [Pod Scheduling Optimization](operation/pod_schedule_optimization.md)
   - [Set FUSE clean policy](samples/fuse_clean_policy.md)
   + Serverless
     - [How to run in Knative environment](samples/knative.md)
