@@ -43,6 +43,7 @@
   - [Support Image Pull Secrets](samples/image_pull_secrets.md)
 + Operation Guide
   - [Runtime monitoring](operation/monitoring.md)
+  - [Cache Runtime Auto Scaling](operation/dataset_auto_scaling.md)
 + Troubleshooting
   - [Collecting logs](userguide/troubleshooting.md)
 + Developer Guide
