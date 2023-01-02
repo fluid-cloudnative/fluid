@@ -123,8 +123,8 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 // 2. Transform the common part
 func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime,
 	dataset *datav1alpha1.Dataset,
-	value *Alluxio) (err error) {
-
+	value *Alluxio,
+) (err error) {
 	value.RuntimeIdentity.Namespace = runtime.Namespace
 	value.RuntimeIdentity.Name = runtime.Name
 
@@ -242,12 +242,6 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 
 	e.transformShortCircuit(runtimeInfo, value)
 
-	clusterDomain, err := common.GetClusterDomain()
-	if err != nil {
-		return err
-	}
-	value.ClusterDomain = clusterDomain
-
 	return
 }
 
@@ -270,8 +264,8 @@ func (e *AlluxioEngine) transformPodMetadata(runtime *datav1alpha1.AlluxioRuntim
 // 2. Transform the masters
 func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 	dataset *datav1alpha1.Dataset,
-	value *Alluxio) (err error) {
-
+	value *Alluxio,
+) (err error) {
 	value.Master = Master{}
 
 	backupRoot := os.Getenv("FLUID_WORKDIR")
@@ -499,12 +493,10 @@ func (e *AlluxioEngine) transformMasterSelector(runtime *datav1alpha1.AlluxioRun
 }
 
 func (e *AlluxioEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *Alluxio) {
-
 	value.PlacementMode = string(dataset.Spec.PlacementMode)
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
-
 }
 
 func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterface, value *Alluxio) {
