@@ -1,10 +1,10 @@
-# 示例 - Dataset缓存跨Namespace访问(Sidecar机制)
-本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
-- Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+# Demo - Access Dataset cache across Namespace (Sidecar mechanism)
+This demo is used to show how to use a Dataset cache across Namespace.
+- In Namespace `ns-a`, create Dataset `demo` and AlluxioRuntime `demo`
+- In Namespace `ns-b` create Dataset `demo-ref`. The mountPoint of `demo-ref` is `dataset://ns-a/demo`
  
-## 前提条件
-在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：
+## Prerequests
+Before running this demo, please refer to the [installation documentation](../userguide/install.md) to complete the installation and check that the components of Fluid are working properly:
 ```shell
 $ kubectl get pod -n fluid-system
 alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
@@ -14,12 +14,12 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 thinruntime-controller-7dcbf5f45-xsf4p          1/1     Running   0          8h
 ```
 
-其中，`thinruntime-controller`是用来支持Dataset跨Namespace共享，`alluxioruntime-controller`是实际的缓存。
+Where `thinruntime-controller` is used to support Dataset sharing across Namespace and `alluxioruntime-controller` is the actual cache.
 
-## Sidecar机制跨Namespace共享数据集缓存
-###  1. 创建Dataset和缓存Runtime
+## Share Dataset cache across Namespace through CSI mechanism 
+###  1. Create Dataset and Cache Runtime
 
-在默认名空间下，创建`phy` Dataset和AlluxioRuntime
+In default Namespace，create `phy` Dataset and AlluxioRuntime.
 ```shell
 $ cat<<EOF >ds.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -49,12 +49,14 @@ EOF
 $ kubectl create -f ds.yaml
 ```
 
-### 2. 创建引用的Dataset和Runtime
-在 ref 名空间下，创建：
-- 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
+### 2. Create referenced Dataset and Runtime
+In Namespace `ref`, create:
+- the referenced dataset `refdemo`, whose mountPoint format is `dataset://${origin-dataset-namespace}/${origin-dataset-name}`.
+- ThinRuntime `refdemo`, and its Spec fields don't need to be filled.
 
-注：
-1. 当前引用的数据集，只支持一个mount，且形式必须为`dataset://`（即出现`dataset://`和其它形式时，dataset创建失败），Spec中其它字段无效；
+Note:
+1. Currently, the referenced Dataset only supports single mount and its form must be `dataset://` (i.e. the creation of a dataset fails when `dataset://` and other forms both appear), and other fields in the Spec are invalid.
+2. The fields in Spec of the referenced Runtime corresponding to the Dataset are invalid.
 ```shell
 $ kubectl create ns ref
 
@@ -66,15 +68,17 @@ metadata:
 spec:
   mounts:
     - mountPoint: dataset://default/phy
+      name: fusedemo
+      path: "/"
 EOF
 
 $ kubectl create -f ds-ref.yaml -n ref
 ```
 
-### 创建Pod并查看数据
+### Create Pod and Check the data
 
-在 ref 名空间下，创建Pod：
-需要开启serverless注入，设置pod标签`serverless.fluid.io/inject=true`
+In Namespace `ref`, create a Pod：  
+Need to enable serverless injection, set pod tag `serverless.fluid.io/inject=true`
 ```shell
 $ cat<<EOF >app-ref.yaml
 apiVersion: v1
@@ -99,9 +103,9 @@ EOF
 $ kubectl create -f app-ref.yaml -n ref
 ```
 
-查看 default 空间下的pod信息：
-- 只存在一个AlluxioRuntime集群，即缓存只有一份；
-- 采用sidecar机制，因此不存在fuse的pod；
+In default Namespace, check the Pod information.
+- Only one AlluxioRuntime cluster exists, i.e. there is only one cache.
+- The sidecar mechanism is used, so there is no fuse pod.
 ```shell
 $ kubectl get pods -o wide
 NAME             READY   STATUS    RESTARTS   AGE     IP              NODE      NOMINATED NODE   READINESS GATES
@@ -109,18 +113,14 @@ phy-master-0     2/2     Running   0          7m2s    172.16.1.10     work02    
 phy-worker-0     2/2     Running   0          6m29s   172.16.1.10     work02    <none>           <none>
 ```
 
-查看 ref 空间下 app nginx pod 状态正常运行，并查看挂载的数据：
+In Namespace `ref`, check the status of the app nginx pod.
 ```shell
 $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
-
-# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
-$ kubectl exec nginx -c nginx -n ref -it -- ls /data_spark
-spark
 ```
 
-查看 ref 空间下 app nginx pod的yaml，可以看到被注入`fuse` container：
+Check the yaml of the app nginx pod under the `ref` namespace and you can see that the `fuse` container is injected.
 ```shell
 $ kubectl get pods nginx -n ref -o yaml
 ...
@@ -132,16 +132,16 @@ spec:
 ...
 ```
 
-### 已知问题
+### Known Issues
 
-对于Fuse Sidecar场景，在引用的名空间(`ref`)下会创建一些ConfigMap
+For the Fuse Sidecar scenario, some ConfigMap is created under the referenced namespace (`ref`).
 ```shell
 NAME                                    DATA   AGE
 check-fluid-mount-ready                 1      6d14h
 phy-config                              7      6d15h
 refdemo-fuse.alluxio-fuse-check-mount   1      6d14h
 ```
-- `check-fluid-mount-ready` 是该名空间下所有Dataset共享的；
-- `refdemo-fuse.alluxio-fuse-check-mount`是根据Dataset名和Runtime类型生成的；
-- `phy-config`是AlluxioRuntime的Fuse Container所需的ConfigMap，因此从`default`名空间拷贝至`ref`名空间下；
-  - **如果之前`ref`名空间下存在使用AlluxioRuntime的名为`phy`的Dataset，那么`refdemo`Dataset的使用会出错；**
+- `check-fluid-mount-ready` is shared by all Datasets under that namespace.
+- `refdemo-fuse.alluxio-fuse-check-mount` is generated based on the Dataset name and Runtime type.
+- `phy-config` is the ConfigMap required by AlluxioRuntime's Fuse Container and is therefore copied from the `default` namespace to the `ref` namespace.
+  - **If a Dataset named `phy` using AlluxioRuntime previously existed under the `ref` namespace, then the use of the `refdemo` Dataset will be wrong.**
