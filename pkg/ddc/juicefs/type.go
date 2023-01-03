@@ -17,86 +17,89 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
-// JuiceFS The value yaml file
+// JuiceFS The value json file
 type JuiceFS struct {
-	FullnameOverride string `yaml:"fullnameOverride"`
-	Edition          string `yaml:"edition,omitempty"`
-	Source           string `yaml:"source,omitempty"`
+	FullnameOverride string `json:"fullnameOverride"`
+	Edition          string `json:"edition,omitempty"`
+	Source           string `json:"source,omitempty"`
 
-	common.ImageInfo `yaml:",inline"`
-	common.UserInfo  `yaml:",inline"`
+	common.ImageInfo `json:",inline"`
+	common.UserInfo  `json:",inline"`
 
-	NodeSelector map[string]string   `yaml:"nodeSelector,omitempty"`
+	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
 	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
-	Configs      Configs             `yaml:"configs,omitempty"`
-	Fuse         Fuse                `yaml:"fuse,omitempty"`
-	Worker       Worker              `yaml:"worker,omitempty"`
+	Configs      Configs             `json:"configs,omitempty"`
+	Fuse         Fuse                `json:"fuse,omitempty"`
+	Worker       Worker              `json:"worker,omitempty"`
 
-	CacheDirs       map[string]cache       `yaml:"cacheDirs,omitempty"`
-	PlacementMode   string                 `yaml:"placement,omitempty"`
-	Owner           *common.OwnerReference `yaml:"owner,omitempty"`
-	RuntimeIdentity common.RuntimeIdentity `yaml:"runtimeIdentity,omitempty"`
+	CacheDirs       map[string]cache       `json:"cacheDirs,omitempty"`
+	PlacementMode   string                 `json:"placement,omitempty"`
+	Owner           *common.OwnerReference `json:"owner,omitempty"`
+	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity,omitempty"`
 }
 
 type Configs struct {
-	Name            string `yaml:"name"`
-	AccessKeySecret string `yaml:"accesskeySecret,omitempty"`
-	SecretKeySecret string `yaml:"secretkeySecret,omitempty"`
-	Bucket          string `yaml:"bucket,omitempty"`
-	MetaUrlSecret   string `yaml:"metaurlSecret,omitempty"`
-	TokenSecret     string `yaml:"tokenSecret,omitempty"`
-	Storage         string `yaml:"storage,omitempty"`
-	FormatCmd       string `yaml:"formatCmd,omitempty"`
+	Name            string `json:"name"`
+	AccessKeySecret string `json:"accesskeySecret,omitempty"`
+	SecretKeySecret string `json:"secretkeySecret,omitempty"`
+	Bucket          string `json:"bucket,omitempty"`
+	MetaUrlSecret   string `json:"metaurlSecret,omitempty"`
+	TokenSecret     string `json:"tokenSecret,omitempty"`
+	Storage         string `json:"storage,omitempty"`
+	FormatCmd       string `json:"formatCmd,omitempty"`
 }
 
 type Worker struct {
-	Privileged      bool                   `yaml:"privileged,omitempty"`
-	Image           string                 `yaml:"image,omitempty"`
-	NodeSelector    map[string]string      `yaml:"nodeSelector,omitempty"`
-	ImageTag        string                 `yaml:"imageTag,omitempty"`
-	ImagePullPolicy string                 `yaml:"imagePullPolicy,omitempty"`
-	Resources       common.Resources       `yaml:"resources,omitempty"`
-	Envs            []corev1.EnvVar        `yaml:"envs,omitempty"`
-	Ports           []corev1.ContainerPort `yaml:"ports,omitempty"`
+	Privileged      bool                   `json:"privileged"`
+	Image           string                 `json:"image,omitempty"`
+	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
+	ImageTag        string                 `json:"imageTag,omitempty"`
+	ImagePullPolicy string                 `json:"imagePullPolicy,omitempty"`
+	Resources       common.Resources       `json:"resources,omitempty"`
+	Envs            []corev1.EnvVar        `json:"envs,omitempty"`
+	Ports           []corev1.ContainerPort `json:"ports,omitempty"`
 	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
+	HostNetwork     bool                   `json:"hostNetwork,omitempty"`
 
-	MountPath   string            `yaml:"mountPath,omitempty"`
-	StatCmd     string            `yaml:"statCmd,omitempty"`
-	Command     string            `yaml:"command,omitempty"`
-	Labels      map[string]string `yaml:"labels,omitempty"`
-	Annotations map[string]string `yaml:"annotations,omitempty"`
+	MountPath   string            `json:"mountPath,omitempty"`
+	StatCmd     string            `json:"statCmd,omitempty"`
+	Command     string            `json:"command,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 type Fuse struct {
-	Privileged      bool                 `yaml:"privileged,omitempty"`
-	Enabled         bool                 `yaml:"enabled,omitempty"`
-	Image           string               `yaml:"image,omitempty"`
-	NodeSelector    map[string]string    `yaml:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar      `yaml:"envs,omitempty"`
-	ImageTag        string               `yaml:"imageTag,omitempty"`
-	ImagePullPolicy string               `yaml:"imagePullPolicy,omitempty"`
-	Resources       common.Resources     `yaml:"resources,omitempty"`
-	CriticalPod     bool                 `yaml:"criticalPod,omitempty"`
+	Privileged      bool                 `json:"privileged"`
+	Enabled         bool                 `json:"enabled,omitempty"`
+	Image           string               `json:"image,omitempty"`
+	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
+	Envs            []corev1.EnvVar      `json:"envs,omitempty"`
+	ImageTag        string               `json:"imageTag,omitempty"`
+	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
+	Resources       common.Resources     `json:"resources,omitempty"`
+	CriticalPod     bool                 `json:"criticalPod,omitempty"`
 	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
+	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
 
-	SubPath       string            `yaml:"subPath,omitempty"`
-	MountPath     string            `yaml:"mountPath,omitempty"`
-	HostMountPath string            `yaml:"hostMountPath,omitempty"`
-	Command       string            `yaml:"command,omitempty"`
-	StatCmd       string            `yaml:"statCmd,omitempty"`
-	Labels        map[string]string `yaml:"labels,omitempty"`
-	Annotations   map[string]string `yaml:"annotations,omitempty"`
+	SubPath       string            `json:"subPath,omitempty"`
+	MountPath     string            `json:"mountPath,omitempty"`
+	HostMountPath string            `json:"hostMountPath,omitempty"`
+	Command       string            `json:"command,omitempty"`
+	StatCmd       string            `json:"statCmd,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	Annotations   map[string]string `json:"annotations,omitempty"`
 }
 
 type cache struct {
-	Path string `yaml:"path,omitempty"`
-	Type string `yaml:"type,omitempty"`
+	Path string `json:"path,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 type cacheStates struct {

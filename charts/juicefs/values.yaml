@@ -32,7 +32,6 @@ imagePullPolicy: IfNotPresent
 
 ## WORKER ##
 worker:
-  privileged: true
   image: ""
   imageTag: ""
   imagePullPolicy: ""
@@ -43,6 +42,8 @@ worker:
   command: ""
   mountPath: /mnt/jfs
   statCmd: "stat -c %i /mnt/jfs"
+  podManagementPolicy: Parallel
+  hostNetwork: false
   resources:
     requests:
 #      cpu: "0.5"
@@ -53,6 +54,8 @@ worker:
   replicas: 0
   labels: {}
   annotations: {}
+  volumes: []
+  volumeMounts: []
 
 configs:
   name: ""
@@ -67,7 +70,7 @@ configs:
 ## FUSE ##
 
 fuse:
-  privileged: true
+  hostNetwork: false
   subPath: ""
   criticalPod: false
   enabled: true
@@ -76,13 +79,14 @@ fuse:
   imagePullPolicy: IfNotPresent
   envs: []
   nodeSelector: {}
-  dnsPolicy: ClusterFirstWithHostNet
   # Mount path in the host
   mountPath: /mnt/jfs
   cacheDir: ""
   hostMountPath: /mnt/jfs
   command: "/usr/local/bin/juicefs mount /mnt/jfs"
   statCmd: "stat -c %i /mnt/jfs"
+  updateStrategy:
+    type: OnDelete
   resources:
     requests:
 #      cpu: "0.5"
@@ -92,6 +96,8 @@ fuse:
 #      memory: "4G"
   labels: {}
   annotations: {}
+  volumes: []
+  volumeMounts: []
 
 runtimeIdentity:
   namespace: default

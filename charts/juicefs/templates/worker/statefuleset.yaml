@@ -1,3 +1,4 @@
+{{- $hostNetwork := .Values.worker.hostNetwork }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -22,6 +23,7 @@ metadata:
 spec:
   replicas: {{ .Values.worker.replicas }}
   serviceName: {{ template "juicefs.fullname" . }}-worker
+  podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   selector:
     matchLabels:
       app: {{ template "juicefs.name" . }}
@@ -51,6 +53,10 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.worker.hostNetwork }}
+      hostNetwork: {{ $hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
@@ -112,17 +118,6 @@ spec:
                 name: {{ .Values.configs.tokenSecret }}
                 key: token
           {{- end }}
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - 'if [ x$({{ .Values.worker.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
-            failureThreshold: 3
-            initialDelaySeconds: 1
-            periodSeconds: 1
-            successThreshold: 1
-            timeoutSeconds: 1
           lifecycle:
             preStop:
               exec:
@@ -133,6 +128,9 @@ spec:
             {{- range $name, $mount := .Values.cacheDirs }}
             - name: cache-dir-{{ $name }}
               mountPath: "{{ $mount.path }}"
+            {{- end }}
+            {{- if .Values.worker.volumeMounts }}
+{{ toYaml .Values.worker.volumeMounts | indent 12 }}
             {{- end }}
       restartPolicy: Always
       volumes:
@@ -152,6 +150,9 @@ spec:
           configMap:
             name: {{ template "juicefs.fullname" . }}-worker-script
             defaultMode: 0755
+        {{- if .Values.worker.volumes }}
+{{ toYaml .Values.worker.volumes | indent 8 }}
+        {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
