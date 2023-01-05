@@ -1,6 +1,6 @@
 # 示例 - 基于Restful的文件系统客户端
 
-AlluxioRuntime提供了基于[Restful API](https://docs.alluxio.io/os/user/stable/en/api/FS-API.html)的访问接口，方便用户通过Python，Java和Golang等语言进行二次开发。AlluxioRuntime也提供了这方面的支持，该功能默认并没有开启。可以通过CRD的声明打开。
+Alluxio提供了基于[Restful API](https://docs.alluxio.io/os/user/stable/en/api/FS-API.html)的访问接口，方便用户通过Python，Java和Golang等语言进行二次开发。AlluxioRuntime也提供了这方面的支持，该功能默认并没有开启。可以通过CRD的声明打开。
 
 
 ## 运行示例
