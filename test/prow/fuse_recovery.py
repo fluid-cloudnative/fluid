@@ -32,9 +32,9 @@ def getPodNameByPrefix(prefix, pod_namespace):
     return None
 
 
-def checkCSILog() -> bool:
+def checkCsiRecoverEnabled() -> bool:
     """
-    check if csi-nodeplugin-fluid-xxxx pod has log 'start csi recover'
+    check if csi-nodeplugin-fluid-xxxx pod.spec.containers has args "FuseRecovery=true"
     """
     fluid_namespace = "fluid-system"
     pod_name = "csi-nodeplugin-fluid"
@@ -42,12 +42,13 @@ def checkCSILog() -> bool:
     if pod_name is None:
         return False
     api = client.CoreV1Api()
-    while True:
-        log_content = api.read_namespaced_pod_log(pod_name, fluid_namespace, container="plugins")
-        if str(log_content).__contains__("start csi recover"):
+    for i in range(10):
+        pod = api.read_namespaced_pod(pod_name, fluid_namespace)
+        if str(pod.spec.containers).__contains__("FuseRecovery=true"):
             print("CSI recovery enabled")
             return True
         time.sleep(1)
+    return False
 
 
 def createDatasetAndRuntime():
@@ -143,29 +144,6 @@ def checkVolumeResourcesReady():
                 continue
         print("PersistentVolume & PersistentVolumeClaim Ready.")
         break
-
-
-def enableInjection():
-    api = client.CoreV1Api()
-    body = {'metadata': {
-        'labels': {
-            'fluid.io/enable-injection': 'true'
-        }
-    }}
-    api.patch_namespace(namespace, body)
-    time.sleep(1)
-    print("enable injection")
-
-
-def checkEnableInjection():
-    api = client.CoreV1Api()
-    while True:
-        namespaces = api.read_namespace(namespace)
-        labels = namespaces.metadata.labels
-        if "fluid.io/enable-injection" in labels and labels["fluid.io/enable-injection"] == "true":
-            print(labels)
-            return True
-        time.sleep(1)
 
 
 def createDataListPod(name):
@@ -277,7 +255,7 @@ def main():
     exit_code = 0
     ### Load config
     config.load_incluster_config()
-    if checkCSILog() is False:
+    if checkCsiRecoverEnabled() is False:
         return 1
 
     ### Create dataset & alluxioruntime
