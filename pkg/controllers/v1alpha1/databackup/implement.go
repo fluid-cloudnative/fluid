@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -491,11 +490,11 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		return
 	}
 
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-%s-backuper-values.yaml", databackup.Namespace, databackup.Name, dataBackup.RuntimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-%s-backuper-values.yaml", databackup.Namespace, databackup.Name, dataBackup.RuntimeType))
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0400)
 	if err != nil {
 		return
 	}

@@ -19,6 +19,11 @@ package recover
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
@@ -26,7 +31,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -35,12 +39,8 @@ import (
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -74,7 +74,7 @@ type containerStat struct {
 
 func initializeKubeletClient() (*kubelet.KubeletClient, error) {
 	// get CSI sa token
-	tokenByte, err := ioutil.ReadFile(serviceAccountTokenFile)
+	tokenByte, err := os.ReadFile(serviceAccountTokenFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "in cluster mode, find token failed")
 	}

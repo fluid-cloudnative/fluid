@@ -18,7 +18,7 @@ package recover
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -77,7 +77,7 @@ func Test_initializeKubeletClient(t *testing.T) {
 				fakeClientKey      = ""
 				fakeKubeletTimeout = "120"
 			)
-			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+			patch1 := ApplyFunc(os.ReadFile, func(filename string) ([]byte, error) {
 				return []byte(fakeToken), nil
 			})
 			defer patch1.Reset()

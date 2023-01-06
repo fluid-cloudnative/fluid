@@ -16,7 +16,6 @@ limitations under the License.
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -32,7 +31,7 @@ func TestPathExists(t *testing.T) {
 }
 
 func TestGetChartsDirectory(t *testing.T) {
-	f, err := ioutil.TempFile("", "test")
+	f, err := os.CreateTemp("", "test")
 	if err != nil {
 		t.Errorf("MkdirTemp failed due to %v", err)
 	}

@@ -17,7 +17,6 @@ package kubectl
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -59,7 +58,7 @@ func SaveConfigMapToFile(name string, key string, namespace string) (fileName st
 		return "", err
 	}
 
-	file, err := ioutil.TempFile(os.TempDir(), name)
+	file, err := os.CreateTemp(os.TempDir(), name)
 	if err != nil {
 		log.Error(err, "failed to create tmp file", "tmpFile", file.Name())
 		return fileName, err
