@@ -3,19 +3,20 @@ package e2etest
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"os"
+	"strconv"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-	"strconv"
-	"time"
 )
 
 var _ = Describe("Test alluxioruntime controller patch node labels", func() {
@@ -356,7 +357,7 @@ var _ = Describe("Test alluxioruntime controller patch node labels", func() {
 
 // readFile will read a yaml k8s object to runtime.Object.
 func readFile(fileName string, object runtime.Object) error {
-	data, err := ioutil.ReadFile(fileName)
+	data, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}

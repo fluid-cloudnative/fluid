@@ -18,19 +18,19 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/golang/glog"
-	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/mount"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/golang/glog"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/mount"
 )
 
 const MountRoot string = "MOUNT_ROOT"
 
-//GetMountRoot gets the value of the env variable named MOUNT_ROOT
+// GetMountRoot gets the value of the env variable named MOUNT_ROOT
 func GetMountRoot() (string, error) {
 	mountRoot := os.Getenv(MountRoot)
 
@@ -60,7 +60,7 @@ func IsMounted(absPath string) (bool, error) {
 		return false, err
 	}
 
-	file, err := ioutil.ReadFile("/proc/mounts")
+	file, err := os.ReadFile("/proc/mounts")
 	if err != nil {
 		return false, err
 	}

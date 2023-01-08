@@ -18,7 +18,6 @@ package webhook
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -101,7 +100,7 @@ func TestBuildOrSyncCABundle(t *testing.T) {
 			t.Setenv(common.MyPodNamespace, item.ns)
 		}
 
-		certDir, err := ioutil.TempDir("/tmp", item.certPath)
+		certDir, err := os.MkdirTemp("/tmp", item.certPath)
 		if err != nil {
 			t.Errorf("MkdirTemp failed due to %v", err)
 		}
