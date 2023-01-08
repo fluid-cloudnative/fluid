@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -96,7 +95,7 @@ func TestIsMounted(t *testing.T) {
 				return nil, nil
 			})
 			defer patch2.Reset()
-			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+			patch1 := ApplyFunc(os.ReadFile, func(filename string) ([]byte, error) {
 				return []byte("JuiceFS:minio /var/lib/kubelet/pods/4781fc5b-72f9-4175-9321-2e1f169880ce/volumes/kubernetes.io~csi/default-jfsdemo/mount fuse.juicefs rw,relatime,user_id=0,group_id=0,default_permissions,allow_other 0 0"), nil
 			})
 			defer patch1.Reset()
@@ -107,7 +106,7 @@ func TestIsMounted(t *testing.T) {
 			So(mounted, ShouldBeTrue)
 		})
 		Convey("IsMounted false", func() {
-			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+			patch1 := ApplyFunc(os.ReadFile, func(filename string) ([]byte, error) {
 				return []byte("JuiceFS:minio /var/lib/kubelet/pods/4781fc5b-72f9-4175-9321-2e1f169880ce/volumes/kubernetes.io~csi/default-jfsdemo/mount fuse.juicefs rw,relatime,user_id=0,group_id=0,default_permissions,allow_other 0 0"), nil
 			})
 			defer patch1.Reset()
@@ -122,7 +121,7 @@ func TestIsMounted(t *testing.T) {
 			So(mounted, ShouldBeFalse)
 		})
 		Convey("token len is 1", func() {
-			patch1 := ApplyFunc(ioutil.ReadFile, func(filename string) ([]byte, error) {
+			patch1 := ApplyFunc(os.ReadFile, func(filename string) ([]byte, error) {
 				return []byte("JuiceFS:minio "), nil
 			})
 			defer patch1.Reset()

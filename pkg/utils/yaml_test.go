@@ -1,13 +1,13 @@
 package utils
 
 import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"reflect"
 	"strconv"
 	"testing"
+
+	"gopkg.in/yaml.v2"
 )
 
 type dummyOuter struct {
@@ -22,7 +22,7 @@ type dummyInner struct {
 }
 
 func TestToYaml(t *testing.T) {
-	tempFile, err := ioutil.TempFile(os.TempDir(), "dummy")
+	tempFile, err := os.CreateTemp(os.TempDir(), "dummy")
 	if err != nil {
 		t.Errorf("TestToYaml can't write temp file. error = %v", err)
 		t.FailNow()
@@ -47,9 +47,9 @@ func TestToYaml(t *testing.T) {
 	}
 
 	tempFileName := tempFile.Name()
-	bytes, err := ioutil.ReadFile(tempFileName)
+	bytes, err := os.ReadFile(tempFileName)
 	if err != nil {
-		t.Errorf("ioutil.ReadFile() error = %v, expected error = nil", err)
+		t.Errorf("os. ReadFile() error = %v, expected error = nil", err)
 		t.FailNow()
 	}
 

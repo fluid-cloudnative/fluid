@@ -18,7 +18,6 @@ package jindo
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -63,7 +62,7 @@ func (e *JindoEngine) generateJindoValueFile() (valueFileName string, err error)
 	if err != nil {
 		return
 	}
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
 	if err != nil {
 		e.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -71,7 +70,7 @@ func (e *JindoEngine) generateJindoValueFile() (valueFileName string, err error)
 	valueFileName = valueFile.Name()
 	e.Log.V(1).Info("Save the values file", "valueFile", valueFileName)
 
-	err = ioutil.WriteFile(valueFileName, data, 0400)
+	err = os.WriteFile(valueFileName, data, 0400)
 	if err != nil {
 		return
 	}

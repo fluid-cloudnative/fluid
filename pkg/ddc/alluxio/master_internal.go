@@ -17,7 +17,6 @@ package alluxio
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -85,7 +84,7 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 	}
 
 	//2. Get the template value file
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
 	if err != nil {
 		e.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -94,7 +93,7 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 	valueFileName = valueFile.Name()
 	e.Log.V(1).Info("Save the values file", "valueFile", valueFileName)
 
-	err = ioutil.WriteFile(valueFileName, data, 0400)
+	err = os.WriteFile(valueFileName, data, 0400)
 	if err != nil {
 		return
 	}

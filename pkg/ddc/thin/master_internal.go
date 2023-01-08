@@ -18,7 +18,6 @@ package thin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -89,7 +88,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	}
 
 	//2. Get the template value file
-	valueFile, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", t.name, t.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", t.name, t.runtimeType))
 	if err != nil {
 		t.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -98,7 +97,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	valueFileName = valueFile.Name()
 	t.Log.Info("Save the values file", "valueFile", valueFileName)
 
-	err = ioutil.WriteFile(valueFileName, data, 0400)
+	err = os.WriteFile(valueFileName, data, 0400)
 	if err != nil {
 		return
 	}

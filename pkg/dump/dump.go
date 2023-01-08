@@ -2,7 +2,6 @@ package dump
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"runtime"
@@ -75,7 +74,7 @@ func InstallgoroutineDumpGenerator() {
 func coredump(fileName string) {
 	log.Info("Dump stacktrace to file", "fileName", fileName)
 	trace := StackTrace(true)
-	err := ioutil.WriteFile(fileName, []byte(trace), 0644)
+	err := os.WriteFile(fileName, []byte(trace), 0644)
 	if err != nil {
 		log.Error(err, "Failed to write coredump.")
 	}
