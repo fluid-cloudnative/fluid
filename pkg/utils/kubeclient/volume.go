@@ -108,7 +108,7 @@ func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, 
 				return
 			}
 		}
-		log.Info("The persistentVolume exist", "name", name,
+		log.Info("The persistentVolumeClaim exist", "name", name,
 			"annotaitons", annotations)
 		found = true
 	}
@@ -238,7 +238,7 @@ func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]in
 	return pvcMountNodes, nil
 }
 
-// RemoveProtectionFinalizer remove finalizers of PersistentVolumeClaim
+// RemoveProtectionFinalizer removes finalizers of PersistentVolumeClaim
 // if all owners that this PVC is mounted by are inactive (Succeed or Failed)
 func RemoveProtectionFinalizer(client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
@@ -248,7 +248,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 
 	pvc := &corev1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(), key, pvc)
-	if err != nil && !apierrs.IsNotFound(err) {
+	if err != nil {
 		return err
 	}
 
@@ -292,8 +292,10 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 	return nil
 }
 
-// ShouldRemoveProtectionFinalizer should remove pvc-protection finalizer
-// when linked pods are inactive and timeout
+// ShouldRemoveProtectionFinalizer check if should remove pvc-protection finalizer by force.
+// Force-removal happens only when it matches both the two following conditions:
+//   1. PVC's in Terminating state for over than 30 seconds
+//   2. PVC's not actively used by any pods
 func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
