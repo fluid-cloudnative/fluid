@@ -1,4 +1,4 @@
-## How to create and delete fluid resources using Go client
+## How to create and delete fluid resources with Go client
 
 The following is an example of creating and deleting Dataset and AlluxioRuntime, showing how to create and delete fluid resources by using the Go client.
 
