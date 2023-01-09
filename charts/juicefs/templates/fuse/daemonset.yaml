@@ -127,8 +127,9 @@ spec:
           - containerPort: 9567
             name: metrics
             protocol: TCP
-          {{- if .Values.fuse.privileged }}
           securityContext:
+            runAsUser: 0
+          {{- if .Values.fuse.privileged }}
             privileged: true
           {{- end }}
           lifecycle:
