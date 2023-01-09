@@ -161,7 +161,7 @@ def check_volume_resources_ready(dataset_name):
         break
 
 
-def create_eci_data_write_job(job_name, use_sidecar=False):
+def create_data_write_job(job_name, use_sidecar=False):
     api = client.BatchV1Api()
 
     container = client.V1Container(
@@ -199,7 +199,7 @@ def create_eci_data_write_job(job_name, use_sidecar=False):
     print("Job {} created.".format(job_name))
 
 
-def create_eci_data_read_job(job_name, use_sidecar=False):
+def create_data_read_job(job_name, use_sidecar=False):
     api = client.BatchV1Api()
 
     container = client.V1Container(
@@ -322,10 +322,10 @@ def main():
 
     # 2. create write & read data job
     test_write_job = "demo-write"
-    create_eci_data_write_job(test_write_job)
+    create_data_write_job(test_write_job)
     check_data_job_status(test_write_job)
     test_read_job = "demo-read"
-    create_eci_data_read_job(test_read_job)
+    create_data_read_job(test_read_job)
     check_data_job_status(test_read_job)
 
     # 3. clean up write & read data job
@@ -346,10 +346,10 @@ def main():
 
     # 2. create write & read data job
     test_write_job = "demo-write-sidecar"
-    create_eci_data_write_job(test_write_job, use_sidecar=True)
+    create_data_write_job(test_write_job, use_sidecar=True)
     check_data_job_status(test_write_job)
     test_read_job = "demo-read-sidecar"
-    create_eci_data_read_job(test_read_job, use_sidecar=True)
+    create_data_read_job(test_read_job, use_sidecar=True)
     check_data_job_status(test_read_job)
 
     # 3. clean up write & read data job
