@@ -173,13 +173,7 @@ def create_eci_data_write_job(job_name, use_sidecar=False):
     )
 
     template = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(
-            labels={"app": "datawrite"},
-            annotations={
-                "k8s.aliyun.com/eci-image-cache": "true",
-                "k8s.aliyun.com/eci-use-specs": "ecs.g6e.4xlarge"
-            }
-        ),
+        metadata=client.V1ObjectMeta(labels={"app": "datawrite"}),
         spec=client.V1PodSpec(
             restart_policy="Never",
             containers=[container],
@@ -190,8 +184,7 @@ def create_eci_data_write_job(job_name, use_sidecar=False):
         )
     )
     if use_sidecar:
-        template.metadata.labels["alibabacloud.com/eci"] = "true"
-        template.metadata.labels["alibabacloud.com/fluid-sidecar-target"] = "eci"
+        template.metadata.labels["serverless.fluid.io/inject"] = "true"
 
     spec = client.V1JobSpec(template=template, backoff_limit=4)
 
@@ -218,13 +211,7 @@ def create_eci_data_read_job(job_name, use_sidecar=False):
     )
 
     template = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(
-            labels={"app": "dataread"},
-            annotations={
-                "k8s.aliyun.com/eci-image-cache": "true",
-                "k8s.aliyun.com/eci-use-specs": "ecs.g6e.4xlarge"
-            }
-        ),
+        metadata=client.V1ObjectMeta(labels={"app": "dataread"}),
         spec=client.V1PodSpec(
             restart_policy="Never",
             containers=[container],
@@ -235,8 +222,7 @@ def create_eci_data_read_job(job_name, use_sidecar=False):
         )
     )
     if use_sidecar:
-        template.metadata.labels["alibabacloud.com/eci"] = "true"
-        template.metadata.labels["alibabacloud.com/fluid-sidecar-target"] = "eci"
+        template.metadata.labels["serverless.fluid.io/inject"] = "true"
 
     spec = client.V1JobSpec(template=template, backoff_limit=4)
 
