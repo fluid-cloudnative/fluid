@@ -122,7 +122,7 @@ func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	alluxioEngineCommon := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
-	alluxioEngineErr := newTestAlluxioEngine(fakeClient, "error", "fluid", true)
+	alluxioEngineForceDelete := newTestAlluxioEngine(fakeClient, "error", "fluid", true)
 	alluxioEngineNoRunTime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -131,9 +131,9 @@ func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    alluxioEngineErr,
+			engine:    alluxioEngineForceDelete,
 			isDeleted: true,
-			isErr:     true,
+			isErr:     false,
 		},
 		{
 			engine:    alluxioEngineNoRunTime,

@@ -104,7 +104,7 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "fluid-error",
+				Name: "fluid-force-delete-pvc",
 				//Namespace:   "fluid",
 				Annotations: common.ExpectedFluidAnnotations,
 			},
@@ -121,7 +121,14 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        "error",
+				Name:        "eacdemo",
+				Namespace:   "fluid",
+				Annotations: common.ExpectedFluidAnnotations,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "force-delete-pvc",
 				Namespace:   "fluid",
 				Annotations: common.ExpectedFluidAnnotations,
 				Finalizers:  []string{"kubernetes.io/pvc-protection"}, // err because it needs sleep
@@ -136,7 +143,7 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	eacEngineCommon := newTestEACEngine(fakeClient, "eacdemo", "fluid", true)
-	eacEngineErr := newTestEACEngine(fakeClient, "error", "fluid", true)
+	eacEngineForceDelete := newTestEACEngine(fakeClient, "force-delete-pvc", "fluid", true)
 	eacEngineNoRunTime := newTestEACEngine(fakeClient, "eacdemo", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -145,9 +152,9 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    eacEngineErr,
-			isDeleted: false,
-			isErr:     true,
+			engine:    eacEngineForceDelete,
+			isDeleted: true,
+			isErr:     false,
 		},
 		{
 			engine:    eacEngineNoRunTime,

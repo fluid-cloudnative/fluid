@@ -122,7 +122,7 @@ func TestGooseFSEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	goosefsEngineCommon := newTestGooseFSEngine(fakeClient, "hbase", "fluid", true)
-	goosefsEngineErr := newTestGooseFSEngine(fakeClient, "error", "fluid", true)
+	goosefsEngineForceDelete := newTestGooseFSEngine(fakeClient, "error", "fluid", true)
 	goosefsEngineNoRunTime := newTestGooseFSEngine(fakeClient, "hbase", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -131,9 +131,9 @@ func TestGooseFSEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    goosefsEngineErr,
+			engine:    goosefsEngineForceDelete,
 			isDeleted: true,
-			isErr:     true,
+			isErr:     false,
 		},
 		{
 			engine:    goosefsEngineNoRunTime,
