@@ -54,7 +54,7 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 		if err != nil {
 			return err
 		}
-		retries := 500
+		retries := 10
 		for i := 0; i < retries; i++ {
 			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
 			if err != nil {
@@ -69,7 +69,7 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 		}
 
 		if found {
-			return fmt.Errorf("the PV %s is not cleaned up",
+			return fmt.Errorf("the PV %s is not cleaned up after 10-second retry",
 				pvName)
 		} else {
 			log.Info("the PV is deleted successfully", "name", pvName)
@@ -96,7 +96,7 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 		}
 
 		stillFound := false
-		retries := 500
+		retries := 10
 		for i := 0; i < retries; i++ {
 			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
 			if err != nil {
@@ -132,7 +132,7 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 		}
 
 		if stillFound {
-			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
+			return fmt.Errorf("the PVC %s in ns %s is not cleaned up after 10-second retry",
 				runtime.GetName(),
 				runtime.GetNamespace())
 		} else {
