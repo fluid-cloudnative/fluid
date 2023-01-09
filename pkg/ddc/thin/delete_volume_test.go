@@ -140,7 +140,7 @@ func TestThinEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	ThinEngineCommon := newTestThinEngine(fakeClient, "thin", "fluid", true)
-	ThinEngineForceDelete := newTestThinEngine(fakeClient, "error", "fluid", true)
+	ThinEngineErr := newTestThinEngine(fakeClient, "error", "fluid", true)
 	ThinEngineNoRunTime := newTestThinEngine(fakeClient, "thin-no-runtime", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -149,9 +149,9 @@ func TestThinEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    ThinEngineForceDelete,
+			engine:    ThinEngineErr,
 			isDeleted: true,
-			isErr:     false,
+			isErr:     true,
 		},
 		{
 			engine:    ThinEngineNoRunTime,

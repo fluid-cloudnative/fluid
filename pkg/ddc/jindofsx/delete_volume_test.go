@@ -122,7 +122,7 @@ func TestJindoFSxEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	JindoFSxEngineCommon := newTestJindoFSxEngine(fakeClient, "hbase", "fluid", true)
-	JindoFSxEngineForceDelete := newTestJindoFSxEngine(fakeClient, "error", "fluid", true)
+	JindoFSxEngineErr := newTestJindoFSxEngine(fakeClient, "error", "fluid", true)
 	JindoFSxEngineNoRunTime := newTestJindoFSxEngine(fakeClient, "hbase", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -131,9 +131,9 @@ func TestJindoFSxEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    JindoFSxEngineForceDelete,
+			engine:    JindoFSxEngineErr,
 			isDeleted: true,
-			isErr:     false,
+			isErr:     true,
 		},
 		{
 			engine:    JindoFSxEngineNoRunTime,

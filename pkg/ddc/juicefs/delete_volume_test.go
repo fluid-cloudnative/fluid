@@ -123,7 +123,7 @@ func TestJuiceFSEngine_DeleteVolume(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
 	juicefsEngineCommon := newTestJuiceEngine(fakeClient, "juicefs", "fluid", true)
-	juicefsEngineForceDelete := newTestJuiceEngine(fakeClient, "error", "fluid", true)
+	juicefsEngineErr := newTestJuiceEngine(fakeClient, "error", "fluid", true)
 	juicefsEngineNoRunTime := newTestJuiceEngine(fakeClient, "juicefs", "fluid", false)
 	var testCases = []TestCase{
 		{
@@ -132,9 +132,9 @@ func TestJuiceFSEngine_DeleteVolume(t *testing.T) {
 			isErr:     false,
 		},
 		{
-			engine:    juicefsEngineForceDelete,
+			engine:    juicefsEngineErr,
 			isDeleted: true,
-			isErr:     false,
+			isErr:     true,
 		},
 		{
 			engine:    juicefsEngineNoRunTime,
