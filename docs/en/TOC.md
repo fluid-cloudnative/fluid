@@ -53,5 +53,6 @@
   - [Develop with Kind on MacOS](dev/dev_with_kind.md)
   - [Performance Analyze with pprof](dev/pprof.md)
   + Client Usage
+    - [How to create and delete fluid resources using Go client](dev/use_go_create_resource.md)
     - [How to use client other than Go client](dev/multiple-client-support.md)
     - [Access via REST API](samples/api_proxy.md)
