@@ -76,8 +76,9 @@ spec:
 {{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
-          {{- if .Values.worker.privileged }}
           securityContext:
+            runAsUser: 0
+          {{- if .Values.worker.privileged }}
             privileged: true
           {{- end }}
           {{- if .Values.worker.ports }}
