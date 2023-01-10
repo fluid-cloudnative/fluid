@@ -90,16 +90,16 @@ runtime:
     replicas: 1
     enabled: false
     controller:
-      image:
+      image: fluidcloudnative/eacruntime-controller:v0.9.0-e503877
       imagePullPolicy: Always
     init:
-      image:
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v0.1.0-196d2b1
     master:
-      image:
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1
     worker:
-      image:
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker:v0.1.0-196d2b1
     fuse:
-      image:
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1
 
 webhook:
   enabled: true
