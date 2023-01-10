@@ -3,8 +3,10 @@ package volume
 import (
 	"context"
 	"testing"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
@@ -154,14 +156,31 @@ func TestDeleteFusePersistentVolumeClaim(t *testing.T) {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       "hbase",
-			Namespace:  "fluid",
-			Finalizers: []string{"kubernetes.io/pvc-protection"},
+	runtimeInfoForceDelete, err := base.BuildRuntimeInfo("force-delete", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	testPVCInputs := []*v1.PersistentVolumeClaim{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "hbase",
+				Namespace:   "fluid",
+				Finalizers:  []string{"kubernetes.io/pvc-protection"},
+				Annotations: common.ExpectedFluidAnnotations,
+			},
+			Spec: v1.PersistentVolumeClaimSpec{},
 		},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}}
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              "force-delete",
+				Namespace:         "fluid",
+				Finalizers:        []string{"kubernetes.io/pvc-protection"},
+				Annotations:       common.ExpectedFluidAnnotations,
+				DeletionTimestamp: &metav1.Time{Time: time.Now().Add(-35 * time.Second)},
+			},
+		},
+	}
 
 	testPVCs := []runtime.Object{}
 	for _, pvInput := range testPVCInputs {
@@ -171,23 +190,30 @@ func TestDeleteFusePersistentVolumeClaim(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
 
 	var testCase = []struct {
-		runtimeInfo    base.RuntimeInfoInterface
-		expectedResult error
+		runtimeInfo base.RuntimeInfoInterface
+		isErr       bool
 	}{
 		{
-			runtimeInfo:    runtimeInfoHadoop,
-			expectedResult: nil,
+			runtimeInfo: runtimeInfoHadoop,
+			isErr:       false,
 		},
 		{
-			runtimeInfo:    runtimeInfoHbase,
-			expectedResult: nil,
+			runtimeInfo: runtimeInfoHbase,
+			isErr:       true,
+		},
+		{
+			runtimeInfo: runtimeInfoForceDelete,
+			isErr:       false,
 		},
 	}
 	for _, test := range testCase {
 		var log = ctrl.Log.WithName("delete")
-		if err := DeleteFusePersistentVolumeClaim(client, test.runtimeInfo, log); err != test.expectedResult {
-			t.Errorf("fail to exec the function with the error %v", err)
+		if err := DeleteFusePersistentVolumeClaim(client, test.runtimeInfo, log); test.isErr != (err != nil) {
+			if test.isErr {
+				t.Errorf("Expected got error, but got nil")
+			} else {
+				t.Errorf("Expected no error, but got error: %v", err)
+			}
 		}
 	}
-
 }
