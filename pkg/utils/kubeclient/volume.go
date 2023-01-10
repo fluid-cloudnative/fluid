@@ -167,6 +167,10 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 		found = true
 	}
 	if found {
+		if !pvc.DeletionTimestamp.IsZero() {
+			log.V(1).Info("pvc already has deletionTimeStamp, skip deletion", "name", pvc.Name, "namespace", pvc.Namespace)
+			return nil
+		}
 		log.V(1).Info("deleting pvc", "name", pvc.Name, "namespace", pvc.Namespace)
 		err = client.Delete(context.TODO(), pvc)
 		if err != nil && !apierrs.IsNotFound(err) {
