@@ -23,6 +23,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,7 +54,7 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 		if err != nil {
 			return err
 		}
-		retries := 500
+		retries := 10
 		for i := 0; i < retries; i++ {
 			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
 			if err != nil {
@@ -61,14 +62,14 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 			}
 
 			if found {
-				time.Sleep(time.Duration(2 * time.Second))
+				time.Sleep(1 * time.Second)
 			} else {
 				break
 			}
 		}
 
 		if found {
-			return fmt.Errorf("the PV %s is not cleaned up",
+			return fmt.Errorf("the PV %s is not cleaned up after 10-second retry",
 				pvName)
 		} else {
 			log.Info("the PV is deleted successfully", "name", pvName)
@@ -94,28 +95,44 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 			return err
 		}
 
-		should, err := kubeclient.ShouldRemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
-		if err != nil {
-			return err
-		}
-
-		// NOTE: remove finalizer after PVC was ordered to be deleted
-		if should {
-			log.Info("Should remove pvc-protection finalizer")
-			err = kubeclient.RemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+		stillFound := false
+		retries := 10
+		for i := 0; i < retries; i++ {
+			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
 			if err != nil {
-				log.Info("Failed to remove finalizers")
 				return err
 			}
+
+			if !stillFound {
+				break
+			}
+
+			should, err := kubeclient.ShouldRemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+			if err != nil {
+				// ignore NotFound error and re-check existence if the pvc is already deleted
+				if utils.IgnoreNotFound(err) == nil {
+					continue
+				}
+			}
+
+			if should {
+				log.Info("Should forcibly remove pvc-protection finalizer")
+				err = kubeclient.RemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+				if err != nil {
+					// ignore NotFound error and re-check existence if the pvc is already deleted
+					if utils.IgnoreNotFound(err) == nil {
+						continue
+					}
+					log.Info("Failed to remove finalizers", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
+					return err
+				}
+			}
+
+			time.Sleep(1 * time.Second)
 		}
 
-		found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
-		if err != nil {
-			return err
-		}
-
-		if found {
-			return fmt.Errorf("the PVC %s in ns %s is not cleaned up",
+		if stillFound {
+			return fmt.Errorf("the PVC %s in ns %s is not cleaned up after 10-second retry",
 				runtime.GetName(),
 				runtime.GetNamespace())
 		} else {
