@@ -169,7 +169,8 @@ def check_volume_resources_ready(dataset_name):
     return False
 
 
-def create_data_write_job(job_name, use_sidecar=False):
+def create_data_write_job(dataset_name, job_name, use_sidecar=False):
+    pvc_name = dataset_name
     api = client.BatchV1Api()
 
     container = client.V1Container(
@@ -187,7 +188,7 @@ def create_data_write_job(job_name, use_sidecar=False):
             containers=[container],
             volumes=[client.V1Volume(
                 name="demo",
-                persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name="jfsdemo")
+                persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name)
             )]
         )
     )
@@ -207,7 +208,8 @@ def create_data_write_job(job_name, use_sidecar=False):
     print("Job {} created.".format(job_name))
 
 
-def create_data_read_job(job_name, use_sidecar=False):
+def create_data_read_job(dataset_name, job_name, use_sidecar=False):
+    pvc_name = dataset_name
     api = client.BatchV1Api()
 
     container = client.V1Container(
@@ -225,7 +227,7 @@ def create_data_read_job(job_name, use_sidecar=False):
             containers=[container],
             volumes=[client.V1Volume(
                 name="demo",
-                persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name="jfsdemo")
+                persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name)
             )]
         )
     )
@@ -342,10 +344,10 @@ def main():
             raise Exception("volume resources of dataset {} in normal mode are not ready.".format(dataset_name))
 
         # 3. create write & read data job
-        create_data_write_job(test_write_job)
+        create_data_write_job(dataset_name, test_write_job)
         if not check_data_job_status(test_write_job):
             raise Exception("write job {} in normal mode failed.".format(test_write_job))
-        create_data_read_job(test_read_job)
+        create_data_read_job(dataset_name, test_read_job)
         if not check_data_job_status(test_read_job):
             raise Exception("read job {} in normal mode failed.".format(test_read_job))
     except Exception as e:
@@ -380,10 +382,10 @@ def main():
             raise Exception("volume resources of dataset {} in sidecar mode are not ready.".format(dataset_name))
 
         # 3. create write & read data job
-        create_data_write_job(test_write_job, use_sidecar=True)
+        create_data_write_job(dataset_name, test_write_job, use_sidecar=True)
         if not check_data_job_status(test_write_job):
             raise Exception("write job {} in sidecar mode failed.".format(test_write_job))
-        create_data_read_job(test_read_job, use_sidecar=True)
+        create_data_read_job(dataset_name, test_read_job, use_sidecar=True)
         if not check_data_job_status(test_read_job):
             raise Exception("read job {} in sidecar mode failed.".format(test_read_job))
     except Exception as e:
