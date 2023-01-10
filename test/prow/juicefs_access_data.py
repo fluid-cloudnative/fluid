@@ -122,7 +122,8 @@ def create_dataset_and_runtime(dataset_name):
 def check_dataset_bound(dataset_name):
     api = client.CustomObjectsApi()
 
-    while True:
+    count = 0
+    while count < 300:
         resource = api.get_namespaced_custom_object(
             group="data.fluid.io",
             version="v1alpha1",
@@ -132,17 +133,22 @@ def check_dataset_bound(dataset_name):
         )
 
         if "status" in resource:
-            print(resource["status"])
             if "phase" in resource["status"]:
                 if resource["status"]["phase"] == "Bound":
-                    break
+                    print("Dataset {} is bound.".format(dataset_name))
+                    return True
         time.sleep(1)
+        count += 1
+    print("Dataset {} is not bound within 300s.".format(dataset_name))
+    return False
 
 
 def check_volume_resources_ready(dataset_name):
     pv_name = "{}-{}".format(APP_NAMESPACE, dataset_name)
     pvc_name = dataset_name
-    while True:
+    count = 0
+    while count < 300:
+        count += 1
         try:
             client.CoreV1Api().read_persistent_volume(name=pv_name)
         except client.exceptions.ApiException as e:
@@ -158,7 +164,9 @@ def check_volume_resources_ready(dataset_name):
                 continue
 
         print("PersistentVolume {} & PersistentVolumeClaim {} Ready.".format(pv_name, pvc_name))
-        break
+        return True
+    print("PersistentVolume {} & PersistentVolumeClaim {} not ready within 300s.".format(pv_name, pvc_name))
+    return False
 
 
 def create_data_write_job(job_name, use_sidecar=False):
@@ -240,33 +248,39 @@ def create_data_read_job(job_name, use_sidecar=False):
 def check_data_job_status(job_name):
     api = client.BatchV1Api()
 
-    job_completed = False
-    while not job_completed:
+    count = 0
+    while count < 300:
+        count += 1
         response = api.read_namespaced_job_status(name=job_name, namespace=APP_NAMESPACE)
         if response.status.succeeded is not None or response.status.failed is not None:
-            job_completed = True
+            print("Job {} completed.".format(job_name))
+            return True
         time.sleep(1)
-    print("Data Write Job {} done.".format(job_name))
+    print("Job {} not completed within 300s.".format(job_name))
+    return False
 
 
 def clean_job(job_name):
     batch_api = client.BatchV1Api()
-    # Delete Data Read Job
+
     # See https://github.com/kubernetes-client/python/issues/234
     body = client.V1DeleteOptions(propagation_policy='Background')
     batch_api.delete_namespaced_job(name=job_name, namespace=APP_NAMESPACE, body=body)
 
-    job_delete = False
-    while not job_delete:
+    count = 0
+    while count < 300:
+        count += 1
         print("job {} still exists...".format(job_name))
         try:
             batch_api.read_namespaced_job(name=job_name, namespace=APP_NAMESPACE)
         except client.exceptions.ApiException as e:
             if e.status == 404:
-                job_delete = True
-                continue
+                print("job {} deleted".format(job_name))
+                return True
         time.sleep(1)
-    print("job {} deleted".format(job_name))
+
+    print("job {} not deleted within 300s".format(job_name))
+    return False
 
 
 def clean_up_dataset_and_runtime(dataset_name):
@@ -280,9 +294,10 @@ def clean_up_dataset_and_runtime(dataset_name):
     )
     print("Dataset [] deleted".format(dataset_name))
 
-    runtime_delete = False
-    while not runtime_delete:
-        print("runtime {} still exists...".format(dataset_name))
+    count = 0
+    while count < 300:
+        count += 1
+        print("JuiceFSRuntime {} still exists...".format(dataset_name))
         try:
             custom_api.get_namespaced_custom_object(
                 group="data.fluid.io",
@@ -293,10 +308,11 @@ def clean_up_dataset_and_runtime(dataset_name):
             )
         except client.exceptions.ApiException as e:
             if e.status == 404:
-                runtime_delete = True
-                continue
+                print("JuiceFSRuntime {} is cleaned up".format(dataset_name))
+                return True
         time.sleep(1)
-    print("Runtime CR {} is cleaned up".format(dataset_name))
+    print("JuiceFSRuntime {} is not cleaned up within 300s".format(dataset_name))
+    return False
 
 
 def clean_up_secret():
@@ -306,61 +322,83 @@ def clean_up_secret():
 
 
 def main():
-    config.load_kube_config()
-
-    # ------- create secret -------
-    create_redis_secret()
+    config.load_incluster_config()
 
     # ********************************
     # ------- test normal mode -------
     # ********************************
-    # 1. create dataset and runtime
     dataset_name = "jfsdemo"
-    create_dataset_and_runtime(dataset_name)
-    check_dataset_bound(dataset_name)
-    check_volume_resources_ready(dataset_name)
-
-    # 2. create write & read data job
     test_write_job = "demo-write"
-    create_data_write_job(test_write_job)
-    check_data_job_status(test_write_job)
     test_read_job = "demo-read"
-    create_data_read_job(test_read_job)
-    check_data_job_status(test_read_job)
+    try:
+        # 1. create secret
+        create_redis_secret()
 
-    # 3. clean up write & read data job
-    clean_job(test_write_job)
-    clean_job(test_read_job)
+        # 2. create dataset and runtime
+        create_dataset_and_runtime(dataset_name)
+        if not check_dataset_bound(dataset_name):
+            raise Exception("dataset {} in normal mode is not bound.".format(dataset_name))
+        if not check_volume_resources_ready(dataset_name):
+            raise Exception("volume resources of dataset {} in normal mode are not ready.".format(dataset_name))
 
-    # 4. clean up dataset and runtime
-    clean_up_dataset_and_runtime(dataset_name)
+        # 3. create write & read data job
+        create_data_write_job(test_write_job)
+        if not check_data_job_status(test_write_job):
+            raise Exception("write job {} in normal mode failed.".format(test_write_job))
+        create_data_read_job(test_read_job)
+        if not check_data_job_status(test_read_job):
+            raise Exception("read job {} in normal mode failed.".format(test_read_job))
+    except Exception as e:
+        print(e)
+        exit(-1)
+    finally:
+        # 4. clean up write & read data job
+        clean_job(test_write_job)
+        clean_job(test_read_job)
+
+        # 5. clean up dataset and runtime
+        clean_up_dataset_and_runtime(dataset_name)
+
+        # 6. clean up secret
+        clean_up_secret()
 
     # ********************************
     # ------- test sidecar mode -------
     # ********************************
-    # 1. create dataset and runtime
     dataset_name = "jfsdemo-sidecar"
-    create_dataset_and_runtime(dataset_name)
-    check_dataset_bound(dataset_name)
-    check_volume_resources_ready(dataset_name)
-
-    # 2. create write & read data job
     test_write_job = "demo-write-sidecar"
-    create_data_write_job(test_write_job, use_sidecar=True)
-    check_data_job_status(test_write_job)
     test_read_job = "demo-read-sidecar"
-    create_data_read_job(test_read_job, use_sidecar=True)
-    check_data_job_status(test_read_job)
+    try:
+        # 1. create secret
+        create_redis_secret()
 
-    # 3. clean up write & read data job
-    clean_job(test_write_job)
-    clean_job(test_read_job)
+        # 2. create dataset and runtime
+        create_dataset_and_runtime(dataset_name)
+        if not check_dataset_bound(dataset_name):
+            raise Exception("dataset {} in sidecar mode is not bound.".format(dataset_name))
+        if not check_volume_resources_ready(dataset_name):
+            raise Exception("volume resources of dataset {} in sidecar mode are not ready.".format(dataset_name))
 
-    # 4. clean up dataset and runtime
-    clean_up_dataset_and_runtime(dataset_name)
+        # 3. create write & read data job
+        create_data_write_job(test_write_job, use_sidecar=True)
+        if not check_data_job_status(test_write_job):
+            raise Exception("write job {} in sidecar mode failed.".format(test_write_job))
+        create_data_read_job(test_read_job, use_sidecar=True)
+        if not check_data_job_status(test_read_job):
+            raise Exception("read job {} in sidecar mode failed.".format(test_read_job))
+    except Exception as e:
+        print(e)
+        exit(-1)
+    finally:
+        # 4. clean up write & read data job
+        clean_job(test_write_job)
+        clean_job(test_read_job)
 
-    # ------- clean up secret -------
-    clean_up_secret()
+        # 5. clean up dataset and runtime
+        clean_up_dataset_and_runtime(dataset_name)
+
+        # 6. clean up secret
+        clean_up_secret()
 
 
 if __name__ == '__main__':
