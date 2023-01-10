@@ -38,3 +38,6 @@
  
 0.2.9
 - Add updateStrategy for fuse
+
+0.2.10
+- Set root user in worker & fuse pod
