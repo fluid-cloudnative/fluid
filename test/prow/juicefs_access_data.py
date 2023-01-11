@@ -267,7 +267,12 @@ def clean_job(job_name):
 
     # See https://github.com/kubernetes-client/python/issues/234
     body = client.V1DeleteOptions(propagation_policy='Background')
-    batch_api.delete_namespaced_job(name=job_name, namespace=APP_NAMESPACE, body=body)
+    try:
+        batch_api.delete_namespaced_job(name=job_name, namespace=APP_NAMESPACE, body=body)
+    except client.exceptions.ApiException as e:
+        if e.status == 404:
+            print("job {} deleted".format(job_name))
+            return True
 
     count = 0
     while count < 300:
@@ -294,7 +299,7 @@ def clean_up_dataset_and_runtime(dataset_name):
         namespace=APP_NAMESPACE,
         plural="datasets"
     )
-    print("Dataset [] deleted".format(dataset_name))
+    print("Dataset {} deleted".format(dataset_name))
 
     count = 0
     while count < 300:

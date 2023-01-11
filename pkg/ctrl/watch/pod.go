@@ -19,6 +19,9 @@ package watch
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -108,7 +111,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 	// ignore if no fuse container
 	exist := false
 	for _, cn := range pod.Spec.Containers {
-		if cn.Name == common.FuseContainerName {
+		if strings.Contains(cn.Name, common.FuseContainerName) {
 			exist = true
 			break
 		}
@@ -126,7 +129,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 
 	// reconcile if all app containers exit 0 and fuse container not exit
 	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.Name != common.FuseContainerName {
+		if !strings.Contains(containerStatus.Name, common.FuseContainerName) {
 			log.V(1).Info("container status", "status", containerStatus)
 			if containerStatus.State.Terminated == nil {
 				log.Info("fluid app not exited", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
@@ -134,7 +137,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 				return false
 			}
 		}
-		if containerStatus.Name == common.FuseContainerName {
+		if strings.Contains(containerStatus.Name, common.FuseContainerName) {
 			if containerStatus.State.Running == nil {
 				log.Info("fluid fuse not running", "pod", pod.Name, "container", containerStatus.Name, "namespace", pod.Namespace)
 				return false
