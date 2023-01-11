@@ -38,6 +38,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
+const controllerName string = "GooseFSRuntimeController"
+
 // Use compiler to check if the struct implements all the interface
 var _ controllers.RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
 
@@ -105,4 +107,8 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 		WithOptions(options).
 		For(&datav1alpha1.GooseFSRuntime{}).
 		Complete(r)
+}
+
+func (r *RuntimeReconciler) ControllerName() string {
+	return controllerName
 }
