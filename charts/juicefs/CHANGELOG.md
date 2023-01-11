@@ -41,3 +41,6 @@
 
 0.2.10
 - Set root user in worker & fuse pod
+
+0.2.11
+- Support credential key in secret

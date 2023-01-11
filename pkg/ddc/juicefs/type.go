@@ -48,7 +48,7 @@ type Configs struct {
 	AccessKeySecret    string `json:"accesskeySecret,omitempty"`
 	AccessKeySecretKey string `json:"accesskeySecretKey,omitempty"`
 	SecretKeySecret    string `json:"secretkeySecret,omitempty"`
-	SecretKeySecretKey string `json:"SecretKeySecretKey,omitempty"`
+	SecretKeySecretKey string `json:"secretkeySecretKey,omitempty"`
 	Bucket             string `json:"bucket,omitempty"`
 	MetaUrlSecret      string `json:"metaurlSecret,omitempty"`
 	MetaUrlSecretKey   string `json:"metaurlSecretKey,omitempty"`
