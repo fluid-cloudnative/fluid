@@ -41,7 +41,8 @@ import (
 )
 
 const (
-	finalizer = "fluid-dataset-controller-finalizer"
+	finalizer      = "fluid-dataset-controller-finalizer"
+	controllerName = "DatasetController"
 )
 
 // DatasetReconciler reconciles a Dataset object
@@ -239,4 +240,8 @@ func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&datav1alpha1.Dataset{}).
 		Complete(r)
+}
+
+func (r *DatasetReconciler) ControllerName() string {
+	return controllerName
 }
