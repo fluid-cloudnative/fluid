@@ -83,28 +83,28 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.metaurlSecret }}
-                key: metaurl
+                key: {{ .Values.configs.metaurlSecretKey }}
           {{- end }}
           {{- if .Values.configs.accesskeySecret }}
           - name: ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.accesskeySecret }}
-                key: access-key
+                key: {{ .Values.configs.accesskeySecretKey }}
           {{- end }}
           {{- if .Values.configs.secretkeySecret }}
           - name: SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.secretkeySecret }}
-                key: secret-key
+                key: {{ .Values.configs.secretkeySecretKey }}
           {{- end }}
           {{- if .Values.configs.tokenSecret }}
           - name: TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.tokenSecret }}
-                key: token
+                key: {{ .Values.configs.tokenSecretKey }}
           {{- end }}
           - name: FLUID_RUNTIME_TYPE
             value: "juicefs"
