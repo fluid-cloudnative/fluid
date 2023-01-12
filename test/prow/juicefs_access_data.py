@@ -62,7 +62,7 @@ def create_redis_secret():
         "apiVersion": "v1",
         "kind": "Secret",
         "metadata": {"name": SECRET_NAME},
-        "stringData": {"metaurl": "redis://redis:6379/0", "access-key": "minioadmin", "secret-key": "minioadmin"}
+        "stringData": {"metaurl": "redis://redis:6379/0", "accesskey": "minioadmin", "secretkey": "minioadmin"}
     }
 
     api.create_namespaced_secret(namespace=APP_NAMESPACE, body=jfs_secret)
@@ -82,8 +82,8 @@ def create_dataset_and_runtime(dataset_name):
                 "options": {"bucket": "http://%s:9000/minio/test" % NODE_IP, "storage": "minio"},
                 "encryptOptions": [
                     {"name": "metaurl", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "metaurl"}}},
-                    {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "access-key"}}},
-                    {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secret-key"}}}
+                    {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "accesskey"}}},
+                    {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secretkey"}}}
                 ]
             }],
             "accessModes": ["ReadWriteMany"]
