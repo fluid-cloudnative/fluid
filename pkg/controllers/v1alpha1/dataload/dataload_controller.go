@@ -43,6 +43,8 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
+const controllerName string = "DataLoadReconciler"
+
 // DataLoadReconciler reconciles a DataLoad object
 type DataLoadReconciler struct {
 	Scheme  *runtime.Scheme
@@ -232,4 +234,8 @@ func (r *DataLoadReconciler) GetOrCreateEngine(
 	}
 
 	return engine, err
+}
+
+func (r *DataLoadReconciler) ControllerName() string {
+	return controllerName
 }

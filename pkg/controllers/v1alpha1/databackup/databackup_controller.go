@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const controllerName string = "DataBackupController"
+
 // reconcileRequestContext wraps up necessary info for reconciliation
 type reconcileRequestContext struct {
 	context.Context
@@ -264,4 +266,8 @@ func (r *DataBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&datav1alpha1.DataBackup{}).
 		Complete(r)
+}
+
+func (r *DataBackupReconciler) ControllerName() string {
+	return controllerName
 }
