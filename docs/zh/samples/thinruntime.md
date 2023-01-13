@@ -113,8 +113,11 @@ obj = json.loads(rawStr)
 
 with open("mount-minio.sh", "w") as f:
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
-    f.write("url=\"%s\"\n" % obj['mounts'][0]['mountPoint'])
-    f.write("bucket=\"%s\"\n" % obj['mounts'][0]['options']['bucket'])
+    f.write("url=\"%s\"\n" % obj['mounts'][0]['options']['minio-url'])
+    if obj['mounts'][0]['mountPoint'].startswith("minio://"):
+      f.write("bucket=\"%s\"\n" % obj['mounts'][0]['mountPoint'][len("minio://"):])
+    else:
+      f.write("bucket=\"%s\"\n" % obj['mounts'][0]['mountPoint'])
     f.write("akId=\"%s\"\n" % obj['mounts'][0]['options']['minio-access-key'])
     f.write("akSecret=\"%s\"\n" % obj['mounts'][0]['options']['minio-access-secret'])
 
@@ -192,10 +195,10 @@ metadata:
   name: minio-demo
 spec:
   mounts:
-  - mountPoint: http://minio:9000
+  - mountPoint: minio://my-first-bucket   # minio://<bucket name>
     name: minio
     options:
-      bucket: my-first-bucket
+      minio-url: http://minio:9000  # minio service <url>:<port>
     encryptOptions:
       - name: minio-access-key
         valueFrom:
@@ -216,9 +219,9 @@ spec:
   profileName: minio-profile
 ```
 
-- `Dataset.spec.mounts[*].mountPoint`指定为minio在集群可访问的URL（i.e. `http://minio:9000`）
-- `Dataset.spec.mounts[*].options.bucket`指定所需访问的数据桶（i.e. `my-first-bucket`）
-- `ThinRuntime.spec.profileName`指定已创建的ThinRuntimeProfile（i.e. `minio-profile`）
+- `Dataset.spec.mounts[*].mountPoint`指定所需访问的数据桶(e.g. `my-frist-bucket`)
+- `Dataset.spec.mounts[*].options.minio-url`指定minio在集群可访问的URL（e.g. `http://minio:9000`）
+- `ThinRuntime.gpec.profileName`指定已创建的ThinRuntimeProfile（e.g. `minio-profile`）
 
 创建Dataset CR和ThinRuntime CR：
 
