@@ -111,7 +111,7 @@ exec goofys -f --endpoint "$url" "$bucket" $targetPath
 
 obj = json.loads(rawStr)
 
-with open("mount-ossfs.sh", "w") as f:
+with open("mount-minio.sh", "w") as f:
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
     f.write("url=\"%s\"\n" % obj['mounts'][0]['options']['minio-url'])
     if obj['mounts'][0]['mountPoint'].startswith("minio://"):
