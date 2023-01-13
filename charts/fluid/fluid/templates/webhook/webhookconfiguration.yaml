@@ -17,7 +17,7 @@ webhooks:
         path: "/mutate-fluid-io-v1alpha1-schedulepod"
         port: 9443
       caBundle: Cg==
-    timeoutSeconds: 20
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
     failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
@@ -37,7 +37,7 @@ webhooks:
         path: "/mutate-fluid-io-v1alpha1-schedulepod"
         port: 9443
       caBundle: Cg==
-    timeoutSeconds: 20
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
     failurePolicy: Fail
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
