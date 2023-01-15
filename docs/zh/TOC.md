@@ -40,7 +40,7 @@
   - [镜像拉取密钥](samples/image_pull_secrets.md)
   + 无服务器场景
     - [如何在Knative环境运行](samples/knative.md)
-    - [如何保障 erverless 任务顺利完成](samples/application_controller.md)
+    - [如何保障 Serverless 任务顺利完成](samples/application_controller.md)
 + 工作负载
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现
