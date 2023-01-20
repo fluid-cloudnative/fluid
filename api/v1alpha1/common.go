@@ -112,3 +112,21 @@ type PodMetadata struct {
 type VolumeSource struct {
 	corev1.VolumeSource `json:",inline"`
 }
+
+// CleanCachePolicy defines policies of cleaning cache
+type CleanCachePolicy struct {
+	// Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request.
+	// Value must be non-negative integer. The value zero indicates clean immediately via the timeout
+	// command (no opportunity to shut down).
+	// If this value is nil, the default grace period will be used instead.
+	// The grace period is the duration in seconds after the processes running in the pod are sent
+	// a termination signal and the time when the processes are forcibly halted with timeout command.
+	// Set this value longer than the expected cleanup time for your process.
+	// +optional
+	GracePeriodSeconds *int32 `json:"gracePeriodSeconds,omitempty"`
+
+	// Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts
+	// to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number
+	// of retries. This gives you the option to continue processing retries.
+	MaxRetryAttempts *int32 `json:"maxRetryAttempts,omitempty"`
+}

@@ -75,6 +75,10 @@ type JuiceFSRuntimeSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// CleanCachePolicy defines cleanCache Policy
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components

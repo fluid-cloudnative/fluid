@@ -1,9 +1,10 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,14 +38,15 @@ type AlluxioEngine struct {
 	runtimeType string
 	Log         logr.Logger
 	client.Client
-	// gracefulShutdownLimits is the limit for the system to forcibly clean up.
-	gracefulShutdownLimits int32
-	retryShutdown          int32
-	initImage              string
-	MetadataSyncDoneCh     chan MetadataSyncResult
-	runtimeInfo            base.RuntimeInfoInterface
-	UnitTest               bool
-	lastCacheHitStates     *cacheHitStates
+	// defaultGracefulShutdownLimits is the limit for the system to forcibly clean up.
+	defaultGracefulShutdownLimits       int32
+	defaultCleanCacheGracePeriodSeconds int32
+	retryShutdown                       int32
+	initImage                           string
+	MetadataSyncDoneCh                  chan MetadataSyncResult
+	runtimeInfo                         base.RuntimeInfoInterface
+	UnitTest                            bool
+	lastCacheHitStates                  *cacheHitStates
 	*ctrl.Helper
 	Recorder record.EventRecorder
 }
@@ -52,16 +54,17 @@ type AlluxioEngine struct {
 // Build function builds the Alluxio Engine
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:                   ctx.Name,
-		namespace:              ctx.Namespace,
-		Client:                 ctx.Client,
-		Recorder:               ctx.Recorder,
-		Log:                    ctx.Log,
-		runtimeType:            ctx.RuntimeType,
-		gracefulShutdownLimits: 5,
-		retryShutdown:          0,
-		MetadataSyncDoneCh:     nil,
-		lastCacheHitStates:     nil,
+		name:                                ctx.Name,
+		namespace:                           ctx.Namespace,
+		Client:                              ctx.Client,
+		Recorder:                            ctx.Recorder,
+		Log:                                 ctx.Log,
+		runtimeType:                         ctx.RuntimeType,
+		defaultGracefulShutdownLimits:       5,
+		defaultCleanCacheGracePeriodSeconds: 60,
+		retryShutdown:                       0,
+		MetadataSyncDoneCh:                  nil,
+		lastCacheHitStates:                  nil,
 	}
 	// var implement base.Implement = engine
 	// engine.TemplateEngine = template

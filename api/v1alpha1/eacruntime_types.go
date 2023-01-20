@@ -143,6 +143,10 @@ type EACRuntimeSpec struct {
 
 	// Operating system optimization for EAC
 	OSAdvise OSAdvise `json:"osAdvise,omitempty"`
+
+	// CleanCachePolicy defines cleanCache Policy
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true

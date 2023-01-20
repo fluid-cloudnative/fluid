@@ -85,7 +85,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	err = a.CleanCache("/")
+	err = a.CleanCache("/", 30)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -95,7 +95,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = a.CleanCache("/")
+	err = a.CleanCache("/", 30)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = a.CleanCache("/")
+	err = a.CleanCache("/", 30)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}

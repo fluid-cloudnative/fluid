@@ -48,7 +48,9 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		e.Log.Error(err, "Failed to get dataset when query cache status")
+		if utils.IgnoreNotFound(err) != nil {
+			e.Log.Error(err, "Failed to get dataset when query cache status")
+		}
 		return states, err
 	}
 
@@ -195,6 +197,40 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	// 2. run clean action
 	podName, containerName := e.getMasterPodInfo()
 	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
-	return fileUitls.CleanCache(path)
+	cleanCacheGracePeriodSeconds, err := e.getCleanCacheGracePeriodSeconds()
+	if err != nil {
+		return err
+	}
+	return fileUitls.CleanCache(path, cleanCacheGracePeriodSeconds)
 
+}
+
+func (e *AlluxioEngine) getGracefulShutdownLimits() (gracefulShutdownLimits int32, err error) {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+
+	if runtime.Spec.CleanCachePolicy.MaxRetryAttempts != nil {
+		gracefulShutdownLimits = *runtime.Spec.CleanCachePolicy.MaxRetryAttempts
+	} else {
+		gracefulShutdownLimits = e.defaultGracefulShutdownLimits
+	}
+
+	return
+}
+
+func (e *AlluxioEngine) getCleanCacheGracePeriodSeconds() (cleanCacheGracePeriodSeconds int32, err error) {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+
+	if runtime.Spec.CleanCachePolicy.GracePeriodSeconds != nil {
+		cleanCacheGracePeriodSeconds = *runtime.Spec.CleanCachePolicy.GracePeriodSeconds
+	} else {
+		cleanCacheGracePeriodSeconds = e.defaultCleanCacheGracePeriodSeconds
+	}
+
+	return
 }

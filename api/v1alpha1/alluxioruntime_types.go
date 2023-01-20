@@ -291,6 +291,10 @@ type AlluxioRuntimeSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to Alluxio's pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// CleanCachePolicy defines cleanCache Policy
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true
