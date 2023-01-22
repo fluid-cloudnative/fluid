@@ -117,6 +117,9 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 
 	// 13.set the placementMode
 	e.transformPlacementMode(dataset, value)
+
+	// 14.set the cleanCachePolicy
+	err = e.SetCleanCachePolicy()
 	return
 }
 
