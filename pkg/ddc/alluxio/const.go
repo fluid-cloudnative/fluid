@@ -55,4 +55,8 @@ const (
 	podRoleType = "role"
 
 	wokrerPodRole = "alluxio-worker"
+
+	// defaultGracefulShutdownLimits is the limit for the system to forcibly clean up.
+	defaultGracefulShutdownLimits       int32 = 5
+	defaultCleanCacheGracePeriodSeconds int32 = 60
 )

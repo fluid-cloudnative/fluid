@@ -430,19 +430,18 @@ func mockAlluxioReportMetrics() string {
 
 func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	type fields struct {
-		runtime                             *datav1alpha1.AlluxioRuntime
-		name                                string
-		namespace                           string
-		runtimeType                         string
-		Log                                 logr.Logger
-		Client                              client.Client
-		defaultGracefulShutdownLimits       int32
-		defaultCleanCacheGracePeriodSeconds int32
-		retryShutdown                       int32
-		initImage                           string
-		MetadataSyncDoneCh                  chan MetadataSyncResult
-		UnitTest                            bool
-		Recorder                            record.EventRecorder
+		runtime                       *datav1alpha1.AlluxioRuntime
+		name                          string
+		namespace                     string
+		runtimeType                   string
+		Log                           logr.Logger
+		Client                        client.Client
+		defaultGracefulShutdownLimits int32
+		retryShutdown                 int32
+		initImage                     string
+		MetadataSyncDoneCh            chan MetadataSyncResult
+		UnitTest                      bool
+		Recorder                      record.EventRecorder
 	}
 	tests := []struct {
 		name                       string
@@ -517,18 +516,16 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{
-				runtime:                             tt.fields.runtime,
-				name:                                tt.fields.name,
-				namespace:                           tt.fields.namespace,
-				runtimeType:                         tt.fields.runtimeType,
-				Log:                                 tt.fields.Log,
-				Client:                              fakeClient,
-				defaultGracefulShutdownLimits:       tt.fields.defaultGracefulShutdownLimits,
-				defaultCleanCacheGracePeriodSeconds: tt.fields.defaultCleanCacheGracePeriodSeconds,
-				retryShutdown:                       tt.fields.retryShutdown,
-				initImage:                           tt.fields.initImage,
-				MetadataSyncDoneCh:                  tt.fields.MetadataSyncDoneCh,
-				Recorder:                            tt.fields.Recorder,
+				runtime:            tt.fields.runtime,
+				name:               tt.fields.name,
+				namespace:          tt.fields.namespace,
+				runtimeType:        tt.fields.runtimeType,
+				Log:                tt.fields.Log,
+				Client:             fakeClient,
+				retryShutdown:      tt.fields.retryShutdown,
+				initImage:          tt.fields.initImage,
+				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
+				Recorder:           tt.fields.Recorder,
 			}
 			gotGracefulShutdownLimits, err := e.getGracefulShutdownLimits()
 			if (err != nil) != tt.wantErr {
@@ -544,13 +541,13 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 
 func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 	type fields struct {
-		runtime                             *datav1alpha1.AlluxioRuntime
-		name                                string
-		namespace                           string
-		runtimeType                         string
-		Log                                 logr.Logger
-		Client                              client.Client
-		defaultGracefulShutdownLimits       int32
+		runtime     *datav1alpha1.AlluxioRuntime
+		name        string
+		namespace   string
+		runtimeType string
+		Log         logr.Logger
+		Client      client.Client
+
 		defaultCleanCacheGracePeriodSeconds int32
 		retryShutdown                       int32
 		initImage                           string
@@ -629,16 +626,14 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{
-				runtime:                             tt.fields.runtime,
-				name:                                tt.fields.name,
-				namespace:                           tt.fields.namespace,
-				runtimeType:                         tt.fields.runtimeType,
-				Log:                                 tt.fields.Log,
-				Client:                              fakeClient,
-				defaultGracefulShutdownLimits:       tt.fields.defaultGracefulShutdownLimits,
-				defaultCleanCacheGracePeriodSeconds: tt.fields.defaultCleanCacheGracePeriodSeconds,
-				retryShutdown:                       tt.fields.retryShutdown,
-				initImage:                           tt.fields.initImage,
+				runtime:       tt.fields.runtime,
+				name:          tt.fields.name,
+				namespace:     tt.fields.namespace,
+				runtimeType:   tt.fields.runtimeType,
+				Log:           tt.fields.Log,
+				Client:        fakeClient,
+				retryShutdown: tt.fields.retryShutdown,
+				initImage:     tt.fields.initImage,
 			}
 			gotCleanCacheGracePeriodSeconds, err := e.getCleanCacheGracePeriodSeconds()
 			if (err != nil) != tt.wantErr {
