@@ -430,18 +430,17 @@ func mockAlluxioReportMetrics() string {
 
 func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	type fields struct {
-		runtime                       *datav1alpha1.AlluxioRuntime
-		name                          string
-		namespace                     string
-		runtimeType                   string
-		Log                           logr.Logger
-		Client                        client.Client
-		defaultGracefulShutdownLimits int32
-		retryShutdown                 int32
-		initImage                     string
-		MetadataSyncDoneCh            chan MetadataSyncResult
-		UnitTest                      bool
-		Recorder                      record.EventRecorder
+		runtime            *datav1alpha1.AlluxioRuntime
+		name               string
+		namespace          string
+		runtimeType        string
+		Log                logr.Logger
+		Client             client.Client
+		retryShutdown      int32
+		initImage          string
+		MetadataSyncDoneCh chan MetadataSyncResult
+		UnitTest           bool
+		Recorder           record.EventRecorder
 	}
 	tests := []struct {
 		name                       string
@@ -462,7 +461,6 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{},
 				},
-				defaultGracefulShutdownLimits: 5,
 			},
 			wantGracefulShutdownLimits: 5,
 			wantErr:                    false,
@@ -482,7 +480,6 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 						},
 					},
 				},
-				defaultGracefulShutdownLimits: 5,
 			},
 			wantGracefulShutdownLimits: 12,
 			wantErr:                    false,
@@ -502,7 +499,6 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 						},
 					},
 				},
-				defaultGracefulShutdownLimits: 5,
 			},
 			wantGracefulShutdownLimits: 0,
 			wantErr:                    true,
@@ -541,16 +537,14 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 
 func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 	type fields struct {
-		runtime                             *datav1alpha1.AlluxioRuntime
-		name                                string
-		namespace                           string
-		runtimeType                         string
-		Log                                 logr.Logger
-		Client                              client.Client
-		defaultGracefulShutdownLimits       int32
-		defaultCleanCacheGracePeriodSeconds int32
-		retryShutdown                       int32
-		initImage                           string
+		runtime       *datav1alpha1.AlluxioRuntime
+		name          string
+		namespace     string
+		runtimeType   string
+		Log           logr.Logger
+		Client        client.Client
+		retryShutdown int32
+		initImage     string
 	}
 	tests := []struct {
 		name                             string
@@ -590,7 +584,6 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 						},
 					},
 				},
-				defaultCleanCacheGracePeriodSeconds: 5,
 			},
 			wantCleanCacheGracePeriodSeconds: 12,
 			wantErr:                          false,
@@ -610,7 +603,6 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 						},
 					},
 				},
-				defaultCleanCacheGracePeriodSeconds: 5,
 			},
 			wantCleanCacheGracePeriodSeconds: 0,
 			wantErr:                          true,
