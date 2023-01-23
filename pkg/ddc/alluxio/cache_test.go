@@ -541,13 +541,13 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 
 func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 	type fields struct {
-		runtime     *datav1alpha1.AlluxioRuntime
-		name        string
-		namespace   string
-		runtimeType string
-		Log         logr.Logger
-		Client      client.Client
-
+		runtime                             *datav1alpha1.AlluxioRuntime
+		name                                string
+		namespace                           string
+		runtimeType                         string
+		Log                                 logr.Logger
+		Client                              client.Client
+		defaultGracefulShutdownLimits       int32
 		defaultCleanCacheGracePeriodSeconds int32
 		retryShutdown                       int32
 		initImage                           string
@@ -571,9 +571,8 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{},
 				},
-				defaultCleanCacheGracePeriodSeconds: 5,
 			},
-			wantCleanCacheGracePeriodSeconds: 5,
+			wantCleanCacheGracePeriodSeconds: 60,
 			wantErr:                          false,
 		}, {
 			name: "clean_cache_policy",
