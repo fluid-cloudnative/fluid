@@ -523,16 +523,15 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 
 func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	type fields struct {
-		runtime                *datav1alpha1.AlluxioRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-		initImage              string
-		MetadataSyncDoneCh     chan MetadataSyncResult
+		runtime            *datav1alpha1.AlluxioRuntime
+		name               string
+		namespace          string
+		runtimeType        string
+		Log                logr.Logger
+		Client             client.Client
+		retryShutdown      int32
+		initImage          string
+		MetadataSyncDoneCh chan MetadataSyncResult
 	}
 	type args struct {
 		allocatedPorts []int
@@ -608,16 +607,15 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-				initImage:              tt.fields.initImage,
-				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+				runtime:            tt.fields.runtime,
+				name:               tt.fields.name,
+				namespace:          tt.fields.namespace,
+				runtimeType:        tt.fields.runtimeType,
+				Log:                tt.fields.Log,
+				Client:             tt.fields.Client,
+				retryShutdown:      tt.fields.retryShutdown,
+				initImage:          tt.fields.initImage,
+				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
 
 			index := 0
@@ -651,16 +649,15 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-21000")
 	portallocator.SetupRuntimePortAllocator(nil, pr, dummy)
 	type fields struct {
-		runtime                *datav1alpha1.AlluxioRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-		initImage              string
-		MetadataSyncDoneCh     chan MetadataSyncResult
+		runtime            *datav1alpha1.AlluxioRuntime
+		name               string
+		namespace          string
+		runtimeType        string
+		Log                logr.Logger
+		Client             client.Client
+		retryShutdown      int32
+		initImage          string
+		MetadataSyncDoneCh chan MetadataSyncResult
 	}
 	type args struct {
 		allocatedPorts []int
@@ -776,16 +773,15 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-				initImage:              tt.fields.initImage,
-				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
+				runtime:            tt.fields.runtime,
+				name:               tt.fields.name,
+				namespace:          tt.fields.namespace,
+				runtimeType:        tt.fields.runtimeType,
+				Log:                tt.fields.Log,
+				Client:             tt.fields.Client,
+				retryShutdown:      tt.fields.retryShutdown,
+				initImage:          tt.fields.initImage,
+				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
 
 			err := e.allocatePorts(tt.args.alluxioValue, e.runtime)

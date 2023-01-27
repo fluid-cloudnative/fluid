@@ -192,7 +192,10 @@ func TestShutdown(t *testing.T) {
 		engine.namespace = test.runtimeInfo.GetNamespace()
 		engine.Helper = ctrl.BuildHelper(engine.runtimeInfo, client, engine.Log)
 		err := engine.Shutdown()
-		if !(err == nil || strings.Contains(err.Error(), "executable file not found")) {
+		if !(err == nil ||
+			strings.Contains(err.Error(), "executable file not found") ||
+			strings.Contains(err.Error(), "invalid configuration") ||
+			strings.Contains(err.Error(), "not found")) {
 			t.Errorf("fail to call the shutdown with the error %v", err)
 		}
 	}

@@ -30,7 +30,7 @@ func TestAlluxioEngine_SyncRuntime(t *testing.T) {
 		// runtimeType            string
 		// Log                    logr.Logger
 		// Client                 client.Client
-		// gracefulShutdownLimits int32
+		// defaultGracefulShutdownLimits int32
 		// retryShutdown          int32
 		// initImage              string
 		// MetadataSyncDoneCh     chan MetadataSyncResult
@@ -65,7 +65,7 @@ func TestAlluxioEngine_SyncRuntime(t *testing.T) {
 				// runtimeType:            tt.fields.runtimeType,
 				// Log:                    tt.fields.Log,
 				// Client:                 tt.fields.Client,
-				// gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
+				// defaultGracefulShutdownLimits: tt.fields.defaultGracefulShutdownLimits,
 				// retryShutdown:          tt.fields.retryShutdown,
 				// initImage:              tt.fields.initImage,
 				// MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,

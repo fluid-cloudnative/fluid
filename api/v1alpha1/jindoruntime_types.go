@@ -198,6 +198,10 @@ type JindoRuntimeSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkmode,omitempty"`
+
+	// CleanCachePolicy defines cleanCache Policy
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true

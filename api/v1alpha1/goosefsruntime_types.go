@@ -184,6 +184,10 @@ type GooseFSRuntimeSpec struct {
 	// of the file as the value.
 	// +optional
 	HadoopConfig string `json:"hadoopConfig,omitempty"`
+
+	// CleanCachePolicy defines cleanCache Policy
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true
