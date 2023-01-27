@@ -20,16 +20,19 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/go-logr/logr"
 	. "github.com/smartystreets/goconvey/convey"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestQueryCacheStatus(t *testing.T) {
@@ -276,9 +279,7 @@ func TestInvokeCleanCache(t *testing.T) {
 	}
 }
 
-//
 // $ alluxio fsadmin report summary
-//
 func mockAlluxioReportSummary() string {
 	s := `Alluxio cluster summary: 
 	Master Address: 172.18.0.2:20000
@@ -425,4 +426,214 @@ func mockAlluxioReportMetrics() string {
 	Master.registerWorker.User:root  (Type: TIMER, Value: 1)
 	`
 	return r
+}
+
+func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
+	type fields struct {
+		runtime            *datav1alpha1.AlluxioRuntime
+		name               string
+		namespace          string
+		runtimeType        string
+		Log                logr.Logger
+		Client             client.Client
+		retryShutdown      int32
+		initImage          string
+		MetadataSyncDoneCh chan MetadataSyncResult
+		UnitTest           bool
+		Recorder           record.EventRecorder
+	}
+	tests := []struct {
+		name                       string
+		fields                     fields
+		wantGracefulShutdownLimits int32
+		wantErr                    bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "no_clean_cache_policy",
+			fields: fields{
+				name:      "noCleanCache",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "noCleanCache",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{},
+				},
+			},
+			wantGracefulShutdownLimits: 5,
+			wantErr:                    false,
+		}, {
+			name: "clean_cache_policy",
+			fields: fields{
+				name:      "cleanCache",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cleanCache",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						CleanCachePolicy: datav1alpha1.CleanCachePolicy{
+							MaxRetryAttempts: utilpointer.Int32(12),
+						},
+					},
+				},
+			},
+			wantGracefulShutdownLimits: 12,
+			wantErr:                    false,
+		}, {
+			name: "test_err",
+			fields: fields{
+				name:      "err",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "notFoundErr",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						CleanCachePolicy: datav1alpha1.CleanCachePolicy{
+							MaxRetryAttempts: utilpointer.Int32(12),
+						},
+					},
+				},
+			},
+			wantGracefulShutdownLimits: 0,
+			wantErr:                    true,
+		},
+	}
+	objs := []runtime.Object{}
+	for _, tt := range tests {
+		objs = append(objs, tt.fields.runtime.DeepCopy())
+	}
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:            tt.fields.runtime,
+				name:               tt.fields.name,
+				namespace:          tt.fields.namespace,
+				runtimeType:        tt.fields.runtimeType,
+				Log:                tt.fields.Log,
+				Client:             fakeClient,
+				retryShutdown:      tt.fields.retryShutdown,
+				initImage:          tt.fields.initImage,
+				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
+				Recorder:           tt.fields.Recorder,
+			}
+			gotGracefulShutdownLimits, err := e.getGracefulShutdownLimits()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AlluxioEngine.getGracefulShutdownLimits() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotGracefulShutdownLimits != tt.wantGracefulShutdownLimits {
+				t.Errorf("AlluxioEngine.getGracefulShutdownLimits() = %v, want %v", gotGracefulShutdownLimits, tt.wantGracefulShutdownLimits)
+			}
+		})
+	}
+}
+
+func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
+	type fields struct {
+		runtime       *datav1alpha1.AlluxioRuntime
+		name          string
+		namespace     string
+		runtimeType   string
+		Log           logr.Logger
+		Client        client.Client
+		retryShutdown int32
+		initImage     string
+	}
+	tests := []struct {
+		name                             string
+		fields                           fields
+		wantCleanCacheGracePeriodSeconds int32
+		wantErr                          bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "no_clean_cache_policy",
+			fields: fields{
+				name:      "noCleanCache",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "noCleanCache",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{},
+				},
+			},
+			wantCleanCacheGracePeriodSeconds: 60,
+			wantErr:                          false,
+		}, {
+			name: "clean_cache_policy",
+			fields: fields{
+				name:      "cleanCache",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cleanCache",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						CleanCachePolicy: datav1alpha1.CleanCachePolicy{
+							GracePeriodSeconds: utilpointer.Int32(12),
+						},
+					},
+				},
+			},
+			wantCleanCacheGracePeriodSeconds: 12,
+			wantErr:                          false,
+		}, {
+			name: "test_err",
+			fields: fields{
+				name:      "notFoundError",
+				namespace: "default",
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "notFound",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						CleanCachePolicy: datav1alpha1.CleanCachePolicy{
+							MaxRetryAttempts: utilpointer.Int32(12),
+						},
+					},
+				},
+			},
+			wantCleanCacheGracePeriodSeconds: 0,
+			wantErr:                          true,
+		},
+	}
+
+	objs := []runtime.Object{}
+	for _, tt := range tests {
+		objs = append(objs, tt.fields.runtime.DeepCopy())
+	}
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{
+				runtime:       tt.fields.runtime,
+				name:          tt.fields.name,
+				namespace:     tt.fields.namespace,
+				runtimeType:   tt.fields.runtimeType,
+				Log:           tt.fields.Log,
+				Client:        fakeClient,
+				retryShutdown: tt.fields.retryShutdown,
+				initImage:     tt.fields.initImage,
+			}
+			gotCleanCacheGracePeriodSeconds, err := e.getCleanCacheGracePeriodSeconds()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("testcase %v AlluxioEngine.getCleanCacheGracePeriodSeconds() error = %v, wantErr %v", tt.name, err, tt.wantErr)
+				return
+			}
+			if gotCleanCacheGracePeriodSeconds != tt.wantCleanCacheGracePeriodSeconds {
+				t.Errorf("testcase %v AlluxioEngine.getCleanCacheGracePeriodSeconds() = %v, want %v", tt.name, gotCleanCacheGracePeriodSeconds, tt.wantCleanCacheGracePeriodSeconds)
+			}
+		})
+	}
 }

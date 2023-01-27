@@ -17,6 +17,7 @@ package operations
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	units "github.com/docker/go-units"
@@ -59,11 +60,13 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 }
 
 // clean cache with a preset timeout of 60s
-func (a AlluxioFileUtils) CleanCache(path string) (err error) {
+func (a AlluxioFileUtils) CleanCache(path string, timeout int32) (err error) {
 	var (
-		command = []string{"60", "alluxio", "fs", "free", "-f", path}
-		stdout  string
-		stderr  string
+		// command = []string{"60", "alluxio", "fs", "free", "-f", path}
+		command = []string{strconv.FormatInt(int64(timeout), 10),
+			"alluxio", "fs", "free", "-f", path}
+		stdout string
+		stderr string
 	)
 
 	//TODO : find solution to use "timeout" or "timeout -t" in different linux release

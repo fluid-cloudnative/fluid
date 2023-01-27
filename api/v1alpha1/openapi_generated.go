@@ -36,6 +36,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation":           schema_fluid_cloudnative_fluid_api_v1alpha1_BackupLocation(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":    schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":         schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
@@ -681,11 +682,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines cleanCache Policy",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -734,6 +742,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref commo
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.NodeSelector"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CleanCachePolicy defines policies of cleaning cache",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"gracePeriodSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request. Value must be non-negative integer. The value zero indicates clean immediately via the timeout command (no opportunity to shut down). If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with timeout command. Set this value longer than the expected cleanup time for your process.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"maxRetryAttempts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number of retries. This gives you the option to continue processing retries.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -1953,11 +1988,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.Refer
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise"),
 						},
 					},
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines cleanCache Policy",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
 	}
 }
 
@@ -2523,11 +2565,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref common.R
 							Format:      "",
 						},
 					},
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines cleanCache Policy",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -3185,11 +3234,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 							Format:      "",
 						},
 					},
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines cleanCache Policy",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -3639,11 +3695,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines cleanCache Policy",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 

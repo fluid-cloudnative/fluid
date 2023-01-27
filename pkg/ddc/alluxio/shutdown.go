@@ -41,7 +41,11 @@ import (
 
 // shut down the Alluxio engine
 func (e *AlluxioEngine) Shutdown() (err error) {
-	if e.retryShutdown < e.gracefulShutdownLimits {
+	gracefulShutdownLimits, err := e.getGracefulShutdownLimits()
+	if err != nil {
+		return
+	}
+	if e.retryShutdown < gracefulShutdownLimits {
 		err = e.cleanupCache()
 		if err != nil {
 			e.retryShutdown = e.retryShutdown + 1
@@ -82,8 +86,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		e.Log.Info("skip releasePorts for container network mode")
 	}
 
-	err = e.cleanAll()
-	return err
+	return e.cleanAll()
 }
 
 // destroyMaster Destroies the master
@@ -112,6 +115,9 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 func (e *AlluxioEngine) cleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
 	cacheStates, err := e.queryCacheStatus()
+	if utils.IgnoreNotFound(err) != nil {
+		return err
+	}
 	if cacheStates.cached == "" {
 		return
 	}
@@ -144,22 +150,8 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 		e.Log.Info("Clean up the cache successfully")
 	}
 
-	time.Sleep(time.Duration(10 * time.Second))
-
-	// ufs, cached, cachedPercentage, err = e.du()
-	// if err != nil {
-	// 	return
-	// }
-
-	// e.Log.Info("The cache after cleanup", "ufs", ufs,
-	// 	"cached", cached,
-	// 	"cachedPercentage", cachedPercentage)
-
-	// if cached > 0 {
-	// 	return fmt.Errorf("The remaining cached is not cleaned up, it still has %d", cached)
-	// }
-
-	return fmt.Errorf("the remaining cached is not cleaned up, check again")
+	time.Sleep(time.Duration(5 * time.Second))
+	return fmt.Errorf("to make sure if the remaining cache is cleaned up, check again")
 }
 
 func (e *AlluxioEngine) releasePorts() (err error) {
