@@ -6,6 +6,7 @@ spec:
   mounts:
     - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
       name: hbase
+      path: /
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: AlluxioRuntime
