@@ -80,6 +80,7 @@ spec:
                 description: CleanCachePolicy defines cleanCache Policy
                 properties:
                   gracePeriodSeconds:
+                    default: 60
                     description: Optional duration in seconds the cache needs to clean
                       gracefully. May be decreased in delete runtime request. Value
                       must be non-negative integer. The value zero indicates clean
@@ -93,6 +94,7 @@ spec:
                     format: int32
                     type: integer
                   maxRetryAttempts:
+                    default: 3
                     description: Optional max retry Attempts when cleanCache function
                       returns an error after execution, runtime attempts to run it
                       three more times by default. With Maximum Retry Attempts, you
