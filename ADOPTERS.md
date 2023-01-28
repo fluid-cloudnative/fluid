@@ -36,3 +36,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [CloudView](https://cloudview.mobi) | [@kastland](kastland@126.com) | Production | AI Platform on k8s |
 | [Inceptio](https://www.inceptio.ai) | [@shajingcheng](shajingcheng@126.com) | Staging | Bigdata Platform on k8s |
 | [autelrobotics](https://www.autelrobotics.cn) | [@andyzheung](https://github.com/andyzheung) | Testing | AI platform training data cache and big emr job data process data cache |
+| [coScene](https://www.coscene.cn) | [@juchaosong](https://github.com/juchaosong) | Test | Data Platform on k8s |
