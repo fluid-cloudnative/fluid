@@ -24,7 +24,6 @@ import (
 
 	"sort"
 	"strings"
-	"time"
 
 	"k8s.io/client-go/util/retry"
 
@@ -150,7 +149,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 		e.Log.Info("Clean up the cache successfully")
 	}
 
-	time.Sleep(time.Duration(5 * time.Second))
+	// time.Sleep(time.Duration(5 * time.Second))
 	return fmt.Errorf("to make sure if the remaining cache is cleaned up, check again")
 }
 
