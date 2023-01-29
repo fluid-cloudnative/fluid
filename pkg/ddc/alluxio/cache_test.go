@@ -462,7 +462,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{},
 				},
 			},
-			wantGracefulShutdownLimits: 5,
+			wantGracefulShutdownLimits: 3,
 			wantErr:                    false,
 		}, {
 			name: "clean_cache_policy",
