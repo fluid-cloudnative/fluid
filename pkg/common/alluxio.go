@@ -14,9 +14,9 @@ const (
 
 	AlluxioFuseImageEnv = "ALLUXIO_FUSE_IMAGE_ENV"
 
-	DefaultAlluxioRuntimeImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226"
+	DefaultAlluxioRuntimeImage = "alluxio/alluxio-dev:2.9.0"
 
-	DefaultAlluxioFuseImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226"
+	DefaultAlluxioFuseImage = "alluxio/alluxio-dev:2.9.0"
 )
 
 var (

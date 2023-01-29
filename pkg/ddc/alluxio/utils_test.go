@@ -848,7 +848,7 @@ func TestParseRuntimeImage(t *testing.T) {
 				imagePullSecrets: []corev1.LocalObjectReference{{Name: "test"}},
 			},
 			envs: map[string]string{
-				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
+				common.AlluxioRuntimeImageEnv: "alluxio/alluxio-dev:2.9.0",
 			},
 			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
 			want1: "2.3.0-SNAPSHOT-2c41226",
@@ -864,7 +864,7 @@ func TestParseRuntimeImage(t *testing.T) {
 				imagePullSecrets: []corev1.LocalObjectReference{},
 			},
 			envs: map[string]string{
-				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
+				common.AlluxioRuntimeImageEnv: "alluxio/alluxio-dev:2.9.0",
 				common.EnvImagePullSecretsKey: "secret1,secret2",
 			},
 			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
@@ -881,7 +881,7 @@ func TestParseRuntimeImage(t *testing.T) {
 				imagePullSecrets: []corev1.LocalObjectReference{{Name: "test"}},
 			},
 			envs: map[string]string{
-				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
+				common.AlluxioRuntimeImageEnv: "alluxio/alluxio-dev:2.9.0",
 				common.EnvImagePullSecretsKey: "secret1,secret2",
 			},
 			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
@@ -953,7 +953,7 @@ func TestParseFuseImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
-			t.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
+			t.Setenv(common.AlluxioFuseImageEnv, "alluxio/alluxio-dev:2.9.0")
 			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseFuseImage() got = %v, want %v", got, tt.want)
