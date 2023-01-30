@@ -44,7 +44,7 @@ type ThinEngine struct {
 	client.Client
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
-	MetadataSyncDoneCh     chan MetadataSyncResult
+	MetadataSyncDoneCh     chan base.MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
 	retryShutdown          int32

@@ -531,7 +531,7 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	type args struct {
 		allocatedPorts []int
@@ -657,7 +657,7 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	type args struct {
 		allocatedPorts []int

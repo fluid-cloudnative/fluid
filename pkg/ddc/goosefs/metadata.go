@@ -25,19 +25,11 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 )
-
-// MetadataSyncResult describes result for asynchronous metadata sync
-type MetadataSyncResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	FileNum   string
-	Err       error
-}
 
 // SyncMetadata syncs metadata if necessary
 // For GooseFS Engine, metadata sync is an asynchronous operation, which means
@@ -237,10 +229,10 @@ func (e *GooseFSEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			e.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
 		}
-		e.MetadataSyncDoneCh = make(chan MetadataSyncResult)
-		go func(resultChan chan MetadataSyncResult) {
+		e.MetadataSyncDoneCh = make(chan base.MetadataSyncResult)
+		go func(resultChan chan base.MetadataSyncResult) {
 			defer close(resultChan)
-			result := MetadataSyncResult{
+			result := base.MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}

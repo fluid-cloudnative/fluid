@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
@@ -219,7 +220,7 @@ func TestJuiceFSEngine_syncMetadataInternal(t *testing.T) {
 			namespace:          "fluid",
 			Client:             client,
 			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan MetadataSyncResult),
+			MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
 		},
 		{
 			name:               "test2",
@@ -230,7 +231,7 @@ func TestJuiceFSEngine_syncMetadataInternal(t *testing.T) {
 		},
 	}
 
-	result := MetadataSyncResult{
+	result := base.MetadataSyncResult{
 		StartTime: time.Now(),
 		UfsTotal:  "2GB",
 		Done:      true,

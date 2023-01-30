@@ -22,17 +22,10 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 )
-
-// MetadataSyncResult describes result for asynchronous metadata sync
-type MetadataSyncResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	Err       error
-}
 
 func (e *JindoEngine) SyncMetadata() (err error) {
 	defer utils.TimeTrack(time.Now(), "JindoEngine.SyncMetadata", "name", e.name, "namespace", e.namespace)
@@ -75,10 +68,14 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 	if e.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout
 		select {
-		case result := <-e.MetadataSyncDoneCh:
+		case result, ok := <-e.MetadataSyncDoneCh:
 			defer func() {
 				e.MetadataSyncDoneCh = nil
 			}()
+			if !ok {
+				e.Log.Info("Get empty result from a closed MetadataSyncDoneCh")
+				return
+			}
 			e.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
 			if result.Done {
 				e.Log.Info("Metadata sync succeeded", "period", time.Since(result.StartTime))
@@ -129,10 +126,10 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			e.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
 		}
-		e.MetadataSyncDoneCh = make(chan MetadataSyncResult)
-		go func(resultChan chan MetadataSyncResult) {
-			defer close(resultChan)
-			result := MetadataSyncResult{
+		e.MetadataSyncDoneCh = make(chan base.MetadataSyncResult)
+		go func(resultChan chan base.MetadataSyncResult) {
+			defer base.SafeClose(resultChan)
+			result := base.MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
@@ -141,7 +138,9 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				e.Log.Error(err, "Can't get dataset when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
-				resultChan <- result
+				if closed := base.SafeSend(resultChan, result); closed {
+					e.Log.Info("Recover from sending result to a closed channel", "result", result)
+				}
 				return
 			}
 
@@ -177,7 +176,9 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 			} else {
 				result.Err = nil
 			}
-			resultChan <- result
+			if closed := base.SafeSend(resultChan, result); closed {
+				e.Log.Info("Recover from sending result to a closed channel", "result", result)
+			}
 		}(e.MetadataSyncDoneCh)
 	}
 	return

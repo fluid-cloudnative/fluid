@@ -25,18 +25,10 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
-
-// MetadataSyncResult describes result for asynchronous metadata sync
-type MetadataSyncResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	FileNum   string
-	Err       error
-}
 
 // SyncMetadata syncs metadata if necessary
 func (j *JuiceFSEngine) SyncMetadata() (err error) {
@@ -85,10 +77,14 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 	if j.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout
 		select {
-		case result := <-j.MetadataSyncDoneCh:
+		case result, ok := <-j.MetadataSyncDoneCh:
 			defer func() {
 				j.MetadataSyncDoneCh = nil
 			}()
+			if !ok {
+				j.Log.Info("Get empty result from a closed MetadataSyncDoneCh")
+				return
+			}
 			j.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
 			if result.Done {
 				j.Log.Info("Metadata sync succeeded", "period", time.Since(result.StartTime))
@@ -140,10 +136,10 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			j.Log.Error(err, "Failed to set UfsTotal to METADATA_SYNC_NOT_DONE_MSG")
 		}
-		j.MetadataSyncDoneCh = make(chan MetadataSyncResult)
-		go func(resultChan chan MetadataSyncResult) {
-			defer close(resultChan)
-			result := MetadataSyncResult{
+		j.MetadataSyncDoneCh = make(chan base.MetadataSyncResult)
+		go func(resultChan chan base.MetadataSyncResult) {
+			defer base.SafeClose(resultChan)
+			result := base.MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
@@ -152,7 +148,9 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				j.Log.Error(err, "Can't get dataset when syncing metadata", "name", j.name, "namespace", j.namespace)
 				result.Err = err
 				result.Done = false
-				resultChan <- result
+				if closed := base.SafeSend(resultChan, result); closed {
+					j.Log.Info("Recover from sending result to a closed channel", "result", result)
+				}
 				return
 			}
 
@@ -164,7 +162,9 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 				result.UfsTotal = ""
 				result.FileNum = ""
 				result.Done = true
-				resultChan <- result
+				if closed := base.SafeSend(resultChan, result); closed {
+					j.Log.Info("Recover from sending result to a closed channel", "result", result)
+				}
 				return
 			}
 			for _, pod := range pods {
@@ -177,7 +177,9 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 					j.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", j.name, "namespace", j.namespace)
 					result.Err = err
 					result.Done = false
-					resultChan <- result
+					if closed := base.SafeSend(resultChan, result); closed {
+						j.Log.Info("Recover from sending result to a closed channel", "result", result)
+					}
 					return
 				}
 
@@ -205,7 +207,9 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 			} else {
 				result.Err = nil
 			}
-			resultChan <- result
+			if closed := base.SafeSend(resultChan, result); closed {
+				j.Log.Info("Recover from sending result to a closed channel", "result", result)
+			}
 		}(j.MetadataSyncDoneCh)
 	}
 
