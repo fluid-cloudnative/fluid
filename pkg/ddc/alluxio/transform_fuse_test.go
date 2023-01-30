@@ -27,13 +27,14 @@ import (
 
 func TestTransformFuseWithNoArgs(t *testing.T) {
 	var tests = []struct {
+		name              string
 		runtime           *datav1alpha1.AlluxioRuntime
 		dataset           *datav1alpha1.Dataset
 		alluxioValue      *Alluxio
 		expect            []string
 		foundMountPathEnv bool
 	}{
-		{&datav1alpha1.AlluxioRuntime{
+		{"no_args", &datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -42,7 +43,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					Name:       "test",
 				}},
 			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,allow_other"}, true},
-		{&datav1alpha1.AlluxioRuntime{
+		{"2.8.1_args", &datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
 					ImageTag: "release-2.8.1-SNAPSHOT-0433ade",
@@ -70,7 +71,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			t.Errorf("Got err %v", err)
 		}
 		if !reflect.DeepEqual(test.alluxioValue.Fuse.Args, test.expect) {
-			t.Errorf("expected value %v, but got %v", test.expect, test.alluxioValue.Fuse.Args)
+			t.Errorf("testCase %s expected value %v, but got %v", test.expect, test.alluxioValue.Fuse.Args)
 		}
 
 		_, found := test.alluxioValue.Fuse.Env["MOUNT_POINT"]
