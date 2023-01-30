@@ -41,6 +41,9 @@ type metadataSyncResult struct {
 // SafeClose closes the metadataSyncResultChannel but ignores panic when the channel is already closed.
 // Returns true if the channel is already closed.
 func SafeClose(ch chan metadataSyncResult) (closed bool) {
+	if ch == nil {
+		return
+	}
 	defer func() {
 		if recover() != nil {
 			closed = true
