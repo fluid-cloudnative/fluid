@@ -75,10 +75,14 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 	if t.MetadataSyncDoneCh != nil {
 		// Either get result from channel or timeout
 		select {
-		case result := <-t.MetadataSyncDoneCh:
+		case result, ok := <-t.MetadataSyncDoneCh:
 			defer func() {
 				t.MetadataSyncDoneCh = nil
 			}()
+			if !ok {
+				t.Log.Info("Get empty result from a closed MetadataSyncDoneCh")
+				return
+			}
 			t.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
 			if result.Done {
 				t.Log.Info("Metadata sync succeeded", "period", time.Since(result.StartTime))
@@ -132,7 +136,7 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 		}
 		t.MetadataSyncDoneCh = make(chan base.MetadataSyncResult)
 		go func(resultChan chan base.MetadataSyncResult) {
-			defer close(resultChan)
+			defer base.SafeClose(resultChan)
 			result := base.MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
@@ -142,7 +146,9 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 				t.Log.Error(err, "Can't get dataset when syncing metadata", "name", t.name, "namespace", t.namespace)
 				result.Err = err
 				result.Done = false
-				resultChan <- result
+				if closed := base.SafeSend(resultChan, result); closed {
+					t.Log.Info("Recover from sending result to a closed channel", "result", result)
+				}
 				return
 			}
 
@@ -154,7 +160,9 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 				result.UfsTotal = ""
 				result.FileNum = ""
 				result.Done = true
-				resultChan <- result
+				if closed := base.SafeSend(resultChan, result); closed {
+					t.Log.Info("Recover from sending result to a closed channel", "result", result)
+				}
 				return
 			}
 			for _, pod := range pods {
@@ -167,7 +175,9 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 					t.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", t.name, "namespace", t.namespace)
 					result.Err = err
 					result.Done = false
-					resultChan <- result
+					if closed := base.SafeSend(resultChan, result); closed {
+						t.Log.Info("Recover from sending result to a closed channel", "result", result)
+					}
 					return
 				}
 
@@ -195,7 +205,9 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 			} else {
 				result.Err = nil
 			}
-			resultChan <- result
+			if closed := base.SafeSend(resultChan, result); closed {
+				t.Log.Info("Recover from sending result to a closed channel", "result", result)
+			}
 		}(t.MetadataSyncDoneCh)
 	}
 

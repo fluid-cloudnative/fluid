@@ -46,7 +46,7 @@ type GooseFSEngine struct {
 	gracefulShutdownLimits int32
 	retryShutdown          int32
 	initImage              string
-	MetadataSyncDoneCh     chan MetadataSyncResult
+	MetadataSyncDoneCh     chan base.MetadataSyncResult
 	runtimeInfo            base.RuntimeInfoInterface
 	UnitTest               bool
 	lastCacheHitStates     *cacheHitStates

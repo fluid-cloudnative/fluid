@@ -43,7 +43,7 @@ type JindoFSxEngine struct {
 	retryShutdown          int32
 	//initImage              string
 	runtimeInfo        base.RuntimeInfoInterface
-	MetadataSyncDoneCh chan MetadataSyncResult
+	MetadataSyncDoneCh chan base.MetadataSyncResult
 	cacheNodeNames     []string
 	Recorder           record.EventRecorder
 	*ctrl.Helper

@@ -22,6 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -325,7 +326,7 @@ func TestGooseFSEngine_setPortProperties(t *testing.T) {
 		gracefulShutdownLimits int32
 		retryShutdown          int32
 		initImage              string
-		MetadataSyncDoneCh     chan MetadataSyncResult
+		MetadataSyncDoneCh     chan base.MetadataSyncResult
 	}
 	type args struct {
 		runtime      *datav1alpha1.GooseFSRuntime

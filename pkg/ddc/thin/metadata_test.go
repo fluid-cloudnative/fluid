@@ -18,13 +18,15 @@ package thin
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"testing"
-	"time"
 )
 
 func TestShouldSyncMetadata(t *testing.T) {
@@ -198,7 +200,7 @@ func TestThinEngine_syncMetadataInternal(t *testing.T) {
 			namespace:          "fluid",
 			Client:             client,
 			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan MetadataSyncResult),
+			MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
 		},
 		{
 			name:               "test2",
@@ -209,7 +211,7 @@ func TestThinEngine_syncMetadataInternal(t *testing.T) {
 		},
 	}
 
-	result := MetadataSyncResult{
+	result := base.MetadataSyncResult{
 		StartTime: time.Now(),
 		UfsTotal:  "2GB",
 		Done:      true,

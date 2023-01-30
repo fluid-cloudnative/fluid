@@ -24,6 +24,7 @@ import (
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -235,7 +236,7 @@ func TestPrepareUFS(t *testing.T) {
 		name               string
 		namespace          string
 		Log                logr.Logger
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	tests := []struct {
 		name    string

@@ -186,7 +186,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 				e.MetadataSyncDoneCh = nil
 			}()
 			if !ok {
-				e.Log.Info("Get result from a closed MetadataSyncDoneCh")
+				e.Log.Info("Get empty result from a closed MetadataSyncDoneCh")
 				return
 			}
 			e.Log.Info("Get result from MetadataSyncDoneCh", "result", result)
