@@ -22,6 +22,7 @@ import (
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
@@ -438,7 +439,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan base.MetadataSyncResult
 		UnitTest           bool
 		Recorder           record.EventRecorder
 	}

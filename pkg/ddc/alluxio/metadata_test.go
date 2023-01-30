@@ -26,6 +26,7 @@ import (
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -584,7 +585,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 			namespace:          "fluid",
 			Client:             client,
 			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan MetadataSyncResult),
+			MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
 		},
 		{
 			name:               "spark",
@@ -595,7 +596,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 		},
 	}
 
-	result := MetadataSyncResult{
+	result := base.MetadataSyncResult{
 		StartTime: time.Now(),
 		UfsTotal:  "2GB",
 		Done:      true,
