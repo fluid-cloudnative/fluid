@@ -438,7 +438,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan metadataSyncResult
 		UnitTest           bool
 		Recorder           record.EventRecorder
 	}

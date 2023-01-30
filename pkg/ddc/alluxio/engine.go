@@ -40,7 +40,7 @@ type AlluxioEngine struct {
 	client.Client
 	retryShutdown      int32
 	initImage          string
-	MetadataSyncDoneCh chan MetadataSyncResult
+	MetadataSyncDoneCh chan metadataSyncResult
 	runtimeInfo        base.RuntimeInfoInterface
 	UnitTest           bool
 	lastCacheHitStates *cacheHitStates

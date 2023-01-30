@@ -584,7 +584,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 			namespace:          "fluid",
 			Client:             client,
 			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan MetadataSyncResult),
+			MetadataSyncDoneCh: make(chan metadataSyncResult),
 		},
 		{
 			name:               "spark",
@@ -595,7 +595,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 		},
 	}
 
-	result := MetadataSyncResult{
+	result := metadataSyncResult{
 		StartTime: time.Now(),
 		UfsTotal:  "2GB",
 		Done:      true,

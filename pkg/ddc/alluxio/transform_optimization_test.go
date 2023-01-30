@@ -360,7 +360,7 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan metadataSyncResult
 	}
 	type args struct {
 		runtime      *datav1alpha1.AlluxioRuntime

@@ -236,7 +236,7 @@ func TestPrepareUFS(t *testing.T) {
 		name               string
 		namespace          string
 		Log                logr.Logger
-		MetadataSyncDoneCh chan MetadataSyncResult
+		MetadataSyncDoneCh chan metadataSyncResult
 		master             *appsv1.StatefulSet
 	}
 	tests := []struct {
