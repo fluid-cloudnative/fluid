@@ -26,6 +26,7 @@ import (
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -584,7 +585,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 			namespace:          "fluid",
 			Client:             client,
 			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan metadataSyncResult),
+			MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
 		},
 		{
 			name:               "spark",
@@ -595,7 +596,7 @@ func TestSyncMetadataInternal(t *testing.T) {
 		},
 	}
 
-	result := metadataSyncResult{
+	result := base.MetadataSyncResult{
 		StartTime: time.Now(),
 		UfsTotal:  "2GB",
 		Done:      true,
@@ -641,97 +642,5 @@ func TestSyncMetadataInternal(t *testing.T) {
 		if dataset.Status.UfsTotal != test.expectedUfsTotal || dataset.Status.FileNum != test.expectedFileNum {
 			t.Errorf("expected UfsTotal %s, get UfsTotal %s, expected FileNum %s, get FileNum %s", test.expectedUfsTotal, dataset.Status.UfsTotal, test.expectedFileNum, dataset.Status.FileNum)
 		}
-	}
-}
-
-func TestSafeClose(t *testing.T) {
-	var nilCh chan metadataSyncResult = nil
-
-	openCh := make(chan metadataSyncResult)
-
-	closedCh := make(chan metadataSyncResult)
-	close(closedCh)
-
-	tests := []struct {
-		name       string
-		ch         chan metadataSyncResult
-		wantClosed bool
-	}{
-		{
-			name:       "close_open_channel",
-			ch:         openCh,
-			wantClosed: false,
-		},
-		{
-			name:       "close_nil_channel",
-			ch:         nilCh,
-			wantClosed: false,
-		},
-		{
-			name:       "close_closed_channel",
-			ch:         closedCh,
-			wantClosed: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotClosed := SafeClose(tt.ch); gotClosed != tt.wantClosed {
-				t.Errorf("SafeClose() = %v, want %v", gotClosed, tt.wantClosed)
-			}
-		})
-	}
-}
-
-func TestSafeSend(t *testing.T) {
-	var nilCh chan metadataSyncResult = nil
-
-	openCh := make(chan metadataSyncResult)
-	go func() {
-		<-openCh
-	}()
-
-	closedCh := make(chan metadataSyncResult)
-	close(closedCh)
-
-	type args struct {
-		ch     chan metadataSyncResult
-		result metadataSyncResult
-	}
-	tests := []struct {
-		name       string
-		args       args
-		wantClosed bool
-	}{
-		{
-			name: "send_to_open_channel",
-			args: args{
-				ch:     openCh,
-				result: metadataSyncResult{},
-			},
-			wantClosed: false,
-		},
-		{
-			name: "send_to_nil_channel",
-			args: args{
-				ch:     nilCh,
-				result: metadataSyncResult{},
-			},
-			wantClosed: false,
-		},
-		{
-			name: "send_to_closed_channel",
-			args: args{
-				ch:     closedCh,
-				result: metadataSyncResult{},
-			},
-			wantClosed: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotClosed := SafeSend(tt.args.ch, tt.args.result); gotClosed != tt.wantClosed {
-				t.Errorf("SafeSend() = %v, want %v", gotClosed, tt.wantClosed)
-			}
-		})
 	}
 }

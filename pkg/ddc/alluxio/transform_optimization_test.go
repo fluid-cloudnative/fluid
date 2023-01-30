@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -360,7 +361,7 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 		Client             client.Client
 		retryShutdown      int32
 		initImage          string
-		MetadataSyncDoneCh chan metadataSyncResult
+		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	type args struct {
 		runtime      *datav1alpha1.AlluxioRuntime

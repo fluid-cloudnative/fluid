@@ -25,50 +25,10 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/util/retry"
 )
-
-// metadataSyncResult describes result for asynchronous metadata sync
-type metadataSyncResult struct {
-	Done      bool
-	StartTime time.Time
-	UfsTotal  string
-	FileNum   string
-	Err       error
-}
-
-// SafeClose closes the metadataSyncResultChannel but ignores panic when the channel is already closed.
-// Returns true if the channel is already closed.
-func SafeClose(ch chan metadataSyncResult) (closed bool) {
-	if ch == nil {
-		return
-	}
-	defer func() {
-		if recover() != nil {
-			closed = true
-		}
-	}()
-
-	close(ch)
-	return false
-}
-
-// SafeSend sends result to the metadataSyncResultChannel but ignores panic when the channel is already closed
-// Returns true if the channel is already closed.
-func SafeSend(ch chan metadataSyncResult, result metadataSyncResult) (closed bool) {
-	if ch == nil {
-		return
-	}
-	defer func() {
-		if recover() != nil {
-			closed = true
-		}
-	}()
-
-	ch <- result
-	return false
-}
 
 // SyncMetadata syncs metadata if necessary
 // For Alluxio Engine, metadata sync is an asynchronous operation, which means
@@ -280,10 +240,10 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 		if err != nil {
 			e.Log.Error(err, "Failed to set UfsTotal to metadataSyncNotDoneMsg")
 		}
-		e.MetadataSyncDoneCh = make(chan metadataSyncResult)
-		go func(resultChan chan metadataSyncResult) {
-			defer SafeClose(resultChan)
-			result := metadataSyncResult{
+		e.MetadataSyncDoneCh = make(chan base.MetadataSyncResult)
+		go func(resultChan chan base.MetadataSyncResult) {
+			defer base.SafeClose(resultChan)
+			result := base.MetadataSyncResult{
 				StartTime: time.Now(),
 				UfsTotal:  "",
 			}
@@ -292,7 +252,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 				e.Log.Error(err, "Can't get dataset when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
-				if closed := SafeSend(resultChan, result); closed {
+				if closed := base.SafeSend(resultChan, result); closed {
 					e.Log.Info("Recover from sending result to a closed channel", "result", result)
 				}
 				return
@@ -313,7 +273,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 						e.Log.Error(err, fmt.Sprintf("Sync local dir failed when syncing metadata, path: %s", localDirPath), "name", e.name, "namespace", e.namespace)
 						result.Err = err
 						result.Done = false
-						if closed := SafeSend(resultChan, result); closed {
+						if closed := base.SafeSend(resultChan, result); closed {
 							e.Log.Info("Recover from sending result to a closed channel", "result", result)
 						}
 						return
@@ -326,7 +286,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
-				if closed := SafeSend(resultChan, result); closed {
+				if closed := base.SafeSend(resultChan, result); closed {
 					e.Log.Info("Recover from sending result to a closed channel", "result", result)
 				}
 				return
@@ -353,7 +313,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 			} else {
 				result.Err = nil
 			}
-			if closed := SafeSend(resultChan, result); closed {
+			if closed := base.SafeSend(resultChan, result); closed {
 				e.Log.Info("Recover from sending result to a closed channel", "result", result)
 			}
 		}(e.MetadataSyncDoneCh)

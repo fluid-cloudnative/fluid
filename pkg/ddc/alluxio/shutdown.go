@@ -27,6 +27,7 @@ import (
 
 	"k8s.io/client-go/util/retry"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
@@ -56,7 +57,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 	}
 
 	if e.MetadataSyncDoneCh != nil {
-		SafeClose(e.MetadataSyncDoneCh)
+		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
 	_, err = e.destroyWorkers(-1)
