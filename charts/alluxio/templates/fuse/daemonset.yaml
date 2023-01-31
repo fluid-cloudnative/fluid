@@ -44,8 +44,9 @@ spec:
       role: alluxio-fuse
   template:
     metadata:
-      {{- if .Values.fuse.annotations }}
       annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
       {{- range $key, $val := .Values.fuse.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
