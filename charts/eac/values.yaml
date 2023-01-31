@@ -41,6 +41,8 @@ worker:
     limits:
   #      cpu: "4"
   #      memory: "4G"
+  annotations:
+    sidecar.istio.io/inject: "false"
 
 fuse:
   labels: {}
@@ -73,6 +75,8 @@ fuse:
     limits:
   #      cpu: "4"
   #      memory: "4G"
+  annotations:
+    sidecar.istio.io/inject: "false"
 
 master:
   labels: {}
@@ -100,6 +104,8 @@ master:
     limits:
   #      cpu: "4"
   #      memory: "4G"
+  annotations:
+    sidecar.istio.io/inject: "false"
 
 placement: Inclusive
 
