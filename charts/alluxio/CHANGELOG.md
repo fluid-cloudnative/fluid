@@ -242,3 +242,7 @@
 0.9.10
 
 - Use `name.namespace` instead of full svc cluster domain
+
+0.10.0
+
+- Add `sidecar.istio.io/inject` to components annotation
