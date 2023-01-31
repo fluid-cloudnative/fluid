@@ -35,6 +35,12 @@ spec:
   podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "jindofs.name" . }}
         chart: {{ template "jindofs.chart" . }}
