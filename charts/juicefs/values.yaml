@@ -53,7 +53,8 @@ worker:
 #      memory: "4G"
   replicas: 0
   labels: {}
-  annotations: {}
+  annotations:
+    sidecar.istio.io/inject: "false"
   volumes: []
   volumeMounts: []
 
@@ -99,7 +100,8 @@ fuse:
 #      cpu: "4"
 #      memory: "4G"
   labels: {}
-  annotations: {}
+  annotations:
+    sidecar.istio.io/inject: "false"
   volumes: []
   volumeMounts: []
 
