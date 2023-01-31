@@ -31,6 +31,12 @@ spec:
       role: thin-worker
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "thin.name" . }}
         chart: {{ template "thin.chart" . }}

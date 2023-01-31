@@ -28,6 +28,12 @@ spec:
       role: thin-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "thin.name" . }}
         chart: {{ template "thin.chart" . }}
