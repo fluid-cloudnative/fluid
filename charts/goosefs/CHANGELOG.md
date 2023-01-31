@@ -8,3 +8,6 @@
 
 1.1.1
 - Make fuse tolerate any taint
+
+1.1.2
+- Add `sidecar.istio.io/inject` to components annotation 
