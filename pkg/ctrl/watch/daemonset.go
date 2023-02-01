@@ -26,6 +26,7 @@ type daemonsetEventHandler struct {
 
 func (handler *daemonsetEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) bool {
 	return func(e event.CreateEvent) (onCreate bool) {
+		log.V(1).Info("enter daemonsetEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		daemonset, ok := e.Object.(*appsv1.DaemonSet)
 		if !ok {
 			log.Info("daemonset.onCreateFunc Skip", "object", e.Object)
@@ -36,13 +37,14 @@ func (handler *daemonsetEventHandler) onCreateFunc(r Controller) func(e event.Cr
 			return false
 		}
 
-		log.V(1).Info("daemonsetEventHandler.onCreateFunc", "name", daemonset.GetName(), "namespace", daemonset.GetNamespace())
+		log.V(1).Info("exit daemonsetEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		return true
 	}
 }
 
 func (handler *daemonsetEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) bool {
 	return func(e event.UpdateEvent) (needUpdate bool) {
+		log.V(1).Info("enter daemonsetEventHandler.onUpdateFunc", "name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
 		daemonsetNew, ok := e.ObjectNew.(*appsv1.DaemonSet)
 		if !ok {
 			log.Info("daemonset.onUpdateFunc Skip", "object", e.ObjectNew)
@@ -64,13 +66,14 @@ func (handler *daemonsetEventHandler) onUpdateFunc(r Controller) func(e event.Up
 			return needUpdate
 		}
 
-		log.V(1).Info("daemonsetEventHandler.onUpdateFunc", "name", daemonsetNew.GetName(), "namespace", daemonsetNew.GetNamespace())
+		log.V(1).Info("exit daemonsetEventHandler.onUpdateFunc", "name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
 		return true
 	}
 }
 
 func (handler *daemonsetEventHandler) onDeleteFunc(r Controller) func(e event.DeleteEvent) bool {
 	return func(e event.DeleteEvent) bool {
+		log.V(1).Info("enter daemonsetEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		daemonset, ok := e.Object.(*appsv1.DaemonSet)
 		if !ok {
 			log.Info("daemonset.onDeleteFunc Skip", "object", e.Object)
@@ -81,7 +84,7 @@ func (handler *daemonsetEventHandler) onDeleteFunc(r Controller) func(e event.De
 			return false
 		}
 
-		log.V(1).Info("daemonsetEventHandler.onDeleteFunc", "name", daemonset.GetName(), "namespace", daemonset.GetNamespace())
+		log.V(1).Info("exit daemonsetEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		return true
 	}
 }
