@@ -72,6 +72,8 @@ type Alluxio struct {
 	PlacementMode string `json:"placement,omitempty"`
 
 	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
+
+	Owner *common.OwnerReference `json:"owner,omitempty"`
 }
 
 type HadoopConfig struct {
