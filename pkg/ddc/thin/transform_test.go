@@ -17,13 +17,16 @@
 package thin
 
 import (
+	"reflect"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
-	"testing"
 )
 
 func TestThinEngine_transformTolerations(t *testing.T) {
@@ -244,6 +247,14 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 				Image:           "test",
 				ImageTag:        "v1",
 				ImagePullPolicy: "Always",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						// should be inherited
+						corev1.ResourceCPU: resource.MustParse("100m"),
+						// should be overridden
+						corev1.ResourceMemory: resource.MustParse("2Gi"),
+					},
+				},
 				Env: []corev1.EnvVar{{
 					Name:  "a",
 					Value: "b",
@@ -276,6 +287,15 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 			ThinRuntimeProfileName: "test",
 			Worker: datav1alpha1.ThinCompTemplateSpec{
 				Replicas: 1,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("200m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
 				Env: []corev1.EnvVar{{
 					Name: "b",
 					ValueFrom: &corev1.EnvVarSource{
@@ -328,8 +348,14 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 			ImageTag:        "v1",
 			ImagePullPolicy: "Always",
 			Resources: common.Resources{
-				Requests: map[corev1.ResourceName]string{},
-				Limits:   map[corev1.ResourceName]string{},
+				Requests: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "100m",
+					corev1.ResourceMemory: "1Gi",
+				},
+				Limits: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "200m",
+					corev1.ResourceMemory: "4Gi",
+				},
 			},
 			HostNetwork: true,
 			Envs: []corev1.EnvVar{{
@@ -400,7 +426,7 @@ func TestThinEngine_transformWorkers(t1 *testing.T) {
 		if err := t.transformWorkers(runtime, profile, value); err != nil {
 			t1.Errorf("transformWorkers() error = %v", err)
 		}
-		if !reflect.DeepEqual(value, wantValue) {
+		if !testutil.DeepEqualIgnoringSliceOrder(t1, value, wantValue) {
 			t1.Errorf("parseFromProfile() got = %v, want = %v", value, wantValue)
 		}
 	})
