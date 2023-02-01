@@ -96,3 +96,6 @@ master:
   #      memory: "4G"
 
 placement: Inclusive
+
+owner:
+  enabled: false

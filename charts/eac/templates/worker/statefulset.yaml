@@ -10,6 +10,15 @@ metadata:
     role: eac-worker
     fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
     fluid.io/dataset-placement: {{ .Values.placement }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   replicas: {{ if .Values.worker.enabled -}} {{ $.Values.worker.count }} {{ else -}} 0 {{ end }}
   serviceName: {{ template "eac.fullname" . }}-worker
