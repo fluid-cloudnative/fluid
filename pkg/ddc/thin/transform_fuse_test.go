@@ -24,6 +24,8 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -467,8 +469,11 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
-		if !reflect.DeepEqual(value.Fuse.ConfigValue, wantValue.Fuse.ConfigValue) {
-			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", value.Fuse, wantValue.Fuse)
+
+		if !testutil.DeepEqualIgnoringSliceOrder(t1, value.Fuse, wantValue.Fuse) {
+			valueYaml, _ := yaml.Marshal(value.Fuse)
+			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
+			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", string(valueYaml), string(wantYaml))
 		}
 	})
 }
