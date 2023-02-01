@@ -26,6 +26,7 @@
 {{- $name := include "alluxio.name" . }}
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
+{{- $owner := $.Values.owner }}
 {{- range $i := until $masterCount }}
   {{- $masterName := printf "master-%v" $i }}
   {{- $masterJavaOpts := printf " -Dalluxio.master.hostname=%v-%v " $fullName $masterName }}
@@ -43,13 +44,13 @@ metadata:
     monitor: {{ $metricsLabel }}
     {{- end }}
   ownerReferences:
-  {{- if .Values.owner.enabled }}
-  - apiVersion: {{ .Values.owner.apiVersion }}
-    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
-    controller: {{ .Values.owner.controller }}
-    kind: {{ .Values.owner.kind }}
-    name: {{ .Values.owner.name }}
-    uid: {{ .Values.owner.uid }}
+  {{- if $owner.enabled }}
+  - apiVersion: {{ $owner.apiVersion }}
+    blockOwnerDeletion: {{ $owner.blockOwnerDeletion }}
+    controller: {{ $owner.controller }}
+    kind: {{ $owner.kind }}
+    name: {{ $owner.name }}
+    uid: {{ $owner.uid }}
   {{- end }}
 spec:
   ports:
