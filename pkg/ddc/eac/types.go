@@ -25,14 +25,15 @@ import (
 
 // The value yaml file
 type EAC struct {
-	FullnameOverride string          `yaml:"fullnameOverride"`
-	PlacementMode    string          `yaml:"placement,omitempty"`
-	Master           Master          `yaml:"master"`
-	Worker           Worker          `yaml:"worker"`
-	Fuse             Fuse            `yaml:"fuse"`
-	InitFuse         InitFuse        `yaml:"initFuse"`
-	OSAdvise         OSAdvise        `yaml:"osAdvise"`
-	Tolerations      []v1.Toleration `yaml:"tolerations,omitempty"`
+	FullnameOverride string                 `yaml:"fullnameOverride"`
+	PlacementMode    string                 `yaml:"placement,omitempty"`
+	Master           Master                 `yaml:"master"`
+	Worker           Worker                 `yaml:"worker"`
+	Fuse             Fuse                   `yaml:"fuse"`
+	InitFuse         InitFuse               `yaml:"initFuse"`
+	OSAdvise         OSAdvise               `yaml:"osAdvise"`
+	Tolerations      []v1.Toleration        `yaml:"tolerations,omitempty"`
+	Owner            *common.OwnerReference `yaml:"owner,omitempty"`
 }
 
 type OSAdvise struct {

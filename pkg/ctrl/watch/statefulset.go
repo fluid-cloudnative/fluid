@@ -26,6 +26,7 @@ type statefulsetEventHandler struct {
 
 func (handler *statefulsetEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) bool {
 	return func(e event.CreateEvent) (onCreate bool) {
+		log.V(1).Info("enter statefulsetEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		statefulset, ok := e.Object.(*appsv1.StatefulSet)
 		if !ok {
 			log.Info("statefulset.onCreateFunc Skip", "object", e.Object)
@@ -40,13 +41,14 @@ func (handler *statefulsetEventHandler) onCreateFunc(r Controller) func(e event.
 			return false
 		}
 
-		log.V(1).Info("statefulsetEventHandler.onCreateFunc", "name", statefulset.GetName(), "namespace", statefulset.GetNamespace())
+		log.V(1).Info("exit statefulsetEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		return true
 	}
 }
 
 func (handler *statefulsetEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) bool {
 	return func(e event.UpdateEvent) (needUpdate bool) {
+		log.V(1).Info("enter statefulsetEventHandler.onUpdateFunc", "name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
 		statefulsetNew, ok := e.ObjectNew.(*appsv1.StatefulSet)
 		if !ok {
 			log.Info("statefulset.onUpdateFunc Skip", "object", e.ObjectNew)
@@ -68,13 +70,14 @@ func (handler *statefulsetEventHandler) onUpdateFunc(r Controller) func(e event.
 			return needUpdate
 		}
 
-		log.V(1).Info("statefulsetEventHandler.onUpdateFunc", "name", statefulsetNew.GetName(), "namespace", statefulsetNew.GetNamespace())
+		log.V(1).Info("exit statefulsetEventHandler.onUpdateFunc", "name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
 		return true
 	}
 }
 
 func (handler *statefulsetEventHandler) onDeleteFunc(r Controller) func(e event.DeleteEvent) bool {
 	return func(e event.DeleteEvent) bool {
+		log.V(1).Info("enter statefulsetEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		statefulset, ok := e.Object.(*appsv1.StatefulSet)
 		if !ok {
 			log.Info("statefulset.onDeleteFunc Skip", "object", e.Object)
@@ -85,7 +88,7 @@ func (handler *statefulsetEventHandler) onDeleteFunc(r Controller) func(e event.
 			return false
 		}
 
-		log.V(1).Info("statefulsetEventHandler.onDeleteFunc", "name", statefulset.GetName(), "namespace", statefulset.GetNamespace())
+		log.V(1).Info("exit statefulsetEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		return true
 	}
 }
