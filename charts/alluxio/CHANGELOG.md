@@ -242,3 +242,7 @@
 0.9.10
 
 - Use `name.namespace` instead of full svc cluster domain
+
+0.9.11
+
+- Support ownerReferences for AlluxioRuntime resources

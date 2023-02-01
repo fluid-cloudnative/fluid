@@ -18,9 +18,11 @@ package eac
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -35,7 +37,10 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 		return value, err
 	}
 
-	value = &EAC{}
+	value = &EAC{
+		// Set ownerReference to all EACRuntime resources
+		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+	}
 
 	value.FullnameOverride = e.name
 

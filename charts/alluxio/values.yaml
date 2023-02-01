@@ -446,4 +446,7 @@ runtimeIdentity:
   namespace: default
   name: xxx
 
+owner:
+  enabled: false
+
 clusterDomain: cluster.local
