@@ -127,6 +127,21 @@ spec:
                       the fuse client to fit on a node, this option only effect when
                       global is enabled
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to EAC's fuse pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   properties:
                     additionalProperties:
                       type: string
@@ -214,6 +229,21 @@ spec:
                     description: NodeSelector is a selector which must be true for
                       the component to fit on a node.
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to EAC's master and worker pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   ports:
                     additionalProperties:
                       type: integer
@@ -286,6 +316,21 @@ spec:
                   osVersion:
                     description: Specific operating system version that can have optimization.
                     type: string
+                type: object
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to all EAC's pods
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
                 type: object
               replicas:
                 description: The replicas of the worker, need to be specified
@@ -1974,6 +2019,21 @@ spec:
                       type: string
                     description: NodeSelector is a selector which must be true for
                       the component to fit on a node.
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to EAC's master and worker pods
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     additionalProperties:
