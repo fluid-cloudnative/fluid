@@ -246,3 +246,7 @@
 0.9.11
 
 - Support ownerReferences for AlluxioRuntime resources
+
+0.9.12
+
+- Add `sidecar.istio.io/inject` to components annotation
