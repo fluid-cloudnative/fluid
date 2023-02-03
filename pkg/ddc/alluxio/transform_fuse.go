@@ -41,6 +41,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties
+		e.overrideProperties(runtime, value.Fuse.Properties)
 	}
 
 	if len(runtime.Spec.Fuse.Env) > 0 {

@@ -180,6 +180,12 @@ func (e *AlluxioEngine) setPortProperties(runtime *datav1alpha1.AlluxioRuntime, 
 	}
 }
 
+func (e *AlluxioEngine) overrideProperties(runtime *datav1alpha1.AlluxioRuntime, properties map[string]string) {
+	for k, v := range properties {
+		runtime.Spec.Properties[k] = v
+	}
+}
+
 func (e *AlluxioEngine) optimizeDefaultForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 	if len(runtime.Spec.Master.JvmOptions) > 0 {
 		value.Master.JvmOptions = runtime.Spec.Master.JvmOptions
