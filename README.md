@@ -133,7 +133,7 @@ Feel free to reach out if you have any questions. The maintainers of this projec
 DingTalk:
 
 <div>
-  <img src="https://fluid-imgs.oss-cn-shanghai.aliyuncs.com/public/imgs/dingding_code.png" width="280" title="dingtalk">
+  <img src="static/dingtalk.png" width="280" title="dingtalk">
 </div>
 
 WeChat Official Account:
