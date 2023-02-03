@@ -79,8 +79,8 @@ fluid-minio-test
 **准备包含Minio Fuse客户端的容器镜像**
 
 Fluid将会把ThinRuntime中Fuse所需的运行参数、Dataset中描述数据路径的挂载点等参数传入到ThinRuntime Fuse Pod容器中。在容器内部，用户需要执行参数解析脚本，并将解析完的运行时参数传递给Fuse客户端程序，由客户端程序完成Fuse文件系统在容器内的挂载。
-··
-因此，使用ThinRuntime CRD描述存储系统时，需要使用**特制的容器镜像**，镜像中主要包括两部分：
+
+因此，使用ThinRuntime CRD描述存储系统时，需要使用**特制的容器镜像**，镜像中需要包括以下两个程序：
 - Fuse客户端程序
 - Fuse客户端程序所需的运行时参数解析脚本
 
@@ -161,7 +161,7 @@ kind: ThinRuntimeProfile
 metadata:
   name: minio-profile
 spec:
-  fileSystemType: minio
+  fileSystemType: fuse
   fuse:
     image: $IMG_REPO/fluid-minio-goofys
     imageTag: demo
@@ -171,6 +171,10 @@ spec:
     - -c
     - "python3 /fluid-config-parse.py && chmod u+x ./mount-minio.sh && ./mount-minio.sh"
 ```
+在上述CR示例中：
+- `fileSystemType`描述了ThinRuntime Fuse所挂载的文件系统类型(fsType)。需要根据使用的存储系统Fuse客户端程序填写，例如，goofys挂载的挂载点fsType为fuse, s3fs挂载的挂载点fsType为fuse.s3fs）
+- `fuse`描述了ThinRuntime Fuse的容器信息，包括镜像信息（`image、imageTag、imagePullPolicy`）以及容器启动命令(`command`)等。
+
 
 创建ThinRuntimeProfile CR `minio-profile`到Kubernetes集群。
 ```
@@ -221,7 +225,7 @@ spec:
 
 - `Dataset.spec.mounts[*].mountPoint`指定所需访问的数据桶(e.g. `my-frist-bucket`)
 - `Dataset.spec.mounts[*].options.minio-url`指定minio在集群可访问的URL（e.g. `http://minio:9000`）
-- `ThinRuntime.gpec.profileName`指定已创建的ThinRuntimeProfile（e.g. `minio-profile`）
+- `ThinRuntime.spec.profileName`指定已创建的ThinRuntimeProfile（e.g. `minio-profile`）
 
 创建Dataset CR和ThinRuntime CR：
 
