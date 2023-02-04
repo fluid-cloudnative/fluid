@@ -13,6 +13,8 @@ Resource Types:
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
 </li><li>
+<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>
+</li><li>
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
@@ -295,6 +297,34 @@ of the file as the value.</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -526,6 +556,19 @@ map[string]string
 <p>Options specifies the extra dataload properties for runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -721,6 +764,183 @@ DataRestoreLocation
 <em>
 <a href="#data.fluid.io/v1alpha1.DatasetStatus">
 DatasetStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EACRuntime">EACRuntime
+</h3>
+<p>
+<p>EACRuntime is the Schema for the eacruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>EACRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">
+EACRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
+EACCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
+EACCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initFuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitFuseSpec">
+InitFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init alifuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">
+EACFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by EAC worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>osAdvise</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OSAdvise">
+OSAdvise
+</a>
+</em>
+</td>
+<td>
+<p>Operating system optimization for EAC</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
 </a>
 </em>
 </td>
@@ -993,6 +1213,20 @@ For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are su
 of the file as the value.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1211,7 +1445,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS pods.</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -1237,6 +1487,20 @@ NetworkMode
 <td>
 <em>(Optional)</em>
 <p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
 </td>
 </tr>
 </table>
@@ -1452,6 +1716,48 @@ bool
 Prometheus is enabled by default</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1646,6 +1952,20 @@ NetworkMode
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec
@@ -1799,7 +2119,7 @@ FuseCleanPolicy
 <em>(Optional)</em>
 <p>CleanPolicy decides when to clean Alluxio Fuse pods.
 Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
-OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnDemand cleans fuse pod once the fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 Defaults to OnRuntimeDeleted</p>
 </td>
@@ -1830,6 +2150,20 @@ NetworkMode
 <td>
 <em>(Optional)</em>
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the alluxio runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s fuse pods</p>
 </td>
 </tr>
 </tbody>
@@ -2074,6 +2408,34 @@ of the file as the value.</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.BackupLocation">BackupLocation
@@ -2145,6 +2507,61 @@ Kubernetes core/v1.NodeSelector
 </td>
 <td>
 <p>Required specifies hard node constraints that must be met.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CleanCachePolicy">CleanCachePolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+</p>
+<p>
+<p>CleanCachePolicy defines policies of cleaning cache</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>gracePeriodSeconds</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request.
+Value must be non-negative integer. The value zero indicates clean immediately via the timeout
+command (no opportunity to shut down).
+If this value is nil, the default grace period will be used instead.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with timeout command.
+Set this value longer than the expected cleanup time for your process.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxRetryAttempts</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts
+to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number
+of retries. This gives you the option to continue processing retries.</p>
 </td>
 </tr>
 </tbody>
@@ -2469,6 +2886,19 @@ map[string]string
 </td>
 <td>
 <p>Options specifies the extra dataload properties for runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
 </td>
 </tr>
 </tbody>
@@ -2933,6 +3363,371 @@ string
 This is mainly used as a lock to prevent concurrent DataBackup jobs.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>datasetRef</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>DatasetRef specifies the datasets namespaced name mounting this Dataset.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+</p>
+<p>
+<p>EACCompTemplateSpec is a description of the EAC components</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the given template.
+If unspecified, defaults to 1.
+replicas is the min replicas of dataset in the cluster</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>version</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of EAC Comp</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configurable properties for the EAC component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ports</code></br>
+<em>
+map[string]int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports used by EAC(e.g. rpc: 19998 for master).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by the EAC component. <br>
+<br>
+Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+already allocated to the pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enabled or Disabled for the components.
+Default enable.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the component to fit on a node.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use host network or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+</p>
+<p>
+<p>EACFuseSpec is a description of the EAC Fuse</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>version</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of EAC Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>properties</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configurable properties for EAC fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by EAC Fuse. <br>
+<br>
+Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
+already allocated to the pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean EAC Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>)
+</p>
+<p>
+<p>EACRuntimeSpec defines the desired state of EACRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
+EACCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC master</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
+EACCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>initFuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.InitFuseSpec">
+InitFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The spec of init alifuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">
+EACFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of EAC Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage used by EAC worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>osAdvise</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OSAdvise">
+OSAdvise
+</a>
+</em>
+</td>
+<td>
+<p>Operating system optimization for EAC</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.EncryptOption">EncryptOption
@@ -3015,9 +3810,11 @@ SecretKeySelector
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>)
 </p>
 <p>
 </p>
@@ -3554,6 +4351,20 @@ For now, only &ldquo;hdfs-site.xml&rdquo; and &ldquo;core-site.xml&rdquo; are su
 of the file as the value.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.HCFSStatus">HCFSStatus
@@ -3593,6 +4404,38 @@ string
 </td>
 <td>
 <p>Underlayer HCFS Compatible Version</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.InitFuseSpec">InitFuseSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+</p>
+<p>
+<p>InitFuseSpec is a description of initialize the fuse kernel module for runtime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>version</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<p>The version information that instructs fluid to orchestrate a particular version of Alifuse</p>
 </td>
 </tr>
 </tbody>
@@ -3796,8 +4639,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS Master or Worker pods.
-Any label already existed will be overriden</p>
+<p>Labels will be added on JindoFS Master or Worker pods.
+DEPRECATED: This is a deprecated field. Please use PodMetadata instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Jindo&rsquo;s pods</p>
 </td>
 </tr>
 <tr>
@@ -3963,8 +4821,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS Fuse pods.
-Any label already existed will be overriden</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -3995,6 +4868,17 @@ bool
 <td>
 <em>(Optional)</em>
 <p>If disable JindoFS fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>logConfig</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>
@@ -4160,7 +5044,23 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Labels will be added on all the JindoFS pods.</p>
+<p>Labels will be added on all the JindoFS pods.
+DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
+Note: this field is set to be exclusive with PodMetadata.Labels</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all Jindo&rsquo;s fuse pods</p>
 </td>
 </tr>
 <tr>
@@ -4186,6 +5086,20 @@ NetworkMode
 <td>
 <em>(Optional)</em>
 <p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
 </td>
 </tr>
 </tbody>
@@ -4297,6 +5211,48 @@ map[string]string
 <p>NodeSelector is a selector</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec
@@ -4402,6 +5358,20 @@ this option only effect when global is enabled</p>
 </tr>
 <tr>
 <td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>cleanPolicy</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
@@ -4416,6 +5386,34 @@ Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
 Defaults to OnDemand</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
 </td>
 </tr>
 </tbody>
@@ -4576,6 +5574,48 @@ bool
 Prometheus is enabled by default</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to JuiceFs&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanCachePolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.Level">Level
@@ -4605,6 +5645,33 @@ common.MediumType
 </td>
 <td>
 <p>Medium Type of the tier. One of the three types: <code>MEM</code>, <code>SSD</code>, <code>HDD</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeType</code></br>
+<em>
+common.VolumeType
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeType is the volume type of the tier. Should be one of the three types: <code>hostPath</code>, <code>emptyDir</code> and <code>volumeTemplate</code>.
+If not set, defaults to hostPath.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeSource</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VolumeSource">
+VolumeSource
+</a>
+</em>
+</td>
+<td>
+<p>VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource.
+For now, users should only specify VolumeSource when VolumeType is set to emptyDir.</p>
 </td>
 </tr>
 <tr>
@@ -4681,7 +5748,8 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.DatasetStatus">DatasetStatus</a>)
+<a href="#data.fluid.io/v1alpha1.DatasetStatus">DatasetStatus</a>, 
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">RuntimeStatus</a>)
 </p>
 <p>
 <p>Mount describes a mounting. <br>
@@ -4729,6 +5797,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>The name of mount</p>
 </td>
 </tr>
@@ -4790,10 +5859,68 @@ bool
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">ThinCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>)
 </p>
 <p>
 </p>
+<h3 id="data.fluid.io/v1alpha1.NodePublishSecretPolicy">NodePublishSecretPolicy
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfileSpec">ThinRuntimeProfileSpec</a>)
+</p>
+<p>
+</p>
+<h3 id="data.fluid.io/v1alpha1.OSAdvise">OSAdvise
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+</p>
+<p>
+<p>OSAdvise is a description of choices to have optimization on specific operating system</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>osVersion</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specific operating system version that can have optimization.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable operating system optimization
+not enabled by default.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.PlacementMode">PlacementMode
 (<code>string</code> alias)</p></h3>
 <p>
@@ -4802,6 +5929,56 @@ bool
 </p>
 <p>
 </p>
+<h3 id="data.fluid.io/v1alpha1.PodMetadata">PodMetadata
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">JindoCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+</p>
+<p>
+<p>PodMetadata defines subgroup properties of metav1.ObjectMeta</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Labels are labels of pod specification</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotations</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Annotations are annotations of pod specification</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Runtime">Runtime
 </h3>
 <p>
@@ -4975,9 +6152,11 @@ Kubernetes meta/v1.Time
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>)
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>)
 </p>
 <p>
 <p>RuntimeStatus defines the observed state of Runtime</p>
@@ -5310,6 +6489,19 @@ Kubernetes meta/v1.Time
 if Mounttime is earlier than master starting time, remount will be required</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>mounts</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Mount">
+[]Mount
+</a>
+</em>
+</td>
+<td>
+<p>MountPoints represents the mount points specified in the bounded dataset</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.SecretKeySelector">SecretKeySelector
@@ -5435,14 +6627,908 @@ int32
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.ThinCompTemplateSpec">ThinCompTemplateSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfileSpec">ThinRuntimeProfileSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
+</p>
+<p>
+<p>ThinCompTemplateSpec is a description of the thinRuntime components</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for thinRuntime fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imageTag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for thinRuntime fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullPolicy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the given template.
+If unspecified, defaults to 1.
+replicas is the min replicas of dataset in the cluster</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ports</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+[]Kubernetes core/v1.ContainerPort
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports used thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources that will be requested by thinRuntime component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+[]Kubernetes core/v1.EnvVar
+</a>
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by thinRuntime component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enabled or Disabled for the components.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into runtime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>livenessProbe</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+Kubernetes core/v1.Probe
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>livenessProbe of thin fuse pod</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>readinessProbe</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+Kubernetes core/v1.Probe
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>readinessProbe of thin fuse pod</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfileSpec">ThinRuntimeProfileSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for thinRuntime fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imageTag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image for thinRuntime fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullPolicy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ports</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+[]Kubernetes core/v1.ContainerPort
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ports used thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+[]Kubernetes core/v1.EnvVar
+</a>
+</em>
+</td>
+<td>
+<p>Environment variables that will be used by thinRuntime Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>command</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Command that will be passed to thinRuntime Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>args</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Arguments that will be passed to thinRuntime Fuse</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Options configurable options of FUSE client, performance parameters usually.
+will be merged with Dataset.spec.mounts.options into fuse pod.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<p>Resources that will be requested by thinRuntime Fuse.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
+this option only effect when global is enabled</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean thinRuntime Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once the fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnDemand</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>livenessProbe</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+Kubernetes core/v1.Probe
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>livenessProbe of thin fuse pod</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>readinessProbe</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+Kubernetes core/v1.Probe
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>readinessProbe of thin fuse pod</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the thinruntime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime
+</h3>
+<p>
+<p>ThinRuntime is the Schema for the thinruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">
+ThinRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>profileName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The specific runtime profile name, empty value is used for handling datasets which mount another dataset</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
+ThinCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
+ThinFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntimeProfile">ThinRuntimeProfile
+</h3>
+<p>
+<p>ThinRuntimeProfile is the Schema for the ThinRuntimeProfiles API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfileSpec">
+ThinRuntimeProfileSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>fileSystemType</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>file system of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
+ThinCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
+ThinFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodePublishSecretPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NodePublishSecretPolicy">
+NodePublishSecretPolicy
+</a>
+</em>
+</td>
+<td>
+<p>NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfileStatus">
+ThinRuntimeProfileStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntimeProfileSpec">ThinRuntimeProfileSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfile">ThinRuntimeProfile</a>)
+</p>
+<p>
+<p>ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>fileSystemType</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>file system of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
+ThinCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
+ThinFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodePublishSecretPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NodePublishSecretPolicy">
+NodePublishSecretPolicy
+</a>
+</em>
+</td>
+<td>
+<p>NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntimeProfileStatus">ThinRuntimeProfileStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeProfile">ThinRuntimeProfile</a>)
+</p>
+<p>
+<p>ThinRuntimeProfileStatus defines the observed state of ThinRuntimeProfile</p>
+</p>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>)
+</p>
+<p>
+<p>ThinRuntimeSpec defines the desired state of ThinRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>profileName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The specific runtime profile name, empty value is used for handling datasets which mount another dataset</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
+ThinCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
+ThinFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.TieredStore">TieredStore
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
 </p>
 <p>
 <p>TieredStore is a description of the tiered store</p>
@@ -5479,7 +7565,8 @@ int32
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
 </p>
 <p>
 <p>User explains the user and group to run a Container</p>
@@ -5543,7 +7630,10 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.InitFuseSpec">InitFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
 </p>
@@ -5593,8 +7683,42 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.VolumeSource">VolumeSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.Level">Level</a>)
+</p>
+<p>
+<p>VolumeSource defines volume source and volume claim template.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>VolumeSource</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumesource-v1-core">
+Kubernetes core/v1.VolumeSource
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>VolumeSource</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>7c68e76</code>.
+on git commit <code>ee2d1cf</code>.
 </em></p>
