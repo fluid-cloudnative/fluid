@@ -28,16 +28,20 @@ import (
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// Avoid the retires too frequently
-	if !t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
-		return
-	}
+	// if !t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
+	// return
+	// }
 
 	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
-	defer t.setTimeOfLastSync()
+	var permitted bool
+	// defer t.setTimeOfLastSync()
 
-	err = t.Implement.SyncMetadata()
-	if err != nil {
-		return
+	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
+		permitted = true
+		err = t.Implement.SyncMetadata()
+		if err != nil {
+			return
+		}
 	}
 
 	// 1. Sync replicas
@@ -63,9 +67,12 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 4. Update runtime status
-	_, err = t.Implement.CheckAndUpdateRuntimeStatus()
-	if err != nil {
-		return
+	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
+		permitted = true
+		_, err = t.Implement.CheckAndUpdateRuntimeStatus()
+		if err != nil {
+			return
+		}
 	}
 
 	// 5. Update the cached of dataset
@@ -75,22 +82,31 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 6. Update dataset mount point
-	ufsToUpdate := t.Implement.ShouldUpdateUFS()
-	if ufsToUpdate != nil {
-		if ufsToUpdate.ShouldUpdate() {
-			var updateReady bool
-			updateReady, err = t.Implement.UpdateOnUFSChange(ufsToUpdate)
-			if err != nil {
-				return
-			}
-			if updateReady {
-				err = utils.UpdateMountStatus(t.Client, t.Context.Name, t.Context.Namespace, datav1alpha1.BoundDatasetPhase)
+	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
+		permitted = true
+		ufsToUpdate := t.Implement.ShouldUpdateUFS()
+		if ufsToUpdate != nil {
+			if ufsToUpdate.ShouldUpdate() {
+				var updateReady bool
+				updateReady, err = t.Implement.UpdateOnUFSChange(ufsToUpdate)
 				if err != nil {
 					return
+				}
+				if updateReady {
+					err = utils.UpdateMountStatus(t.Client, t.Context.Name, t.Context.Namespace, datav1alpha1.BoundDatasetPhase)
+					if err != nil {
+						return
+					}
 				}
 			}
 		}
 	}
+
+	defer func() {
+		if permitted {
+			t.setTimeOfLastSync()
+		}
+	}()
 
 	return t.Implement.SyncScheduleInfoToCacheNodes()
 }
