@@ -3,9 +3,9 @@
 ## 环境需求
 
 - Git
-- Golang (version >= 1.13)
+- Golang (version >= 1.16)
 - Docker (version >= 19.03)
-- Kubernetes (version >= 1.14)
+- Kubernetes (version >= 1.18)
 - GNU Make
 
 对于Golang的安装与配置，请参考[此处](https://golang.org/dl/)。
@@ -17,88 +17,86 @@ Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`
 - Linux
   - `sudo apt-get install build-essential`
 
-## 编译、运行和调试
+## 项目构建
 
-### 安装`controller-gen`
-
-```shell
-$ go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
-$ cp $GOPATH/bin/controller-gen /usr/local/bin/
+### 获取项目源码
 ```
+$ export GOPATH=$(go env GOPATH)
 
-通过以上方式安装`controller-gen`时，如果出现如下错误：
+$ mkdir $GOPATH/src/github.com/fluid-cloudnative
 
-```shell
-go: cannot use path@version syntax in GOPATH mode
-```
+$ cd $GOPATH/src/github.com/fluid-cloudnative 
 
-你需要在执行安装之前，首先设置GO111MODULE=on：
-
-```shell
-export GO111MODULE=on
-```
-
-安装完成后，删除环境变量GO111MODULE：
-
-```shell
-unset GO111MODULE
-```
-
-
-
-### 获取Fluid源码
-
-```shell
-$ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
-$ cd $GOPATH/src/github.com/fluid-cloudnative
 $ git clone https://github.com/fluid-cloudnative/fluid.git
+
+$ cd fluid
 ```
 
 > **注意**：本文在非Go Module模式下完成Fluid的编译、运行和调试。
 >
 > 有关Go module可以参阅 [Golang 官方文档](https://github.com/golang/go/wiki/Modules) 获取更多信息。
 
-### 编译
+### 安装`controller-gen`
+
+首先，运行以下命令下载Fluid项目所需的代码生成工具`controller-gen`。
+
+```shell
+$ make controller-gen
+```
+
+检查`controller-gen`是否成功安装：
+```
+$ controller-gen --version 
+Version: v0.8.0
+```
+> **注意**: controller-gen默认将下载到`$GOPATH/bin`路径下，请确保`$GOPATH/bin`已被添加在开发环境的`$PATH`环境变量中
+
+### 二进制程序编译
 
 Fluid项目根目录下的`Makefile`文件已经包含了项目开发中的编译、构建、部署等基本逻辑
 
 ```shell
-# 构建dataset-controller, alluxioruntime-controller和csi Binary
+# 构建Fluid各控制器组件、Fluid Webhook组件和Fluid CSI插件二进制程序
 $ make build
 ```
 
-构建得到的Binary程序位于`./bin`目录下。
+构建得到的二进制程序位于Fluid项目`./bin`目录下。
 
-### 镜像构建
+### Fluid组件镜像构建&推送
 
-1. 设置镜像名称
+1. 设置需要推送的私有镜像仓库（将以下`<docker-registry>`和`<my-repo>`替换为实际地址）
 
    ```shell
-   # 为dataset-controller镜像命名
-   $ export DATASET_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
-   # 为alluxioruntime-controller镜像命名
-   $ export ALLUXIORUNTIME_CONTROLLER_IMG=<your-registry>/<your-namespace>/<img-name>
-   # 为CSI插件镜像命名
-   $ export CSI_IMG=<your-registry>/<your-namespace>/<csi-img-name>
-   # 为init-user镜像命名
-   $ export INIT_USERS_IMG=<your-registry>/<your-namespace>/<csi-img-name>
+   export IMG_REPO=<docker-registry>/<my-repo>
    ```
    
-   在运行Fluid之前，需要构建镜像并推送到可以访问的镜像仓库中
-   
-2. 登录镜像仓库：
+2. 输入镜像仓库访问凭证：
 
    ```shell
    $ sudo docker login <docker-registry>
    ```
 
-3. 构建镜像然后推送到仓库:
+3. 构建全部Fluid组件镜像然后推送到仓库:
 
    ```shell
    $ make docker-push-all
    ```
 
-### 运行
+   > 如果仅需要构建并推送特定Fluid组件的镜像（e.g. alluxio-runtime-controller镜像，fluid-webhook镜像）等，请参考`./Makefile`找到对应的Makefile target执行（e.g. `make docker-push-alluxioruntime-controller`，`make docker-push-webhook`等）
+
+## 单元测试、运行和调试
+
+### 单元测试
+
+运行以下命令，执行Fluid项目单元测试：
+```
+make test
+```
+
+> 如果您在macOS等非linux系统开发，运行测试时若提示`exec format error`，则需要检查运行测试命令时是否设置了与开发环境不一致的`GOOS`环境变量，可通过`go env -w GOOS=darwin`进行覆盖。
+
+### 运行ruanruan
+
 
 接下来的内容将假设在本地环境中已经通过`KUBECONFIG`环境变量或是在`~/.kube/config`文件中配置好了可以访问的Kubernetes集群，您可以通过`kubectl cluster-info`对该配置进行快速检查。更多有关`kubeconfig`的信息可以参考 [Kubernetes官方文档](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
@@ -261,7 +259,6 @@ $ export PATH=$PATH:/usr/local/kubebuilder/bin
 $ make test
 ```
 
-> 如果您在macOS等非linux系统开发，运行测试时若提示`exec format error`，则需要检查运行测试命令时是否设置了与开发环境不一致的`GOOS`。
 
 ### 调试
 
