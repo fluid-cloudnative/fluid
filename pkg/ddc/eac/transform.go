@@ -67,6 +67,12 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 	e.transformOSAdvice(runtime, value)
 	e.transformPlacementMode(dataset, value)
 	e.transformTolerations(dataset, value)
+
+	err = e.transformPodMetadata(runtime, value)
+	if err != nil {
+		return
+	}
+
 	return
 }
 
@@ -260,4 +266,18 @@ func (e *EACEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *E
 			value.Tolerations = append(value.Tolerations, toleration)
 		}
 	}
+}
+
+func (e *EACEngine) transformPodMetadata(runtime *datav1alpha1.EACRuntime, value *EAC) (err error) {
+	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
+	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
+	value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)
+	value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.PodMetadata.Labels)
+
+	commonAnnotations := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Annotations)
+	value.Master.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Master.PodMetadata.Annotations)
+	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
+	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
+
+	return nil
 }

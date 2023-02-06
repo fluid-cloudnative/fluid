@@ -1,7 +1,7 @@
 apiVersion: v1
 name: eac
 description: A fuse filesystem for NAS with distributed cache.
-version: 0.1.1
+version: 0.1.2
 maintainers:
   - name: Yingchun Ma
     email: mayingchun.myc@alibaba-inc.com
