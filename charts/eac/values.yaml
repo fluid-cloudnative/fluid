@@ -15,6 +15,8 @@ initFuse:
   imagePullPolicy: Always
 
 worker:
+  annotations: {}
+  labels: {}
   enabled: true
   count: 0
   image: image-work-in-progress
@@ -41,6 +43,8 @@ worker:
   #      memory: "4G"
 
 fuse:
+  labels: {}
+  annotations: {}
   updateStrategy:
     type: OnDelete
   criticalPod: false
@@ -71,6 +75,8 @@ fuse:
   #      memory: "4G"
 
 master:
+  labels: {}
+  annotations: {}
   enabled: true
   count: 1
   image: image-work-in-progress
