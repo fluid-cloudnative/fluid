@@ -20,6 +20,7 @@ metadata:
     uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  podManagementPolicy: "Parallel"
   replicas: {{ if .Values.worker.enabled -}} {{ $.Values.worker.count }} {{ else -}} 0 {{ end }}
   serviceName: {{ template "eac.fullname" . }}-worker
   selector:
