@@ -27,17 +27,15 @@ import (
 
 // SyncReplicas syncs the replicas
 func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
-	// Avoid the retires too frequently
-	// if !t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
-	// return
-	// }
+	// permitSyncEngineStatus avoids frequent rpcs with engines with rate limited retries
+	permitSyncEngineStatus := t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace})
+	if permitSyncEngineStatus {
+		defer t.setTimeOfLastSync()
+	}
 
 	defer utils.TimeTrack(time.Now(), "base.Sync", "ctx", ctx)
-	var permitted bool
-	// defer t.setTimeOfLastSync()
 
-	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
-		permitted = true
+	if permitSyncEngineStatus {
 		err = t.Implement.SyncMetadata()
 		if err != nil {
 			return
@@ -67,8 +65,7 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 4. Update runtime status
-	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
-		permitted = true
+	if permitSyncEngineStatus {
 		_, err = t.Implement.CheckAndUpdateRuntimeStatus()
 		if err != nil {
 			return
@@ -82,8 +79,7 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 6. Update dataset mount point
-	if t.permitSync(types.NamespacedName{Name: ctx.Name, Namespace: t.Context.Namespace}) {
-		permitted = true
+	if permitSyncEngineStatus {
 		ufsToUpdate := t.Implement.ShouldUpdateUFS()
 		if ufsToUpdate != nil {
 			if ufsToUpdate.ShouldUpdate() {
@@ -101,12 +97,6 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 			}
 		}
 	}
-
-	defer func() {
-		if permitted {
-			t.setTimeOfLastSync()
-		}
-	}()
 
 	return t.Implement.SyncScheduleInfoToCacheNodes()
 }
