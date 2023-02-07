@@ -18,8 +18,10 @@ package eac
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"fmt"
 	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -143,6 +145,11 @@ func (e *EACEngine) UpdateCacheOfDataset() (err error) {
 	if err != nil {
 		e.Log.Error(err, "Update dataset")
 		return err
+	}
+
+	// TODO: remove the following logic if supports asynchrounous labeling cache node
+	if runtime.Status.WorkerPhase == datav1alpha1.RuntimePhaseNotReady || runtime.Status.WorkerPhase == datav1alpha1.RuntimePhasePartialReady {
+		return fmt.Errorf("EACRuntime scaling not ready", "name", runtime.Name, "namespace", runtime.Namespace)
 	}
 
 	return
