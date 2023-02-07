@@ -387,11 +387,32 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				t.Errorf("transformWorkerCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !reflect.DeepEqual(tt.args.value.Worker.Volumes, tt.wantVolumes) {
+			// compare volumes
+			if len(tt.args.value.Worker.Volumes) != len(tt.wantVolumes) {
 				t.Errorf("want volumes %v, got %v for testcase %s", tt.wantVolumes, tt.args.value.Worker.Volumes, tt.name)
 			}
-			if !reflect.DeepEqual(tt.args.value.Worker.VolumeMounts, tt.wantVolumeMounts) {
+			wantVolumeMap := make(map[string]corev1.Volume)
+			for _, v := range tt.wantVolumes {
+				wantVolumeMap[v.Name] = v
+			}
+			for _, v := range tt.args.value.Worker.Volumes {
+				if wv := wantVolumeMap[v.Name]; !reflect.DeepEqual(wv, v) {
+					t.Errorf("want volumes %v, got %v for testcase %s", tt.wantVolumes, tt.args.value.Worker.Volumes, tt.name)
+				}
+			}
+
+			// compare volumeMounts
+			if len(tt.args.value.Worker.VolumeMounts) != len(tt.wantVolumeMounts) {
 				t.Errorf("want volumeMounts %v, got %v for testcase %s", tt.wantVolumeMounts, tt.args.value.Worker.VolumeMounts, tt.name)
+			}
+			wantVolumeMountsMap := make(map[string]corev1.VolumeMount)
+			for _, v := range tt.wantVolumeMounts {
+				wantVolumeMountsMap[v.Name] = v
+			}
+			for _, v := range tt.args.value.Worker.VolumeMounts {
+				if wv := wantVolumeMountsMap[v.Name]; !reflect.DeepEqual(wv, v) {
+					t.Errorf("want volumeMounts %v, got %v for testcase %s", tt.wantVolumeMounts, tt.args.value.Worker.VolumeMounts, tt.name)
+				}
 			}
 		})
 	}
@@ -473,14 +494,35 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
 			if err := j.transformFuseCacheVolumes(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
-				t.Errorf("transformWorkerCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("transformFuseCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !reflect.DeepEqual(tt.args.value.Fuse.Volumes, tt.wantVolumes) {
+			// compare volumes
+			if len(tt.args.value.Fuse.Volumes) != len(tt.wantVolumes) {
 				t.Errorf("want volumes %v, got %v for testcase %s", tt.wantVolumes, tt.args.value.Fuse.Volumes, tt.name)
 			}
-			if !reflect.DeepEqual(tt.args.value.Fuse.VolumeMounts, tt.wantVolumeMounts) {
+			wantVolumeMap := make(map[string]corev1.Volume)
+			for _, v := range tt.wantVolumes {
+				wantVolumeMap[v.Name] = v
+			}
+			for _, v := range tt.args.value.Fuse.Volumes {
+				if wv := wantVolumeMap[v.Name]; !reflect.DeepEqual(wv, v) {
+					t.Errorf("want volumes %v, got %v for testcase %s", tt.wantVolumes, tt.args.value.Fuse.Volumes, tt.name)
+				}
+			}
+
+			// compare volumeMounts
+			if len(tt.args.value.Fuse.VolumeMounts) != len(tt.wantVolumeMounts) {
 				t.Errorf("want volumeMounts %v, got %v for testcase %s", tt.wantVolumeMounts, tt.args.value.Fuse.VolumeMounts, tt.name)
+			}
+			wantVolumeMountsMap := make(map[string]corev1.VolumeMount)
+			for _, v := range tt.wantVolumeMounts {
+				wantVolumeMountsMap[v.Name] = v
+			}
+			for _, v := range tt.args.value.Fuse.VolumeMounts {
+				if wv := wantVolumeMountsMap[v.Name]; !reflect.DeepEqual(wv, v) {
+					t.Errorf("want volumeMounts %v, got %v for testcase %s", tt.wantVolumeMounts, tt.args.value.Fuse.VolumeMounts, tt.name)
+				}
 			}
 		})
 	}
