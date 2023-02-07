@@ -126,24 +126,50 @@ $ export HOME="$HOME"
 $ ./bin/alluxioruntime-controller start --development=true --enable-leader-election
 ```
 
-### 本地调试Fluid控制器组件
+### 调试Fluid组件
 
 Fluid控制器组件支持本地运行或调试。Fluid控制器组件包括Dataset Controller、各Runtime Controller以及Application Controller。在本地运行控制器组件前，需要在本地环境提前配置kubeconfig（通过`KUBECONFIG`环境变量配置或通过`$HOME/.kube/config`文件配置），并能正常访问一个Kubernetes集群。
 
 > Fluid Webhook组件或Fluid CSI插件无法在本地运行与Kubernetes集群交互。调试此类组件需要首先进行镜像构建，手动替换`charts/fluid/fluid/values.yaml`的对应镜像地址后，使用helm部署到Kubernetes集群后运行，并通过dlv远程调试进行此类组件的调试。
 
-**前提条件**
+**本地命令行调试**
 
 确保环境中已经安装了go-delve，具体安装过程可以参考[go-delve安装手册](https://github.com/go-delve/delve/tree/master/Documentation/installation)
-
-**本地命令行调试**
 
 ```shell
 $ dlv debug cmd/alluxio/main.go
 ```
 
 **本地VSCode调试**
-`<TODO>`
+如果使用VSCode作为开发环境，可直接安装VSCode的[Go插件](https://marketplace.visualstudio.com/items?itemName=golang.go)并进行本地调试。以调试Alluxio Runtime Controller为例，可在`./.vscode/launch.json`中定义如下Go代码调试任务：
+
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+       {
+            "name": "Alluxio Runtime Controller",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "cmd/alluxio/main.go",
+            "args": ["start", "--development=true", "--enable-leader-election"],
+            "env": {
+                "KUBECONFIG": "<path>/<to>/<kubeconfig>",
+                "ALLUXIO_RUNTIME_IMAGE_ENV": "alluxio/alluxio-dev:2.9.0",
+                "ALLUXIO_FUSE_IMAGE_ENV": "alluxio/alluxio-dev:2.9.0",
+                "DEFAULT_INIT_IMAGE_ENV": "fluidcloudnative/init-users:v0.8.0-5bb4677",
+                "MOUNT_ROOT": "/runtime-mnt",
+                "HOME": "<HOME_PATH>"
+            }
+        },
+    ]
+}
+```
+
 
 **远程调试** 针对Fluid Webhook和Fluid CSI插件等组件，通常情况下更为常用的方式是远程调试，确保本机和组件镜像中均已正确安装了go-delve
 
