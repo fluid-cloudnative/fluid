@@ -25,6 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 )
 
@@ -36,7 +38,8 @@ func TestLoggingErrorExceptConflict(t *testing.T) {
 			Namespace: "test",
 			Name:      "test",
 		},
-		Log: fake.NullLogger(),
+		Runtime: &datav1alpha1.AlluxioRuntime{},
+		Log:     fake.NullLogger(),
 	})
 
 	err := engine.loggingErrorExceptConflict(fluiderrs.NewDeprecated(schema.GroupResource{Group: "", Resource: "test"}, types.NamespacedName{}), "test")
