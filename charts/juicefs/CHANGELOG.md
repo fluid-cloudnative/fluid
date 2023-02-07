@@ -44,3 +44,6 @@
 
 0.2.11
 - Support credential key in secret
+
+0.2.12
+- Set cache dir in volumes & volumeMounts for worker & fuse
