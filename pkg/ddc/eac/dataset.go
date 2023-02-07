@@ -149,7 +149,7 @@ func (e *EACEngine) UpdateCacheOfDataset() (err error) {
 
 	// TODO: remove the following logic if supports asynchrounous labeling cache node
 	if runtime.Status.WorkerPhase == datav1alpha1.RuntimePhaseNotReady || runtime.Status.WorkerPhase == datav1alpha1.RuntimePhasePartialReady {
-		return fmt.Errorf("EACRuntime scaling not ready", "name", runtime.Name, "namespace", runtime.Namespace)
+		return fmt.Errorf("EACRuntime \"%s/%s\" scaling not ready", runtime.Namespace, runtime.Name)
 	}
 
 	return
