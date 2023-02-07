@@ -109,6 +109,12 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 	if err != nil {
 		j.Log.Error(err, "failed to transform volumes for worker")
 	}
+	// transform cache volumes for worker
+	err = j.transformWorkerCacheVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform cache volumes for worker")
+		return err
+	}
 
 	// parse work pod network mode
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
