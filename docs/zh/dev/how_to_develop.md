@@ -132,7 +132,7 @@ Fluid控制器组件支持本地运行或调试。Fluid控制器组件包括Data
 
 > Fluid Webhook组件或Fluid CSI插件无法在本地运行与Kubernetes集群交互。调试此类组件需要首先进行镜像构建，手动替换`charts/fluid/fluid/values.yaml`的对应镜像地址后，使用helm部署到Kubernetes集群后运行，并通过dlv远程调试进行此类组件的调试。
 
-**本地命令行调试**
+#### 本地命令行调试
 
 确保环境中已经安装了go-delve，具体安装过程可以参考[go-delve安装手册](https://github.com/go-delve/delve/tree/master/Documentation/installation)
 
@@ -140,7 +140,7 @@ Fluid控制器组件支持本地运行或调试。Fluid控制器组件包括Data
 $ dlv debug cmd/alluxio/main.go
 ```
 
-**本地VSCode调试**
+#### 本地VSCode调试
 如果使用VSCode作为开发环境，可直接安装VSCode的[Go插件](https://marketplace.visualstudio.com/items?itemName=golang.go)并进行本地调试。以调试Alluxio Runtime Controller为例，可在`./.vscode/launch.json`中定义如下Go代码调试任务：
 
 ```json
@@ -168,7 +168,9 @@ $ dlv debug cmd/alluxio/main.go
 ```
 
 
-**远程调试** 针对Fluid Webhook和Fluid CSI插件等组件，通常情况下更为常用的方式是远程调试，确保本机和组件镜像中均已正确安装了go-delve
+#### 远程调试
+
+针对Fluid Webhook和Fluid CSI插件等组件，通常情况下更为常用的方式是远程调试，确保本机和组件镜像中均已正确安装了go-delve
 
 在远程主机上:
 
