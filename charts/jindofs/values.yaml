@@ -40,8 +40,6 @@ master:
     namespace.filelet.cache.size: 100000
     namespace.blocklet.cache.size: 1000000
     namespace.backend.type: rocksdb
-  annotations:
-    sidecar.istio.io/inject: "false"
 
 worker:
   ports:
@@ -52,8 +50,6 @@ worker:
   podManagementPolicy: Parallel
   properties:
     storage.rpc.port: 6101
-  annotations:
-    sidecar.istio.io/inject: "false"
 
 fuse:
   criticalPod: false
@@ -66,8 +62,6 @@ fuse:
     client.oss.upload.max.parallelism: 16
     client.oss.timeout.millisecond: 30000
     client.oss.connection.timeout.millisecond: 3000
-  annotations:
-    sidecar.istio.io/inject: "false"
 
 mounts:
   master:

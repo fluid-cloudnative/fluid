@@ -33,12 +33,8 @@ spec:
   replicas: {{ $masterCount }}
   template:
     metadata:
-      {{- if .Values.master.annotations }}
       annotations:
-      {{- range $key, $val := .Values.master.annotations }}
-        {{ $key | quote }}: {{ $val | quote }}
-      {{- end }}
-      {{- end }}
+        sidecar.istio.io/inject: "false"
       labels:
         name: {{ template "jindofs.fullname" . }}-master
         app: {{ template "jindofs.name" . }}
