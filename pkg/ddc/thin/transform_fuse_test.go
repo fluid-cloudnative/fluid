@@ -392,6 +392,9 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 	}
 	dataset := &datav1alpha1.Dataset{
 		Spec: datav1alpha1.DatasetSpec{
+			PublicOptions: map[string]string{
+				"c": "d",
+			},
 			Mounts: []datav1alpha1.Mount{{
 				MountPoint: "abc",
 				Options:    map[string]string{"a": "b"},
@@ -484,7 +487,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			}},
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
-			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
 		},
 	}
 	value := &ThinValue{}

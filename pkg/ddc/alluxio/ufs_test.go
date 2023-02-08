@@ -334,6 +334,151 @@ func TestPrepareUFS(t *testing.T) {
 	}
 }
 
+func TestGenUFSMountOptions(t *testing.T) {
+	type fields struct {
+		runtime            *datav1alpha1.AlluxioRuntime
+		dataset            *datav1alpha1.Dataset
+		secret             *corev1.Secret
+		name               string
+		namespace          string
+		Log                logr.Logger
+		MetadataSyncDoneCh chan base.MetadataSyncResult
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantOptions map[string]string
+	}{
+		{
+			name: "test",
+			fields: fields{
+				name:      "spark",
+				namespace: "default",
+				Log:       fake.NullLogger(),
+				secret: &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "spark",
+						Namespace: "default",
+					},
+					Data:       map[string][]byte{
+						"key1": []byte("value1"),
+						"key2": []byte("value2"),
+					},
+				},
+				runtime: &datav1alpha1.AlluxioRuntime{},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						PublicOptions: map[string]string{
+							"test2": "test2",
+						},
+						PublicEncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "testEncrypt1",
+								ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "spark",
+									Key:  "key2",
+								}},
+							},
+						},
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "cosn://imagenet-1234567/",
+								Options: map[string]string{
+									"test1": "test1",
+								},
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+									Name: "testEncrypt",
+									ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "spark",
+										Key:  "key1",
+									}},
+									},
+								},
+							},
+						},
+						DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
+							Path:     "local:///tmp/restore",
+							NodeName: "192.168.0.1",
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+			},
+			wantOptions: map[string]string{
+				"test1": "test1",
+				"test2": "test2",
+				"testEncrypt": "value1",
+				"testEncrypt1": "value2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			_ = corev1.AddToScheme(s)
+			mockClient := fake.NewFakeClientWithScheme(s, tt.fields.runtime, tt.fields.dataset, tt.fields.secret)
+
+			var afsUtils operations.AlluxioFileUtils
+			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+				return true
+			})
+			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "IsMounted", func(_ operations.AlluxioFileUtils, AlluxioPath string) (bool, error) {
+				return false, nil
+			})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(afsUtils), "Mount", func(_ operations.AlluxioFileUtils, alluxioPath string, ufsPath string, options map[string]string, readOnly bool, shared bool) error {
+				return nil
+			})
+			defer patch3.Reset()
+
+			patch4 := ApplyMethod(reflect.TypeOf(afsUtils), "QueryMetaDataInfoIntoFile", func(_ operations.AlluxioFileUtils, key operations.KeyOfMetaDataFile, filename string) (string, error) {
+				return "10000", nil
+			})
+			defer patch4.Reset()
+
+			e := &AlluxioEngine{
+				runtime:            tt.fields.runtime,
+				name:               tt.fields.name,
+				namespace:          tt.fields.namespace,
+				Log:                tt.fields.Log,
+				Client:             mockClient,
+				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
+			}
+			getoptions, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.PublicOptions, tt.fields.dataset.Spec.PublicEncryptOptions)
+			if err != nil {
+				t.Errorf("AlluxioEngine.genUFSMountOptions() error = %v", err)
+			}
+			for k, v := range getoptions {
+				if v1, ok := tt.wantOptions[k]; !ok {
+					t.Errorf("AlluxioEngine.genUFSMountOptions() should has key: %v", k)
+				}else {
+					if v1 != v {
+						t.Errorf("AlluxioEngine.genUFSMountOptions()  key: %v value: %v, get value: %v", k, v1, v)
+					} else {
+						delete(tt.wantOptions, k)
+					}
+				}
+			}
+
+			if len(tt.wantOptions) > 0 {
+				t.Errorf("AlluxioEngine.genUFSMountOptions() not equal, wantOptions: %v", tt.wantOptions)
+			}
+		})
+	}
+}
+
 func TestFindUnmountedUFS(t *testing.T) {
 
 	type fields struct {

@@ -1525,11 +1525,41 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation"),
 						},
 					},
+					"publicOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PublicOptions is the options to all mount",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"publicEncryptOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PublicEncryptOptions is the encryptOption to all mount",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/pkg/errors"
 )
 
@@ -202,6 +203,9 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			for key, value := range mount.Options {
 				mountOptions[key] = value
 			}
+			for key, value := range dataset.Spec.PublicOptions {
+				mountOptions[key] = value
+			}
 
 			// Configure mountOptions using encryptOptions
 			// If encryptOptions have the same key with options, it will overwrite the corresponding value
@@ -291,7 +295,7 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 			return err
 		}
 
-		mOptions, err := e.genUFSMountOptions(mount)
+		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.PublicOptions, dataset.Spec.PublicEncryptOptions)
 		if err != nil {
 			return errors.Wrapf(err, "gen ufs mount options by spec mount item failure,mount name:%s", mount.Name)
 		}
@@ -307,18 +311,37 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 }
 
 // goosefs mount options
-func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]string, error) {
+func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount, publicOptions map[string]string, publicEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 
 	// initialize goosefs mount options
 	mOptions := map[string]string{}
 	if len(m.Options) > 0 {
 		mOptions = m.Options
 	}
+	for key, value := range publicOptions {
+		mOptions[key] = value
+	}
 
-	// if encryptOptions have the same key with options
-	// it will overwrite the corresponding value
-	for _, item := range m.EncryptOptions {
+	var err error
+	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+	if err != nil {
+		return mOptions, err
+	}
 
+	//gen public encryptOptions
+	mOptions, err = e.genEncryptOptions(publicEncryptOptions, mOptions, m.Name)
+	if err != nil {
+		return mOptions, err
+	}
+
+	return mOptions, nil
+}
+
+// goosefs encrypt mount options
+func (e *GooseFSEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
+	for _, item := range EncryptOptions {
+
+		securityutil.UpdateSensitiveKey(item.Name)
 		sRef := item.ValueFrom.SecretKeyRef
 		secret, err := kubeclient.GetSecret(e.Client, sRef.Name, e.namespace)
 		if err != nil {
@@ -326,7 +349,7 @@ func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]str
 			return mOptions, err
 		}
 
-		e.Log.Info("get value from secret", "mount name", m.Name, "secret key", sRef.Key)
+		e.Log.Info("get value from secret", "mount name", name, "secret key", sRef.Key)
 
 		v := secret.Data[sRef.Key]
 		mOptions[item.Name] = string(v)

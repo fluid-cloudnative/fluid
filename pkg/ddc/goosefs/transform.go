@@ -138,7 +138,7 @@ func (e *GooseFSEngine) transformCommonPart(runtime *datav1alpha1.GooseFSRuntime
 	uRootPath, m := utils.UFSPathBuilder{}.GenAlluxioUFSRootPath(dataset.Spec.Mounts)
 	// attach mount options when direct mount ufs endpoint
 	if m != nil {
-		if mOptions, err := e.genUFSMountOptions(*m); err != nil {
+		if mOptions, err := e.genUFSMountOptions(*m, dataset.Spec.PublicOptions, dataset.Spec.PublicEncryptOptions); err != nil {
 			return err
 		} else {
 			for k, v := range mOptions {

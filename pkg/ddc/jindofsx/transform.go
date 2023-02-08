@@ -210,7 +210,16 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	// to set filestore properties with confvalue
 	propertiesFileStore := map[string]string{}
 
-	for _, mount := range dataset.Spec.Mounts {
+	for _, tmpMount := range dataset.Spec.Mounts {
+		mount := tmpMount
+
+		for key, value := range dataset.Spec.PublicOptions {
+			mount.Options[key] = value
+		}
+
+		mount.EncryptOptions = append(mount.EncryptOptions, dataset.Spec.PublicEncryptOptions...)
+
+
 		// support nas storage
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			if len(value.UFSVolumes) == 0 {
