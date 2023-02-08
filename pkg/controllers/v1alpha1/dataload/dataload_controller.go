@@ -29,6 +29,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
+	"github.com/fluid-cloudnative/fluid/vendor/sigs.k8s.io/controller-runtime/pkg/controller"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -208,8 +209,9 @@ func (r *DataLoadReconciler) addFinalizerAndRequeue(ctx cruntime.ReconcileReques
 }
 
 // SetupWithManager sets up the controller with the given controller manager
-func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.DataLoad{}).
 		Complete(r)
 }

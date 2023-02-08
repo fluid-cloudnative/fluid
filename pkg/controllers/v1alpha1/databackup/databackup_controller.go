@@ -27,6 +27,7 @@ import (
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/vendor/sigs.k8s.io/controller-runtime/pkg/controller"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -262,8 +263,9 @@ func (r *DataBackupReconciler) releaseLockOnTargetDataset(ctx reconcileRequestCo
 }
 
 // SetupWithManager sets up the controller with the given controller manager
-func (r *DataBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DataBackupReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.DataBackup{}).
 		Complete(r)
 }
