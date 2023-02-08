@@ -13,3 +13,7 @@
 0.1.3
 
 - Add runtime identity environments
+
+0.1.4
+
+- Add `sidecar.istio.io/inject` to components annotation

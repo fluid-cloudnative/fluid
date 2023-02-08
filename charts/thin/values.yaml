@@ -51,8 +51,6 @@ worker:
   hostNetwork: true
   livenessProbe:
   readinessProbe:
-  annotations:
-    sidecar.istio.io/inject: "false"
 
 ## FUSE ##
 
@@ -82,8 +80,6 @@ fuse:
     limits:
 #      cpu: "4"
 #      memory: "4G"
-  annotations:
-    sidecar.istio.io/inject: "false"
 
 runtimeIdentity:
   namespace: default
