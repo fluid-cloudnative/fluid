@@ -81,6 +81,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		j.Log.Error(err, "failed to transform volumes for fuse")
 		return err
 	}
+	// transform cache volumes for fuse
+	err = j.transformFuseCacheVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform cache volumes for fuse")
+		return err
+	}
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()

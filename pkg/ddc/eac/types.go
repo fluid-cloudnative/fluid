@@ -25,14 +25,15 @@ import (
 
 // The value yaml file
 type EAC struct {
-	FullnameOverride string          `yaml:"fullnameOverride"`
-	PlacementMode    string          `yaml:"placement,omitempty"`
-	Master           Master          `yaml:"master"`
-	Worker           Worker          `yaml:"worker"`
-	Fuse             Fuse            `yaml:"fuse"`
-	InitFuse         InitFuse        `yaml:"initFuse"`
-	OSAdvise         OSAdvise        `yaml:"osAdvise"`
-	Tolerations      []v1.Toleration `yaml:"tolerations,omitempty"`
+	FullnameOverride string                 `yaml:"fullnameOverride"`
+	PlacementMode    string                 `yaml:"placement,omitempty"`
+	Master           Master                 `yaml:"master"`
+	Worker           Worker                 `yaml:"worker"`
+	Fuse             Fuse                   `yaml:"fuse"`
+	InitFuse         InitFuse               `yaml:"initFuse"`
+	OSAdvise         OSAdvise               `yaml:"osAdvise"`
+	Tolerations      []v1.Toleration        `yaml:"tolerations,omitempty"`
+	Owner            *common.OwnerReference `yaml:"owner,omitempty"`
 }
 
 type OSAdvise struct {
@@ -50,6 +51,8 @@ type Master struct {
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	HostNetwork      bool              `yaml:"hostNetwork"`
 	TieredStore      TieredStore       `yaml:"tieredstore,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
+	Annotations      map[string]string `yaml:"annotations,omitempty"`
 }
 
 type Worker struct {
@@ -61,6 +64,8 @@ type Worker struct {
 	NodeSelector     map[string]string `yaml:"nodeSelector,omitempty"`
 	HostNetwork      bool              `yaml:"hostNetwork"`
 	TieredStore      TieredStore       `yaml:"tieredstore,omitempty"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
+	Annotations      map[string]string `yaml:"annotations,omitempty"`
 }
 
 type Fuse struct {
@@ -74,6 +79,8 @@ type Fuse struct {
 	HostNetwork      bool              `yaml:"hostNetwork"`
 	TieredStore      TieredStore       `yaml:"tieredstore,omitempty"`
 	CriticalPod      bool              `yaml:"criticalPod"`
+	Labels           map[string]string `yaml:"labels,omitempty"`
+	Annotations      map[string]string `yaml:"annotations,omitempty"`
 }
 
 type InitFuse struct {

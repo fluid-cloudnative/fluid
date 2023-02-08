@@ -23,6 +23,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: alluxio-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   updateStrategy:
     type: {{ .Values.fuse.updateStrategy.type }}
@@ -35,8 +44,9 @@ spec:
       role: alluxio-fuse
   template:
     metadata:
-      {{- if .Values.fuse.annotations }}
       annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
       {{- range $key, $val := .Values.fuse.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
       {{- end }}

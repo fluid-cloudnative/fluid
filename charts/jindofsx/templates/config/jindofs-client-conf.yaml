@@ -15,6 +15,15 @@ metadata:
     chart: {{ template "jindofs.chart" . }}-client
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
 data:
   {{- if $isSingleMaster }}
   STORAGE_NAMESPACE_RPC_ADDRESS: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}

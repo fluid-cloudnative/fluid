@@ -61,7 +61,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			Spec: v1.PersistentVolumeSpec{
 				AccessModes: accessModes,
 				Capacity: v1.ResourceList{
-					v1.ResourceName(v1.ResourceStorage): resource.MustParse("100Gi"),
+					v1.ResourceName(v1.ResourceStorage): resource.MustParse("100Pi"),
 				},
 				StorageClassName: common.FluidStorageClass,
 				PersistentVolumeSource: v1.PersistentVolumeSource{
@@ -180,7 +180,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				AccessModes:      accessModes,
 				Resources: v1.ResourceRequirements{
 					Requests: v1.ResourceList{
-						v1.ResourceName(v1.ResourceStorage): resource.MustParse("100Gi"),
+						v1.ResourceName(v1.ResourceStorage): resource.MustParse("100Pi"),
 					},
 				},
 			},

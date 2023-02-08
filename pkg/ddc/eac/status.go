@@ -18,6 +18,9 @@ package eac
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -25,8 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.

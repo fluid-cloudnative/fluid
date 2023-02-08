@@ -84,6 +84,10 @@ type EACCompTemplateSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to EAC's master and worker pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // EACFuseSpec is a description of the EAC Fuse
@@ -119,6 +123,10 @@ type EACFuseSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to EAC's fuse pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // EACRuntimeSpec defines the desired state of EACRuntime
@@ -147,6 +155,10 @@ type EACRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to all EAC's pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true

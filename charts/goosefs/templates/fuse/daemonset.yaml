@@ -22,8 +22,9 @@ spec:
       role: goosefs-fuse
   template:
     metadata:
-      {{- if .Values.fuse.annotations }}
       annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
 {{ toYaml .Values.fuse.annotations | trim | indent 8  }}
       {{- end }}
       labels:

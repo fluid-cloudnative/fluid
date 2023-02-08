@@ -8,6 +8,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: eac-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   updateStrategy:
     type: {{ .Values.fuse.updateStrategy.type }}
@@ -20,12 +29,23 @@ spec:
       role: eac-fuse
   template:
     metadata:
+      {{- if .Values.fuse.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "eac.name" . }}
         chart: {{ template "eac.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: eac-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       terminationGracePeriodSeconds: 10000000
       {{- if .Values.fuse.criticalPod }}

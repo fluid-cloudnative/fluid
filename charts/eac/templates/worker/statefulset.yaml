@@ -10,7 +10,17 @@ metadata:
     role: eac-worker
     fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
     fluid.io/dataset-placement: {{ .Values.placement }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
+  podManagementPolicy: "Parallel"
   replicas: {{ if .Values.worker.enabled -}} {{ $.Values.worker.count }} {{ else -}} 0 {{ end }}
   serviceName: {{ template "eac.fullname" . }}-worker
   selector:
@@ -20,6 +30,12 @@ spec:
       role: eac-worker
   template:
     metadata:
+      {{- if .Values.worker.annotations }}
+      annotations:
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ template "eac.name" . }}
         chart: {{ template "eac.chart" . }}
@@ -28,6 +44,11 @@ spec:
         role: eac-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.worker.hostNetwork }}
       hostNetwork: {{ .Values.worker.hostNetwork }}
