@@ -345,8 +345,8 @@ func TestGenUFSMountOptions(t *testing.T) {
 		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	tests := []struct {
-		name    string
-		fields  fields
+		name        string
+		fields      fields
 		wantOptions map[string]string
 	}{
 		{
@@ -357,10 +357,10 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Log:       fake.NullLogger(),
 				secret: &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
-						Name: "spark",
+						Name:      "spark",
 						Namespace: "default",
 					},
-					Data:       map[string][]byte{
+					Data: map[string][]byte{
 						"key1": []byte("value1"),
 						"key2": []byte("value2"),
 					},
@@ -372,10 +372,10 @@ func TestGenUFSMountOptions(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.DatasetSpec{
-						PublicOptions: map[string]string{
+						SharedOptions: map[string]string{
 							"test2": "test2",
 						},
-						PublicEncryptOptions: []datav1alpha1.EncryptOption{
+						SharedEncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: "testEncrypt1",
 								ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
@@ -392,11 +392,11 @@ func TestGenUFSMountOptions(t *testing.T) {
 								},
 								EncryptOptions: []datav1alpha1.EncryptOption{
 									{
-									Name: "testEncrypt",
-									ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "spark",
-										Key:  "key1",
-									}},
+										Name: "testEncrypt",
+										ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+											Name: "spark",
+											Key:  "key1",
+										}},
 									},
 								},
 							},
@@ -412,9 +412,9 @@ func TestGenUFSMountOptions(t *testing.T) {
 				},
 			},
 			wantOptions: map[string]string{
-				"test1": "test1",
-				"test2": "test2",
-				"testEncrypt": "value1",
+				"test1":        "test1",
+				"test2":        "test2",
+				"testEncrypt":  "value1",
 				"testEncrypt1": "value2",
 			},
 		},
@@ -456,14 +456,14 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Client:             mockClient,
 				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
-			getoptions, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.PublicOptions, tt.fields.dataset.Spec.PublicEncryptOptions)
+			getoptions, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.SharedOptions, tt.fields.dataset.Spec.SharedEncryptOptions)
 			if err != nil {
 				t.Errorf("AlluxioEngine.genUFSMountOptions() error = %v", err)
 			}
 			for k, v := range getoptions {
 				if v1, ok := tt.wantOptions[k]; !ok {
 					t.Errorf("AlluxioEngine.genUFSMountOptions() should has key: %v", k)
-				}else {
+				} else {
 					if v1 != v {
 						t.Errorf("AlluxioEngine.genUFSMountOptions()  key: %v value: %v, get value: %v", k, v1, v)
 					} else {

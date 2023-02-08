@@ -269,34 +269,6 @@ spec:
                 - ""
                 - Shared
                 type: string
-              publicEncryptOptions:
-                description: PublicEncryptOptions is the encryptOption to all mount
-                items:
-                  properties:
-                    name:
-                      description: The name of encryptOption
-                      type: string
-                    valueFrom:
-                      description: The valueFrom of encryptOption
-                      properties:
-                        secretKeyRef:
-                          description: The encryptInfo obtained from secret
-                          properties:
-                            key:
-                              description: The required key in the secret
-                              type: string
-                            name:
-                              description: The name of required secret
-                              type: string
-                          type: object
-                      type: object
-                  type: object
-                type: array
-              publicOptions:
-                additionalProperties:
-                  type: string
-                description: PublicOptions is the options to all mount
-                type: object
               runtimes:
                 description: Runtimes for supporting dataset (e.g. AlluxioRuntime)
                 items:
@@ -320,6 +292,34 @@ spec:
                       type: string
                   type: object
                 type: array
+              sharedEncryptOptions:
+                description: SharedEncryptOptions is the encryptOption to all mount
+                items:
+                  properties:
+                    name:
+                      description: The name of encryptOption
+                      type: string
+                    valueFrom:
+                      description: The valueFrom of encryptOption
+                      properties:
+                        secretKeyRef:
+                          description: The encryptInfo obtained from secret
+                          properties:
+                            key:
+                              description: The required key in the secret
+                              type: string
+                            name:
+                              description: The name of required secret
+                              type: string
+                          type: object
+                      type: object
+                  type: object
+                type: array
+              sharedOptions:
+                additionalProperties:
+                  type: string
+                description: SharedOptions is the options to all mount
+                type: object
               tolerations:
                 description: If specified, the pod's tolerations.
                 items:

@@ -700,15 +700,15 @@ func (in *DatasetSpec) DeepCopyInto(out *DatasetSpec) {
 		*out = new(DataRestoreLocation)
 		**out = **in
 	}
-	if in.PublicOptions != nil {
-		in, out := &in.PublicOptions, &out.PublicOptions
+	if in.SharedOptions != nil {
+		in, out := &in.SharedOptions, &out.SharedOptions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-	if in.PublicEncryptOptions != nil {
-		in, out := &in.PublicEncryptOptions, &out.PublicEncryptOptions
+	if in.SharedEncryptOptions != nil {
+		in, out := &in.SharedEncryptOptions, &out.SharedEncryptOptions
 		*out = make([]EncryptOption, len(*in))
 		copy(*out, *in)
 	}

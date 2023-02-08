@@ -1525,9 +1525,9 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation"),
 						},
 					},
-					"publicOptions": {
+					"sharedOptions": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PublicOptions is the options to all mount",
+							Description: "SharedOptions is the options to all mount",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -1541,9 +1541,9 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 							},
 						},
 					},
-					"publicEncryptOptions": {
+					"sharedEncryptOptions": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PublicEncryptOptions is the encryptOption to all mount",
+							Description: "SharedEncryptOptions is the encryptOption to all mount",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{

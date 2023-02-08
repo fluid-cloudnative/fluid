@@ -151,13 +151,13 @@ type DatasetSpec struct {
 	// +optional
 	DataRestoreLocation *DataRestoreLocation `json:"dataRestoreLocation,omitempty"`
 
-	// PublicOptions is the options to all mount
+	// SharedOptions is the options to all mount
 	// +optional
-	PublicOptions map[string]string `json:"publicOptions,omitempty"`
+	SharedOptions map[string]string `json:"sharedOptions,omitempty"`
 
-	// PublicEncryptOptions is the encryptOption to all mount
+	// SharedEncryptOptions is the encryptOption to all mount
 	// +optional
-	PublicEncryptOptions []EncryptOption `json:"publicEncryptOptions,omitempty"`
+	SharedEncryptOptions []EncryptOption `json:"sharedEncryptOptions,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset

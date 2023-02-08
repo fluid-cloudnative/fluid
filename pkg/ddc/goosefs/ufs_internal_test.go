@@ -865,8 +865,8 @@ func TestGenUFSMountOptions(t *testing.T) {
 		Log       logr.Logger
 	}
 	type args struct {
-		m datav1alpha1.Mount
-		pm map[string]string
+		m   datav1alpha1.Mount
+		pm  map[string]string
 		pme []datav1alpha1.EncryptOption
 	}
 	tests := []struct {
@@ -946,7 +946,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Data: map[string][]byte{
 					"fs.cosn.userinfo.secretKey": []byte("key"),
 					"fs.cosn.userinfo.secretId":  []byte("id"),
-					"key2": []byte("value2"),
+					"key2":                       []byte("value2"),
 				},
 			}
 			testObjs := []runtime.Object{}

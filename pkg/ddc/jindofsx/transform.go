@@ -212,13 +212,18 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 	for _, tmpMount := range dataset.Spec.Mounts {
 		mount := tmpMount
+		mount.Options = map[string]string{}
+		mount.EncryptOptions = []datav1alpha1.EncryptOption{}
 
-		for key, value := range dataset.Spec.PublicOptions {
+		for key, value := range dataset.Spec.SharedOptions {
+			mount.Options[key] = value
+		}
+		for key, value := range tmpMount.Options {
 			mount.Options[key] = value
 		}
 
-		mount.EncryptOptions = append(mount.EncryptOptions, dataset.Spec.PublicEncryptOptions...)
-
+		mount.EncryptOptions = append(mount.EncryptOptions, dataset.Spec.SharedEncryptOptions...)
+		mount.EncryptOptions = append(mount.EncryptOptions, tmpMount.EncryptOptions...)
 
 		// support nas storage
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {

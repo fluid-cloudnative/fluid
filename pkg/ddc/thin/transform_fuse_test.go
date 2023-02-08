@@ -201,6 +201,7 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 		},
 		Data: map[string][]byte{
 			"a": []byte("z"),
+			"h": []byte("i"),
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -232,7 +233,21 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 						"b": "y",
 					}}},
 				},
-				dataset: &datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{
+				dataset: &datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{
+					SharedOptions: map[string]string{
+						"f": "g",
+						"e": "e",
+					},
+					SharedEncryptOptions: []datav1alpha1.EncryptOption{{
+						Name: "h",
+						ValueFrom: datav1alpha1.EncryptOptionSource{
+							SecretKeyRef: datav1alpha1.SecretKeySelector{
+								Name: "sec",
+								Key:  "h",
+							},
+						},
+					}},
+					Mounts: []datav1alpha1.Mount{{
 					Options: map[string]string{
 						"d": "z",
 						"e": "",
@@ -254,6 +269,8 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 				"c": "x",
 				"d": "z",
 				"e": "",
+				"f": "g",
+				"h": "i",
 			},
 		},
 	}
@@ -392,7 +409,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 	}
 	dataset := &datav1alpha1.Dataset{
 		Spec: datav1alpha1.DatasetSpec{
-			PublicOptions: map[string]string{
+			SharedOptions: map[string]string{
 				"c": "d",
 			},
 			Mounts: []datav1alpha1.Mount{{
@@ -488,6 +505,227 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
 			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+		},
+	}
+	value := &ThinValue{}
+	t1.Run("test", func(t1 *testing.T) {
+		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test", runtime: runtime}
+		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
+			t1.Errorf("transformFuse() error = %v", err)
+		}
+
+		if !testutil.DeepEqualIgnoringSliceOrder(t1, value.Fuse, wantValue.Fuse) {
+			valueYaml, _ := yaml.Marshal(value.Fuse)
+			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
+			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", string(valueYaml), string(wantYaml))
+		}
+	})
+}
+
+
+func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
+	profile := &datav1alpha1.ThinRuntimeProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: datav1alpha1.ThinRuntimeProfileSpec{
+			FileSystemType: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
+				Image:           "test",
+				ImageTag:        "v1",
+				ImagePullPolicy: "Always",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						// Should be inherited
+						corev1.ResourceCPU: resource.MustParse("100m"),
+						// Should be overridden
+						corev1.ResourceMemory: resource.MustParse("2Gi"),
+					},
+				},
+				Env: []corev1.EnvVar{{
+					Name:  "a",
+					Value: "b",
+				}},
+				NodeSelector: map[string]string{"a": "b"},
+				Ports: []corev1.ContainerPort{{
+					Name:          "port",
+					ContainerPort: 8080,
+				}},
+				NetworkMode: datav1alpha1.HostNetworkMode,
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "a",
+					MountPath: "/test",
+				}},
+			},
+			Volumes: []corev1.Volume{{
+				Name: "a",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/test"},
+				},
+			}},
+		},
+	}
+	runtime := &datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.ThinRuntimeSpec{
+			ThinRuntimeProfileName: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("200m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
+				Env: []corev1.EnvVar{{
+					Name: "b",
+					ValueFrom: &corev1.EnvVarSource{
+						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-cm"},
+						},
+					},
+				}},
+				NodeSelector: map[string]string{"b": "c"},
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "b",
+					MountPath: "/b",
+				}},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					InitialDelaySeconds: 1,
+					TimeoutSeconds:      1,
+					PeriodSeconds:       1,
+					SuccessThreshold:    1,
+					FailureThreshold:    1,
+				},
+				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					InitialDelaySeconds: 1,
+					TimeoutSeconds:      1,
+					PeriodSeconds:       1,
+					SuccessThreshold:    1,
+					FailureThreshold:    1,
+				},
+			},
+			Volumes: []corev1.Volume{{
+				Name: "b",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/b"},
+				},
+			}},
+		},
+	}
+	dataset := &datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{
+			SharedOptions: map[string]string{
+				"a": "c",
+			},
+			Mounts: []datav1alpha1.Mount{{
+				MountPoint: "abc",
+				Options:    map[string]string{"a": "b"},
+			}},
+		},
+	}
+	wantValue := &ThinValue{
+		Fuse: Fuse{
+			Enabled:         true,
+			Image:           "test",
+			ImageTag:        "v1",
+			ImagePullPolicy: "Always",
+			TargetPath:      "/thin/fluid/test/thin-fuse",
+			Resources: common.Resources{
+				Requests: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "100m",
+					corev1.ResourceMemory: "1Gi",
+				},
+				Limits: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "200m",
+					corev1.ResourceMemory: "4Gi",
+				},
+			},
+			HostNetwork: true,
+			Envs: []corev1.EnvVar{{
+				Name:  "a",
+				Value: "b",
+			}, {
+				Name: "b",
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "test-cm",
+						},
+					},
+				},
+			}, {
+				Name:  common.ThinFuseOptionEnvKey,
+				Value: "a=b",
+			}, {
+				Name:  common.ThinFusePointEnvKey,
+				Value: "/thin/fluid/test/thin-fuse",
+			}},
+			NodeSelector: map[string]string{"b": "c", "fluid.io/f-fluid-test": "true"},
+			Ports: []corev1.ContainerPort{{
+				Name:          "port",
+				ContainerPort: 8080,
+			}},
+			LivenessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+				InitialDelaySeconds: 1,
+				TimeoutSeconds:      1,
+				PeriodSeconds:       1,
+				SuccessThreshold:    1,
+				FailureThreshold:    1,
+			},
+			ReadinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+				InitialDelaySeconds: 1,
+				TimeoutSeconds:      1,
+				PeriodSeconds:       1,
+				SuccessThreshold:    1,
+				FailureThreshold:    1,
+			},
+			Volumes: []corev1.Volume{{
+				Name: "a",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/test"},
+				},
+			}, {
+				Name: "b",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/b"},
+				},
+			}},
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      "a",
+				MountPath: "/test",
+			}, {
+				Name:      "b",
+				MountPath: "/b",
+			}},
+			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
+			// MountPath:   "/thin/fluid/test/thin-fuse",
+			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
 		},
 	}
 	value := &ThinValue{}

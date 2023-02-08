@@ -69,27 +69,27 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 	return
 }
 
-func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, publicOptions map[string]string, publicEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 
 	// initialize mount options
 	mOptions := map[string]string{}
-	if len(m.Options) > 0 {
-		mOptions = m.Options
+	if len(SharedOptions) > 0 {
+		mOptions = SharedOptions
 	}
-	for key, value := range publicOptions {
+	for key, value := range m.Options {
 		mOptions[key] = value
 	}
 
 	// if encryptOptions have the same key with options
 	// it will overwrite the corresponding value
 	var err error
-	mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+	mOptions, err = t.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}
 
 	//gen public encryptOptions
-	mOptions, err = t.genEncryptOptions(publicEncryptOptions, mOptions, m.Name)
+	mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}

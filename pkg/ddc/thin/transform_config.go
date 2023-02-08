@@ -45,7 +45,7 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 			pvMountOptions[pvcName] = mountOptions
 		}
 
-		m.Options, err = t.genUFSMountOptions(m, dataset.Spec.PublicOptions, dataset.Spec.PublicEncryptOptions)
+		m.Options, err = t.genUFSMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 		if err != nil {
 			return
 		}

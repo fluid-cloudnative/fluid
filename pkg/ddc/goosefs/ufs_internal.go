@@ -200,35 +200,23 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), goosefsPath) {
 			mountOptions := map[string]string{}
-			for key, value := range mount.Options {
+			for key, value := range dataset.Spec.SharedOptions {
 				mountOptions[key] = value
 			}
-			for key, value := range dataset.Spec.PublicOptions {
+
+			for key, value := range mount.Options {
 				mountOptions[key] = value
 			}
 
 			// Configure mountOptions using encryptOptions
 			// If encryptOptions have the same key with options, it will overwrite the corresponding value
-			for _, encryptOption := range mount.EncryptOptions {
-				key := encryptOption.Name
-				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-
-				secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
-				if err != nil {
-					e.Log.Info("can't get the secret",
-						"namespace", e.namespace,
-						"name", e.name,
-						"secretName", secretKeyRef.Name)
-					return err
-				}
-
-				value := secret.Data[secretKeyRef.Key]
-				e.Log.Info("get value from secret",
-					"namespace", e.namespace,
-					"name", e.name,
-					"secretName", secretKeyRef.Name)
-
-				mountOptions[key] = string(value)
+			mountOptions, err = e.genEncryptOptions(dataset.Spec.SharedEncryptOptions, mountOptions, mount.Name)
+			if err != nil {
+				return err
+			}
+			mountOptions, err = e.genEncryptOptions(mount.EncryptOptions, mountOptions, mount.Name)
+			if err != nil {
+				return err
 			}
 			err = fileUtils.Mount(goosefsPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
@@ -295,7 +283,7 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 			return err
 		}
 
-		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.PublicOptions, dataset.Spec.PublicEncryptOptions)
+		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 		if err != nil {
 			return errors.Wrapf(err, "gen ufs mount options by spec mount item failure,mount name:%s", mount.Name)
 		}
@@ -311,25 +299,25 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 }
 
 // goosefs mount options
-func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount, publicOptions map[string]string, publicEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 
 	// initialize goosefs mount options
 	mOptions := map[string]string{}
-	if len(m.Options) > 0 {
-		mOptions = m.Options
+	if len(SharedOptions) > 0 {
+		mOptions = SharedOptions
 	}
-	for key, value := range publicOptions {
+	for key, value := range m.Options {
 		mOptions[key] = value
 	}
 
 	var err error
-	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+	mOptions, err = e.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}
 
 	//gen public encryptOptions
-	mOptions, err = e.genEncryptOptions(publicEncryptOptions, mOptions, m.Name)
+	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}

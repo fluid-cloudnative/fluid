@@ -166,21 +166,22 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
 		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), alluxioPath) {
 			mountOptions := map[string]string{}
-			for key, value := range mount.Options {
+			for key, value := range dataset.Spec.SharedOptions {
 				mountOptions[key] = value
 			}
-			for key, value := range dataset.Spec.PublicOptions {
+
+			for key, value := range mount.Options {
 				mountOptions[key] = value
 			}
 
 			// Configure mountOptions using encryptOptions
 			// If encryptOptions have the same key with options, it will overwrite the corresponding value
-			mountOptions, err = e.genEncryptOptions(mount.EncryptOptions, mountOptions, mount.Name)
+			mountOptions, err = e.genEncryptOptions(dataset.Spec.SharedEncryptOptions, mountOptions, mount.Name)
 			if err != nil {
 				return err
 			}
 
-			mountOptions, err = e.genEncryptOptions(dataset.Spec.PublicEncryptOptions, mountOptions, mount.Name)
+			mountOptions, err = e.genEncryptOptions(mount.EncryptOptions, mountOptions, mount.Name)
 			if err != nil {
 				return err
 			}
@@ -258,7 +259,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			return err
 		}
 
-		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.PublicOptions, dataset.Spec.PublicEncryptOptions)
+		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 		if err != nil {
 			return errors.Wrapf(err, "gen ufs mount options by spec mount item failure,mount name:%s", mount.Name)
 		}
@@ -281,32 +282,31 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 }
 
 // alluxio mount options
-func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, publicOptions map[string]string, publicEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 
 	// initialize alluxio mount options
 	mOptions := map[string]string{}
-	if len(m.Options) > 0 {
-		mOptions = m.Options
+	if len(SharedOptions) > 0 {
+		mOptions = SharedOptions
 	}
 
-	for key, value := range publicOptions {
+	for key, value := range m.Options {
 		mOptions[key] = value
 	}
 
 	// if encryptOptions have the same key with options
 	// it will overwrite the corresponding value
 	var err error
-	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+	mOptions, err = e.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}
 
 	//gen public encryptOptions
-	mOptions, err = e.genEncryptOptions(publicEncryptOptions, mOptions, m.Name)
+	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
 	if err != nil {
 		return mOptions, err
 	}
-
 
 	return mOptions, nil
 }
@@ -331,7 +331,6 @@ func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptO
 
 	return mOptions, nil
 }
-
 
 func (e *AlluxioEngine) updateMountTime() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
