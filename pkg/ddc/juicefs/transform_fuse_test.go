@@ -348,6 +348,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 		mount           datav1alpha1.Mount
 		tiredStoreLevel *datav1alpha1.Level
 		value           *JuiceFS
+		sharedOptions map[string]string
+		sharedEncryptOptions []datav1alpha1.EncryptOption
 	}
 	tests := []struct {
 		name        string
@@ -366,6 +368,16 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 			},
 			args: args{
+				sharedOptions: map[string]string{"a":"b"},
+				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: "token",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-enterprise",
+							Key:  "token",
+						},
+					},
+				}},
 				mount: datav1alpha1.Mount{
 					MountPoint: "juicefs:///",
 					Options:    nil,
@@ -393,6 +405,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			wantErr: false,
 			wantOptions: map[string]string{
+				"a":          "b",
 				"cache-dir":  "/dev",
 				"cache-size": "9",
 			},
@@ -405,9 +418,27 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 			},
 			args: args{
+				sharedOptions: map[string]string{"a":"b"},
+				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: JuiceMetaUrl,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-community",
+						Key:  "access-key",
+					}}}, {
+					Name: JuiceAccessKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-community",
+						Key:  "secret-key",
+					}}}, {
+					Name: JuiceSecretKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-community",
+						Key:  "metaurl",
+					}}},
+				},
 				mount: datav1alpha1.Mount{
 					MountPoint: "juicefs:///test",
-					Options:    map[string]string{},
+					Options:    map[string]string{"a": "c"},
 					Name:       "test-community",
 					EncryptOptions: []datav1alpha1.EncryptOption{{
 						Name: JuiceMetaUrl,
@@ -439,6 +470,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			wantErr: false,
 			wantOptions: map[string]string{
+				"a":         "c",
 				"subdir":    "/test",
 				"cache-dir": "/dev",
 			},
@@ -446,12 +478,23 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opt, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value)
+			opt, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value, tt.args.sharedOptions, tt.args.sharedEncryptOptions)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genValue() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if len(opt) != len(tt.wantOptions) {
 				t.Errorf("genValue() got = %v, wantOptions %v", opt, tt.wantOptions)
+			}
+			for k, v := range opt {
+				if v1, ok := tt.wantOptions[k]; !ok {
+					t.Errorf("AlluxioEngine.genUFSMountOptions() should has key: %v", k)
+				} else {
+					if v1 != v {
+						t.Errorf("AlluxioEngine.genUFSMountOptions()  key: %v value: %v, get value: %v", k, v1, v)
+					} else {
+						delete(tt.wantOptions, k)
+					}
+				}
 			}
 		})
 	}
