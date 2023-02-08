@@ -17,6 +17,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -41,7 +42,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties
-		e.overrideProperties(runtime, value.Fuse.Properties)
+		runtime.Spec.Properties = utils.UnionMapsWithOverride(runtime.Spec.Properties, runtime.Spec.Fuse.Properties)
 	}
 
 	if len(runtime.Spec.Fuse.Env) > 0 {

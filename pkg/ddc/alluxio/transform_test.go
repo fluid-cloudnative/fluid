@@ -839,6 +839,39 @@ func TestTransformMasterProperties(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "properties is not null for master",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Properties: map[string]string{
+						"alluxio.worker.block.heartbeat.interval":   "300sec",
+						"alluxio.master.rpc.executor.keepalive":     "45sec",
+						"alluxio.master.rpc.executor.max.pool.size": "300",
+					},
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						Properties: map[string]string{
+							"alluxio.master.rpc.executor.keepalive":     "30sec",
+							"alluxio.master.rpc.executor.max.pool.size": "100",
+						},
+					},
+				},
+			},
+			Value:   &Alluxio{},
+			DataSet: &datav1alpha1.Dataset{},
+			wantValue: &Alluxio{
+				Master: Master{
+					Properties: map[string]string{
+						"alluxio.master.rpc.executor.keepalive":     "30sec",
+						"alluxio.master.rpc.executor.max.pool.size": "100",
+					},
+				},
+				Properties: map[string]string{
+					"alluxio.master.rpc.executor.keepalive":     "30sec",
+					"alluxio.master.rpc.executor.max.pool.size": "100",
+					"alluxio.worker.block.heartbeat.interval":   "300sec",
+				},
+			},
+		},
 	}
 
 	for _, tt := range testCases {
