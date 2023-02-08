@@ -68,7 +68,7 @@ var _ = Describe("TemplateEngine", func() {
 		Log:           fake.NullLogger(),
 		RuntimeType:   "test-runtime-type",
 		FinalizerName: "test-finalizer-name",
-		Runtime:       nil,
+		Runtime:       &datav1alpha1.AlluxioRuntime{},
 	}
 	var t *base.TemplateEngine
 
@@ -252,6 +252,7 @@ func TestNewTemplateEngine(t *testing.T) {
 		Client:      client,
 		Log:         fake.NullLogger(),
 		RuntimeType: "alluxio",
+		Runtime:     &datav1alpha1.AlluxioRuntime{},
 	}
 
 	templateEngine := base.NewTemplateEngine(engine, id, ctx)
@@ -277,6 +278,7 @@ func TestID(t *testing.T) {
 		Client:      client,
 		Log:         fake.NullLogger(),
 		RuntimeType: "alluxio",
+		Runtime:     &datav1alpha1.AlluxioRuntime{},
 	}
 
 	templateEngine := base.NewTemplateEngine(engine, id, ctx)
