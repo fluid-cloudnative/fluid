@@ -1371,7 +1371,8 @@ func TestPermitSync(t *testing.T) {
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Log: fakeutils.NullLogger(),
+		Log:     fakeutils.NullLogger(),
+		Runtime: &v1alpha1.AlluxioRuntime{},
 	}
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)
