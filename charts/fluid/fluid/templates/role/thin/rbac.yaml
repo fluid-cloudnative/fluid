@@ -27,6 +27,7 @@ rules:
       - jindoruntimes
       - juicefsruntimes
       - goosefsruntimes
+      - eacruntimes
       - thinruntimes
       - thinruntimeprofiles
       - datasets
