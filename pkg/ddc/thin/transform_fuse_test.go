@@ -450,7 +450,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 				},
 			}, {
 				Name:  common.ThinFuseOptionEnvKey,
-				Value: "a=b",
+				Value: "c=d,a=b",
 			}, {
 				Name:  common.ThinFusePointEnvKey,
 				Value: "/thin/fluid/test/thin-fuse",

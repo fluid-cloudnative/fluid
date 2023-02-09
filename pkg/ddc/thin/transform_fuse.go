@@ -26,7 +26,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -181,45 +180,14 @@ func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile
 		options[k] = v
 	}
 
-	// option in dataset sharedOptions will cover option in runtime
-	for k, v := range dataset.Spec.SharedOptions {
+	mountOptions, err := t.genUFSMountOptions(dataset.Spec.Mounts[0], dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
+	if err != nil {
+		t.Log.Info("Error:", "err", err)
+		return "", err
+	}
+
+	for k, v := range mountOptions {
 		options[k] = v
-	}
-
-	// option in dataset will cover sharedOptions and option in runtime
-	for k, v := range dataset.Spec.Mounts[0].Options {
-		// support only one mountpoint
-		options[k] = v
-	}
-
-	for _, encryptOption := range dataset.Spec.SharedEncryptOptions {
-		key := encryptOption.Name
-		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(t.Client, secretKeyRef.Name, t.namespace)
-		if err != nil {
-			t.Log.Info("can't get the secret",
-				"namespace", t.namespace,
-				"name", t.name,
-				"secretName", secretKeyRef.Name)
-			return "", err
-		}
-		val := secret.Data[secretKeyRef.Key]
-		options[key] = string(val)
-	}
-
-	for _, encryptOption := range dataset.Spec.Mounts[0].EncryptOptions {
-		key := encryptOption.Name
-		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(t.Client, secretKeyRef.Name, t.namespace)
-		if err != nil {
-			t.Log.Info("can't get the secret",
-				"namespace", t.namespace,
-				"name", t.name,
-				"secretName", secretKeyRef.Name)
-			return "", err
-		}
-		val := secret.Data[secretKeyRef.Key]
-		options[key] = string(val)
 	}
 
 	optionList := make([]string, 0, len(options))
