@@ -69,10 +69,10 @@ func (e *EACEngine) Shutdown() (err error) {
 // cleanupCache cleans up the cache
 func (e *EACEngine) cleanupCache() (err error) {
 	runtime, err := e.getRuntime()
-	e.Log.Info("get runtime info", "runtime", runtime)
 	if err != nil {
 		return err
 	}
+	e.Log.Info("get runtime info", "runtime", runtime)
 
 	configMapName := e.getConfigmapName()
 	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, runtime.Namespace)
