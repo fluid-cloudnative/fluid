@@ -420,6 +420,12 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 			return status, err
 		}
 		return &runtime.Status, nil
+	case common.EACRuntime:
+		runtime, err := utils.GetEACRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
 	case common.ThinRuntime:
 		runtime, err := utils.GetThinRuntime(client, name, namespace)
 		if err != nil {
