@@ -129,6 +129,9 @@ func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1
 		if err != nil {
 			return err
 		}
+	case common.EACRuntime:
+		// TODO: EACRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
+		// Currently EACRuntime only supports CSI mode, so do nothing here.
 	case common.ThinRuntime:
 		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
 		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: mountedRuntimeNamespace},
