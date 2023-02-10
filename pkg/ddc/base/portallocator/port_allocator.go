@@ -106,7 +106,11 @@ func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
 	case BitMap:
 		alloc.pa, err = newBitMapAllocator(alloc.pr, alloc.log)
 	default:
-		return errors.New("runtime-port-allocator can only be random or bitmap")
+		err = errors.New("runtime-port-allocator can only be random or bitmap")
+	}
+
+	if err != nil {
+		return err
 	}
 
 	// policy should check reserved ports
