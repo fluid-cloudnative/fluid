@@ -299,6 +299,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 
 	if len(runtime.Spec.Master.Properties) > 0 {
 		value.Master.Properties = runtime.Spec.Master.Properties
+		runtime.Spec.Properties = utils.UnionMapsWithOverride(runtime.Spec.Properties, runtime.Spec.Master.Properties)
 	}
 
 	// parse master pod network mode
@@ -370,6 +371,7 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		value.Worker.Properties = runtime.Spec.Worker.Properties
+		runtime.Spec.Properties = utils.UnionMapsWithOverride(runtime.Spec.Properties, runtime.Spec.Worker.Properties)
 	}
 
 	if len(runtime.Spec.Worker.Env) > 0 {
