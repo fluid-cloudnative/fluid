@@ -795,3 +795,237 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 		})
 	}
 }
+
+func TestTransformMasterProperties(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name      string
+		Runtime   *datav1alpha1.AlluxioRuntime
+		Value     *Alluxio
+		DataSet   *datav1alpha1.Dataset
+		wantValue *Alluxio
+	}
+
+	testCases := []testCase{
+		{
+			Name: "master properties is not null",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Properties: map[string]string{
+						"alluxio.master.rpc.executor.keepalive":     "45sec",
+						"alluxio.master.rpc.executor.max.pool.size": "300",
+					},
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						Properties: map[string]string{
+							"alluxio.master.rpc.executor.keepalive":     "30sec",
+							"alluxio.master.rpc.executor.max.pool.size": "100",
+						},
+					},
+				},
+			},
+			Value:   &Alluxio{},
+			DataSet: &datav1alpha1.Dataset{},
+			wantValue: &Alluxio{
+				Master: Master{
+					Properties: map[string]string{
+						"alluxio.master.rpc.executor.keepalive":     "30sec",
+						"alluxio.master.rpc.executor.max.pool.size": "100",
+					},
+				},
+				Properties: map[string]string{
+					"alluxio.master.rpc.executor.keepalive":     "30sec",
+					"alluxio.master.rpc.executor.max.pool.size": "100",
+				},
+			},
+		},
+		{
+			Name: "properties is not null for master",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Properties: map[string]string{
+						"alluxio.worker.block.heartbeat.interval":   "300sec",
+						"alluxio.master.rpc.executor.keepalive":     "45sec",
+						"alluxio.master.rpc.executor.max.pool.size": "300",
+					},
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						Properties: map[string]string{
+							"alluxio.master.rpc.executor.keepalive":     "30sec",
+							"alluxio.master.rpc.executor.max.pool.size": "100",
+						},
+					},
+				},
+			},
+			Value:   &Alluxio{},
+			DataSet: &datav1alpha1.Dataset{},
+			wantValue: &Alluxio{
+				Master: Master{
+					Properties: map[string]string{
+						"alluxio.master.rpc.executor.keepalive":     "30sec",
+						"alluxio.master.rpc.executor.max.pool.size": "100",
+					},
+				},
+				Properties: map[string]string{
+					"alluxio.master.rpc.executor.keepalive":     "30sec",
+					"alluxio.master.rpc.executor.max.pool.size": "100",
+					"alluxio.worker.block.heartbeat.interval":   "300sec",
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		err := engine.transformMasters(tt.Runtime, tt.DataSet, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+		for k, v := range tt.Value.Properties {
+			if data, ok := tt.wantValue.Properties[k]; ok {
+				if data != v {
+					t.Fatalf("test name: %s. expect %s got %s", tt.Name, v, data)
+				}
+			} else {
+				t.Fatalf("test name: %s. expect %s in value,but not in ", tt.Name, k)
+			}
+		}
+	}
+}
+
+func TestTransformWorkerProperties(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name      string
+		Runtime   *datav1alpha1.AlluxioRuntime
+		Value     *Alluxio
+		wantValue *Alluxio
+	}
+
+	testCases := []testCase{
+		{
+			Name: "worker properties is not null",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Properties: map[string]string{
+						"alluxio.worker.block.heartbeat.interval":      "300sec",
+						"alluxio.worker.block.heartbeat.timeout=1hour": "5hour",
+					},
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						Properties: map[string]string{
+							"alluxio.worker.block.heartbeat.interval":      "30sec",
+							"alluxio.worker.block.heartbeat.timeout=1hour": "1hour",
+						},
+					},
+				},
+			},
+			Value: &Alluxio{},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					Properties: map[string]string{
+						"alluxio.worker.block.heartbeat.interval":      "30sec",
+						"alluxio.worker.block.heartbeat.timeout=1hour": "1hour",
+					},
+				},
+				Properties: map[string]string{
+					"alluxio.worker.block.heartbeat.interval":      "30sec",
+					"alluxio.worker.block.heartbeat.timeout=1hour": "1hour",
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", tt.Runtime.Spec.TieredStore)
+		err := engine.transformWorkers(tt.Runtime, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+		for k, v := range tt.Value.Properties {
+			if data, ok := tt.wantValue.Properties[k]; ok {
+				if data != v {
+					t.Fatalf("test name: %s. expect %s got %s", tt.Name, v, data)
+				}
+			} else {
+				t.Fatalf("test name: %s. expect %s in value,but not in ", tt.Name, k)
+			}
+		}
+	}
+}
+
+func TestTransformFuseProperties(t *testing.T) {
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	var x int64 = 1000
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
+
+	type testCase struct {
+		Name      string
+		Runtime   *datav1alpha1.AlluxioRuntime
+		Value     *Alluxio
+		DataSet   *datav1alpha1.Dataset
+		wantValue *Alluxio
+	}
+
+	testCases := []testCase{
+		{
+			Name: "fuse properties is not null",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Properties: map[string]string{
+						"alluxio.fuse.cached.paths.max": "100000",
+						"alluxio.fuse.maxcache.bytes":   "1MB",
+					},
+					Fuse: datav1alpha1.AlluxioFuseSpec{
+						Properties: map[string]string{
+							"alluxio.fuse.cached.paths.max": "1000",
+							"alluxio.fuse.maxcache.bytes":   "2MB",
+						},
+					},
+				},
+			},
+			Value: &Alluxio{},
+			DataSet: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+					}},
+					Owner: &datav1alpha1.User{
+						UID: &x,
+						GID: &x,
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Fuse: Fuse{
+					Properties: map[string]string{
+						"alluxio.fuse.cached.paths.max": "1000",
+						"alluxio.fuse.maxcache.bytes":   "2MB",
+					},
+				},
+				Properties: map[string]string{
+					"alluxio.fuse.cached.paths.max": "1000",
+					"alluxio.fuse.maxcache.bytes":   "2MB",
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		engine.Log = ctrl.Log
+		err := engine.transformFuse(tt.Runtime, tt.DataSet, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+		for k, v := range tt.Value.Properties {
+			if data, ok := tt.wantValue.Properties[k]; ok {
+				if data != v {
+					t.Fatalf("test name: %s. expect %s got %s", tt.Name, v, data)
+				}
+			} else {
+				t.Fatalf("test name: %s. expect %s in value,but not in ", tt.Name, k)
+			}
+		}
+	}
+}
