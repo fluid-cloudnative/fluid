@@ -59,8 +59,11 @@ func TestEACEngine_transform(t *testing.T) {
 		ctrl.SetLogger(zap.New(func(o *zap.Options) {
 			o.Development = true
 		}))
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
-		_, err := engine.transform(test.runtime)
+		err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		_, err = engine.transform(test.runtime)
 		if err != nil {
 			t.Errorf("error %v", err)
 		}

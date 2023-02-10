@@ -311,7 +311,10 @@ func TestEACEngineReleasePorts(t *testing.T) {
 				Log:       fake.NullLogger(),
 			}
 
-			portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", GetReservedPorts)
+			err := portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", GetReservedPorts)
+			if err != nil {
+				t.Fatalf("failed to set up runtime port allocator due to %v", err)
+			}
 			allocator, _ := portallocator.GetRuntimePortAllocator()
 			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
 				func(_ *portallocator.RuntimePortAllocator, ports []int) {
