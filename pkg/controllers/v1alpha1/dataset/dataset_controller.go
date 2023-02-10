@@ -25,8 +25,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
