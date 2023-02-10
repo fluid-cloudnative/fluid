@@ -71,7 +71,7 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 	return nil
 }
 
-func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
+func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
 	mountedRuntimeType := mountedRuntime.GetRuntimeType()
 	mountedRuntimeName := mountedRuntime.GetName()
 	mountedRuntimeNamespace := mountedRuntime.GetNamespace()
@@ -129,6 +129,10 @@ func createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1
 		if err != nil {
 			return err
 		}
+	case common.EACRuntime:
+		// TODO: EACRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
+		// Currently EACRuntime only supports CSI mode, so do nothing here.
+		e.Log.Info("Skip createConfigMapForRefDataset because the mountedRuntimeType=EAC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
 		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
 		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: mountedRuntimeNamespace},
