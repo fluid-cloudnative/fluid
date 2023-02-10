@@ -127,7 +127,7 @@ func TestShutdown(t *testing.T) {
 
 	pr := net.ParsePortRangeOrDie("20000-21000")
 
-	portallocator.SetupRuntimePortAllocator(nil, pr, dummy)
+	portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
 
 	var testCase = []struct {
 		expectedWorkers  int32

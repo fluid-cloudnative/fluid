@@ -335,7 +335,7 @@ func TestAlluxioEngineReleasePorts(t *testing.T) {
 				Log:       fake.NullLogger(),
 			}
 
-			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
+			portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", GetReservedPorts)
 			allocator, _ := portallocator.GetRuntimePortAllocator()
 			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
 				func(_ *portallocator.RuntimePortAllocator, ports []int) {

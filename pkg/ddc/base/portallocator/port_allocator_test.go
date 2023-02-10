@@ -33,7 +33,7 @@ var errDummy = func(client client.Client) (ports []int, err error) {
 
 func TestRuntimePortAllocatorWithError(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-21000")
-	SetupRuntimePortAllocator(nil, pr, errDummy)
+	SetupRuntimePortAllocator(nil, pr, "bitmap", errDummy)
 
 	_, err := GetRuntimePortAllocator()
 	if err == nil {
@@ -43,7 +43,7 @@ func TestRuntimePortAllocatorWithError(t *testing.T) {
 
 func TestRuntimePortAllocator(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-21000")
-	SetupRuntimePortAllocator(nil, pr, dummy)
+	SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
 
 	allocator, err := GetRuntimePortAllocator()
 	if err != nil {
@@ -71,7 +71,7 @@ func TestRuntimePortAllocator(t *testing.T) {
 
 func TestRuntimePortAllocatorRelease(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-20010")
-	SetupRuntimePortAllocator(nil, pr, dummy)
+	SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
 
 	preservedPorts, _ := dummy(nil)
 

@@ -35,7 +35,7 @@ func TestTransformPortForMaster(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 		err := engine.transformPortForMaster(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
@@ -70,7 +70,7 @@ func TestTransformPortForFuse(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 		err := engine.transformPortForFuse(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
@@ -105,7 +105,7 @@ func TestTransformPortForWorker(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 		err := engine.transformPortForWorker(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)

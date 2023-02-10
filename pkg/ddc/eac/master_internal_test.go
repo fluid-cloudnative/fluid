@@ -117,7 +117,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		runtime:   eacruntime,
 	}
 
-	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 
 	// check release found
 	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
@@ -244,7 +244,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 		runtime:   eacruntime,
 	}
 
-	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 
 	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
