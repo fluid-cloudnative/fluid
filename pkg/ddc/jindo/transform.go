@@ -194,7 +194,21 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 
 	jfsNamespace := "jindo"
 	mode := "oss"
-	for _, mount := range dataset.Spec.Mounts {
+	for _, tmpMount := range dataset.Spec.Mounts {
+
+		mount := tmpMount
+		mount.Options = map[string]string{}
+		mount.EncryptOptions = []datav1alpha1.EncryptOption{}
+
+		for key, value := range dataset.Spec.SharedOptions {
+			mount.Options[key] = value
+		}
+		for key, value := range tmpMount.Options {
+			mount.Options[key] = value
+		}
+
+		mount.EncryptOptions = append(mount.EncryptOptions, dataset.Spec.SharedEncryptOptions...)
+		mount.EncryptOptions = append(mount.EncryptOptions, tmpMount.EncryptOptions...)
 
 		//jfsNamespace = jfsNamespace + mount.Name + ","
 
