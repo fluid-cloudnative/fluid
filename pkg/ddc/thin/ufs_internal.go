@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
@@ -68,18 +69,39 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 	return
 }
 
-func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]string, error) {
+func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 
 	// initialize mount options
 	mOptions := map[string]string{}
-	if len(m.Options) > 0 {
-		mOptions = m.Options
+	if len(SharedOptions) > 0 {
+		mOptions = SharedOptions
+	}
+	for key, value := range m.Options {
+		mOptions[key] = value
 	}
 
 	// if encryptOptions have the same key with options
 	// it will overwrite the corresponding value
-	for _, item := range m.EncryptOptions {
+	var err error
+	mOptions, err = t.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
+	if err != nil {
+		return mOptions, err
+	}
 
+	//gen public encryptOptions
+	mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+	if err != nil {
+		return mOptions, err
+	}
+
+	return mOptions, nil
+}
+
+// thin encrypt mount options
+func (t *ThinEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
+	for _, item := range EncryptOptions {
+
+		securityutil.UpdateSensitiveKey(item.Name)
 		sRef := item.ValueFrom.SecretKeyRef
 		secret, err := kubeclient.GetSecret(t.Client, sRef.Name, t.namespace)
 		if err != nil {
@@ -87,7 +109,7 @@ func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount) (map[string]string
 			return mOptions, err
 		}
 
-		t.Log.Info("get value from secret", "mount name", m.Name, "secret key", sRef.Key)
+		t.Log.Info("get value from secret", "mount name", name, "secret key", sRef.Key)
 
 		v := secret.Data[sRef.Key]
 		mOptions[item.Name] = string(v)
