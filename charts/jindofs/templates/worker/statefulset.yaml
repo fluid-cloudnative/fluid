@@ -35,6 +35,8 @@ spec:
   podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: {{ template "jindofs.name" . }}
         chart: {{ template "jindofs.chart" . }}

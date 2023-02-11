@@ -36,3 +36,7 @@ Add runtime identity information to template
 0.8.7
 
 Make fuse tolerate any trint
+
+0.8.8
+
+Add `sidecar.istio.io/inject` to components annotation
