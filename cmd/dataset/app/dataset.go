@@ -35,6 +35,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -49,6 +50,7 @@ var (
 	leaderElectionNamespace string
 	development             bool
 	pprofAddr               string
+	maxConcurrentReconciles int
 )
 
 var datasetCmd = &cobra.Command{
@@ -68,6 +70,7 @@ func init() {
 	datasetCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	datasetCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	datasetCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	datasetCmd.Flags().IntVar(&maxConcurrentReconciles, "reconcile-workers", 3, "Set the number of max concurrent workers for reconciling dataset and dataset operations")
 }
 
 func handle() {
@@ -101,13 +104,17 @@ func handle() {
 		os.Exit(1)
 	}
 
+	controllerOptions := controller.Options{
+		MaxConcurrentReconciles: maxConcurrentReconciles,
+	}
+
 	if err = (&datasetctl.DatasetReconciler{
 		Client:       mgr.GetClient(),
 		Log:          ctrl.Log.WithName("datasetctl").WithName("Dataset"),
 		Scheme:       mgr.GetScheme(),
 		Recorder:     mgr.GetEventRecorderFor("Dataset"),
 		ResyncPeriod: time.Duration(5 * time.Second),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Dataset")
 		os.Exit(1)
 	}
@@ -116,7 +123,7 @@ func handle() {
 		ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("DataLoad"),
-	)).SetupWithManager(mgr); err != nil {
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
 		os.Exit(1)
 	}
@@ -125,7 +132,7 @@ func handle() {
 		ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("DataBackup"),
-	)).SetupWithManager(mgr); err != nil {
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
 		os.Exit(1)
 	}

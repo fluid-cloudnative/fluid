@@ -1181,6 +1181,13 @@ func TestGetRuntimeStatus(t *testing.T) {
 		},
 	}
 
+	eacRuntime := v1alpha1.EACRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "eac",
+			Namespace: "default",
+		},
+	}
+
 	thinRuntime := v1alpha1.ThinRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "thin",
@@ -1192,6 +1199,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EACRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ThinRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
@@ -1200,12 +1208,14 @@ func TestGetRuntimeStatus(t *testing.T) {
 	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
+	eacRuntimeObjs := []runtime.Object{}
 	thinRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
 	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
+	eacRuntimeObjs = append(eacRuntimeObjs, &eacRuntime)
 	thinRuntimeObjs = append(thinRuntimeObjs, &thinRuntime)
 	type args struct {
 		client      client.Client
@@ -1299,6 +1309,26 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "eac_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				name:        "eac",
+				namespace:   "default",
+				runtimeType: common.EACRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "eac_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				name:        "eac-error",
+				namespace:   "default",
+				runtimeType: common.EACRuntime,
+			},
+			wantErr: true,
+		},
+		{
 			name: "thin_test",
 			args: args{
 				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
@@ -1371,7 +1401,8 @@ func TestPermitSync(t *testing.T) {
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Log: fakeutils.NullLogger(),
+		Log:     fakeutils.NullLogger(),
+		Runtime: &v1alpha1.AlluxioRuntime{},
 	}
 
 	templateEngine := NewTemplateEngine(nil, id, ctx)

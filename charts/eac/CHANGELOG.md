@@ -9,3 +9,7 @@
 0.1.2
 
 - Support podMetadata for EACRuntime resources
+
+0.1.3
+
+- Add `sidecar.istio.io/inject` to components annotation

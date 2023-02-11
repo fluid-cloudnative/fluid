@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -208,8 +209,9 @@ func (r *DataLoadReconciler) addFinalizerAndRequeue(ctx cruntime.ReconcileReques
 }
 
 // SetupWithManager sets up the controller with the given controller manager
-func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.DataLoad{}).
 		Complete(r)
 }

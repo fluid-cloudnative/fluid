@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
@@ -236,8 +237,9 @@ func (r *DatasetReconciler) addFinalizerAndRequeue(ctx reconcileRequestContext) 
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.Dataset.ObjectMeta.GetGeneration())
 }
 
-func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.Dataset{}).
 		Complete(r)
 }
