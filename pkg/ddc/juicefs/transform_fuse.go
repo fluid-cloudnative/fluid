@@ -52,7 +52,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if len(runtime.Spec.TieredStore.Levels) != 0 {
 		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
 	}
-	option, err := j.genValue(mount, tiredStoreLevel, value)
+	option, err := j.genValue(mount, tiredStoreLevel, value, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 	if err != nil {
 		return err
 	}
@@ -106,11 +106,26 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
 }
 
-func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS) (map[string]string, error) {
+func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
+	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	value.Configs.Name = mount.Name
 	options := make(map[string]string)
 	source := ""
 	value.Edition = EnterpriseEdition
+
+	for k, v := range SharedOptions {
+		switch k {
+		case JuiceStorage:
+			value.Configs.Storage = v
+			continue
+		case JuiceBucket:
+			value.Configs.Bucket = v
+			continue
+		default:
+			options[k] = v
+		}
+	}
+
 	for k, v := range mount.Options {
 		switch k {
 		case JuiceStorage:
@@ -123,6 +138,41 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			options[k] = v
 		}
 	}
+
+	for _, encryptOption := range SharedEncryptOptions {
+		key := encryptOption.Name
+		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+		secret, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+		if err != nil {
+			j.Log.Info("can't get the secret",
+				"namespace", j.namespace,
+				"name", j.name,
+				"secretName", secretKeyRef.Name)
+			return nil, err
+		}
+
+		switch key {
+		case JuiceMetaUrl:
+			source = "${METAURL}"
+			value.Configs.MetaUrlSecret = secretKeyRef.Name
+			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
+			_, ok := secret.Data[secretKeyRef.Key]
+			if !ok {
+				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
+			}
+			value.Edition = CommunityEdition
+		case JuiceAccessKey:
+			value.Configs.AccessKeySecret = secretKeyRef.Name
+			value.Configs.AccessKeySecretKey = secretKeyRef.Key
+		case JuiceSecretKey:
+			value.Configs.SecretKeySecret = secretKeyRef.Name
+			value.Configs.SecretKeySecretKey = secretKeyRef.Key
+		case JuiceToken:
+			value.Configs.TokenSecret = secretKeyRef.Name
+			value.Configs.TokenSecretKey = secretKeyRef.Key
+		}
+	}
+
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
