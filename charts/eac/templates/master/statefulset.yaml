@@ -28,8 +28,9 @@ spec:
   serviceName: {{ template "eac.fullname" . }}-master
   template:
     metadata:
-      {{- if .Values.master.annotations }}
       annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.master.annotations }}
       {{- range $key, $val := .Values.master.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
