@@ -329,6 +329,11 @@ func (e *GooseFSEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions m
 func (e *GooseFSEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
 	for _, item := range EncryptOptions {
 
+		if _, ok := mOptions[item.Name]; ok {
+			err := errors.New(fmt.Sprintf("the name %s is duplicated with the option", item.Name))
+			return mOptions, err
+		}
+
 		securityutil.UpdateSensitiveKey(item.Name)
 		sRef := item.ValueFrom.SecretKeyRef
 		secret, err := kubeclient.GetSecret(e.Client, sRef.Name, e.namespace)
