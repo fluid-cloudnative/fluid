@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"errors"
 	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -105,7 +104,7 @@ func (t *ThinEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOpti
 	for _, item := range EncryptOptions {
 
 		if _, ok := mOptions[item.Name]; ok {
-			err := errors.New(fmt.Sprintf("the name %s is duplicated with the option", item.Name))
+			err := fmt.Errorf("the name %s is duplicated with the option", item.Name)
 			return mOptions, err
 		}
 
