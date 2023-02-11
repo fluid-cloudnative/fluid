@@ -31,6 +31,8 @@ spec:
       role: thin-worker
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: {{ template "thin.name" . }}
         chart: {{ template "thin.chart" . }}
