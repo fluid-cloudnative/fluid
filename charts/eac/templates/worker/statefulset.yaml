@@ -30,8 +30,9 @@ spec:
       role: eac-worker
   template:
     metadata:
-      {{- if .Values.worker.annotations }}
       annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.worker.annotations }}
       {{- range $key, $val := .Values.worker.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
