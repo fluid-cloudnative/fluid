@@ -317,7 +317,7 @@ func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptO
 	for _, item := range EncryptOptions {
 
 		if _, ok := mOptions[item.Name]; ok {
-			err := fmt.Errorf("the name %s is duplicated with the option", item.Name)
+			err := fmt.Errorf("the option %s is set more than one times, please double check the dataset's option and encryptOptions", item.Name)
 			return mOptions, err
 		}
 
