@@ -16,6 +16,10 @@ limitations under the License.
 
 package dataload
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // DataLoadValue defines the value yaml file used in DataLoad helm chart
 type DataLoadValue struct {
 	DataLoadInfo DataLoadInfo `yaml:"dataloader"`
@@ -46,6 +50,9 @@ type DataLoadInfo struct {
 
 	// Annotations defines annotations in DataLoad's pod metadata
 	Annotations map[string]string `yaml:"annotations,omitempty"`
+
+	// image pull secrets
+	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
 }
 
 type TargetPath struct {
