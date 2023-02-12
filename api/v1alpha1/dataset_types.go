@@ -150,6 +150,14 @@ type DatasetSpec struct {
 	// DataRestoreLocation is the location to load data of dataset  been backuped
 	// +optional
 	DataRestoreLocation *DataRestoreLocation `json:"dataRestoreLocation,omitempty"`
+
+	// SharedOptions is the options to all mount
+	// +optional
+	SharedOptions map[string]string `json:"sharedOptions,omitempty"`
+
+	// SharedEncryptOptions is the encryptOption to all mount
+	// +optional
+	SharedEncryptOptions []EncryptOption `json:"sharedEncryptOptions,omitempty"`
 }
 
 // Runtime describes a runtime to be used to support dataset

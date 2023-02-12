@@ -865,7 +865,9 @@ func TestGenUFSMountOptions(t *testing.T) {
 		Log       logr.Logger
 	}
 	type args struct {
-		m datav1alpha1.Mount
+		m   datav1alpha1.Mount
+		pm  map[string]string
+		pme []datav1alpha1.EncryptOption
 	}
 	tests := []struct {
 		name    string
@@ -882,6 +884,20 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Log:       fake.NullLogger(),
 			},
 			args: args{
+				pm: map[string]string{
+					"key1": "value1",
+				},
+				pme: []datav1alpha1.EncryptOption{
+					{
+						Name: "key2",
+						ValueFrom: datav1alpha1.EncryptOptionSource{
+							SecretKeyRef: datav1alpha1.SecretKeySelector{
+								Name: "mysecret",
+								Key:  "key2",
+							},
+						},
+					},
+				},
 				m: datav1alpha1.Mount{
 					Options: map[string]string{"fs.cosn.bucket.region": "ap-shanghai",
 						"fs.cosn.impl":                    "org.apache.hadoop.fs.CosFileSystem",
@@ -914,7 +930,9 @@ func TestGenUFSMountOptions(t *testing.T) {
 				"fs.AbstractFileSystem.cosn.impl": "org.apache.hadoop.fs.CosN",
 				"fs.cos.app.id":                   "1251707795",
 				"fs.cosn.userinfo.secretKey":      "key",
-				"fs.cosn.userinfo.secretId":       "id"},
+				"fs.cosn.userinfo.secretId":       "id",
+				"key1":                            "value1",
+				"key2":                            "value2"},
 			wantErr: false,
 		},
 	}
@@ -928,6 +946,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Data: map[string][]byte{
 					"fs.cosn.userinfo.secretKey": []byte("key"),
 					"fs.cosn.userinfo.secretId":  []byte("id"),
+					"key2":                       []byte("value2"),
 				},
 			}
 			testObjs := []runtime.Object{}
@@ -939,7 +958,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Log:       tt.fields.Log,
 				Client:    client,
 			}
-			got, err := e.genUFSMountOptions(tt.args.m)
+			got, err := e.genUFSMountOptions(tt.args.m, tt.args.pm, tt.args.pme)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GooseFSEngine.genUFSMountOptions() error = %v, wantErr %v", err, tt.wantErr)
 				return
