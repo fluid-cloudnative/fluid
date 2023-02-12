@@ -11,7 +11,7 @@
 
 不同于传统PVC面向存储的抽象，Fluid对Kubernetes上”计算任务使用数据的过程”进行抽象，提出弹性数据集Dataset概念，并作为“first class citizen”在Kubernetes中实现，来实现Dataset管理（CRUD操作）、权限控制和访问加速等能力。Fluid一方面负责分布式缓存系统（Alluxio，JuiceFS）转换成自我管理、弹性扩容、自我修复，可观测的缓存服务，并通过其支持数据集的操作；另一方面，Fluid通过数据缓存的位置信息，为使用数据集的应用提供数据亲和性调度。
 
-![](perspective.png)
+![](../../../static/perspective.png)
 
 ## 核心功能：
 
@@ -37,7 +37,7 @@ Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具
 
 可以支持原生、边缘、Serverless K8s集群、K8s多集群等多样化环境可以运行在云平台、边缘、 K8s多集群等多样化环境。
 
-![](roadmap.png)
+![](../../../static/roadmap.png)
 
 而Fluid对于数据场景的支持，分为3个阶段，1.可达可通 2.加速访问 3.容器集群中工作负载和数据之间的协同编排，以及多个数据集的管理。
 
