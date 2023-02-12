@@ -1,1 +1,3 @@
-concepts.md
+# 概念
+
+![](../../../static/concept.png)
