@@ -6,12 +6,14 @@
 
 2. Kubernetes只提供了异构存储服务接入和管理标准接口(CSI，Container Storage Interface),对应用如何在容器集群中使用和管理数据并没有定义。在运行训练任务时，数据科学家需要能够定义数据集的文件特征,管理数据集版本，控制访问权限，数据集预处理，加速异构数据读取等。但是在Kubernetes中还没有这样的标准方案，这是云原生容器社区缺失的重要能力之一。
 
-3. Kubernetes 提供多种形态支持，比如原生Kubernetes，边缘Kubernetes，Serverless Kubernetes，而对于不同形态的Kubernetes，对于csi Plugin支持程度不同，比如许多公有云的Serverless Kubernetes不支持第三方的CSI Plugin接入。
+3. Kubernetes 支持多种形态，比如原生Kubernetes，边缘Kubernetes，Serverless Kubernetes，但是对于不同形态的Kubernetes，Kubernetes不同形态的支持对于CSI插件支持程度也不同，许多Serverless Kubernetes不支持第三方的CSI插件的部署。
 
 
 ## 什么是Fluid
 
-不同于传统PVC面向存储的抽象，Fluid以应用为中心的角度，对Kubernetes上”计算任务使用数据的过程”进行抽象，提出弹性数据集Dataset概念，并作为“first class citizen”在Kubernetes中实现，来实现Dataset管理（CRUD操作）、权限控制和访问加速等能力。Fluid一方面负责分布式缓存系统（Alluxio，JuiceFS）转换成自我管理、弹性扩容、自我修复，可观测的缓存服务，并通过其支持数据集的操作；另一方面，Fluid通过数据缓存的位置信息，为使用数据集的应用提供数据亲和性调度。
+不同于传统PVC面向存储的抽象，Fluid以应用为中心的角度，对Kubernetes上”计算任务使用数据的过程”进行抽象。它提出弹性数据集Dataset概念，并作为一等公民在Kubernetes中实现，以实现数据集的CRUD操作、权限控制和访问加速等功能。
+
+Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自我管理、弹性扩容和自我修复能力的可观测缓存服务，并通过支持数据集的操作来实现此目的。同时，通过数据缓存的位置信息，Fluid能够为使用数据集的应用提供数据亲和性调度。
 
 ![](../../../static/concepts/perspective.png)
 
@@ -19,13 +21,11 @@
 
 1. **面向应用的数据集统一抽象**：
 
-数据集抽象可以支持来自不同的存储源的数据聚合。在 Kubernetes 集群中，还可以指定数据集的可迁移性，例如在使用 GPU 运算时，可以将数据缓存到 GPU 节点。当计算结束后，我们可以通过修改亲和性将数据缓存到便宜的 CPU 节点上，以节省成本。同时也支持可描述的数据特征，为底层Runtime优化数据访问策略提供一些应用层的信息，比如某些Runtime就会根据文件特征是小文件，将数据缓存保存到rocksdb而不是磁盘上。
-
-同时数据集提供了可观测性，比如该数据集的数据总量多少，目前提供的缓存空间是多大，缓存命中率是多少。用户可以根据这些信息决定是否需要对缓存系统进行扩缩容。
+数据集抽象不仅汇总来自多个存储源的数据，还描述了数据的迁移性和特征，并提供可观测性，例如数据集的总数据量、当前缓存空间大小以及缓存命中率。用户可以根据这些信息评估是否需要对缓存系统进行扩容或缩容。
 
 2. **可扩展的数据引擎插件**：
 
-Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具体的Runtime实现；由于不同存储的差异，就会有不同的Runtime接口。如何真正访问数据就需要引入Runtime，Fluid中的Runtime分为两大类，一类是CacheRuntime实现缓存加速,包括开源的分布式缓存AlluxioRuntime主要加速S3，HDFS，JuiceFSRuntime加速JuiceFS；另一类是ThinRuntime统一访问接口，比如CubeFS，CurveFS是新开源和维护的分布式存储系统。
+Dataset是统一的抽象概念，而实际的数据操作需要由具体的Runtime实现，因为不同存储的差异，会有不同的Runtime接口。Fluid的Runtime分为两大类：CacheRuntime实现数据缓存加速，如AlluxioRuntime主要加速S3、HDFS和JuiceFS；另一类是ThinRuntime，它提供统一的访问接口，方便接入第三方存储。
 
 3. **自动化的数据操作**：
 
@@ -37,7 +37,7 @@ Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具
 
 5. **运行时平台无关**：
 
-可以支持原生、边缘、Serverless K8s集群、K8s多集群等多样化环境可以运行在云平台、边缘、 Kubernetes多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
+可以支持原生、边缘、Serverless Kubernetes集群、Kubernetes多集群等多样化环境可以运行在云平台、边缘、 Kubernetes多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
 
 ![](../../../static/concepts/roadmap.png)
 
