@@ -16,11 +16,12 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"reflect"
-	"testing"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
