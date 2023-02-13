@@ -1,8 +1,10 @@
 # 系统架构
 
-Fluid的整体架构：
+Fluid的整体架构如下所示:
 
-![](../../../static/concepts/architecture.png)
+<div align="center">
+  <img src="../../../static/concepts/architecture.png" title="perspective" height="60%" width="60%" alt="">
+</div>
 
 
 Fluid有两个核心概念：Dataset和Runtime。为了支持这两个概念，Fluid的架构被逻辑地划分为控制平面和数据平面。
