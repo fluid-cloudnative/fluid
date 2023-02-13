@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -277,6 +278,101 @@ func TestBuildWorkersAffinity(t *testing.T) {
 
 			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
 				t.Errorf("testcase %s BuildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
+			}
+		})
+	}
+}
+
+func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
+	tests := []struct {
+		name    string
+		dataset *datav1alpha1.Dataset
+		worker  *appsv1.StatefulSet
+		want    *v1.Affinity
+	}{
+		{
+			name: "eac-shared",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-eac",
+					Namespace: "big-data",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					PlacementMode: datav1alpha1.ShareMode,
+				},
+			},
+			worker: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-eac-worker",
+					Namespace: "big-data",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32Ptr(1),
+				},
+			},
+			want: &v1.Affinity{
+				PodAntiAffinity: &v1.PodAntiAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{},
+					RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+						{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "fluid.io/dataset-placement",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"Exclusive"},
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+				NodeAffinity: &v1.NodeAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+						{
+							Weight: 100,
+							Preference: v1.NodeSelectorTerm{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "fluid.io/f-big-data-test-eac",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"true"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.dataset)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.worker)
+			_ = v1.AddToScheme(s)
+
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.dataset)
+			runtimeObjs = append(runtimeObjs, tt.worker)
+			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EACRuntime, datav1alpha1.TieredStore{})
+			if err != nil {
+				t.Fatalf("testcase %s failed due to %v", tt.name, err)
+			}
+			h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
+
+			want := tt.want
+			worker, err := h.BuildWorkersAffinity(tt.worker)
+			if err != nil {
+				t.Fatalf("test BuildWorkersAffinity() = %v", err)
+			}
+
+			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
+				t.Fatalf("testcase %s BuildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.want)
 			}
 		})
 	}
