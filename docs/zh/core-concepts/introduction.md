@@ -15,7 +15,7 @@
 
 Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自我管理、弹性扩容和自我修复能力的可观测缓存服务，并通过支持数据集的操作来实现此目的。同时，通过数据缓存的位置信息，Fluid能够为使用数据集的应用提供数据亲和性调度。
 
-![](../../../static/concepts/perspective.png)
+![](../../../static/concepts/perspective_cn.png)
 
 ## 核心功能：
 

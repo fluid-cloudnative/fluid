@@ -1,6 +1,6 @@
 # 概念
 
-![](../../../static/concepts/concept.png)
+![](../../../static/concepts/concept_cn.png)
 
 
 
@@ -24,7 +24,10 @@
 
 Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具体的Runtime实现；由于不同存储的差异，就会有不同的Runtime接口。如何真正访问数据就需要引入Runtime，这里的API Spec是可以相对灵活的定义，但是Runtime的生命周期由Fluid统一定义，Runtime的具体实现者需要依照通用接口定义完成具体实现。
 
-Fluid中的Runtime分为两大类，一类是CacheRuntime实现缓存加速,包括开源的分布式缓存Alluxio主要加速S3，HDFS，JuiceFS加速JuiceFS,阿里云JindoFS加速OSS和OSS+HDFS，EAC加速NAS和CPFS；另一类是ThinRuntime统一访问接口，比如CubeFS，CurveFS是国内互联网公司开源和维护的分布式存储系统。
+Fluid中的Runtime分为两大类:
+
+1. CacheRuntime实现缓存加速,包括开源的分布式缓存Alluxio主要加速S3，HDFS，JuiceFS加速JuiceFS, 阿里云JindoFS加速OSS和OSS+HDFS  ，腾讯云GooseFS支持COS
+2. ThinRuntime统一访问接口，比如支持s3fs, nfs-fuse等分布式存储系统。
 
 
 ## 数据操作 Operations
