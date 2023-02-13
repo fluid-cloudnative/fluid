@@ -17,6 +17,8 @@ limitations under the License.
 package portallocator
 
 import (
+	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -30,6 +32,15 @@ const (
 	Random AllocatePolicy = "random"
 	BitMap AllocatePolicy = "bitmap"
 )
+
+func ValidateEnum(allocatePolicyStr string) (AllocatePolicy, error) {
+	switch AllocatePolicy(allocatePolicyStr) {
+	case Random, BitMap:
+		return AllocatePolicy(allocatePolicyStr), nil
+	default:
+		return AllocatePolicy(allocatePolicyStr), fmt.Errorf("runtime-port-allocator can only be random or bitmap")
+	}
+}
 
 type BatchAllocatorInterface interface {
 	Allocate(int) error
@@ -60,9 +71,15 @@ type RuntimePortAllocator struct {
 // rpa is a global singleton of type RuntimePortAllocator
 var rpa *RuntimePortAllocator
 
-// SetupRuntimePortAllocator instantiates the global singleton rpa, use BitMap port allocating policy
-func SetupRuntimePortAllocator(client client.Client, pr *net.PortRange, getReservedPorts func(client client.Client) (ports []int, err error)) {
-	SetupRuntimePortAllocatorWithType(client, pr, BitMap, getReservedPorts)
+// SetupRuntimePortAllocator instantiates the global singleton rpa, set up port allocating policy according to the given allocatePolicyStr.
+// Currently the valid policies are either "random" or "bitmap".
+func SetupRuntimePortAllocator(client client.Client, pr *net.PortRange, allocatePolicyStr string, getReservedPorts func(client client.Client) (ports []int, err error)) error {
+	policy, err := ValidateEnum(allocatePolicyStr)
+	if err != nil {
+		return err
+	}
+	SetupRuntimePortAllocatorWithType(client, pr, policy, getReservedPorts)
+	return nil
 }
 
 // SetupRuntimePortAllocatorWithType instantiates the global singleton rpa with specified port allocating policy
@@ -90,7 +107,7 @@ func (alloc *RuntimePortAllocator) createAndRestorePortAllocator() (err error) {
 	case BitMap:
 		alloc.pa, err = newBitMapAllocator(alloc.pr, alloc.log)
 	default:
-		err = errors.New("allocate-port-policy can only be random or bitmap")
+		err = errors.New("runtime-port-allocator can only be random or bitmap")
 	}
 
 	if err != nil {
