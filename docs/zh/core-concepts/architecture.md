@@ -15,7 +15,7 @@ Fluid有两个核心概念：Dataset和Runtime。为了支持这两个概念，F
 
   - **Application Manager**: 主要关心使用数据集的应用Pod的调度和运行，分为两个核心组件：Scheduler和Webhook.
 
-    - Scheduler: 结合从Runtime获取的数据集对应运行时的部署信息信息，对于Kubernetes集群中的Pod进行调度。将使用数据集的应用优先调度到含有数据缓存的节点。
+    - Scheduler: 结合从Runtime获取的缓存信息，对于Kubernetes集群中的Pod进行调度。将使用数据集的应用优先调度到含有数据缓存的节点。
 
     - Sidecar Webhook: 对于无法运行csi-pluign的Kubernetes环境， Sidecar webhook会将自动的将PVC替换成 FUSE sidecar，并且控制Pod中容器启动顺序，保证FUSE容器先启动。
 
