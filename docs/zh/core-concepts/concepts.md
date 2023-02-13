@@ -1,7 +1,10 @@
 # 概念
 
-![](../../../static/concepts/concept_cn.png)
+完整概念图如下：
 
+<div align="center">
+  <img src="../../../static/concepts/concept.png" title="perspective" height="60%" width="60%" alt="">
+</div>
 
 
 ## 数据集 Dataset
