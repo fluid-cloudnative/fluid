@@ -1,12 +1,5 @@
 # 概念
 
-完整概念图如下：
-
-<div align="center">
-  <img src="../../../static/concepts/concept.png" title="perspective" height="60%" width="60%" alt="">
-</div>
-
-
 ## 数据集 Dataset
 
 数据集是逻辑上相关的一组数据的集合，会被运算引擎使用，比如大数据的Spark，AI场景的TensorFlow。而这些数据智能的应用会创造工业界的核心价值。Dataset的管理实际上也有多个维度，比如安全性，版本管理和数据加速。我们希望从数据加速出发，对于数据集的管理提供支持。例如支持不同的存储源的数据来源聚合, 可迁移性和数据特征：
@@ -17,11 +10,15 @@
 
 **可描述的数据特征**: 为底层Runtime优化数据访问策略提供一些应用层的信息，比如某些运行时(Runtime)就会根据文件特征是小文件，进行专门的优化，而无需用户进行专门的配置。
 
-![](../../../static/concepts/dataset.png)
+<div align="center">
+  <img src="../../../static/concepts/dataset.png" title="perspective" height="60%" width="60%" alt="">
+</div>
 
 同时Dataset提供了可观测性，比如该数据集的数据总量多少，目前提供的缓存空间是多大，缓存命中率是多少,用户可以根据这些信息决定是否需要扩缩容。
 
-![](../../../static/concepts/dataset-status.png)
+<div align="center">
+  <img src="../../../static/concepts/dataset-status.png" title="perspective" height="60%" width="60%" alt="">
+</div>
 
 ## 运行时 Runtime
 
@@ -52,5 +49,12 @@ Fluid的通用数据操作(data operation)描述数据预热，数据迁移，�
 
 
 支持将外部存储中的导入数据集后开始使用和边倒入边使用策略。
+
+
+完整概念：
+
+<div align="center">
+  <img src="../../../static/concepts/concept.png" title="perspective" height="60%" width="60%" alt="">
+</div>
 
 
