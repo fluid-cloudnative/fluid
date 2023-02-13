@@ -34,7 +34,7 @@ runtime:
     replicas: 1
     runtimeWorkers: 3
     portRange: 20000-26000
-    portAllocatePolicy: bitmap
+    portAllocatePolicy: random
     enabled: false
     init:
       image: fluidcloudnative/init-users:v0.9.0-fcf2004
@@ -48,6 +48,7 @@ runtime:
     replicas: 1
     runtimeWorkers: 3
     portRange: 18000-19999
+    portAllocatePolicy: random
     enabled: false
     engine: jindofsx
     queryUfsTotal: true
@@ -65,6 +66,7 @@ runtime:
     replicas: 1
     runtimeWorkers: 3
     portRange: 26000-32000
+    portAllocatePolicy: random
     enabled: false
     init:
       image: fluidcloudnative/init-users:v0.9.0-fcf2004
