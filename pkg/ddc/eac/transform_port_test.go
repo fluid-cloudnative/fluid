@@ -35,8 +35,11 @@ func TestTransformPortForMaster(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-		err := engine.transformPortForMaster(test.runtime, test.eacValue)
+		err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+		if err != nil {
+			t.Fatalf("failed to set up runtime port allocator due to %v", err)
+		}
+		err = engine.transformPortForMaster(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
@@ -70,8 +73,11 @@ func TestTransformPortForFuse(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-		err := engine.transformPortForFuse(test.runtime, test.eacValue)
+		err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		err = engine.transformPortForFuse(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
@@ -105,8 +111,11 @@ func TestTransformPortForWorker(t *testing.T) {
 	for _, test := range tests {
 		client := fake.NewFakeClientWithScheme(testScheme, test.runtime.DeepCopy())
 		engine := &EACEngine{Log: fake.NullLogger()}
-		portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-		err := engine.transformPortForWorker(test.runtime, test.eacValue)
+		err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+		err = engine.transformPortForWorker(test.runtime, test.eacValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
