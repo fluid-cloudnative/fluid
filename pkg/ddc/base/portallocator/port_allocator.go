@@ -71,7 +71,8 @@ type RuntimePortAllocator struct {
 // rpa is a global singleton of type RuntimePortAllocator
 var rpa *RuntimePortAllocator
 
-// SetupRuntimePortAllocator instantiates the global singleton rpa, use BitMap port allocating policy
+// SetupRuntimePortAllocator instantiates the global singleton rpa, set up port allocating policy according to the given allocatePolicyStr.
+// Currently the valid policies are either "random" or "bitmap".
 func SetupRuntimePortAllocator(client client.Client, pr *net.PortRange, allocatePolicyStr string, getReservedPorts func(client client.Client) (ports []int, err error)) error {
 	policy, err := ValidateEnum(allocatePolicyStr)
 	if err != nil {
