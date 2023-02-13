@@ -6,7 +6,7 @@
 
 2. Kubernetes只提供了异构存储服务接入和管理标准接口(CSI，Container Storage Interface),对应用如何在容器集群中使用和管理数据并没有定义。在运行训练任务时，数据科学家需要能够定义数据集的文件特征,管理数据集版本，控制访问权限，数据集预处理，加速异构数据读取等。但是在Kubernetes中还没有这样的标准方案，这是云原生容器社区缺失的重要能力之一。
 
-3. 更多的 AI 和大数据应用选择 Serverless Kubernetes 作为运行平台，因为它可以提供无需固定节点、灵活扩缩容和按需付费的优势。但是Serverless Kubernetes对于存储的支持比较封闭，仅支持云厂商自身的存储接口，需要更加开放的扩展性。
+3. Kubernetes 提供多种形态支持，比如原生Kubernetes，边缘Kubernetes，Serverless Kubernetes，而对于不同形态的Kubernetes，对于csi Plugin支持程度不同，比如许多公有云的Serverless Kubernetes不支持第三方的CSI Plugin接入。
 
 
 ## 什么是Fluid
@@ -37,7 +37,7 @@ Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具
 
 5. **运行时平台无关**：
 
-可以支持原生、边缘、Serverless K8s集群、K8s多集群等多样化环境可以运行在云平台、边缘、 K8s多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
+可以支持原生、边缘、Serverless K8s集群、K8s多集群等多样化环境可以运行在云平台、边缘、 Kubernetes多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
 
 ![](../../../static/concepts/roadmap.png)
 
