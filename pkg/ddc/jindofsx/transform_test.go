@@ -576,8 +576,11 @@ func TestJindoFSxEngine_transform(t *testing.T) {
 				Log:       fake.NullLogger(),
 			}
 			tt.args.runtime = tt.fields.runtime
-			portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-			_, err := e.transform(tt.args.runtime)
+			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			if err != nil {
+				t.Fatalf("failed to set up runtime port allocator due to %v", err)
+			}
+			_, err = e.transform(tt.args.runtime)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JindoFSxEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
 				return
