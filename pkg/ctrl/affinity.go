@@ -20,6 +20,7 @@ import (
 	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -124,6 +125,13 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 						TopologyKey: "kubernetes.io/hostname",
 					},
 				},
+			}
+
+			// TODO: remove this when EAC is ready for spread-first scheduling policy
+			// Currently EAC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
+			// to avoid using spread-first scheduling policy
+			if e.runtimeInfo.GetRuntimeType() == common.EACRuntime {
+				workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
 			}
 		}
 
