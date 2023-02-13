@@ -8,7 +8,7 @@
 + 概述
   - [概述](userguide/overview.md)
 + 核心概念
-  - [初识Fluid](core-concepts/introduction.md)
+  - [Fluid简介](core-concepts/introduction.md)
   - [概念](core-concepts/concepts.md)
   - [系统架构](core-concepts/architecture.md)
 + 入门
