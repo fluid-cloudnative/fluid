@@ -647,7 +647,10 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 
 func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-21000")
-	portallocator.SetupRuntimePortAllocator(nil, pr, dummy)
+	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
 		name               string
