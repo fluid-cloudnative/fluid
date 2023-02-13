@@ -15,7 +15,11 @@
 
 Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自我管理、弹性扩容和自我修复能力的可观测缓存服务，并通过支持数据集的操作来实现此目的。同时，通过数据缓存的位置信息，Fluid能够为使用数据集的应用提供数据亲和性调度。
 
-![](../../../static/concepts/perspective_cn.png)
+
+<div align="center">
+  <img src="../../../static/concepts/perspective_cn.png" title="perspective" height="60%" width="60%" alt="">
+</div>
+
 
 ## 核心功能：
 
@@ -39,7 +43,26 @@ Dataset是统一的抽象概念，而实际的数据操作需要由具体的Runt
 
 可以支持原生、边缘、Serverless Kubernetes集群、Kubernetes多集群等多样化环境可以运行在云平台、边缘、 Kubernetes多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
 
-![](../../../static/concepts/roadmap.png)
+
+## 演示
+我们提供了视频的Demo，为您展示如何通过Fluid提升数据访问速度。
+
+### 演示 1: 加速文件访问
+
+[![](../../../static/remote_file_accessing.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277753111709.mp4)
+
+
+### 演示 2: 加速机器学习
+
+[![](../../../static/machine_learning.png)](http://cloud.video.taobao.com/play/u/2987821887/p/1/e/6/t/1/277528130570.mp4)
+
+## 快速体验Fluid
+Fluid需要运行在 Kubernetes v1.14 及以上版本，并且需要支持CSI存储。Fluid Operator的部署和管理是通过 Kubernetes 平台上的包管理工具 Helm v3实现的。运行 Fluid前请确保 Helm 已经正确安装在 Kubernetes 集群里。
+
+你可以参照参考文档 [docs](https://github.com/fluid-cloudnative/docs-fluid)，安装和使用Fluid。
+- [English](docs/en/TOC.md)
+- [简体中文](docs/zh/TOC.md)
+
 
 ## 规划：
 
@@ -50,3 +73,6 @@ Fluid提供了三个阶段的对数据场景的支持：
 1. 实现云上计算和云下数据的无缝对接，以提供计算与数据的可互通性。  
 2. 通过通用的方法来提高数据访问速度。  
 3. 协调容器集群中的工作负载与数据，并管理多个数据集，以提高数据管理的效率。
+
+
+![](../../../static/concepts/roadmap.png)
