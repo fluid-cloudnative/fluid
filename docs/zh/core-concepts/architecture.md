@@ -10,16 +10,23 @@ Fluid有两个核心概念：Dataset和Runtime。为了支持这两个概念，F
 
 - 控制平面 
 
-  - **Dataset/Runtime Manager**: 主要关心数据集和支持数据集的运行时在Kubernetes中的调度和编排。负责数据集的调度，迁移和缓存运行时的弹性扩缩容；同时支持数据集的自动化运维操作，比如控制细粒度的数据预热，比如可以指定预热某个指定文件夹；控制元数据备份和恢复，提升对于海量小文件场景的数据访问性能；设置缓存数据的pin策略，避免数据驱逐导致的性能震荡。
+  - **Dataset/Runtime Manager**: 主要负责数据集和支持数据集的运行时在Kubernetes中的调度和编排。负责数据集的调度，迁移和缓存运行时的弹性扩缩容；同时支持数据集的自动化运维操作，比如控制细粒度的数据预热，比如可以指定预热某个指定文件夹；控制元数据备份和恢复，提升对于海量小文件场景的数据访问性能；设置缓存数据的pin策略，避免数据驱逐导致的性能震荡。
 
 
   - **Application Manager**: 主要关心使用数据集的应用Pod的调度和运行，分为两个核心组件：Scheduler和Webhook.
 
-    - Scheduler: 结合和Runtime获取的数据集排布信息，对于Kubernetes集群中的Pod进行调度。需要使用数据集的应用优先调度到含有数据缓存的节点，并且应用和所需要具体数据的匹配度，进行优选；而不使用该数据集则会避免调度到这样的节点。另一方面在调度应用的同时可以结合应用的调度决策信息，将数据预热到应用未来会运行的节点上，实现在深度学习场景中对于第一个epoch的缓存加速。
+    - Scheduler: 结合从Runtime获取的数据集对应运行时的部署信息信息，对于Kubernetes集群中的Pod进行调度。将使用数据集的应用优先调度到含有数据缓存的节点。
+
+    - Sidecar Webhook: 对于无法运行csi-pluign的Kubernetes环境， Sidecar webhook会将自动的将PVC替换成 FUSE sidecar，并且控制Pod中容器启动顺序，保证FUSE容器先启动。
 
 
+ - 数据平面
 
-    - Webhook:
+   - **Runtime Plugin**: 可以扩展兼容多种分布式缓存引擎。
+同时Fluid抽象出了共性特征，比如对于缓存描述：使用了什么缓存介质，缓存quota，缓存目录，这些都是共性的; 而分布式缓存引擎的拓扑抽象有一定的差异性，比如alluxiomaster和slave架构，Juice是只有worker P2P的架构，可以在Rungtime的CRD中进行配置。支持Alluxio，JuiceFS等Runtime。
+
+
+   - **CSI Plugin**: 支持以
 
 
 
