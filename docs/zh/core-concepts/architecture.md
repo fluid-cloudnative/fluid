@@ -23,17 +23,7 @@ Fluid有两个核心概念：Dataset和Runtime。为了支持这两个概念，F
  - 数据平面
 
    - **Runtime Plugin**: 可以扩展兼容多种分布式缓存引擎。
-同时Fluid抽象出了共性特征，比如对于缓存描述：使用了什么缓存介质，缓存quota，缓存目录，这些都是共性的; 而分布式缓存引擎的拓扑抽象有一定的差异性，比如alluxiomaster和slave架构，Juice是只有worker P2P的架构，可以在Rungtime的CRD中进行配置。支持Alluxio，JuiceFS等Runtime。
+同时Fluid抽象出了共性特征，比如对于缓存描述：使用了什么缓存介质，缓存quota，缓存目录，这些都是共性的; 而分布式缓存引擎的拓扑抽象有一定的差异性，比如alluxiomaster和slave架构，Juice是只有worker P2P的架构，可以在Rungtime的CRD中进行配置。支持Alluxio，JuiceFS等Runtime；同时也支持无需开发的通用存储接入ThinRuntime。
 
 
-   - **CSI Plugin**: 支持以
-
-
-
-
-
-
-Fluid控制平面包括Dataset Controller，负责管理Dataset的通用操作；Runtime Controller，负责管理各种Runtime的生命周期；Scheduler plugin负责调度使用Dataset的Pod。
-
-在数据平面上，我们通过CSI插件支持运行在ECS上的Pod，通过FUSE sidecar支持运行在ECI上的Pod。开发人员就不需要担心数据平面的实现。他们只需按照Runtime的开发指南集成Fluid即可。值得注意的是，Fluid也实现了CSI插件接口，但是与传统的CSI插件相比，有两个主要区别：1）FUSE客户端实现了容器化，以Pod形式运行，使其具有更好的可观测性，并可以单独设置资源配额；2）FUSE客户端与CSI插件完全解耦，不再需要将FUSE客户端构建到CSI插件容器镜像中。这使得FUSE客户端和CSI插件可以各自独立地演进。
-
+   - **CSI Plugin**: 以容器的方式的方式启动存储客户端，与存储客户端完全解耦，做CSI Plugin升级不会影响到业务容器，同时支持多版本存储客户端部署在同一个Kubernetes集群中；将客户端独立在 pod 中运行也就使其在 Kubernetes 体系中，提供可观测性；设置客户端的计算资源配额；同时支持一定能力的自愈。
