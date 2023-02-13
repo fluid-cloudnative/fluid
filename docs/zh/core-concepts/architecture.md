@@ -22,8 +22,7 @@ Fluid有两个核心概念：Dataset和Runtime。为了支持这两个概念，F
 
  - 数据平面
 
-   - **Runtime Plugin**: 可以扩展兼容多种分布式缓存引擎。
-同时Fluid抽象出了共性特征，比如对于缓存描述：使用了什么缓存介质，缓存quota，缓存目录，这些都是共性的; 而分布式缓存引擎的拓扑抽象有一定的差异性，比如alluxioRuntime使用master和slave架构，JuiceFSRuntime是只有worker P2P的架构，可以在Rungtime的CRD中进行配置。支持Alluxio，JuiceFS等Runtime；同时也支持无需开发的通用存储接入ThinRuntime。
+   - **Runtime Plugin**: 作为一种扩展性强的插件，能够支持多种数据访问引擎。Fluid通过抽象出一些通用的特征，如缓存的使用介质、配额、目录等，与不同的分布式缓存引擎实现技术具有可扩展性。比如AlluxioRuntime使用Master-Slave架构，而JuiceFSRuntime使用Worker P2P架构，都可以在Runtime的CRD中进行配置。该插件不仅支持Alluxio、JuiceFS等特定的Runtime，也支持通用的ThinRuntime，使用者无需开发即可实现对通用存储的访问。
 
 
-   - **CSI Plugin**: 以容器的方式的方式启动存储客户端，与存储客户端完全解耦，做CSI Plugin升级不会影响到业务容器，同时支持多版本存储客户端部署在同一个Kubernetes集群中；将客户端独立在 pod 中运行也就使其在 Kubernetes 体系中，提供可观测性；设置客户端的计算资源配额；同时支持一定能力的自愈。
+   - **CSI Plugin**: 以容器的方式的方式启动存储客户端，与存储客户端完全解耦，做CSI Plugin升级不会影响到业务容器，同时支持多版本存储客户端部署在同一个Kubernetes集群中；将客户端独立在 pod 中运行也就使其在 Kubernetes 体系中，提供可观测性；设置客户端的计算资源配额。
