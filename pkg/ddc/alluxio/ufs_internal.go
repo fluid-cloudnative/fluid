@@ -186,6 +186,7 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 				return err
 			}
 
+
 			err = fileUtils.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
 				return err
@@ -314,6 +315,11 @@ func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions m
 // alluxio encrypt mount options
 func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
 	for _, item := range EncryptOptions {
+
+		if _, ok := mOptions[item.Name]; ok {
+			err := fmt.Errorf("the option %s is set more than one times, please double check the dataset's option and encryptOptions", item.Name)
+			return mOptions, err
+		}
 
 		securityutil.UpdateSensitiveKey(item.Name)
 		sRef := item.ValueFrom.SecretKeyRef

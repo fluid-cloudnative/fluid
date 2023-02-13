@@ -17,6 +17,8 @@
 package thin
 
 import (
+	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/operations"
@@ -100,6 +102,11 @@ func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[
 // thin encrypt mount options
 func (t *ThinEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
 	for _, item := range EncryptOptions {
+
+		if _, ok := mOptions[item.Name]; ok {
+			err := fmt.Errorf("the option %s is set more than one times, please double check the dataset's option and encryptOptions", item.Name)
+			return mOptions, err
+		}
 
 		securityutil.UpdateSensitiveKey(item.Name)
 		sRef := item.ValueFrom.SecretKeyRef
