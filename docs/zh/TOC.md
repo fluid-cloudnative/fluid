@@ -6,7 +6,11 @@
 ## TOC
 
 + 概述
-  - [介绍](userguide/overview.md)
+  - [概述](userguide/overview.md)
++ 核心概念
+  - [Fluid简介](core-concepts/introduction.md)
+  - [概念](core-concepts/concepts.md)
+  - [系统架构](core-concepts/architecture.md)
 + 入门
   - [安装](userguide/install.md)
   - [快速开始](userguide/get_started.md)
