@@ -58,6 +58,14 @@ const (
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
 	RuntimeDeprecated = "RuntimeDeprecated"
+
+	DataMigrateCollision = "DataMigrateCollision"
+
+	DataMigrateJobStarted = "DataMigrateJobStarted"
+
+	DataMigrateJobFailed = "DataMigrateJobFailed"
+
+	DataMigrateJobComplete = "DataMigrateJobComplete"
 )
 
 type CacheStoreType string
