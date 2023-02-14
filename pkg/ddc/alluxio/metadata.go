@@ -87,7 +87,6 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, nil
 	}
 
-	//todo(xuzhihao): option to enable/disable automatic metadata sync
 	//todo: periodical metadata sync
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != metadataSyncNotDoneMsg {
 		e.Log.V(1).Info("dataset ufs is ready",
