@@ -5,12 +5,13 @@
 package base
 
 import (
-	reflect "reflect"
+	"reflect"
 
-	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	runtime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	utils "github.com/fluid-cloudnative/fluid/pkg/utils"
-	gomock "github.com/golang/mock/gomock"
+	"github.com/golang/mock/gomock"
+
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // MockEngine is a mock of Engine interface.
@@ -374,6 +375,13 @@ func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (m *MockImplement) CreateDataMigrateJob(ctx runtime.ReconcileRequestContext, targetDataMigrate v1alpha1.DataMigrate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDataMigrateJob", ctx, targetDataMigrate)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
