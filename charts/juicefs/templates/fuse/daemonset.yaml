@@ -30,10 +30,11 @@ spec:
       role: juicefs-fuse
   template:
     metadata:
-      {{- if .Values.fuse.annotations }}
       annotations:
-      {{- range $key, $val := .Values.fuse.annotations }}
-        {{ $key | quote}}: {{ $val | quote }}
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
+      {{- range $key, $val := .Values.fuse.annotations}}
+        {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
       {{- end }}
       labels:

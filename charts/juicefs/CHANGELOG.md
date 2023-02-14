@@ -47,3 +47,6 @@
 
 0.2.12
 - Set cache dir in volumes & volumeMounts for worker & fuse
+
+0.2.13
+- Add `sidecar.istio.io/inject` to components annotation
