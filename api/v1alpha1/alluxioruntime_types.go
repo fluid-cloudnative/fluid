@@ -295,6 +295,10 @@ type AlluxioRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// SkipMetadataSync defines whether to skip syncing metadata when Alluxio is being set up. Default to false.
+	// +optional
+	SkipMetadataSync bool `json:"skipMetadataSync,omitempty"`
 }
 
 // +kubebuilder:object:root=true

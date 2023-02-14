@@ -943,6 +943,10 @@ spec:
                 - uid
                 - user
                 type: object
+              skipMetadataSync:
+                description: SkipMetadataSync defines whether to skip syncing metadata
+                  when Alluxio is being set up. Default to false.
+                type: boolean
               tieredstore:
                 description: Tiered storage used by Alluxio
                 properties:
