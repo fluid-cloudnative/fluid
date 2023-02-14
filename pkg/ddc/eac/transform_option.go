@@ -48,7 +48,7 @@ func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	var options []string
 
-	if runtime.Spec.Worker.Disabled == false {
+	if !runtime.Spec.Worker.Disabled {
 		options = append(options, "g_tier_EnableClusterCache=true")
 		options = append(options, "g_tier_EnableClusterCachePrefetch=true")
 	}

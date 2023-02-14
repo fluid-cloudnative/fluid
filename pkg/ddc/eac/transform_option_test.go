@@ -24,7 +24,7 @@ func TestTransformMasterOptions(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected err %v", err)
 	}
-	if value.Master.Options != "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,client_owner=fluid-test-master,assign_uuid=fluid-test-master,a=b" {
+	if value.Master.Options != "client_owner=fluid-test-master,assign_uuid=fluid-test-master,a=b" {
 		t.Errorf("unexpected option %v", value.Master.Options)
 	}
 }
@@ -32,6 +32,9 @@ func TestTransformMasterOptions(t *testing.T) {
 func TestTransformFuseOptions(t *testing.T) {
 	runtime := &datav1alpha1.EACRuntime{
 		Spec: datav1alpha1.EACRuntimeSpec{
+			Worker: datav1alpha1.EACCompTemplateSpec{
+				Disabled: false,
+			},
 			Fuse: datav1alpha1.EACFuseSpec{
 				Properties: map[string]string{
 					"a": "b",
@@ -49,6 +52,15 @@ func TestTransformFuseOptions(t *testing.T) {
 		t.Errorf("unexpected err %v", err)
 	}
 	if value.Fuse.Options != "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,assign_uuid=fluid-test-fuse,a=b" {
+		t.Errorf("unexpected option %v", value.Fuse.Options)
+	}
+
+	runtime.Spec.Worker.Disabled = true
+	err = engine.transformFuseOptions(runtime, value)
+	if err != nil {
+		t.Errorf("unexpected err %v", err)
+	}
+	if value.Fuse.Options != "assign_uuid=fluid-test-fuse,a=b" {
 		t.Errorf("unexpected option %v", value.Fuse.Options)
 	}
 }
