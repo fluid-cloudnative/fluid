@@ -78,7 +78,7 @@ type JuiceFSRuntimeSpec struct {
 
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
-	CleanCachePolicy CleanCacheBehavior `json:"cleanCachePolicy,omitempty"`
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components

@@ -477,7 +477,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
-							CleanCacheBehavior: datav1alpha1.CleanCacheBehavior{
+							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
 								MaxRetryAttempts: utilpointer.Int32(12),
 							},
 						},
@@ -498,7 +498,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
-							CleanCacheBehavior: datav1alpha1.CleanCacheBehavior{
+							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
 								MaxRetryAttempts: utilpointer.Int32(12),
 							},
 						},
@@ -585,7 +585,7 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
-							CleanCacheBehavior: datav1alpha1.CleanCacheBehavior{
+							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
 								GracePeriodSeconds: utilpointer.Int32(12),
 							},
 						},
@@ -606,7 +606,7 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
-							CleanCacheBehavior: datav1alpha1.CleanCacheBehavior{
+							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
 								MaxRetryAttempts: utilpointer.Int32(12),
 							},
 						},

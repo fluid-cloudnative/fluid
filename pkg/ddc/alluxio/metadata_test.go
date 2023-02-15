@@ -403,7 +403,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
-					MetadataSyncBehavior: datav1alpha1.MetadataSyncBehavior{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
 						AutoSync: nil,
 					},
 				},
@@ -416,7 +416,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
-					MetadataSyncBehavior: datav1alpha1.MetadataSyncBehavior{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
 						AutoSync: utilpointer.BoolPtr(true),
 					},
 				},
@@ -429,7 +429,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
-					MetadataSyncBehavior: datav1alpha1.MetadataSyncBehavior{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
 						AutoSync: utilpointer.BoolPtr(false),
 					},
 				},

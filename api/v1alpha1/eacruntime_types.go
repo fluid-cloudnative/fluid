@@ -154,7 +154,7 @@ type EACRuntimeSpec struct {
 
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
-	CleanCachePolicy CleanCacheBehavior `json:"cleanCachePolicy,omitempty"`
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 
 	// PodMetadata defines labels and annotations that will be propagated to all EAC's pods
 	// +optional

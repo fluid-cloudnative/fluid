@@ -948,8 +948,8 @@ OSAdvise
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -1257,8 +1257,8 @@ of the file as the value.</p>
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -1533,8 +1533,8 @@ NetworkMode
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -1788,8 +1788,8 @@ PodMetadata
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -2551,7 +2551,7 @@ Kubernetes core/v1.NodeSelector
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.CleanCacheBehavior">CleanCacheBehavior
+<h3 id="data.fluid.io/v1alpha1.CleanCachePolicy">CleanCachePolicy
 </h3>
 <p>
 (<em>Appears on:</em>
@@ -2562,7 +2562,7 @@ Kubernetes core/v1.NodeSelector
 <a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
 </p>
 <p>
-<p>CleanCacheBehavior defines behavior when cleaning cache</p>
+<p>CleanCachePolicy defines behavior when cleaning cache</p>
 </p>
 <table>
 <thead>
@@ -3812,8 +3812,8 @@ OSAdvise
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -4464,8 +4464,8 @@ of the file as the value.</p>
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -5201,8 +5201,8 @@ NetworkMode
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -5715,8 +5715,8 @@ PodMetadata
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
@@ -5852,7 +5852,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.MetadataSyncBehavior">MetadataSyncBehavior
+<h3 id="data.fluid.io/v1alpha1.MetadataSyncPolicy">MetadataSyncPolicy
 </h3>
 <p>
 (<em>Appears on:</em>
@@ -6308,30 +6308,30 @@ Kubernetes meta/v1.Time
 <tbody>
 <tr>
 <td>
-<code>cleanCacheBehavior</code></br>
+<code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
-CleanCacheBehavior
+<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
+CleanCachePolicy
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCacheBehavior defines the behavior of cleaning cache when shutting down the runtime</p>
+<p>CleanCachePolicy defines the behavior of cleaning cache when shutting down the runtime</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>metadataSyncBehavior</code></br>
+<code>metadataSyncPolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.MetadataSyncBehavior">
-MetadataSyncBehavior
+<a href="#data.fluid.io/v1alpha1.MetadataSyncPolicy">
+MetadataSyncPolicy
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>MetadataSyncBehavior defines the behavior of syncing metadata when setting up the runtime. If not set,</p>
+<p>MetadataSyncPolicy defines the behavior of syncing metadata when setting up the runtime. If not set,</p>
 </td>
 </tr>
 </tbody>
@@ -7909,5 +7909,5 @@ Kubernetes core/v1.VolumeSource
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>772e0977</code>.
+on git commit <code>8ddebe17</code>.
 </em></p>

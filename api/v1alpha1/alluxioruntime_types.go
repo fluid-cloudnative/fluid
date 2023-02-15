@@ -229,13 +229,13 @@ type Data struct {
 
 // RuntimeManagement defines suggestions for runtime controllers to manage the runtime
 type RuntimeManagement struct {
-	// CleanCacheBehavior defines the behavior of cleaning cache when shutting down the runtime
+	// CleanCachePolicy defines the behavior of cleaning cache when shutting down the runtime
 	// +optional
-	CleanCacheBehavior CleanCacheBehavior `json:"cleanCacheBehavior,omitempty"`
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 
-	// MetadataSyncBehavior defines the behavior of syncing metadata when setting up the runtime. If not set,
+	// MetadataSyncPolicy defines the behavior of syncing metadata when setting up the runtime. If not set,
 	// +optional
-	MetadataSyncBehavior MetadataSyncBehavior `json:"metadataSyncBehavior,omitempty"`
+	MetadataSyncPolicy MetadataSyncPolicy `json:"metadataSyncPolicy,omitempty"`
 }
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime

@@ -735,8 +735,8 @@ spec:
                 description: RuntimeManagement defines behaviors when managing the
                   runtime
                 properties:
-                  cleanCacheBehavior:
-                    description: CleanCacheBehavior defines the behavior of cleaning
+                  cleanCachePolicy:
+                    description: CleanCachePolicy defines the behavior of cleaning
                       cache when shutting down the runtime
                     properties:
                       gracePeriodSeconds:
@@ -763,8 +763,8 @@ spec:
                         format: int32
                         type: integer
                     type: object
-                  metadataSyncBehavior:
-                    description: MetadataSyncBehavior defines the behavior of syncing
+                  metadataSyncPolicy:
+                    description: MetadataSyncPolicy defines the behavior of syncing
                       metadata when setting up the runtime. If not set,
                     properties:
                       autoSync:
