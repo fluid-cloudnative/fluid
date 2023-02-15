@@ -345,10 +345,10 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 		runtimeType string
 	}
 	type args struct {
-		mount           datav1alpha1.Mount
-		tiredStoreLevel *datav1alpha1.Level
-		value           *JuiceFS
-		sharedOptions map[string]string
+		mount                datav1alpha1.Mount
+		tiredStoreLevel      *datav1alpha1.Level
+		value                *JuiceFS
+		sharedOptions        map[string]string
 		sharedEncryptOptions []datav1alpha1.EncryptOption
 	}
 	tests := []struct {
@@ -368,7 +368,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 			},
 			args: args{
-				sharedOptions: map[string]string{"a":"b"},
+				sharedOptions: map[string]string{"a": "b"},
 				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
 					Name: "token",
 					ValueFrom: datav1alpha1.EncryptOptionSource{
@@ -418,7 +418,7 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 			},
 			args: args{
-				sharedOptions: map[string]string{"a":"b"},
+				sharedOptions: map[string]string{"a": "b"},
 				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
 					Name: JuiceMetaUrl,
 					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{

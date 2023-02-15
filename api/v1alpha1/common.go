@@ -113,8 +113,8 @@ type VolumeSource struct {
 	corev1.VolumeSource `json:",inline"`
 }
 
-// CleanCachePolicy defines policies of cleaning cache
-type CleanCachePolicy struct {
+// CleanCacheBehavior defines behavior when cleaning cache
+type CleanCacheBehavior struct {
 	// Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request.
 	// Value must be non-negative integer. The value zero indicates clean immediately via the timeout
 	// command (no opportunity to shut down).
@@ -132,4 +132,14 @@ type CleanCachePolicy struct {
 	// +kubebuilder:default=3
 	// +optional
 	MaxRetryAttempts *int32 `json:"maxRetryAttempts,omitempty"`
+}
+
+type MetadataSyncBehavior struct {
+	// +kubebuilder:default=true
+	// +optional
+	AutoSync *bool `json:"autoSync,omitempty"`
+}
+
+func (msb *MetadataSyncBehavior) AutoSyncEnabled() bool {
+	return msb.AutoSync == nil || *msb.AutoSync
 }

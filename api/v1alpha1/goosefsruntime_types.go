@@ -187,7 +187,7 @@ type GooseFSRuntimeSpec struct {
 
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
-	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+	CleanCachePolicy CleanCacheBehavior `json:"cleanCachePolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true

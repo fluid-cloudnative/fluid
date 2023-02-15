@@ -227,6 +227,16 @@ type Data struct {
 	Pin bool `json:"pin"`
 }
 
+// RuntimeManagement defines suggestions for runtime controllers to manage the runtime
+type RuntimeManagement struct {
+	// CleanCacheBehavior defines the behavior of cleaning cache when shutting down the runtime
+	// +optional
+	CleanCacheBehavior CleanCacheBehavior `json:"cleanCacheBehavior,omitempty"`
+
+	// MetadataSyncBehavior defines the behavior of syncing metadata when setting up the runtime. If not set,
+	MetadataSyncBehavior MetadataSyncBehavior `json:"metadataSyncBehavior,omitempty"`
+}
+
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
@@ -292,13 +302,9 @@ type AlluxioRuntimeSpec struct {
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
-	// CleanCachePolicy defines cleanCache Policy
+	// RuntimeManagement defines behaviors when managing the runtime
 	// +optional
-	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
-
-	// SkipMetadataSync defines whether to skip syncing metadata when Alluxio is being set up. Default to false.
-	// +optional
-	SkipMetadataSync bool `json:"skipMetadataSync,omitempty"`
+	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
 }
 
 // +kubebuilder:object:root=true

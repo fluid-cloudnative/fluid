@@ -81,7 +81,7 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
-	if runtime.Spec.SkipMetadataSync {
+	if !runtime.Spec.RuntimeManagement.MetadataSyncBehavior.AutoSyncEnabled() {
 		e.Log.Info("Skip syncing metadta cause runtime.Spec.SkipMetadataSync=true", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
 		should = false
 		return should, nil

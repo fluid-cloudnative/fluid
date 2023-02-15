@@ -211,8 +211,8 @@ func (e *AlluxioEngine) getGracefulShutdownLimits() (gracefulShutdownLimits int3
 		return
 	}
 
-	if runtime.Spec.CleanCachePolicy.MaxRetryAttempts != nil {
-		gracefulShutdownLimits = *runtime.Spec.CleanCachePolicy.MaxRetryAttempts
+	if runtime.Spec.RuntimeManagement.CleanCacheBehavior.MaxRetryAttempts != nil {
+		gracefulShutdownLimits = *runtime.Spec.RuntimeManagement.CleanCacheBehavior.MaxRetryAttempts
 	} else {
 		gracefulShutdownLimits = defaultGracefulShutdownLimits
 	}
@@ -226,8 +226,8 @@ func (e *AlluxioEngine) getCleanCacheGracePeriodSeconds() (cleanCacheGracePeriod
 		return
 	}
 
-	if runtime.Spec.CleanCachePolicy.GracePeriodSeconds != nil {
-		cleanCacheGracePeriodSeconds = *runtime.Spec.CleanCachePolicy.GracePeriodSeconds
+	if runtime.Spec.RuntimeManagement.CleanCacheBehavior.GracePeriodSeconds != nil {
+		cleanCacheGracePeriodSeconds = *runtime.Spec.RuntimeManagement.CleanCacheBehavior.GracePeriodSeconds
 	} else {
 		cleanCacheGracePeriodSeconds = defaultCleanCacheGracePeriodSeconds
 	}
