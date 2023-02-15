@@ -248,20 +248,20 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 						},
 					}},
 					Mounts: []datav1alpha1.Mount{{
-					Options: map[string]string{
-						"d": "z",
-						"e": "",
-					},
-					EncryptOptions: []datav1alpha1.EncryptOption{{
-						Name: "a",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "sec",
-								Key:  "a",
-							},
+						Options: map[string]string{
+							"d": "z",
+							"e": "",
 						},
-					}},
-				}}}},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "a",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "sec",
+									Key:  "a",
+								},
+							},
+						}},
+					}}}},
 			},
 			wantOption: map[string]string{
 				"a": "z",
@@ -521,7 +521,6 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 		}
 	})
 }
-
 
 func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 	profile := &datav1alpha1.ThinRuntimeProfile{

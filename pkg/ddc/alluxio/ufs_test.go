@@ -479,7 +479,6 @@ func TestGenUFSMountOptions(t *testing.T) {
 	}
 }
 
-
 func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
@@ -491,9 +490,9 @@ func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
 	tests := []struct {
-		name        string
-		fields      fields
-		wantErr     bool
+		name    string
+		fields  fields
+		wantErr bool
 	}{
 		{
 			name: "test",
@@ -606,7 +605,6 @@ func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 		})
 	}
 }
-
 
 func TestFindUnmountedUFS(t *testing.T) {
 

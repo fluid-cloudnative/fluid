@@ -79,11 +79,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":       schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                 schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":              schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement":        schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":        schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":            schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
@@ -682,18 +684,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
-					"cleanCachePolicy": {
+					"management": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CleanCachePolicy defines cleanCache Policy",
+							Description: "RuntimeManagement defines policies when managing the runtime",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -749,7 +751,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref common.Ref
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "CleanCachePolicy defines policies of cleaning cache",
+				Description: "CleanCachePolicy defines policies when cleaning cache",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gracePeriodSeconds": {
@@ -3834,6 +3836,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref common.ReferenceCallb
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MetadataSyncPolicy defines policies when syncing metadata",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"autoSync": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AutoSync enables automatic metadata sync when setting up a runtime. If not set, it defaults to true.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4091,6 +4113,35 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref common.Ref
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeManagement defines suggestions for runtime controllers to manage the runtime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"cleanCachePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
+						},
+					},
+					"metadataSyncPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy"},
 	}
 }
 
