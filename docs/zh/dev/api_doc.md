@@ -313,16 +313,16 @@ PodMetadata
 </tr>
 <tr>
 <td>
-<code>cleanCachePolicy</code></br>
+<code>management</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCachePolicy defines cleanCache Policy</p>
+<p>RuntimeManagement defines behaviors when managing the runtime</p>
 </td>
 </tr>
 </table>
@@ -755,6 +755,32 @@ DataRestoreLocation
 <p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>sharedOptions</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SharedOptions is the options to all mount</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sharedEncryptOptions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">
+[]EncryptOption
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SharedEncryptOptions is the encryptOption to all mount</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -922,14 +948,28 @@ OSAdvise
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
 <p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all EAC&rsquo;s pods</p>
 </td>
 </tr>
 </table>
@@ -1217,8 +1257,8 @@ of the file as the value.</p>
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -1493,8 +1533,8 @@ NetworkMode
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -1748,8 +1788,8 @@ PodMetadata
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -2424,16 +2464,16 @@ PodMetadata
 </tr>
 <tr>
 <td>
-<code>cleanCachePolicy</code></br>
+<code>management</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCachePolicy defines cleanCache Policy</p>
+<p>RuntimeManagement defines behaviors when managing the runtime</p>
 </td>
 </tr>
 </tbody>
@@ -2511,18 +2551,18 @@ Kubernetes core/v1.NodeSelector
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.CleanCachePolicy">CleanCachePolicy
+<h3 id="data.fluid.io/v1alpha1.CleanCacheBehavior">CleanCacheBehavior
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
 </p>
 <p>
-<p>CleanCachePolicy defines policies of cleaning cache</p>
+<p>CleanCacheBehavior defines behavior when cleaning cache</p>
 </p>
 <table>
 <thead>
@@ -3222,6 +3262,32 @@ DataRestoreLocation
 <p>DataRestoreLocation is the location to load data of dataset  been backuped</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>sharedOptions</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SharedOptions is the options to all mount</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sharedEncryptOptions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOption">
+[]EncryptOption
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SharedEncryptOptions is the encryptOption to all mount</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.DatasetStatus">DatasetStatus
@@ -3500,6 +3566,20 @@ NetworkMode
 <p>Whether to use host network or not.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to EAC&rsquo;s master and worker pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec
@@ -3604,6 +3684,20 @@ NetworkMode
 <td>
 <em>(Optional)</em>
 <p>Whether to use hostnetwork or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to EAC&rsquo;s fuse pods</p>
 </td>
 </tr>
 </tbody>
@@ -3718,8 +3812,8 @@ OSAdvise
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -3728,12 +3822,27 @@ CleanCachePolicy
 <p>CleanCachePolicy defines cleanCache Policy</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to all EAC&rsquo;s pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.EncryptOption">EncryptOption
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.Mount">Mount</a>)
 </p>
 <p>
@@ -4355,8 +4464,8 @@ of the file as the value.</p>
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -5092,8 +5201,8 @@ NetworkMode
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -5606,8 +5715,8 @@ PodMetadata
 <td>
 <code>cleanCachePolicy</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
 </a>
 </em>
 </td>
@@ -5739,6 +5848,36 @@ string
 </td>
 <td>
 <p>Ratio of low watermark of the tier (e.g. 0.7)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.MetadataSyncBehavior">MetadataSyncBehavior
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>autoSync</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AutoSync enables automatic metadata sync when setting up a runtime. If not set, it defaults to true.</p>
 </td>
 </tr>
 </tbody>
@@ -5937,6 +6076,9 @@ not enabled by default.</p>
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">JindoCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
@@ -6143,6 +6285,53 @@ Kubernetes meta/v1.Time
 </td>
 <td>
 <p>Last time the condition transitioned from one status to another.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+</p>
+<p>
+<p>RuntimeManagement defines suggestions for runtime controllers to manage the runtime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>cleanCacheBehavior</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CleanCacheBehavior">
+CleanCacheBehavior
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanCacheBehavior defines the behavior of cleaning cache when shutting down the runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metadataSyncBehavior</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.MetadataSyncBehavior">
+MetadataSyncBehavior
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MetadataSyncBehavior defines the behavior of syncing metadata when setting up the runtime. If not set,</p>
 </td>
 </tr>
 </tbody>
@@ -7720,5 +7909,5 @@ Kubernetes core/v1.VolumeSource
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>ee2d1cf</code>.
+on git commit <code>772e0977</code>.
 </em></p>
