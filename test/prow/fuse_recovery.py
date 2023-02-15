@@ -47,7 +47,7 @@ def checkCsiRecoverEnabled() -> bool:
         if str(pod.spec.containers).__contains__("FuseRecovery=true"):
             print("CSI recovery enabled")
             return True
-        time.sleep(1)
+        time.sleep(5)
     return False
 
 
@@ -112,6 +112,7 @@ def checkDatasetBound():
         if "status" in resource:
             if "phase" in resource["status"]:
                 if resource["status"]["phase"] == "Bound":
+                    time.sleep(5)
                     return True
         time.sleep(1)
 
@@ -144,6 +145,7 @@ def checkVolumeResourcesReady():
                 continue
         print("PersistentVolume & PersistentVolumeClaim Ready.")
         break
+    time.sleep(5)
 
 
 def createDataListPod(name):
@@ -170,7 +172,7 @@ def createDataListPod(name):
     )
     api.create_namespaced_pod(namespace=namespace, body=pod)
     print("Pod created.")
-    time.sleep(1)
+    time.sleep(5)
 
 
 def checkDataListSuccess(name) -> bool:
@@ -188,7 +190,7 @@ def deletePod(prefix, pod_namespace):
     pod_name = getPodNameByPrefix(prefix, pod_namespace)
     api = client.CoreV1Api()
     api.delete_namespaced_pod(pod_name, pod_namespace)
-    time.sleep(1)
+    time.sleep(5)
     print("Delete pod: {}".format(pod_name))
 
 
@@ -266,13 +268,13 @@ def main():
     ### Create Pod with Injection Label
     createDataListPod("nginx")
     if checkPodReady("nginx", namespace):
-        time.sleep(1)
+        time.sleep(5)
         checkDataListSuccess("nginx")
 
     ### Delete fuse
     deleteAlluxioFusePod()
     if checkPodReady("hbase-fuse", namespace) and checkFuseRecovered():
-        time.sleep(1)
+        time.sleep(5)
         if checkDataListSuccess("nginx"):
             exit_code = 0
         else:
