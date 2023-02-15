@@ -75,7 +75,18 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
-	//todo(xuzhihao): option to enable/disable automatic metadata sync
+	runtime, err := utils.GetAlluxioRuntime(e.Client, e.name, e.namespace)
+	if err != nil {
+		should = false
+		return should, err
+	}
+
+	if !runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled() {
+		e.Log.Info("Skip syncing metadta cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
+		should = false
+		return should, nil
+	}
+
 	//todo: periodical metadata sync
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != metadataSyncNotDoneMsg {
 		e.Log.V(1).Info("dataset ufs is ready",
