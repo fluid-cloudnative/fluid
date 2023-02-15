@@ -732,12 +732,12 @@ spec:
                   type: string
                 type: array
               management:
-                description: RuntimeManagement defines behaviors when managing the
+                description: RuntimeManagement defines policies when managing the
                   runtime
                 properties:
                   cleanCachePolicy:
-                    description: CleanCachePolicy defines the behavior of cleaning
-                      cache when shutting down the runtime
+                    description: CleanCachePolicy defines the policy of cleaning cache
+                      when shutting down the runtime
                     properties:
                       gracePeriodSeconds:
                         default: 60
@@ -764,7 +764,7 @@ spec:
                         type: integer
                     type: object
                   metadataSyncPolicy:
-                    description: MetadataSyncPolicy defines the behavior of syncing
+                    description: MetadataSyncPolicy defines the policy of syncing
                       metadata when setting up the runtime. If not set,
                     properties:
                       autoSync:

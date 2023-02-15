@@ -322,7 +322,7 @@ RuntimeManagement
 </td>
 <td>
 <em>(Optional)</em>
-<p>RuntimeManagement defines behaviors when managing the runtime</p>
+<p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
 </table>
@@ -2473,7 +2473,7 @@ RuntimeManagement
 </td>
 <td>
 <em>(Optional)</em>
-<p>RuntimeManagement defines behaviors when managing the runtime</p>
+<p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
 </tbody>
@@ -2562,7 +2562,7 @@ Kubernetes core/v1.NodeSelector
 <a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
 </p>
 <p>
-<p>CleanCachePolicy defines behavior when cleaning cache</p>
+<p>CleanCachePolicy defines policies when cleaning cache</p>
 </p>
 <table>
 <thead>
@@ -5859,6 +5859,7 @@ string
 <a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
 </p>
 <p>
+<p>MetadataSyncPolicy defines policies when syncing metadata</p>
 </p>
 <table>
 <thead>
@@ -6317,7 +6318,7 @@ CleanCachePolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCachePolicy defines the behavior of cleaning cache when shutting down the runtime</p>
+<p>CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime</p>
 </td>
 </tr>
 <tr>
@@ -6331,7 +6332,7 @@ MetadataSyncPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>MetadataSyncPolicy defines the behavior of syncing metadata when setting up the runtime. If not set,</p>
+<p>MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,</p>
 </td>
 </tr>
 </tbody>
@@ -7909,5 +7910,5 @@ Kubernetes core/v1.VolumeSource
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>8ddebe17</code>.
+on git commit <code>26b76d04</code>.
 </em></p>
