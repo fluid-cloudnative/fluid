@@ -234,6 +234,7 @@ type RuntimeManagement struct {
 	CleanCacheBehavior CleanCacheBehavior `json:"cleanCacheBehavior,omitempty"`
 
 	// MetadataSyncBehavior defines the behavior of syncing metadata when setting up the runtime. If not set,
+	// +optional
 	MetadataSyncBehavior MetadataSyncBehavior `json:"metadataSyncBehavior,omitempty"`
 }
 

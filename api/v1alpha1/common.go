@@ -135,6 +135,7 @@ type CleanCacheBehavior struct {
 }
 
 type MetadataSyncBehavior struct {
+	// AutoSync enables automatic metadata sync when setting up a runtime. If not set, it defaults to true.
 	// +kubebuilder:default=true
 	// +optional
 	AutoSync *bool `json:"autoSync,omitempty"`
