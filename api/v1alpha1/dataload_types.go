@@ -16,7 +16,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,18 +60,6 @@ type DataLoadSpec struct {
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
-// DataLoadStatus defines the observed state of DataLoad
-type DataLoadStatus struct {
-	// Phase describes current phase of DataLoad
-	Phase common.Phase `json:"phase"`
-
-	// Conditions consists of transition information on DataLoad's Phase
-	Conditions []Condition `json:"conditions"`
-
-	// Duration tell user how much time was spent to load the data
-	Duration string `json:"duration"`
-}
-
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
@@ -88,8 +75,8 @@ type DataLoad struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DataLoadSpec   `json:"spec,omitempty"`
-	Status DataLoadStatus `json:"status,omitempty"`
+	Spec   DataLoadSpec    `json:"spec,omitempty"`
+	Status OperationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

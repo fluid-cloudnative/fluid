@@ -26,10 +26,10 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
-    - jsonPath: .status.backupLocation.path
+    - jsonPath: .status.props.BackupLocationPath
       name: Path
       type: string
-    - jsonPath: .status.backupLocation.nodeName
+    - jsonPath: .status.props.BackupLocationNodeName
       name: NodeName
       type: string
     - jsonPath: .status.duration
@@ -90,21 +90,9 @@ spec:
                 type: object
             type: object
           status:
-            description: DataBackupStatus defines the observed state of DataBackup
+            description: OperationStatus defines the observed state of certain Data
+              Operation
             properties:
-              backupLocation:
-                description: BackupLocation tell user the location to save data of
-                  the DataBackup
-                properties:
-                  nodeName:
-                    description: NodeName describes the nodeName of backup if Path
-                      is in the form of local://subpath
-                    type: string
-                  path:
-                    description: Path describes the path of backup, in the form of
-                      local:///absolutePath or pvc://<pvcName>/subpath
-                    type: string
-                type: object
               conditions:
                 description: Conditions consists of transition information on DataBackup's
                   Phase
@@ -141,15 +129,21 @@ spec:
                   type: object
                 type: array
               duration:
-                description: Duration tell user how much time was spent to backup
+                description: Duration tell user how much time was spent to operation
                 type: string
               phase:
                 description: Phase describes current phase of DataBackup
                 type: string
+              props:
+                additionalProperties:
+                  type: string
+                description: Props data operation customized name-value
+                type: object
             required:
             - conditions
             - duration
             - phase
+            - props
             type: object
         type: object
     served: true

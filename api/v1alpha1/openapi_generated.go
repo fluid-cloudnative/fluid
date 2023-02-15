@@ -34,7 +34,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":           schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":       schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation":           schema_fluid_cloudnative_fluid_api_v1alpha1_BackupLocation(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":    schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":         schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
@@ -42,11 +41,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupList":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupStatus":         schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":      schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
@@ -81,6 +78,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                 schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":          schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":              schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
@@ -697,33 +695,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_BackupLocation(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "BackupLocation describes the final backup location of DataBackup",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"path": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Path describes the path of backup, in the form of local:///absolutePath or pvc://<pvcName>/subpath",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"nodeName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NodeName describes the nodeName of backup if Path is in the form of local://subpath",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -897,14 +868,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref common.Reference
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupStatus"),
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -992,59 +963,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref common.Refer
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "DataBackupStatus defines the observed state of DataBackup",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Phase describes current phase of DataBackup",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"backupLocation": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BackupLocation tell user the location to save data of the DataBackup",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation"),
-						},
-					},
-					"duration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Duration tell user how much time was spent to backup",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"conditions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Conditions consists of transition information on DataBackup's Phase",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"phase", "duration", "conditions"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.BackupLocation", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1081,14 +999,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref common.ReferenceCa
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus"),
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1204,52 +1122,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "DataLoadStatus defines the observed state of DataLoad",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Phase describes current phase of DataLoad",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"conditions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Conditions consists of transition information on DataLoad's Phase",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"),
-									},
-								},
-							},
-						},
-					},
-					"duration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Duration tell user how much time was spent to load the data",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"phase", "conditions", "duration"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"},
 	}
 }
 
@@ -3938,6 +3810,68 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref common.ReferenceCa
 				},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OperationStatus defines the observed state of certain Data Operation",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase describes current phase of DataBackup",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Duration tell user how much time was spent to operation",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions consists of transition information on DataBackup's Phase",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"),
+									},
+								},
+							},
+						},
+					},
+					"props": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Props data operation customized name-value",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"phase", "duration", "conditions", "props"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"},
 	}
 }
 

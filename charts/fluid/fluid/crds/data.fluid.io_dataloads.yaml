@@ -106,10 +106,11 @@ spec:
                 type: array
             type: object
           status:
-            description: DataLoadStatus defines the observed state of DataLoad
+            description: OperationStatus defines the observed state of certain Data
+              Operation
             properties:
               conditions:
-                description: Conditions consists of transition information on DataLoad's
+                description: Conditions consists of transition information on DataBackup's
                   Phase
                 items:
                   description: Condition explains the transitions on phase
@@ -144,16 +145,21 @@ spec:
                   type: object
                 type: array
               duration:
-                description: Duration tell user how much time was spent to load the
-                  data
+                description: Duration tell user how much time was spent to operation
                 type: string
               phase:
-                description: Phase describes current phase of DataLoad
+                description: Phase describes current phase of DataBackup
                 type: string
+              props:
+                additionalProperties:
+                  type: string
+                description: Props data operation customized name-value
+                type: object
             required:
             - conditions
             - duration
             - phase
+            - props
             type: object
         type: object
     served: true
