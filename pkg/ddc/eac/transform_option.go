@@ -32,8 +32,7 @@ var (
 func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	var options []string
-	options = append(options, "g_tier_EnableClusterCache=true")
-	options = append(options, "g_tier_EnableClusterCachePrefetch=true")
+
 	options = append(options, fmt.Sprintf("client_owner=%s-%s-master", e.namespace, e.name))
 	options = append(options, fmt.Sprintf("assign_uuid=%s-%s-master", e.namespace, e.name))
 
@@ -48,8 +47,12 @@ func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 	value *EAC) (err error) {
 	var options []string
-	options = append(options, "g_tier_EnableClusterCache=true")
-	options = append(options, "g_tier_EnableClusterCachePrefetch=true")
+
+	if !runtime.Spec.Worker.Disabled {
+		options = append(options, "g_tier_EnableClusterCache=true")
+		options = append(options, "g_tier_EnableClusterCachePrefetch=true")
+	}
+
 	options = append(options, fmt.Sprintf("assign_uuid=%s-%s-fuse", e.namespace, e.name))
 
 	for o := range runtime.Spec.Fuse.Properties {
