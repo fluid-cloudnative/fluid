@@ -13,3 +13,8 @@
 0.1.3
 
 - Add `sidecar.istio.io/inject` to components annotation
+
+0.1.4
+
+- Fix eac-fuse mount options
+- Add eac-master image splited from eac-fuse image
