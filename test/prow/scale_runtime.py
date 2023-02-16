@@ -41,7 +41,6 @@ def patchNodeLabel(key, value, node):
 
 def createDatasetAndRuntime(*runtimes):
     api = client.CustomObjectsApi()
-    # mirror = "http://124.221.241.143:88/"
     mirror = "https://mirrors.bit.edu.cn/apache/hbase/stable/"
     for runtime in runtimes:
         my_dataset = {
