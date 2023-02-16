@@ -3817,12 +3817,12 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "OperationStatus defines the observed state of certain Data Operation",
+				Description: "OperationStatus defines the observed state of operation",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Phase describes current phase of DataBackup",
+							Description: "Phase describes current phase of operation",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -3838,7 +3838,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 					},
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Conditions consists of transition information on DataBackup's Phase",
+							Description: "Conditions consists of transition information on operation's Phase",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -3852,7 +3852,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 					},
 					"infos": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Infos data operation customized name-value",
+							Description: "Infos operation customized name-value",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,

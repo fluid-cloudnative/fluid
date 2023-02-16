@@ -106,11 +106,10 @@ spec:
                 type: array
             type: object
           status:
-            description: OperationStatus defines the observed state of certain Data
-              Operation
+            description: OperationStatus defines the observed state of operation
             properties:
               conditions:
-                description: Conditions consists of transition information on DataBackup's
+                description: Conditions consists of transition information on operation's
                   Phase
                 items:
                   description: Condition explains the transitions on phase
@@ -150,10 +149,10 @@ spec:
               infos:
                 additionalProperties:
                   type: string
-                description: Infos data operation customized name-value
+                description: Infos operation customized name-value
                 type: object
               phase:
-                description: Phase describes current phase of DataBackup
+                description: Phase describes current phase of operation
                 type: string
             required:
             - conditions

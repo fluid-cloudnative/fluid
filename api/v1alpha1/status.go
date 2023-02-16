@@ -130,16 +130,16 @@ type RuntimeStatus struct {
 	Mounts []Mount `json:"mounts,omitempty"`
 }
 
-// OperationStatus defines the observed state of certain Data Operation
+// OperationStatus defines the observed state of operation
 type OperationStatus struct {
-	// Phase describes current phase of DataBackup
+	// Phase describes current phase of operation
 	Phase common.Phase `json:"phase"`
 	// Duration tell user how much time was spent to operation
 	Duration string `json:"duration"`
-	// Conditions consists of transition information on DataBackup's Phase
+	// Conditions consists of transition information on operation's Phase
 	Conditions []Condition `json:"conditions"`
 
-	// Infos data operation customized name-value
+	// Infos operation customized name-value
 	Infos map[string]string `json:"infos"`
 }
 
