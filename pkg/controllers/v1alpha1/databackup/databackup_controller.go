@@ -192,6 +192,9 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 	// 1. Update BackupPath of the databackup
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
 
+	if databackupToUpdate.Status.Infos == nil {
+		databackupToUpdate.Status.Infos = map[string]string{}
+	}
 	databackupToUpdate.Status.Infos[cdatabackup.BackupLocationPath] = databackupToUpdate.Spec.BackupPath
 
 	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme.String()) {
