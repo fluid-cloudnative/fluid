@@ -8,3 +8,4 @@ coverage:
         target: 60%
 ignore:
   - "**/*_generated.*"
+  - "pkg/utils/testutil"

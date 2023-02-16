@@ -734,6 +734,7 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
 
+		value.Fuse.Envs = testutil.SortEnvVarByName(value.Fuse.Envs, common.ThinFuseOptionEnvKey)
 		if !testutil.DeepEqualIgnoringSliceOrder(t1, value.Fuse, wantValue.Fuse) {
 			valueYaml, _ := yaml.Marshal(value.Fuse)
 			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
