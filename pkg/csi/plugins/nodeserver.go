@@ -204,6 +204,11 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// no volume context attribute.
 	namespace, name, err := ns.getRuntimeNamespacedName(nil, req.GetVolumeId())
 	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			// For cases like the related persistent volume has been deleted, ignore it and return success
+			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up, ignore it", req.GetVolumeId())
+			return &csi.NodeUnstageVolumeResponse{}, nil
+		}
 		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
@@ -212,7 +217,12 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// need to clean fuse eagerly.
 	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "NodeUnstageVolume: can't get fuse clean policy")
+		if utils.IgnoreNotFound(err) == nil {
+			// For cases like the dataset or runtime has been deleted, ignore it and return success
+			glog.Warningf("NodeUnstageVolume: dataset or runtime %s/%s not found, maybe it's already cleaned up", namespace, name)
+			return &csi.NodeUnstageVolumeResponse{}, nil
+		}
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: failed to get runtime info for %s/%s", namespace, name)
 	}
 
 	var shouldCleanFuse bool
