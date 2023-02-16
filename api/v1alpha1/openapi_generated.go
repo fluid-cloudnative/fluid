@@ -3850,9 +3850,9 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 							},
 						},
 					},
-					"props": {
+					"infos": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Props data operation customized name-value",
+							Description: "Infos data operation customized name-value",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -3867,7 +3867,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 						},
 					},
 				},
-				Required: []string{"phase", "duration", "conditions", "props"},
+				Required: []string{"phase", "duration", "conditions", "infos"},
 			},
 		},
 		Dependencies: []string{

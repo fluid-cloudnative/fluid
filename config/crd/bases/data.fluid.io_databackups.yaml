@@ -26,10 +26,10 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
-    - jsonPath: .status.props.BackupLocationPath
+    - jsonPath: .status.infos.BackupLocationPath
       name: Path
       type: string
-    - jsonPath: .status.props.BackupLocationNodeName
+    - jsonPath: .status.infos.BackupLocationNodeName
       name: NodeName
       type: string
     - jsonPath: .status.duration
@@ -131,19 +131,19 @@ spec:
               duration:
                 description: Duration tell user how much time was spent to operation
                 type: string
+              infos:
+                additionalProperties:
+                  type: string
+                description: Infos data operation customized name-value
+                type: object
               phase:
                 description: Phase describes current phase of DataBackup
                 type: string
-              props:
-                additionalProperties:
-                  type: string
-                description: Props data operation customized name-value
-                type: object
             required:
             - conditions
             - duration
+            - infos
             - phase
-            - props
             type: object
         type: object
     served: true

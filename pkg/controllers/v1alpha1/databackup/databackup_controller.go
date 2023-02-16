@@ -176,7 +176,7 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 		databackupToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
 	databackupToUpdate.Status.Duration = "Unfinished"
-	databackupToUpdate.Status.Props = map[string]string{}
+	databackupToUpdate.Status.Infos = map[string]string{}
 
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "failed to update the databackup")
@@ -192,7 +192,7 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 	// 1. Update BackupPath of the databackup
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
 
-	databackupToUpdate.Status.Props[cdatabackup.BackupLocationPath] = databackupToUpdate.Spec.BackupPath
+	databackupToUpdate.Status.Infos[cdatabackup.BackupLocationPath] = databackupToUpdate.Spec.BackupPath
 
 	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme.String()) {
 		podName := databackupToUpdate.Name + "-pod"
@@ -201,9 +201,9 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 			log.Error(err, "Failed to get backup pod")
 			return utils.RequeueIfError(err)
 		}
-		databackupToUpdate.Status.Props[cdatabackup.BackupLocationNodeName] = backupPod.Spec.NodeName
+		databackupToUpdate.Status.Infos[cdatabackup.BackupLocationNodeName] = backupPod.Spec.NodeName
 	} else {
-		databackupToUpdate.Status.Props[cdatabackup.BackupLocationNodeName] = "NA"
+		databackupToUpdate.Status.Infos[cdatabackup.BackupLocationNodeName] = "NA"
 	}
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "the backup pod has completd, but failed to  update the databackup")

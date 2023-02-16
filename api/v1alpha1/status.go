@@ -139,8 +139,8 @@ type OperationStatus struct {
 	// Conditions consists of transition information on DataBackup's Phase
 	Conditions []Condition `json:"conditions"`
 
-	// Props data operation customized name-value
-	Props map[string]string `json:"props"`
+	// Infos data operation customized name-value
+	Infos map[string]string `json:"infos"`
 }
 
 type RuntimePhase string

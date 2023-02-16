@@ -34,8 +34,8 @@ type DataBackupSpec struct {
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
-// +kubebuilder:printcolumn:name="Path",type="string",JSONPath=`.status.props.BackupLocationPath`
-// +kubebuilder:printcolumn:name="NodeName",type="string",JSONPath=`.status.props.BackupLocationNodeName`
+// +kubebuilder:printcolumn:name="Path",type="string",JSONPath=`.status.infos.BackupLocationPath`
+// +kubebuilder:printcolumn:name="NodeName",type="string",JSONPath=`.status.infos.BackupLocationNodeName`
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true

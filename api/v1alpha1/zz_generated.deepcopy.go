@@ -1661,8 +1661,8 @@ func (in *OperationStatus) DeepCopyInto(out *OperationStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Props != nil {
-		in, out := &in.Props, &out.Props
+	if in.Infos != nil {
+		in, out := &in.Infos, &out.Infos
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
