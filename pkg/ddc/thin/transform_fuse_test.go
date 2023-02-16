@@ -745,7 +745,7 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 	})
 }
 
-// Function to sort the value of an environment variable by its name
+// sortEnvVarByName sorts the value of an environment variable by its name
 func sortEnvVarByName(envs []corev1.EnvVar, name string) []corev1.EnvVar {
 	// Search for the environment variable with the given name
 	for i := range envs {
@@ -758,7 +758,7 @@ func sortEnvVarByName(envs []corev1.EnvVar, name string) []corev1.EnvVar {
 	return envs
 }
 
-// Function to sort the value of an environment variable
+// sortEnvVarValue sorts the value of an environment variable
 func sortEnvVarValue(value string) string {
 	// Split the value into key=value pairs
 	pairs := strings.Split(value, ",")
