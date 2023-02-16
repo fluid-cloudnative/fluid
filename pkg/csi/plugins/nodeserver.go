@@ -204,6 +204,11 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// no volume context attribute.
 	namespace, name, err := ns.getRuntimeNamespacedName(nil, req.GetVolumeId())
 	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			// For cases like the related persistent volume has been deleted, ignore it and return success
+			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up", req.GetVolumeId())
+			return &csi.NodeUnstageVolumeResponse{}, nil
+		}
 		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
