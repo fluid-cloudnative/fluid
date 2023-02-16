@@ -25,8 +25,6 @@ import (
 	"github.com/go-logr/logr"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -367,19 +365,4 @@ func (r *DataMigrateReconcilerImplement) releaseLockOnTargetDataset(ctx cruntime
 		return nil
 	})
 	return err
-}
-
-func (r *DataMigrateReconcilerImplement) GetTargetDataset(dataMigrate datav1alpha1.DataMigrate) (dataset *datav1alpha1.Dataset, err error) {
-	if dataMigrate.Spec.From.DataSet.Name != "" {
-		dataset, err = utils.GetDataset(r.Client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
-		return
-	}
-	if dataMigrate.Spec.To.DataSet.Name != "" {
-		dataset, err = utils.GetDataset(r.Client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
-		return
-	}
-	return nil, apierrors.NewNotFound(schema.GroupResource{
-		Group:    datav1alpha1.Group,
-		Resource: datav1alpha1.Version,
-	}, "dataset")
 }

@@ -100,7 +100,7 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 	}
 
 	// 3. get target dataset
-	targetDataset, err := r.GetTargetDataset(targetDataMigrate)
+	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, targetDataMigrate)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("can't find target dataset", "dataMigrate", targetDataMigrate.Name)

@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -25,6 +27,9 @@ import (
 
 // DataMigrateSpec defines the desired state of DataMigrate
 type DataMigrateSpec struct {
+	// image used by migrate job
+	ImageInfo common.ImageInfo `json:",inline,omitempty"`
+
 	// data to migrate source, including dataset and external storage
 	From DataToMigrate `json:"from"`
 
@@ -42,6 +47,9 @@ type DataMigrateSpec struct {
 	// The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
 	// +optional
 	Schedule string `json:"schedule,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to DataLoad pods
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 type Policy string
@@ -62,10 +70,10 @@ const (
 
 type DataToMigrate struct {
 	// dataset to migrate
-	DataSet DatasetToMigrate `json:"dataset,omitempty"`
+	DataSet *DatasetToMigrate `json:"dataset,omitempty"`
 
 	// external storage for data migrate
-	ExternalStorage ExternalStorage `json:"externalStorage,omitempty"`
+	ExternalStorage *ExternalStorage `json:"externalStorage,omitempty"`
 }
 
 type DatasetToMigrate struct {

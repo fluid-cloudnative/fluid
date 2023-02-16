@@ -17,11 +17,183 @@
 package juicefs
 
 import (
+	"fmt"
+	"net/url"
+	"os"
+	"path"
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error {
-	//TODO implement me
-	panic("implement me")
+func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
+	log := ctx.Log.WithName("createDataMigrateJob")
+
+	// 1. Check if the helm release already exists
+	releaseName := utils.GetDataMigrateReleaseName(targetDataMigrate.Name)
+	jobName := utils.GetDataMigrateJobName(releaseName)
+	var existed bool
+	existed, err = helm.CheckRelease(releaseName, targetDataMigrate.Namespace)
+	if err != nil {
+		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataMigrate.Namespace)
+		return err
+	}
+
+	// 2. install the helm chart if not exists
+	if !existed {
+		log.Info("DataMigrate job helm chart not installed yet, will install")
+		valueFileName, err := j.generateDataMigrateValueFile(ctx, targetDataMigrate)
+		if err != nil {
+			log.Error(err, "failed to generate dataload chart's value file")
+			return err
+		}
+		chartName := utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart + "/" + common.JuiceFSRuntime
+		err = helm.InstallRelease(releaseName, targetDataMigrate.Namespace, valueFileName, chartName)
+		if err != nil {
+			log.Error(err, "failed to install datamigrate chart")
+			return err
+		}
+		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataMigrate.Namespace, "releaseName", releaseName)
+		ctx.Recorder.Eventf(&targetDataMigrate, corev1.EventTypeNormal, common.DataLoadJobStarted, "The DataMigrate job %s started", jobName)
+	}
+	return err
+}
+
+func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, dataMigrate datav1alpha1.DataMigrate) (valueFileName string, err error) {
+	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, dataMigrate)
+	if err != nil {
+		return "", err
+	}
+	j.Log.Info("target dataset", "dataset", targetDataset)
+
+	imageName, imageTag := dataMigrate.Spec.ImageInfo.Image, dataMigrate.Spec.ImageInfo.ImageTag
+
+	if len(imageName) == 0 {
+		defaultImageInfo := strings.Split(common.DefaultJuiceFSMigrateImage, ":")
+		if len(defaultImageInfo) < 1 {
+			panic("invalid default dataload image!")
+		} else {
+			imageName = defaultImageInfo[0]
+		}
+	}
+
+	if len(imageTag) == 0 {
+		defaultImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+		if len(defaultImageInfo) < 2 {
+			panic("invalid default dataload image!")
+		} else {
+			imageTag = defaultImageInfo[1]
+		}
+	}
+
+	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+
+	dataMigrateInfo := cdatamigrate.DataMigrateInfo{
+		BackoffLimit:  3,
+		TargetDataset: targetDataset.Name,
+		SecretRefs:    []corev1.SecretKeySelector{},
+		Image:         image,
+		Options:       dataMigrate.Spec.Options,
+		Labels:        dataMigrate.Spec.PodMetadata.Labels,
+		Annotations:   dataMigrate.Spec.PodMetadata.Annotations,
+	}
+	migrateFrom, err := j.genDataUrl(dataMigrate.Spec.From, &dataMigrateInfo)
+	if err != nil {
+		return "", err
+	}
+	migrateTo, err := j.genDataUrl(dataMigrate.Spec.To, &dataMigrateInfo)
+	if err != nil {
+		return "", err
+	}
+	dataMigrateInfo.MigrateFrom = migrateFrom
+	dataMigrateInfo.MigrateTo = migrateTo
+
+	dataMigrateValue := cdatamigrate.DataMigrateValue{
+		DataMigrateInfo: dataMigrateInfo,
+	}
+
+	data, err := yaml.Marshal(dataMigrateValue)
+	if err != nil {
+		return
+	}
+	j.Log.Info("dataMigrate value", "value", string(data))
+
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-migrater-values.yaml", dataMigrate.Namespace, dataMigrate.Name))
+	if err != nil {
+		return
+	}
+	err = os.WriteFile(valueFile.Name(), data, 0400)
+	if err != nil {
+		return
+	}
+	return valueFile.Name(), nil
+}
+
+func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatamigrate.DataMigrateInfo) (dataUrl string, err error) {
+	if data.DataSet != nil {
+		metaurlSecret, metaurlSecretKey, err := GetMetaUrlInfoFromConfigMap(j.Client, data.DataSet.Name, data.DataSet.Namespace)
+		if err != nil {
+			return "", err
+		}
+		info.SecretRefs = append(info.SecretRefs, corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: metaurlSecret,
+			},
+			Key: metaurlSecretKey,
+		})
+		dataUrl = "jfs://${METAURL}/"
+		if data.DataSet.Path != "" {
+			dataUrl = path.Join(dataUrl, data.DataSet.Path, "/")
+		}
+		return
+	}
+	if data.ExternalStorage != nil {
+		u, err := url.Parse(data.ExternalStorage.URI)
+		if err != nil {
+			return "", err
+		}
+		var accessKey, secretKey, token string
+		for _, encryptOption := range data.ExternalStorage.EncryptOptions {
+			name := encryptOption.Name
+			switch name {
+			case "access-key":
+				accessKey = "${ACCESS_KEY}"
+			case "secret-key":
+				secretKey = "${SECRET_KEY}"
+			case "token":
+				token = "${TOKEN}"
+			}
+			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+			_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+			if err != nil {
+				j.Log.Info("can't get the secret",
+					"namespace", j.namespace,
+					"name", j.name,
+					"secretName", secretKeyRef.Name)
+				return "", err
+			}
+			info.SecretRefs = append(info.SecretRefs, corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secretKeyRef.Name,
+				},
+				Key: secretKeyRef.Key,
+			})
+		}
+		if token != "" {
+			secretKey = fmt.Sprintf("%s:%s", secretKey, token)
+		}
+		u.User = url.UserPassword(accessKey, secretKey)
+		dataUrl = u.String()
+		return
+	}
+	return
 }
