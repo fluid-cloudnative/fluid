@@ -17,8 +17,8 @@ RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 # Use distroless as minimal base image to package the csi binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM alpine:3.16
-RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
+FROM registry.cn-hangzhou.aliyuncs.com/acs/debian:10-slim-update
+RUN apt-get update && apt-get install -y curl tzdata iproute2 bash libc6-i386 vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
