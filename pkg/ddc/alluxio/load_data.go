@@ -21,6 +21,9 @@ import (
 	"os"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -29,8 +32,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 )
 
 // CreateDataLoadJob creates the job to load data
@@ -101,14 +102,18 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		}
 	}
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+	// image pull secrets
+	// if the environment variable is not set, it is still an empty slice
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         image,
-		Labels:        dataload.Spec.PodMetadata.Labels,
-		Annotations:   dataload.Spec.PodMetadata.Annotations,
+		BackoffLimit:     3,
+		TargetDataset:    dataload.Spec.Dataset.Name,
+		LoadMetadata:     dataload.Spec.LoadMetadata,
+		Image:            image,
+		Labels:           dataload.Spec.PodMetadata.Labels,
+		Annotations:      dataload.Spec.PodMetadata.Annotations,
+		ImagePullSecrets: imagePullSecrets,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -131,7 +136,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
 	if err != nil {
 		return
 	}

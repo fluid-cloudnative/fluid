@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -14,9 +15,7 @@ import (
 
 const ImageTagEnvRegexFormat = "^\\S+:\\S+$"
 
-var (
-	ImageTagEnvRegex = regexp.MustCompile(ImageTagEnvRegexFormat)
-)
+var ImageTagEnvRegex = regexp.MustCompile(ImageTagEnvRegexFormat)
 
 // ParseDockerImage extracts repo and tag from image. An empty string is returned if no tag is discovered.
 func ParseDockerImage(image string) (name string, tag string) {
@@ -58,14 +57,21 @@ func GetImageTagFromEnv(envName string) (tag string) {
 	return
 }
 
-// get docker pull secrets from environment variables, if it's not existed, return ""
-func GetImagePullSecretsFromEnv(envName string) (pullSecretsStr string) {
+// get docker pull secrets from environment variables, if it's not existed, return []
+// image pull secret format in ENV: str1,str2,str3
+func GetImagePullSecretsFromEnv(envName string) []corev1.LocalObjectReference {
+	imagePullSecrets := []corev1.LocalObjectReference{}
 	if value, existed := os.LookupEnv(envName); existed {
 		if len(value) > 0 {
-			pullSecretsStr = value
+			secrets := strings.Split(value, ",")
+			for _, item := range secrets {
+				if len(item) > 0 {
+					imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: item})
+				}
+			}
 		}
 	}
-	return
+	return imagePullSecrets
 }
 
 // ParseInitImage parses the init image and image tag

@@ -42,7 +42,6 @@ func (e *AlluxioEngine) getDataSetFileNum() (string, error) {
 
 // getRuntime gets the alluxio runtime
 func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
-
 	key := types.NamespacedName{
 		Name:      e.name,
 		Namespace: e.namespace,
@@ -177,7 +176,6 @@ func getMountRoot() (path string) {
 	}
 	// e.Log.Info("Mount root", "path", path)
 	return
-
 }
 
 func isPortInUsed(port int, usedPorts []int) bool {
@@ -220,12 +218,7 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 
 	if len(imagePullSecrets) == 0 {
 		// if the environment variable is not set, it is still an empty slice
-		eValues := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
-		secrets := strings.Split(eValues, ",")
-		for _, item := range secrets {
-			imagePullSecrets = append(imagePullSecrets, v1.LocalObjectReference{Name: item})
-		}
-
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 	}
 
 	return image, tag, imagePullPolicy, imagePullSecrets

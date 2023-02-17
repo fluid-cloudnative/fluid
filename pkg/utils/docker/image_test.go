@@ -12,9 +12,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
-var (
-	testScheme *runtime.Scheme
-)
+var testScheme *runtime.Scheme
 
 func init() {
 	testScheme = runtime.NewScheme()
@@ -22,7 +20,7 @@ func init() {
 }
 
 func TestParseDockerImage(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		input string
 		image string
 		tag   string
@@ -49,7 +47,7 @@ func TestGetImageRepoFromEnv(t *testing.T) {
 	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
 	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
 
-	var testCase = []struct {
+	testCase := []struct {
 		envName string
 		want    string
 	}{
@@ -78,7 +76,7 @@ func TestGetImageTagFromEnv(t *testing.T) {
 	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
 	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
 
-	var testCase = []struct {
+	testCase := []struct {
 		envName string
 		want    string
 	}{
@@ -106,17 +104,44 @@ func TestGetImagePullSecrets(t *testing.T) {
 	testCases := map[string]struct {
 		envName       string
 		envMockValues string
-		want          string
+		want          []v1.LocalObjectReference
 	}{
 		"test with env value case 1": {
 			envName:       common.EnvImagePullSecretsKey,
 			envMockValues: "test1,test2",
-			want:          "test1,test2",
+			want: []v1.LocalObjectReference{
+				{
+					Name: "test1",
+				},
+				{
+					Name: "test2",
+				},
+			},
 		},
 		"test with env value case 2": {
 			envName:       common.EnvImagePullSecretsKey,
 			envMockValues: "",
-			want:          "",
+			want:          []v1.LocalObjectReference{},
+		},
+		"test with env value case 3": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: "str1",
+			want:          []v1.LocalObjectReference{{Name: "str1"}},
+		},
+		"test with env value case 4": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: "str1,",
+			want:          []v1.LocalObjectReference{{Name: "str1"}},
+		},
+		"test with env value case 5": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: ",,,str1,",
+			want:          []v1.LocalObjectReference{{Name: "str1"}},
+		},
+		"test with env value case 6": {
+			envName:       common.EnvImagePullSecretsKey,
+			envMockValues: ",,,str1,,,str2,,",
+			want:          []v1.LocalObjectReference{{Name: "str1"}, {Name: "str2"}},
 		},
 	}
 
@@ -132,7 +157,7 @@ func TestGetImagePullSecrets(t *testing.T) {
 func TestParseInitImage(t *testing.T) {
 	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
 
-	var testCase = []struct {
+	testCase := []struct {
 		image               string
 		tag                 string
 		imagePullPolicy     string
@@ -193,7 +218,6 @@ func TestParseInitImage(t *testing.T) {
 }
 
 func TestGetWorkerImage(t *testing.T) {
-
 	configMapInputs := []*v1.ConfigMap{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "hbase-alluxio-values", Namespace: "default"},
@@ -216,7 +240,7 @@ func TestGetWorkerImage(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testConfigMaps...)
 
-	var testCase = []struct {
+	testCase := []struct {
 		datasetName   string
 		runtimeType   string
 		namespace     string
