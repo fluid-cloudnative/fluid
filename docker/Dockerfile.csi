@@ -19,7 +19,9 @@ RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM registry.cn-hangzhou.aliyuncs.com/acs/debian:10-slim-update
 RUN apt-get update && apt-get install -y curl tzdata iproute2 bash libc6-i386 vim &&  \
- 	rm -rf /var/cache/apk/* && \
+    apt clean all && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /root/.cache && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
 
