@@ -16,10 +16,12 @@
 
 package datamigrate
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+)
 
 type DataMigrateValue struct {
-	DataMigrateInfo DataMigrateInfo `json:"datamigrater"`
+	DataMigrateInfo DataMigrateInfo `json:"datamigrate"`
 }
 
 type DataMigrateInfo struct {
@@ -35,8 +37,8 @@ type DataMigrateInfo struct {
 	// MigrateTo specifies the data that the DataMigrate migrate to
 	MigrateTo string `json:"migrateTo,omitempty"`
 
-	// SecretRefs specifies the secret that the DataMigrate job uses
-	SecretRefs []corev1.SecretKeySelector `json:"secretRefs,omitempty"`
+	// EncryptOptions specifies the encrypt options that the DataMigrate job uses
+	EncryptOptions []v1alpha1.EncryptOption `json:"encryptOptions,omitempty"`
 
 	// Image specifies the image that the DataMigrate job uses
 	Image string `yaml:"image,omitempty"`

@@ -1366,16 +1366,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image of a Container",
-							Default:     "",
+							Description: "Image used by migrate job",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ImageTag of a Container",
-							Default:     "",
+							Description: "ImageTag used by migrate job",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1383,23 +1381,8 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					"imagePullPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
-						},
-					},
-					"imagePullSecrets": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ImagePullSecrets",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
-									},
-								},
-							},
 						},
 					},
 					"from": {
@@ -1454,11 +1437,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 						},
 					},
 				},
-				Required: []string{"image", "imageTag", "imagePullPolicy", "imagePullSecrets", "from", "to"},
+				Required: []string{"from", "to"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"},
 	}
 }
 

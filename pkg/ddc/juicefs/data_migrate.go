@@ -98,13 +98,13 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
 	dataMigrateInfo := cdatamigrate.DataMigrateInfo{
-		BackoffLimit:  3,
-		TargetDataset: targetDataset.Name,
-		SecretRefs:    []corev1.SecretKeySelector{},
-		Image:         image,
-		Options:       dataMigrate.Spec.Options,
-		Labels:        dataMigrate.Spec.PodMetadata.Labels,
-		Annotations:   dataMigrate.Spec.PodMetadata.Annotations,
+		BackoffLimit:   3,
+		TargetDataset:  targetDataset.Name,
+		EncryptOptions: []datav1alpha1.EncryptOption{},
+		Image:          image,
+		Options:        dataMigrate.Spec.Options,
+		Labels:         dataMigrate.Spec.PodMetadata.Labels,
+		Annotations:    dataMigrate.Spec.PodMetadata.Annotations,
 	}
 	migrateFrom, err := j.genDataUrl(dataMigrate.Spec.From, &dataMigrateInfo)
 	if err != nil {
@@ -144,11 +144,14 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		if err != nil {
 			return "", err
 		}
-		info.SecretRefs = append(info.SecretRefs, corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: metaurlSecret,
+		info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+			Name: "METAURL",
+			ValueFrom: datav1alpha1.EncryptOptionSource{
+				SecretKeyRef: datav1alpha1.SecretKeySelector{
+					Name: metaurlSecret,
+					Key:  metaurlSecretKey,
+				},
 			},
-			Key: metaurlSecretKey,
 		})
 		dataUrl = "jfs://${METAURL}/"
 		if data.DataSet.Path != "" {
@@ -181,12 +184,7 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 					"secretName", secretKeyRef.Name)
 				return "", err
 			}
-			info.SecretRefs = append(info.SecretRefs, corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secretKeyRef.Name,
-				},
-				Key: secretKeyRef.Key,
-			})
+			info.EncryptOptions = append(info.EncryptOptions, encryptOption)
 		}
 		if token != "" {
 			secretKey = fmt.Sprintf("%s:%s", secretKey, token)

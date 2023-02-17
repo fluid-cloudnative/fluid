@@ -90,26 +90,14 @@ spec:
                     type: object
                 type: object
               image:
-                description: Image of a Container
+                description: Image used by migrate job
                 type: string
               imagePullPolicy:
                 description: 'ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`,
                   `Never`'
                 type: string
-              imagePullSecrets:
-                description: ImagePullSecrets
-                items:
-                  description: LocalObjectReference contains enough information to
-                    let you locate the referenced object inside the same namespace.
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                type: array
               imageTag:
-                description: ImageTag of a Container
+                description: ImageTag used by migrate job
                 type: string
               options:
                 additionalProperties:
@@ -194,10 +182,6 @@ spec:
                 type: object
             required:
             - from
-            - image
-            - imagePullPolicy
-            - imagePullSecrets
-            - imageTag
             - to
             type: object
           status:
