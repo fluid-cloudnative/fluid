@@ -45,6 +45,10 @@ spec:
       {{- end }}
     spec:
       restartPolicy: Never
+      {{- with .Values.dataloader.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
