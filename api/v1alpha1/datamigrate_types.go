@@ -18,8 +18,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -27,8 +25,14 @@ import (
 
 // DataMigrateSpec defines the desired state of DataMigrate
 type DataMigrateSpec struct {
-	// image used by migrate job
-	ImageInfo common.ImageInfo `json:",inline,omitempty"`
+	// Image used by migrate job
+	Image string `json:"image,omitempty" yaml:"image"`
+
+	// ImageTag used by migrate job
+	ImageTag string `json:"imageTag,omitempty" yaml:"imageTag"`
+
+	// ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`
+	ImagePullPolicy string `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy"`
 
 	// data to migrate source, including dataset and external storage
 	From DataToMigrate `json:"from"`

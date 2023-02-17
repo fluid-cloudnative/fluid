@@ -89,10 +89,47 @@ spec:
                     - uri
                     type: object
                 type: object
+              image:
+                description: Image of a Container
+                type: string
+              imagePullPolicy:
+                description: 'ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`,
+                  `Never`'
+                type: string
+              imagePullSecrets:
+                description: ImagePullSecrets
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
+              imageTag:
+                description: ImageTag of a Container
+                type: string
               options:
                 additionalProperties:
                   type: string
                 description: options for migrate, different for each runtime
+                type: object
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to DataLoad pods
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
                 type: object
               policy:
                 description: policy for migrate, including None, Once, Cron, OnEvent
@@ -157,6 +194,10 @@ spec:
                 type: object
             required:
             - from
+            - image
+            - imagePullPolicy
+            - imagePullSecrets
+            - imageTag
             - to
             type: object
           status:

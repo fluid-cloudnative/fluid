@@ -1364,6 +1364,44 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 				Description: "DataMigrateSpec defines the desired state of DataMigrate",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image of a Container",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImageTag of a Container",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullSecrets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImagePullSecrets",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
 					"from": {
 						SchemaProps: spec.SchemaProps{
 							Description: "data to migrate source, including dataset and external storage",
@@ -1408,12 +1446,19 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Format:      "",
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
-				Required: []string{"from", "to"},
+				Required: []string{"image", "imageTag", "imagePullPolicy", "imagePullSecrets", "from", "to"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -1453,14 +1498,12 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref common.Refere
 					"dataset": {
 						SchemaProps: spec.SchemaProps{
 							Description: "dataset to migrate",
-							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate"),
 						},
 					},
 					"externalStorage": {
 						SchemaProps: spec.SchemaProps{
 							Description: "external storage for data migrate",
-							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage"),
 						},
 					},

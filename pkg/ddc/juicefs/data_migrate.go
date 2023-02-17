@@ -75,7 +75,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	}
 	j.Log.Info("target dataset", "dataset", targetDataset)
 
-	imageName, imageTag := dataMigrate.Spec.ImageInfo.Image, dataMigrate.Spec.ImageInfo.ImageTag
+	imageName, imageTag := dataMigrate.Spec.Image, dataMigrate.Spec.ImageTag
 
 	if len(imageName) == 0 {
 		defaultImageInfo := strings.Split(common.DefaultJuiceFSMigrateImage, ":")
@@ -154,7 +154,7 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		if data.DataSet.Path != "" {
 			dataUrl = path.Join(dataUrl, data.DataSet.Path, "/")
 		}
-		return
+		return dataUrl, nil
 	}
 	if data.ExternalStorage != nil {
 		u, err := url.Parse(data.ExternalStorage.URI)
@@ -193,7 +193,7 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		}
 		u.User = url.UserPassword(accessKey, secretKey)
 		dataUrl = u.String()
-		return
+		return dataUrl, nil
 	}
 	return
 }
