@@ -450,7 +450,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 				},
 			}, {
 				Name:  common.ThinFuseOptionEnvKey,
-				Value: "c=d,a=b",
+				Value: "a=b,c=d",
 			}, {
 				Name:  common.ThinFusePointEnvKey,
 				Value: "/thin/fluid/test/thin-fuse",
@@ -514,6 +514,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
 
+		value.Fuse.Envs = testutil.SortEnvVarByName(value.Fuse.Envs, common.ThinFuseOptionEnvKey)
 		if !testutil.DeepEqualIgnoringSliceOrder(t1, value.Fuse, wantValue.Fuse) {
 			valueYaml, _ := yaml.Marshal(value.Fuse)
 			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
