@@ -82,10 +82,10 @@ func (j *JuiceFSEngine) destroyMaster() (err error) {
 // cleanupCache cleans up the cache
 func (j *JuiceFSEngine) cleanupCache() (err error) {
 	runtime, err := j.getRuntime()
-	j.Log.Info("get runtime info", "runtime", runtime)
 	if err != nil {
 		return err
 	}
+	j.Log.Info("get runtime info", "runtime", runtime)
 
 	cacheDir := common.JuiceFSDefaultCacheDir
 	if len(runtime.Spec.TieredStore.Levels) != 0 {

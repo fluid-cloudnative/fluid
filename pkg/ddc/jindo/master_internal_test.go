@@ -111,8 +111,11 @@ func TestSetupMasterInternal(t *testing.T) {
 			},
 		},
 	}
-	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
-	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
+	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -234,8 +237,11 @@ func TestGenerateJindoValueFile(t *testing.T) {
 		},
 	}
 
-	portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, GetReservedPorts)
-	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
+	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

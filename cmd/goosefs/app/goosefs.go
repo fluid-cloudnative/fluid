@@ -49,6 +49,7 @@ var (
 	portRange               string
 	maxConcurrentReconciles int
 	pprofAddr               string
+	portAllocatePolicy      string
 )
 
 var cmd = &cobra.Command{
@@ -73,6 +74,7 @@ func init() {
 	startCmd.Flags().StringVarP(&leaderElectionNamespace, "leader-election-namespace", "", "fluid-system", "The namespace in which the leader election resource will be created.")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for GooseFS")
+	startCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for GooseFSRuntime controller")
 	cmd.AddCommand(startCmd)
@@ -129,7 +131,12 @@ func handle() {
 	}
 	setupLog.Info("port range parsed", "port range", pr.String())
 
-	portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, goosefs.GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, portAllocatePolicy, goosefs.GetReservedPorts)
+	if err != nil {
+		setupLog.Error(err, "failed to setup runtime port allocator")
+		os.Exit(1)
+	}
+	setupLog.Info("Set up runtime port allocator", "policy", portAllocatePolicy)
 
 	setupLog.Info("starting goosefsruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

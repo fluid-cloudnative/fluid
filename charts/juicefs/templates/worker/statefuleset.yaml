@@ -76,8 +76,9 @@ spec:
 {{ toYaml .Values.worker.resources | trim | indent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
-          {{- if .Values.worker.privileged }}
           securityContext:
+            runAsUser: 0
+          {{- if .Values.worker.privileged }}
             privileged: true
           {{- end }}
           {{- if .Values.worker.ports }}
@@ -95,28 +96,28 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.metaurlSecret }}
-                key: metaurl
+                key: {{ .Values.configs.metaurlSecretKey }}
           {{- end }}
           {{- if .Values.configs.accesskeySecret }}
           - name: ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.accesskeySecret }}
-                key: access-key
+                key: {{ .Values.configs.accesskeySecretKey }}
           {{- end }}
           {{- if .Values.configs.secretkeySecret }}
           - name: SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.secretkeySecret }}
-                key: secret-key
+                key: {{ .Values.configs.secretkeySecretKey }}
           {{- end }}
           {{- if .Values.configs.tokenSecret }}
           - name: TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.tokenSecret }}
-                key: token
+                key: {{ .Values.configs.tokenSecretKey }}
           {{- end }}
           lifecycle:
             preStop:
@@ -125,27 +126,11 @@ spec:
           volumeMounts:
             - mountPath: /root/script
               name: script
-            {{- range $name, $mount := .Values.cacheDirs }}
-            - name: cache-dir-{{ $name }}
-              mountPath: "{{ $mount.path }}"
-            {{- end }}
             {{- if .Values.worker.volumeMounts }}
 {{ toYaml .Values.worker.volumeMounts | indent 12 }}
             {{- end }}
       restartPolicy: Always
       volumes:
-        {{- range $name, $mount := .Values.cacheDirs }}
-        {{- if eq $mount.type "hostPath" }}
-        - hostPath:
-            path:  "{{ $mount.path }}"
-            type: DirectoryOrCreate
-          name: cache-dir-{{ $name }}
-          {{- else if eq $mount.type "emptyDir" }}
-        - emptyDir: {}
-          name: cache-dir-{{ $name }}
-        {{- /* todo: support volume template */}}
-        {{- end }}
-        {{- end }}
         - name: script
           configMap:
             name: {{ template "juicefs.fullname" . }}-worker-script

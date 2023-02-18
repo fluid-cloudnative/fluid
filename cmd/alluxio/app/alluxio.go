@@ -74,7 +74,7 @@ func init() {
 	alluxioCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "20000-25000", "Set available port range for Alluxio")
 	alluxioCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for AlluxioRuntime controller")
 	alluxioCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
-	alluxioCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "bitmap", "Set port allocating policy, available choice is bitmap or random(default bitmap).")
+	alluxioCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 }
 
 func handle() {
@@ -128,7 +128,12 @@ func handle() {
 	}
 	setupLog.Info("port range parsed", "port range", pr.String())
 
-	portallocator.SetupRuntimePortAllocatorWithType(mgr.GetClient(), pr, portallocator.AllocatePolicy(portAllocatePolicy), alluxio.GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, portAllocatePolicy, alluxio.GetReservedPorts)
+	if err != nil {
+		setupLog.Error(err, "failed to setup runtime port allocator")
+		os.Exit(1)
+	}
+	setupLog.Info("Set up runtime port allocator", "policy", portAllocatePolicy)
 
 	setupLog.Info("starting alluxioruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

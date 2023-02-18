@@ -44,14 +44,18 @@ type JuiceFS struct {
 }
 
 type Configs struct {
-	Name            string `json:"name"`
-	AccessKeySecret string `json:"accesskeySecret,omitempty"`
-	SecretKeySecret string `json:"secretkeySecret,omitempty"`
-	Bucket          string `json:"bucket,omitempty"`
-	MetaUrlSecret   string `json:"metaurlSecret,omitempty"`
-	TokenSecret     string `json:"tokenSecret,omitempty"`
-	Storage         string `json:"storage,omitempty"`
-	FormatCmd       string `json:"formatCmd,omitempty"`
+	Name               string `json:"name"`
+	AccessKeySecret    string `json:"accesskeySecret,omitempty"`
+	AccessKeySecretKey string `json:"accesskeySecretKey,omitempty"`
+	SecretKeySecret    string `json:"secretkeySecret,omitempty"`
+	SecretKeySecretKey string `json:"secretkeySecretKey,omitempty"`
+	Bucket             string `json:"bucket,omitempty"`
+	MetaUrlSecret      string `json:"metaurlSecret,omitempty"`
+	MetaUrlSecretKey   string `json:"metaurlSecretKey,omitempty"`
+	TokenSecret        string `json:"tokenSecret,omitempty"`
+	TokenSecretKey     string `json:"tokenSecretKey,omitempty"`
+	Storage            string `json:"storage,omitempty"`
+	FormatCmd          string `json:"formatCmd,omitempty"`
 }
 
 type Worker struct {

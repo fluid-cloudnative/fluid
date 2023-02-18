@@ -83,28 +83,28 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.metaurlSecret }}
-                key: metaurl
+                key: {{ .Values.configs.metaurlSecretKey }}
           {{- end }}
           {{- if .Values.configs.accesskeySecret }}
           - name: ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.accesskeySecret }}
-                key: access-key
+                key: {{ .Values.configs.accesskeySecretKey }}
           {{- end }}
           {{- if .Values.configs.secretkeySecret }}
           - name: SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.secretkeySecret }}
-                key: secret-key
+                key: {{ .Values.configs.secretkeySecretKey }}
           {{- end }}
           {{- if .Values.configs.tokenSecret }}
           - name: TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.configs.tokenSecret }}
-                key: token
+                key: {{ .Values.configs.tokenSecretKey }}
           {{- end }}
           - name: FLUID_RUNTIME_TYPE
             value: "juicefs"
@@ -127,8 +127,9 @@ spec:
           - containerPort: 9567
             name: metrics
             protocol: TCP
-          {{- if .Values.fuse.privileged }}
           securityContext:
+            runAsUser: 0
+          {{- if .Values.fuse.privileged }}
             privileged: true
           {{- end }}
           lifecycle:
@@ -136,15 +137,11 @@ spec:
               exec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
           volumeMounts:
-          - name: juicefs-fuse-mount
-            mountPath: {{ .Values.fuse.hostMountPath }}
-            mountPropagation: Bidirectional
-          - mountPath: /root/script
-            name: script
-          {{- range $name, $mount := .Values.cacheDirs }}
-          - name: cache-dir-{{ $name }}
-            mountPath: "{{ $mount.path }}"
-          {{- end }}
+            - name: juicefs-fuse-mount
+              mountPath: {{ .Values.fuse.hostMountPath }}
+              mountPropagation: Bidirectional
+            - mountPath: /root/script
+              name: script
           {{- if .Values.fuse.volumeMounts }}
 {{ toYaml .Values.fuse.volumeMounts | indent 12 }}
           {{- end }}
@@ -154,18 +151,6 @@ spec:
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
-        {{- range $name, $mount := .Values.cacheDirs }}
-        {{- if eq $mount.type "hostPath" }}
-        - hostPath:
-            path:  "{{ $mount.path }}"
-            type: DirectoryOrCreate
-          name: cache-dir-{{ $name }}
-          {{- else if eq $mount.type "emptyDir" }}
-        - emptyDir: {}
-          name: cache-dir-{{ $name }}
-        {{- /* todo: support volume template */}}
-        {{- end }}
-        {{- end }}
         - name: script
           configMap:
             name: {{ template "juicefs.fullname" . }}-fuse-script

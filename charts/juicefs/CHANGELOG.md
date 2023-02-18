@@ -38,3 +38,12 @@ Support configurable tieredstore's volume type
  
 0.2.9
 - Add updateStrategy for fuse
+
+0.2.10
+- Set root user in worker & fuse pod
+
+0.2.11
+- Support credential key in secret
+
+0.2.12
+- Set cache dir in volumes & volumeMounts for worker & fuse

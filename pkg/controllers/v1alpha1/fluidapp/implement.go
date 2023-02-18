@@ -17,13 +17,15 @@
 package fluidapp
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strings"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 type FluidAppReconcilerImplement struct {
@@ -41,13 +43,18 @@ func NewFluidAppReconcilerImplement(client client.Client, log logr.Logger, recor
 	return r
 }
 
-func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err error) {
-	var fuseContainer corev1.Container
+func (i *FluidAppReconcilerImplement) umountFuseSidecars(pod *corev1.Pod) (err error) {
 	for _, cn := range pod.Spec.Containers {
-		if cn.Name == common.FuseContainerName {
-			fuseContainer = cn
+		if strings.Contains(cn.Name, common.FuseContainerName) {
+			if e := i.umountFuseSidecar(pod, cn); e != nil {
+				return
+			}
 		}
 	}
+	return
+}
+
+func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod, fuseContainer corev1.Container) (err error) {
 	if fuseContainer.Name == "" {
 		return
 	}
@@ -72,7 +79,7 @@ func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod) (err er
 	}
 
 	i.Log.Info("exec cmd in pod fuse container", "cmd", cmd, "podName", pod.Name, "namespace", pod.Namespace)
-	stdout, stderr, err := kubeclient.ExecCommandInContainer(pod.Name, common.FuseContainerName, pod.Namespace, cmd)
+	stdout, stderr, err := kubeclient.ExecCommandInContainer(pod.Name, fuseContainer.Name, pod.Namespace, cmd)
 	if err != nil {
 		i.Log.Info("exec output", "stdout", stdout, "stderr", stderr)
 		if strings.Contains(stderr, "not mounted") {

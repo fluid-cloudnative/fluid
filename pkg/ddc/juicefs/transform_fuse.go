@@ -81,6 +81,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		j.Log.Error(err, "failed to transform volumes for fuse")
 		return err
 	}
+	// transform cache volumes for fuse
+	err = j.transformFuseCacheVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform cache volumes for fuse")
+		return err
+	}
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
@@ -133,6 +139,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceMetaUrl:
 			source = "${METAURL}"
 			value.Configs.MetaUrlSecret = secretKeyRef.Name
+			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
 			_, ok := secret.Data[secretKeyRef.Key]
 			if !ok {
 				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
@@ -140,10 +147,13 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
+			value.Configs.AccessKeySecretKey = secretKeyRef.Key
 		case JuiceSecretKey:
 			value.Configs.SecretKeySecret = secretKeyRef.Name
+			value.Configs.SecretKeySecretKey = secretKeyRef.Key
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
+			value.Configs.TokenSecretKey = secretKeyRef.Key
 		}
 	}
 

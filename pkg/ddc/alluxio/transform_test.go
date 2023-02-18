@@ -1,11 +1,8 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +13,12 @@ limitations under the License.
 package alluxio
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"reflect"
-	"testing"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -176,6 +174,7 @@ func TestTransformWorkers(t *testing.T) {
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
 						NetworkMode: datav1alpha1.HostNetworkMode,
 					},
+					TieredStore: datav1alpha1.TieredStore{},
 				},
 			},
 			wantValue: &Alluxio{
@@ -184,11 +183,33 @@ func TestTransformWorkers(t *testing.T) {
 				},
 			},
 		},
+		"test network mode case 4": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						NetworkMode: datav1alpha1.HostNetworkMode,
+						NodeSelector: map[string]string{
+							"workerSelector": "true",
+						},
+					},
+					TieredStore: datav1alpha1.TieredStore{},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					HostNetwork: true,
+					NodeSelector: map[string]string{
+						"workerSelector": "true",
+					},
+				},
+			},
+		},
 	}
 
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 	for k, v := range testCases {
 		gotValue := &Alluxio{}
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", v.runtime.Spec.TieredStore)
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
 			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
 				t.Errorf("check %s failure, got:%t,want:%t",
@@ -196,6 +217,15 @@ func TestTransformWorkers(t *testing.T) {
 					gotValue.Worker.HostNetwork,
 					v.wantValue.Worker.HostNetwork,
 				)
+			}
+			if len(v.wantValue.Worker.NodeSelector) > 0 {
+				if !reflect.DeepEqual(v.wantValue.Worker.NodeSelector, gotValue.Worker.NodeSelector) {
+					t.Errorf("check %s failure, got:%v,want:%v",
+						k,
+						gotValue.Worker.NodeSelector,
+						v.wantValue.Worker.NodeSelector,
+					)
+				}
 			}
 		}
 	}

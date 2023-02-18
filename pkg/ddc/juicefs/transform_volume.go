@@ -18,8 +18,13 @@ package juicefs
 
 import (
 	"fmt"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"strconv"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // transform worker volumes
@@ -54,6 +59,70 @@ func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRunt
 	return err
 }
 
+// transform worker cache volumes
+// after genValue & genMount function
+func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+	caches := map[string]cache{}
+	cacheDir := ""
+
+	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
+	workerOptions := runtime.Spec.Worker.Options
+	for k, v := range workerOptions {
+		if k == "cache-dir" {
+			cacheDir = v
+			break
+		}
+	}
+	if cacheDir != "" {
+		originPath := strings.Split(cacheDir, ",")
+		for i, p := range originPath {
+			var volumeType = common.VolumeTypeHostPath
+			caches[strconv.Itoa(i+1)] = cache{
+				Path: p,
+				Type: string(volumeType),
+			}
+		}
+	} else {
+		caches = value.CacheDirs
+	}
+
+	// set volumes & volumeMounts for cache
+	volumeMap := map[string]corev1.VolumeMount{}
+	for _, v := range runtime.Spec.Worker.VolumeMounts {
+		volumeMap[v.MountPath] = v
+	}
+	for i, cache := range caches {
+		if _, ok := volumeMap[cache.Path]; ok {
+			// cache path is already in volumeMounts
+			continue
+		}
+		value.Worker.VolumeMounts = append(value.Worker.VolumeMounts, corev1.VolumeMount{
+			Name:      "cache-dir-" + i,
+			MountPath: cache.Path,
+		})
+		v := corev1.Volume{
+			Name: "cache-dir-" + i,
+		}
+		switch cache.Type {
+		case string(common.VolumeTypeHostPath):
+			dir := corev1.HostPathDirectoryOrCreate
+			v.VolumeSource = corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: cache.Path,
+					Type: &dir,
+				},
+			}
+		case string(common.VolumeTypeEmptyDir):
+			v.VolumeSource = corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}
+			// todo: support volume template
+		}
+		value.Worker.Volumes = append(value.Worker.Volumes, v)
+	}
+	return err
+}
+
 // transform fuse volumes
 func (j *JuiceFSEngine) transformFuseVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
 	if len(runtime.Spec.Fuse.VolumeMounts) > 0 {
@@ -82,5 +151,47 @@ func (j *JuiceFSEngine) transformFuseVolumes(runtime *datav1alpha1.JuiceFSRuntim
 		}
 	}
 
+	return err
+}
+
+// transform fuse cache volumes
+// after genValue & genMount function
+func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+	caches := value.CacheDirs
+
+	// set volumes & volumeMounts for cache
+	volumeMap := map[string]corev1.VolumeMount{}
+	for _, v := range runtime.Spec.Fuse.VolumeMounts {
+		volumeMap[v.MountPath] = v
+	}
+	for i, cache := range caches {
+		if _, ok := volumeMap[cache.Path]; ok {
+			// cache path is already in volumeMounts
+			continue
+		}
+		value.Fuse.VolumeMounts = append(value.Fuse.VolumeMounts, corev1.VolumeMount{
+			Name:      "cache-dir-" + i,
+			MountPath: cache.Path,
+		})
+		v := corev1.Volume{
+			Name: "cache-dir-" + i,
+		}
+		switch cache.Type {
+		case string(common.VolumeTypeHostPath):
+			dir := corev1.HostPathDirectoryOrCreate
+			v.VolumeSource = corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: cache.Path,
+					Type: &dir,
+				},
+			}
+		case string(common.VolumeTypeEmptyDir):
+			v.VolumeSource = corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}
+			// todo: support volume template
+		}
+		value.Fuse.Volumes = append(value.Fuse.Volumes, v)
+	}
 	return err
 }
