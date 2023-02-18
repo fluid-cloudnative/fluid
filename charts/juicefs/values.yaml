@@ -60,11 +60,15 @@ worker:
 configs:
   name: ""
   accesskeySecret: ""
+  accesskeySecretKey: ""
   secretkeySecret: ""
+  secretkeySecretKey: ""
   bucket: ""
   metaurlSecret: ""
+  metaurlSecretKey: ""
   storage: ""
   tokenSecret: ""
+  tokenSecretKey: ""
   formatCmd : ""
 
 ## FUSE ##
