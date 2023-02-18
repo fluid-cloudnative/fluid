@@ -18,10 +18,7 @@ package fluidapp
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -33,6 +30,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 const controllerName string = "FluidAppController"
@@ -98,8 +100,8 @@ func (f *FluidAppReconciler) Reconcile(ctx context.Context, request reconcile.Re
 func (f *FluidAppReconciler) internalReconcile(ctx reconcileRequestContext) (ctrl.Result, error) {
 	pod := ctx.pod
 
-	// umount fuse sidecar
-	err := f.umountFuseSidecar(pod)
+	// umount fuse sidecars
+	err := f.umountFuseSidecars(pod)
 	if err != nil {
 		ctx.Log.Error(err, "umount fuse sidecar error", "podName", pod.Name, "podNamespace", pod.Namespace)
 		return utils.RequeueIfError(err)
