@@ -467,7 +467,10 @@ func TestGooseFSEngineReleasePorts(t *testing.T) {
 				Log:       fake.NullLogger(),
 			}
 
-			portallocator.SetupRuntimePortAllocator(client, pr, GetReservedPorts)
+			err := portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", GetReservedPorts)
+			if err != nil {
+				t.Fatalf("Failed to set up runtime port allocator due to %v", err)
+			}
 			allocator, _ := portallocator.GetRuntimePortAllocator()
 			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
 				func(_ *portallocator.RuntimePortAllocator, ports []int) {
