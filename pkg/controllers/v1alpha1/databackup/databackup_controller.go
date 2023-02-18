@@ -176,6 +176,8 @@ func (r *DataBackupReconciler) reconcileNoneDataBackup(ctx reconcileRequestConte
 		databackupToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
 	databackupToUpdate.Status.Duration = "Unfinished"
+	databackupToUpdate.Status.Infos = map[string]string{}
+
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "failed to update the databackup")
 		return utils.RequeueIfError(err)
@@ -189,7 +191,12 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 	log := ctx.Log.WithName("reconcileCompleteDataBackup")
 	// 1. Update BackupPath of the databackup
 	databackupToUpdate := ctx.DataBackup.DeepCopy()
-	databackupToUpdate.Status.BackupLocation.Path = databackupToUpdate.Spec.BackupPath
+
+	if databackupToUpdate.Status.Infos == nil {
+		databackupToUpdate.Status.Infos = map[string]string{}
+	}
+	databackupToUpdate.Status.Infos[cdatabackup.BackupLocationPath] = databackupToUpdate.Spec.BackupPath
+
 	if strings.HasPrefix(databackupToUpdate.Spec.BackupPath, common.PathScheme.String()) {
 		podName := databackupToUpdate.Name + "-pod"
 		backupPod, err := kubeclient.GetPodByName(r.Client, podName, ctx.Namespace)
@@ -197,9 +204,9 @@ func (r *DataBackupReconciler) reconcileCompleteDataBackup(ctx reconcileRequestC
 			log.Error(err, "Failed to get backup pod")
 			return utils.RequeueIfError(err)
 		}
-		databackupToUpdate.Status.BackupLocation.NodeName = backupPod.Spec.NodeName
+		databackupToUpdate.Status.Infos[cdatabackup.BackupLocationNodeName] = backupPod.Spec.NodeName
 	} else {
-		databackupToUpdate.Status.BackupLocation.NodeName = "NA"
+		databackupToUpdate.Status.Infos[cdatabackup.BackupLocationNodeName] = "NA"
 	}
 	if err := r.Status().Update(context.TODO(), databackupToUpdate); err != nil {
 		log.Error(err, "the backup pod has completd, but failed to  update the databackup")
@@ -247,7 +254,7 @@ func (r *DataBackupReconciler) releaseLockOnTargetDataset(ctx reconcileRequestCo
 			return err
 		}
 		if dataset.Status.DataBackupRef != utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace) {
-			log.Info("Found DataBackuRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataLoadRef", dataset.Status.DataLoadRef)
+			log.Info("Found DataBackuRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataBackupRef", dataset.Status.DataBackupRef)
 			return nil
 		}
 		datasetToUpdate := dataset.DeepCopy()

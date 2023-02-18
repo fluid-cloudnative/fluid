@@ -67,7 +67,7 @@ hbase-worker-1         2/2     Running       0          3m4s
 该DataBackup同样变为Complete状态：
 ```bash
 $ kubectl get databackup
-NAME           DATASET   PHASE      PPATH                                NODENAME     AGE
+NAME           DATASET   PHASE      PATH                                NODENAME     AGE
 hbase-backup   hbase     Complete   pvc://<pvcName>/subpath1/subpath2/   NA           30s
 ```
 

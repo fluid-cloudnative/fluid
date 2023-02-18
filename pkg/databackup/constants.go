@@ -21,4 +21,7 @@ const (
 	AlluxioBackupPathPod = "/alluxio_backups"
 	GooseFSBackupPathPod = "/goosefs_backups"
 	DatabackupChart      = "fluid-databackup"
+
+	BackupLocationPath     = "BackupLocationPath"
+	BackupLocationNodeName = "BackupLocationNodeName"
 )
