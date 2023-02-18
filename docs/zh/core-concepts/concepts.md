@@ -26,7 +26,7 @@ Dataset是个统一的抽象概念;对于数据真正的操作，实际上由具
 
 Fluid中的Runtime分为两大类:
 
-1. CacheRuntime实现缓存加速,包括开源的分布式缓存Alluxio主要加速S3，HDFS，JuiceFS加速JuiceFS, 阿里云JindoFS加速OSS和OSS+HDFS，腾讯云GooseFS支持COS
+1. CacheRuntime实现缓存加速,包括开源的分布式缓存AlluxioRuntime主要加速S3，HDFS，JuiceFSRuntime加速JuiceFS, 阿里云JindoFSRuntime加速OSS和OSS+HDFS，腾讯云GooseFSRuntime支持COS。
 2. ThinRuntime统一访问接口，比如支持s3fs, nfs-fuse等分布式存储系统。
 
 
