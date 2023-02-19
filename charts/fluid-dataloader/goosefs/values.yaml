@@ -25,7 +25,7 @@ dataloader:
 
   # expireTime: 43200000
   # Default: 43200000
-  # Description: when enable atomiccache and failed, ttl will avoid space waste, default is 12h, unit is ms. 
+  # Description: when enable atomiccache and failed, ttl will avoid space waste, default is 12h, unit is ms.
 
   # Optional
   # Default: (path: "/", replicas: 1, fluidNative: false)
@@ -38,3 +38,7 @@ dataloader:
   # Required
   # Description: the image that the DataLoad job uses
   image: <goosefs-image>
+
+  # Optional
+  # Description: optional image pull secrets on DataLoad pods
+  imagePullSecrets: []
