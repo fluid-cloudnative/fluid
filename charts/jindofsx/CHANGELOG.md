@@ -76,3 +76,7 @@ Use datasetName.datasetNamespace for service discovery
 0.8.17
 
 Add pvc storage type support
+
+0.8.18
+
+Add `sidecar.istio.io/inject` to components annotation
