@@ -1,19 +1,18 @@
 # Introduction
 
-## 为什么需要Fluid
+## Why Fluid？
 
-1. 在云上通过云原生架构运行AI、大数据等任务，可以享受计算资源弹性的优势，但同时也会遇到，计算和存储分离架构带来的数据访问延迟和远程拉取数据带宽开销大的挑战。尤其在GPU深度学习训练场景中，迭代式的远程读取大量训练数据方法会严重拖慢GPU计算效率。
+1. Running AI, big data and other tasks on the cloud through a cloud-native architecture can take advantage of the elasticity of computing resources, but at the same time, it also faces data access latency and large bandwidth overhead due to the separated computing and storage architecture. Especially deep learning training with GPUs, iterative remote access to large amounts of training data will significantly slow down the computing efficiency.
 
-2. Kubernetes只提供了异构存储服务接入和管理标准接口(CSI，Container Storage Interface),对应用如何在容器集群中使用和管理数据并没有定义。在运行训练任务时，数据科学家需要能够定义数据集的文件特征,管理数据集版本，控制访问权限，数据集预处理，加速异构数据读取等。但是在Kubernetes中还没有这样的标准方案，这是云原生容器社区缺失的重要能力之一。
+2. Kubernetes provides heterogeneous storage service access and management standard interface (CSI, Container Storage Interface), but it does not define how the application uses and manages data. When running machine learning tasks, data scientists need to be able to define file features of the dataset, manage versions of the dataset, control access permissions, pre-process the dataset, accelerate heterogeneous data reading, etc. However, there is no such standard scheme in Kubernetes, which is one of the important missing capabilities of Kubernetes.
 
-3. Kubernetes 支持多种形态，比如原生Kubernetes，边缘Kubernetes，Serverless Kubernetes，但是对于不同形态的Kubernetes，Kubernetes不同形态的支持对于CSI插件支持程度也不同，许多Serverless Kubernetes不支持第三方的CSI插件的部署。
+3. Kubernetes supports a variety of forms, such as native Kubernetes, edge Kubernetes and Serverless Kubernetes. However, for different forms of Kubernetes, the support for CSI plug-ins is also different, for example, many Serverless Kubernetes do not support the deployment of third-party CSI plug-ins.
 
+## What is Fluid?
 
-## 什么是Fluid
+Unlike traditional PVC-based storage abstraction, Fluid takes an Application-oriented perspective to abstract the “process of using data on Kubernetes”. It introduces the concept of elastic Dataset and implements it as a first-class citizen in Kubernetes to enable Dataset CRUD operation, permission control, and access acceleration.
 
-不同于传统PVC面向存储的抽象，Fluid以应用为中心的角度，对Kubernetes上”计算任务使用数据的过程”进行抽象。它提出弹性数据集Dataset概念，并作为一等公民在Kubernetes中实现，以实现数据集的CRUD操作、权限控制和访问加速等功能。
-
-Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自我管理、弹性扩容和自我修复能力的可观测缓存服务，并通过支持数据集的操作来实现此目的。同时，通过数据缓存的位置信息，Fluid能够为使用数据集的应用提供数据亲和性调度。
+Fluid is responsible for converting distributed caching systems (such as Alluxio and JuiceFS) into observable caching services with self-management, elastic scaling, and self-healing capabilities, and it does so by supporting dataset operations. At the same time, through the data caching location information, Fluid can provide data-affinity scheduling for applications using datasets.
 
 
 <div align="center">
@@ -21,9 +20,11 @@ Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自�
 </div>
 
 
-## 核心功能：
+## Key Features：
 
-1. **面向应用的数据集统一抽象**：数据集抽象不仅汇总来自多个存储源的数据，还描述了数据的迁移性和特征，并提供可观测性，例如数据集的总数据量、当前缓存空间大小以及缓存命中率。用户可以根据这些信息评估是否需要对缓存系统进行扩容或缩容。
+1. **Application-oriented DataSet Unified Abstraction**：数据集抽象不仅汇总来自多个存储源的数据，还描述了数据的迁移性和特征，并提供可观测性，例如数据集的总数据量、当前缓存空间大小以及缓存命中率。用户可以根据这些信息评估是否需要对缓存系统进行扩容或缩容。
+
+DataSet abstraction not only consolidates data from multiple storage sources, but also describes the data's migratory and characteristic properties, providing observability, such as total data volume of the DataSet, current cache space size, and cache hit rate. Users can assess whether a cache system needs to be scaled up or down according to this information.
 
 2. **可扩展的数据引擎插件**：Dataset是统一的抽象概念，而实际的数据操作需要由具体的Runtime实现，因为不同存储的差异，会有不同的Runtime接口。Fluid的Runtime分为两大类：CacheRuntime实现数据缓存加速，如AlluxioRuntime主要加速S3、HDFS和JuiceFS；另一类是ThinRuntime，它提供统一的访问接口，方便接入第三方存储。
 
@@ -34,7 +35,7 @@ Fluid负责将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自�
 5. **运行时平台无关**：可以支持原生、边缘、Serverless Kubernetes集群、Kubernetes多集群等多样化环境可以运行在云平台、边缘、 Kubernetes多集群等多样化环境。可以根据环境的差异选择CSI Plugin和sidecar不同模式运行存储的客户端。
 
 
-## 演示
+## Demo：
 我们提供了视频的Demo，为您展示如何通过Fluid提升数据访问速度。
 
 ### 演示 1: 加速文件访问
