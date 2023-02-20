@@ -68,7 +68,7 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.Namespac
 	return controllerName, scaleout, fmt.Errorf("no matched controller for dataset %s", datasetKey)
 }
 
-// scale out deployment If needed
+// scaleoutDeploymentIfNeeded scales out runtime controller deployments if the current replica of it is 0.
 func scaleoutDeploymentIfNeeded(c client.Client, key types.NamespacedName, log logr.Logger) (scale bool, err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		deploy := &appsv1.Deployment{}
