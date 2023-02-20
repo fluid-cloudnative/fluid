@@ -21,6 +21,9 @@ import (
 	"os"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -30,8 +33,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
-	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 )
 
 // CreateDataLoadJob creates the job to load data
@@ -98,6 +99,8 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+
 	runtime, err := utils.GetJindoRuntime(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return
@@ -113,10 +116,11 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         image,
+		BackoffLimit:     3,
+		TargetDataset:    dataload.Spec.Dataset.Name,
+		LoadMetadata:     dataload.Spec.LoadMetadata,
+		Image:            image,
+		ImagePullSecrets: imagePullSecrets,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -156,7 +160,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
 	if err != nil {
 		return
 	}
