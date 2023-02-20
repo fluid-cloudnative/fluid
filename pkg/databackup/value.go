@@ -17,6 +17,8 @@ limitations under the License.
 package databackup
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
@@ -39,4 +41,6 @@ type DataBackup struct {
 	PVCName     string `yaml:"pvcName,omitempty"`
 	Path        string `yaml:"path,omitempty"`
 	RuntimeType string `yaml:"runtimeType,omitempty"`
+	// image pull secrets
+	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
 }
