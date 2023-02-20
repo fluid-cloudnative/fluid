@@ -95,14 +95,16 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	}
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:  3,
-		TargetDataset: dataload.Spec.Dataset.Name,
-		LoadMetadata:  dataload.Spec.LoadMetadata,
-		Image:         image,
-		Labels:        dataload.Spec.PodMetadata.Labels,
-		Annotations:   dataload.Spec.PodMetadata.Annotations,
+		BackoffLimit:     3,
+		TargetDataset:    dataload.Spec.Dataset.Name,
+		LoadMetadata:     dataload.Spec.LoadMetadata,
+		Image:            image,
+		Labels:           dataload.Spec.PodMetadata.Labels,
+		Annotations:      dataload.Spec.PodMetadata.Annotations,
+		ImagePullSecrets: imagePullSecrets,
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -168,7 +170,7 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
 	if err != nil {
 		return
 	}
