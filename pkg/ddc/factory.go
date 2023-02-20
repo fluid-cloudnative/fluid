@@ -49,6 +49,7 @@ func init() {
 		"juicefsruntime-controller": juicefs.Precheck,
 		"goosefsruntime-controller": goosefs.Precheck,
 		"thinruntime-controller":    thin.Precheck,
+		"eacruntime-controller":     eac.Precheck,
 	})
 }
 

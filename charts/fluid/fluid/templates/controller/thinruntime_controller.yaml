@@ -21,7 +21,7 @@ spec:
         control-plane: thinruntime-controller
       annotations:
       {{ if gt (.Values.runtime.thin.replicas | int) 1 -}}
-        replicas: {{ .Values.runtime.thin.replicas | quote }}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.thin.replicas | quote }}
       {{- end }}
     spec:
       serviceAccountName: thinruntime-controller

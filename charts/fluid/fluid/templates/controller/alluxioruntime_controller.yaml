@@ -21,7 +21,7 @@ spec:
         control-plane: alluxioruntime-controller
       annotations:
       {{ if gt (.Values.runtime.alluxio.replicas | int) 1 -}}
-        replicas: {{ .Values.runtime.alluxio.replicas | quote }}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.alluxio.replicas | quote }}
       {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
