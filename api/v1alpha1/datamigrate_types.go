@@ -109,7 +109,7 @@ type DataMigrate struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   DataMigrateSpec `json:"spec,omitempty"`
-	Status DataLoadStatus  `json:"status,omitempty"`
+	Status OperationStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

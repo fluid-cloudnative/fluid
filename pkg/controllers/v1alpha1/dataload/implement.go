@@ -124,6 +124,7 @@ func (r *DataLoadReconcilerImplement) reconcileNoneDataLoad(ctx cruntime.Reconci
 	if len(dataloadToUpdate.Status.Conditions) == 0 {
 		dataloadToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
+	dataloadToUpdate.Status.Infos = map[string]string{}
 	dataloadToUpdate.Status.Duration = "Unfinished"
 	if err := r.Status().Update(context.TODO(), dataloadToUpdate); err != nil {
 		log.Error(err, "failed to update the cdataload")

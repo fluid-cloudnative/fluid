@@ -16,20 +16,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// BackupLocation describes the final backup location of DataBackup
-type BackupLocation struct {
-	// Path describes the path of backup, in the form of local:///absolutePath or pvc://<pvcName>/subpath
-	Path string `json:"path,omitempty"`
-	// NodeName describes the nodeName of backup if Path is in the form of local://subpath
-	NodeName string `json:"nodeName,omitempty"`
-}
 
 // DataBackupSpec defines the desired state of DataBackup
 type DataBackupSpec struct {
@@ -41,22 +32,10 @@ type DataBackupSpec struct {
 	RunAs *User `json:"runAs,omitempty"`
 }
 
-// DataBackupStatus defines the observed state of DataBackup
-type DataBackupStatus struct {
-	// Phase describes current phase of DataBackup
-	Phase common.Phase `json:"phase"`
-	// BackupLocation tell user the location to save data of the DataBackup
-	BackupLocation BackupLocation `json:"backupLocation,omitempty"`
-	// Duration tell user how much time was spent to backup
-	Duration string `json:"duration"`
-	// Conditions consists of transition information on DataBackup's Phase
-	Conditions []Condition `json:"conditions"`
-}
-
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset`
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
-// +kubebuilder:printcolumn:name="Path",type="string",JSONPath=`.status.backupLocation.path`
-// +kubebuilder:printcolumn:name="NodeName",type="string",JSONPath=`.status.backupLocation.nodeName`
+// +kubebuilder:printcolumn:name="Path",type="string",JSONPath=`.status.infos.BackupLocationPath`
+// +kubebuilder:printcolumn:name="NodeName",type="string",JSONPath=`.status.infos.BackupLocationNodeName`
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:object:root=true
@@ -70,8 +49,8 @@ type DataBackup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DataBackupSpec   `json:"spec,omitempty"`
-	Status DataBackupStatus `json:"status,omitempty"`
+	Spec   DataBackupSpec  `json:"spec,omitempty"`
+	Status OperationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
