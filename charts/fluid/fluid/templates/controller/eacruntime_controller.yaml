@@ -1,4 +1,3 @@
-{{ if .Values.runtime.eac.enabled -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -11,11 +10,19 @@ spec:
   selector:
     matchLabels:
       control-plane: eacruntime-controller
+  {{ if .Values.runtime.eac.enabled -}}
   replicas: {{ .Values.runtime.eac.replicas }}
+  {{- else }}
+  replicas: 0
+  {{- end }}
   template:
     metadata:
       labels:
         control-plane: eacruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.eac.replicas | int ) 1 -}}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.eac.replicas | quote }}
+      {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -84,4 +91,3 @@ spec:
             cpu: 100m
             memory: 200Mi
       terminationGracePeriodSeconds: 10
-{{- end }}
