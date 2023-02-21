@@ -157,7 +157,6 @@ spec:
             required:
             - conditions
             - duration
-            - infos
             - phase
             type: object
         type: object
