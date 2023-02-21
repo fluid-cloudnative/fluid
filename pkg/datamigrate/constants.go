@@ -18,5 +18,5 @@ package datamigrate
 
 const (
 	DataMigrateFinalizer = "fluid-datamigrate-controller-finalizer"
-	DataMigrateChart     = "fluid-datamigrater"
+	DataMigrateChart     = "fluid-datamigrate"
 )

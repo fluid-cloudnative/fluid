@@ -26,10 +26,10 @@ type DataMigrateValue struct {
 
 type DataMigrateInfo struct {
 	// BackoffLimit specifies the upper limit times when the DataMigrate job fails
-	BackoffLimit int32 `yaml:"backoffLimit,omitempty"`
+	BackoffLimit int32 `json:"backoffLimit,omitempty"`
 
 	// TargetDataset specifies the dataset that the DataLoad targets
-	TargetDataset string `yaml:"targetDataset,omitempty"`
+	TargetDataset string `json:"targetDataset,omitempty"`
 
 	// MigrateFrom specifies the data that the DataMigrate migrate from
 	MigrateFrom string `json:"migrateFrom,omitempty"`
@@ -41,14 +41,14 @@ type DataMigrateInfo struct {
 	EncryptOptions []v1alpha1.EncryptOption `json:"encryptOptions,omitempty"`
 
 	// Image specifies the image that the DataMigrate job uses
-	Image string `yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 
 	// Options specifies the extra dataMigrate properties for runtime
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
 	// Labels defines labels in DataMigrate's pod metadata
-	Labels map[string]string `yaml:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// Annotations defines annotations in DataMigrate's pod metadata
-	Annotations map[string]string `yaml:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }

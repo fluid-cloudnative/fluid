@@ -22,6 +22,9 @@ import (
 )
 
 func (t *TemplateEngine) MigrateData(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
-	//TODO implement me
-	panic("implement me")
+	if err = t.Implement.CreateDataMigrateJob(ctx, targetDataMigrate); err != nil {
+		t.Log.Error(err, "Failed to create the DataMigrate job.")
+		return err
+	}
+	return err
 }

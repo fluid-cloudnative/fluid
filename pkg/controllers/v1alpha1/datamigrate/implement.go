@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -66,8 +67,19 @@ func (r *DataMigrateReconcilerImplement) ReconcileDataMigrateDeletion(ctx crunti
 		return utils.RequeueIfError(err)
 	}
 
+	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, targetDataMigrate)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("can't find target dataset", "dataMigrate", targetDataMigrate.Name)
+			return utils.RequeueAfterInterval(20 * time.Second)
+		}
+		// other error
+		ctx.Log.Error(err, "Failed to get the ddc dataset")
+		return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
+	}
+
 	// 2. Release lock on target dataset if necessary
-	err = r.releaseLockOnTargetDataset(ctx, targetDataMigrate, dataset)
+	err = r.releaseLockOnTargetDataset(ctx, targetDataMigrate, targetDataset)
 	if err != nil {
 		log.Error(err, "can't release lock on target dataset", "targetDataset", dataset.Name)
 		return utils.RequeueIfError(err)
@@ -120,6 +132,7 @@ func (r *DataMigrateReconcilerImplement) reconcileNoneDataMigrate(ctx cruntime.R
 	log := ctx.Log.WithName("reconcileNoneDataMigrate")
 	DataMigrateToUpdate := targetDataMigrate.DeepCopy()
 	DataMigrateToUpdate.Status.Phase = common.PhasePending
+	DataMigrateToUpdate.Status.Infos = map[string]string{}
 	if len(DataMigrateToUpdate.Status.Conditions) == 0 {
 		DataMigrateToUpdate.Status.Conditions = []datav1alpha1.Condition{}
 	}
@@ -155,6 +168,7 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 			}
 			DataMigrateToUpdate := DataMigrate.DeepCopy()
 			DataMigrateToUpdate.Status.Phase = common.PhaseFailed
+			DataMigrateToUpdate.Status.Infos = map[string]string{}
 
 			if !reflect.DeepEqual(DataMigrateToUpdate.Status, DataMigrate.Status) {
 				if err := r.Status().Update(ctx, DataMigrateToUpdate); err != nil {
@@ -207,7 +221,17 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 		}
 	}
 
-	// 5. update phase to Executing
+	// 5. update dataset phase to DataMigrating
+	log.Info("Get lock on target dataset, try to update phase")
+	DataSetToUpdate := targetDataSet.DeepCopy()
+	DataSetToUpdate.Status.Phase = datav1alpha1.DataMigrating
+	if err := r.Client.Status().Update(context.TODO(), DataSetToUpdate); err != nil {
+		log.Error(err, "failed to update DataSet's status to DataMigrating, will retry")
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info("update DataSet's status to DataMigrating successfully")
+
+	// 6. update phase to Executing
 	// We offload the helm install logic to `reconcileExecutingDataMigrate` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataMigrate job will never start and all other DataMigrates will be blocked forever.
@@ -220,15 +244,6 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 	}
 	log.V(1).Info("update DataMigrate's status to Executing successfully")
 
-	// 6. update dataset phase to DataMigrating
-	log.Info("Get lock on target dataset, try to update phase")
-	DataSetToUpdate := targetDataSet.DeepCopy()
-	DataSetToUpdate.Status.Phase = datav1alpha1.DataMigrating
-	if err := r.Client.Status().Update(context.TODO(), DataSetToUpdate); err != nil {
-		log.Error(err, "failed to update DataSet's status to DataMigrating, will retry")
-		return utils.RequeueIfError(err)
-	}
-	log.V(1).Info("update DataSet's status to DataMigrating successfully")
 	return utils.RequeueImmediately()
 }
 

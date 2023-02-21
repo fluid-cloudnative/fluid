@@ -1,13 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ printf "%s-data-migrate-script" .Release.Name }}
+  name: {{ printf "%s-script" .Release.Name }}
   labels:
     release: {{ .Release.Name }}
     role: datamigrate-job
 data:
   datamigrate.sh: |
     #!/bin/bash
+    echo "juicefs datamigrate job start..."
 
     # todo: option
+    echo "execute juicefs sync cmd: "
     juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }}
+    echo "juicefs datamigrate job end."

@@ -145,7 +145,7 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 			return "", err
 		}
 		info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
-			Name: "METAURL",
+			Name: "FLUID_METAURL",
 			ValueFrom: datav1alpha1.EncryptOptionSource{
 				SecretKeyRef: datav1alpha1.SecretKeySelector{
 					Name: metaurlSecret,
@@ -153,7 +153,7 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				},
 			},
 		})
-		dataUrl = "jfs://${METAURL}/"
+		dataUrl = "jfs://FLUID_METAURL/"
 		if data.DataSet.Path != "" {
 			dataUrl = path.Join(dataUrl, data.DataSet.Path, "/")
 		}
@@ -167,13 +167,17 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		var accessKey, secretKey, token string
 		for _, encryptOption := range data.ExternalStorage.EncryptOptions {
 			name := encryptOption.Name
+			keyName := name
 			switch name {
 			case "access-key":
 				accessKey = "${ACCESS_KEY}"
+				keyName = "ACCESS_KEY"
 			case "secret-key":
 				secretKey = "${SECRET_KEY}"
+				keyName = "SECRET_KEY"
 			case "token":
 				token = "${TOKEN}"
+				keyName = "TOKEN"
 			}
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 			_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
@@ -184,13 +188,18 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 					"secretName", secretKeyRef.Name)
 				return "", err
 			}
-			info.EncryptOptions = append(info.EncryptOptions, encryptOption)
+			info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+				Name:      keyName,
+				ValueFrom: encryptOption.ValueFrom,
+			})
 		}
 		if token != "" {
 			secretKey = fmt.Sprintf("%s:%s", secretKey, token)
 		}
 		u.User = url.UserPassword(accessKey, secretKey)
-		dataUrl = u.String()
+		decodedValue, _ := url.QueryUnescape(u.String())
+		dataUrl = decodedValue
+		j.Log.Info("dataUrl", "dataUrl", dataUrl)
 		return dataUrl, nil
 	}
 	return

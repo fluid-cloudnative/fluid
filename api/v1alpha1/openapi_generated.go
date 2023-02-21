@@ -44,7 +44,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
@@ -1134,52 +1133,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "DataLoadStatus defines the observed state of DataLoad",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Phase describes current phase of DataLoad",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"conditions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Conditions consists of transition information on DataLoad's Phase",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"),
-									},
-								},
-							},
-						},
-					},
-					"duration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Duration tell user how much time was spent to load the data",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"phase", "conditions", "duration"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1216,14 +1169,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref common.Referenc
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus"),
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
