@@ -3889,7 +3889,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 						},
 					},
 				},
-				Required: []string{"phase", "duration", "conditions", "infos"},
+				Required: []string{"phase", "duration", "conditions"},
 			},
 		},
 		Dependencies: []string{
