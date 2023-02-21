@@ -126,7 +126,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	}
 	j.Log.Info("dataMigrate value", "value", string(data))
 
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-migrater-values.yaml", dataMigrate.Namespace, dataMigrate.Name))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-migrate-values.yaml", dataMigrate.Namespace, dataMigrate.Name))
 	if err != nil {
 		return
 	}
@@ -156,7 +156,10 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		if err != nil {
 			return "", err
 		}
-		u.Path = data.DataSet.Path
+		u.Path = "/"
+		if data.DataSet.Path != "" {
+			u.Path = data.DataSet.Path
+		}
 		dataUrl = u.String()
 		return dataUrl, nil
 	}
