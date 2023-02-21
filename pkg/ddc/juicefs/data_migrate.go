@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -153,10 +152,12 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				},
 			},
 		})
-		dataUrl = "jfs://FLUID_METAURL/"
-		if data.DataSet.Path != "" {
-			dataUrl = path.Join(dataUrl, data.DataSet.Path, "/")
+		u, err := url.Parse("jfs://FLUID_METAURL/")
+		if err != nil {
+			return "", err
 		}
+		u.Path = data.DataSet.Path
+		dataUrl = u.String()
 		return dataUrl, nil
 	}
 	if data.ExternalStorage != nil {

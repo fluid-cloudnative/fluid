@@ -20,11 +20,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestGetCacheInfoFromConfigmap(t *testing.T) {
@@ -56,7 +57,7 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	wantCacheInfo := map[string]string{"mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "edition": "community"}
+	wantCacheInfo := map[string]string{"mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", "edition": "community"}
 	cacheinfo, err := GetCacheInfoFromConfigmap(fakeClient, dataSet.Name, dataSet.Namespace)
 	if err != nil {
 		t.Errorf("GetCacheInfoFromConfigmap failed.")
@@ -84,7 +85,7 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 					"data": valuesConfigMapData,
 				},
 			}},
-			wantCacheInfo: map[string]string{"mountpath": "/runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse", "edition": "community"},
+			wantCacheInfo: map[string]string{"mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", "edition": "community"},
 			wantErr:       false,
 		},
 		{
@@ -107,6 +108,102 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
 				t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
+			}
+		})
+	}
+}
+
+func TestGetMetaUrlInfoFromConfigMap(t *testing.T) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset-juicefs-values",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"data": valuesConfigMapData,
+		},
+	}
+	dataSet := &v1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset",
+			Namespace: "fluid",
+		},
+		Status: v1alpha1.DatasetStatus{
+			Runtimes: []v1alpha1.Runtime{
+				{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+					Type:      "juicefs",
+				},
+			},
+		},
+	}
+	runtimeObjs := []runtime.Object{}
+	runtimeObjs = append(runtimeObjs, configMap)
+	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
+	wantMetaurlSecret, wantMetaurlSecretKey := "jfs-secret", "metaurl"
+	metaurlSecret, metaurlSecretkey, err := GetMetaUrlInfoFromConfigMap(fakeClient, dataSet.Name, dataSet.Namespace)
+	if err != nil {
+		t.Errorf("GetMetaUrlInfoFromConfigMap failed.")
+	}
+	if metaurlSecret != wantMetaurlSecret || metaurlSecretkey != wantMetaurlSecretKey {
+		t.Errorf("got metaurlSecret= %v, want metaurlSecret= %v", metaurlSecret, wantMetaurlSecret)
+		t.Errorf("got metaurlSecretKey= %v, want metaurlSecretKey= %v", metaurlSecretkey, wantMetaurlSecretKey)
+	}
+
+}
+
+func Test_parseMetaUrlInfoFromConfigMap1(t *testing.T) {
+	type args struct {
+		configMap *v1.ConfigMap
+	}
+	tests := []struct {
+		name                 string
+		args                 args
+		wantMetaurlSecret    string
+		wantMetaurlSecretkey string
+		wantErr              bool
+	}{
+		{
+			name: "test",
+			args: args{
+				configMap: &v1.ConfigMap{
+					Data: map[string]string{
+						"data": valuesConfigMapData,
+					},
+				},
+			},
+			wantMetaurlSecret:    "jfs-secret",
+			wantMetaurlSecretkey: "metaurl",
+			wantErr:              false,
+		},
+		{
+			name: "test-err",
+			args: args{
+				configMap: &v1.ConfigMap{
+					Data: map[string]string{
+						"data": "test",
+					},
+				},
+			},
+			wantMetaurlSecret:    "",
+			wantMetaurlSecretkey: "",
+			wantErr:              true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMetaurlSecret, gotMetaurlSecretkey, err := parseMetaUrlInfoFromConfigMap(tt.args.configMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseMetaUrlInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotMetaurlSecret != tt.wantMetaurlSecret {
+				t.Errorf("parseMetaUrlInfoFromConfigMap() gotMetaurlSecret = %v, want %v", gotMetaurlSecret, tt.wantMetaurlSecret)
+			}
+			if gotMetaurlSecretkey != tt.wantMetaurlSecretkey {
+				t.Errorf("parseMetaUrlInfoFromConfigMap() gotMetaurlSecretkey = %v, want %v", gotMetaurlSecretkey, tt.wantMetaurlSecretkey)
 			}
 		})
 	}
