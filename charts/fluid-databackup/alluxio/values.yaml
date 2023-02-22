@@ -41,6 +41,10 @@ dataBackup:
   # if it is null, will backup in local
   # pvcName: test
 
+  # Optional
+  # Description: optional image pull secrets on DataLoad pods
+  imagePullSecrets: []
+
 initUsers:
   enabled: false
   image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
