@@ -9,6 +9,10 @@ spec:
   {{- if .Values.dataBackup.nodeName }}
   nodeName: {{ .Values.dataBackup.nodeName }}
   {{- end }}
+  {{- with .Values.dataBackup.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   securityContext:
     fsGroup: {{ .Values.fsGroup }}
   {{ if .Values.initUsers.enabled -}}
