@@ -17,6 +17,8 @@
 package datamigrate
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
@@ -51,4 +53,7 @@ type DataMigrateInfo struct {
 
 	// Annotations defines annotations in DataMigrate's pod metadata
 	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// image pull secrets
+	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
 }

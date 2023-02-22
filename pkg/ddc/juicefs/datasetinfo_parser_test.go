@@ -113,7 +113,7 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 	}
 }
 
-func TestGetMetaUrlInfoFromConfigMap(t *testing.T) {
+func TestGetFSInfoFromConfigMap(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dataset-juicefs-values",
@@ -142,28 +142,25 @@ func TestGetMetaUrlInfoFromConfigMap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	wantMetaurlSecret, wantMetaurlSecretKey := "jfs-secret", "metaurl"
-	metaurlSecret, metaurlSecretkey, err := GetMetaUrlInfoFromConfigMap(fakeClient, dataSet.Name, dataSet.Namespace)
+	wantMetaurlInfo := map[string]string{MetaurlSecret: "jfs-secret", MetaurlSecretKey: "metaurl", Name: "minio", Edition: "community"}
+	metaurlInfo, err := GetFSInfoFromConfigMap(fakeClient, dataSet.Name, dataSet.Namespace)
 	if err != nil {
 		t.Errorf("GetMetaUrlInfoFromConfigMap failed.")
 	}
-	if metaurlSecret != wantMetaurlSecret || metaurlSecretkey != wantMetaurlSecretKey {
-		t.Errorf("got metaurlSecret= %v, want metaurlSecret= %v", metaurlSecret, wantMetaurlSecret)
-		t.Errorf("got metaurlSecretKey= %v, want metaurlSecretKey= %v", metaurlSecretkey, wantMetaurlSecretKey)
+	if !reflect.DeepEqual(metaurlInfo, wantMetaurlInfo) {
+		t.Errorf("parseCacheInfoFromConfigMap() gotMetaurlInfo = %v, want %v", metaurlInfo, wantMetaurlInfo)
 	}
-
 }
 
-func Test_parseMetaUrlInfoFromConfigMap1(t *testing.T) {
+func Test_parseFSInfoFromConfigMap(t *testing.T) {
 	type args struct {
 		configMap *v1.ConfigMap
 	}
 	tests := []struct {
-		name                 string
-		args                 args
-		wantMetaurlSecret    string
-		wantMetaurlSecretkey string
-		wantErr              bool
+		name            string
+		args            args
+		wantMetaurlInfo map[string]string
+		wantErr         bool
 	}{
 		{
 			name: "test",
@@ -174,9 +171,13 @@ func Test_parseMetaUrlInfoFromConfigMap1(t *testing.T) {
 					},
 				},
 			},
-			wantMetaurlSecret:    "jfs-secret",
-			wantMetaurlSecretkey: "metaurl",
-			wantErr:              false,
+			wantMetaurlInfo: map[string]string{
+				MetaurlSecret:    "jfs-secret",
+				MetaurlSecretKey: "metaurl",
+				Name:             "minio",
+				Edition:          CommunityEdition,
+			},
+			wantErr: false,
 		},
 		{
 			name: "test-err",
@@ -187,23 +188,19 @@ func Test_parseMetaUrlInfoFromConfigMap1(t *testing.T) {
 					},
 				},
 			},
-			wantMetaurlSecret:    "",
-			wantMetaurlSecretkey: "",
-			wantErr:              true,
+			wantMetaurlInfo: nil,
+			wantErr:         true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMetaurlSecret, gotMetaurlSecretkey, err := parseMetaUrlInfoFromConfigMap(tt.args.configMap)
+			gotMetaurlInfo, err := parseFSInfoFromConfigMap(tt.args.configMap)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseMetaUrlInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseFSInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotMetaurlSecret != tt.wantMetaurlSecret {
-				t.Errorf("parseMetaUrlInfoFromConfigMap() gotMetaurlSecret = %v, want %v", gotMetaurlSecret, tt.wantMetaurlSecret)
-			}
-			if gotMetaurlSecretkey != tt.wantMetaurlSecretkey {
-				t.Errorf("parseMetaUrlInfoFromConfigMap() gotMetaurlSecretkey = %v, want %v", gotMetaurlSecretkey, tt.wantMetaurlSecretkey)
+			if !reflect.DeepEqual(gotMetaurlInfo, tt.wantMetaurlInfo) {
+				t.Errorf("parseFSInfoFromConfigMap() gotMetaurlInfo = %v, want %v", gotMetaurlInfo, tt.wantMetaurlInfo)
 			}
 		})
 	}

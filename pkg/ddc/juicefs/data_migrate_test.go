@@ -234,6 +234,9 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 					URI: "minio://test/test",
 				},
 			},
+			Options: map[string]string{
+				"exclude": "4.png",
+			},
 		},
 	}
 
@@ -307,25 +310,58 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 			args: args{
 				data: v1alpha1.DataToMigrate{ExternalStorage: &v1alpha1.ExternalStorage{
 					URI: "http://minio/",
-					EncryptOptions: []v1alpha1.EncryptOption{{
-						Name: "access-key",
-						ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
-							Name: "juicefs-secret",
-							Key:  "access-key",
-						}},
-					}},
+					EncryptOptions: []v1alpha1.EncryptOption{
+						{
+							Name: "access-key",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "access-key",
+							}},
+						},
+						{
+							Name: "secret-key",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "secret-key",
+							}},
+						},
+						{
+							Name: "token",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "token",
+							}},
+						},
+					},
 				}},
 				info: &cdatamigrate.DataMigrateInfo{
-					EncryptOptions: []v1alpha1.EncryptOption{{
-						Name: "access-key",
-						ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
-							Name: "juicefs-secret",
-							Key:  "access-key",
-						}},
-					}},
+					EncryptOptions: []v1alpha1.EncryptOption{
+						{
+							Name: "access-key",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "access-key",
+							}},
+						},
+						{
+							Name: "secret-key",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "secret-key",
+							}},
+						},
+						{
+							Name: "token",
+							ValueFrom: v1alpha1.EncryptOptionSource{SecretKeyRef: v1alpha1.SecretKeySelector{
+								Name: "juicefs-secret",
+								Key:  "token",
+							}},
+						},
+					},
+					Options: map[string]string{},
 				},
 			},
-			wantDataUrl: "http://${ACCESS_KEY}:@minio/",
+			wantDataUrl: "http://${ACCESS_KEY}:${SECRET_KEY}:${TOKEN}@minio/",
 			wantErr:     false,
 		},
 		{
@@ -349,6 +385,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 							Key:  "access-key",
 						}},
 					}},
+					Options: map[string]string{},
 				},
 			},
 			wantDataUrl: "http://${ACCESS_KEY}:@minio/test/",
@@ -375,6 +412,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 							Key:  "access-key",
 						}},
 					}},
+					Options: map[string]string{},
 				},
 			},
 			wantDataUrl: "http://${ACCESS_KEY}:@minio/test",
@@ -392,6 +430,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{
 					EncryptOptions: []v1alpha1.EncryptOption{},
+					Options:        map[string]string{},
 				},
 			},
 			wantDataUrl: "jfs://FLUID_METAURL/subpath/",
@@ -408,6 +447,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{
 					EncryptOptions: []v1alpha1.EncryptOption{},
+					Options:        map[string]string{},
 				},
 			},
 			wantDataUrl: "jfs://FLUID_METAURL/",
@@ -425,6 +465,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{
 					EncryptOptions: []v1alpha1.EncryptOption{},
+					Options:        map[string]string{},
 				},
 			},
 			wantDataUrl: "jfs://FLUID_METAURL/subpath",

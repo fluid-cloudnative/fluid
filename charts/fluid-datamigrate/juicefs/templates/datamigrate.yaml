@@ -33,6 +33,10 @@ spec:
       {{- end }}
     spec:
       restartPolicy: Never
+      {{- with .Values.datamigrate.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: datamigrate
           image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
@@ -45,11 +49,15 @@ spec:
             - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
+            {{- if eq $key "edition" }}
+            - name: EDITION
+              value: {{ $val | quote }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}-juicefs-values
-          env:
+            {{- if eq $key "option" }}
+            - name: OPTION
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
             {{- range .Values.datamigrate.encryptOptions }}
             - name: {{ .name }}
               valueFrom:
@@ -57,6 +65,9 @@ spec:
                   name: {{ .valueFrom.secretKeyRef.name }}
                   key: {{ .valueFrom.secretKeyRef.key }}
             {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}-juicefs-values
           volumeMounts:
             - mountPath: /scripts
               name: data-migrate-script

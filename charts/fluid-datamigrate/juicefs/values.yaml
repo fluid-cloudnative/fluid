@@ -39,3 +39,7 @@ datamigrate:
   # Optional
   # Description: optional annotations on DataMigrate pods
   annotations:
+
+  # Optional
+  # Description: optional image pull secrets on DataLoad pods
+  imagePullSecrets: []

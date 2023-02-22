@@ -72,11 +72,11 @@ func GetDataMigrateRef(name, namespace string) string {
 }
 
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (dataset *datav1alpha1.Dataset, err error) {
-	if dataMigrate.Spec.From.DataSet.Name != "" {
+	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
 		dataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
 		return
 	}
-	if dataMigrate.Spec.To.DataSet.Name != "" {
+	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {
 		dataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
 		return
 	}

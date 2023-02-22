@@ -8,9 +8,17 @@ metadata:
 data:
   datamigrate.sh: |
     #!/bin/bash
-    echo "juicefs datamigrate job start..."
+    set -xe
 
-    # todo: option
-    echo "execute juicefs sync cmd: "
-    juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }}
-    echo "juicefs datamigrate job end."
+    function main() {
+      echo "juicefs datamigrate job start..."
+
+      if [ $EDITION == 'community' ]
+      then
+        timeout $TIMEOUT /usr/local/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+      else
+        timeout $TIMEOUT /usr/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+      fi
+      echo "juicefs datamigrate job end."
+    }
+    main "$@"
