@@ -26,6 +26,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
@@ -35,14 +44,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DataBackupReconcilerImplement implements the actual reconciliation logic of DataBackupReconciler
@@ -427,6 +428,9 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	if workdir == "" {
 		workdir = "/tmp"
 	}
+	// image pull secrets
+	// if the environment variable is not set, it is still an empty slice
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataBackup := cdatabackup.DataBackup{
 		Namespace:   databackup.Namespace,
@@ -437,6 +441,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 		JavaEnv:     javaEnv,
 		Workdir:     workdir,
 		RuntimeType: runtimeType,
+		ImagePullSecrets: imagePullSecrets,
 	}
 	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
 	if err != nil {
