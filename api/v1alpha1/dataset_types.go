@@ -208,11 +208,17 @@ type DatasetStatus struct {
 
 	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataLoad jobs.
+	// Deprecated, use OperationRef instead
 	DataLoadRef string `json:"dataLoadRef,omitempty"`
 
 	// DataBackupRef specifies the running Backup job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
+	// Deprecated, use OperationRef instead
 	DataBackupRef string `json:"dataBackupRef,omitempty"`
+
+	// OperationRef specifies the Operation that targets this Dataset.
+	// This is mainly used as a lock to prevent concurrent same Operation jobs.
+	OperationRef map[string]string `json:"operationRef,omitempty"`
 
 	// DatasetRef specifies the datasets namespaced name mounting this Dataset.
 	DatasetRef []string `json:"datasetRef,omitempty"`
@@ -323,4 +329,31 @@ func (dataset *Dataset) CanbeBound(name string, namespace string, category commo
 
 func (dataset *Dataset) IsExclusiveMode() bool {
 	return dataset.Spec.PlacementMode == DefaultMode || dataset.Spec.PlacementMode == ExclusiveMode
+}
+
+// GetLockedNameForOperation get the name of operation for certain type running on this dataset, otherwise return empty string
+func (dataset *Dataset) GetLockedNameForOperation(operationType string) string {
+	if dataset.Status.OperationRef == nil {
+		return ""
+	}
+
+	return dataset.Status.OperationRef[operationType]
+}
+
+// LockOperation lock Dataset for operation
+func (dataset *Dataset) LockOperation(operationType string, name string) {
+	if dataset.Status.OperationRef == nil {
+		dataset.Status.OperationRef = map[string]string{}
+	}
+
+	dataset.Status.OperationRef[operationType] = name
+}
+
+// ReleaseOperation release Dataset for operation
+func (dataset *Dataset) ReleaseOperation(operationType string) {
+	if dataset.Status.OperationRef == nil {
+		return
+	}
+
+	dataset.Status.OperationRef[operationType] = ""
 }

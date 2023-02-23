@@ -101,7 +101,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	log := ctx.Log.WithName("reconcilePendingDataBackup")
 	targetDataset := ctx.Dataset
 	// 1. Check if there's any Backuping pods(conflict DataBackup)
-	conflictDataBackupRef := targetDataset.Status.DataBackupRef
+	conflictDataBackupRef := targetDataset.GetLockedNameForOperation(cdatabackup.DATABACKUP_LOCK_NAME)
 	myDataBackupRef := utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace)
 	if len(conflictDataBackupRef) != 0 && conflictDataBackupRef != myDataBackupRef {
 		log.V(1).Info("Found other DataBackups that is in Executing phase, will backoff", "other DataBackup", conflictDataBackupRef)
@@ -186,7 +186,7 @@ func (r *DataBackupReconcilerImplement) reconcilePendingDataBackup(ctx reconcile
 	// the losers not need to backup again
 	log.Info("No conflicts detected, try to lock the target dataset")
 	datasetToUpdate := targetDataset.DeepCopy()
-	datasetToUpdate.Status.DataBackupRef = myDataBackupRef
+	datasetToUpdate.LockOperation(cdatabackup.DATABACKUP_LOCK_NAME, myDataBackupRef)
 	if !reflect.DeepEqual(targetDataset.Status, datasetToUpdate.Status) {
 		if err := r.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 			log.V(1).Info("fail to get target dataset's lock, will requeue")
