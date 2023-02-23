@@ -16,6 +16,8 @@ limitations under the License.
 package dataload
 
 const (
+	DATALOAD_LOCK_NAME = "DataLoad"
+
 	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
 	DATALOAD_CHART         = "fluid-dataloader"
 	DATALOAD_DEFAULT_IMAGE = "registry.cn-hangzhou.aliyuncs.com/fluid/fluid-dataloader"
