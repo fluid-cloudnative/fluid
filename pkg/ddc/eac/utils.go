@@ -29,6 +29,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"path/filepath"
 	"strings"
 )
@@ -102,7 +103,7 @@ func getMountRoot() (path string) {
 	return
 }
 
-func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {
+func (e *EACEngine) getWorkerRunningPods() (pods []v1.Pod, err error) {
 	sts, err := kubeclient.GetStatefulSet(e.Client, e.getWorkerName(), e.namespace)
 	if err != nil {
 		return pods, err
@@ -113,9 +114,17 @@ func (e *EACEngine) getWorkerPods() (pods []v1.Pod, err error) {
 		return pods, err
 	}
 
-	pods, err = kubeclient.GetPodsForStatefulSet(e.Client, sts, selector)
+	allpods, err := kubeclient.GetPodsForStatefulSet(e.Client, sts, selector)
 	if err != nil {
 		return pods, err
+	}
+
+	for _, pod := range allpods {
+		if !podutil.IsPodReady(&pod) {
+			e.Log.V(1).Info("Skip the pod because it's not ready", "pod", pod.Name)
+			continue
+		}
+		pods = append(pods, pod)
 	}
 
 	return pods, nil
