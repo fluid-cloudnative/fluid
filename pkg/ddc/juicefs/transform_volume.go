@@ -74,7 +74,7 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 		}
 	}
 	if cacheDir != "" {
-		originPath := strings.Split(cacheDir, ",")
+		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
 			var volumeType = common.VolumeTypeHostPath
 			caches[strconv.Itoa(i+1)] = cache{

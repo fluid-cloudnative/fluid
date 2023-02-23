@@ -96,7 +96,8 @@ def create_dataset_and_runtime(dataset_name):
         "metadata": {"name": dataset_name, "namespace": APP_NAMESPACE},
         "spec": {
             "replicas": 1,
-            "tieredstore": {"levels": [{"mediumtype": "MEM", "path": "/dev/shm", "quota": "40960", "low": "0.1"}]}
+            "tieredstore": {"levels": [
+                {"mediumtype": "MEM", "path": "/dev/shm/cache1:/dev/shm/cache2", "quota": "40960", "low": "0.1"}]}
         }
     }
 
