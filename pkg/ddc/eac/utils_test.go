@@ -425,7 +425,7 @@ func Test_getMountRoot(t *testing.T) {
 	}
 }
 
-func TestEACEngine_getWorkerPods(t *testing.T) {
+func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 	type fields struct {
 		worker    *appsv1.StatefulSet
 		pods      []*corev1.Pod
