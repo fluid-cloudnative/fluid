@@ -62,7 +62,6 @@ func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRunt
 // transform worker cache volumes
 // after genValue & genMount function
 func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	caches := map[string]cache{}
 	cacheDir := ""
 
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
@@ -74,7 +73,7 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 		}
 	}
 	// set tiredstore cache as volume also, for clear cache when shut down
-	caches = value.CacheDirs
+	caches := value.CacheDirs
 	index := len(caches)
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
