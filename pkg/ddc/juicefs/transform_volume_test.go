@@ -288,7 +288,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1,/worker-cache2"},
+							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 						},
 					},
 				},
@@ -336,7 +336,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1,/worker-cache2"},
+							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "cache",
