@@ -74,7 +74,7 @@ func (e *EACEngine) CheckRuntimeReady() (ready bool) {
 	}
 
 	// 2. check worker ready
-	workerPods, err := e.getWorkerPods()
+	workerPods, err := e.getWorkerRunningPods()
 	if err != nil {
 		e.Log.Error(err, "Fail to get worker pods")
 		return false

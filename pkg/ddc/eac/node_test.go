@@ -216,6 +216,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Spec: v1.PodSpec{
 							NodeName: "node1",
 						},
+						Status: v1.PodStatus{
+							Phase: v1.PodRunning,
+							Conditions: []v1.PodCondition{
+								{
+									Type:   v1.PodReady,
+									Status: v1.ConditionTrue,
+								},
+							},
+						},
 					},
 				},
 				nodes: []*v1.Node{
@@ -269,6 +278,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						},
 						Spec: v1.PodSpec{
 							NodeName: "node3",
+						},
+						Status: v1.PodStatus{
+							Phase: v1.PodRunning,
+							Conditions: []v1.PodCondition{
+								{
+									Type:   v1.PodReady,
+									Status: v1.ConditionTrue,
+								},
+							},
 						},
 					},
 				},
