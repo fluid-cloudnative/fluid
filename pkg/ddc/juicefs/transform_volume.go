@@ -73,17 +73,18 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 			break
 		}
 	}
+	// set tiredstore cache as volume also, for clear cache when shut down
+	caches = value.CacheDirs
+	index := len(caches)
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
 			var volumeType = common.VolumeTypeHostPath
-			caches[strconv.Itoa(i+1)] = cache{
+			caches[strconv.Itoa(index+i+1)] = cache{
 				Path: p,
 				Type: string(volumeType),
 			}
 		}
-	} else {
-		caches = value.CacheDirs
 	}
 
 	// set volumes & volumeMounts for cache

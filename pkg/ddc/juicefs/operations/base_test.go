@@ -233,6 +233,42 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	wrappedUnhookExec()
 }
 
+func TestJuiceFileUtils_DeleteDirs(t *testing.T) {
+	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "juicefs rmr success", "", nil
+	}
+	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := JuiceFileUtils{}
+	err = a.DeleteDirs([]string{""})
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteDirs([]string{""})
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
 func TestJuiceFileUtils_DeleteDir(t *testing.T) {
 	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "juicefs rmr success", "", nil

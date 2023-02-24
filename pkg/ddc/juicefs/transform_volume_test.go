@@ -304,13 +304,22 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					Name: "cache-dir-1",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/worker-cache1",
+							Path: "/cache",
 							Type: &dir,
 						},
 					},
 				},
 				{
 					Name: "cache-dir-2",
+					VolumeSource: corev1.VolumeSource{
+						HostPath: &corev1.HostPathVolumeSource{
+							Path: "/worker-cache1",
+							Type: &dir,
+						},
+					},
+				},
+				{
+					Name: "cache-dir-3",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache2",
@@ -322,10 +331,14 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			wantVolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "cache-dir-1",
-					MountPath: "/worker-cache1",
+					MountPath: "/cache",
 				},
 				{
 					Name:      "cache-dir-2",
+					MountPath: "/worker-cache1",
+				},
+				{
+					Name:      "cache-dir-3",
 					MountPath: "/worker-cache2",
 				},
 			},
@@ -358,12 +371,43 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					CacheDirs: map[string]cache{
 						"1": {Path: "/cache", Type: string(common.VolumeTypeHostPath)},
 					},
+					Worker: Worker{
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "cache",
+								MountPath: "/worker-cache2",
+							},
+						},
+						Volumes: []corev1.Volume{
+							{
+								Name: "cache",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+					},
 				},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
 				{
+					Name: "cache",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
 					Name: "cache-dir-1",
+					VolumeSource: corev1.VolumeSource{
+						HostPath: &corev1.HostPathVolumeSource{
+							Path: "/cache",
+							Type: &dir,
+						},
+					},
+				},
+				{
+					Name: "cache-dir-2",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache1",
@@ -374,7 +418,15 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			},
 			wantVolumeMounts: []corev1.VolumeMount{
 				{
+					Name:      "cache",
+					MountPath: "/worker-cache2",
+				},
+				{
 					Name:      "cache-dir-1",
+					MountPath: "/cache",
+				},
+				{
+					Name:      "cache-dir-2",
 					MountPath: "/worker-cache1",
 				},
 			},

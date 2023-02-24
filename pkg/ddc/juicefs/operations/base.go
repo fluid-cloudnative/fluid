@@ -184,6 +184,23 @@ func (j JuiceFileUtils) Mkdir(juiceSubPath string) (err error) {
 	return
 }
 
+// DeleteDirs delete dir in pod
+func (j JuiceFileUtils) DeleteDirs(dirs []string) (err error) {
+	var (
+		command = []string{"rm", "-rf"}
+		stdout  string
+		stderr  string
+	)
+	command = append(command, dirs...)
+
+	stdout, stderr, err = j.exec(command, true)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	return
+}
+
 // DeleteDir delete dir in pod
 func (j JuiceFileUtils) DeleteDir(dir string) (err error) {
 	var (

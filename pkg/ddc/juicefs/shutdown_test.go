@@ -21,21 +21,24 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/go-logr/logr"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
+
 	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -415,8 +418,8 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
-				func(_ operations.JuiceFileUtils, cacheDir string) error {
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDirs",
+				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
 					return nil
 				})
 			defer patch2.Reset()
@@ -663,6 +666,128 @@ func TestJuiceFSEngine_cleanAll(t *testing.T) {
 			}
 			if err := j.cleanAll(); (err != nil) != tt.wantErr {
 				t.Errorf("cleanAll() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_getCacheDirs(t *testing.T) {
+	type args struct {
+		runtime *datav1alpha1.JuiceFSRuntime
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantCacheDirs []string
+	}{
+		{
+			name: "test-default",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{},
+			},
+			wantCacheDirs: []string{"/var/jfsCache"},
+		},
+		{
+			name: "test-hostpath",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk",
+							}},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk"},
+		},
+		{
+			name: "test-emptydir",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeEmptyDir,
+								Path:       "/mnt/ramdisk",
+							}},
+						},
+					},
+				},
+			},
+			wantCacheDirs: nil,
+		},
+		{
+			name: "test-multipath-tiredstore",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk:/mnt/ramdisk2",
+							}},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk", "/mnt/ramdisk2"},
+		},
+		{
+			name: "test-worker-cache",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk:/mnt/ramdisk2",
+							}},
+						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+							Options: map[string]string{
+								"cache-dir": "/worker/ramdisk",
+							},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk", "/mnt/ramdisk2", "/worker/ramdisk"},
+		},
+		{
+			name: "test-worker-multi-cache",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk:/mnt/ramdisk2",
+							}},
+						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+							Options: map[string]string{
+								"cache-dir": "/worker/ramdisk1:/worker/ramdisk2",
+							},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk", "/mnt/ramdisk2", "/worker/ramdisk1", "/worker/ramdisk2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			if gotCacheDirs := j.getCacheDirs(tt.args.runtime); !reflect.DeepEqual(gotCacheDirs, tt.wantCacheDirs) {
+				t.Errorf("getCacheDirs() = %v, want %v", gotCacheDirs, tt.wantCacheDirs)
 			}
 		})
 	}

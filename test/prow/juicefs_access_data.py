@@ -97,7 +97,7 @@ def create_dataset_and_runtime(dataset_name):
         "spec": {
             "replicas": 1,
             "tieredstore": {"levels": [
-                {"mediumtype": "MEM", "path": "/dev/shm/cache1:/dev/shm/cache2", "quota": "40960", "low": "0.1"}]}
+                {"mediumtype": "MEM", "path": "/dev/shm/cache1:/dev/shm/cache2", "quota": "400Mi", "low": "0.1"}]}
         }
     }
 
@@ -118,6 +118,67 @@ def create_dataset_and_runtime(dataset_name):
         body=my_juicefsruntime
     )
     print("Create juicefs runtime {}".format(dataset_name))
+
+
+def get_worker_node(dataset_name):
+    api = client.CoreV1Api()
+    pod_name = "{}-worker-0".format(dataset_name)
+    count = 0
+    while count < 300:
+        count += 1
+        try:
+            pod = api.read_namespaced_pod(name=pod_name, namespace=APP_NAMESPACE)
+            return pod.spec.node_name
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                time.sleep(1)
+                continue
+    return ""
+
+
+def create_check_cache_job(node_name):
+    print("Create check cache job")
+    api = client.BatchV1Api()
+
+    container = client.V1Container(
+        name="demo",
+        image="debian:buster",
+        command=["/bin/bash"],
+        args=["-c", "if [ $(find /dev/shm/* | grep chunks | wc -l) = 0 ]; then exit 0; else exit 1; fi"],
+        volume_mounts=[client.V1VolumeMount(mount_path="/dev/shm/cache1", name="cache1"),
+                       client.V1VolumeMount(mount_path="/dev/shm/cache2", name="cache2")]
+    )
+
+    template = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(labels={"app": "checkcache"}),
+        spec=client.V1PodSpec(
+            restart_policy="Never",
+            containers=[container],
+            volumes=[
+                client.V1Volume(
+                    name="cache1",
+                    host_path=client.V1HostPathVolumeSource(path="/dev/shm/cache1")
+                ),
+                client.V1Volume(
+                    name="cache2",
+                    host_path=client.V1HostPathVolumeSource(path="/dev/shm/cache2")
+                )
+            ],
+            node_name=node_name,
+        )
+    )
+
+    spec = client.V1JobSpec(template=template, backoff_limit=4)
+
+    job = client.V1Job(
+        api_version="batch/v1",
+        kind="Job",
+        metadata=client.V1ObjectMeta(name="checkcache", namespace=APP_NAMESPACE),
+        spec=spec
+    )
+
+    api.create_namespaced_job(namespace=APP_NAMESPACE, body=job)
+    print("Job {} created.".format("checkcache"))
 
 
 def check_dataset_bound(dataset_name):
@@ -255,9 +316,12 @@ def check_data_job_status(job_name):
     while count < 300:
         count += 1
         response = api.read_namespaced_job_status(name=job_name, namespace=APP_NAMESPACE)
-        if response.status.succeeded is not None or response.status.failed is not None:
+        if response.status.succeeded is not None:
             print("Job {} completed.".format(job_name))
             return True
+        if response.status.failed is not None:
+            print("Job {} failed.".format(job_name))
+            return False
         time.sleep(1)
     print("Job {} not completed within 300s.".format(job_name))
     return False
@@ -332,9 +396,9 @@ def clean_up_secret():
 def main():
     config.load_incluster_config()
 
-    # ********************************
+    # ****************************************************************
     # ------- test normal mode -------
-    # ********************************
+    # ****************************************************************
     dataset_name = "jfsdemo"
     test_write_job = "demo-write"
     test_read_job = "demo-read"
@@ -348,6 +412,8 @@ def main():
             raise Exception("dataset {} in normal mode is not bound.".format(dataset_name))
         if not check_volume_resources_ready(dataset_name):
             raise Exception("volume resources of dataset {} in normal mode are not ready.".format(dataset_name))
+
+        node_name = get_worker_node(dataset_name)
 
         # 3. create write & read data job
         create_data_write_job(dataset_name, test_write_job)
@@ -370,7 +436,21 @@ def main():
         # 6. clean up secret
         clean_up_secret()
 
-    # ********************************
+    # ****************************************************************
+    # ------- test cache clear after runtime shutdown -------
+    # ****************************************************************
+    try:
+        create_check_cache_job(node_name)
+        if not check_data_job_status("checkcache"):
+            raise Exception("read job {} in normal mode failed.".format("checkcache"))
+    except Exception as e:
+        print(e)
+        exit(-1)
+    finally:
+        # clean up check cache job
+        clean_job("checkcache")
+
+    # ****************************************************************
     # ------- test sidecar mode -------
     # ********************************
     dataset_name = "jfsdemo-sidecar"
