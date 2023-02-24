@@ -96,7 +96,7 @@ func (e *EACEngine) cleanupCache() (err error) {
 		return
 	}
 
-	workerPods, err := e.getWorkerPods()
+	workerPods, err := e.getWorkerRunningPods()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)

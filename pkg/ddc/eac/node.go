@@ -57,7 +57,7 @@ func (e *EACEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		previousCacheNodenames []string
 	)
 
-	workerPods, err := e.getWorkerPods()
+	workerPods, err := e.getWorkerRunningPods()
 	if err != nil {
 		return err
 	}
