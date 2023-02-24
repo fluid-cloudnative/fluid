@@ -13,4 +13,4 @@ In order to meet users' needs to access data from other general storage systems 
 | Storage System| User Guide | 
 |-----------------|:--------------------:|
 | NFS           |       [User Guide](./nfs/readme.md)        |
-| CubeFS        |       [User Guide](./cubefs/v2.4/readme.md)        |
+| CubeFS 2.4       |       [User Guide](./cubefs/v2.4/readme.md)        |
