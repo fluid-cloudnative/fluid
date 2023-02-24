@@ -143,7 +143,6 @@ func (j *JuiceFSEngine) getCacheDirs(runtime *datav1alpha1.JuiceFSRuntime) (cach
 	workerOptions := runtime.Spec.Worker.Options
 	for k, v := range workerOptions {
 		if k == "cache-dir" {
-			cacheDir = v
 			cacheDirs = append(cacheDirs, strings.Split(v, ":")...)
 			break
 		}
