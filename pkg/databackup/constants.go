@@ -17,7 +17,7 @@ limitations under the License.
 package databackup
 
 const (
-	DATABACKUP_LOCK_NAME = "DataBackup"
+	DataBackupLockName = "DataBackup"
 
 	Finalizer            = "fluid-databackup-controller-finalizer"
 	AlluxioBackupPathPod = "/alluxio_backups"

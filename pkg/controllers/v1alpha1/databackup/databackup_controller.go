@@ -253,14 +253,14 @@ func (r *DataBackupReconciler) releaseLockOnTargetDataset(ctx reconcileRequestCo
 			// other error
 			return err
 		}
-		currentRef := dataset.GetLockedNameForOperation(cdatabackup.DATABACKUP_LOCK_NAME)
+		currentRef := dataset.GetLockedNameForOperation(cdatabackup.DataBackupLockName)
 
 		if currentRef != utils.GetDataBackupRef(ctx.DataBackup.Name, ctx.DataBackup.Namespace) {
 			log.Info("Found DataBackupRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataBackupRef", currentRef)
 			return nil
 		}
 		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.ReleaseOperation(cdatabackup.DATABACKUP_LOCK_NAME)
+		datasetToUpdate.ReleaseOperation(cdatabackup.DataBackupLockName)
 		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
 			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
 				return err

@@ -16,7 +16,7 @@ limitations under the License.
 package dataload
 
 const (
-	DATALOAD_LOCK_NAME = "DataLoad"
+	DataLoadLockName = "DataLoad"
 
 	DATALOAD_FINALIZER     = "fluid-dataload-controller-finalizer"
 	DATALOAD_CHART         = "fluid-dataloader"
