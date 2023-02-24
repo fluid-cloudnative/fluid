@@ -119,12 +119,14 @@ func (e *EACEngine) getWorkerRunningPods() (pods []v1.Pod, err error) {
 		return pods, err
 	}
 
+	pods = make([]v1.Pod, 0, len(allpods))
 	for _, pod := range allpods {
-		if !podutil.IsPodReady(&pod) {
+		if podutil.IsPodReady(&pod) {
+			pods = append(pods, pod)
+		} else {
 			e.Log.V(1).Info("Skip the pod because it's not ready", "pod", pod.Name)
 			continue
 		}
-		pods = append(pods, pod)
 	}
 
 	return pods, nil
