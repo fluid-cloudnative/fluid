@@ -125,7 +125,6 @@ func (e *EACEngine) getWorkerRunningPods() (pods []v1.Pod, err error) {
 			pods = append(pods, pod)
 		} else {
 			e.Log.V(1).Info("Skip the pod because it's not ready", "pod", pod.Name)
-			continue
 		}
 	}
 
