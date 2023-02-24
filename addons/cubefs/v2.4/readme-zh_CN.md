@@ -1,4 +1,4 @@
-# CubeFS
+# CubeFS 2.4
 
 该插件用于 [CubeFS](https://cubefs.io/) v2.4.0.
 
@@ -115,7 +115,7 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 ```
 
 ## 如何开发
-Please check [doc](./dev-guide/cubefs-v2.4-zh_CN.md).
+请参考文档 [doc](./dev-guide/cubefs-v2.4-zh_CN.md).
 
 
 ## 版本
