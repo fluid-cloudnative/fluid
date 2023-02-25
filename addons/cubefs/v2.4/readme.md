@@ -1,4 +1,4 @@
-# CubeFS
+# CubeFS 2.4
 
 This addon is built based for [CubeFS](https://cubefs.io/) v2.4.0.
 
