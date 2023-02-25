@@ -1,25 +1,25 @@
-# CubeFS 接入 ThinRuntime 的简单示例
+# CubeFS 2.4 接入 ThinRuntime 的简单示例
 
 ## 前期准备
 
 ### CubeFS集群搭建
 
-#### Prerequisite
+#### 前置条件
 
 * Kubernetes 1.14+
 * CSI spec version 1.1.0
 * Helm 3
 
-#### Deploy CubeFS
+#### CubeFS 集群部署
 
-Deploy CubeFS v2.4.0 according to [cubefs-helm](https://github.com/cubefs/cubefs-helm).
+根据 [cubefs-helm](https://github.com/cubefs/cubefs-helm) 部署 CubeFS v2.4.0 。
 
-The CSI driver also should be deployed according [cubefs-csi](https://github.com/cubefs/cubefs-csi).
+根据 [cubefs-csi](https://github.com/cubefs/cubefs-csi) 部署对应 CSI driver。
 
 
-### Use Remote CubeFS Cluster as backend storage
+### 使用CubeFS作为后端存储
 
-#### Create PV
+#### 创建 PV 资源
 ```shell
 $ cat << EOF > pv-static.yaml
 apiVersion: v1
@@ -56,7 +56,7 @@ $ kubectl create -f pv-static.yaml
 ```
 > 其中`csi.volumeAttributes`中`masterAddr`为集群中CubeFS master0对应`<IP: port>`, `owner`为CubeFS集群中创建对应`volName`的用户, 且指定该用户`accessKey, secretKey`。
 
-#### Create PVC
+#### 创建 PVC 资源
 ```shell
 $ cat << EOF > pvc-static.yaml
 apiVersion: v1
