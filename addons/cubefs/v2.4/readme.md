@@ -4,11 +4,13 @@ This addon is built based for [CubeFS](https://cubefs.io/) v2.4.0.
 
 ## Install
 
+To install the addon, apply the `runtime-profile.yaml` file:
+
 ```shell
 kubectl apply -f runtime-profile.yaml
 ```
 
-## How to use
+## Usage
 
 ### Prerequisites
 There is already a PVC bound to PV, and PV uses CSI Volume Source.
@@ -23,6 +25,7 @@ persistentvolumeclaim/cfs-pvc-static   Bound    cfs-pv-static         5Gi       
 ```
 
 ### Create and Deploy ThinRuntimeProfile Resource
+
 ```shell
 $ cat <<EOF > runtime-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -43,6 +46,8 @@ $ kubectl apply -f runtime-profile.yaml
 ```
 
 ### Create and Deploy Dataset and ThinRuntime Resource
+To create and deploy the `Dataset` and `ThinRuntime` resources for the addon, run the following commands:
+
 ```shell
 $ cat <<EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -67,6 +72,8 @@ $ kubectl apply -f dataset.yaml
 ```
 
 ### Run pod with Fluid PVC
+
+To run a Pod with a Fluid PVC that uses the addon, run the following commands:
 
 ```shell
 $ cat <<EOF > app.yaml
@@ -96,6 +103,7 @@ $ kubectl apply -f app.yaml
 
 After the application using the remote file system is deployed, the corresponding FUSE pod is also scheduled to the same node.
 
+To verify that the addon is working correctly, run the following command:
 
 ```shell
 $ kubectl get pods
@@ -118,10 +126,3 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 ## How to develop
 
 Please check [doc](./dev-guide/cubefs-v2.4.md).
-
-
-## Versions
-
-* 0.1
-
-Add init support for CubeFS.
