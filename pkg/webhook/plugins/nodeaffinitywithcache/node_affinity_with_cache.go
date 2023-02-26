@@ -83,9 +83,6 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (
 	requiredRuntimes map[string]base.RuntimeInfoInterface, preferredRuntimes map[string]base.RuntimeInfoInterface) {
 
-	requiredRuntimes = nil
-	preferredRuntimes = nil
-
 	// get the pod specified bound dataset
 	boundDataSetNames := map[string]bool{}
 	for key, value := range pod.Labels {
@@ -121,7 +118,7 @@ func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map
 }
 
 func injectRequiredSchedulingTerms(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) error {
-	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
+	var requiredSchedulingTerms []corev1.NodeSelectorTerm
 	for _, runtimeInfo := range runtimeInfos {
 		requiredSchedulingTerm, err := getRequiredSchedulingTerms(runtimeInfo)
 		if err != nil {

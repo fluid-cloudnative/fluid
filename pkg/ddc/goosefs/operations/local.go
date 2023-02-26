@@ -21,9 +21,9 @@ import (
 	"time"
 )
 
-//SyncLocalDir syncs local path by running command `du -sh <path>`.
-//Under the circumstance where some NAS(e.g. NFS) is mounted on the `<path>`, the function will sync metadata of all files in the NAS.
-//This is necessary for GooseFS to get consistent file metadata with UFS(i.e. NAS in this case).
+// SyncLocalDir syncs local path by running command `du -sh <path>`.
+// Under the circumstance where some NAS(e.g. NFS) is mounted on the `<path>`, the function will sync metadata of all files in the NAS.
+// This is necessary for GooseFS to get consistent file metadata with UFS(i.e. NAS in this case).
 func (a GooseFSFileUtils) SyncLocalDir(path string) (err error) {
 	var (
 		// command = []string{"goosefs", "fs", "-Dgoosefs.user.file.metadata.sync.interval=0", "ls", "-R", goosefsPath}
