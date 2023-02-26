@@ -127,10 +127,3 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 
 ## 如何开发
 请参考文档 [doc](./dev-guide/cubefs-v2.4-zh_CN.md).
-
-
-## 版本
-
-* 0.1
-
-初始支持CubeFS。
