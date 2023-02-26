@@ -67,8 +67,9 @@ func (t *ThinEngine) shouldSyncMetadata() (should bool, err error) {
 // syncMetadataInternal does the actual work of metadata sync
 // At any time, there is at most one goroutine working on metadata sync. First call to
 // this function will start a goroutine including the following two steps:
-//   1. load metadata
-//   2. get total size of UFSs
+//  1. load metadata
+//  2. get total size of UFSs
+//
 // Any following calls to this function will try to get result of the working goroutine with a timeout, which
 // ensures the function won't block the following Sync operations(e.g. CheckAndUpdateRuntimeStatus) for a long time.
 func (t *ThinEngine) syncMetadataInternal() (err error) {

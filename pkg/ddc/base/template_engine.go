@@ -85,7 +85,7 @@ func (t *TemplateEngine) ID() string {
 	return t.Id
 }
 
-//Shutdown and clean up the engine
+// Shutdown and clean up the engine
 func (t *TemplateEngine) Shutdown() error {
 	return t.Implement.Shutdown()
 }
