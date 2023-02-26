@@ -71,10 +71,3 @@ The remote file system is mounted to the /data directory of nginx pod.
 ## How to develop
 
 Please check [doc](dev-guide/nfs.md)
-
-
-## Versions
-
-* 0.1
-
-Add init support for NFS.
