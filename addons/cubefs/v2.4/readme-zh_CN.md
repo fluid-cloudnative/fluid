@@ -4,6 +4,8 @@
 
 ## 安装
 
+使用以下命令安装：
+
 ```shell
 kubectl apply -f runtime-profile.yaml
 ```
@@ -11,7 +13,8 @@ kubectl apply -f runtime-profile.yaml
 ## 使用
 
 ### 前置条件
-已有一个与PV绑定的PVC，且PV使用CSI Volume Source。
+确保已经有一个已经绑定了PV的PVC，并且PV使用CSI Volume Source。
+
 ```shell
 $ kubectl get pv,pvc
 NAME                                   CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
@@ -22,6 +25,8 @@ persistentvolumeclaim/cfs-pvc-static   Bound    cfs-pv-static         5Gi       
 ```
 
 ### 创建并部署 ThinRuntimeProfile 资源
+
+使用以下命令创建并部署ThinRuntimeProfile资源：
 ```shell
 $ cat <<EOF > runtime-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -43,6 +48,9 @@ $ kubectl apply -f runtime-profile.yaml
 
 
 ### 创建 Dataset 和 ThinRuntime 
+
+使用以下命令创建Dataset和ThinRuntime：
+
 ```shell
 $ cat <<EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -67,6 +75,8 @@ $ kubectl apply -f dataset.yaml
 ```
 
 ### 数据访问应用示例
+
+使用以下命令创建数据访问应用示例：
 
 ```shell
 $ cat <<EOF > app.yaml
@@ -94,7 +104,7 @@ EOF
 $ kubectl apply -f app.yaml
 ```
 
-查看应用Pod，可发现其正常运行。Fluid自动根据ThinRuntimeProfile中的Fuse配置，创建Fuse Pod，并调度到应用同一个节点上。
+运行以上命令后，应用Pod将会自动创建Fuse Pod，并将其调度到与应用相同的节点上。您可以通过以下命令检查Pod状态：
 
 ```shell
 $ kubectl get pods
@@ -102,7 +112,8 @@ NAME                    READY   STATUS    RESTARTS   AGE
 cubefs-test-fuse-lf8r4  1/1     Running   0        2m56s
 nginx                   1/1     Running   0        2m56s
 ```
-远程的⽂件系统被挂载到 nginx pod 的 /data ⽬录下。
+
+您可以通过以下命令检查远程的⽂件系统被挂载到 nginx pod 的 /data ⽬录下。
 
 ```
 $ kubectl exec -it nginx bash
@@ -116,10 +127,3 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 
 ## 如何开发
 请参考文档 [doc](./dev-guide/cubefs-v2.4-zh_CN.md).
-
-
-## 版本
-
-* 0.1
-
-初始支持CubeFS。
