@@ -233,7 +233,7 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestJuiceFileUtils_DeleteDir(t *testing.T) {
+func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
 	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "juicefs rmr success", "", nil
 	}
@@ -252,7 +252,7 @@ func TestJuiceFileUtils_DeleteDir(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := JuiceFileUtils{}
-	err = a.DeleteDir("")
+	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -262,9 +262,47 @@ func TestJuiceFileUtils_DeleteDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = a.DeleteDir("")
+	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
+	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "juicefs rmr success", "", nil
+	}
+	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(JuiceFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	a := JuiceFileUtils{}
+	// no error
+	err := gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+
+	// error
+	err = gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
 }
@@ -288,7 +326,7 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := JuiceFileUtils{}
-	err = a.DeleteDir("")
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -503,4 +541,107 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 		}
 	}
 	wrappedUnhookExec()
+}
+
+func TestValidDir(t *testing.T) {
+	type args struct {
+		dir string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantMatch bool
+	}{
+		{
+			name: "test-normal",
+			args: args{
+				dir: "/tmp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test1",
+			args: args{
+				dir: "/t mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test2",
+			args: args{
+				dir: "/t..mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test3",
+			args: args{
+				dir: "/t__mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test4",
+			args: args{
+				dir: "/t--mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test5",
+			args: args{
+				dir: "/",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test6",
+			args: args{
+				dir: ".",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test7",
+			args: args{
+				dir: "/tttt/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test8",
+			args: args{
+				dir: "//",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test9",
+			args: args{
+				dir: "/0/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test10",
+			args: args{
+				dir: "/0/1/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test11",
+			args: args{
+				dir: "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z/0/raw/chunks",
+			},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotMatch := ValidCacheDir(tt.args.dir); gotMatch != tt.wantMatch {
+				t.Errorf("ValidDir() = %v, want %v", gotMatch, tt.wantMatch)
+			}
+		})
+	}
 }

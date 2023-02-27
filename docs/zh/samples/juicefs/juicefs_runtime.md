@@ -8,7 +8,7 @@ JuiceFS 是一款面向云环境设计的开源高性能共享文件系统，提
 
 ## 安装
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。参考 [安装文档](../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
+您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。参考 [安装文档](../../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
 
 ```shell
 $ kubectl get po -n fluid-system
