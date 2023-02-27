@@ -7,7 +7,7 @@ Redis、MySQL、TiKV 等多种数据库中。
 
 ## 部署 JuiceFSRuntime 环境
 
-具体部署方法参考文档 [如何在 Fluid 中使用 JuiceFS](./juicefs_runtime.md)。
+具体部署方法参考文档 [如何在 Fluid 中使用 JuiceFS](juicefs_runtime.md)。
 
 在 JuiceFSRuntime 和 Dataset 创建成功后，等待 worker pod 启动成功，再进行下面的步骤。
 
@@ -63,4 +63,4 @@ root@jfsdemo-worker-0:~#
 
 可以看到 bucket 中的文件已经被同步到了 JuiceFS 中。
 
-最后创建业务 Pod，其中 Pod 使用上面创建的 `Dataset` 的方式为指定同名的 PVC。该步骤与文档 [如何在 Fluid 中使用 JuiceFS](./juicefs_runtime.md) 中一致，这里不再赘述。
+最后创建业务 Pod，其中 Pod 使用上面创建的 `Dataset` 的方式为指定同名的 PVC。该步骤与文档 [如何在 Fluid 中使用 JuiceFS](juicefs_runtime.md) 中一致，这里不再赘述。
