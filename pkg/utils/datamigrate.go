@@ -62,7 +62,7 @@ func GetDataMigrateReleaseName(name string) string {
 
 // GetDataMigrateJobName returns DataMigrate job's name given the DataMigrate helm release's name
 func GetDataMigrateJobName(releaseName string) string {
-	return fmt.Sprintf("%s-job", releaseName)
+	return fmt.Sprintf("%s-migrate", releaseName)
 }
 
 // GetDataMigrateRef returns the identity of the DataMigrate by combining its namespace and name.
@@ -72,12 +72,12 @@ func GetDataMigrateRef(name, namespace string) string {
 }
 
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (dataset *datav1alpha1.Dataset, err error) {
-	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
-		dataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
-		return
-	}
 	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {
 		dataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
+		return
+	}
+	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
+		dataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
 		return
 	}
 	return nil, apierrors.NewNotFound(schema.GroupResource{

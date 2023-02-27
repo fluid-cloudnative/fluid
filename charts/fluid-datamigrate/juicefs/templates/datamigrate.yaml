@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ printf "%s-job" .Release.Name }}
+  name: {{ printf "%s-migrate" .Release.Name }}
   labels:
     release: {{ .Release.Name }}
     role: datamigrate-job

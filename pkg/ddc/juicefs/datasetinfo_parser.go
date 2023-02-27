@@ -71,8 +71,8 @@ func parseFSInfoFromConfigMap(configMap *v1.ConfigMap) (info map[string]string, 
 	var value JuiceFS
 	info = map[string]string{}
 	if v, ok := configMap.Data["data"]; ok {
-		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
-			return nil, err
+		if err = yaml.Unmarshal([]byte(v), &value); err != nil {
+			return
 		}
 		info[MetaurlSecret] = value.Configs.MetaUrlSecret
 		info[MetaurlSecretKey] = value.Configs.MetaUrlSecretKey

@@ -35,6 +35,9 @@ spec:
           spec:
             description: DataMigrateSpec defines the desired state of DataMigrate
             properties:
+              block:
+                description: if dataMigrate blocked dataset usage, default is false
+                type: boolean
               from:
                 description: data to migrate source, including dataset and external
                   storage
@@ -90,14 +93,14 @@ spec:
                     type: object
                 type: object
               image:
-                description: Image used by migrate job
+                description: Image (e.g. alluxio/alluxio)
                 type: string
               imagePullPolicy:
-                description: 'ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`,
+                description: 'One of the three policies: `Always`, `IfNotPresent`,
                   `Never`'
                 type: string
               imageTag:
-                description: ImageTag used by migrate job
+                description: Image tag (e.g. 2.3.0-SNAPSHOT)
                 type: string
               options:
                 additionalProperties:

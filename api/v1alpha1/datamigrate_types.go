@@ -25,20 +25,18 @@ import (
 
 // DataMigrateSpec defines the desired state of DataMigrate
 type DataMigrateSpec struct {
-	// Image used by migrate job
-	Image string `json:"image,omitempty" yaml:"image"`
-
-	// ImageTag used by migrate job
-	ImageTag string `json:"imageTag,omitempty" yaml:"imageTag"`
-
-	// ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`
-	ImagePullPolicy string `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy"`
+	// The version information that instructs fluid to orchestrate a particular version for data migrate.
+	VersionSpec `json:",inline,omitempty"`
 
 	// data to migrate source, including dataset and external storage
 	From DataToMigrate `json:"from"`
 
 	// data to migrate destination, including dataset and external storage
 	To DataToMigrate `json:"to"`
+
+	// if dataMigrate blocked dataset usage, default is false
+	// +optional
+	Block bool `json:"block,omitempty"`
 
 	// options for migrate, different for each runtime
 	// +optional
