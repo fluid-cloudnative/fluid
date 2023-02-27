@@ -83,7 +83,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx cruntime.Rec
 
 	// 4. remove finalizer
 	if utils.HasDeletionTimestamp(targetDataload.ObjectMeta) {
-		targetDataload.ObjectMeta.Finalizers = utils.RemoveString(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
+		targetDataload.ObjectMeta.Finalizers = utils.RemoveString(targetDataload.ObjectMeta.Finalizers, cdataload.DataloadFinalizer)
 		if err := r.Update(ctx, &targetDataload); err != nil {
 			log.Error(err, "failed to remove finalizer")
 			return utils.RequeueIfError(err)
