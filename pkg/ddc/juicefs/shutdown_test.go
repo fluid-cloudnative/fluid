@@ -418,7 +418,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDirs",
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
 				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
 					return nil
 				})
@@ -444,7 +444,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDir",
 				func(_ operations.JuiceFileUtils, cacheDir string) error {
 					return errors.New("delete dir error")
 				})
@@ -469,7 +469,7 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteDir",
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDir",
 				func(_ operations.JuiceFileUtils, cacheDir string) error {
 					return errors.New("delete dir error")
 				})

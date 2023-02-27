@@ -118,7 +118,7 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 		for _, cacheDir := range cacheDirs {
 			cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
 		}
-		err := fileUtils.DeleteDirs(cacheDirsToBeDeleted)
+		err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
 		if err != nil {
 			return err
 		}
