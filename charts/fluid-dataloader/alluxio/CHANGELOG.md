@@ -10,3 +10,6 @@
 ### 0.3.0
 
 - Support configurable DataLoad pod metadata
+
+### 0.9.0
+- Dataload support Affinity,Tolerations,NodeSelector,SchedulerName

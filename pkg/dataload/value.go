@@ -22,58 +22,58 @@ import (
 
 // DataLoadValue defines the value yaml file used in DataLoad helm chart
 type DataLoadValue struct {
-	DataLoadInfo DataLoadInfo `yaml:"dataloader"`
+	DataLoadInfo DataLoadInfo `json:"dataloader"`
 }
 
 // DataLoadInfo defines values used in DataLoad helm chart
 type DataLoadInfo struct {
 	// BackoffLimit specifies the upper limit times when the DataLoad job fails
-	BackoffLimit int32 `yaml:"backoffLimit,omitempty"`
+	BackoffLimit int32 `json:"backoffLimit,omitempty"`
 
 	// TargetDataset specifies the dataset that the DataLoad targets
-	TargetDataset string `yaml:"targetDataset,omitempty"`
+	TargetDataset string `json:"targetDataset,omitempty"`
 
 	// LoadMetadata specifies if the DataLoad job should load metadata from UFS when doing data load
-	LoadMetadata bool `yaml:"loadMetadata,omitempty"`
+	LoadMetadata bool `json:"loadMetadata,omitempty"`
 
 	// TargetPaths specifies which paths should the DataLoad load
-	TargetPaths []TargetPath `yaml:"targetPaths,omitempty"`
+	TargetPaths []TargetPath `json:"targetPaths,omitempty"`
 
 	// Image specifies the image that the DataLoad job uses
-	Image string `yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 
 	// Options specifies the extra dataload properties for runtime
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
 	// Labels defines labels in DataLoad's pod metadata
-	Labels map[string]string `yaml:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// Annotations defines annotations in DataLoad's pod metadata
-	Annotations map[string]string `yaml:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// image pull secrets
-	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// pod affinity
-	Affinity *corev1.Affinity `yaml:"affinity,omitempty"`
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 
 	// pod tolerations
-	Tolerations []corev1.Toleration `yaml:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// node selector
-	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// scheduler name
-	SchedulerName string `yaml:"schedulerName,omitempty"`
+	SchedulerName string `json:"schedulerName,omitempty"`
 }
 
 type TargetPath struct {
 	// Path specifies the path should be loaded
-	Path string `yaml:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// Replicas specifies how many replicas should be loaded
-	Replicas int32 `yaml:"replicas,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 
 	// FluidNative specifies if the path is a native mountPoint(e.g. hostpath or pvc)
-	FluidNative bool `yaml:"fluidNative,omitempty"`
+	FluidNative bool `json:"fluidNative,omitempty"`
 }

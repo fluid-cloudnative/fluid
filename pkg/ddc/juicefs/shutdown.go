@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -87,14 +88,7 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 	}
 	j.Log.Info("get runtime info", "runtime", runtime)
 
-	cacheDir := common.JuiceFSDefaultCacheDir
-	if len(runtime.Spec.TieredStore.Levels) != 0 {
-		if runtime.Spec.TieredStore.Levels[0].MediumType == common.Memory {
-			j.Log.Info("cache in memory, skip clean up cache")
-			return
-		}
-		cacheDir = runtime.Spec.TieredStore.Levels[0].Path
-	}
+	cacheDirs := j.getCacheDirs(runtime)
 
 	workerName := j.getWorkerName()
 	pods, err := j.GetRunningPodsOfStatefulSet(workerName, j.namespace)
@@ -118,14 +112,42 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 	for _, pod := range pods {
 		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
 
-		j.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDir)
-		cacheDirToBeDeleted := filepath.Join(cacheDir, uuid, "raw/chunks")
-		err := fileUtils.DeleteDir(cacheDirToBeDeleted)
+		j.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDirs)
+
+		cacheDirsToBeDeleted := []string{}
+		for _, cacheDir := range cacheDirs {
+			cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
+		}
+		err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (j *JuiceFSEngine) getCacheDirs(runtime *datav1alpha1.JuiceFSRuntime) (cacheDirs []string) {
+	cacheDir := common.JuiceFSDefaultCacheDir
+	if len(runtime.Spec.TieredStore.Levels) != 0 {
+		cacheDir = ""
+		// if cache type hostpath, clean it
+		if runtime.Spec.TieredStore.Levels[0].VolumeType == common.VolumeTypeHostPath {
+			cacheDir = runtime.Spec.TieredStore.Levels[0].Path
+		}
+	}
+	if cacheDir != "" {
+		cacheDirs = strings.Split(cacheDir, ":")
+	}
+
+	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
+	workerOptions := runtime.Spec.Worker.Options
+	for k, v := range workerOptions {
+		if k == "cache-dir" {
+			cacheDirs = append(cacheDirs, strings.Split(v, ":")...)
+			break
+		}
+	}
+	return
 }
 
 func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid string, err error) {

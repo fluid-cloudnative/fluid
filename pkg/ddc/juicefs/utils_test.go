@@ -22,11 +22,12 @@ import (
 	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

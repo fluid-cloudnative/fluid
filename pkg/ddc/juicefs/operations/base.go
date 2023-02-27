@@ -184,8 +184,39 @@ func (j JuiceFileUtils) Mkdir(juiceSubPath string) (err error) {
 	return
 }
 
-// DeleteDir delete dir in pod
-func (j JuiceFileUtils) DeleteDir(dir string) (err error) {
+// DeleteCacheDirs delete cache dir in pod
+func (j JuiceFileUtils) DeleteCacheDirs(dirs []string) (err error) {
+	for _, dir := range dirs {
+		// cache dir check
+		match := ValidCacheDir(dir)
+		if !match {
+			j.log.Info("invalid cache directory, skip cleaning up", "cacheDir", dir)
+			return
+		}
+	}
+	var (
+		command = []string{"rm", "-rf"}
+		stdout  string
+		stderr  string
+	)
+	command = append(command, dirs...)
+
+	stdout, stderr, err = j.exec(command, true)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	return
+}
+
+// DeleteCacheDir delete cache dir in pod
+func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
+	// cache dir check
+	match := ValidCacheDir(dir)
+	if !match {
+		j.log.Info("invalid cache directory, skip cleaning up", "cacheDir", dir)
+		return
+	}
 	var (
 		command = []string{"rm", "-rf", dir}
 		stdout  string
@@ -348,4 +379,8 @@ func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 		value = strings.TrimPrefix(stdout, string(key)+": ")
 	}
 	return
+}
+
+func ValidCacheDir(dir string) (match bool) {
+	return strings.HasSuffix(dir, "raw/chunks")
 }
