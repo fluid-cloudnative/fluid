@@ -1238,21 +1238,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image used by migrate job",
+							Description: "Image (e.g. alluxio/alluxio)",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ImageTag used by migrate job",
+							Description: "Image tag (e.g. 2.3.0-SNAPSHOT)",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imagePullPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ImagePullPolicy is one of the three policies: `Always`,  `IfNotPresent`, `Never`",
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1269,6 +1269,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Description: "data to migrate destination, including dataset and external storage",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate"),
+						},
+					},
+					"block": {
+						SchemaProps: spec.SchemaProps{
+							Description: "if dataMigrate blocked dataset usage, default is false",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "using which runtime to migrate data; if none, take dataset runtime as default",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"options": {
