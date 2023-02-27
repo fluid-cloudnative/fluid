@@ -195,7 +195,7 @@ func (j JuiceFileUtils) DeleteCacheDirs(dirs []string) (err error) {
 		// cache dir check
 		match := ValidCacheDir(dir)
 		if !match {
-			err = fmt.Errorf("dir %s is not valid", dir)
+			err = fmt.Errorf("invalid cache directory %s, skip cleaning up", dir)
 			return
 		}
 	}
@@ -219,7 +219,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 	// cache dir check
 	match := ValidCacheDir(dir)
 	if !match {
-		err = fmt.Errorf("dir %s is not valid", dir)
+		err = fmt.Errorf("invalid cache directory %s, skip cleaning up", dir)
 		return
 	}
 	var (

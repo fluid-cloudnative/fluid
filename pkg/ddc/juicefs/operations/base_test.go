@@ -301,7 +301,7 @@ func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	err = a.DeleteCacheDir("/t mp")
-	if err == nil || !strings.Contains(err.Error(), "is not valid") {
+	if err == nil || !strings.Contains(err.Error(), "invalid cache directory") {
 		t.Error("check failure, want err, got nil")
 	}
 	wrappedUnhookExec()
