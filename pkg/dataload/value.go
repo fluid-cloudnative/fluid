@@ -53,6 +53,18 @@ type DataLoadInfo struct {
 
 	// image pull secrets
 	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
+
+	// pod affinity
+	Affinity *corev1.Affinity `yaml:"affinity,omitempty"`
+
+	// pod tolerations
+	Tolerations []corev1.Toleration `yaml:"tolerations,omitempty"`
+
+	// node selector
+	NodeSelector map[string]string `yaml:"nodeSelector,omitempty"`
+
+	// scheduler name
+	SchedulerName string `yaml:"schedulerName,omitempty"`
 }
 
 type TargetPath struct {
