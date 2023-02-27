@@ -425,7 +425,7 @@ func Test_getMountRoot(t *testing.T) {
 	}
 }
 
-func TestEACEngine_getWorkerPods(t *testing.T) {
+func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 	type fields struct {
 		worker    *appsv1.StatefulSet
 		pods      []*corev1.Pod
@@ -619,7 +619,7 @@ func TestEACEngine_getWorkerPods(t *testing.T) {
 
 			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
 
-			pods, err := e.getWorkerPods()
+			pods, err := e.getWorkerRunningPods()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("EACEngine.syncWorkersEndpoints() error = %v, wantErr %v", err, tt.wantErr)
 				return

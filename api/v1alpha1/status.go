@@ -140,7 +140,7 @@ type OperationStatus struct {
 	Conditions []Condition `json:"conditions"`
 
 	// Infos operation customized name-value
-	Infos map[string]string `json:"infos"`
+	Infos map[string]string `json:"infos,omitempty"`
 }
 
 type RuntimePhase string

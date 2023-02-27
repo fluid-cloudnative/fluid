@@ -433,14 +433,14 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataBackup := cdatabackup.DataBackup{
-		Namespace:   databackup.Namespace,
-		Dataset:     databackup.Spec.Dataset,
-		Name:        databackup.Name,
-		NodeName:    nodeName,
-		Image:       image,
-		JavaEnv:     javaEnv,
-		Workdir:     workdir,
-		RuntimeType: runtimeType,
+		Namespace:        databackup.Namespace,
+		Dataset:          databackup.Spec.Dataset,
+		Name:             databackup.Name,
+		NodeName:         nodeName,
+		Image:            image,
+		JavaEnv:          javaEnv,
+		Workdir:          workdir,
+		RuntimeType:      runtimeType,
 		ImagePullSecrets: imagePullSecrets,
 	}
 	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
@@ -499,7 +499,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
 	if err != nil {
 		return
 	}
