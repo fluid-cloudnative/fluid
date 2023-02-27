@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -29,10 +28,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
-
-const DirRegexFormat = "^[^\\s]*$"
-
-var DirRegex = regexp.MustCompile(DirRegexFormat)
 
 type JuiceFileUtils struct {
 	podName   string
@@ -195,7 +190,7 @@ func (j JuiceFileUtils) DeleteCacheDirs(dirs []string) (err error) {
 		// cache dir check
 		match := ValidCacheDir(dir)
 		if !match {
-			err = fmt.Errorf("invalid cache directory %s, skip cleaning up", dir)
+			j.log.Info("invalid cache directory, skip cleaning up", "cacheDir", dir)
 			return
 		}
 	}
@@ -219,7 +214,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 	// cache dir check
 	match := ValidCacheDir(dir)
 	if !match {
-		err = fmt.Errorf("invalid cache directory %s, skip cleaning up", dir)
+		j.log.Info("invalid cache directory, skip cleaning up", "cacheDir", dir)
 		return
 	}
 	var (
@@ -387,8 +382,5 @@ func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 }
 
 func ValidCacheDir(dir string) (match bool) {
-	if !strings.HasSuffix(dir, "raw/chunks") {
-		return false
-	}
-	return DirRegex.MatchString(dir)
+	return strings.HasSuffix(dir, "raw/chunks")
 }

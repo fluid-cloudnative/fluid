@@ -295,17 +295,6 @@ func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	// dir error
-	err = gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = a.DeleteCacheDir("/t mp")
-	if err == nil || !strings.Contains(err.Error(), "invalid cache directory") {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExec()
-
 	// error
 	err = gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
 	if err != nil {
@@ -575,7 +564,7 @@ func TestValidDir(t *testing.T) {
 			args: args{
 				dir: "/t mp/raw/chunks",
 			},
-			wantMatch: false,
+			wantMatch: true,
 		},
 		{
 			name: "test2",
