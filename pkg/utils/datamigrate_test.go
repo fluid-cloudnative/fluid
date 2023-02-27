@@ -136,7 +136,7 @@ func TestGetDataMigrateJobName(t *testing.T) {
 			args: args{
 				releaseName: "test",
 			},
-			want: "test-job",
+			want: "test-migrate",
 		},
 	}
 	for _, tt := range tests {

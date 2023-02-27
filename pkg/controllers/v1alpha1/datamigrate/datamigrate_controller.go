@@ -126,6 +126,10 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 			"Bounded accelerate runtime not ready")
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
+	if targetDataMigrate.Spec.RuntimeType != "" && targetDataMigrate.Spec.RuntimeType != boundedRuntime.Type {
+		err = fmt.Errorf("the runtime type of the target dataset is %s, but the runtime type of the dataMigrate is %s", boundedRuntime.Type, targetDataMigrate.Spec.RuntimeType)
+		return utils.RequeueIfError(errors.Wrap(err, "Unable to get ddc runtime"))
+	}
 	ctx.RuntimeType = boundedRuntime.Type
 
 	var fluidRuntime client.Object

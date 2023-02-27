@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // GetDataMigrate gets the DataMigrate given its name and namespace
@@ -71,15 +72,54 @@ func GetDataMigrateRef(name, namespace string) string {
 	return fmt.Sprintf("%s-%s", namespace, name)
 }
 
-func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (dataset *datav1alpha1.Dataset, err error) {
+func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
+	var fromDataset, toDataset *datav1alpha1.Dataset
 	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {
-		dataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
-		return
+		toDataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
+		if err != nil {
+			return
+		}
+
+		// if runtimeType is not specified, we will use the toDataset as the targetDataset
+		if dataMigrate.Spec.RuntimeType == "" {
+			targetDataset = toDataset
+			return
+		}
+
+		// if runtimeType is specified, check if toDataset's accelerate runtime type is the same as the runtimeType
+		index, boundedRuntime := GetRuntimeByCategory(toDataset.Status.Runtimes, common.AccelerateCategory)
+		if index == -1 {
+			err = fmt.Errorf("bounded accelerate runtime not ready")
+			return
+		}
+		if boundedRuntime.Type == dataMigrate.Spec.RuntimeType {
+			targetDataset = toDataset
+			return
+		}
 	}
 	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
-		dataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
-		return
+		fromDataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
+		if err != nil {
+			return
+		}
+		// if runtimeType is not specified, we will use the fromDataset as the targetDataset
+		if dataMigrate.Spec.RuntimeType == "" {
+			targetDataset = fromDataset
+			return
+		}
+
+		// if runtimeType is specified, check if fromDataset's accelerate runtime type is the same as the runtimeType
+		index, boundedRuntime := GetRuntimeByCategory(fromDataset.Status.Runtimes, common.AccelerateCategory)
+		if index == -1 {
+			err = fmt.Errorf("bounded accelerate runtime not ready")
+			return
+		}
+		if boundedRuntime.Type == dataMigrate.Spec.RuntimeType {
+			targetDataset = fromDataset
+			return
+		}
 	}
+
 	return nil, apierrors.NewNotFound(schema.GroupResource{
 		Group:    datav1alpha1.Group,
 		Resource: datav1alpha1.Version,

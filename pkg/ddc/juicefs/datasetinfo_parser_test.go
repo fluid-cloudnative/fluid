@@ -188,7 +188,7 @@ func Test_parseFSInfoFromConfigMap(t *testing.T) {
 					},
 				},
 			},
-			wantMetaurlInfo: nil,
+			wantMetaurlInfo: map[string]string{},
 			wantErr:         true,
 		},
 	}

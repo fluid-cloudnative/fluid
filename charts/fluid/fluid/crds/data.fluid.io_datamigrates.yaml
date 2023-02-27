@@ -125,6 +125,10 @@ spec:
               policy:
                 description: policy for migrate, including None, Once, Cron, OnEvent
                 type: string
+              runtimeType:
+                description: using which runtime to migrate data; if none, take dataset
+                  runtime as default
+                type: string
               schedule:
                 description: The schedule in Cron format, only set when policy is
                   cron, see https://en.wikipedia.org/wiki/Cron.

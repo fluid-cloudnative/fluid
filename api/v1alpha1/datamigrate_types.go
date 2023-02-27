@@ -26,6 +26,7 @@ import (
 // DataMigrateSpec defines the desired state of DataMigrate
 type DataMigrateSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version for data migrate.
+	// +optional
 	VersionSpec `json:",inline,omitempty"`
 
 	// data to migrate source, including dataset and external storage
@@ -37,6 +38,10 @@ type DataMigrateSpec struct {
 	// if dataMigrate blocked dataset usage, default is false
 	// +optional
 	Block bool `json:"block,omitempty"`
+
+	// using which runtime to migrate data; if none, take dataset runtime as default
+	// +optional
+	RuntimeType string `json:"runtimeType,omitempty"`
 
 	// options for migrate, different for each runtime
 	// +optional
