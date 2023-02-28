@@ -58,7 +58,7 @@ require (
 	github.com/agiledragon/gomonkey/v2 v2.2.0
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.7.0
-	github.com/docker/go-units v0.4.0
+	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/glog v1.0.0
