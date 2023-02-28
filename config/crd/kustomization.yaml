@@ -12,7 +12,7 @@ resources:
 - bases/data.fluid.io_thinruntimes.yaml
 - bases/data.fluid.io_thinruntimeprofiles.yaml
 - bases/data.fluid.io_eacruntimes.yaml
-- bases/data.fluid.io.fluid.io_datatables.yaml
+- bases/data.fluid.io_datatables.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

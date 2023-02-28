@@ -12,7 +12,7 @@ metadata:
   name: datatable-viewer-role
 rules:
 - apiGroups:
-  - data.fluid.io.fluid.io
+  - data.fluid.io
   resources:
   - datatables
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - data.fluid.io.fluid.io
+  - data.fluid.io
   resources:
   - datatables/status
   verbs:

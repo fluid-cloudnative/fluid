@@ -1,4 +1,4 @@
-apiVersion: data.fluid.io.fluid.io/v1alpha1
+apiVersion: data.fluid.io/v1alpha1
 kind: DataTable
 metadata:
   labels:
