@@ -17,11 +17,13 @@
 package jindo
 
 import (
+	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 func (e *JindoEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error {
 	// TODO implement me
-	return nil
+	return fmt.Errorf("not implemented yet")
 }
