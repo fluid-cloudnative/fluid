@@ -164,7 +164,7 @@ func TestGetDataMigrateRef(t *testing.T) {
 				name:      "test",
 				namespace: "default",
 			},
-			want: "default-test",
+			want: "default/test",
 		},
 	}
 	for _, tt := range tests {

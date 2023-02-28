@@ -69,7 +69,7 @@ func GetDataMigrateJobName(releaseName string) string {
 // GetDataMigrateRef returns the identity of the DataMigrate by combining its namespace and name.
 // The identity is used for identifying current lock holder on the target dataset.
 func GetDataMigrateRef(name, namespace string) string {
-	return fmt.Sprintf("%s-%s", namespace, name)
+	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {

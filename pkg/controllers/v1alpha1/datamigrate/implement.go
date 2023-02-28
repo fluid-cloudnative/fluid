@@ -67,22 +67,19 @@ func (r *DataMigrateReconcilerImplement) ReconcileDataMigrateDeletion(ctx crunti
 		return utils.RequeueIfError(err)
 	}
 
+	// 2. Release lock on target dataset if necessary
 	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, targetDataMigrate)
-	if err != nil {
-		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("can't find target dataset", "dataMigrate", targetDataMigrate.Name)
-			return utils.RequeueAfterInterval(20 * time.Second)
-		}
+	if utils.IgnoreNotFound(err) != nil {
 		// other error
 		ctx.Log.Error(err, "Failed to get the ddc dataset")
 		return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
 	}
-
-	// 2. Release lock on target dataset if necessary
-	err = r.releaseLockOnTargetDataset(ctx, targetDataMigrate, targetDataset)
-	if err != nil {
-		log.Error(err, "can't release lock on target dataset", "targetDataset", dataset.Name)
-		return utils.RequeueIfError(err)
+	if targetDataset != nil {
+		err = r.releaseLockOnTargetDataset(ctx, targetDataMigrate, targetDataset)
+		if err != nil {
+			log.Error(err, "can't release lock on target dataset", "targetDataset", dataset.Name)
+			return utils.RequeueIfError(err)
+		}
 	}
 
 	// 3. delete engine
@@ -208,11 +205,13 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
-	// 4. lock the target dataset. Make sure only one DataMigrate can win the lock and
+	// 4. lock the target dataset and update dataset phase to DataMigrating.
+	// Make sure only one DataMigrate can win the lock and
 	// the losers have to requeue and go through the whole reconciliation loop.
-	log.Info("No conflicts detected, try to lock the target dataset")
+	log.Info("No conflicts detected, try to lock the target dataset and update DataSet's status to DataMigrating")
 	datasetToUpdate := targetDataSet.DeepCopy()
 	datasetToUpdate.Status.DataMigrateRef = myDataMigrateRef
+	datasetToUpdate.Status.Phase = datav1alpha1.DataMigrating
 	if !reflect.DeepEqual(targetDataSet.Status, datasetToUpdate.Status) {
 		if err := r.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 			log.V(1).Info("fail to get target dataset's lock, will requeue")
@@ -221,17 +220,7 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 		}
 	}
 
-	// 5. update dataset phase to DataMigrating
-	log.Info("Get lock on target dataset, try to update phase")
-	DataSetToUpdate := targetDataSet.DeepCopy()
-	DataSetToUpdate.Status.Phase = datav1alpha1.DataMigrating
-	if err := r.Client.Status().Update(context.TODO(), DataSetToUpdate); err != nil {
-		log.Error(err, "failed to update DataSet's status to DataMigrating, will retry")
-		return utils.RequeueIfError(err)
-	}
-	log.V(1).Info("update DataSet's status to DataMigrating successfully")
-
-	// 6. update phase to Executing
+	// 5. update phase to Executing
 	// We offload the helm install logic to `reconcileExecutingDataMigrate` to
 	// avoid such a case that status.phase change successfully first but helm install failed,
 	// where the DataMigrate job will never start and all other DataMigrates will be blocked forever.

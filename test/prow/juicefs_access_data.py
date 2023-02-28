@@ -133,7 +133,7 @@ def create_datamigrate(datamigrate_name, dataset_name):
                 "dataset": {"name": dataset_name, "namespace": APP_NAMESPACE}
             },
             "to": {"externalStorage": {
-                "uri": "http://%s:9000/minio/test" % NODE_IP,
+                "uri": "minio://%s:9000/minio/test/" % NODE_IP,
                 "encryptOptions": [
                     {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "accesskey"}}},
                     {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secretkey"}}},
