@@ -17,7 +17,7 @@ package utils
 
 import corev1 "k8s.io/api/core/v1"
 
-//InjectPreferredSchedulingTerms inject the preferredSchedulingTerms into a pod
+// InjectPreferredSchedulingTerms inject the preferredSchedulingTerms into a pod
 func InjectPreferredSchedulingTerms(preferredSchedulingTerms []corev1.PreferredSchedulingTerm, pod *corev1.Pod) {
 	if len(preferredSchedulingTerms) == 0 {
 		return
@@ -40,7 +40,7 @@ func InjectPreferredSchedulingTerms(preferredSchedulingTerms []corev1.PreferredS
 	}
 }
 
-//InjectRequiredSchedulingTerms inject the NodeSelectorTerms into a pod
+// InjectRequiredSchedulingTerms inject the NodeSelectorTerms into a pod
 func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, pod *corev1.Pod) {
 	if len(requiredSchedulingTerms) == 0 {
 		return
