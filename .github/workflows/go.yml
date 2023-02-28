@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  GO_VERSION: 1.18
+
 jobs:
   staticcheck:
     runs-on: ubuntu-latest
@@ -25,19 +28,23 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
+      - name: Lint golang code
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout 10m --verbose
       - name: Lint preparation
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
           arch=$(go env GOARCH)
           os=$(go env GOOS)
-          curl -L https://get.helm.sh/helm-v3.7.2-${os}-${arch}.tar.gz | tar -xz -C /tmp
+          curl -L https://get.helm.sh/helm-v3.11.1-${os}-${arch}.tar.gz | tar -xz -C /tmp
           chmod u+x /tmp/${os}-${arch}/helm && sudo mv /tmp/${os}-${arch}/helm /usr/local/bin/helm
 
       - name: CRD validation check
@@ -48,7 +55,6 @@ jobs:
 
       - name: Project lint
         run: |
-          golangci-lint run --timeout=10m
           test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
           go vet ./...
           find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
@@ -66,7 +72,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.17
+        go-version: ${{ env.GO_VERSION }}
     
     - name: Checkout code
       uses: actions/checkout@v3

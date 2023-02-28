@@ -176,9 +176,7 @@ func TestInvokeCleanCache(t *testing.T) {
 	}
 }
 
-//
 // $ jindo jfs -report
-//
 func mockJindoReportSummary() string {
 	s := `Namespace Address: localhost:18000
 	Rpc Port: 8101

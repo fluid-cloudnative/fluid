@@ -100,7 +100,7 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 	return should, nil
 }
 
-//  shouldRestoreMetadata checks whether should restore metadata from backup
+// shouldRestoreMetadata checks whether should restore metadata from backup
 func (e *AlluxioEngine) shouldRestoreMetadata() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -184,8 +184,9 @@ func (e *AlluxioEngine) RestoreMetadataInternal() (err error) {
 // syncMetadataInternal does the actual work of metadata sync
 // At any time, there is at most one goroutine working on metadata sync. First call to
 // this function will start a goroutine including the following two steps:
-//   1. load metadata
-//   2. get total size of UFSs
+//  1. load metadata
+//  2. get total size of UFSs
+//
 // Any following calls to this function will try to get result of the working goroutine with a timeout, which
 // ensures the function won't block the following Sync operations(e.g. CheckAndUpdateRuntimeStatus) for a long time.
 func (e *AlluxioEngine) syncMetadataInternal() (err error) {
