@@ -276,9 +276,7 @@ func TestInvokeCleanCache(t *testing.T) {
 	}
 }
 
-//
 // $ goosefs fsadmin report summary
-//
 func mockGooseFSReportSummary() string {
 	s := `GooseFS cluster summary: 
 	Master Address: 172.18.0.2:20000

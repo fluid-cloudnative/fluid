@@ -15,7 +15,7 @@ limitations under the License.
 
 package common
 
-//Reason for Fluid events
+// Reason for Fluid events
 const (
 	ErrorCreateDataset = "ErrorCreateDataset"
 
