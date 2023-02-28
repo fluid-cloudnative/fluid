@@ -17,24 +17,30 @@ package datatable
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datafluidiov1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/go-logr/logr"
 )
 
 // DataTableReconciler reconciles a DataTable object
 type DataTableReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=data.fluid.io.fluid.io,resources=datatables,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=data.fluid.io.fluid.io,resources=datatables/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=data.fluid.io.fluid.io,resources=datatables/finalizers,verbs=update
+//+kubebuilder:rbac:groups=data.fluid.io,resources=datatables,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=data.fluid.io,resources=datatables/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=data.fluid.io,resources=datatables/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -49,13 +55,17 @@ func (r *DataTableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	fmt.Println("------------")
+	fmt.Println(req.Name)
+	fmt.Println("------------")
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DataTableReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DataTableReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datafluidiov1alpha1.DataTable{}).
 		Complete(r)
 }
