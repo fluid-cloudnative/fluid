@@ -56,7 +56,7 @@ func getVersion() Version {
 	}
 }
 
-// Print version info directly by command
+// PrintVersion info directly by command
 func PrintVersion(short bool) {
 	v := getVersion()
 	if short {
@@ -74,7 +74,7 @@ func PrintVersion(short bool) {
 	fmt.Printf("  Platform: %s\n", v.Platform)
 }
 
-// Print version info in log when start
+// LogVersion info in log when start
 func LogVersion() {
 	v := getVersion()
 	log.Printf("BuildDate: %s\n", v.BuildDate)
