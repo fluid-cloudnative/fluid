@@ -24,18 +24,58 @@ import (
 
 // DataTableSpec defines the desired state of DataTable
 type DataTableSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Hive URL
+	Url string `json:"url,omitempty"`
 
-	// Foo is an example field of DataTable. Edit datatable_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Indicates the table data to be cached
+	Schemas []Schema `json:"schemas,omitempty"`
+}
+
+// Schema defines the table data to be cached in a schema
+type Schema struct {
+	// DataBase Name
+	SchemaName string `json:"schemaName"`
+
+	// Indicates the table to be cached
+	Tables []Table `json:"tables,omitempty"`
+}
+
+// Schema defines the table data to be cached in a table
+type Table struct {
+	// Table Name
+	TableName string `json:"tableName"`
+
+	// Column name for this table
+	ColumnName []string `json:"columnName,omitempty"`
+
+	// Partition infos for the partition
+	PartitionColumn []map[string]string `json:"partitionColumn,omitempty"` // 每个map表示一个分区表（可能会有多个kv）
 }
 
 // DataTableStatus defines the observed state of DataTable
+// +kubebuilder:subresource:status
 type DataTableStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// the data of mount points have been mounted
+	Schemas []Schema `json:"mounts,omitempty"`
+
+	// Total in GB of data in the cluster
+	UfsTotal string `json:"ufsTotal,omitempty"`
+
+	// DataTable Phase. One of the three phases: `Bound`, `NotBound` and `Failed`
+	Phase DataTablePhase `json:"phase,omitempty"` // 表明数据是否挂载
 }
+
+// DataTablePhase indicates whether the loading is behaving
+type DataTablePhase string
+
+const (
+	// Bound to dataset, can't be released
+	BoundDataTablePhase DataTablePhase = "Bound"
+	// Failed, can't be deleted
+	FailedDataTablePhase DataTablePhase = "Failed"
+	// Not bound to runtime, can be deleted
+	NotBoundDataTablePhase DataTablePhase = "NotBound"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
