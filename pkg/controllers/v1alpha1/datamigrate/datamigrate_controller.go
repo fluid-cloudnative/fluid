@@ -104,6 +104,10 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("can't find target dataset", "dataMigrate", targetDataMigrate.Name)
+			r.Recorder.Eventf(&targetDataMigrate,
+				v1.EventTypeNormal,
+				common.TargetDatasetNotFound,
+				"Target dataset not found")
 			return utils.RequeueAfterInterval(20 * time.Second)
 		}
 		// other error
