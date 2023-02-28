@@ -301,11 +301,13 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 			optionMap["attr-cache"] = "7200"
 			optionMap["entry-cache"] = "7200"
 		}
+
+		// set metrics port
 		if _, ok := optionMap["metrics"]; !ok {
-			optionMap["metrics"] = "0.0.0.0:9567"
+			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", *value.Fuse.MetricsPort)
 		}
 		if _, ok := workerOptionMap["metrics"]; !ok {
-			workerOptionMap["metrics"] = "0.0.0.0:9567"
+			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", *value.Worker.MetricsPort)
 		}
 		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
 		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}

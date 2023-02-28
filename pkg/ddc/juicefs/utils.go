@@ -19,6 +19,7 @@ package juicefs
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -282,4 +283,24 @@ func ParseSubPathFromMountPoint(mountPoint string) (string, error) {
 		return "", fmt.Errorf("MountPoint error, can not parse jfs path")
 	}
 	return jPath[1], nil
+}
+
+func GetMetricsPort(options map[string]string) int {
+	port := int64(9567)
+	if options == nil {
+		return int(port)
+	}
+
+	for k, v := range options {
+		if k == "metrics" {
+			re := regexp.MustCompile(`.*:([0-9]{1,6})`)
+			match := re.FindStringSubmatch(v)
+			if len(match) > 0 {
+				port, _ = strconv.ParseInt(match[1], 10, 32)
+				break
+			}
+		}
+	}
+
+	return int(port)
 }
