@@ -17,17 +17,27 @@ package datatable
 
 import (
 	"context"
-	"fmt"
+	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/datatable"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+)
 
-	datafluidiov1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/go-logr/logr"
+const (
+	// finalizer for datable
+	DataTableFinalizerName = "datatable-controller-finalizer"
+	// common name
+	CommonName   = "datatable-common"
+	ResyncPeriod = time.Duration(5 * time.Second)
 )
 
 // DataTableReconciler reconciles a DataTable object
@@ -36,6 +46,14 @@ type DataTableReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+}
+
+type reconcileRequestContext struct {
+	context.Context
+	Log       logr.Logger
+	Datatable datav1alpha1.DataTable
+	types.NamespacedName
+	FinalizerName string
 }
 
 //+kubebuilder:rbac:groups=data.fluid.io,resources=datatables,verbs=get;list;watch;create;update;patch;delete
@@ -51,13 +69,39 @@ type DataTableReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
-func (r *DataTableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+func (r *DataTableReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	// TODO(user): your logic here
-	fmt.Println("------------")
-	fmt.Println(req.Name)
-	fmt.Println("------------")
+	// init the reconcileRequestContext struct
+	ctx := reconcileRequestContext{
+		Context:        context,
+		Log:            r.Log.WithValues("datatable", req.NamespacedName),
+		NamespacedName: req.NamespacedName,
+		FinalizerName:  DataTableFinalizerName,
+	}
+
+	ctx.Log.V(1).Info("Process the request", "request", req)
+
+	if err := r.Get(ctx, req.NamespacedName, &ctx.Datatable); err != nil {
+		// can not get the datatable obj
+		// TODO: err handle
+		ctx.Log.Error(err, "Fail to get the datatable", req)
+		return utils.RequeueIfError(err)
+	} else {
+		return r.reconcileDataTable(ctx)
+	}
+}
+
+func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (result ctrl.Result, err error) {
+
+	ip, err := datatable.GetOrCreateAlluxio(r.Client, CommonName, ctx.Datatable.Namespace)
+	if err != nil || len(ip) == 0 {
+		if err != nil {
+			ctx.Log.Error(err, "GetOrCreateAlluxio error")
+		} else {
+			ctx.Log.V(1).Info("The alluxio is starting...")
+		}
+		return utils.RequeueAfterInterval(10 * time.Second)
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -66,6 +110,6 @@ func (r *DataTableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *DataTableReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
-		For(&datafluidiov1alpha1.DataTable{}).
+		For(&datav1alpha1.DataTable{}).
 		Complete(r)
 }
