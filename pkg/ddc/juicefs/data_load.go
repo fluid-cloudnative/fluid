@@ -53,7 +53,7 @@ func (j *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JuiceFSRuntime
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.JuiceFSRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")

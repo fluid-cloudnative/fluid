@@ -45,7 +45,7 @@ func BytesSize(size float64) string {
 // FromHumanSize returns an integer from a human-readable specification of a
 // size with 1024 as multiplier
 // e.g.:
-// 	1. 1 KiB = 1024 byte
+//  1. 1 KiB = 1024 byte
 func FromHumanSize(size string) (int64, error) {
 	return parseSize(size, binaryMap)
 }

@@ -120,7 +120,7 @@ func (e *EACEngine) CheckWorkersReady() (ready bool, err error) {
 }
 
 func (e *EACEngine) syncWorkersEndpoints() (count int, err error) {
-	workerPods, err := e.getWorkerPods()
+	workerPods, err := e.getWorkerRunningPods()
 	if err != nil {
 		return 0, err
 	}
