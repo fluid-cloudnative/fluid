@@ -27,7 +27,7 @@ import (
 var valuesConfigMapData = `
 cacheDirs:
   "1":
-    path: /var/foo
+    path: /jfs/cache3:/jfs/cache4
     type: hostPath
 configs:
   accesskeySecret: jfs-secret
@@ -46,8 +46,9 @@ edition: community
 fsGroup: 0
 fullnameOverride: jfsdemo
 fuse:
+  metricsPort: 14001
   command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
-    -o attr-cache=7200,entry-cache=7200,metrics=0.0.0.0:9567,cache-size=1024,free-space-ratio=0.1,cache-dir=/var/foo,ro
+    -o metrics=0.0.0.0:9567,cache-size=1024,free-space-ratio=0.1,cache-dir=/jfs/cache3:/jfs/cache4
   criticalPod: true
   enabled: true
   hostMountPath: /runtime-mnt/juicefs/default/jfsdemo
@@ -62,11 +63,11 @@ fuse:
   resources: {}
   statCmd: stat -c %i /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
   volumeMounts:
-  - mountPath: /var/foo
+  - mountPath: /jfs/cache3:/jfs/cache4
     name: cache-dir-1
   volumes:
   - hostPath:
-      path: /var/foo
+      path: /jfs/cache3:/jfs/cache4
       type: DirectoryOrCreate
     name: cache-dir-1
 group: 0
@@ -81,7 +82,7 @@ owner:
   enabled: true
   kind: JuiceFSRuntime
   name: jfsdemo
-  uid: 7bf75683-c4cd-4f18-9344-3adde1799250
+  uid: 9ae3312b-d5b6-4a3d-895c-7712bfa7d74e
 placement: Exclusive
 runtimeIdentity:
   name: jfsdemo
@@ -89,19 +90,20 @@ runtimeIdentity:
 source: ${METAURL}
 user: 0
 worker:
+  metricsPort: 14000
   command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
-    -o cache-size=1024,free-space-ratio=0.1,cache-dir=/var/foo,ro,metrics=0.0.0.0:9567
+    -o cache-size=1024,free-space-ratio=0.1,cache-dir=/jfs/cache1:/jfs/cache2,metrics=0.0.0.0:9567
   hostNetwork: true
   mountPath: /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
   privileged: true
   resources: {}
   statCmd: stat -c %i /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
   volumeMounts:
-  - mountPath: /var/foo
+  - mountPath: /jfs/cache1:/jfs/cache2
     name: cache-dir-1
   volumes:
   - hostPath:
-      path: /var/foo
+      path: /jfs/cache1:/jfs/cache2
       type: DirectoryOrCreate
     name: cache-dir-1
 `

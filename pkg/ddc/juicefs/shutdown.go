@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
@@ -31,6 +32,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
@@ -50,6 +52,11 @@ func (j *JuiceFSEngine) Shutdown() (err error) {
 	}
 
 	_, err = j.destroyWorkers(-1)
+	if err != nil {
+		return
+	}
+
+	err = j.releasePorts()
 	if err != nil {
 		return
 	}
@@ -78,6 +85,34 @@ func (j *JuiceFSEngine) destroyMaster() (err error) {
 		}
 	}
 	return
+}
+
+func (j *JuiceFSEngine) releasePorts() (err error) {
+	var valueConfigMapName = j.getConfigmapName()
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		return errors.Wrap(err, "GetRuntimePortAllocator when releasePorts")
+	}
+
+	cm, err := kubeclient.GetConfigmapByName(j.Client, valueConfigMapName, j.namespace)
+	if err != nil {
+		return errors.Wrap(err, "GetConfigmapByName when releasePorts")
+	}
+
+	// The value configMap is not found
+	if cm == nil {
+		j.Log.Info("value configMap not found, there might be some unreleased ports", "valueConfigMapName", valueConfigMapName)
+		return nil
+	}
+
+	portsToRelease, err := parsePortsFromConfigMap(cm)
+	if err != nil {
+		return errors.Wrap(err, "parsePortsFromConfigMap when releasePorts")
+	}
+
+	allocator.ReleaseReservedPorts(portsToRelease)
+	return nil
 }
 
 // cleanupCache cleans up the cache

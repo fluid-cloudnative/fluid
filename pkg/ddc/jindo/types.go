@@ -17,8 +17,9 @@ limitations under the License.
 package jindo
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 type Jindo struct {
