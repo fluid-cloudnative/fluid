@@ -36,3 +36,7 @@ cmd/*/start.sh
 openapi-gen
 sdk
 **/__debug_bin
+
+datatable.yaml
+Dockerfile
+main.go
