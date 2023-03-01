@@ -168,7 +168,7 @@ func TestGetDataLoadRef(t *testing.T) {
 				name:      "hbase",
 				namespace: "default",
 			},
-			want: "default-hbase",
+			want: "default/hbase",
 		},
 	}
 	for _, tt := range tests {

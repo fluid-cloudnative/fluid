@@ -808,6 +808,13 @@ func (in *DatasetStatus) DeepCopyInto(out *DatasetStatus) {
 		*out = new(HCFSStatus)
 		**out = **in
 	}
+	if in.OperationRef != nil {
+		in, out := &in.OperationRef, &out.OperationRef
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.DatasetRef != nil {
 		in, out := &in.DatasetRef, &out.DatasetRef
 		*out = make([]string, len(*in))
