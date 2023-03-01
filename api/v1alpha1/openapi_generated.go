@@ -1761,7 +1761,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 					},
 					"dataLoadRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs.",
+							Description: "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs. Deprecated, use OperationRef instead",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1775,9 +1775,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 					},
 					"dataBackupRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs.",
+							Description: "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs. Deprecated, use OperationRef instead",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"operationRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OperationRef specifies the Operation that targets this Dataset. This is mainly used as a lock to prevent concurrent same Operation jobs.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"datasetRef": {
