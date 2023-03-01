@@ -24,6 +24,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
@@ -53,13 +54,20 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	// transform toleration
 	j.transformTolerations(dataset, value)
 
-	// transform the fuse
 	value.Fuse = Fuse{
 		Privileged: true,
 	}
 	value.Worker = Worker{
 		Privileged: true,
 	}
+
+	// allocate ports
+	err = j.allocatePorts(dataset, runtime, value)
+	if err != nil {
+		return
+	}
+
+	// transform the fuse
 	err = j.transformFuse(runtime, dataset, value)
 	if err != nil {
 		return
@@ -89,7 +97,6 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 	imagePullPolicy := runtime.Spec.JuiceFSVersion.ImagePullPolicy
 
 	value.Worker.Envs = runtime.Spec.Worker.Env
-	value.Worker.Ports = runtime.Spec.Worker.Ports
 
 	value.Image, value.ImageTag, value.ImagePullPolicy = j.parseRuntimeImage(image, imageTag, imagePullPolicy)
 
@@ -150,4 +157,73 @@ func (j *JuiceFSEngine) transformPodMetadata(runtime *datav1alpha1.JuiceFSRuntim
 	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
 
 	return nil
+}
+
+func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) error {
+	if j.getEdition(dataset.Spec.Mounts[0], dataset.Spec.SharedEncryptOptions) == EnterpriseEdition {
+		// enterprise edition do not need metrics port
+		return nil
+	}
+	fuseMetricsPort, err := GetMetricsPort(dataset.Spec.Mounts[0].Options)
+	if err != nil {
+		return err
+	}
+	workerMetricsPort := DefaultMetricsPort
+	if runtime.Spec.Worker.Options == nil {
+		workerMetricsPort = fuseMetricsPort
+	}
+
+	// if not use hostnetwork then use default port
+	// use hostnetwork to choose port from port allocator
+
+	expectedPortNum := 2
+	if !datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+		value.Worker.MetricsPort = &workerMetricsPort
+		expectedPortNum--
+	}
+	if !datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode) {
+		value.Fuse.MetricsPort = &fuseMetricsPort
+		expectedPortNum--
+	}
+	if expectedPortNum == 0 {
+		return nil
+	}
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		j.Log.Error(err, "can't get runtime port allocator")
+		return err
+	}
+
+	allocatedPorts, err := allocator.GetAvailablePorts(expectedPortNum)
+	if err != nil {
+		j.Log.Error(err, "can't get available ports", "expected port num", expectedPortNum)
+		return err
+	}
+
+	index := 0
+	value.Worker.MetricsPort = &allocatedPorts[index]
+	index++
+	value.Fuse.MetricsPort = &allocatedPorts[index]
+	return nil
+}
+
+func (j *JuiceFSEngine) getEdition(mount datav1alpha1.Mount, SharedEncryptOptions []datav1alpha1.EncryptOption) (edition string) {
+	edition = EnterpriseEdition
+
+	for _, encryptOption := range SharedEncryptOptions {
+		if encryptOption.Name == JuiceMetaUrl {
+			edition = CommunityEdition
+			break
+		}
+	}
+
+	for _, encryptOption := range mount.EncryptOptions {
+		if encryptOption.Name == JuiceMetaUrl {
+			edition = CommunityEdition
+			break
+		}
+	}
+
+	return
 }

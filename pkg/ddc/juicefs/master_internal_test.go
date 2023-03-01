@@ -21,15 +21,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/net"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 
 	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -64,6 +68,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
 		return errors.New("fail to install dataload chart")
+	}
+	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
+		return errors.New("fail to exec command")
 	}
 
 	wrappedUnhookCheckRelease := func() {
@@ -134,10 +141,17 @@ func TestSetupMasterInternal(t *testing.T) {
 			},
 		},
 	}
-	////portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, GetReservedPorts)
+	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 
 	// check release found
-	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
+	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

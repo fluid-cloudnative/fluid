@@ -31,9 +31,10 @@ const (
 
 	PodRoleType = "role"
 
-	WorkerPodRole     = "juicefs-worker"
-	EnterpriseEdition = "enterprise"
-	CommunityEdition  = "community"
+	WorkerPodRole      = "juicefs-worker"
+	EnterpriseEdition  = "enterprise"
+	CommunityEdition   = "community"
+	DefaultMetricsPort = 9567
 
 	MetadataSyncNotDoneMsg               = "[Calculating]"
 	CheckMetadataSyncDoneTimeoutMillisec = 500

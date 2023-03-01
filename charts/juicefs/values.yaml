@@ -37,13 +37,13 @@ worker:
   imagePullPolicy: ""
   nodeSelector: ""
   cacheDir: ""
-  ports: []
   envs: []
   command: ""
   mountPath: /mnt/jfs
   statCmd: "stat -c %i /mnt/jfs"
   podManagementPolicy: Parallel
   hostNetwork: false
+  metricsPort: 9567
   resources:
     requests:
 #      cpu: "0.5"
@@ -56,6 +56,7 @@ worker:
   annotations: {}
   volumes: []
   volumeMounts: []
+
 
 configs:
   name: ""
@@ -75,6 +76,7 @@ configs:
 
 fuse:
   hostNetwork: false
+  metricsPort: 9567
   subPath: ""
   criticalPod: false
   enabled: true

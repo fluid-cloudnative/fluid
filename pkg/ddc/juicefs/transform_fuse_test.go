@@ -20,15 +20,17 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -119,9 +121,11 @@ func TestTransformFuse(t *testing.T) {
 							}},
 					}},
 				}},
-			juicefsValue: &JuiceFS{},
-			expect:       "",
-			wantErr:      false,
+			juicefsValue: &JuiceFS{
+				Worker: Worker{},
+			},
+			expect:  "",
+			wantErr: false,
 		},
 		{
 			name: "test-secret-wrong-1",

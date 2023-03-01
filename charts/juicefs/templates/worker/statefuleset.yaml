@@ -82,9 +82,11 @@ spec:
           {{- if .Values.worker.privileged }}
             privileged: true
           {{- end }}
-          {{- if .Values.worker.ports }}
           ports:
-{{ toYaml .Values.worker.ports | trim | indent 10  }}
+          {{- if .Values.worker.metricsPort }}
+            - containerPort: {{ .Values.worker.metricsPort }}
+              name: metrics
+              protocol: TCP
           {{- end }}
           env:
           - name: JFS_FOREGROUND

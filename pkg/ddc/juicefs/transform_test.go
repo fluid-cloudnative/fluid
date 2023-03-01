@@ -22,14 +22,22 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
+
+var dummy = func(client client.Client) (ports []int, err error) {
+	return []int{14000, 14001}, nil
+}
 
 func TestJuiceFSEngine_transform(t *testing.T) {
 	juicefsSecret := &corev1.Secret{
@@ -222,5 +230,65 @@ func TestJuiceFSEngine_transformPodMetadata(t *testing.T) {
 		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
 			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
 		}
+	}
+}
+
+func TestJuiceFSEngine_allocatePorts(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("14000-15999")
+	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	type args struct {
+		dataset *datav1alpha1.Dataset
+		runtime *datav1alpha1.JuiceFSRuntime
+		value   *JuiceFS
+	}
+	tests := []struct {
+		name                  string
+		args                  args
+		wantErr               bool
+		wantWorkerMetricsPort bool
+		wantFuseMetricsPort   bool
+	}{
+		{
+			name: "test",
+			args: args{
+				dataset: &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{EncryptOptions: []datav1alpha1.EncryptOption{{Name: JuiceMetaUrl}}}},
+					},
+				},
+				runtime: &datav1alpha1.JuiceFSRuntime{},
+				value:   &JuiceFS{},
+			},
+			wantErr:               false,
+			wantWorkerMetricsPort: true,
+			wantFuseMetricsPort:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			if err := j.allocatePorts(tt.args.dataset, tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+				t.Errorf("allocatePorts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantWorkerMetricsPort {
+				if tt.args.value.Worker.MetricsPort == nil {
+					t.Error("allocatePorts() got worker port nil")
+				}
+				if *tt.args.value.Worker.MetricsPort < 14000 || *tt.args.value.Worker.MetricsPort > 15999 {
+					t.Errorf("allocatePorts() got worker port = %v, but want in range [14000, 15999]", *tt.args.value.Worker.MetricsPort)
+				}
+			}
+			if tt.wantFuseMetricsPort {
+				if tt.args.value.Fuse.MetricsPort == nil {
+					t.Error("allocatePorts() got fuse port nil")
+				}
+				if *tt.args.value.Fuse.MetricsPort < 14000 || *tt.args.value.Fuse.MetricsPort > 15999 {
+					t.Errorf("allocatePorts() got fuse port = %v, but want in range [14000, 15999]", *tt.args.value.Fuse.MetricsPort)
+				}
+			}
+		})
 	}
 }

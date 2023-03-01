@@ -19,15 +19,18 @@ package app
 import (
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -47,8 +50,10 @@ var (
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	development             bool
+	portRange               string
 	maxConcurrentReconciles int
 	pprofAddr               string
+	portAllocatePolicy      string
 )
 
 var startCmd = &cobra.Command{
@@ -69,6 +74,8 @@ func init() {
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
+	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "14000-15999", "Set available port range for JuiceFS")
+	startCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 }
 
 func handle() {
@@ -115,6 +122,20 @@ func handle() {
 		setupLog.Error(err, "unable to create controller", "controller", "JuiceFSRuntime")
 		os.Exit(1)
 	}
+
+	pr, err := net.ParsePortRange(portRange)
+	if err != nil {
+		setupLog.Error(err, "can't parse port range. Port range must be like <min>-<max>")
+		os.Exit(1)
+	}
+	setupLog.Info("port range parsed", "port range", pr.String())
+
+	err = portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, portAllocatePolicy, juicefs.GetReservedPorts)
+	if err != nil {
+		setupLog.Error(err, "failed to setup runtime port allocator")
+		os.Exit(1)
+	}
+	setupLog.Info("Set up runtime port allocator", "policy", portAllocatePolicy)
 
 	setupLog.Info("starting juicefsruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
