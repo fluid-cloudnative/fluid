@@ -12,11 +12,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -24,39 +25,85 @@ import (
 )
 
 var valuesConfigMapData = `
-fullnameOverride: test-dataset
+cacheDirs:
+  "1":
+    path: /var/foo
+    type: hostPath
+configs:
+  accesskeySecret: jfs-secret
+  accesskeySecretKey: accesskey
+  bucket: http://minio.default.svc.cluster.local:9000/minio/test2
+  formatCmd: /usr/local/bin/juicefs format --trash-days=0 --access-key=${ACCESS_KEY}
+    --secret-key=${SECRET_KEY} --storage=minio --bucket=http://minio.default.svc.cluster.local:9000/minio/test2
+    ${METAURL} minio
+  metaurlSecret: jfs-secret
+  metaurlSecretKey: metaurl
+  name: minio
+  secretkeySecret: jfs-secret
+  secretkeySecretKey: secretkey
+  storage: minio
 edition: community
-image: juicedata/juicefs-csi-driver
-imageTag: v0.11.0
-imagePullPolicy: IfNotPresent
-user: 0
-group: 0
 fsGroup: 0
+fullnameOverride: jfsdemo
 fuse:
-  prepare:
-    subPath: /dir1
-    name: pics
-    accesskeySecret: juicefs-secret
-    secretkeySecret: juicefs-secret
-    bucket: http://xx.xx.xx.xx/pics
-    metaurlSecret: juicefs-secret
-    storage: minio
-  image: juicedata/juicefs-csi-driver
-  nodeSelector:
-    fluid.io/f-fluid-test-dataset: "true"
-  imageTag: v0.11.0
-  mountPath: /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse
-  cacheDir: /tmp/jfs-cache
-  hostMountPath: /runtime-mnt/juicefs/fluid/test-dataset
-  command: /bin/mount.juicefs redis://xx.xx.xx.xx:6379/1 /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse -o metrics=0.0.0.0:9567,subdir=/dir1,cache-size=4096,free-space-ratio=0.1,cache-dir=/tmp/jfs-cache
-  statCmd: stat -c %i /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse
-  enabled: true
+  command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+    -o attr-cache=7200,entry-cache=7200,metrics=0.0.0.0:9567,cache-size=1024,free-space-ratio=0.1,cache-dir=/var/foo,ro
   criticalPod: true
-worker:
-  cacheDir: /tmp/jfs-cache
+  enabled: true
+  hostMountPath: /runtime-mnt/juicefs/default/jfsdemo
+  hostNetwork: true
+  image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
+  imagePullPolicy: IfNotPresent
+  imageTag: v1.0.0-4.8.0
+  mountPath: /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+  nodeSelector:
+    fluid.io/f-default-jfsdemo: "true"
+  privileged: true
+  resources: {}
+  statCmd: stat -c %i /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+  volumeMounts:
+  - mountPath: /var/foo
+    name: cache-dir-1
+  volumes:
+  - hostPath:
+      path: /var/foo
+      type: DirectoryOrCreate
+    name: cache-dir-1
+group: 0
+image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
+imagePullPolicy: IfNotPresent
+imagePullSecrets: null
+imageTag: v1.0.0-4.8.0
+owner:
+  apiVersion: data.fluid.io/v1alpha1
+  blockOwnerDeletion: false
+  controller: true
+  enabled: true
+  kind: JuiceFSRuntime
+  name: jfsdemo
+  uid: 7bf75683-c4cd-4f18-9344-3adde1799250
 placement: Exclusive
-
-Events:  <none>
+runtimeIdentity:
+  name: jfsdemo
+  namespace: default
+source: ${METAURL}
+user: 0
+worker:
+  command: /bin/mount.juicefs ${METAURL} /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+    -o cache-size=1024,free-space-ratio=0.1,cache-dir=/var/foo,ro,metrics=0.0.0.0:9567
+  hostNetwork: true
+  mountPath: /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+  privileged: true
+  resources: {}
+  statCmd: stat -c %i /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse
+  volumeMounts:
+  - mountPath: /var/foo
+    name: cache-dir-1
+  volumes:
+  - hostPath:
+      path: /var/foo
+      type: DirectoryOrCreate
+    name: cache-dir-1
 `
 
 func TestJuiceFSEngine_CreateDataLoadJob(t *testing.T) {

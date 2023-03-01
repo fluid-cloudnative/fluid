@@ -19,9 +19,10 @@ package thin
 import (
 	"fmt"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"

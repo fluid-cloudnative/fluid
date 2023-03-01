@@ -21,9 +21,10 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
