@@ -169,7 +169,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 	}
 
 	// 6. add finalizer and requeue
-	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DATALOAD_FINALIZER) {
+	if !utils.ContainsString(targetDataload.ObjectMeta.GetFinalizers(), cdataload.DataloadFinalizer) {
 		return r.addFinalizerAndRequeue(ctx, targetDataload)
 	}
 
@@ -198,8 +198,8 @@ func (r *DataLoadReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestCon
 }
 
 func (r *DataLoadReconciler) addFinalizerAndRequeue(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (ctrl.Result, error) {
-	targetDataload.ObjectMeta.Finalizers = append(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
-	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DATALOAD_FINALIZER)
+	targetDataload.ObjectMeta.Finalizers = append(targetDataload.ObjectMeta.Finalizers, cdataload.DataloadFinalizer)
+	ctx.Log.Info("Add finalizer and requeue", "finalizer", cdataload.DataloadFinalizer)
 	prevGeneration := targetDataload.ObjectMeta.GetGeneration()
 	if err := r.Update(ctx, &targetDataload); err != nil {
 		ctx.Log.Error(err, "failed to add finalizer to dataload", "StatusUpdateError", err)

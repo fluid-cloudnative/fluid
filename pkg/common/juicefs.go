@@ -32,6 +32,8 @@ const (
 
 	DefaultJuiceFSRuntimeImage = "juicedata/juicefs-fuse:v1.0.0"
 
+	DefaultJuiceFSMigrateImage = "juicedata/juicefs-fuse:nightly"
+
 	JuiceFSCeMountPath = "/bin/mount.juicefs"
 	JuiceFSMountPath   = "/sbin/mount.juicefs"
 	JuiceCeCliPath     = "/usr/local/bin/juicefs"

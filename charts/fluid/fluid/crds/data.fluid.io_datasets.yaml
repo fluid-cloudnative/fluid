@@ -405,12 +405,17 @@ spec:
               dataBackupRef:
                 description: DataBackupRef specifies the running Backup job that targets
                   this Dataset. This is mainly used as a lock to prevent concurrent
-                  DataBackup jobs.
+                  DataBackup jobs. Deprecated, use OperationRef instead
                 type: string
               dataLoadRef:
                 description: DataLoadRef specifies the running DataLoad job that targets
                   this Dataset. This is mainly used as a lock to prevent concurrent
-                  DataLoad jobs.
+                  DataLoad jobs. Deprecated, use OperationRef instead
+                type: string
+              dataMigrateRef:
+                description: DataMigrateRef specifies the running DataMigrate job
+                  that targets this Dataset. This is mainly used as a lock to prevent
+                  concurrent DataMigrate jobs.
                 type: string
               datasetRef:
                 description: DatasetRef specifies the datasets namespaced name mounting
@@ -487,6 +492,13 @@ spec:
                       type: boolean
                   type: object
                 type: array
+              operationRef:
+                additionalProperties:
+                  type: string
+                description: OperationRef specifies the Operation that targets this
+                  Dataset. This is mainly used as a lock to prevent concurrent same
+                  Operation jobs.
+                type: object
               phase:
                 description: 'Dataset Phase. One of the four phases: `Pending`, `Bound`,
                   `NotBound` and `Failed`'

@@ -40,15 +40,15 @@ func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount, mounts 
 
 // value for alluxio instance configuration :
 //
-//  alluxio.master.mount.table.root.ufs
+//	alluxio.master.mount.table.root.ufs
 //
 // two situations
-//	1. mount local storage root path as alluxio root path
+//  1. mount local storage root path as alluxio root path
 //     e.g. : alluxio fs mount
-//            /underFSStorage /
-// 	2. direct mount ufs endpoint as alluxio root path
+//     /underFSStorage /
+//  2. direct mount ufs endpoint as alluxio root path
 //     e.g. : alluxio fs mount
-//            http://fluid.io/apache/spark/spark-3.0.2 /
+//     http://fluid.io/apache/spark/spark-3.0.2 /
 func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (string, *datav1alpha1.Mount) {
 	// if have multi ufs mount point or empty
 	// use local storage root path by default
@@ -73,11 +73,13 @@ func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (strin
 }
 
 // this value will be the default value for the alluxio configuration:
-//   alluxio.master.mount.table.root.ufs
+//
+//	alluxio.master.mount.table.root.ufs
 //
 // e.g. :
-//   $ alluxio fs mount
-//   /underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
+//
+//	$ alluxio fs mount
+//	/underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
 func (u UFSPathBuilder) GetLocalStorageRootDir() string {
 	return common.AlluxioLocalStorageRootPath
 }

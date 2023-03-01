@@ -44,12 +44,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":      schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":         schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate":         schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetToMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACCompTemplateSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_EACCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACFuseSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_EACFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntime":               schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntime(ref),
@@ -57,6 +62,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EACRuntimeSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":            schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":      schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":          schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":  schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":           schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
@@ -1127,6 +1133,204 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataMigrate is the Schema for the datamigrates API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataMigrateList contains a list of DataMigrate",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataMigrateSpec defines the desired state of DataMigrate",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image (e.g. alluxio/alluxio)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image tag (e.g. 2.3.0-SNAPSHOT)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"from": {
+						SchemaProps: spec.SchemaProps{
+							Description: "data to migrate source, including dataset and external storage",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate"),
+						},
+					},
+					"to": {
+						SchemaProps: spec.SchemaProps{
+							Description: "data to migrate destination, including dataset and external storage",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate"),
+						},
+					},
+					"block": {
+						SchemaProps: spec.SchemaProps{
+							Description: "if dataMigrate blocked dataset usage, default is false",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "using which runtime to migrate data; if none, take dataset runtime as default",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "options for migrate, different for each runtime",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "policy for migrate, including None, Once, Cron, OnEvent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+				},
+				Required: []string{"from", "to"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1151,6 +1355,32 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref common.
 				},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"dataset": {
+						SchemaProps: spec.SchemaProps{
+							Description: "dataset to migrate",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate"),
+						},
+					},
+					"externalStorage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "external storage for data migrate",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage"},
 	}
 }
 
@@ -1531,16 +1761,39 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 					},
 					"dataLoadRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs.",
+							Description: "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs. Deprecated, use OperationRef instead",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dataMigrateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DataMigrateRef specifies the running DataMigrate job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataMigrate jobs.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"dataBackupRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs.",
+							Description: "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs. Deprecated, use OperationRef instead",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"operationRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OperationRef specifies the Operation that targets this Dataset. This is mainly used as a lock to prevent concurrent same Operation jobs.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"datasetRef": {
@@ -1564,6 +1817,42 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition", "github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetToMigrate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name of dataset",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "namespace of dataset",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "path to migrate",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name", "namespace"},
+			},
+		},
 	}
 }
 
@@ -1974,6 +2263,43 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uri": {
+						SchemaProps: spec.SchemaProps{
+							Description: "type of external storage, including s3, oss, gcs, ceph, nfs, pvc, etc. (related to runtime)",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"encryptOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "encrypt info for external storage",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"uri"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
 	}
 }
 
