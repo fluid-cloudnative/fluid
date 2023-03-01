@@ -57,3 +57,28 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 	}
 	return configmapinfo, nil
 }
+
+func GetFSInfoFromConfigMap(client client.Client, name string, namespace string) (info map[string]string, err error) {
+	configMapName := fmt.Sprintf("%s-juicefs-values", name)
+	configMap, err := kubeclient.GetConfigmapByName(client, configMapName, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetConfigMapByName error when GetCacheInfoFromConfigmap")
+	}
+	return parseFSInfoFromConfigMap(configMap)
+}
+
+func parseFSInfoFromConfigMap(configMap *v1.ConfigMap) (info map[string]string, err error) {
+	var value JuiceFS
+	info = map[string]string{}
+	if v, ok := configMap.Data["data"]; ok {
+		if err = yaml.Unmarshal([]byte(v), &value); err != nil {
+			return
+		}
+		info[MetaurlSecret] = value.Configs.MetaUrlSecret
+		info[MetaurlSecretKey] = value.Configs.MetaUrlSecretKey
+		info[Name] = value.Configs.Name
+		info[Edition] = value.Edition
+		return
+	}
+	return
+}

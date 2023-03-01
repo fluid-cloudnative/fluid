@@ -47,7 +47,11 @@ const (
 	JuiceSecretKey = "secret-key"
 	JuiceToken     = "token"
 
-	MountPath              = "mountpath"
-	Edition                = "edition"
-	DefaultDataLoadTimeout = "30m"
+	MountPath                 = "mountpath"
+	Edition                   = "edition"
+	MetaurlSecret             = "metaurlSecret"
+	MetaurlSecretKey          = "metaurlSecretKey"
+	Name                      = "name"
+	DefaultDataLoadTimeout    = "30m"
+	DefaultDataMigrateTimeout = "30m"
 )

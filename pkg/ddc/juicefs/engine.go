@@ -19,9 +19,10 @@ package juicefs
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"

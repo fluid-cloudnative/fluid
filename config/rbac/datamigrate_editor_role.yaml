@@ -1,0 +1,24 @@
+# permissions for end users to edit datamigrates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: datamigrate-editor-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datamigrates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datamigrates/status
+  verbs:
+  - get

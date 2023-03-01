@@ -17,10 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	// "github.com/rook/rook/pkg/apis/rook.io/v1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	// "github.com/rook/rook/pkg/apis/rook.io/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // DatasetPhase indicates whether the loading is behaving
@@ -37,6 +38,8 @@ const (
 	NotBoundDatasetPhase DatasetPhase = "NotBound"
 	// updating dataset, can't be released
 	UpdatingDatasetPhase DatasetPhase = "Updating"
+	// migrating dataset, can't be mounted
+	DataMigrating DatasetPhase = "DataMigrating"
 	// the dataset have no phase and need to be judged
 	NoneDatasetPhase DatasetPhase = ""
 )
@@ -209,6 +212,10 @@ type DatasetStatus struct {
 	// DataLoadRef specifies the running DataLoad job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataLoad jobs.
 	DataLoadRef string `json:"dataLoadRef,omitempty"`
+
+	// DataMigrateRef specifies the running DataMigrate job that targets this Dataset.
+	// This is mainly used as a lock to prevent concurrent DataMigrate jobs.
+	DataMigrateRef string `json:"dataMigrateRef,omitempty"`
 
 	// DataBackupRef specifies the running Backup job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataBackup jobs.

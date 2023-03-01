@@ -46,6 +46,9 @@ type Engine interface {
 
 	// Dataloader
 	Dataloader
+
+	// Datamigrater
+	Datamigrater
 }
 
 type Dataloader interface {
@@ -57,6 +60,11 @@ type Dataloader interface {
 
 	// Check existence of path
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
+}
+
+type Datamigrater interface {
+	// MigrateData generate datamigrate values and install helm chart
+	MigrateData(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error)
 }
 
 // Implement is what the real engine should implement if it use the TemplateEngine
@@ -131,6 +139,9 @@ type Implement interface {
 
 	// CreateDataLoadJob creates the job to load data
 	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
+
+	// CreateDataMigrateJob creates the job to load data
+	CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error
 
 	// checks if the runtime is ready
 	CheckRuntimeReady() (ready bool)
