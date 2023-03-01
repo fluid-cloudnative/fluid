@@ -304,10 +304,18 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 
 		// set metrics port
 		if _, ok := optionMap["metrics"]; !ok {
-			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", *value.Fuse.MetricsPort)
+			metricsPort := DefaultMetricsPort
+			if value.Fuse.MetricsPort != nil {
+				metricsPort = *value.Fuse.MetricsPort
+			}
+			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
 		if _, ok := workerOptionMap["metrics"]; !ok {
-			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", *value.Worker.MetricsPort)
+			metricsPort := DefaultMetricsPort
+			if value.Fuse.MetricsPort != nil {
+				metricsPort = *value.Worker.MetricsPort
+			}
+			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
 		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
 		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}

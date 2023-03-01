@@ -285,22 +285,23 @@ func ParseSubPathFromMountPoint(mountPoint string) (string, error) {
 	return jPath[1], nil
 }
 
-func GetMetricsPort(options map[string]string) int {
+func GetMetricsPort(options map[string]string) (int, error) {
 	port := int64(9567)
 	if options == nil {
-		return int(port)
+		return int(port), nil
 	}
 
 	for k, v := range options {
 		if k == "metrics" {
 			re := regexp.MustCompile(`.*:([0-9]{1,6})`)
 			match := re.FindStringSubmatch(v)
-			if len(match) > 0 {
-				port, _ = strconv.ParseInt(match[1], 10, 32)
-				break
+			if len(match) == 0 {
+				return DefaultMetricsPort, fmt.Errorf("invalid metrics port: %s", v)
 			}
+			port, _ = strconv.ParseInt(match[1], 10, 32)
+			break
 		}
 	}
 
-	return int(port)
+	return int(port), nil
 }

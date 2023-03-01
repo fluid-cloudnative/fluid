@@ -966,3 +966,66 @@ func TestJuiceFSEngine_GetEdition(t *testing.T) {
 		})
 	}
 }
+
+func TestGetMetricsPort(t *testing.T) {
+	type args struct {
+		options map[string]string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				options: map[string]string{
+					"metrics": "0.0.0.0:9567",
+				},
+			},
+			want:    9567,
+			wantErr: false,
+		},
+		{
+			name: "test-default",
+			args: args{
+				options: map[string]string{},
+			},
+			want:    9567,
+			wantErr: false,
+		},
+		{
+			name: "test-wrong1",
+			args: args{
+				options: map[string]string{
+					"metrics": "0.0.0.0:test",
+				},
+			},
+			want:    9567,
+			wantErr: true,
+		},
+		{
+			name: "test-wrong2",
+			args: args{
+				options: map[string]string{
+					"metrics": "0.0.0.0",
+				},
+			},
+			want:    9567,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetMetricsPort(tt.args.options)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetMetricsPort() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetMetricsPort() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

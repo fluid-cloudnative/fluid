@@ -164,7 +164,10 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 		// enterprise edition do not need metrics port
 		return nil
 	}
-	fuseMetricsPort := GetMetricsPort(dataset.Spec.Mounts[0].Options)
+	fuseMetricsPort, err := GetMetricsPort(dataset.Spec.Mounts[0].Options)
+	if err != nil {
+		return err
+	}
 	workerMetricsPort := DefaultMetricsPort
 	if runtime.Spec.Worker.Options == nil {
 		workerMetricsPort = fuseMetricsPort

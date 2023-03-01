@@ -12,11 +12,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -33,6 +34,7 @@ user: 0
 group: 0
 fsGroup: 0
 fuse:
+  metricsPort: 14001
   prepare:
     subPath: /dir1
     name: pics
@@ -52,8 +54,11 @@ fuse:
   statCmd: stat -c %i /runtime-mnt/juicefs/fluid/test-dataset/juicefs-fuse
   enabled: true
   criticalPod: true
+  hostNetwork: true
 worker:
+  metricsPort: 14000
   cacheDir: /tmp/jfs-cache
+  hostNetwork: true
 placement: Exclusive
 
 Events:  <none>
