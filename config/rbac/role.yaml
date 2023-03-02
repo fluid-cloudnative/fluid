@@ -1,3 +1,4 @@
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -41,6 +42,32 @@ rules:
   - data.fluid.io
   resources:
   - datasets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datatables
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datatables/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datatables/status
   verbs:
   - get
   - patch

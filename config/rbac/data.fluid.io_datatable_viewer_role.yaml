@@ -1,0 +1,27 @@
+# permissions for end users to view datatables.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: datatable-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: fluid
+    app.kubernetes.io/part-of: fluid
+    app.kubernetes.io/managed-by: kustomize
+  name: datatable-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datatables
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - datatables/status
+  verbs:
+  - get

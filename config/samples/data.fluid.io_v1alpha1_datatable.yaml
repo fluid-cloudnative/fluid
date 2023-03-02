@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataTable
+metadata:
+  labels:
+    app.kubernetes.io/name: datatable
+    app.kubernetes.io/instance: datatable-sample
+    app.kubernetes.io/part-of: fluid
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: fluid
+  name: datatable-sample
+spec:
+  # TODO(user): Add fields here

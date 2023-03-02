@@ -1,0 +1,139 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: datatables.data.fluid.io
+spec:
+  group: data.fluid.io
+  names:
+    kind: DataTable
+    listKind: DataTableList
+    plural: datatables
+    singular: datatable
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: DataTable is the Schema for the datatables API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DataTableSpec defines the desired state of DataTable
+          properties:
+            schemas:
+              description: Indicates the table data to be cached
+              items:
+                description: Schema defines the table data to be cached in a schema
+                properties:
+                  schemaName:
+                    description: DataBase Name
+                    type: string
+                  tables:
+                    description: Indicates the table to be cached
+                    items:
+                      description: Schema defines the table data to be cached in a
+                        table
+                      properties:
+                        columnName:
+                          description: Column name for this table
+                          items:
+                            type: string
+                          type: array
+                        partitionColumn:
+                          description: Partition infos for the partition
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        tableName:
+                          description: Table Name
+                          type: string
+                      required:
+                      - tableName
+                      type: object
+                    type: array
+                required:
+                - schemaName
+                type: object
+              type: array
+            url:
+              description: Hive URL
+              type: string
+          type: object
+        status:
+          description: DataTableStatus defines the observed state of DataTable
+          properties:
+            mounts:
+              description: the data of mount points have been mounted
+              items:
+                description: Schema defines the table data to be cached in a schema
+                properties:
+                  schemaName:
+                    description: DataBase Name
+                    type: string
+                  tables:
+                    description: Indicates the table to be cached
+                    items:
+                      description: Schema defines the table data to be cached in a
+                        table
+                      properties:
+                        columnName:
+                          description: Column name for this table
+                          items:
+                            type: string
+                          type: array
+                        partitionColumn:
+                          description: Partition infos for the partition
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        tableName:
+                          description: Table Name
+                          type: string
+                      required:
+                      - tableName
+                      type: object
+                    type: array
+                required:
+                - schemaName
+                type: object
+              type: array
+            phase:
+              description: 'DataTable Phase. One of the three phases: `Bound`, `NotBound`
+                and `Failed`'
+              type: string
+            ufsTotal:
+              description: Total in GB of data in the cluster
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
