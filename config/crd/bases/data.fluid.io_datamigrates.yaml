@@ -9,9 +9,13 @@ metadata:
 spec:
   group: data.fluid.io
   names:
+    categories:
+    - fluid
     kind: DataMigrate
     listKind: DataMigrateList
     plural: datamigrates
+    shortNames:
+    - migrate
     singular: datamigrate
   scope: Namespaced
   versions:
