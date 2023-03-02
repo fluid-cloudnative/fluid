@@ -17,6 +17,9 @@ package datatable
 
 import (
 	"context"
+	"fmt"
+	"github.com/dazheng/gohive"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/hive"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -36,9 +39,12 @@ const (
 	// finalizer for datable
 	DataTableFinalizerName = "datatable-controller-finalizer"
 	// common name
-	CommonName   = "datatable-common"
-	ResyncPeriod = time.Duration(5 * time.Second)
+	CommonName    = "datatable-common"
+	ResyncPeriod  = time.Duration(5 * time.Second)
+	FinalizerName = "fluid-datatable-controller-finalizer"
 )
+
+var MasterIP string
 
 // DataTableReconciler reconciles a DataTable object
 type DataTableReconciler struct {
@@ -83,9 +89,13 @@ func (r *DataTableReconciler) Reconcile(context context.Context, req ctrl.Reques
 
 	if err := r.Get(ctx, req.NamespacedName, &ctx.Datatable); err != nil {
 		// can not get the datatable obj
-		// TODO: err handle
-		ctx.Log.Error(err, "Fail to get the datatable", req)
-		return utils.RequeueIfError(err)
+		if utils.IgnoreNotFound(err) != nil {
+			ctx.Log.Error(err, "Fail to get the datatable", req)
+			return utils.RequeueIfError(err)
+		} else {
+			ctx.Log.V(1).Info("Fail to get the datatable")
+			return ctrl.Result{}, nil
+		}
 	} else {
 		return r.reconcileDataTable(ctx)
 	}
@@ -93,8 +103,9 @@ func (r *DataTableReconciler) Reconcile(context context.Context, req ctrl.Reques
 
 func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (result ctrl.Result, err error) {
 
-	ip, err := datatable.GetOrCreateAlluxio(r.Client, CommonName, ctx.Datatable.Namespace)
-	if err != nil || len(ip) == 0 {
+	// 0. create dataset and alluxio runtime if they do not exist, or get the master ip
+	MasterIP, err = datatable.GetOrCreateAlluxio(r.Client, CommonName, ctx.Datatable.Namespace)
+	if err != nil || len(MasterIP) == 0 {
 		if err != nil {
 			ctx.Log.Error(err, "GetOrCreateAlluxio error")
 		} else {
@@ -103,7 +114,61 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
 
+	// 1. create the hive client
+	host := ctx.Datatable.Spec.Url
+	conn, err := hive.CreateHiveClient(host)
+	if err != nil {
+		ctx.Log.Error(err, "Fail to create the hive client")
+		return utils.RequeueIfError(err)
+	}
+	fmt.Println("create the hive client")
+
+	// 2. delete this datatable if it is mark the deletiontimestamp
+	if utils.HasDeletionTimestamp(ctx.Datatable.ObjectMeta) {
+		return r.ReconcileDatatableDeletion(ctx, conn)
+	}
+
+	// 3. add finalizer if it does not have
+	if !utils.ContainsString(ctx.Datatable.ObjectMeta.GetFinalizers(), FinalizerName) {
+		conn.Close()
+		return r.AddFinalizerAndRequeue(ctx)
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func (r *DataTableReconciler) ReconcileDatatableDeletion(ctx reconcileRequestContext, conn *gohive.Connection) (ctrl.Result, error) {
+	fmt.Println("delete")
+	datatable := ctx.Datatable
+	if err := hive.ChangeSchemaURLForRecover(r.Client, datatable, conn); err != nil {
+		r.Log.Error(err, "Fail to recover the table location")
+		return utils.RequeueIfError(err)
+	}
+	if !datatable.ObjectMeta.GetDeletionTimestamp().IsZero() {
+		datatable.ObjectMeta.Finalizers = utils.RemoveString(datatable.ObjectMeta.GetFinalizers(), FinalizerName)
+
+		if err := r.Update(ctx, &datatable); err != nil {
+			r.Log.Error(err, "Fail to update the datatable")
+			utils.RequeueIfError(err)
+		}
+
+		r.Log.V(1).Info("Clean the finalizers", datatable)
+	}
+	conn.Close()
+	fmt.Println("delete over")
+	return ctrl.Result{}, nil
+}
+
+func (r *DataTableReconciler) AddFinalizerAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
+	fmt.Println("add finalizer")
+	prevGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
+	ctx.Datatable.ObjectMeta.Finalizers = append(ctx.Datatable.ObjectMeta.Finalizers, FinalizerName)
+	if err := r.Update(ctx, &ctx.Datatable); err != nil {
+		ctx.Log.Error(err, "Fail to add the finalizer")
+		return utils.RequeueIfError(err)
+	}
+	newGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
+	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, newGeneration)
 }
 
 // SetupWithManager sets up the controller with the Manager.
