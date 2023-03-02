@@ -1,6 +1,9 @@
 # cloud.google.com/go v0.81.0
 ## explicit; go 1.11
 cloud.google.com/go/compute/metadata
+# git.apache.org/thrift.git v0.12.0
+## explicit
+git.apache.org/thrift.git/lib/go/thrift
 # github.com/PuerkitoBio/purell v1.1.1
 ## explicit
 github.com/PuerkitoBio/purell
@@ -25,6 +28,10 @@ github.com/container-storage-interface/spec/lib/go/csi
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dazheng/gohive v0.0.0-20190904024313-b1810177c8f2
+## explicit; go 1.13
+github.com/dazheng/gohive
+github.com/dazheng/gohive/inf
 # github.com/docker/go-units v0.4.0
 ## explicit
 github.com/docker/go-units

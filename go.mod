@@ -90,6 +90,8 @@ require (
 )
 
 require (
+	git.apache.org/thrift.git v0.12.0 // indirect
+	github.com/dazheng/gohive v0.0.0-20190904024313-b1810177c8f2 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 )
