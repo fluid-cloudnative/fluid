@@ -103,11 +103,14 @@ type ExternalStorage struct {
 	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=migrate
+// +genclient
 
 // DataMigrate is the Schema for the datamigrates API
 type DataMigrate struct {
@@ -118,7 +121,8 @@ type DataMigrate struct {
 	Status OperationStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // DataMigrateList contains a list of DataMigrate
 type DataMigrateList struct {
