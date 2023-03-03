@@ -211,7 +211,12 @@ func TestShutdown(t *testing.T) {
 			return nil
 		})
 
+		destroyMasterPatches := ApplyPrivateMethod(engine, "destroyMaster", func() error {
+			return nil
+		})
+
 		func() {
+			defer destroyMasterPatches.Reset()
 			defer invokeCleanCachePatches.Reset()
 			defer queryCacheStatusPatches.Reset()
 			err := engine.Shutdown()
