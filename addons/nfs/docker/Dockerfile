@@ -1,10 +1,23 @@
-FROM alpine:3.17
+# Build environment
+FROM ubuntu:jammy as BUILD
+RUN apt update && \
+    apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
 
-RUN apk add python3 bash nfs-utils
 
-ADD fluid_config_init.py /
+COPY ./ /src
+WORKDIR /src
+RUN ./setup.sh && \
+    ./configure && \
+    make
+
+# Production image
+FROM ubuntu:jammy
+RUN apt update && \
+    apt install --yes libnfs13 libfuse2 fuse python3 bash && \
+    apt clean autoclean && \
+    apt autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
+ADD ./fluid_config_init.py /
 ADD entrypoint.sh /usr/local/bin
-
-RUN chmod u+x /usr/local/bin/entrypoint.sh
-
+COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
 CMD ["/usr/local/bin/entrypoint.sh"]
