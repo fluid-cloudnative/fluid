@@ -41,19 +41,17 @@ sleep inf
 """
 
 obj = json.loads(rawStr[0])
-pvAttrs = obj['persistentVolumeAttrs']['cfs-pvc-static']['volumeAttributes']
+volAttrs = obj['mounts'][0]
 
-print("pvAttrs", pvAttrs)
+print("pvAttrs", volAttrs)
 
 fuse = {}
 fuse["mountPoint"] = obj["targetPath"]
-fuse["volName"] = pvAttrs["volName"]
-fuse["owner"] = pvAttrs["owner"]
-fuse["masterAddr"] = pvAttrs["masterAddr"]
-fuse["logDir"] = pvAttrs["logDir"]
-fuse["logLevel"] = pvAttrs["logLevel"]
-fuse["accessKey"] = pvAttrs["accessKey"]
-fuse["secretKey"] = pvAttrs["secretKey"]
+fuse["volName"] = volAttrs["name"]
+fuse["masterAddr"] = volAttrs["mountPoint"]
+fuse["owner"] = "root"
+fuse["logDir"] = "/cfs/logs/"
+fuse["logLevel"] = "error"
 
 print("fuse.json: ", fuse)
 

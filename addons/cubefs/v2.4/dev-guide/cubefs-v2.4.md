@@ -14,66 +14,10 @@
 
 Deploy CubeFS v2.4.0 according to [cubefs-helm](https://github.com/cubefs/cubefs-helm).
 
-The CSI driver also should be deployed according [cubefs-csi](https://github.com/cubefs/cubefs-csi).
-
 
 ### Use Remote CubeFS Cluster as backend storage
 
-#### Create PV
-```shell
-$ cat << EOF > pv-static.yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: cfs-pv-static
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 5Gi
-  claimRef:
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    name: cfs-pvc-static
-    namespace: default
-  csi:
-    driver: csi.cubefs.com
-    fsType: ext4
-    volumeAttributes:
-      masterAddr: <master-service.cubefs.svc.cluster.local:17010>
-      owner: <cubefs>
-      volName: <test>
-      logDir: /cfs/logs/
-      logLevel: error
-      accessKey: "xxxxxxxxxxxxxxxx"
-      secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    volumeHandle: pvc-static-vol
-  persistentVolumeReclaimPolicy: Retain
-  volumeMode: Filesystem
-EOF
-
-$ kubectl create -f pv-static.yaml
-```
-> where `masterAddr` is the `<IP: port>` of CubeFS master0, `owner` is the user who create `volName` in CubeFS, and replace corresponding `accessKey, secretKey`。
-
-#### Create PVC
-```shell
-$ cat << EOF > pvc-static.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cfs-pvc-static
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
-EOF
-
-$ kubectl create -f pvc-static.yaml
-```
+Create storage volumes that need to be mounted in the CubeFS cluster.
 
 ## Prepare CubeFS-FUSE Client Image
 
@@ -109,19 +53,17 @@ sleep inf
 """
 
 obj = json.loads(rawStr[0])
-pvAttrs = obj['persistentVolumeAttrs']['cfs-pvc-static']['volumeAttributes']
+volAttrs = obj['mounts'][0]
 
-print("pvAttrs", pvAttrs)
+print("pvAttrs", volAttrs)
 
 fuse = {}
 fuse["mountPoint"] = obj["targetPath"]
-fuse["volName"] = pvAttrs["volName"]
-fuse["owner"] = pvAttrs["owner"]
-fuse["masterAddr"] = pvAttrs["masterAddr"]
-fuse["logDir"] = pvAttrs["logDir"]
-fuse["logLevel"] = pvAttrs["logLevel"]
-fuse["accessKey"] = pvAttrs["accessKey"]
-fuse["secretKey"] = pvAttrs["secretKey"]
+fuse["volName"] = volAttrs["name"]
+fuse["masterAddr"] = volAttrs["mountPoint"]
+fuse["owner"] = "root"
+fuse["logDir"] = "/cfs/logs/"
+fuse["logLevel"] = "error"
 
 print("fuse.json: ", fuse)
 
@@ -132,7 +74,7 @@ with open("mount-cubefs.sh", "w") as f:
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
     f.write(script)
 ```
-The Python script injects the parameters into the shell script in the form of variables after extraction.
+The Python script injects the parameters into the shell script in the form of variables after extraction. The mounted storage volume is created by the root user in the CubeFS cluster, and `logDir` and `logLevel` are default.
 
 2. Mount script
 
@@ -206,9 +148,8 @@ metadata:
   name: cubefs-test
 spec:
   mounts:
-    - mountPoint: pvc://cfs-pvc-static
-      name: cfs-pvc-static
-      path: "/"
+    - mountPoint: <IP:Port>
+      name: fluid-test
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntime
@@ -220,7 +161,7 @@ EOF
 
 $ kubectl apply -f dataset.yaml
 ```
-`mountPoint` is the PVC you want to mount.
+Modify the above `mountPoint` to the address of the Master of CubeFS you want to use. Modify `name` to the name of the storage volume to be mounted
 
 ### Deploy Application
 

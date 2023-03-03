@@ -14,66 +14,10 @@
 
 根据 [cubefs-helm](https://github.com/cubefs/cubefs-helm) 部署 CubeFS v2.4.0 。
 
-根据 [cubefs-csi](https://github.com/cubefs/cubefs-csi) 部署对应 CSI driver。
-
 
 ### 使用CubeFS作为后端存储
 
-#### 创建 PV 资源
-```shell
-$ cat << EOF > pv-static.yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: cfs-pv-static
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 5Gi
-  claimRef:
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    name: cfs-pvc-static
-    namespace: default
-  csi:
-    driver: csi.cubefs.com
-    fsType: ext4
-    volumeAttributes:
-      masterAddr: <master-service.cubefs.svc.cluster.local:17010>
-      owner: <cubefs>
-      volName: <test>
-      logDir: /cfs/logs/
-      logLevel: error
-      accessKey: "xxxxxxxxxxxxxxxx"
-      secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    volumeHandle: pvc-static-vol
-  persistentVolumeReclaimPolicy: Retain
-  volumeMode: Filesystem
-EOF
-
-$ kubectl create -f pv-static.yaml
-```
-> 其中`csi.volumeAttributes`中`masterAddr`为集群中CubeFS master0对应`<IP: port>`, `owner`为CubeFS集群中创建对应`volName`的用户, 且指定该用户`accessKey, secretKey`。
-
-#### 创建 PVC 资源
-```shell
-$ cat << EOF > pvc-static.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cfs-pvc-static
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
-EOF
-
-$ kubectl create -f pvc-static.yaml
-```
+在CubeFS集群内创建需要挂载的存储卷。
 
 ## 准备 CubeFS-FUSE 客户端镜像
 
@@ -109,19 +53,17 @@ sleep inf
 """
 
 obj = json.loads(rawStr[0])
-pvAttrs = obj['persistentVolumeAttrs']['cfs-pvc-static']['volumeAttributes']
+volAttrs = obj['mounts'][0]
 
-print("pvAttrs", pvAttrs)
+print("pvAttrs", volAttrs)
 
 fuse = {}
 fuse["mountPoint"] = obj["targetPath"]
-fuse["volName"] = pvAttrs["volName"]
-fuse["owner"] = pvAttrs["owner"]
-fuse["masterAddr"] = pvAttrs["masterAddr"]
-fuse["logDir"] = pvAttrs["logDir"]
-fuse["logLevel"] = pvAttrs["logLevel"]
-fuse["accessKey"] = pvAttrs["accessKey"]
-fuse["secretKey"] = pvAttrs["secretKey"]
+fuse["volName"] = volAttrs["name"]
+fuse["masterAddr"] = volAttrs["mountPoint"]
+fuse["owner"] = "root"
+fuse["logDir"] = "/cfs/logs/"
+fuse["logLevel"] = "error"
 
 print("fuse.json: ", fuse)
 
@@ -132,7 +74,7 @@ with open("mount-cubefs.sh", "w") as f:
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
     f.write(script)
 ```
-该 Python 脚本，将参数提取后以变量的方式注入 shell 脚本。
+该 Python 脚本，将参数提取后以变量的方式注入 shell 脚本。其中挂载的存储卷为CubeFS集群中root用户创建，`logDir`和`logLevel`为默认。
 
 2. 挂载远程文件系统脚本
 
@@ -207,9 +149,8 @@ metadata:
   name: cubefs-test
 spec:
   mounts:
-    - mountPoint: pvc://cfs-pvc-static
-      name: cfs-pvc-static
-      path: "/"
+    - mountPoint: <IP:Port>
+      name: fluid-test
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntime
@@ -221,7 +162,7 @@ EOF
 
 $ kubectl apply -f dataset.yaml
 ```
-`mountPoint`为您想要挂载的PVC。
+将上述 `mountPoint` 修改为您需要使用的CuebFS集群Master的地址, `name`修改为需要挂载的存储卷的名字。
 
 ### 部署应用
 
