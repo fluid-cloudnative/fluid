@@ -2,7 +2,24 @@ package gomonkey
 
 import "unsafe"
 
-func movX(opc, shift int, val uintptr) []byte {
+func buildJmpDirective(double uintptr) []byte {
+	res := make([]byte, 0, 24)
+	d0d1 := double & 0xFFFF
+	d2d3 := double >> 16 & 0xFFFF
+	d4d5 := double >> 32 & 0xFFFF
+	d6d7 := double >> 48 & 0xFFFF
+
+	res = append(res, movImm(0B10, 0, d0d1)...)          // MOVZ x26, double[16:0]
+	res = append(res, movImm(0B11, 1, d2d3)...)          // MOVK x26, double[32:16]
+	res = append(res, movImm(0B11, 2, d4d5)...)          // MOVK x26, double[48:32]
+	res = append(res, movImm(0B11, 3, d6d7)...)          // MOVK x26, double[64:48]
+	res = append(res, []byte{0x4A, 0x03, 0x40, 0xF9}...) // LDR x10, [x26]
+	res = append(res, []byte{0x40, 0x01, 0x1F, 0xD6}...) // BR x10
+
+	return res
+}
+
+func movImm(opc, shift int, val uintptr) []byte {
 	var m uint32 = 26          // rd
 	m |= uint32(val) << 5      // imm16
 	m |= uint32(shift&3) << 21 // hw
@@ -13,16 +30,5 @@ func movX(opc, shift int, val uintptr) []byte {
 	res := make([]byte, 4)
 	*(*uint32)(unsafe.Pointer(&res[0])) = m
 
-	return res
-}
-
-func buildJmpDirective(targetFuncAddr uintptr) []byte {
-	res := make([]byte, 0, 24)
-	res = append(res, movX(0b10, 0, targetFuncAddr&0xffff)...)     //movz x26, addr[16:]
-	res = append(res, movX(0b11, 1, targetFuncAddr>>16&0xffff)...) //movk x26, addr[32:16]
-	res = append(res, movX(0b11, 2, targetFuncAddr>>32&0xffff)...) //movk x26, addr[48:32]
-	res = append(res, movX(0b11, 3, targetFuncAddr>>48&0xffff)...) //movk x26, addr[64:48]
-	res = append(res, []byte{0x4a, 0x03, 0x40, 0xf9}...)           //ldr  x10, [x26]
-	res = append(res, []byte{0x40, 0x01, 0x1f, 0xd6}...)           //br   x10
 	return res
 }

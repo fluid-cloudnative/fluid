@@ -1,9 +1,9 @@
 package alluxio
 
 import (
-	"strings"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -194,12 +194,42 @@ func TestShutdown(t *testing.T) {
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
 		engine.Helper = ctrl.BuildHelper(engine.runtimeInfo, client, engine.Log)
-		err := engine.Shutdown()
-		if !(err == nil ||
-			strings.Contains(err.Error(), "executable file not found") ||
-			strings.Contains(err.Error(), "invalid configuration") ||
-			strings.Contains(err.Error(), "not found")) {
-			t.Errorf("fail to call the shutdown with the error %v", err)
-		}
+
+		queryCacheStatusPatches := ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+			return cacheStates{
+				cacheCapacity:    "19.07MiB",
+				cached:           "0.00B",
+				cachedPercentage: "0.0%",
+				cacheHitStates: cacheHitStates{
+					bytesReadLocal:  20310917,
+					bytesReadUfsAll: 32243712,
+				},
+			}, nil
+		})
+
+		invokeCleanCachePatches := ApplyPrivateMethod(engine, "invokeCleanCache", func(path string) error {
+			return nil
+		})
+
+		destroyMasterPatches := ApplyPrivateMethod(engine, "destroyMaster", func() error {
+			return nil
+		})
+
+		func() {
+			defer destroyMasterPatches.Reset()
+			defer invokeCleanCachePatches.Reset()
+			defer queryCacheStatusPatches.Reset()
+			err := engine.Shutdown()
+			if err != nil {
+				t.Fatalf("failed to engine.Shutdonw() due to: %v", err)
+			}
+		}()
+
+		// if !(err == nil ||
+		// 	strings.Contains(err.Error(), "executable file not found") ||
+		// 	strings.Contains(err.Error(), "invalid configuration") ||
+		// 	strings.Contains(err.Error(), "not found")) {
+		// 	t.Errorf("fail to call the shutdown with the error %v", err)
+		// }
 	}
 }
