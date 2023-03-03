@@ -1766,13 +1766,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref common.Refere
 							Format:      "",
 						},
 					},
-					"dataMigrateRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DataMigrateRef specifies the running DataMigrate job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataMigrate jobs.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"dataBackupRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs. Deprecated, use OperationRef instead",
