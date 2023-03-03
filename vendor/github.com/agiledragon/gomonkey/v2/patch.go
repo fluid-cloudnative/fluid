@@ -5,10 +5,12 @@ import (
 	"reflect"
 	"syscall"
 	"unsafe"
+
+	"github.com/agiledragon/gomonkey/v2/creflect"
 )
 
 type Patches struct {
-	originals    map[reflect.Value][]byte
+	originals    map[uintptr][]byte
 	values       map[reflect.Value]reflect.Value
 	valueHolders map[reflect.Value]reflect.Value
 }
@@ -23,8 +25,16 @@ func ApplyFunc(target, double interface{}) *Patches {
 	return create().ApplyFunc(target, double)
 }
 
-func ApplyMethod(target reflect.Type, methodName string, double interface{}) *Patches {
+func ApplyMethod(target interface{}, methodName string, double interface{}) *Patches {
 	return create().ApplyMethod(target, methodName, double)
+}
+
+func ApplyMethodFunc(target interface{}, methodName string, doubleFunc interface{}) *Patches {
+	return create().ApplyMethodFunc(target, methodName, doubleFunc)
+}
+
+func ApplyPrivateMethod(target interface{}, methodName string, double interface{}) *Patches {
+	return create().ApplyPrivateMethod(target, methodName, double)
 }
 
 func ApplyGlobalVar(target, double interface{}) *Patches {
@@ -39,7 +49,7 @@ func ApplyFuncSeq(target interface{}, outputs []OutputCell) *Patches {
 	return create().ApplyFuncSeq(target, outputs)
 }
 
-func ApplyMethodSeq(target reflect.Type, methodName string, outputs []OutputCell) *Patches {
+func ApplyMethodSeq(target interface{}, methodName string, outputs []OutputCell) *Patches {
 	return create().ApplyMethodSeq(target, methodName, outputs)
 }
 
@@ -47,8 +57,20 @@ func ApplyFuncVarSeq(target interface{}, outputs []OutputCell) *Patches {
 	return create().ApplyFuncVarSeq(target, outputs)
 }
 
+func ApplyFuncReturn(target interface{}, output ...interface{}) *Patches {
+	return create().ApplyFuncReturn(target, output...)
+}
+
+func ApplyMethodReturn(target interface{}, methodName string, output ...interface{}) *Patches {
+	return create().ApplyMethodReturn(target, methodName, output...)
+}
+
+func ApplyFuncVarReturn(target interface{}, output ...interface{}) *Patches {
+	return create().ApplyFuncVarReturn(target, output...)
+}
+
 func create() *Patches {
-	return &Patches{originals: make(map[reflect.Value][]byte), values: make(map[reflect.Value]reflect.Value), valueHolders: make(map[reflect.Value]reflect.Value)}
+	return &Patches{originals: make(map[uintptr][]byte), values: make(map[reflect.Value]reflect.Value), valueHolders: make(map[reflect.Value]reflect.Value)}
 }
 
 func NewPatches() *Patches {
@@ -61,13 +83,31 @@ func (this *Patches) ApplyFunc(target, double interface{}) *Patches {
 	return this.ApplyCore(t, d)
 }
 
-func (this *Patches) ApplyMethod(target reflect.Type, methodName string, double interface{}) *Patches {
-	m, ok := target.MethodByName(methodName)
+func (this *Patches) ApplyMethod(target interface{}, methodName string, double interface{}) *Patches {
+	m, ok := castRType(target).MethodByName(methodName)
 	if !ok {
 		panic("retrieve method by name failed")
 	}
 	d := reflect.ValueOf(double)
 	return this.ApplyCore(m.Func, d)
+}
+
+func (this *Patches) ApplyMethodFunc(target interface{}, methodName string, doubleFunc interface{}) *Patches {
+	m, ok := castRType(target).MethodByName(methodName)
+	if !ok {
+		panic("retrieve method by name failed")
+	}
+	d := funcToMethod(m.Type, doubleFunc)
+	return this.ApplyCore(m.Func, d)
+}
+
+func (this *Patches) ApplyPrivateMethod(target interface{}, methodName string, double interface{}) *Patches {
+	m, ok := creflect.MethodByName(castRType(target), methodName)
+	if !ok {
+		panic("retrieve method by name failed")
+	}
+	d := reflect.ValueOf(double)
+	return this.ApplyCoreOnlyForPrivateMethod(m, d)
 }
 
 func (this *Patches) ApplyGlobalVar(target, double interface{}) *Patches {
@@ -99,8 +139,8 @@ func (this *Patches) ApplyFuncSeq(target interface{}, outputs []OutputCell) *Pat
 	return this.ApplyCore(t, d)
 }
 
-func (this *Patches) ApplyMethodSeq(target reflect.Type, methodName string, outputs []OutputCell) *Patches {
-	m, ok := target.MethodByName(methodName)
+func (this *Patches) ApplyMethodSeq(target interface{}, methodName string, outputs []OutputCell) *Patches {
+	m, ok := castRType(target).MethodByName(methodName)
 	if !ok {
 		panic("retrieve method by name failed")
 	}
@@ -122,9 +162,43 @@ func (this *Patches) ApplyFuncVarSeq(target interface{}, outputs []OutputCell) *
 	return this.ApplyGlobalVar(target, double)
 }
 
+func (this *Patches) ApplyFuncReturn(target interface{}, returns ...interface{}) *Patches {
+	funcType := reflect.TypeOf(target)
+	t := reflect.ValueOf(target)
+	outputs := []OutputCell{{Values: returns, Times: -1}}
+	d := getDoubleFunc(funcType, outputs)
+	return this.ApplyCore(t, d)
+}
+
+func (this *Patches) ApplyMethodReturn(target interface{}, methodName string, returns ...interface{}) *Patches {
+	m, ok := reflect.TypeOf(target).MethodByName(methodName)
+	if !ok {
+		panic("retrieve method by name failed")
+	}
+
+	outputs := []OutputCell{{Values: returns, Times: -1}}
+	d := getDoubleFunc(m.Type, outputs)
+	return this.ApplyCore(m.Func, d)
+}
+
+func (this *Patches) ApplyFuncVarReturn(target interface{}, returns ...interface{}) *Patches {
+	t := reflect.ValueOf(target)
+	if t.Type().Kind() != reflect.Ptr {
+		panic("target is not a pointer")
+	}
+	if t.Elem().Kind() != reflect.Func {
+		panic("target is not a func")
+	}
+
+	funcType := reflect.TypeOf(target).Elem()
+	outputs := []OutputCell{{Values: returns, Times: -1}}
+	double := getDoubleFunc(funcType, outputs).Interface()
+	return this.ApplyGlobalVar(target, double)
+}
+
 func (this *Patches) Reset() {
 	for target, bytes := range this.originals {
-		modifyBinary(*(*uintptr)(getPointer(target)), bytes)
+		modifyBinary(target, bytes)
 		delete(this.originals, target)
 	}
 
@@ -135,13 +209,25 @@ func (this *Patches) Reset() {
 
 func (this *Patches) ApplyCore(target, double reflect.Value) *Patches {
 	this.check(target, double)
-	if _, ok := this.originals[target]; ok {
-		panic("patch has been existed")
+	assTarget := *(*uintptr)(getPointer(target))
+	original := replace(assTarget, uintptr(getPointer(double)))
+	if _, ok := this.originals[assTarget]; !ok {
+		this.originals[assTarget] = original
 	}
-
 	this.valueHolders[double] = double
-	original := replace(*(*uintptr)(getPointer(target)), uintptr(getPointer(double)))
-	this.originals[target] = original
+	return this
+}
+
+func (this *Patches) ApplyCoreOnlyForPrivateMethod(target unsafe.Pointer, double reflect.Value) *Patches {
+	if double.Kind() != reflect.Func {
+		panic("double is not a func")
+	}
+	assTarget := *(*uintptr)(target)
+	original := replace(assTarget, uintptr(getPointer(double)))
+	if _, ok := this.originals[assTarget]; !ok {
+		this.originals[assTarget] = original
+	}
+	this.valueHolders[double] = double
 	return this
 }
 
@@ -154,7 +240,23 @@ func (this *Patches) check(target, double reflect.Value) {
 		panic("double is not a func")
 	}
 
-	if target.Type() != double.Type() {
+	targetType := target.Type()
+	doubleType := double.Type()
+
+	if targetType.NumIn() < doubleType.NumIn() ||
+		targetType.NumOut() != doubleType.NumOut() ||
+		(targetType.NumIn() == doubleType.NumIn() && targetType.IsVariadic() != doubleType.IsVariadic()) {
+		panic(fmt.Sprintf("target type(%s) and double type(%s) are different", target.Type(), double.Type()))
+	}
+
+	for i, size := 0, doubleType.NumIn(); i < size; i++ {
+		targetIn := targetType.In(i)
+		doubleIn := doubleType.In(i)
+
+		if targetIn.AssignableTo(doubleIn) {
+			continue
+		}
+
 		panic(fmt.Sprintf("target type(%s) and double type(%s) are different", target.Type(), double.Type()))
 	}
 }
@@ -174,8 +276,14 @@ func getDoubleFunc(funcType reflect.Type, outputs []OutputCell) reflect.Value {
 			funcType.NumOut(), len(outputs[0].Values)))
 	}
 
+	needReturn := false
 	slice := make([]Params, 0)
 	for _, output := range outputs {
+		if output.Times == -1 {
+			needReturn = true
+			slice = []Params{output.Values}
+			break
+		}
 		t := 0
 		if output.Times <= 1 {
 			t = 1
@@ -188,9 +296,12 @@ func getDoubleFunc(funcType reflect.Type, outputs []OutputCell) reflect.Value {
 	}
 
 	i := 0
-	len := len(slice)
+	lenOutputs := len(slice)
 	return reflect.MakeFunc(funcType, func(_ []reflect.Value) []reflect.Value {
-		if i < len {
+		if needReturn {
+			return GetResultValues(funcType, slice[0]...)
+		}
+		if i < lenOutputs {
 			i++
 			return GetResultValues(funcType, slice[i-1]...)
 		}
@@ -229,4 +340,26 @@ func entryAddress(p uintptr, l int) []byte {
 
 func pageStart(ptr uintptr) uintptr {
 	return ptr & ^(uintptr(syscall.Getpagesize() - 1))
+}
+
+func funcToMethod(funcType reflect.Type, doubleFunc interface{}) reflect.Value {
+	rf := reflect.TypeOf(doubleFunc)
+	if rf.Kind() != reflect.Func {
+		panic("doubleFunc is not a func")
+	}
+	vf := reflect.ValueOf(doubleFunc)
+	return reflect.MakeFunc(funcType, func(in []reflect.Value) []reflect.Value {
+		if funcType.IsVariadic() {
+			return vf.CallSlice(in[1:])
+		} else {
+			return vf.Call(in[1:])
+		}
+	})
+}
+
+func castRType(val interface{}) reflect.Type {
+	if rTypeVal, ok := val.(reflect.Type); ok {
+		return rTypeVal
+	}
+	return reflect.TypeOf(val)
 }
