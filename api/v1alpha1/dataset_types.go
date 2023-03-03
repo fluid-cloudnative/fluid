@@ -214,10 +214,6 @@ type DatasetStatus struct {
 	// Deprecated, use OperationRef instead
 	DataLoadRef string `json:"dataLoadRef,omitempty"`
 
-	// DataMigrateRef specifies the running DataMigrate job that targets this Dataset.
-	// This is mainly used as a lock to prevent concurrent DataMigrate jobs.
-	DataMigrateRef string `json:"dataMigrateRef,omitempty"`
-
 	// DataBackupRef specifies the running Backup job that targets this Dataset.
 	// This is mainly used as a lock to prevent concurrent DataBackup jobs.
 	// Deprecated, use OperationRef instead

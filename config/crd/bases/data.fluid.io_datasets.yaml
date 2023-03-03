@@ -412,11 +412,6 @@ spec:
                   this Dataset. This is mainly used as a lock to prevent concurrent
                   DataLoad jobs. Deprecated, use OperationRef instead
                 type: string
-              dataMigrateRef:
-                description: DataMigrateRef specifies the running DataMigrate job
-                  that targets this Dataset. This is mainly used as a lock to prevent
-                  concurrent DataMigrate jobs.
-                type: string
               datasetRef:
                 description: DatasetRef specifies the datasets namespaced name mounting
                   this Dataset.

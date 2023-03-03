@@ -182,7 +182,7 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 	}
 
 	// 2. Check if there's any Executing DataMigrate jobs(conflict DataMigrate)
-	conflictDataMigrateRef := targetDataSet.Status.DataMigrateRef
+	conflictDataMigrateRef := targetDataSet.GetLockedNameForOperation(cdatamigrate.DataMigrateLockName)
 	myDataMigrateRef := utils.GetDataMigrateRef(targetDataMigrate.Name, targetDataMigrate.Namespace)
 	if len(conflictDataMigrateRef) != 0 && conflictDataMigrateRef != myDataMigrateRef {
 		log.V(1).Info("Found other DataMigrates that is in Executing phase, will backoff", "other DataMigrate", conflictDataMigrateRef)
@@ -210,7 +210,7 @@ func (r *DataMigrateReconcilerImplement) reconcilePendingDataMigrate(ctx cruntim
 	// the losers have to requeue and go through the whole reconciliation loop.
 	log.Info("No conflicts detected, try to lock the target dataset and update DataSet's status to DataMigrating")
 	datasetToUpdate := targetDataSet.DeepCopy()
-	datasetToUpdate.Status.DataMigrateRef = myDataMigrateRef
+	datasetToUpdate.LockOperation(cdatamigrate.DataMigrateLockName, myDataMigrateRef)
 	datasetToUpdate.Status.Phase = datav1alpha1.DataMigrating
 	if !reflect.DeepEqual(targetDataSet.Status, datasetToUpdate.Status) {
 		if err := r.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
@@ -354,13 +354,13 @@ func (r *DataMigrateReconcilerImplement) reconcileFailedDataMigrate(ctx cruntime
 // We use a key-value pair on the target dataset's status as the lock. To release the lock, we can simply set the value to empty.
 func (r *DataMigrateReconcilerImplement) releaseLockOnTargetDataset(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate, targetDataSet *datav1alpha1.Dataset) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if targetDataSet.Status.DataMigrateRef != utils.GetDataMigrateRef(targetDataMigrate.Name, targetDataMigrate.Namespace) {
-			r.Log.Info("Found DataMigrateRef inconsistent with the reconciling DataMigrate, won't release this lock, ignore it", "DataMigrateRef", targetDataSet.Status.DataMigrateRef)
+		currentRef := targetDataSet.GetLockedNameForOperation(cdatamigrate.DataMigrateLockName)
+		if currentRef != utils.GetDataMigrateRef(targetDataMigrate.Name, targetDataMigrate.Namespace) {
+			r.Log.Info("Found DataMigrateRef inconsistent with the reconciling DataMigrate, won't release this lock, ignore it", "targetDataSet", targetDataSet.Name)
 			return nil
 		}
 		datasetToUpdate := targetDataSet.DeepCopy()
-		datasetToUpdate.Status.DataMigrateRef = ""
-		datasetToUpdate.Status.Phase = datav1alpha1.BoundDatasetPhase
+		datasetToUpdate.ReleaseOperation(cdatamigrate.DataMigrateLockName)
 		if !reflect.DeepEqual(datasetToUpdate.Status, targetDataSet) {
 			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
 				return err
