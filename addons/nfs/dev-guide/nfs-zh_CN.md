@@ -1,7 +1,7 @@
 # NFS 接入 ThinRuntime 的简单示例
 
 ## 前期准备
-首先需要在 K8s 集群能够访问到的机器上部署 [NFS 服务端](https://nfs.sourceforge.net/) 并配置读写权限，并且保证在 K8s 集群的节点上能够访问到该 NFS 服务。
+NFS 接入 ThinRuntime 需要构造 NFS-FUSE 客户端，本实例使用 [该项目](https://github.com/sahlberg/fuse-nfs) 为基础构建 FUSE 镜像。
 
 ## 准备 NFS-FUSE 客户端镜像
 1. 挂载参数解析脚本
@@ -27,19 +27,17 @@ MNT_FROM=$mountPoint
 MNT_TO=$targetPath
 
 
-trap "umount ${MNT_TO}" SIGTERM
+trap "fusermount -u ${MNT_TO}" SIGTERM
 mkdir -p ${MNT_TO}
-mount -t nfs ${MNT_FROM} ${MNT_TO}
+fuse-nfs -n nfs://${MNT_FROM} -m ${MNT_TO}
 sleep inf
 """
 
 obj = json.loads(rawStr)
 
-
 with open("mount-nfs.sh", "w") as f:
     f.write("mountPoint=\"%s\"\n" % obj['mounts'][0]['mountPoint'])
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
-
     f.write(script)
 
 ```
@@ -49,7 +47,7 @@ with open("mount-nfs.sh", "w") as f:
 
 在将参数解析并注入shell脚本后，生成的脚本如下
 ```shell
-mountPoint="xx.xx.xx.xx:/xxx/nfs"
+mountPoint="xx.xx.xx.xx/xxx/nfs"
 targetPath="/runtime-mnt/thin/default/my-storage/thin-fuse"
 
 #!/bin/sh
@@ -58,9 +56,9 @@ MNT_FROM=$mountPoint
 MNT_TO=$targetPath
 
 
-trap "umount ${MNT_TO}" SIGTERM
+trap "fusermount -u ${MNT_TO}" SIGTERM
 mkdir -p ${MNT_TO}
-mount -t nfs ${MNT_FROM} ${MNT_TO}
+fuse-nfs -n nfs://${MNT_FROM} ${MNT_TO}
 
 sleep inf
 ```
@@ -72,12 +70,31 @@ sleep inf
 将参数解析脚本、挂载脚本和相关的库打包入镜像。
 
 ```dockerfile
-FROM alpine
-RUN apk add python3 bash nfs-utils
-ADD ./fluid_config_init.py /
-```
+# Build environment
+FROM ubuntu:jammy as BUILD
+RUN apt update && \
+    apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
 
-除了 Python 脚本外，还需要在基镜像上**安装 python 环境和 nfs-utils NFS 客户端**。
+
+COPY ./ /src
+WORKDIR /src
+RUN ./setup.sh && \
+    ./configure && \
+    make
+
+# Production image
+FROM ubuntu:jammy
+RUN apt update && \
+    apt install --yes libnfs13 libfuse2 fuse python3 bash && \
+    apt clean autoclean && \
+    apt autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
+ADD ./fluid_config_init.py /
+ADD entrypoint.sh /usr/local/bin
+COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
+CMD ["/usr/local/bin/entrypoint.sh"]
+```
+用户需要首先下载 [该项目](https://github.com/sahlberg/fuse-nfs) 到本地，然后将 **Dockerfile 替换为上述示例、并将参数解析脚本 fluid_config_init.py、启动脚本 entrypoint.sh 复制到项目下**。
 
 ## 使用示例
 ### 创建并部署 ThinRuntimeProfile 资源
@@ -95,9 +112,9 @@ spec:
     imageTag: <IMG_TAG>
     imagePullPolicy: IfNotPresent
     command:
-      - sh
+      - /bin/sh
       - -c
-      - "python3 /fluid_config_init.py && chmod u+x /mount-nfs.sh && /mount-nfs.sh"
+      - "chmod +x /usr/local/bin/entrypoint.sh && /usr/local/bin/entrypoint.sh"
 EOF
 
 $ kubectl apply -f profile.yaml
@@ -112,7 +129,7 @@ metadata:
   name: nfs-demo
 spec:
   mounts:
-  - mountPoint: <IP:PATH>
+  - mountPoint: <IP/PATH>
     name: nfs-demo
 ---
 apiVersion: data.fluid.io/v1alpha1
@@ -125,7 +142,7 @@ EOF
 
 $ kubectl apply -f data.yaml
 ```
-将上述 mountPoint 修改为您需要使用的远程 NFS 的地址。
+将上述 mountPoint(HOST_IP/PATH) 修改为您需要使用的远程 NFS 的地址。
 
 ### 部署应用
 ```shell

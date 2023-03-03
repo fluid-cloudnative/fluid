@@ -1,7 +1,7 @@
 # Simple example of NFS access to ThinRuntime
 
 ## Prerequisites
-First, deploy [NFS Server](https://nfs.sourceforge.net/) on the machine that K8s cluster can access. And configure read and write permissions, and ensure that the NFS service can be accessed on the K8s cluster node.
+NFS access to ThinRuntime needs to construct an NFS-FUSE client. This demo uses [this item](https://github.com/sahlberg/fuse-nfs) to build a FUSE image fo.
 
 ## Prepare NFS-FUSE Client Image
 1. Parameter Resolution Script
@@ -27,9 +27,9 @@ MNT_FROM=$mountPoint
 MNT_TO=$targetPath
 
 
-trap "umount ${MNT_TO}" SIGTERM
+trap "fusermount -u ${MNT_TO}" SIGTERM
 mkdir -p ${MNT_TO}
-mount -t nfs ${MNT_FROM} ${MNT_TO}
+fuse-nfs -n nfs://${MNT_FROM} -m ${MNT_TO}
 sleep inf
 """
 
@@ -49,7 +49,7 @@ The Python script injects the parameters into the shell script in the form of va
 
 After the parameters are parsed and injected into the shell script, the generated script is as follows
 ```shell
-mountPoint="xx.xx.xx.xx:/xxx/nfs"
+mountPoint="xx.xx.xx.xx/xxx/nfs"
 targetPath="/runtime-mnt/thin/default/my-storage/thin-fuse"
 
 #!/bin/sh
@@ -58,9 +58,9 @@ MNT_FROM=$mountPoint
 MNT_TO=$targetPath
 
 
-trap "umount ${MNT_TO}" SIGTERM
+trap "fusermount -u ${MNT_TO}" SIGTERM
 mkdir -p ${MNT_TO}
-mount -t nfs ${MNT_FROM} ${MNT_TO}
+fuse-nfs -n nfs://${MNT_FROM} ${MNT_TO}
 
 sleep inf
 ```
@@ -73,11 +73,32 @@ The shell script creates the mounted folder and mounts the remote file system to
 Package parameter resolution scripts, mount scripts, and related libraries into the image.
 
 ```dockerfile
-FROM alpine
-RUN apk add python3 bash nfs-utils
+# Build environment
+FROM ubuntu:jammy as BUILD
+RUN apt update && \
+    apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
+
+
+COPY ./ /src
+WORKDIR /src
+RUN ./setup.sh && \
+    ./configure && \
+    make
+
+# Production image
+FROM ubuntu:jammy
+RUN apt update && \
+    apt install --yes libnfs13 libfuse2 fuse python3 bash && \
+    apt clean autoclean && \
+    apt autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
 ADD ./fluid_config_init.py /
+ADD entrypoint.sh /usr/local/bin
+COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
+CMD ["/usr/local/bin/entrypoint.sh"]
 ```
 In addition to Python scripts, you also need to **install the python environment and nfs utils NFS client** on the base image.
+Users need to download [this item](https://github.com/sahlberg/fuse-nfs) to the local, and then replace **Dockerfile with the above example, and copy the parameter resolution script fluid_config_init.py and the startup script entrypoint.sh to the project**.
 
 ## Demo
 ### Create and Deploy ThinRuntimeProfile Resource
@@ -112,7 +133,7 @@ metadata:
   name: nfs-demo
 spec:
   mounts:
-  - mountPoint: <IP:PATH>
+  - mountPoint: <IP/PATH>
     name: nfs-demo
 ---
 apiVersion: data.fluid.io/v1alpha1
@@ -125,7 +146,7 @@ EOF
 
 $ kubectl apply -f data.yaml
 ```
-Modify the above mountPoint to the address of the remote NFS you want to use.
+Modify the above mountPoint(HOST_IP/PATH) to the address of the remote NFS you want to use.
 
 ### Deploy Application
 ```shell
