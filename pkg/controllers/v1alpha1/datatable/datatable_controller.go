@@ -17,7 +17,6 @@ package datatable
 
 import (
 	"context"
-	"fmt"
 	"github.com/dazheng/gohive"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/hive"
 	"time"
@@ -36,15 +35,13 @@ import (
 )
 
 const (
-	// finalizer for datable
-	DataTableFinalizerName = "datatable-controller-finalizer"
-	// common name
-	CommonName    = "datatable-common"
-	ResyncPeriod  = time.Duration(5 * time.Second)
-	FinalizerName = "fluid-datatable-controller-finalizer"
+	DataTableFinalizerName = "datatable-controller-finalizer"       // finalizer for datable
+	CommonName             = "datatable-common"                     // the name of dataset and runtime
+	ResyncPeriod           = time.Duration(5 * time.Second)         // requeue period
+	FinalizerName          = "fluid-datatable-controller-finalizer" // finalizer name
 )
 
-var MasterIP string
+var MasterIP string // alluxio master IP
 
 // DataTableReconciler reconciles a DataTable object
 type DataTableReconciler struct {
@@ -113,6 +110,7 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 		}
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
+	r.Log.V(1).Info("STEP 0: Get or Create alluxio successfully and get the master IP")
 
 	// 1. create the hive client
 	host := ctx.Datatable.Spec.Url
@@ -121,7 +119,8 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 		ctx.Log.Error(err, "Fail to create the hive client")
 		return utils.RequeueIfError(err)
 	}
-	fmt.Println("create the hive client")
+	defer conn.Close()
+	r.Log.V(1).Info("STEP 1: Create the hive client successfully")
 
 	// 2. delete this datatable if it is mark the deletiontimestamp
 	if utils.HasDeletionTimestamp(ctx.Datatable.ObjectMeta) {
@@ -130,15 +129,14 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 
 	// 3. add finalizer if it does not have
 	if !utils.ContainsString(ctx.Datatable.ObjectMeta.GetFinalizers(), FinalizerName) {
-		conn.Close()
 		return r.AddFinalizerAndRequeue(ctx)
 	}
 
 	return ctrl.Result{}, nil
 }
 
+// ReconcileDatatableDeletion recover the table location and remove the finalizer
 func (r *DataTableReconciler) ReconcileDatatableDeletion(ctx reconcileRequestContext, conn *gohive.Connection) (ctrl.Result, error) {
-	fmt.Println("delete")
 	datatable := ctx.Datatable
 	if err := hive.ChangeSchemaURLForRecover(r.Client, datatable, conn); err != nil {
 		r.Log.Error(err, "Fail to recover the table location")
@@ -154,13 +152,15 @@ func (r *DataTableReconciler) ReconcileDatatableDeletion(ctx reconcileRequestCon
 
 		r.Log.V(1).Info("Clean the finalizers", datatable)
 	}
-	conn.Close()
-	fmt.Println("delete over")
+
+	r.Log.V(1).Info("STEP 3: Delete the datatable successfully")
+
 	return ctrl.Result{}, nil
 }
 
+// AddFinalizerAndRequeue add the finalizer and requeue
 func (r *DataTableReconciler) AddFinalizerAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
-	fmt.Println("add finalizer")
+
 	prevGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
 	ctx.Datatable.ObjectMeta.Finalizers = append(ctx.Datatable.ObjectMeta.Finalizers, FinalizerName)
 	if err := r.Update(ctx, &ctx.Datatable); err != nil {
@@ -168,6 +168,9 @@ func (r *DataTableReconciler) AddFinalizerAndRequeue(ctx reconcileRequestContext
 		return utils.RequeueIfError(err)
 	}
 	newGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
+
+	r.Log.V(1).Info("STEP 3: Add the finalizer successfully")
+
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, newGeneration)
 }
 
