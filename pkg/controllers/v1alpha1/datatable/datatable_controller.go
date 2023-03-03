@@ -110,6 +110,7 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 		}
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
+	ctx.Datatable.Status.CacheMasterIP = MasterIP // TODO: Update the status
 	r.Log.V(1).Info("STEP 0: Get or Create alluxio successfully and get the master IP")
 
 	// 1. create the hive client
