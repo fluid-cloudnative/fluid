@@ -79,7 +79,7 @@ RUN apt update && \
     apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
 
 
-COPY ./ /src
+COPY ./fuse-nfs-master /src
 WORKDIR /src
 RUN ./setup.sh && \
     ./configure && \
@@ -93,12 +93,17 @@ RUN apt update && \
     apt autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 ADD ./fluid_config_init.py /
-ADD entrypoint.sh /usr/local/bin
+ADD ./entrypoint.sh /usr/local/bin
 COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
 CMD ["/usr/local/bin/entrypoint.sh"]
 ```
 In addition to Python scripts, you also need to **install the python environment and nfs utils NFS client** on the base image.
-Users need to download [this item](https://github.com/sahlberg/fuse-nfs) to the local, and then replace **Dockerfile with the above example, and copy the parameter resolution script fluid_config_init.py and the startup script entrypoint.sh to the project**.
+Users need to download [this item](https://github.com/sahlberg/fuse-nfs) to the local **<PATH>/fuse-nfs-master and then copy Dockerfile with the above example, the parameter resolution script fluid_config_init.py and the startup script entrypoint.sh to the parent directory**.
+
+```shell
+$ ls                                      
+Dockerfile  entrypoint.sh  fluid_config_init.py  fuse-nfs-master
+```
 
 ## Demo
 ### Create and Deploy ThinRuntimeProfile Resource

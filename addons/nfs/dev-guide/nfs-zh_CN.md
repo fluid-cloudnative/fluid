@@ -76,7 +76,7 @@ RUN apt update && \
     apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
 
 
-COPY ./ /src
+COPY ./fuse-nfs-master /src
 WORKDIR /src
 RUN ./setup.sh && \
     ./configure && \
@@ -90,11 +90,15 @@ RUN apt update && \
     apt autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 ADD ./fluid_config_init.py /
-ADD entrypoint.sh /usr/local/bin
+ADD ./entrypoint.sh /usr/local/bin
 COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
 CMD ["/usr/local/bin/entrypoint.sh"]
 ```
-用户需要首先下载 [该项目](https://github.com/sahlberg/fuse-nfs) 到本地，然后将 **Dockerfile 替换为上述示例、并将参数解析脚本 fluid_config_init.py、启动脚本 entrypoint.sh 复制到项目下**。
+用户需要首先下载 [该项目](https://github.com/sahlberg/fuse-nfs) 到本地并解压到 **<PATH>/fuse-nfs-master，然后将上述 Dockerfile 、参数解析脚本 fluid_config_init.py和启动脚本 entrypoint.sh 复制到项目下父目录下**。
+```shell
+$ ls                                      
+Dockerfile  entrypoint.sh  fluid_config_init.py  fuse-nfs-master
+```
 
 ## 使用示例
 ### 创建并部署 ThinRuntimeProfile 资源
