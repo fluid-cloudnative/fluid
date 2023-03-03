@@ -1,4 +1,4 @@
-#  Copyright 2022 The Fluid Authors.
+#  Copyright 2023 The Fluid Authors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ MNT_FROM=$mountPoint
 MNT_TO=$targetPath
 
 
-trap "umount ${MNT_TO}" SIGTERM
+trap "fusermount -u ${MNT_TO}" SIGTERM
 mkdir -p ${MNT_TO}
-mount -t nfs ${MNT_FROM} ${MNT_TO}
+fuse-nfs -n nfs://${MNT_FROM} -m ${MNT_TO}
 sleep inf
 """
 
