@@ -48,5 +48,6 @@ func GetDataLoadJobName(releaseName string) string {
 // GetDataLoadRef returns the identity of the DataLoad by combining its namespace and name.
 // The identity is used for identifying current lock holder on the target dataset.
 func GetDataLoadRef(name, namespace string) string {
-	return fmt.Sprintf("%s-%s", namespace, name)
+	// namespace may contain '-', use '/' as separator
+	return fmt.Sprintf("%s/%s", namespace, name)
 }

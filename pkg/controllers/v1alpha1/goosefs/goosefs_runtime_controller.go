@@ -101,7 +101,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 	return r.ReconcileInternal(ctx)
 }
 
-//SetupWithManager setups the manager with RuntimeReconciler
+// SetupWithManager setups the manager with RuntimeReconciler
 func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).

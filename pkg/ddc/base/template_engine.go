@@ -21,9 +21,10 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +86,7 @@ func (t *TemplateEngine) ID() string {
 	return t.Id
 }
 
-//Shutdown and clean up the engine
+// Shutdown and clean up the engine
 func (t *TemplateEngine) Shutdown() error {
 	return t.Implement.Shutdown()
 }

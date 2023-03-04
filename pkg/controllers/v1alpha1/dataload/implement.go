@@ -83,7 +83,7 @@ func (r *DataLoadReconcilerImplement) ReconcileDataLoadDeletion(ctx cruntime.Rec
 
 	// 4. remove finalizer
 	if utils.HasDeletionTimestamp(targetDataload.ObjectMeta) {
-		targetDataload.ObjectMeta.Finalizers = utils.RemoveString(targetDataload.ObjectMeta.Finalizers, cdataload.DATALOAD_FINALIZER)
+		targetDataload.ObjectMeta.Finalizers = utils.RemoveString(targetDataload.ObjectMeta.Finalizers, cdataload.DataloadFinalizer)
 		if err := r.Update(ctx, &targetDataload); err != nil {
 			log.Error(err, "failed to remove finalizer")
 			return utils.RequeueIfError(err)
@@ -189,7 +189,7 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	log.V(1).Info("get target dataset", "targetDataset", targetDataset)
 
 	// 3. Check if there's any Executing DataLoad jobs(conflict DataLoad)
-	conflictDataLoadRef := targetDataset.Status.DataLoadRef
+	conflictDataLoadRef := targetDataset.GetLockedNameForOperation(cdataload.DataLoadLockName)
 	myDataLoadRef := utils.GetDataLoadRef(targetDataload.Name, targetDataload.Namespace)
 	if len(conflictDataLoadRef) != 0 && conflictDataLoadRef != myDataLoadRef {
 		log.V(1).Info("Found other DataLoads that is in Executing phase, will backoff", "other DataLoad", conflictDataLoadRef)
@@ -216,7 +216,8 @@ func (r *DataLoadReconcilerImplement) reconcilePendingDataLoad(ctx cruntime.Reco
 	// the losers have to requeue and go through the whole reconciliation loop.
 	log.Info("No conflicts detected, try to lock the target dataset")
 	datasetToUpdate := targetDataset.DeepCopy()
-	datasetToUpdate.Status.DataLoadRef = myDataLoadRef
+	datasetToUpdate.LockOperation(cdataload.DataLoadLockName, myDataLoadRef)
+
 	if !reflect.DeepEqual(targetDataset.Status, datasetToUpdate.Status) {
 		if err = r.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 			log.V(1).Info("fail to get target dataset's lock, will requeue")
@@ -367,12 +368,14 @@ func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx cruntime.Re
 			// other error
 			return err
 		}
-		if dataset.Status.DataLoadRef != utils.GetDataLoadRef(targetDataload.Name, targetDataload.Namespace) {
-			log.Info("Found DataLoadRef inconsistent with the reconciling DataLoad, won't release this lock, ignore it", "DataLoadRef", dataset.Status.DataLoadRef)
+
+		currentRef := dataset.GetLockedNameForOperation(cdataload.DataLoadLockName)
+		if currentRef != utils.GetDataLoadRef(targetDataload.Name, targetDataload.Namespace) {
+			log.Info("Found DataLoadRef inconsistent with the reconciling DataLoad, won't release this lock, ignore it", "DataLoadRef", currentRef)
 			return nil
 		}
 		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.Status.DataLoadRef = ""
+		datasetToUpdate.ReleaseOperation(cdataload.DataLoadLockName)
 		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
 			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
 				return err

@@ -59,17 +59,17 @@ type Configs struct {
 }
 
 type Worker struct {
-	Privileged      bool                   `json:"privileged"`
-	Image           string                 `json:"image,omitempty"`
-	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
-	ImageTag        string                 `json:"imageTag,omitempty"`
-	ImagePullPolicy string                 `json:"imagePullPolicy,omitempty"`
-	Resources       common.Resources       `json:"resources,omitempty"`
-	Envs            []corev1.EnvVar        `json:"envs,omitempty"`
-	Ports           []corev1.ContainerPort `json:"ports,omitempty"`
-	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
-	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
-	HostNetwork     bool                   `json:"hostNetwork,omitempty"`
+	Privileged      bool                 `json:"privileged"`
+	Image           string               `json:"image,omitempty"`
+	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
+	ImageTag        string               `json:"imageTag,omitempty"`
+	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
+	Resources       common.Resources     `json:"resources,omitempty"`
+	Envs            []corev1.EnvVar      `json:"envs,omitempty"`
+	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
+	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
+	MetricsPort     *int                 `json:"metricsPort,omitempty"`
 
 	MountPath   string            `json:"mountPath,omitempty"`
 	StatCmd     string            `json:"statCmd,omitempty"`
@@ -91,6 +91,7 @@ type Fuse struct {
 	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
 	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
+	MetricsPort     *int                 `json:"metricsPort,omitempty"`
 
 	SubPath       string            `json:"subPath,omitempty"`
 	MountPath     string            `json:"mountPath,omitempty"`

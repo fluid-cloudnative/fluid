@@ -298,8 +298,8 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 
 // ShouldRemoveProtectionFinalizer check if should remove pvc-protection finalizer by force.
 // Force-removal happens only when it matches both the two following conditions:
-//   1. PVC's in Terminating state for over than 30 seconds
-//   2. PVC's not actively used by any pods
+//  1. PVC's in Terminating state for over than 30 seconds
+//  2. PVC's not actively used by any pods
 func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,

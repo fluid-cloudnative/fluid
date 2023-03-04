@@ -120,6 +120,62 @@ def create_dataset_and_runtime(dataset_name):
     print("Create juicefs runtime {}".format(dataset_name))
 
 
+def create_datamigrate(datamigrate_name, dataset_name):
+    api = client.CustomObjectsApi()
+    my_datamigrate = {
+        "apiVersion": "data.fluid.io/v1alpha1",
+        "kind": "DataMigrate",
+        "metadata": {"name": datamigrate_name, "namespace": APP_NAMESPACE},
+        "spec": {
+            "image": "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse",
+            "imageTag": "nightly",
+            "from": {
+                "dataset": {"name": dataset_name, "namespace": APP_NAMESPACE}
+            },
+            "to": {"externalStorage": {
+                "uri": "minio://%s:9000/minio/test/" % NODE_IP,
+                "encryptOptions": [
+                    {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "accesskey"}}},
+                    {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secretkey"}}},
+                ]
+            }}
+        },
+    }
+
+    api.create_namespaced_custom_object(
+        group="data.fluid.io",
+        version="v1alpha1",
+        namespace="default",
+        plural="datamigrates",
+        body=my_datamigrate,
+    )
+    print("Create datamigrate {}".format(datamigrate_name))
+
+
+def check_datamigrate_complete(datamigrate_name):
+    api = client.CustomObjectsApi()
+
+    count = 0
+    while count < 300:
+        resource = api.get_namespaced_custom_object(
+            group="data.fluid.io",
+            version="v1alpha1",
+            name=datamigrate_name,
+            namespace=APP_NAMESPACE,
+            plural="datamigrates"
+        )
+
+        if "status" in resource:
+            if "phase" in resource["status"]:
+                if resource["status"]["phase"] == "Complete":
+                    print("Datamigrate {} is complete.".format(datamigrate_name))
+                    return True
+        time.sleep(1)
+        count += 1
+    print("Datamigrate {} is not complete within 300s.".format(datamigrate_name))
+    return False
+
+
 def get_worker_node(dataset_name):
     api = client.CoreV1Api()
     pod_name = "{}-worker-0".format(dataset_name)
@@ -387,6 +443,18 @@ def clean_up_dataset_and_runtime(dataset_name):
     return False
 
 
+def clean_up_datamigrate(datamigrate_name):
+    custom_api = client.CustomObjectsApi()
+    custom_api.delete_namespaced_custom_object(
+        group="data.fluid.io",
+        version="v1alpha1",
+        name=datamigrate_name,
+        namespace=APP_NAMESPACE,
+        plural="datamigrates"
+    )
+    print("Datamigrate {} deleted".format(datamigrate_name))
+
+
 def clean_up_secret():
     core_api = client.CoreV1Api()
     core_api.delete_namespaced_secret(name=SECRET_NAME, namespace=APP_NAMESPACE)
@@ -400,6 +468,7 @@ def main():
     # ------- test normal mode -------
     # ****************************************************************
     dataset_name = "jfsdemo"
+    datamigrate_name = "jfsdemo"
     test_write_job = "demo-write"
     test_read_job = "demo-read"
     try:
@@ -422,18 +491,33 @@ def main():
         create_data_read_job(dataset_name, test_read_job)
         if not check_data_job_status(test_read_job):
             raise Exception("read job {} in normal mode failed.".format(test_read_job))
+
+        # ****************************************************************
+        # ------- test data migrate -------
+        # ****************************************************************
+        # 1. create datamigrate
+        create_datamigrate(datamigrate_name, dataset_name)
+
+        # 2. check datamigrate status
+        if not check_datamigrate_complete(datamigrate_name):
+            raise Exception("datamigrate {} failed.".format(datamigrate_name))
+
     except Exception as e:
         print(e)
         exit(-1)
     finally:
-        # 4. clean up write & read data job
+        # clear
+        # 1. clean up write & read data job
         clean_job(test_write_job)
         clean_job(test_read_job)
 
-        # 5. clean up dataset and runtime
+        # 2. clean up datamigrate
+        clean_up_datamigrate(datamigrate_name)
+
+        # 3. clean up dataset and runtime
         clean_up_dataset_and_runtime(dataset_name)
 
-        # 6. clean up secret
+        # 4. clean up secret
         clean_up_secret()
 
     # ****************************************************************
@@ -452,7 +536,7 @@ def main():
 
     # ****************************************************************
     # ------- test sidecar mode -------
-    # ********************************
+    # ****************************************************************
     dataset_name = "jfsdemo-sidecar"
     test_write_job = "demo-write-sidecar"
     test_read_job = "demo-read-sidecar"

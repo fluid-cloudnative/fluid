@@ -31,9 +31,10 @@ const (
 
 	PodRoleType = "role"
 
-	WorkerPodRole     = "juicefs-worker"
-	EnterpriseEdition = "enterprise"
-	CommunityEdition  = "community"
+	WorkerPodRole      = "juicefs-worker"
+	EnterpriseEdition  = "enterprise"
+	CommunityEdition   = "community"
+	DefaultMetricsPort = 9567
 
 	MetadataSyncNotDoneMsg               = "[Calculating]"
 	CheckMetadataSyncDoneTimeoutMillisec = 500
@@ -47,7 +48,11 @@ const (
 	JuiceSecretKey = "secret-key"
 	JuiceToken     = "token"
 
-	MountPath              = "mountpath"
-	Edition                = "edition"
-	DefaultDataLoadTimeout = "30m"
+	MountPath                 = "mountpath"
+	Edition                   = "edition"
+	MetaurlSecret             = "metaurlSecret"
+	MetaurlSecretKey          = "metaurlSecretKey"
+	Name                      = "name"
+	DefaultDataLoadTimeout    = "30m"
+	DefaultDataMigrateTimeout = "30m"
 )

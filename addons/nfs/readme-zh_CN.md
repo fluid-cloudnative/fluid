@@ -19,7 +19,7 @@ metadata:
   name: nfs-demo
 spec:
   mounts:
-  - mountPoint: <IP:PATH>
+  - mountPoint: <IP/PATH>
     name: nfs-demo
 ---
 apiVersion: data.fluid.io/v1alpha1

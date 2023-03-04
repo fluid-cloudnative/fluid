@@ -57,7 +57,7 @@ func (e *JindoEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, ta
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DATALOAD_CHART + "/" + common.JindoRuntime
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.JindoRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")

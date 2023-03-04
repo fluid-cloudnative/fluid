@@ -15,7 +15,7 @@ limitations under the License.
 
 package common
 
-//Reason for Fluid events
+// Reason for Fluid events
 const (
 	ErrorCreateDataset = "ErrorCreateDataset"
 
@@ -58,6 +58,14 @@ const (
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
 	RuntimeDeprecated = "RuntimeDeprecated"
+
+	DataMigrateCollision = "DataMigrateCollision"
+
+	DataMigrateJobStarted = "DataMigrateJobStarted"
+
+	DataMigrateJobFailed = "DataMigrateJobFailed"
+
+	DataMigrateJobComplete = "DataMigrateJobComplete"
 )
 
 type CacheStoreType string

@@ -37,6 +37,7 @@ type Mount struct {
 // Parse one line of /proc/self/mountinfo.
 //
 // The line contains the following space-separated fields:
+//
 //	[0] mount ID
 //	[1] parent ID
 //	[2] major:minor
