@@ -27,11 +27,16 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
     ```shell
     $ kubectl create ns fluid-system
     ```  
-2. Download the latest Fluid from Github [release page](https://github.com/fluid-cloudnative/fluid/releases)
+2. Add Fluid repository to Helm repos and keep it up-to-date
+
+    ```shell
+    $ helm repo add fluid https://fluid-cloudnative.github.io/charts
+    $ helm repo update
+    ```
 
 3. Deploy Fluid with Helm
     ```shell
-    $ helm install fluid fluid-<version>.tgz
+    $ helm install fluid fluid
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default

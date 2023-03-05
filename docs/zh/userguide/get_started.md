@@ -36,7 +36,7 @@
     
 3. 使用 Helm 安装 Fluid
     ```shell
-    $ helm install fluid fluid-<version>.tgz
+    $ helm install fluid fluid
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default
