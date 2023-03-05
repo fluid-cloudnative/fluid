@@ -10,7 +10,8 @@ dataloader:
 
   # Required
   # Description: the dataset that this DataLoad targets
-  targetDataset: #imagenet
+  #targetDataset: imagenet
+  targetDataset: ""
 
   # Optional
   # Default: false
@@ -27,7 +28,8 @@ dataloader:
 
   # Required
   # Description: the image that the DataLoad job uses
-  image: #<alluxio-image>
+  #image: <alluxio-image>
+  image: ""
 
   # Optional
   # Description: optional labels on DataLoad pods
@@ -40,3 +42,44 @@ dataloader:
   # Optional
   # Description: optional image pull secrets on DataLoad pods
   imagePullSecrets: []
+
+  # Optional
+  # Description: optional pod affinity
+  #  affinity:
+  #    nodeAffinity:
+  #      requiredDuringSchedulingIgnoredDuringExecution:
+  #        nodeSelectorTerms:
+  #          - matchExpressions:
+  #              - key: topology.kubernetes.io/zone
+  #                operator: In
+  #                values:
+  #                  - antarctica-east1
+  #                  - antarctica-west1
+  #      preferredDuringSchedulingIgnoredDuringExecution:
+  #        - weight: 1
+  #          preference:
+  #            matchExpressions:
+  #              - key: another-node-label-key
+  #                operator: In
+  #                values:
+  #                  - another-node-label-value
+  affinity: {}
+
+  # Optional
+  # Description: optional pod Tolerations
+  #  tolerations:
+  #    - key: "example-key"
+  #      operator: "Exists"
+  #      effect: "NoSchedule"
+  tolerations: []
+
+  # Optional
+  # Description: optional pod scheduler definition
+  # schedulerName: "scheduler"
+  schedulerName: ""
+
+  # Optional
+  # Description: optional pod node selector
+  # nodeSelector:
+  #  diskType: "ssd"
+  nodeSelector: {}

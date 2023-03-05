@@ -16,6 +16,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -58,6 +59,20 @@ type DataLoadSpec struct {
 
 	// PodMetadata defines labels and annotations that will be propagated to DataLoad pods
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// +optional
+	// pod
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// +optional
+	// pod node selector
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// +optional
+	SchedulerName string `json:"schedulerName,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

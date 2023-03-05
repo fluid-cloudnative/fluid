@@ -499,7 +499,7 @@ func (r *DataBackupReconcilerImplement) generateDataBackupValueFile(ctx reconcil
 	if err != nil {
 		return
 	}
-	err = os.WriteFile(valueFile.Name(), data, 0400)
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
 	if err != nil {
 		return
 	}
