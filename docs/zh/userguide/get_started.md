@@ -3,7 +3,7 @@
 
 ## 前置需求
 
-1. Kubernetes 1.14+
+1. Kubernetes cluster >= v1.14
   
     如果你目前没有满足条件的 Kubernetes 环境, 那么我们推荐你选择官方认证的 Kubernetes 云服务, 通常情况下, 你仅需寥寥几步即可快速获得一个专属的 Kubernetes 环境, 以下列出了部分经过认证的 Kubernetes 云服务:
     - [阿里云容器服务](https://www.aliyun.com/product/kubernetes)
@@ -27,7 +27,12 @@
     ```shell
     $ kubectl create ns fluid-system
     ```  
-2. 从 Github 仓库[Release页面](https://github.com/fluid-cloudnative/fluid/releases)下载最新版本的Fluid
+2. 为您本地Helm仓库添加并且更新“fluid”源到最新版本
+
+    ```shell
+    $ helm repo add fluid https://fluid-cloudnative.github.io/charts
+    $ helm repo update
+    ```
     
 3. 使用 Helm 安装 Fluid
     ```shell
