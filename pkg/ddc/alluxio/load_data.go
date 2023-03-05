@@ -21,8 +21,8 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -101,32 +101,11 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 			}
 		}
 	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
-	// image pull secrets
-	// if the environment variable is not set, it is still an empty slice
-	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
-	dataloadInfo := cdataload.DataLoadInfo{
-		BackoffLimit:     3,
-		TargetDataset:    dataload.Spec.Dataset.Name,
-		LoadMetadata:     dataload.Spec.LoadMetadata,
-		Image:            image,
-		Labels:           dataload.Spec.PodMetadata.Labels,
-		Annotations:      dataload.Spec.PodMetadata.Annotations,
-		ImagePullSecrets: imagePullSecrets,
-	}
+	dataLoadValue := e.genDataLoadValue(image, targetDataset, dataload)
 
-	targetPaths := []cdataload.TargetPath{}
-	for _, target := range dataload.Spec.Target {
-		fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
-		targetPaths = append(targetPaths, cdataload.TargetPath{
-			Path:        target.Path,
-			Replicas:    target.Replicas,
-			FluidNative: fluidNative,
-		})
-	}
-	dataloadInfo.TargetPaths = targetPaths
-	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
 		return
@@ -141,6 +120,62 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alpha1.Dataset, dataload datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+	// image pull secrets
+	// if the environment variable is not set, it is still an empty slice
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+
+	dataloadInfo := cdataload.DataLoadInfo{
+		BackoffLimit:     3,
+		TargetDataset:    dataload.Spec.Dataset.Name,
+		LoadMetadata:     dataload.Spec.LoadMetadata,
+		Image:            image,
+		Labels:           dataload.Spec.PodMetadata.Labels,
+		Annotations:      dataload.Spec.PodMetadata.Annotations,
+		ImagePullSecrets: imagePullSecrets,
+	}
+
+	// pod affinity
+	if dataload.Spec.Affinity != nil {
+		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// node selector
+	if dataload.Spec.NodeSelector != nil {
+		if dataloadInfo.NodeSelector == nil {
+			dataloadInfo.NodeSelector = make(map[string]string)
+		}
+		dataloadInfo.NodeSelector = dataload.Spec.NodeSelector
+	}
+
+	// pod tolerations
+	if len(dataload.Spec.Tolerations) > 0 {
+		if dataloadInfo.Tolerations == nil {
+			dataloadInfo.Tolerations = make([]v1.Toleration, 0)
+		}
+		dataloadInfo.Tolerations = dataload.Spec.Tolerations
+	}
+
+	// scheduler name
+	if len(dataload.Spec.SchedulerName) > 0 {
+		dataloadInfo.SchedulerName = dataload.Spec.SchedulerName
+	}
+
+	targetPaths := []cdataload.TargetPath{}
+	for _, target := range dataload.Spec.Target {
+		fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
+		targetPaths = append(targetPaths, cdataload.TargetPath{
+			Path:        target.Path,
+			Replicas:    target.Replicas,
+			FluidNative: fluidNative,
+		})
+	}
+	dataloadInfo.TargetPaths = targetPaths
+	dataLoadValue := &cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+
+	return dataLoadValue
 }
 
 func (e *AlluxioEngine) CheckRuntimeReady() (ready bool) {
