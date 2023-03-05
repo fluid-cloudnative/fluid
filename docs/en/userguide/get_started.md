@@ -36,7 +36,7 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 
 3. Deploy Fluid with Helm
     ```shell
-    $ helm install fluid fluid
+    $ helm install fluid fluid/fluid
     NAME: fluid
     LAST DEPLOYED: Tue Jul  7 11:22:07 2020
     NAMESPACE: default
