@@ -78,6 +78,8 @@ rules:
   - apiGroups:
       - data.fluid.io
     resources:
+      - datamigrates
+      - datamigrates/status
       - dataloads
       - dataloads/status
       - databackups
