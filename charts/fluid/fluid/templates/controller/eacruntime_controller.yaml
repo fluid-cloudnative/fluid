@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eacruntime-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   labels:
     control-plane: eacruntime-controller
 spec:
@@ -49,6 +49,7 @@ spec:
           - --development=true
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["eacruntime-controller", "start"]
         env:
           {{- if .Values.runtime.mountRoot }}

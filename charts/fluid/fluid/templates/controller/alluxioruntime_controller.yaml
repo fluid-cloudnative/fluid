@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: alluxioruntime-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   labels:
     control-plane: alluxioruntime-controller
 spec:
@@ -51,6 +51,7 @@ spec:
           - --runtime-workers={{ .Values.runtime.alluxio.runtimeWorkers }}
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --leader-election-namespace={{ include "fluid.namespace" . }}
           - --port-allocate-policy={{ .Values.runtime.alluxio.portAllocatePolicy }}
         env:
           {{- if .Values.workdir }}

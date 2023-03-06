@@ -139,10 +139,10 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: dataset-controller
-    namespace: fluid-system
+    namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: dataset-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}

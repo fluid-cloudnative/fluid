@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jindoruntime-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   labels:
     control-plane: jindoruntime-controller
 spec:
@@ -50,6 +50,7 @@ spec:
           - --runtime-workers={{ .Values.runtime.jindo.runtimeWorkers }}
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --leader-election-namespace={{ include "fluid.namespace" . }}
           - --port-allocate-policy={{ .Values.runtime.jindo.portAllocatePolicy }}
         env:
         {{- if .Values.workdir }}

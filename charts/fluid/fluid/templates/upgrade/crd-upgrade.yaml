@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   name: fluid-crds-upgrade-{{ .Chart.AppVersion }}
   annotations:
     "helm.sh/hook": pre-upgrade
@@ -46,13 +46,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: fluid-crds-upgrade
-    namespace: fluid-system
+    namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fluid-crds-upgrade
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   annotations:
     "helm.sh/hook": pre-upgrade
     "helm.sh/hook-weight": "-5"
