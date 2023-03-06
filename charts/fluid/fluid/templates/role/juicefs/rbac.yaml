@@ -5,21 +5,98 @@ metadata:
   name: juicefsruntime-controller
 rules:
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - persistentvolumeclaims
-      - persistentvolumes
-      - services
-      - endpoints
-      - configmaps
-      - events
-      - namespaces
-      - pods
-      - pods/exec
-      - secrets
-      - nodes
+    - namespaces
     verbs:
-      - '*'
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - create
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - pods/exec
+    verbs:
+    - create
+    - get
+    - list
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - list
+    - watch
+    - get
+    - create
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    verbs:
+    - create
+    - delete
+    - list
+    - watch
+    - get 
   - apiGroups:
       - data.fluid.io
     resources:
