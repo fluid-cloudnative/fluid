@@ -5,28 +5,76 @@ metadata:
   name: dataset-controller
 rules:
   - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
       - batch
     resources:
-       - jobs
-       - jobs/status
+      - jobs
+      - jobs/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
   - apiGroups:
       - ""
     resources:
-      - persistentvolumeclaims
-      - persistentvolumes
-      - services
-      - endpoints
       - configmaps
-      - events
-      - namespaces
-      - pods
-      - pods/exec
-      - secrets
-      - nodes
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - list
+      - watch
+      - get
+      - create
+      - delete
   - apiGroups:
       - data.fluid.io
     resources:
@@ -36,8 +84,6 @@ rules:
       - databackups/status
       - datasets
       - datasets/status
-      - datamigrates
-      - datamigrates/status
       - alluxioruntimes
       - alluxioruntimes/status
       - jindoruntimes
