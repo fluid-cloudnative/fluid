@@ -22,7 +22,7 @@ do
 done
 
 count=0
-while stat $ConditionPathIsMountPoint
+while ! stat $ConditionPathIsMountPoint
 do
   sleep 3
   count=`expr $count + 1`

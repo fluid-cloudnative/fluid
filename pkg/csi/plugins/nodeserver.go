@@ -421,6 +421,7 @@ func cleanUpBrokenMountPoint(mountPoint string) error {
 						return errors.Wrapf(mounter.Unmount(mountPoint), "failed to unmount %s", mountPoint)
 					}
 					glog.Infof("Found broken mount point %s, successfully umounted it", mountPoint)
+					return nil
 				}
 			}
 		}
