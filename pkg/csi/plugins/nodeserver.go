@@ -31,6 +31,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -39,7 +40,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
 )
 
 const (
@@ -262,6 +262,12 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	defer ns.mutex.Unlock()
 	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
 
+	// 1. clean up broken mount point
+	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
+	if ignoredErr := cleanUpBrokenMountPoint(fluidPath); ignoredErr != nil {
+		glog.Warningf("Ignoring error when cleaning up broken mount point %v: %v", fluidPath, ignoredErr)
+	}
+
 	// 1. get runtime namespace and name
 	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), req.GetVolumeId())
 	if err != nil {
@@ -380,4 +386,31 @@ func checkMountInUse(volumeName string) (bool, error) {
 	}
 
 	return inUse, err
+}
+
+// cleanUpBrokenMountPoint stats the given mountPoint and umounts it if it's broken mount point(i.e. Stat with errNo 107[Trasport Endpoint is not Connected]).
+func cleanUpBrokenMountPoint(mountPoint string) error {
+	_, err := os.Stat(mountPoint)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		if pathErr, ok := err.(*os.PathError); ok {
+			if errNo, ok := pathErr.Err.(syscall.Errno); ok {
+				if errNo == syscall.ENOTCONN {
+					mounter := mount.New(mountPoint)
+					if err := mounter.Unmount(mountPoint); err != nil {
+						return errors.Wrapf(mounter.Unmount(mountPoint), "failed to unmount %s", mountPoint)
+					}
+					glog.Infof("Found broken mount point %s, successfully umounted it", mountPoint)
+					return nil
+				}
+			}
+		}
+
+		return errors.Wrapf(err, "failed to os.Stat(%s)", mountPoint)
+	}
+
+	return nil
 }
