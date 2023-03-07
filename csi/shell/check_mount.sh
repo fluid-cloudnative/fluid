@@ -16,9 +16,21 @@ do
     count=`expr $count + 1`
     if test $count -eq 10
     then
-        echo "timed out!"
+        echo "timed out waiting for $ConditionPathIsMountPoint mounted"
         exit 1
     fi
+done
+
+count=0
+while ! stat $ConditionPathIsMountPoint
+do
+  sleep 3
+  count=`expr $count + 1`
+  if test $count -eq 10
+    then
+        echo "timed out stating $ConditionPathIsMountPoint returns ready"
+        exit 1
+    fi 
 done
 
 if [ ! -e  $ConditionPathIsMountPoint/$SubPath ] ; then
