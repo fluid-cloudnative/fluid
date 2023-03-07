@@ -417,7 +417,10 @@ func cleanUpBrokenMountPoint(mountPoint string) error {
 			if errNo, ok := pathErr.Err.(syscall.Errno); ok {
 				if errNo == syscall.ENOTCONN {
 					mounter := mount.New(mountPoint)
-					return errors.Wrapf(mounter.Unmount(mountPoint), "failed to unmount %s", mountPoint)
+					if err := mounter.Unmount(mountPoint); err != nil {
+						return errors.Wrapf(mounter.Unmount(mountPoint), "failed to unmount %s", mountPoint)
+					}
+					glog.Infof("Found broken mount point %s, successfully umounted it", mountPoint)
 				}
 			}
 		}
