@@ -13,16 +13,7 @@ kubectl apply -f runtime-profile.yaml
 ## 使用
 
 ### 前置条件
-确保已经有一个已经绑定了PV的PVC，并且PV使用CSI Volume Source。
-
-```shell
-$ kubectl get pv,pvc
-NAME                                   CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
-persistentvolume/cfs-pv-static         5Gi        RWX            Retain           Bound    default/cfs-pvc-static                           27h
-
-NAME                                   STATUS   VOLUME                CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/cfs-pvc-static   Bound    cfs-pv-static         5Gi        RWX                           27h
-```
+K8s集群中已经部署CubeFS 2.4，并且可以正常访问。
 
 ### 创建并部署 ThinRuntimeProfile 资源
 
@@ -59,9 +50,8 @@ metadata:
   name: cubefs-test
 spec:
   mounts:
-    - mountPoint: pvc://cfs-pvc-static
-      name: cfs-pvc-static
-      path: "/"
+    - mountPoint: <IP:Port>
+      name: fluid-test
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntime
@@ -73,6 +63,7 @@ EOF
 
 $ kubectl apply -f dataset.yaml
 ```
+将上述 `mountPoint` 修改为您需要使用的CuebFS集群Master的地址，`name`修改为需要挂载的存储卷的名字。
 
 ### 数据访问应用示例
 

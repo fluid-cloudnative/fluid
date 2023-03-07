@@ -13,16 +13,7 @@ kubectl apply -f runtime-profile.yaml
 ## Usage
 
 ### Prerequisites
-There is already a PVC bound to PV, and PV uses CSI Volume Source.
-
-```shell
-$ kubectl get pv,pvc
-NAME                                   CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
-persistentvolume/cfs-pv-static         5Gi        RWX            Retain           Bound    default/cfs-pvc-static                           27h
-
-NAME                                   STATUS   VOLUME                CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/cfs-pvc-static   Bound    cfs-pv-static         5Gi        RWX                           27h
-```
+CubeFS 2.4 has been deployed in the K8s cluster and can be accessed normally.
 
 ### Create and Deploy ThinRuntimeProfile Resource
 
@@ -56,9 +47,8 @@ metadata:
   name: cubefs-test
 spec:
   mounts:
-    - mountPoint: pvc://cfs-pvc-static
-      name: cfs-pvc-static
-      path: "/"
+    - mountPoint: <IP:Port>
+      name: fluid-test
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntime
@@ -70,6 +60,7 @@ EOF
 
 $ kubectl apply -f dataset.yaml
 ```
+Modify the above `mountPoint` to the address of the Master of CubeFS you want to use. Modify `name` to the name of the storage volume to be mounted
 
 ### Run pod with Fluid PVC
 
