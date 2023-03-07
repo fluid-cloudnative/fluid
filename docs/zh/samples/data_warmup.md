@@ -238,6 +238,72 @@ spec:
 
 > 注意：元数据的同步会使整个数据加载过程变长，如非必要，我们不推荐开启该配置项
 
+### 指定数据加载任务的亲和性
+支持指定数据加载任务的亲和性, 关于kubernetes节点亲和性请参考文档 [用节点亲和性把 Pods 分配到节点
+](https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)
+例如:
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: spark-dataload
+spec:
+  dataset:
+    name: spark
+    namespace: default
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values:
+              - antarctica-east1
+              - antarctica-west1
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: another-node-label-key
+            operator: In
+            values:
+            - another-node-label-value 
+```
+### 指定数据加载任务的容忍度
+支持根据污点的设置配置数据加载任务的容忍度, 关于kubernetes容忍度请参考文档 [污点和容忍度
+](https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/taint-and-toleration/)
+例如: 
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: spark-dataload
+spec:
+  dataset:
+    name: spark
+    namespace: default
+  tolerations:
+  - key: "example-key"
+    operator: "Exists"
+    effect: "NoSchedule"
+```
+
+### 指定数据加载任务的调度器
+支持指定数据加载任务的调度器, 关于kubernetes调度器请参考文档 [Kubernetes 调度器
+](https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/kube-scheduler/)
+例如: 
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: spark-dataload
+spec:
+  dataset:
+    name: spark
+    namespace: default
+  schedulerName: default-scheduler
+```
 ## 环境清理
 ```shell
 $ kubectl delete -f .
