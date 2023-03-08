@@ -56,7 +56,7 @@ func LockTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Objec
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationCollision,
 			"Found other %s(%s) that is in Executing phase, will backoff",
 			operationTypeName, conflictDataOpRef)
-		return fmt.Errorf("found other DataBackup that is in Executing phase, will backoff")
+		return fmt.Errorf("found other %s that is in Executing phase, will backoff", operationTypeName)
 	}
 
 	// 2. can lock, check if the bounded runtime is ready
@@ -113,7 +113,7 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 		currentRef := dataset.GetLockedNameForOperation(operationTypeName)
 
 		if currentRef != GetDataOperationRef(object.GetName(), object.GetNamespace()) {
-			ctx.Log.Info("Found DataBackupRef inconsistent with the reconciling DataBack, won't release this lock, ignore it", "DataBackupRef", currentRef)
+			ctx.Log.Info("Found Ref inconsistent with the reconciling DataBack, won't release this lock, ignore it", "Operation", operationTypeName, "ref", currentRef)
 			return nil
 		}
 		datasetToUpdate := dataset.DeepCopy()

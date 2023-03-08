@@ -62,7 +62,7 @@ func (r *DataBackupReconciler) Reconcile(context context.Context, req ctrl.Reque
 		// used for create engine
 		ReconcileRequestContext: cruntime.ReconcileRequestContext{
 			Context:  context,
-			Log:      r.Log.WithValues(r.GetOperationType(), req.NamespacedName),
+			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
 			Category: common.AccelerateCategory,
