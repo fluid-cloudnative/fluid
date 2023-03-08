@@ -21,18 +21,16 @@ import (
 	"fmt"
 	"testing"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func TestAddScheduleInfoToPod(t *testing.T) {
@@ -1169,5 +1167,25 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 				t.Errorf("testcase %s is failed due to error %v", testcase.name, fmt.Errorf("cache affinity is not inject"))
 			}
 		}
+	}
+}
+
+func TestIsFluidPod(t *testing.T) {
+	type args struct {
+		pod *corev1.Pod
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isFluidPod(tt.args.pod); got != tt.want {
+				t.Errorf("isFluidPod() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
