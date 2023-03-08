@@ -19,6 +19,7 @@ webhooks:
       caBundle: Cg==
     timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
     failurePolicy: Fail
+    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
     objectSelector:
@@ -39,6 +40,7 @@ webhooks:
       caBundle: Cg==
     timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
     failurePolicy: Fail
+    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
     objectSelector:
