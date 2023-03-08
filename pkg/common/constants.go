@@ -29,8 +29,6 @@ const (
 
 	TargetDatasetNotFound = "TargetDatasetNotFound"
 
-	TargetDatasetPathNotFound = "TargetDatasetPathNotFound"
-
 	TargetDatasetNotReady = "TargetDatasetNotReady"
 
 	TargetDatasetNamespaceNotSame = "TargetDatasetNamespaceNotSame"
@@ -44,10 +42,6 @@ const (
 	DataLoadJobFailed = "DataLoadJobFailed"
 
 	DataLoadJobComplete = "DataLoadJobComplete"
-
-	DataBackupFailed = "DataBackupFailed"
-
-	DataBackupComplete = "DataBackupComplete"
 
 	RuntimeScaleInFailed = "RuntimeScaleInFailed"
 
@@ -66,6 +60,16 @@ const (
 	DataMigrateJobFailed = "DataMigrateJobFailed"
 
 	DataMigrateJobComplete = "DataMigrateJobComplete"
+
+	DataOperationNotSupport = "DataOperationNotSupport"
+
+	DataOperationFailed = "DataOperationFailed"
+
+	DataOperationSucceed = "DataOperationSucceed"
+
+	DataOperationNotValid = "DataOperationNotValid"
+
+	DataOperationCollision = "DataOperationCollision"
 )
 
 type CacheStoreType string

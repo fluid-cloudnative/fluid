@@ -249,34 +249,6 @@ func TestGetRpcPortFromMasterContainer(t *testing.T) {
 	}
 }
 
-func TestGetDataBackupRef(t *testing.T) {
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test",
-			args: args{
-				name:      "test",
-				namespace: "default",
-			},
-			want: "default/test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataBackupRef(tt.args.name, tt.args.namespace); got != tt.want {
-				t.Errorf("GetDataBackupRef() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestGetDataBackupReleaseName(t *testing.T) {
 	type args struct {
 		name string

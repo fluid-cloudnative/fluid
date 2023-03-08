@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Fluid Authors.
+Copyright 2022 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package databackup
+package jindofsx
 
-const (
-	Finalizer            = "fluid-databackup-controller-finalizer"
-	AlluxioBackupPathPod = "/alluxio_backups"
-	GooseFSBackupPathPod = "/goosefs_backups"
-	DatabackupChart      = "fluid-databackup"
-
-	BackupLocationPath     = "BackupLocationPath"
-	BackupLocationNodeName = "BackupLocationNodeName"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func (e *JindoFSxEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error) {
+	return false, "", nil
+}

@@ -51,7 +51,7 @@ func IgnoreNoKindMatchError(err error) error {
 }
 
 // NoRequeue returns the result of a reconcile invocation and no err
-// The Object will requeue immediately
+// The Object will not requeue
 func NoRequeue() (ctrl.Result, error) {
 	return RequeueIfError(nil)
 }
@@ -69,7 +69,7 @@ func RequeueImmediately() (ctrl.Result, error) {
 }
 
 // RequeueIfError returns the result of a reconciler invocation and the err
-// The Object will requeue immediately whether the err is nil or not
+// The Object will requeue when err is not nil
 func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }

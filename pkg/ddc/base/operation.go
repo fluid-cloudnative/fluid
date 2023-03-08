@@ -1,0 +1,197 @@
+/*
+Copyright 2022 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package base
+
+import (
+	"fmt"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	v1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
+)
+
+func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus,
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	operateType := operation.GetOperationType()
+
+	// runtime engine override the template engine
+	switch operateType {
+	case dataoperation.DataBackup:
+		ownImpl, ok := t.Implement.(Databackuper)
+		if ok {
+			targetDataBackup, success := object.(*datav1alpha1.DataBackup)
+			if !success {
+				return utils.RequeueIfError(fmt.Errorf("object %v is not a DataBackup", object))
+			}
+			return ownImpl.BackupData(ctx, *targetDataBackup)
+		}
+	}
+
+	// use default template engine
+	switch opStatus.Phase {
+	case common.PhaseNone:
+		return t.reconcileNone(ctx, object, opStatus, operation)
+	case common.PhasePending:
+		return t.reconcilePending(ctx, object, opStatus, operation)
+	case common.PhaseExecuting:
+		return t.reconcileExecuting(ctx, object, opStatus, operation)
+	case common.PhaseComplete:
+		return t.reconcileComplete(ctx, object, opStatus, operation)
+	case common.PhaseFailed:
+		return t.reconcileFailed(ctx, object, operation)
+	default:
+		ctx.Log.Error(fmt.Errorf("unknown phase"), "won't reconcile it", "phase", opStatus.Phase)
+		return utils.NoRequeue()
+	}
+}
+
+func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, object client.Object,
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileNone")
+
+	// 0. check the object spec valid or not
+	conditions, err := operation.Validate(object)
+	if err != nil {
+		log.Error(err, "validate failed")
+		ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotValid, err.Error())
+
+		opStatus.Conditions = conditions
+		opStatus.Phase = common.PhaseFailed
+		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+			return utils.RequeueIfError(err)
+		}
+		return utils.RequeueImmediately()
+	}
+
+	// 1. update status to pending
+	opStatus.Phase = common.PhasePending
+	if len(opStatus.Conditions) == 0 {
+		opStatus.Conditions = []datav1alpha1.Condition{}
+	}
+	opStatus.Duration = "Unfinished"
+	opStatus.Infos = map[string]string{}
+	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		log.Error(err, fmt.Sprintf("failed to update the %s", operation.GetOperationType()))
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info(fmt.Sprintf("Update phase of the %s to Pending successfully", operation.GetOperationType()))
+	return utils.RequeueImmediately()
+}
+
+func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, object client.Object,
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcilePending")
+
+	// 1. lock the dataset
+	err := LockTargetDataset(ctx, object, operation, t)
+	if err != nil {
+		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+
+	log.Info("Get lock on target dataset, try to update phase")
+	opStatus.Phase = common.PhaseExecuting
+	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		log.Error(err, fmt.Sprintf("failed to update %s status to Executing, will retry", operation.GetOperationType()))
+		return utils.RequeueIfError(err)
+	}
+	log.V(1).Info(fmt.Sprintf("update %s status to Executing successfully", operation.GetOperationType()))
+	return utils.RequeueImmediately()
+}
+
+func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext, object client.Object,
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileExecuting")
+
+	// 1. Install the helm chart if not exists
+	support, err := InstallDataOperationHelmIfNotExist(ctx, object, operation, t.Implement)
+	// runtime does not support current data operation, set status to failed
+	if !support {
+		log.Error(fmt.Errorf("runtime not support %s", operation.GetOperationType()), "RuntimeType", ctx.RuntimeType)
+		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationNotSupport,
+			"RuntimeType %s not support %s", ctx.RuntimeType, operation.GetOperationType())
+
+		opStatus.Phase = common.PhaseFailed
+		return utils.RequeueImmediately()
+	}
+	if err != nil {
+		return utils.RequeueAfterInterval(20 * time.Second)
+	}
+
+	// 2. update data operation's status by helm status
+	err = operation.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	if err != nil {
+		log.Error(err, "failed to update status")
+		return utils.RequeueIfError(err)
+	}
+	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		log.Error(err, "failed to update api status")
+		return utils.RequeueIfError(err)
+	}
+
+	log.V(1).Info(fmt.Sprintf("%s finished and update status successfully", operation.GetOperationType()))
+	return utils.RequeueAfterInterval(20 * time.Second)
+}
+
+func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext, object client.Object,
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileComplete")
+
+	// 1. Update the infos field
+	if opStatus.Infos == nil {
+		opStatus.Infos = map[string]string{}
+	}
+	// different data operation may set different key-value
+	err := operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	if err := operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. release lock on target dataset
+	err = ReleaseTargetDataset(ctx, object, operation)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 3. record and no requeue
+	log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
+	ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
+		"%s %s succeeded", operation.GetOperationType(), object.GetName())
+	return utils.NoRequeue()
+}
+
+func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	log := ctx.Log.WithName("reconcileFailed")
+
+	// 1. release lock on target dataset
+	err := ReleaseTargetDataset(ctx, object, operation)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. record and no requeue
+	log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
+	ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
+	return utils.NoRequeue()
+}
