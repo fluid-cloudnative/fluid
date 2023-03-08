@@ -55,7 +55,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 
 		err = helm.InstallRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace, valueFileName, chartName)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("failed to install chart"))
+			log.Error(err, "failed to install chart")
 			return true, err
 		}
 		log.Info(fmt.Sprintf("%s job helm chart successfully installed", operationTypeName),

@@ -41,7 +41,7 @@ type OperationInterface interface {
 	UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error
 
 	// Validate check the data operation spec is valid or not, if not valid return error with conditions
-	Validate(object client.Object) ([]datav1alpha1.Condition, error)
+	Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error)
 
 	// UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
 	UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error

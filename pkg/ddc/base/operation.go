@@ -67,7 +67,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 	log := ctx.Log.WithName("reconcileNone")
 
 	// 0. check the object spec valid or not
-	conditions, err := operation.Validate(object)
+	conditions, err := operation.Validate(ctx, object)
 	if err != nil {
 		log.Error(err, "validate failed")
 		ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotValid, err.Error())

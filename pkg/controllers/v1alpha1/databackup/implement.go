@@ -113,7 +113,7 @@ func (r *DataBackupReconciler) UpdateStatusInfoForCompleted(object client.Object
 
 	return nil
 }
-func (r *DataBackupReconciler) Validate(object client.Object) ([]v1alpha1.Condition, error) {
+func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]v1alpha1.Condition, error) {
 	dataBackup, ok := object.(*v1alpha1.DataBackup)
 	if !ok {
 		return []v1alpha1.Condition{}, fmt.Errorf("object %v is not a DataBackup", object)
@@ -137,11 +137,9 @@ func (r *DataBackupReconciler) Validate(object client.Object) ([]v1alpha1.Condit
 }
 
 func (r *DataBackupReconciler) LockTargetDatasetStatus(dataset *v1alpha1.Dataset) {
-	return
 }
 
 func (r *DataBackupReconciler) ReleaseTargetDatasetStatus(dataset *v1alpha1.Dataset) {
-	return
 }
 
 func (r *DataBackupReconciler) GetOperationType() dataoperation.OperationType {
@@ -175,9 +173,7 @@ func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, op
 	if !ok {
 		return fmt.Errorf("%+v is not a type of DataBackup", object)
 	}
-	var dataBackupCpy *v1alpha1.DataBackup
-	// Job status passed in differs with status in object, update in basis of the passed in one.
-	dataBackupCpy = dataBackup.DeepCopy()
+	var dataBackupCpy = dataBackup.DeepCopy()
 	dataBackupCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataBackupCpy)
 }
