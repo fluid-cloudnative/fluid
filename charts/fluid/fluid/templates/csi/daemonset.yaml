@@ -18,7 +18,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccount: fluid-csi
+      serviceAccountName: fluid-csi
       tolerations:
       - operator: Exists
       #priorityClassName: system-node-critical
