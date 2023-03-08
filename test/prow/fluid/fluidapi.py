@@ -103,6 +103,7 @@ class Runtime(K8sObject):
             self.resource["spec"] = {}
 
         self.resource["spec"]["replicas"] = replica_num
+        return self
 
     def set_tieredstore(self, mediumtype, path, quota="", quota_list="", high="0.99", low="0.99"):
         if "spec" not in self.resource:
@@ -121,6 +122,8 @@ class Runtime(K8sObject):
             self.resource["spec"]["tieredstore"]["levels"][0]["quota"] = quota
         if len(quota_list) != 0:
             self.resource["spec"]["tieredstore"]["levels"][0]["quota"] = quota_list
+        
+        return self
 
 
 class DataLoad(K8sObject):
