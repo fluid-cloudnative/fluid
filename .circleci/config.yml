@@ -1,13 +1,13 @@
-# Golang CircleCI 2.0 configuration file
+# Golang CircleCI 2.1 configuration file
 #
-# Check https://circleci.com/docs/2.0/language-go/ for more details
+# Check https://circleci.com/docs/2.1/language-go/ for more details
 version: 2.1
 jobs:
   build:
     docker:
       # specify the version
       - image: cimg/go:1.18
-    working_directory: /go/src/github.com/fluid-cloudnative/fluid
+    working_directory: ~/project/src/github.com/fluid-cloudnative/fluid
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'
     steps:
