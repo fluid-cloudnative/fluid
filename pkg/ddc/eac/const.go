@@ -17,8 +17,8 @@
 package eac
 
 const (
-	PodRoleType     = "role"
-	WOKRER_POD_ROLE = "eac-worker"
+	// PodRoleType     = "role"
+	workerPodRole = "eac-worker"
 
 	MasterMountPath = "/eac/eac-master"
 	FuseMountDir    = "eac-fuse"
