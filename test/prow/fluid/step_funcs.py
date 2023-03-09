@@ -11,8 +11,8 @@ from framework.step import check
 
 SERVERLESS_KEY="serverless.fluid.io/inject"
 
-def createDatasetFn(dataset):
-    def createDataset():
+def create_dataset_fn(dataset):
+    def create_dataset():
 
         dataset_namespace = dataset["metadata"]["namespace"]
         api = client.CustomObjectsApi()
@@ -25,10 +25,10 @@ def createDatasetFn(dataset):
         )
         print("Dataset \"{}/{}\" created".format(dataset["metadata"]["namespace"], dataset["metadata"]["name"]))
 
-    return createDataset
+    return create_dataset
 
 
-def checkDatasetBoundFn(name, namespace="default"):
+def check_dataset_bound_fn(name, namespace="default"):
     def check():
         api = client.CustomObjectsApi()
 
@@ -50,8 +50,8 @@ def checkDatasetBoundFn(name, namespace="default"):
     return check
 
 
-def createRuntimeFn(runtime):
-    def createRuntime():
+def create_runtime_fn(runtime):
+    def create_runtime():
         plural_str = "{}s".format(runtime["kind"].lower())
         runtime_namespace = runtime["metadata"]["namespace"]
 
@@ -66,10 +66,10 @@ def createRuntimeFn(runtime):
         print("{} \"{}/{}\" created".format(runtime["kind"], runtime["metadata"]["namespace"],
                                             runtime["metadata"]["name"]))
 
-    return createRuntime
+    return create_runtime
 
 
-def deleteDatasetAndRuntimeFn(runtime, name, namespace="default"):
+def delete_dataset_and_runtime_fn(runtime, name, namespace="default"):
     def check_clean_up():
         api = client.CustomObjectsApi()
         plural_str = "{}s".format(runtime["kind"].lower())
@@ -89,7 +89,7 @@ def deleteDatasetAndRuntimeFn(runtime, name, namespace="default"):
 
         return False
 
-    def deleteDataset():
+    def delete_dataset():
         api = client.CustomObjectsApi()
 
         try:
@@ -114,9 +114,9 @@ def deleteDatasetAndRuntimeFn(runtime, name, namespace="default"):
         timeout_check_fn = check(check_clean_up, 60, 3)
         timeout_check_fn()
 
-    return deleteDataset
+    return delete_dataset
 
-def createDataLoadFn(dataload):
+def create_dataload_fn(dataload):
     def create():
         api = client.CustomObjectsApi()
 
@@ -135,7 +135,7 @@ def createDataLoadFn(dataload):
 
     return create
 
-def checkDataLoadJobStatusFn(dataload_name, dataload_namespace="default"):
+def check_dataload_job_status_fn(dataload_name, dataload_namespace="default"):
     def check():
         api = client.CustomObjectsApi()
 
@@ -156,7 +156,7 @@ def checkDataLoadJobStatusFn(dataload_name, dataload_namespace="default"):
 
     return check
 
-def checkDatasetCachedPercentage(name, namespace="default"):
+def check_dataset_cached_percentage_fn(name, namespace="default"):
     def check():
         api = client.CustomObjectsApi()
 
@@ -181,7 +181,7 @@ def checkDatasetCachedPercentage(name, namespace="default"):
     return check
 
 
-def checkVolumeResourceReadyFn(name, namespace="default"):
+def check_volume_resource_ready_fn(name, namespace="default"):
     def check():
         api = client.CoreV1Api()
 
@@ -203,7 +203,7 @@ def checkVolumeResourceReadyFn(name, namespace="default"):
     return check
 
 
-def createJobFn(script, dataset_name, name="fluid-e2e-job-test", namespace="default", serverless=False):
+def create_job_fn(script, dataset_name, name="fluid-e2e-job-test", namespace="default", serverless=False):
     def create():
         api = client.BatchV1Api()
 
@@ -245,7 +245,7 @@ def createJobFn(script, dataset_name, name="fluid-e2e-job-test", namespace="defa
 
     return create
 
-def checkJobStatusFn(name="fluid-e2e-job-test", namespace="default"):
+def check_job_status_fn(name="fluid-e2e-job-test", namespace="default"):
     def check():
         api = client.BatchV1Api()
 
@@ -264,7 +264,7 @@ def checkJobStatusFn(name="fluid-e2e-job-test", namespace="default"):
 
     return check
 
-def deleteJobFn(name="fluid-e2e-job-test", namespace="default"):
+def delete_job_fn(name="fluid-e2e-job-test", namespace="default"):
     def delete():
         batch_api = client.BatchV1Api()
 

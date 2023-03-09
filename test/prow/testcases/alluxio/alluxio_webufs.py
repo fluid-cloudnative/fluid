@@ -38,15 +38,15 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create dataset",
-            forth_fn=funcs.createDatasetFn(dataset.dump()),
-            back_fn=funcs.deleteDatasetAndRuntimeFn(runtime.dump(), name, namespace)
+            forth_fn=funcs.create_dataset_fn(dataset.dump()),
+            back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
         )
     )
 
     flow.append_step(
         SimpleStep(
             step_name="create runtime",
-            forth_fn=funcs.createRuntimeFn(runtime.dump()),
+            forth_fn=funcs.create_runtime_fn(runtime.dump()),
             back_fn=dummy_back
         )
     )
@@ -54,26 +54,26 @@ def main():
     flow.append_step(
         StatusCheckStep(
             step_name="check if dataset is bound",
-            forth_fn=funcs.checkDatasetBoundFn(name, namespace)
+            forth_fn=funcs.check_dataset_bound_fn(name, namespace)
         )
     )
     flow.append_step(
         StatusCheckStep(
             step_name="check if PV & PVC is ready",
-            forth_fn=funcs.checkVolumeResourceReadyFn(name, namespace)
+            forth_fn=funcs.check_volume_resource_ready_fn(name, namespace)
         )
     )
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.createJobFn("time cp -r /data/hbase ./", name),
-            back_fn=funcs.deleteJobFn()
+            forth_fn=funcs.create_job_fn("time cp -r /data/hbase ./", name),
+            back_fn=funcs.delete_job_fn()
         )
     )
     flow.append_step(
         StatusCheckStep(
             step_name="check if data read job success",
-            forth_fn=funcs.checkJobStatusFn()
+            forth_fn=funcs.check_job_status_fn()
         )
     )
 
