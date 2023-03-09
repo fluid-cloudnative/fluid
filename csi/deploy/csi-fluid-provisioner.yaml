@@ -36,7 +36,7 @@ spec:
               - key: node-role.kubernetes.io/master
                 operator: Exists
       priorityClassName: system-node-critical
-      serviceAccount: admin
+      serviceAccountName: admin
       hostNetwork: true
       containers:
         - name: external-provisioner
