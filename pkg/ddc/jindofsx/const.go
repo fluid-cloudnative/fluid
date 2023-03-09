@@ -46,8 +46,6 @@ const (
 	DEFAULT_WORKER_RPC_PORT = 6101
 	DEFAULT_RAFT_RPC_PORT   = 8103
 
-	// PodRoleType = "role"
-
 	workerPodRole = "jindo-worker"
 
 	runtimeFSType = "jindofs"

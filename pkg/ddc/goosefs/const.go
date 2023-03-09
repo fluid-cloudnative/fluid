@@ -56,7 +56,5 @@ const (
 
 	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
 
-	// PodRoleType = "role"
-
 	WOKRER_POD_ROLE = "goosefs-worker"
 )

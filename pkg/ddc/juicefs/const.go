@@ -29,8 +29,6 @@ const (
 	BlockCacheHitBytesOfCommunity  = "juicefs_blockcache_hit_bytes"
 	BlockCacheMissBytesOfCommunity = "juicefs_blockcache_miss_bytes"
 
-	// PodRoleType = "role"
-
 	workerPodRole      = "juicefs-worker"
 	EnterpriseEdition  = "enterprise"
 	CommunityEdition   = "community"
