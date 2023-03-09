@@ -78,11 +78,14 @@ class Dataset(K8sObject):
             self.resource["spec"]["mounts"] = []
 
         self.resource["spec"]["mounts"].append(mount)
+        return self
 
     def set_placement(self, placement):
         if "spec" not in self.resource:
             self.resource["spec"] = {}
         self.resource["spec"]["placement"] = placement
+        return self
+
     def set_access_mode(self, mode):
         if "spec" not in self.resource:
             self.resource["spec"] = {}
@@ -90,6 +93,26 @@ class Dataset(K8sObject):
             self.resource["spec"]["accessModes"] = []
 
         self.resource["spec"]["accessModes"].append(mode)
+        return self
+    
+    def set_node_affinity(self, key, value):
+        if "spec" not in self.resource:
+            self.resource["spec"] = {}
+        if "nodeAffinity" not in self.resource["spec"]:
+            self.resource["spec"]["nodeAffinity"] = {
+                "required": {
+                    "nodeSelectorTerms": [{
+                        "matchExpressions": [{
+                            "key": key,
+                            "operator": "In",
+                            "values": [value]
+                        }]
+                    }]
+                }
+            }
+        
+        return self
+
 
 
 class Runtime(K8sObject):

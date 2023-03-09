@@ -36,3 +36,8 @@ cmd/*/start.sh
 openapi-gen
 sdk
 **/__debug_bin
+
+# debug related
+**/__debug_bin
+**/__pycache__
+
