@@ -59,6 +59,7 @@ func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath 
 				// exitcode=1 indicates timeout waiting for mount point to be ready
 				return errors.New("timeout waiting for FUSE mount point to be ready")
 			case 2:
+				// exitcode=2 indicates subPath not exists
 				return fmt.Errorf("subPath \"%s\" not exists under FUSE mount", subPath)
 			}
 		}
