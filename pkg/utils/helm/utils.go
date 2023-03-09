@@ -54,7 +54,7 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 	// return syscall.Exec(cmd, args, env)
 	// 5. execute the command
 	cmd := exec.Command(binary, args...)
-	log.V(1).Info("Exec", "command", cmd.String())
+	log.Info("Exec", "command", cmd.String())
 	// cmd.Env = env
 	out, err := cmd.CombinedOutput()
 	log.Info(string(out))
@@ -127,14 +127,14 @@ func DeleteRelease(name, namespace string) error {
 
 	args := []string{"uninstall", name, "-n", namespace}
 	cmd := exec.Command(binary, args...)
-
+	log.Info("Exec", "command", cmd.String())
 	// env := os.Environ()
 	// if types.KubeConfig != "" {
 	// 	env = append(env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
 	// }
 	// return syscall.Exec(cmd, args, env)
 	out, err := cmd.Output()
-	log.V(1).Info("delete release", "result", string(out))
+	log.Info("delete release", "result", string(out))
 	if err != nil {
 		log.Error(err, "failed to execute DeleteRelease() command", "command", cmd.String())
 		return fmt.Errorf("failed to delete engine-related kubernetes resources")
