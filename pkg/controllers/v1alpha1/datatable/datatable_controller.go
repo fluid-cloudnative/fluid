@@ -17,6 +17,8 @@ package datatable
 
 import (
 	"context"
+	"github.com/dazheng/gohive"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/hive"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -33,12 +35,13 @@ import (
 )
 
 const (
-	// finalizer for datable
-	DataTableFinalizerName = "datatable-controller-finalizer"
-	// common name
-	CommonName   = "datatable-common"
-	ResyncPeriod = time.Duration(5 * time.Second)
+	DataTableFinalizerName = "datatable-controller-finalizer"       // finalizer for datable
+	CommonName             = "datatable-common"                     // the name of dataset and runtime
+	ResyncPeriod           = time.Duration(5 * time.Second)         // requeue period
+	FinalizerName          = "fluid-datatable-controller-finalizer" // finalizer name
 )
+
+var MasterIP string // alluxio master IP
 
 // DataTableReconciler reconciles a DataTable object
 type DataTableReconciler struct {
@@ -83,9 +86,13 @@ func (r *DataTableReconciler) Reconcile(context context.Context, req ctrl.Reques
 
 	if err := r.Get(ctx, req.NamespacedName, &ctx.Datatable); err != nil {
 		// can not get the datatable obj
-		// TODO: err handle
-		ctx.Log.Error(err, "Fail to get the datatable", req)
-		return utils.RequeueIfError(err)
+		if utils.IgnoreNotFound(err) != nil {
+			ctx.Log.Error(err, "Fail to get the datatable", req)
+			return utils.RequeueIfError(err)
+		} else {
+			ctx.Log.V(1).Info("Fail to get the datatable")
+			return ctrl.Result{}, nil
+		}
 	} else {
 		return r.reconcileDataTable(ctx)
 	}
@@ -93,8 +100,9 @@ func (r *DataTableReconciler) Reconcile(context context.Context, req ctrl.Reques
 
 func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (result ctrl.Result, err error) {
 
-	ip, err := datatable.GetOrCreateAlluxio(r.Client, CommonName, ctx.Datatable.Namespace)
-	if err != nil || len(ip) == 0 {
+	// 0. create dataset and alluxio runtime if they do not exist, or get the master ip
+	MasterIP, err = datatable.GetOrCreateAlluxio(r.Client, CommonName, ctx.Datatable.Namespace)
+	if err != nil || len(MasterIP) == 0 {
 		if err != nil {
 			ctx.Log.Error(err, "GetOrCreateAlluxio error")
 		} else {
@@ -102,8 +110,69 @@ func (r *DataTableReconciler) reconcileDataTable(ctx reconcileRequestContext) (r
 		}
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
+	ctx.Datatable.Status.CacheMasterIP = MasterIP // TODO: Update the status
+	r.Log.V(1).Info("STEP 0: Get or Create alluxio successfully and get the master IP")
+
+	// 1. create the hive client
+	host := ctx.Datatable.Spec.Url
+	conn, err := hive.CreateHiveClient(host)
+	if err != nil {
+		ctx.Log.Error(err, "Fail to create the hive client")
+		return utils.RequeueIfError(err)
+	}
+	defer conn.Close()
+	r.Log.V(1).Info("STEP 1: Create the hive client successfully")
+
+	// 2. delete this datatable if it is mark the deletiontimestamp
+	if utils.HasDeletionTimestamp(ctx.Datatable.ObjectMeta) {
+		return r.ReconcileDatatableDeletion(ctx, conn)
+	}
+
+	// 3. add finalizer if it does not have
+	if !utils.ContainsString(ctx.Datatable.ObjectMeta.GetFinalizers(), FinalizerName) {
+		return r.AddFinalizerAndRequeue(ctx)
+	}
 
 	return ctrl.Result{}, nil
+}
+
+// ReconcileDatatableDeletion recover the table location and remove the finalizer
+func (r *DataTableReconciler) ReconcileDatatableDeletion(ctx reconcileRequestContext, conn *gohive.Connection) (ctrl.Result, error) {
+	datatable := ctx.Datatable
+	if err := hive.ChangeSchemaURLForRecover(r.Client, datatable, conn); err != nil {
+		r.Log.Error(err, "Fail to recover the table location")
+		return utils.RequeueIfError(err)
+	}
+	if !datatable.ObjectMeta.GetDeletionTimestamp().IsZero() {
+		datatable.ObjectMeta.Finalizers = utils.RemoveString(datatable.ObjectMeta.GetFinalizers(), FinalizerName)
+
+		if err := r.Update(ctx, &datatable); err != nil {
+			r.Log.Error(err, "Fail to update the datatable")
+			utils.RequeueIfError(err)
+		}
+
+		r.Log.V(1).Info("Clean the finalizers", datatable)
+	}
+
+	r.Log.V(1).Info("STEP 3: Delete the datatable successfully")
+
+	return ctrl.Result{}, nil
+}
+
+// AddFinalizerAndRequeue add the finalizer and requeue
+func (r *DataTableReconciler) AddFinalizerAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
+
+	prevGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
+	ctx.Datatable.ObjectMeta.Finalizers = append(ctx.Datatable.ObjectMeta.Finalizers, FinalizerName)
+	if err := r.Update(ctx, &ctx.Datatable); err != nil {
+		ctx.Log.Error(err, "Fail to add the finalizer")
+		return utils.RequeueIfError(err)
+	}
+	newGeneration := ctx.Datatable.ObjectMeta.GetGeneration()
+
+	r.Log.V(1).Info("STEP 3: Add the finalizer successfully")
+
+	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, newGeneration)
 }
 
 // SetupWithManager sets up the controller with the Manager.

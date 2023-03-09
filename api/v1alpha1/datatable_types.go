@@ -59,6 +59,9 @@ type DataTableStatus struct {
 	// the data of mount points have been mounted
 	Schemas []Schema `json:"mounts,omitempty"`
 
+	// the alluxio master IP
+	CacheMasterIP string `json:"cacheMasterIP,omitempty"`
+
 	// Total in GB of data in the cluster
 	UfsTotal string `json:"ufsTotal,omitempty"`
 
