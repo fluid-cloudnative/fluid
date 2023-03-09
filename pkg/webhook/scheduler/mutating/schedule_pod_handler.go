@@ -245,7 +245,8 @@ func isFluidPod(pod *corev1.Pod) bool {
 		common.JindoChartName,
 		common.GooseFSRuntime,
 		common.JuiceFSRuntime,
-		common.ThinRuntime}
+		common.ThinRuntime,
+		common.EACRuntime}
 	if _, ok := pod.Labels[common.PodRoleType]; ok && pod.Labels[common.PodRoleType] == common.DataloadPod {
 		return true
 	}
