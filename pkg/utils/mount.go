@@ -52,13 +52,15 @@ func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath 
 	glog.Infoln(string(stdoutStderr))
 
 	if err != nil {
-		// exitcode=1 indicates timeout waiting for mount point to be ready
-		if strings.HasPrefix(err.Error(), "exit status 1") {
-			return errors.New("timeout waiting for FUSE mount point to be ready")
-		}
-		// exitcode=2 indicates subPath not exists
-		if strings.HasPrefix(err.Error(), "exit status 2") {
-			return fmt.Errorf("subPath \"%s\" not exists under FUSE mount", subPath)
+		var checkMountErr *exec.ExitError
+		if errors.As(err, &checkMountErr) {
+			switch checkMountErr.ExitCode() {
+			case 1:
+				// exitcode=1 indicates timeout waiting for mount point to be ready
+				return errors.New("timeout waiting for FUSE mount point to be ready")
+			case 2:
+				return fmt.Errorf("subPath \"%s\" not exists under FUSE mount", subPath)
+			}
 		}
 		return err
 	}
