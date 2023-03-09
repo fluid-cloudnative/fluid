@@ -62,7 +62,6 @@ spec:
       labels:
         app: prometheus
     spec:
-      serviceAccount: prometheus
       serviceAccountName: prometheus
       containers:
         - name: prometheus
