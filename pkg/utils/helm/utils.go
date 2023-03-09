@@ -41,7 +41,6 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 
 	// 4. prepare the arguments
 	args := []string{"install", "-f", valueFile, "--namespace", namespace, name, chartName}
-	log.V(1).Info("Exec", "args", args)
 
 	// env := os.Environ()
 	// if types.KubeConfig != "" {
@@ -51,15 +50,17 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 	// return syscall.Exec(cmd, args, env)
 	// 5. execute the command
 	cmd := exec.Command(binary, args...)
+	log.Info("Exec", "command", cmd.String())
 	// cmd.Env = env
 	out, err := cmd.CombinedOutput()
 	log.Info(string(out))
 
 	if err != nil {
-		log.Error(err, "failed to execute", "args", strings.Join(args, " "))
+		log.Error(err, "failed to execute InstallRelease() command", "command", cmd.String())
+		return fmt.Errorf("failed to create engine-related kubernetes resources")
 	}
 
-	return err
+	return nil
 }
 
 // CheckRelease checks if the release with the given name and namespace exist.
@@ -78,7 +79,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	if err := cmd.Start(); err != nil {
 		// log.Fatalf("cmd.Start: %v", err)
 		// log.Error(err)
-		log.Error(err, "failed to execute")
+		log.Error(err, "failed to start CheckRelease() command", "command", cmd.String())
 		return exist, err
 	}
 
@@ -93,7 +94,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 				}
 			}
 		} else {
-			log.Error(err, "cmd.Wait")
+			log.Error(err, "failed to execute CheckRelease() command", "command", cmd.String())
 			return exist, err
 		}
 	} else {
@@ -122,15 +123,19 @@ func DeleteRelease(name, namespace string) error {
 
 	args := []string{"uninstall", name, "-n", namespace}
 	cmd := exec.Command(binary, args...)
-
+	log.Info("Exec", "command", cmd.String())
 	// env := os.Environ()
 	// if types.KubeConfig != "" {
 	// 	env = append(env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
 	// }
 	// return syscall.Exec(cmd, args, env)
 	out, err := cmd.Output()
-	log.V(1).Info("delete release", "result", string(out))
-	return err
+	log.Info("delete release", "result", string(out))
+	if err != nil {
+		log.Error(err, "failed to execute DeleteRelease() command", "command", cmd.String())
+		return fmt.Errorf("failed to delete engine-related kubernetes resources")
+	}
+	return nil
 }
 
 // ListReleases return an array with all releases' names in a given namespace

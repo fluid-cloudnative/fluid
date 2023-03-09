@@ -117,7 +117,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// 1. Wait the runtime fuse ready
 	err = utils.CheckMountReady(fluidPath, mountType)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	args := []string{"--bind"}
