@@ -124,7 +124,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// 1. Wait the runtime fuse ready and check the sub path existence
 	err = utils.CheckMountReadyAndSubPathExist(fluidPath, mountType, subPath)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	args := []string{"--bind"}
