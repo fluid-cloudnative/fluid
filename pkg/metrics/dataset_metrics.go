@@ -40,7 +40,7 @@ type datasetMetrics struct {
 	labels     prometheus.Labels
 }
 
-func NewDatasetMetrics(namespace, name string) *datasetMetrics {
+func GetDatasetMetrics(namespace, name string) *datasetMetrics {
 	key := labelKeyFunc(namespace, name)
 
 	if m, exists := datasetMetricsMap[key]; exists {
@@ -64,7 +64,7 @@ func (m *datasetMetrics) SetUFSFileNum(num float64) {
 	datasetUFSFileNum.With(m.labels).Set(num)
 }
 
-func (m *datasetMetrics) ForgetMetrics() {
+func (m *datasetMetrics) Forget() {
 	datasetUFSTotalSize.Delete(m.labels)
 	datasetUFSFileNum.Delete(m.labels)
 
