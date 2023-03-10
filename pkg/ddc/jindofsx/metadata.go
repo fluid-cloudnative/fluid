@@ -96,6 +96,7 @@ func (e *JindoFSxEngine) syncMetadataInternal() (err error) {
 					}
 					datasetToUpdate := dataset.DeepCopy()
 					datasetToUpdate.Status.UfsTotal = result.UfsTotal
+					base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, e.Log)
 					if !reflect.DeepEqual(datasetToUpdate, dataset) {
 						err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 						if err != nil {

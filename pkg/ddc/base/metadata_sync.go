@@ -50,6 +50,7 @@ func SafeSend(ch chan MetadataSyncResult, result MetadataSyncResult) (closed boo
 	return false
 }
 
+// RecordDatasetMetrics records dataset-related metrics from the given MetadataSyncResult
 func RecordDatasetMetrics(result MetadataSyncResult, datasetNamespace, datasetName string, log logr.Logger) {
 	if len(result.UfsTotal) != 0 {
 		if ufsTotal, ignoredErr := utils.FromHumanSize(result.UfsTotal); ignoredErr == nil {
