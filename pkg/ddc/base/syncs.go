@@ -20,6 +20,7 @@ import (
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,7 +62,7 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	// 3. Check healthy
 	err = t.Implement.CheckRuntimeHealthy()
 	if err != nil {
-		t.Metrics.HealthCheckErrorInc()
+		metrics.GetRuntimeMetrics(ctx.Runtime.GetObjectKind().GroupVersionKind().Kind, ctx.Namespace, ctx.Name).HealthCheckErrorInc()
 		return
 	}
 
