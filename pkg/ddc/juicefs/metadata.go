@@ -97,6 +97,7 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 					datasetToUpdate := dataset.DeepCopy()
 					datasetToUpdate.Status.UfsTotal = result.UfsTotal
 					datasetToUpdate.Status.FileNum = result.FileNum
+					base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, j.Log)
 					if !reflect.DeepEqual(datasetToUpdate, dataset) {
 						err = j.Client.Status().Update(context.TODO(), datasetToUpdate)
 						if err != nil {
