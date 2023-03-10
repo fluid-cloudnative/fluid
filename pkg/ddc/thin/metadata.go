@@ -95,6 +95,7 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 					datasetToUpdate := dataset.DeepCopy()
 					datasetToUpdate.Status.UfsTotal = result.UfsTotal
 					datasetToUpdate.Status.FileNum = result.FileNum
+					base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, t.Log)
 					if !reflect.DeepEqual(datasetToUpdate, dataset) {
 						err = t.Client.Status().Update(context.TODO(), datasetToUpdate)
 						if err != nil {
