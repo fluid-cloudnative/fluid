@@ -19,6 +19,8 @@ package eac
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac/operations"
@@ -30,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

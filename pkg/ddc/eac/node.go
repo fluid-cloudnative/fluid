@@ -19,13 +19,14 @@ package eac
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	datasetSchedule "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 // AssignNodesToCache finds nodes to place the cache engine

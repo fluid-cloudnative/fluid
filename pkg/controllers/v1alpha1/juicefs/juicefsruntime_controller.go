@@ -17,13 +17,14 @@ package juicefs
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sync"
-	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"

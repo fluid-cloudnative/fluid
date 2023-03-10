@@ -17,9 +17,10 @@
 package eac
 
 import (
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"strings"
 )
 
 func (e *EACEngine) parseMasterImage(image string, tag string, imagePullPolicy string) (string, string, string) {

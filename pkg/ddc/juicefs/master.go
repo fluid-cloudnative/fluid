@@ -18,8 +18,9 @@ package juicefs
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"

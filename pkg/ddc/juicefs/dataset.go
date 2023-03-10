@@ -18,8 +18,9 @@ package juicefs
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"

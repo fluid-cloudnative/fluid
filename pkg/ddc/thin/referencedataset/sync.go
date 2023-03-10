@@ -19,14 +19,15 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+	"os"
+	"reflect"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"reflect"
-	"time"
 )
 
 func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {

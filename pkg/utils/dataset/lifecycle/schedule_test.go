@@ -16,11 +16,12 @@ limitations under the License.
 package lifecycle
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 )

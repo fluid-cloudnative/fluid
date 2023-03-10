@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"

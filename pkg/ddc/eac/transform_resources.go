@@ -19,12 +19,13 @@ package eac
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime, value *EAC) error {

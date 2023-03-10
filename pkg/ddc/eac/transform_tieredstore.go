@@ -18,11 +18,12 @@ package eac
 
 import (
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
-	"strings"
 )
 
 func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,

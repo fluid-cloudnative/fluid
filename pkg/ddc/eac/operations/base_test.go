@@ -18,11 +18,12 @@ package operations
 
 import (
 	"errors"
-	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 const (

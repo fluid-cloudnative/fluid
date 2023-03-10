@@ -17,10 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"reflect"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )

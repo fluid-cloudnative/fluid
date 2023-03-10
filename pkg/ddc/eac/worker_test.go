@@ -17,8 +17,9 @@
 package eac
 
 import (
-	"k8s.io/apimachinery/pkg/types"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	utilpointer "k8s.io/utils/pointer"

@@ -17,6 +17,9 @@
 package thin
 
 import (
+	"reflect"
+	"testing"
+
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,8 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"testing"
 )
 
 func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string, err error) {

@@ -19,10 +19,11 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/writer"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"

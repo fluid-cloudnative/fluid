@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"reflect"
 	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 var testUid int64 = 1000

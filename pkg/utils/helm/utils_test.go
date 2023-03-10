@@ -2,10 +2,11 @@ package helm
 
 import (
 	"errors"
-	"github.com/brahma-adshonor/gohook"
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
 )
 
 func TestInstallRelease(t *testing.T) {
