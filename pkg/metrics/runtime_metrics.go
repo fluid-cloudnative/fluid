@@ -17,7 +17,6 @@ limitations under the License.
 package metrics
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,36 +35,47 @@ var (
 	}, []string{"runtime_type", "runtime"})
 )
 
-// RuntimeMetrics holds all the metrics related to a specific kind of runtime.
-type RuntimeMetrics struct {
+var runtimeMetricsMap map[string]*runtimeMetrics
+
+// runtimeMetrics holds all the metrics related to a specific kind of runtime.
+type runtimeMetrics struct {
 	runtimeType string
 	runtimeKey  string
 
-	setupErrorTotal       prometheus.Counter
-	healthCheckErrorTotal prometheus.Counter
+	labels prometheus.Labels
 }
 
-func NewRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *RuntimeMetrics {
-	key := fmt.Sprintf("%s/%s", runtimeNamespace, runtimeName)
-	label := prometheus.Labels{"runtime_type": strings.ToLower(runtimeType), "runtime": key}
-	metrics := &RuntimeMetrics{
-		runtimeType:           runtimeType,
-		runtimeKey:            key,
-		setupErrorTotal:       runtimeSetupErrorTotal.With(label),
-		healthCheckErrorTotal: runtimeHealthCheckErrorTotal.With(label),
+func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
+	key := labelKeyFunc(runtimeNamespace, runtimeName)
+	if m, exists := runtimeMetricsMap[key]; exists {
+		return m
 	}
 
-	return metrics
+	m := &runtimeMetrics{
+		runtimeType: runtimeType,
+		runtimeKey:  key,
+		labels:      prometheus.Labels{"runtime_type": strings.ToLower(runtimeType), "runtime": key},
+	}
+	runtimeMetricsMap[key] = m
+	return m
 }
 
-func (m *RuntimeMetrics) SetupErrorInc() {
-	m.setupErrorTotal.Inc()
+func (m *runtimeMetrics) SetupErrorInc() {
+	runtimeSetupErrorTotal.With(m.labels).Inc()
 }
 
-func (m *RuntimeMetrics) HealthCheckErrorInc() {
-	m.healthCheckErrorTotal.Inc()
+func (m *runtimeMetrics) HealthCheckErrorInc() {
+	runtimeHealthCheckErrorTotal.With(m.labels).Inc()
+}
+
+func (m *runtimeMetrics) Forget() {
+	runtimeSetupErrorTotal.Delete(m.labels)
+	runtimeHealthCheckErrorTotal.Delete(m.labels)
+
+	delete(runtimeMetricsMap, m.runtimeKey)
 }
 
 func init() {
 	metrics.Registry.MustRegister(runtimeSetupErrorTotal, runtimeHealthCheckErrorTotal)
+	runtimeMetricsMap = map[string]*runtimeMetrics{}
 }
