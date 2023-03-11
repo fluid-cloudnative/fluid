@@ -6,6 +6,9 @@ workdir: /tmp
 crdUpgrade:
   image: fluidcloudnative/fluid-crd-upgrader:v0.9.0-601192e
 
+##  if unspecified, will use built-in variable `.Release.Namespace`.
+namespace: fluid-system
+
 image:
   imagePullSecrets: []
 

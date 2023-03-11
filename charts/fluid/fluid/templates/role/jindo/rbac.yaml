@@ -130,10 +130,10 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: jindoruntime-controller
-    namespace: fluid-system
+    namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jindoruntime-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}

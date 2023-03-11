@@ -61,3 +61,11 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{- define "fluid.namespace" -}}
+{{- if .Values.namespace -}}
+    {{ .Values.namespace }}
+{{- else -}}
+    {{ .Release.Namespace }}
+{{- end -}}
+{{- end -}}

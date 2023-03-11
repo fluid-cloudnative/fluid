@@ -2,7 +2,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-nodeplugin-fluid
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
 spec:
   updateStrategy:
     type: RollingUpdate
