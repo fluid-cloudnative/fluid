@@ -20,6 +20,8 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/pkg/errors"
 	"reflect"
 	"strconv"
 
@@ -51,8 +53,15 @@ func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.Namespac
 		}
 
 		if match {
+			namespace, err := utils.GetEnvByKey(common.MyPodNamespace)
+			if err != nil {
+				return controllerName, scaleout, errors.Wrapf(err, "get namespace from env failed, env key:%s", common.MyPodNamespace)
+			}
+			if namespace == "" {
+				namespace = common.NamespaceFluidSystem
+			}
 			scaleout, err = scaleoutDeploymentIfNeeded(c, types.NamespacedName{
-				Namespace: common.NamespaceFluidSystem,
+				Namespace: namespace,
 				Name:      myControllerName,
 			}, log)
 			if err != nil {

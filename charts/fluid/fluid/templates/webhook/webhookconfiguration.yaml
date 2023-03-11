@@ -12,7 +12,7 @@ webhooks:
         resources:   ["pods"]
     clientConfig:
       service:
-        namespace: fluid-system
+        namespace: {{ include "fluid.namespace" . }}
         name: fluid-pod-admission-webhook
         path: "/mutate-fluid-io-v1alpha1-schedulepod"
         port: 9443
@@ -33,7 +33,7 @@ webhooks:
         resources:   ["pods"]
     clientConfig:
       service:
-        namespace: fluid-system
+        namespace: {{ include "fluid.namespace" . }}
         name: fluid-pod-admission-webhook
         path: "/mutate-fluid-io-v1alpha1-schedulepod"
         port: 9443

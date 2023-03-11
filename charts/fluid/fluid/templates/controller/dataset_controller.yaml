@@ -9,7 +9,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dataset-controller
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   labels:
     control-plane: dataset-controller
 spec:
@@ -47,6 +47,7 @@ spec:
           - --development=false
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --leader-election-namespace={{ include "fluid.namespace" . }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR
@@ -66,6 +67,10 @@ spec:
             {{- end }}
             value: {{ join "," $secretList | quote }}
           {{- end }}
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         ports:
         - containerPort: 8080
           name: metrics

@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fluid-webhook
-  namespace: fluid-system
+  namespace: {{ include "fluid.namespace" . }}
   labels:
     control-plane: fluid-webhook
 spec:
