@@ -74,7 +74,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
-	if isFluidPod(pod) {
+	if utils.IsPodManagedByFluid(pod) {
 		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because it's fluid Pods")
 	}
@@ -238,22 +238,4 @@ func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []stri
 		}
 	}
 	return
-}
-
-func isFluidPod(pod *corev1.Pod) bool {
-	fluidPodLabels := []string{common.AlluxioRuntime,
-		common.JindoChartName,
-		common.GooseFSRuntime,
-		common.JuiceFSRuntime,
-		common.ThinRuntime,
-		common.EACRuntime}
-	if _, ok := pod.Labels[common.PodRoleType]; ok && pod.Labels[common.PodRoleType] == common.DataloadPod {
-		return true
-	}
-	for _, label := range fluidPodLabels {
-		if pod.Labels[common.App] == label {
-			return true
-		}
-	}
-	return false
 }
