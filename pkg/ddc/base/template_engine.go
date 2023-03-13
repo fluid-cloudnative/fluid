@@ -23,7 +23,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 
 	"github.com/go-logr/logr"
@@ -47,7 +46,6 @@ type TemplateEngine struct {
 	Context           cruntime.ReconcileRequestContext
 	syncRetryDuration time.Duration
 	timeOfLastSync    time.Time
-	Metrics           *metrics.RuntimeMetrics
 }
 
 // NewTemplateEngine creates template engine
@@ -61,7 +59,6 @@ func NewTemplateEngine(impl Implement,
 		Id:        id,
 		Context:   context,
 		Client:    context.Client,
-		Metrics:   metrics.NewRuntimeMetrics(context.Runtime.GetObjectKind().GroupVersionKind().Kind, context.Namespace, context.Name),
 		// Log:       log,
 	}
 	b.Log = context.Log.WithValues("engine", context.RuntimeType).WithValues("id", id)
