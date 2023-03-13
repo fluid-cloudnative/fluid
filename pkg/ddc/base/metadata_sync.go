@@ -55,12 +55,14 @@ func SafeSend(ch chan MetadataSyncResult, result MetadataSyncResult) (closed boo
 func RecordDatasetMetrics(result MetadataSyncResult, datasetNamespace, datasetName string, log logr.Logger) {
 	if len(datasetNamespace) == 0 {
 		argErr := errors.New("invalid argument: datasetNamespace should not be empty")
-		log.Error(argErr, "failed to validate RecordDatasetMetrics arguments")
+		log.Error(argErr, "fail to validate RecordDatasetMetrics arguments")
+		return
 	}
 
 	if len(datasetName) == 0 {
 		argErr := errors.New("invalid argument: datasetName should not be empty")
-		log.Error(argErr, "failed to validate RecordDatasetMetrics arguments")
+		log.Error(argErr, "fail to validate RecordDatasetMetrics arguments")
+		return
 	}
 
 	if len(result.UfsTotal) != 0 {
