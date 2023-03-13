@@ -129,7 +129,10 @@ def set_alluxio_runtime_resource(runtime):
     }
 
 def main():
-    config.load_kube_config()
+    if os.getenv("KUBERNETES_SERVICE_HOST") is None:
+        config.load_kube_config()
+    else:
+        config.load_incluster_config()
 
     name = "alluxio-resources"
     namespace = "default"

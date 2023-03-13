@@ -25,7 +25,10 @@ from framework.exception import TestError
 from kubernetes import client, config
 
 def main():
-    config.load_kube_config()
+    if os.getenv("KUBERNETES_SERVICE_HOST") is None:
+        config.load_kube_config()
+    else:
+        config.load_incluster_config()
 
     name = "hbase"
     namespace = "default"

@@ -78,8 +78,11 @@ def checkLabel(datasets, node):
 
 
 def main():
-    config.load_kube_config()
-    # config.load_incluster_config()
+    if os.getenv("KUBERNETES_SERVICE_HOST") is None:
+        config.load_kube_config()
+    else:
+        config.load_incluster_config()
+
     # 1. patch label
     nodes = getNodes()
     if len(nodes.items) == 0:
