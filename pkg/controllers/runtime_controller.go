@@ -37,6 +37,7 @@ import (
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/fluid-cloudnative/fluid/pkg/dump"
+	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 
@@ -188,6 +189,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 
 	// 2. Set the dataset's status as unbound
 	r.implement.RemoveEngine(ctx)
+	r.ForgetMetrics(ctx)
 	// r.removeEngine(engine.ID())
 	dataset := ctx.Dataset.DeepCopy()
 	if dataset != nil {
@@ -381,6 +383,12 @@ func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.Reconcil
 	}
 
 	return nil
+}
+
+// ForgetMetrics deletes related metrics in prometheus metrics to avoid memory inflation
+func (r *RuntimeReconciler) ForgetMetrics(ctx cruntime.ReconcileRequestContext) {
+	metrics.GetRuntimeMetrics(ctx.Runtime.GetObjectKind().GroupVersionKind().Kind, ctx.Namespace, ctx.Name).Forget()
+	metrics.GetDatasetMetrics(ctx.Namespace, ctx.Name).Forget()
 }
 
 // The interface of RuntimeReconciler
