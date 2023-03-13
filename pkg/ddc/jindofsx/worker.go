@@ -119,9 +119,9 @@ func (e *JindoFSxEngine) CheckWorkersReady() (ready bool, err error) {
 // getWorkerSelectors gets the selector of the worker
 func (e *JindoFSxEngine) getWorkerSelectors() string {
 	labels := map[string]string{
-		"release":   e.name,
-		PodRoleType: WOKRER_POD_ROLE,
-		"app":       common.JindoRuntime,
+		"release":          e.name,
+		common.PodRoleType: workerPodRole,
+		"app":              common.JindoRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

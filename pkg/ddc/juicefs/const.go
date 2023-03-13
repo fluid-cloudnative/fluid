@@ -29,9 +29,7 @@ const (
 	BlockCacheHitBytesOfCommunity  = "juicefs_blockcache_hit_bytes"
 	BlockCacheMissBytesOfCommunity = "juicefs_blockcache_miss_bytes"
 
-	PodRoleType = "role"
-
-	WorkerPodRole      = "juicefs-worker"
+	workerPodRole      = "juicefs-worker"
 	EnterpriseEdition  = "enterprise"
 	CommunityEdition   = "community"
 	DefaultMetricsPort = 9567
