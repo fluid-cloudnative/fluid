@@ -1,6 +1,7 @@
 package base
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -52,19 +53,29 @@ func SafeSend(ch chan MetadataSyncResult, result MetadataSyncResult) (closed boo
 
 // RecordDatasetMetrics records dataset-related metrics from the given MetadataSyncResult
 func RecordDatasetMetrics(result MetadataSyncResult, datasetNamespace, datasetName string, log logr.Logger) {
+	if len(datasetNamespace) == 0 {
+		argErr := errors.New("invalid argument: datasetNamespace should not be empty")
+		log.Error(argErr, "failed to validate RecordDatasetMetrics arguments")
+	}
+
+	if len(datasetName) == 0 {
+		argErr := errors.New("invalid argument: datasetName should not be empty")
+		log.Error(argErr, "failed to validate RecordDatasetMetrics arguments")
+	}
+
 	if len(result.UfsTotal) != 0 {
-		if ufsTotal, ignoredErr := utils.FromHumanSize(result.UfsTotal); ignoredErr == nil {
+		if ufsTotal, parseErr := utils.FromHumanSize(result.UfsTotal); parseErr == nil {
 			metrics.GetDatasetMetrics(datasetNamespace, datasetName).SetUFSTotalSize(float64(ufsTotal))
 		} else {
-			log.Error(ignoredErr, "fail to parse result.UfsTotal", "result.UfsTotal", result.UfsTotal)
+			log.Error(parseErr, "fail to parse result.UfsTotal", "result.UfsTotal", result.UfsTotal)
 		}
 	}
 
 	if len(result.FileNum) != 0 {
-		if fileNum, ignoredErr := strconv.Atoi(result.FileNum); ignoredErr == nil {
+		if fileNum, parseErr := strconv.Atoi(result.FileNum); parseErr == nil {
 			metrics.GetDatasetMetrics(datasetNamespace, datasetName).SetUFSFileNum(float64(fileNum))
 		} else {
-			log.Error(ignoredErr, "fail to atoi result.FileNum", "result.FileNum", result.FileNum)
+			log.Error(parseErr, "fail to atoi result.FileNum", "result.FileNum", result.FileNum)
 		}
 	}
 }
