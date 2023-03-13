@@ -52,8 +52,6 @@ const (
 
 	hadoopConfMountPath = "/hdfs-config"
 
-	podRoleType = "role"
-
 	wokrerPodRole = "alluxio-worker"
 
 	// defaultGracefulShutdownLimits is the limit for the system to forcibly clean up.

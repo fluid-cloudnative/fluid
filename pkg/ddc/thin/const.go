@@ -17,8 +17,8 @@
 package thin
 
 const (
-	PodRoleType   = "role"
-	WorkerPodRole = "thin-worker"
+	// PodRoleType   = "role"
+	workerPodRole = "thin-worker"
 
 	MetadataSyncNotDoneMsg               = "[Calculating]"
 	CheckMetadataSyncDoneTimeoutMillisec = 500

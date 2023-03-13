@@ -107,9 +107,9 @@ func (e *GooseFSEngine) CheckWorkersReady() (ready bool, err error) {
 // getWorkerSelectors gets the selector of the worker
 func (e *GooseFSEngine) getWorkerSelectors() string {
 	labels := map[string]string{
-		"release":   e.name,
-		PodRoleType: WOKRER_POD_ROLE,
-		"app":       common.GooseFSRuntime,
+		"release":          e.name,
+		common.PodRoleType: WOKRER_POD_ROLE,
+		"app":              common.GooseFSRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

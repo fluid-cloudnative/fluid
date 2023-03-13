@@ -80,7 +80,7 @@ func (t ThinEngine) syncScheduleInfoToCacheNodes() (err error) {
 		return err
 	}
 
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=%s,role=%s", t.namespace, t.name, common.ThinRuntime, WorkerPodRole))
+	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=%s,role=%s", t.namespace, t.name, common.ThinRuntime, workerPodRole))
 	if err != nil {
 		return err
 	}

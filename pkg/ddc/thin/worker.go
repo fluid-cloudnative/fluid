@@ -99,9 +99,9 @@ func (t ThinEngine) SetupWorkers() (err error) {
 // getWorkerSelectors gets the selector of the worker
 func (t *ThinEngine) getWorkerSelectors() string {
 	labels := map[string]string{
-		"release":   t.name,
-		PodRoleType: WorkerPodRole,
-		"app":       common.ThinRuntime,
+		"release":          t.name,
+		common.PodRoleType: workerPodRole,
+		"app":              common.ThinRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,
