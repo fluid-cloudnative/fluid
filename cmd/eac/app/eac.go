@@ -133,6 +133,8 @@ func handle() {
 		portallocator.Random,
 		eac.GetReservedPorts)
 
+	mgr.Add(eac.NewSessMgrInitializer(mgr.GetClient()))
+
 	setupLog.Info("starting eacruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem eacruntime-controller")

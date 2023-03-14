@@ -36,6 +36,10 @@ const (
 
 	EACInitFuseImageEnv = "EAC_INIT_FUSE_IMAGE_ENV"
 
+	EACSessMgrImageEnv = "EAC_SESSMGR_IMAGE_ENV"
+
+	EACSessMgrUpdateStrategyEnv = "EAC_SESSMGR_UPDATE_STRATEGY_ENV"
+
 	DefaultEACMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
 
 	DefaultEACFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
@@ -43,4 +47,6 @@ const (
 	DefaultEACWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img:update"
 
 	DefaultEACInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
+
+	DefaultEACSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1"
 )
