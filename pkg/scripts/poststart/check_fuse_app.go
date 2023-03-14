@@ -18,6 +18,7 @@ package poststart
 
 import (
 	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilpointer "k8s.io/utils/pointer"
@@ -53,7 +54,7 @@ for idx in "${!mountPaths[@]}"; do
 	mp=${mountPaths[$idx]}
     mt=${mountTypes[$idx]}
 	count=0
-	while ! mount | grep $mp | grep $mt
+	while ! cat /proc/self/mountinfo | grep $mp | grep $mt
 	do
     	sleep 3
     	count=¬expr $count + 1¬
