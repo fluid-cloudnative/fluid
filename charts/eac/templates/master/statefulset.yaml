@@ -48,7 +48,7 @@ spec:
         {{- end }}
         {{- end }}
     spec:
-      terminationGracePeriodSeconds: 10000000
+      terminationGracePeriodSeconds: 90
       {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ .Values.master.hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
