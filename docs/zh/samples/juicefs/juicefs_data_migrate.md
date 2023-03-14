@@ -64,10 +64,10 @@ DataMigrate 的生命周期如下图所示：
 
 ![](images/fluid-datamigration-state.jpg)
 
-### DataMigration 状态转换流程
+### DataMigrate 状态转换流程
 
 1. DataMigrate 创建后，状态为 Pending；
-2. 只有当 DataSet 状态为 Bound 时，或当前环境满足 policy，DataMigration 才能运行；
+2. 只有当 DataSet 状态为 Bound 时，或当前环境满足 policy，DataMigrate 才能运行；
 3. 运行数据迁移时，状态从 Pending 置为 Excuting；
 4. 运行成功状态变为 Complete；运行失败状态变为 Failed；
 
