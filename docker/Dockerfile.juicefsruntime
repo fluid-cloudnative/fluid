@@ -1,5 +1,5 @@
 # Build the juicefsruntime-controller manager binary
-FROM --platform=${BUILDPLATFORM} golang:1.18 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
