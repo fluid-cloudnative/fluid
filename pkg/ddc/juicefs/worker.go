@@ -100,9 +100,9 @@ func (j JuiceFSEngine) SetupWorkers() (err error) {
 // getWorkerSelectors gets the selector of the worker
 func (j *JuiceFSEngine) getWorkerSelectors() string {
 	labels := map[string]string{
-		"release":   j.name,
-		PodRoleType: WorkerPodRole,
-		"app":       common.JuiceFSRuntime,
+		"release":          j.name,
+		common.PodRoleType: workerPodRole,
+		"app":              common.JuiceFSRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

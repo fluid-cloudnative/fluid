@@ -100,6 +100,8 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 						if err != nil {
 							return
 						}
+						// Update dataset metrics after a suceessful status update
+						base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, t.Log)
 					}
 					return
 				})

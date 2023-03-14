@@ -212,11 +212,14 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 					datasetToUpdate := dataset.DeepCopy()
 					datasetToUpdate.Status.UfsTotal = result.UfsTotal
 					datasetToUpdate.Status.FileNum = result.FileNum
+
 					if !reflect.DeepEqual(datasetToUpdate, dataset) {
 						err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 						if err != nil {
 							return
 						}
+						// Update dataset metrics after a suceessful status update
+						base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, e.Log)
 					}
 					return
 				})
