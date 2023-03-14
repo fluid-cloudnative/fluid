@@ -136,10 +136,10 @@ func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, obj
 	return nil, nil
 }
 
-func (r *DataBackupReconciler) LockTargetDatasetStatus(dataset *v1alpha1.Dataset) {
+func (r *DataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *v1alpha1.Dataset) {
 }
 
-func (r *DataBackupReconciler) ReleaseTargetDatasetStatus(dataset *v1alpha1.Dataset) {
+func (r *DataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *v1alpha1.Dataset) {
 }
 
 func (r *DataBackupReconciler) GetOperationType() dataoperation.OperationType {

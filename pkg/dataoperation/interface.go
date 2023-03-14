@@ -49,9 +49,9 @@ type OperationInterface interface {
 	// UpdateStatusByHelmStatus update the operation status according to helm job status
 	UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error
 
-	// LockTargetDatasetStatus set the dataset status for certain field when locking dataset
-	LockTargetDatasetStatus(dataset *datav1alpha1.Dataset)
+	// SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
+	SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 
-	// ReleaseTargetDatasetStatus set the dataset status for certain field when releasing dataset lock
-	ReleaseTargetDatasetStatus(dataset *datav1alpha1.Dataset)
+	// RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
+	RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 }

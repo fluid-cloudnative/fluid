@@ -16,12 +16,15 @@ limitations under the License.
 
 package base
 
-import "testing"
+import (
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
+)
 
 func TestGetDataBackupRef(t *testing.T) {
 	type args struct {
-		name      string
-		namespace string
+		object *v1alpha1.DataBackup
 	}
 	tests := []struct {
 		name string
@@ -31,15 +34,17 @@ func TestGetDataBackupRef(t *testing.T) {
 		{
 			name: "test",
 			args: args{
-				name:      "test",
-				namespace: "default",
+				object: &v1alpha1.DataBackup{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+					Spec:       v1alpha1.DataBackupSpec{},
+				},
 			},
 			want: "default/test",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataOperationRef(tt.args.name, tt.args.namespace); got != tt.want {
+			if got := GetDataOperationKey(tt.args.object); got != tt.want {
 				t.Errorf("GetDataBackupRef() = %v, want %v", got, tt.want)
 			}
 		})

@@ -334,8 +334,8 @@ func (dataset *Dataset) IsExclusiveMode() bool {
 	return dataset.Spec.PlacementMode == DefaultMode || dataset.Spec.PlacementMode == ExclusiveMode
 }
 
-// GetLockedNameForOperation get the name of operation for certain type running on this dataset, otherwise return empty string
-func (dataset *Dataset) GetLockedNameForOperation(operationType string) string {
+// GetDataOperationInProgress get the name of operation for certain type running on this dataset, otherwise return empty string
+func (dataset *Dataset) GetDataOperationInProgress(operationType string) string {
 	if dataset.Status.OperationRef == nil {
 		return ""
 	}
@@ -343,8 +343,8 @@ func (dataset *Dataset) GetLockedNameForOperation(operationType string) string {
 	return dataset.Status.OperationRef[operationType]
 }
 
-// LockOperation lock Dataset for operation
-func (dataset *Dataset) LockOperation(operationType string, name string) {
+// SetDataOperationInProgress set the data operation running on this dataset,
+func (dataset *Dataset) SetDataOperationInProgress(operationType string, name string) {
 	if dataset.Status.OperationRef == nil {
 		dataset.Status.OperationRef = map[string]string{}
 	}
@@ -352,8 +352,8 @@ func (dataset *Dataset) LockOperation(operationType string, name string) {
 	dataset.Status.OperationRef[operationType] = name
 }
 
-// ReleaseOperation release Dataset for operation
-func (dataset *Dataset) ReleaseOperation(operationType string) {
+// RemoveDataOperationInProgress release Dataset for operation
+func (dataset *Dataset) RemoveDataOperationInProgress(operationType string) {
 	if dataset.Status.OperationRef == nil {
 		return
 	}

@@ -100,7 +100,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 	log := ctx.Log.WithName("reconcilePending")
 
 	// 1. lock the dataset
-	err := LockTargetDataset(ctx, object, operation, t)
+	err := SetDataOperationInTargetDataset(ctx, object, operation, t)
 	if err != nil {
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}

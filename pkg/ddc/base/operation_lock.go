@@ -24,42 +24,26 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetDataOperationRef(name, namespace string) string {
-	// namespace may contain '-', use '/' as separator
-	return fmt.Sprintf("%s/%s", namespace, name)
+func GetDataOperationKey(object client.Object) string {
+	return types.NamespacedName{
+		Name:      object.GetName(),
+		Namespace: object.GetNamespace(),
+	}.String()
 }
 
-// LockTargetDataset lock target dataset if not locked by this data operation.
-func LockTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
+// SetDataOperationInTargetDataset return err if current data operation can not be operated on target dataset,
+// if can, set target dataset OperationRef field to mark the data operation being performed.
+func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface, engine Engine) error {
 	targetDataset := ctx.Dataset
 
-	operationTypeName := string(operation.GetOperationType())
-
-	// 1. Check if there's any conflict
-	conflictDataOpRef := targetDataset.GetLockedNameForOperation(operationTypeName)
-	dataOpRef := GetDataOperationRef(object.GetName(), object.GetNamespace())
-
-	// already locked by self, return
-	if conflictDataOpRef == dataOpRef {
-		return nil
-	}
-
-	// conflict lock, return error and requeue
-	if len(conflictDataOpRef) != 0 && conflictDataOpRef != dataOpRef {
-		ctx.Log.Info(fmt.Sprintf("Found other %s that is in Executing phase, will backoff", operationTypeName), "other", conflictDataOpRef)
-		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationCollision,
-			"Found other %s(%s) that is in Executing phase, will backoff",
-			operationTypeName, conflictDataOpRef)
-		return fmt.Errorf("found other %s that is in Executing phase, will backoff", operationTypeName)
-	}
-
-	// 2. can lock, check if the bounded runtime is ready
+	// check if the bounded runtime is ready
 	ready := engine.CheckRuntimeReady()
 	if !ready {
 		ctx.Log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)
@@ -70,26 +54,55 @@ func LockTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Objec
 		return fmt.Errorf("bounded accelerate runtime not ready")
 	}
 
-	ctx.Log.Info("No conflicts detected, try to lock the target dataset")
+	operationTypeName := string(operation.GetOperationType())
 
-	// 3. Try lock target dataset
-	datasetToUpdate := targetDataset.DeepCopy()
-	datasetToUpdate.LockOperation(operationTypeName, dataOpRef)
-
-	// different operation may set other fields
-	operation.LockTargetDatasetStatus(datasetToUpdate)
-
-	if !reflect.DeepEqual(targetDataset.Status, datasetToUpdate.Status) {
-		if err := ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
-			ctx.Log.Info("fail to update target dataset's lock, will requeue", "targetDatasetName", targetDataset.Name)
+	// set current data operation in target dataset
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(ctx.Client, targetDataset.Name, targetDataset.Namespace)
+		if err != nil {
 			return err
 		}
-	}
 
-	return nil
+		conflictingDataOpKey := dataset.GetDataOperationInProgress(operationTypeName)
+		dataOpKey := GetDataOperationKey(object)
+
+		// If the target dataset is already doing this operation, return nil
+		if dataOpKey == conflictingDataOpKey {
+			return nil
+		}
+
+		// other same type data operation already in target dataset, return error and requeue
+		if len(conflictingDataOpKey) != 0 && conflictingDataOpKey != dataOpKey {
+			ctx.Log.Info(fmt.Sprintf("Found other %s that is in Executing phase, will backoff", operationTypeName), "other", conflictingDataOpKey)
+			ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationCollision,
+				"Found other %s(%s) that is in Executing phase, will backoff",
+				operationTypeName, conflictingDataOpKey)
+			return fmt.Errorf("found other %s that is in Executing phase, will backoff", operationTypeName)
+		}
+
+		ctx.Log.Info("No conflicts detected, try to lock the target dataset")
+
+		// set current data operation in the target dataset
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.SetDataOperationInProgress(operationTypeName, dataOpKey)
+		// different operation may set other fields
+		operation.SetTargetDatasetStatusInProgress(datasetToUpdate)
+
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			if err := ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
+				ctx.Log.Info("fail to update target dataset's lock, will requeue", "targetDatasetName", targetDataset.Name)
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		ctx.Log.Error(err, "can't set lock on target dataset", "targetDataset", targetDataset.Name)
+	}
+	return err
 }
 
-// ReleaseTargetDataset release target dataset if locked by this data operation.
+// ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
 func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface) error {
 	// Note: ctx.Dataset may be nil, so use the `GetTargetDatasetNamespacedName`
@@ -110,17 +123,17 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 			// other error
 			return err
 		}
-		currentRef := dataset.GetLockedNameForOperation(operationTypeName)
+		currentDataOpKey := dataset.GetDataOperationInProgress(operationTypeName)
 
-		if currentRef != GetDataOperationRef(object.GetName(), object.GetNamespace()) {
-			ctx.Log.Info("Found Ref inconsistent with the reconciling DataBack, won't release this lock, ignore it", "Operation", operationTypeName, "ref", currentRef)
+		if currentDataOpKey != GetDataOperationKey(object) {
+			ctx.Log.Info("Found Ref inconsistent with the reconciling DataBack, won't release this lock, ignore it", "Operation", operationTypeName, "ref", currentDataOpKey)
 			return nil
 		}
 		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.ReleaseOperation(operationTypeName)
+		datasetToUpdate.RemoveDataOperationInProgress(operationTypeName)
 
 		// different operation may set other fields
-		operation.ReleaseTargetDatasetStatus(datasetToUpdate)
+		operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
 		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
 			if err := ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 				return err
