@@ -99,20 +99,41 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
-
 	runtime, err := utils.GetJindoRuntime(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return
 	}
-	hadoopConfig := runtime.Spec.HadoopConfig
-	loadMemorydata := false
+
 	if len(runtime.Spec.TieredStore.Levels) == 0 {
 		err = fmt.Errorf("the TieredStore is null")
 		return
 	}
-	if runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
-		loadMemorydata = true
+
+	dataLoadValue := e.genDataLoadValue(image, runtime, targetDataset, dataload)
+	data, err := yaml.Marshal(dataLoadValue)
+	if err != nil {
+		return
+	}
+
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
+	if err != nil {
+		return
+	}
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
+	if err != nil {
+		return
+	}
+	return valueFile.Name(), nil
+}
+
+func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset, dataload datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+
+	hadoopConfig := runtime.Spec.HadoopConfig
+	loadMemoryData := false
+
+	if len(runtime.Spec.TieredStore.Levels) > 0 && runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
+		loadMemoryData = true
 	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
@@ -121,6 +142,32 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 		LoadMetadata:     dataload.Spec.LoadMetadata,
 		Image:            image,
 		ImagePullSecrets: imagePullSecrets,
+	}
+
+	// pod affinity
+	if dataload.Spec.Affinity != nil {
+		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// node selector
+	if dataload.Spec.NodeSelector != nil {
+		if dataloadInfo.NodeSelector == nil {
+			dataloadInfo.NodeSelector = make(map[string]string)
+		}
+		dataloadInfo.NodeSelector = dataload.Spec.NodeSelector
+	}
+
+	// pod tolerations
+	if len(dataload.Spec.Tolerations) > 0 {
+		if dataloadInfo.Tolerations == nil {
+			dataloadInfo.Tolerations = make([]v1.Toleration, 0)
+		}
+		dataloadInfo.Tolerations = dataload.Spec.Tolerations
+	}
+
+	// scheduler name
+	if len(dataload.Spec.SchedulerName) > 0 {
+		dataloadInfo.SchedulerName = dataload.Spec.SchedulerName
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -134,7 +181,7 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 	dataloadInfo.TargetPaths = targetPaths
 	options := map[string]string{}
-	if loadMemorydata {
+	if loadMemoryData {
 		options["loadMemorydata"] = "true"
 	} else {
 		options["loadMemorydata"] = "false"
@@ -150,21 +197,8 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	}
 	dataloadInfo.Options = options
 
-	dataLoadValue := cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
-	data, err := yaml.Marshal(dataLoadValue)
-	if err != nil {
-		return
-	}
-
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
-	if err != nil {
-		return
-	}
-	err = os.WriteFile(valueFile.Name(), data, 0o400)
-	if err != nil {
-		return
-	}
-	return valueFile.Name(), nil
+	dataLoadValue := &cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+	return dataLoadValue
 }
 
 func (e *JindoEngine) CheckRuntimeReady() (ready bool) {
