@@ -25,12 +25,12 @@ For more information, please refer to our paper: Rong Gu, et al. [Fluid: Dataset
 # Fluid
 English | [简体中文](./README-zh_CN.md)
 
-|![notification](static/bell-outline-badge.svg) What is NEW!|
-|------------------|
-|Sep. 03th, 2022. Fluid v0.8.0 is **RELEASED**! It provides various new features, such as Lifecycle management of Serverless Job with fluid sidecar support, Enable runtime controller on demand, Automatic CRD upgrader, Restrict pod scheduling to dataset cache nodes, Arm64 support with JuicefsRuntime, GCS support for Alluxio Runtime, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details.|
-|Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! .|
+| ![notification](static/bell-outline-badge.svg) What is NEW!  |
+| ------------------------------------------------------------ |
+| Sep. 03th, 2022. Fluid v0.8.0 is **RELEASED**! It provides various new features, such as Lifecycle management of Serverless Job with fluid sidecar support, Enable runtime controller on demand, Automatic CRD upgrader, Restrict pod scheduling to dataset cache nodes, Arm64 support with JuicefsRuntime, GCS support for Alluxio Runtime, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+| Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+| Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+| Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
 
 <div align="center">
     <img src="static/architecture.png" title="architecture" height="60%" width="60%" alt="">
@@ -62,7 +62,7 @@ English | [简体中文](./README-zh_CN.md)
 
 **Dataset**: A DataSet is a set of data logically related that can be used by computing engines, such as Spark for big data analytics and TensorFlow for AI applications. Intelligently leveraging data often creates core industry values. Managing DataSets may require features in different dimensions, such as security, version management and data acceleration. We hope to start with data acceleration to support the management of datasets. 
 
-**Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to mangage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
+**Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to manage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
 
 **AlluxioRuntime**: Based on open-source [Alluxio](https://www.alluxio.io/), 
 Fluid can manage and schedule Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. This is one engine which supports data management and caching of Datasets.
@@ -153,7 +153,7 @@ Contributions are highly welcomed and greatly appreciated. See [CONTRIBUTING.md]
 
 ## Adopters
 
-If you are intrested in Fluid and would like to share your experiences with others, you are warmly welcome to add your information on [ADOPTERS.md](ADOPTERS.md) page. We will continuousely discuss new requirements and feature design with you in advance.
+If you are interested in Fluid and would like to share your experiences with others, you are warmly welcome to add your information on [ADOPTERS.md](ADOPTERS.md) page. We will continuously discuss new requirements and feature design with you in advance.
 
 
 ## Open Source License
@@ -161,7 +161,7 @@ If you are intrested in Fluid and would like to share your experiences with othe
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details. It is vendor-neutral.
 
 ## Report Vulnerability
-Security is a first priority thing for us at Fluid. If you come across a related issue, please send email to fluid.opensource.project@gmail.com.
+Security is a first priority thing for us at Fluid. If you come across a related issue, please send email to fluid.opensource.project@gmail.com .
 
 
 ## Code of Conduct
