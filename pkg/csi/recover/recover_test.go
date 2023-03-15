@@ -201,7 +201,8 @@ func TestFuseRecover_recoverBrokenMount(t *testing.T) {
 
 func TestFuseRecover_eventRecord(t *testing.T) {
 	type fields struct {
-		dataset    *v1alpha1.Dataset
+		dataset *v1alpha1.Dataset
+		pv      *corev1.PersistentVolume
 	}
 	type args struct {
 		point       mountinfo.MountPoint
@@ -220,6 +221,11 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "jfsdemo",
 						Namespace: "default",
+					},
+				},
+				pv: &corev1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "default-jfsdemo",
 					},
 				},
 			},
@@ -245,6 +251,11 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 						Namespace: "default",
 					},
 				},
+				pv: &corev1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "other-pv",
+					},
+				},
 			},
 			args: args{
 				point: mountinfo.MountPoint{
@@ -265,12 +276,13 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 			s := apimachineryRuntime.NewScheme()
 			_ = v1alpha1.AddToScheme(s)
 			_ = scheme.AddToScheme(s)
-			fakeClient := fake.NewFakeClientWithScheme(s, tt.fields.dataset)
+			fakeClient := fake.NewFakeClientWithScheme(s, tt.fields.dataset, tt.fields.pv)
 			r := &FuseRecover{
 				KubeClient: fakeClient,
 				ApiReader:  fakeClient,
 				Recorder:   record.NewFakeRecorder(1),
 			}
+
 			r.eventRecord(tt.args.point, tt.args.eventType, tt.args.eventReason)
 		})
 	}
