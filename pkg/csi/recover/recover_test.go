@@ -17,23 +17,22 @@ limitations under the License.
 package recover
 
 import (
-	"errors"
 	"os"
 	"reflect"
 	"testing"
-	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	. "github.com/smartystreets/goconvey/convey"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
@@ -41,31 +40,6 @@ import (
 )
 
 const testfuseRecoverPeriod = 30
-
-var mockPod = v1.Pod{
-	ObjectMeta: metav1.ObjectMeta{
-		Labels:    map[string]string{"role": "juicefs-fuse"},
-		Name:      "test-pod",
-		Namespace: "default",
-		OwnerReferences: []metav1.OwnerReference{{
-			Kind: "DaemonSet",
-			Name: "test-juicefs-fuse",
-		}},
-	},
-	Spec: v1.PodSpec{},
-	Status: v1.PodStatus{
-		Conditions: []v1.PodCondition{{
-			Type:   v1.PodReady,
-			Status: v1.ConditionTrue,
-		}},
-		ContainerStatuses: []v1.ContainerStatus{{
-			Name: "test-container",
-			State: v1.ContainerState{Running: &v1.ContainerStateRunning{
-				StartedAt: metav1.Time{Time: time.Now()},
-			}},
-		}},
-	},
-}
 
 func Test_initializeKubeletClient(t *testing.T) {
 	Convey("Test_initializeKubeletClient", t, func() {
@@ -97,15 +71,44 @@ func Test_initializeKubeletClient(t *testing.T) {
 func TestRecover_run(t *testing.T) {
 	Convey("TestRecover_run", t, func() {
 		Convey("run success", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{Items: []v1.Pod{mockPod}}, nil
+			dataset := &v1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "jfsdemo",
+					Namespace: "default",
+				},
+			}
+
+			s := apimachineryRuntime.NewScheme()
+			_ = v1alpha1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
+			fakeClient := fake.NewFakeClientWithScheme(s, dataset)
+
+			mockedFsMounts := map[string]string{}
+
+			sourcePath := "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse"
+			targetPath := "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount"
+
+			fakeMounter := &mount.FakeMounter{}
+			r := &FuseRecover{
+				SafeFormatAndMount: mount.SafeFormatAndMount{
+					Interface: fakeMounter,
+				},
+				KubeClient:        fakeClient,
+				ApiReader:         fakeClient,
+				Recorder:          record.NewFakeRecorder(1),
+				recoverFusePeriod: testfuseRecoverPeriod,
+			}
+
+			patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "Mount", func(_ *mount.FakeMounter, source string, target string, _ string, _ []string) error {
+				mockedFsMounts[source] = target
+				return nil
 			})
 			defer patch1.Reset()
+
 			patch2 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
 				return []mountinfo.MountPoint{{
-					SourcePath:            "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
-					MountPath:             "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
+					SourcePath:            sourcePath,
+					MountPath:             targetPath,
 					FilesystemType:        "fuse.juicefs",
 					ReadOnly:              false,
 					Count:                 0,
@@ -114,206 +117,18 @@ func TestRecover_run(t *testing.T) {
 			})
 			defer patch2.Reset()
 
-			r := &FuseRecover{
-				SafeFormatAndMount: mount.SafeFormatAndMount{
-					Interface: &mount.FakeMounter{},
-				},
-				KubeClient:        fake.NewFakeClient(),
-				KubeletClient:     kubeclient,
-				Recorder:          record.NewFakeRecorder(1),
-				containers:        make(map[string]*containerStat),
-				recoverFusePeriod: testfuseRecoverPeriod,
-			}
-			r.runOnce()
-		})
-		Convey("GetNodeRunningPods error", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{}, errors.New("test")
+			patch3 := ApplyFunc(volume.GetNamespacedNameByVolumeId, func(client client.Reader, volumeId string) (namespace, name string, err error) {
+				return "default", "jfsdemo", nil
 			})
-			defer patch1.Reset()
-			patch2 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
-				return []mountinfo.MountPoint{}, nil
-			})
-			defer patch2.Reset()
+			defer patch3.Reset()
 
-			r := FuseRecover{
-				SafeFormatAndMount: mount.SafeFormatAndMount{},
-				KubeClient:         fake.NewFakeClient(),
-				KubeletClient:      &kubelet.KubeletClient{},
-				Recorder:           record.NewFakeRecorder(1),
-			}
 			r.runOnce()
-		})
-		Convey("container restart", func() {
-			kubeclient := &kubelet.KubeletClient{}
-			patch1 := ApplyMethod(reflect.TypeOf(kubeclient), "GetNodeRunningPods", func(_ *kubelet.KubeletClient) (*v1.PodList, error) {
-				return &v1.PodList{Items: []v1.Pod{mockPod}}, nil
-			})
-			defer patch1.Reset()
-			patch2 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
-				return []mountinfo.MountPoint{}, nil
-			})
-			defer patch2.Reset()
 
-			r := &FuseRecover{
-				SafeFormatAndMount: mount.SafeFormatAndMount{
-					Interface: &mount.FakeMounter{},
-				},
-				KubeClient:        fake.NewFakeClient(),
-				KubeletClient:     kubeclient,
-				Recorder:          record.NewFakeRecorder(1),
-				containers:        make(map[string]*containerStat),
-				recoverFusePeriod: testfuseRecoverPeriod,
+			if target, exists := mockedFsMounts[sourcePath]; !exists || target != targetPath {
+				t.Errorf("failed to recover mount point")
 			}
-
-			r.containers = map[string]*containerStat{
-				"test-container-test-juicefs-fuse-default": {
-					name:          "test-container",
-					podName:       "test-pod",
-					namespace:     "default",
-					daemonSetName: "test-juicefs-fuse",
-					startAt: metav1.Time{
-						Time: time.Now().Add(-1 * time.Minute),
-					},
-				},
-			}
-			r.runOnce()
 		})
 	})
-}
-
-func TestFuseRecover_compareOrRecordContainerStat(t *testing.T) {
-	type fields struct {
-		key       string
-		container *containerStat
-	}
-	type args struct {
-		pod v1.Pod
-	}
-	tests := []struct {
-		name          string
-		fields        fields
-		args          args
-		wantRestarted bool
-	}{
-		{
-			name: "test1",
-			fields: fields{
-				key: "test-container-test-juicefs-fuse-default",
-				container: &containerStat{
-					name:          "test-container",
-					podName:       "test-pod",
-					namespace:     "default",
-					daemonSetName: "test-juicefs-fuse",
-					startAt: metav1.Time{
-						Time: time.Now().Add(-1 * time.Minute),
-					},
-				},
-			},
-			args: args{
-				pod: mockPod,
-			},
-			wantRestarted: true,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				key: "test-container-test-juicefs-fuse-default",
-				container: &containerStat{
-					name:          "test-container",
-					podName:       "test-pod",
-					namespace:     "default",
-					daemonSetName: "test-juicefs-fuse",
-					startAt: metav1.Time{
-						Time: time.Now(),
-					},
-				},
-			},
-			args: args{
-				pod: mockPod,
-			},
-			wantRestarted: false,
-		},
-		{
-			name:   "test-nods",
-			fields: fields{},
-			args: args{
-				pod: v1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
-					},
-				},
-			},
-			wantRestarted: false,
-		},
-		{
-			name: "test-cn-not-running",
-			fields: fields{
-				key: "test-container-test-juicefs-fuse-default",
-				container: &containerStat{
-					name:          "test-container",
-					podName:       "test-pod",
-					namespace:     "default",
-					daemonSetName: "test-juicefs-fuse",
-					startAt: metav1.Time{
-						Time: time.Now().Add(-1 * time.Minute),
-					},
-				},
-			},
-			args: args{
-				pod: v1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels:    map[string]string{"role": "juicefs-fuse"},
-						Name:      "test-pod",
-						Namespace: "default",
-						OwnerReferences: []metav1.OwnerReference{{
-							Kind: "DaemonSet",
-							Name: "test-juicefs-fuse",
-						}},
-					},
-					Spec: v1.PodSpec{},
-					Status: v1.PodStatus{
-						ContainerStatuses: []v1.ContainerStatus{{
-							Name: "test-container",
-							State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{
-								StartedAt: metav1.Time{Time: time.Now()},
-							}},
-						}},
-					}},
-			},
-			wantRestarted: false,
-		},
-		{
-			name:   "test-no-container-record",
-			fields: fields{},
-			args: args{
-				pod: mockPod,
-			},
-			wantRestarted: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kubeletClient := &kubelet.KubeletClient{}
-			r := &FuseRecover{
-				SafeFormatAndMount: mount.SafeFormatAndMount{
-					Interface: &mount.FakeMounter{},
-				},
-				KubeClient:        fake.NewFakeClient(),
-				KubeletClient:     kubeletClient,
-				Recorder:          record.NewFakeRecorder(1),
-				containers:        make(map[string]*containerStat),
-				recoverFusePeriod: testfuseRecoverPeriod,
-			}
-			if tt.fields.container != nil {
-				r.containers[tt.fields.key] = tt.fields.container
-			}
-			if gotRestarted := r.compareOrRecordContainerStat(tt.args.pod); gotRestarted != tt.wantRestarted {
-				t.Errorf("compareOrRecordContainerStat() = %v, want %v", gotRestarted, tt.wantRestarted)
-			}
-		})
-	}
 }
 
 func TestFuseRecover_umountDuplicate(t *testing.T) {
@@ -418,7 +233,7 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 					Count:                 0,
 					NamespacedDatasetName: "default-jfsdemo",
 				},
-				eventType:   v1.EventTypeNormal,
+				eventType:   corev1.EventTypeNormal,
 				eventReason: common.FuseRecoverSucceed,
 			},
 		},
@@ -441,7 +256,7 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 					Count:                 0,
 					NamespacedDatasetName: "jfsdemo",
 				},
-				eventType:   v1.EventTypeNormal,
+				eventType:   corev1.EventTypeNormal,
 				eventReason: common.FuseRecoverSucceed,
 			},
 		},
@@ -449,14 +264,13 @@ func TestFuseRecover_eventRecord(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := apimachineryRuntime.NewScheme()
-			s.AddKnownTypes(v1alpha1.GroupVersion, tt.fields.dataset)
+			_ = v1alpha1.AddToScheme(s)
+			_ = scheme.AddToScheme(s)
 			fakeClient := fake.NewFakeClientWithScheme(s, tt.fields.dataset)
 			r := &FuseRecover{
-				KubeClient:    fakeClient,
-				ApiReader:     fakeClient,
-				KubeletClient: nil,
-				Recorder:      record.NewFakeRecorder(1),
-				containers:    tt.fields.containers,
+				KubeClient: fakeClient,
+				ApiReader:  fakeClient,
+				Recorder:   record.NewFakeRecorder(1),
 			}
 			r.eventRecord(tt.args.point, tt.args.eventType, tt.args.eventReason)
 		})
@@ -472,8 +286,6 @@ func TestNewFuseRecover(t *testing.T) {
 
 	fakeClient := fake.NewFakeClient()
 	fakeRecorder := record.NewFakeRecorder(1)
-	fakeKubeletClient := &kubelet.KubeletClient{}
-	fakeContainersMap := make(map[string]*containerStat)
 
 	tests := []struct {
 		name    string
@@ -495,9 +307,7 @@ func TestNewFuseRecover(t *testing.T) {
 				},
 				KubeClient:        fakeClient,
 				ApiReader:         fakeClient,
-				KubeletClient:     fakeKubeletClient,
 				Recorder:          fakeRecorder,
-				containers:        fakeContainersMap,
 				recoverFusePeriod: defaultFuseRecoveryPeriod,
 			},
 			wantErr: false,
@@ -507,11 +317,6 @@ func TestNewFuseRecover(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(utils.MountRoot, "/runtime-mnt")
 			t.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
-
-			patch := ApplyFunc(initializeKubeletClient, func() (*kubelet.KubeletClient, error) {
-				return fakeKubeletClient, nil
-			})
-			defer patch.Reset()
 
 			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.kubeClient)
 			if (err != nil) != tt.wantErr {
