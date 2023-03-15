@@ -201,7 +201,6 @@ func TestFuseRecover_recoverBrokenMount(t *testing.T) {
 
 func TestFuseRecover_eventRecord(t *testing.T) {
 	type fields struct {
-		containers map[string]*containerStat
 		dataset    *v1alpha1.Dataset
 	}
 	type args struct {

@@ -31,7 +31,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -58,14 +57,6 @@ type FuseRecover struct {
 	Recorder record.EventRecorder
 
 	recoverFusePeriod time.Duration
-}
-
-type containerStat struct {
-	name          string
-	podName       string
-	namespace     string
-	daemonSetName string
-	startAt       metav1.Time
 }
 
 func initializeKubeletClient() (*kubelet.KubeletClient, error) {
