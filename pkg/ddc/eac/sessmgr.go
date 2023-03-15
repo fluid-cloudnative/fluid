@@ -18,11 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const (
-	SessMgrNamespace     = "eac-system"
-	SessMgrDaemonSetName = "eac-sessmgr"
-)
-
 type config struct {
 	SessMgrImage   string
 	InitFuseImage  string
@@ -88,9 +83,9 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 		dsExists = true
 	)
 
-	if err := s.client.Get(ctx, types.NamespacedName{Name: SessMgrNamespace}, ns); err != nil {
+	if err := s.client.Get(ctx, types.NamespacedName{Name: common.SessMgrNamespace}, ns); err != nil {
 		if utils.IgnoreNotFound(err) != nil {
-			return errors.Wrapf(err, "fail to get namespace %s before deploy sessmgr", SessMgrNamespace)
+			return errors.Wrapf(err, "fail to get namespace %s before deploy sessmgr", common.SessMgrNamespace)
 		}
 		nsExists = false
 	}
@@ -98,19 +93,19 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 	if !nsExists {
 		ns = &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: SessMgrNamespace,
+				Name: common.SessMgrNamespace,
 			},
 		}
 		if err := s.client.Create(ctx, ns); err != nil {
 			if utils.IgnoreAlreadyExists(err) != nil {
-				return errors.Wrapf(err, "fail to create namespace %s before deploy sessmgr", SessMgrNamespace)
+				return errors.Wrapf(err, "fail to create namespace %s before deploy sessmgr", common.SessMgrNamespace)
 			}
 		}
 	}
 
-	if err := s.client.Get(ctx, types.NamespacedName{Namespace: SessMgrNamespace, Name: SessMgrDaemonSetName}, ds); err != nil {
+	if err := s.client.Get(ctx, types.NamespacedName{Namespace: common.SessMgrNamespace, Name: common.SessMgrDaemonSetName}, ds); err != nil {
 		if utils.IgnoreNotFound(err) != nil {
-			return errors.Wrapf(err, "fail to get daemonset [%s/%s] before deploy sessmgr", SessMgrNamespace, SessMgrDaemonSetName)
+			return errors.Wrapf(err, "fail to get daemonset [%s/%s] before deploy sessmgr", common.SessMgrNamespace, common.SessMgrDaemonSetName)
 		}
 		dsExists = false
 	}
@@ -122,8 +117,8 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 
 		dsToCreate := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      SessMgrDaemonSetName,
-				Namespace: SessMgrNamespace,
+				Name:      common.SessMgrDaemonSetName,
+				Namespace: common.SessMgrNamespace,
 			},
 			Spec: appsv1.DaemonSetSpec{
 				Selector: &metav1.LabelSelector{
@@ -147,7 +142,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 						HostNetwork:       true,
 						PriorityClassName: "system-node-critical",
 						NodeSelector: map[string]string{
-							"fluid.io/eac-sessmgr": "true",
+							common.SessMgrNodeSelectorKey: "true",
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -241,12 +236,12 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 
 		if err := s.client.Create(ctx, dsToCreate); err != nil {
 			if utils.IgnoreAlreadyExists(err) != nil {
-				return errors.Wrapf(err, "fail to create daemonset [%s/%s]", SessMgrNamespace, SessMgrDaemonSetName)
+				return errors.Wrapf(err, "fail to create daemonset [%s/%s]", common.SessMgrNamespace, common.SessMgrDaemonSetName)
 			}
 		}
 	} else {
 		retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			if err := s.client.Get(ctx, types.NamespacedName{Namespace: SessMgrNamespace, Name: SessMgrDaemonSetName}, ds); err != nil {
+			if err := s.client.Get(ctx, types.NamespacedName{Namespace: common.SessMgrNamespace, Name: common.SessMgrDaemonSetName}, ds); err != nil {
 				return err
 			}
 
