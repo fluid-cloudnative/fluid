@@ -18,7 +18,6 @@ package recover
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -36,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	k8sexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,12 +52,10 @@ var _ manager.Runnable = &FuseRecover{}
 
 type FuseRecover struct {
 	mount.SafeFormatAndMount
-	KubeClient    client.Client
-	ApiReader     client.Reader
-	KubeletClient *kubelet.KubeletClient
-	Recorder      record.EventRecorder
-
-	containers map[string]*containerStat // key: <containerName>-<daemonSetName>-<namespace>
+	KubeClient client.Client
+	ApiReader  client.Reader
+	// KubeletClient *kubelet.KubeletClient
+	Recorder record.EventRecorder
 
 	recoverFusePeriod time.Duration
 }
@@ -124,11 +120,6 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 		return nil, errors.Wrap(err, "got error when creating kubelet client")
 	}
 
-	kubeletClient, err := initializeKubeletClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to initialize kubelet")
-	}
-
 	recoverFusePeriod := defaultFuseRecoveryPeriod
 	if os.Getenv(FuseRecoveryPeriod) != "" {
 		recoverFusePeriod, err = time.ParseDuration(os.Getenv(FuseRecoveryPeriod))
@@ -143,9 +134,7 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 		},
 		KubeClient:        kubeClient,
 		ApiReader:         apiReader,
-		KubeletClient:     kubeletClient,
 		Recorder:          recorder,
-		containers:        make(map[string]*containerStat),
 		recoverFusePeriod: recoverFusePeriod,
 	}, nil
 }
@@ -166,27 +155,7 @@ func (r *FuseRecover) run(stopCh <-chan struct{}) {
 }
 
 func (r *FuseRecover) runOnce() {
-	pods, err := r.KubeletClient.GetNodeRunningPods()
-	glog.V(6).Info("get pods from kubelet")
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	for _, pod := range pods.Items {
-		glog.V(6).Infof("get pod: %s, namespace: %s", pod.Name, pod.Namespace)
-		if !utils.IsFusePod(pod) {
-			continue
-		}
-		if !podutil.IsPodReady(&pod) {
-			continue
-		}
-		glog.V(6).Infof("get fluid fuse pod: %s, namespace: %s", pod.Name, pod.Namespace)
-		if isRestarted := r.compareOrRecordContainerStat(pod); isRestarted {
-			glog.V(3).Infof("fuse pod restarted: %s, namespace: %s", pod.Name, pod.Namespace)
-			r.recover()
-			return
-		}
-	}
+	r.recover()
 }
 
 func (r FuseRecover) recover() {
@@ -232,48 +201,6 @@ func (r *FuseRecover) umountDuplicate(point mountinfo.MountPoint) {
 			glog.Errorf("exec cmd: umount %s err: %v", point.MountPath, err)
 		}
 	}
-}
-
-func (r *FuseRecover) compareOrRecordContainerStat(pod corev1.Pod) (restarted bool) {
-	if pod.Status.ContainerStatuses == nil || len(pod.OwnerReferences) == 0 {
-		return
-	}
-	var dsName string
-	for _, obj := range pod.OwnerReferences {
-		if obj.Kind == "DaemonSet" {
-			dsName = obj.Name
-		}
-	}
-	if dsName == "" {
-		return
-	}
-	for _, cn := range pod.Status.ContainerStatuses {
-		if cn.State.Running == nil {
-			continue
-		}
-		key := fmt.Sprintf("%s-%s-%s", cn.Name, dsName, pod.Namespace)
-		cs, ok := r.containers[key]
-		if !ok {
-			cs = &containerStat{
-				name:          cn.Name,
-				podName:       pod.Name,
-				namespace:     pod.Namespace,
-				daemonSetName: dsName,
-				startAt:       cn.State.Running.StartedAt,
-			}
-			r.containers[key] = cs
-			continue
-		}
-
-		if cs.startAt.Before(&cn.State.Running.StartedAt) {
-			glog.Infof("Container %s of pod %s in namespace %s start time is %s, but record %s",
-				cn.Name, pod.Name, pod.Namespace, cn.State.Running.StartedAt.String(), cs.startAt.String())
-			r.containers[key].startAt = cn.State.Running.StartedAt
-			restarted = true
-			return
-		}
-	}
-	return
 }
 
 func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventReason string) {
