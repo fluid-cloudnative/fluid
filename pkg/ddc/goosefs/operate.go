@@ -18,18 +18,23 @@ package goosefs
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error) {
+func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operateType := operation.GetOperationType()
-	support = false
 
 	if operateType == dataoperation.DataBackup {
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)
-		return true, valueFileName, err
+		return valueFileName, err
 	}
 
-	return
+	return "", errors.NewNotSupported(
+		schema.GroupResource{
+			Group:    object.GetObjectKind().GroupVersionKind().Group,
+			Resource: object.GetObjectKind().GroupVersionKind().Kind,
+		}, "GooseFSRuntime")
 }

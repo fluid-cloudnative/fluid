@@ -19,6 +19,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
@@ -69,7 +70,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 	// 0. check the object spec valid or not
 	conditions, err := operation.Validate(ctx, object)
 	if err != nil {
-		log.Error(err, "validate failed")
+		log.Error(err, "validate failed", "operationName", object.GetName(), "namespace", object.GetNamespace())
 		ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotValid, err.Error())
 
 		opStatus.Conditions = conditions
@@ -120,17 +121,17 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 	log := ctx.Log.WithName("reconcileExecuting")
 
 	// 1. Install the helm chart if not exists
-	support, err := InstallDataOperationHelmIfNotExist(ctx, object, operation, t.Implement)
-	// runtime does not support current data operation, set status to failed
-	if !support {
-		log.Error(fmt.Errorf("runtime not support %s", operation.GetOperationType()), "RuntimeType", ctx.RuntimeType)
-		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationNotSupport,
-			"RuntimeType %s not support %s", ctx.RuntimeType, operation.GetOperationType())
-
-		opStatus.Phase = common.PhaseFailed
-		return utils.RequeueImmediately()
-	}
+	err := InstallDataOperationHelmIfNotExist(ctx, object, operation, t.Implement)
 	if err != nil {
+		// runtime does not support current data operation, set status to failed
+		if fluiderrs.IsNotSupported(err) {
+			log.Error(err, "not support current data operation, set status to failed")
+			ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationNotSupport,
+				"RuntimeType %s not support %s", ctx.RuntimeType, operation.GetOperationType())
+
+			opStatus.Phase = common.PhaseFailed
+			return utils.RequeueImmediately()
+		}
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 

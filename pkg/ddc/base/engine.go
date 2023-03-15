@@ -64,7 +64,7 @@ type DataOperator interface {
 
 // DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
 type DataOperatorYamlGenerator interface {
-	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error)
+	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error)
 }
 
 type Dataloader interface {

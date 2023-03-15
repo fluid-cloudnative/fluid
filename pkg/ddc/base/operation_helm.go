@@ -25,7 +25,7 @@ import (
 )
 
 func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface,
-	yamlGenerator DataOperatorYamlGenerator) (support bool, err error) {
+	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
 
 	operationTypeName := string(operation.GetOperationType())
@@ -35,20 +35,17 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 	if err != nil {
 		log.Error(err, "failed to check if release exists", "releaseName", releaseNamespacedName.Name,
 			"namespace", releaseNamespacedName.Namespace)
-		return true, err
+		return err
 	}
 
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info(fmt.Sprintf("%s job helm chart not installed yet, will install", operationTypeName))
 		var valueFileName string
-		support, valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, object, operation)
-		if !support {
-			return support, err
-		}
+		valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, object, operation)
 		if err != nil {
 			log.Error(err, "failed to generate chart's value file")
-			return support, err
+			return err
 		}
 
 		chartName := operation.GetChartsDirectory() + "/" + ctx.RuntimeType
@@ -56,12 +53,12 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 		err = helm.InstallRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install chart")
-			return true, err
+			return err
 		}
 		log.Info(fmt.Sprintf("%s job helm chart successfully installed", operationTypeName),
 			"namespace", releaseNamespacedName.Namespace, "releaseName", releaseNamespacedName.Name)
 
 	}
 
-	return true, nil
+	return nil
 }

@@ -18,10 +18,17 @@ package juicefs
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error) {
-	return false, "", nil
+func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
+
+	return "", errors.NewNotSupported(
+		schema.GroupResource{
+			Group:    object.GetObjectKind().GroupVersionKind().Group,
+			Resource: object.GetObjectKind().GroupVersionKind().Kind,
+		}, "JuiceFSRuntime")
 }

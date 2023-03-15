@@ -393,13 +393,12 @@ func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 }
 
 
-func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error) {
+func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDataOperationValueFile", ctx, object, operation)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[2].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateDataLoadJob mocks base method.

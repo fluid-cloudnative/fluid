@@ -18,10 +18,17 @@ package jindo
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *JindoEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (support bool, valueFileName string, err error) {
-	return false, "", nil
+func (e *JindoEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
+
+	return "", errors.NewNotSupported(
+		schema.GroupResource{
+			Group:    object.GetObjectKind().GroupVersionKind().Group,
+			Resource: object.GetObjectKind().GroupVersionKind().Kind,
+		}, "JindoRuntime")
 }
