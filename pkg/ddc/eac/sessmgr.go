@@ -40,10 +40,14 @@ func NewSessMgrInitializer(client client.Client) *SessMgrInitializer {
 func (s *SessMgrInitializer) initSessMgr(ctx context.Context) error {
 	config, err := s.loadSessMgrConfig()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "fail to load sess mgr config from env variables")
 	}
 
-	return s.deploySessMgr(ctx, config)
+	err = s.deploySessMgr(ctx, config)
+	if err != nil {
+		return errors.Wrapf(err, "fail to deploy sess mgr")
+	}
+	return nil
 }
 
 func (s *SessMgrInitializer) loadSessMgrConfig() (config config, err error) {
@@ -240,7 +244,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 			}
 		}
 	} else {
-		retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := s.client.Get(ctx, types.NamespacedName{Namespace: common.SessMgrNamespace, Name: common.SessMgrDaemonSetName}, ds); err != nil {
 				return err
 			}
@@ -265,6 +269,9 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 			return nil
 		})
 
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
