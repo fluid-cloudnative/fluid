@@ -6,3 +6,6 @@
 ### 0.2.0
 
 - Remove unused volumes
+
+### 0.9.0
+- Support for setting affinity,tolerations,nodeSelector,schedulerName
