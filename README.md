@@ -160,6 +160,8 @@ If you are intrested in Fluid and would like to share your experiences with othe
 
 Fluid is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details. It is vendor-neutral.
 
+## Report Vulnerability
+Security is a first priority thing for us at Fluid. If you come across a related issue, please send email to fluid.opensource.project@gmail.com.
 
 
 ## Code of Conduct
