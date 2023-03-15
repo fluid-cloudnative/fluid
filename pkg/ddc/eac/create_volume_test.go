@@ -18,15 +18,18 @@ package eac
 
 import (
 	"context"
+	"testing"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 func TestEACEngine_CreateVolume(t *testing.T) {
+	t.Setenv(utils.MountRoot, "/runtime-mnt")
 	testRuntimeInputs := []*datav1alpha1.EACRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -90,6 +93,7 @@ func TestEACEngine_CreateVolume(t *testing.T) {
 }
 
 func TestEACEngine_createFusePersistentVolume(t *testing.T) {
+	t.Setenv(utils.MountRoot, "/runtime-mnt")
 	testRuntimeInputs := []*datav1alpha1.EACRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
