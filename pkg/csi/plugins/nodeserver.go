@@ -460,13 +460,17 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 
 	// check sessmgrd.sock file existence
 	sessMgrSockFilePath := filepath.Join(workDir, common.SessMgrSockFile)
+	glog.Infof("Checking existence of file %s", sessMgrSockFilePath)
 	retryLimit := 30
 	var i int
 	for i = 0; i < retryLimit; i++ {
-		if _, err := os.Stat(sessMgrSockFilePath); err != nil {
-			if !os.IsNotExist(err) {
-				glog.Errorf("fail to os.Stat sessmgr socket file %s", sessMgrSockFilePath)
-			}
+		if _, err := os.Stat(sessMgrSockFilePath); err == nil {
+			break
+		}
+
+		// err != nil
+		if !os.IsNotExist(err) {
+			glog.Errorf("fail to os.Stat sessmgr socket file %s", sessMgrSockFilePath)
 		}
 		time.Sleep(1 * time.Second)
 	}
