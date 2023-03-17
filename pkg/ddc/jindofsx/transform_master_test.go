@@ -17,9 +17,10 @@ limitations under the License.
 package jindofsx
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"

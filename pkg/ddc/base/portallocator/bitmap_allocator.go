@@ -1,12 +1,13 @@
 package portallocator
 
 import (
+	"os"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/kubernetes/pkg/registry/core/service/allocator"
 	"k8s.io/kubernetes/pkg/registry/core/service/portallocator"
-	"os"
 )
 
 type BitMapAllocator struct {

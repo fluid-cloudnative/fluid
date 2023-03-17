@@ -18,11 +18,12 @@ package mountinfo
 
 import (
 	"bufio"
-	"github.com/golang/glog"
 	"io"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 type Mount struct {

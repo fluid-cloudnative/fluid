@@ -18,9 +18,10 @@ package portallocator
 
 import (
 	"errors"
+	"testing"
+
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 var dummy = func(client client.Client) (ports []int, err error) {

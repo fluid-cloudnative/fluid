@@ -19,12 +19,13 @@ package operations
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
-	"strings"
-	"time"
 )
 
 type EACFileUtils struct {

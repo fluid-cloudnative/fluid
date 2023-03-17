@@ -19,6 +19,7 @@ package thin
 import (
 	"context"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"

@@ -18,10 +18,11 @@ package juicefs
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
-	"strconv"
 )
 
 // queryCacheStatus checks the cache status

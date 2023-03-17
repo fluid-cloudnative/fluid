@@ -2,11 +2,12 @@ package portallocator
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/util/net"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/util/net"
 )
 
 type RandomAllocator struct {

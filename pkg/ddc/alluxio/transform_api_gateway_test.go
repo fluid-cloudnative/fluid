@@ -17,8 +17,9 @@ limitations under the License.
 package alluxio
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestTransformAPIGateway(t *testing.T) {

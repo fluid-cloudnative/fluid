@@ -18,8 +18,9 @@ package jindofsx
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"

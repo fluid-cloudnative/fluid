@@ -15,7 +15,7 @@ limitations under the License.
 
 package lifecycle
 
-import "k8s.io/api/core/v1"
+import v1 "k8s.io/api/core/v1"
 
 // toleratesTaints tolerates the taints in node
 func toleratesTaints(taints []v1.Taint, tolerations []v1.Toleration) bool {

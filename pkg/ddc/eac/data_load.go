@@ -17,6 +17,8 @@
 package eac
 
 import (
+	"path/filepath"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -26,7 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	v1 "k8s.io/api/core/v1"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
-	"path/filepath"
 )
 
 // CreateDataLoadJob creates the job to load data

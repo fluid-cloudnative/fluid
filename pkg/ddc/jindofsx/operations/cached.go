@@ -2,8 +2,9 @@ package operations
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // clean cache with a preset timeout of 60s

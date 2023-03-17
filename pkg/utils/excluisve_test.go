@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestGetExclusiveKey(t *testing.T) {

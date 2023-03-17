@@ -18,9 +18,10 @@ package eac
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"k8s.io/apimachinery/pkg/util/net"
-	"testing"
 
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"

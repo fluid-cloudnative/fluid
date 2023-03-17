@@ -18,9 +18,10 @@ package juicefs
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"k8s.io/client-go/util/retry"
 

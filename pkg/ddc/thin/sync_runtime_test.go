@@ -17,8 +17,9 @@
 package thin
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 func TestThinEngine_SyncRuntime(t1 *testing.T) {

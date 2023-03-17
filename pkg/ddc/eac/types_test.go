@@ -17,8 +17,9 @@ limitations under the License.
 package eac
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestGetTiredStoreLevel0(t *testing.T) {

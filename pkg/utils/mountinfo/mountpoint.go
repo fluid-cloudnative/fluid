@@ -18,10 +18,11 @@ package mountinfo
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/golang/glog"
 	"path"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/golang/glog"
 )
 
 type MountPoint struct {

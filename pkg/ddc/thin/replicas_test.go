@@ -17,6 +17,8 @@
 package thin
 
 import (
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -29,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func newThinEngineREP(client client.Client, name string, namespace string) *ThinEngine {
