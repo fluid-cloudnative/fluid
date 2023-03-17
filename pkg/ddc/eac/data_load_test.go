@@ -18,6 +18,8 @@ package eac
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac/operations"
@@ -30,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
-	"testing"
 )
 
 func TestEACEngine_CreateDataLoadJob(t *testing.T) {

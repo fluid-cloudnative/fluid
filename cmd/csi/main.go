@@ -16,8 +16,9 @@ limitations under the License.
 package main
 
 import (
-	"github.com/fluid-cloudnative/fluid/cmd/csi/app"
 	"os"
+
+	"github.com/fluid-cloudnative/fluid/cmd/csi/app"
 )
 
 func main() {

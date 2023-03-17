@@ -18,11 +18,12 @@ package eac
 
 import (
 	"fmt"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strings"
 )
 
 var (

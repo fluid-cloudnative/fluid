@@ -17,9 +17,10 @@
 package eac
 
 import (
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	utilpointer "k8s.io/utils/pointer"
-	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"

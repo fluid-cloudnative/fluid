@@ -18,11 +18,12 @@ package operations
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"reflect"
-	"testing"
 )
 
 func TestNewThinFileUtils(t *testing.T) {

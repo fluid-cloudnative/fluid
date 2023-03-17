@@ -17,9 +17,10 @@
 package eac
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"

@@ -18,8 +18,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/cmd/fluidapp/app"
 	"os"
+
+	"github.com/fluid-cloudnative/fluid/cmd/fluidapp/app"
 )
 
 func main() {

@@ -19,6 +19,8 @@ package eac
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 // CheckRuntimeHealthy checks the healthy of the runtime

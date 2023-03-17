@@ -17,8 +17,9 @@
 package eac
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"

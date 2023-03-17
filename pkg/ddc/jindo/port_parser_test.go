@@ -1,9 +1,10 @@
 package jindo
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"reflect"
 	"testing"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 var cfg = `

@@ -17,11 +17,12 @@ limitations under the License.
 package fuse
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"

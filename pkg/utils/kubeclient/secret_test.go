@@ -17,8 +17,9 @@ limitations under the License.
 package kubeclient
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"

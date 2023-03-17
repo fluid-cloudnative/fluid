@@ -17,8 +17,9 @@
 package thin
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestThinEngine_transformFuseVolumes(t1 *testing.T) {

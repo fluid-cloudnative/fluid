@@ -18,10 +18,11 @@ package eac
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/client-go/util/retry"
 	"reflect"
 	"strconv"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *EACEngine) SyncMetadata() (err error) {

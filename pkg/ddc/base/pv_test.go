@@ -17,8 +17,9 @@ limitations under the License.
 package base
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestGetPersistentVolumeName(t *testing.T) {

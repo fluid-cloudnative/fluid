@@ -17,8 +17,9 @@ limitations under the License.
 package app
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 	"os"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"

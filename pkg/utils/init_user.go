@@ -16,9 +16,10 @@ limitations under the License.
 package utils
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"strconv"
 	"strings"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func GetInitUsersArgs(user *datav1alpha1.User) []string {

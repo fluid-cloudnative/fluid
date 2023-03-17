@@ -17,9 +17,10 @@ limitations under the License.
 package dataload
 
 import (
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"testing"
 )
 
 func TestIsTargetPathUnderFluidNativeMounts(t *testing.T) {

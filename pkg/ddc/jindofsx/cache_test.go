@@ -1,9 +1,10 @@
 package jindofsx
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"

@@ -18,6 +18,9 @@ package thin
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -30,9 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestDestroyWorker(t *testing.T) {

@@ -19,11 +19,12 @@ package operations
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 )
 
 type ThinFileUtils struct {

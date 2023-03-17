@@ -17,11 +17,12 @@ limitations under the License.
 package watch
 
 import (
+	"testing"
+
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"testing"
 )
 
 func TestMutatingWebhookConfigurationEventHandler_OnCreateFunc(t *testing.T) {

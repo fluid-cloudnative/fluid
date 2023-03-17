@@ -17,6 +17,9 @@ package eac
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -32,8 +35,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sync"
-	"time"
 )
 
 // Use compiler to check if the struct implements all the interface

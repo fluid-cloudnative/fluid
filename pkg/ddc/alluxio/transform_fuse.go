@@ -17,8 +17,9 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
