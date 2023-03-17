@@ -44,3 +44,21 @@ const (
 
 	DefaultEACInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
 )
+
+// Constants for EAC SessMgr
+const (
+	SessMgrNamespace     = "eac-system"
+	SessMgrDaemonSetName = "eac-sessmgr"
+
+	SessMgrNodeSelectorKey = "fluid.io/eac-sessmgr"
+
+	EACSessMgrImageEnv = "EAC_SESSMGR_IMAGE_ENV"
+
+	EACSessMgrUpdateStrategyEnv = "EAC_SESSMGR_UPDATE_STRATEGY_ENV"
+
+	DefaultEACSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1"
+
+	SessMgrSockFile = "sessmgrd.sock"
+
+	VolumeAttrEACSessMgrWorkDir = "eac_sessmgr_workdir"
+)

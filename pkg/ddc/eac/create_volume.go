@@ -17,8 +17,17 @@
 package eac
 
 import (
+	"context"
+	"path/filepath"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (e *EACEngine) CreateVolume() (err error) {
@@ -48,11 +57,14 @@ func (e *EACEngine) createFusePersistentVolume() (err error) {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeForRuntime(e.Client,
-		runtimeInfo,
-		e.getMountPath(),
-		common.EACMountType,
-		e.Log)
+	mountRoot, err := utils.GetMountRoot()
+	if err != nil {
+		return err
+	}
+	// e.g. /runtime-mnt/eac-sock
+	sessMgrWorkDir := filepath.Join(mountRoot, "eac-sock")
+
+	return e.createPersistentVolumeForRuntime(runtimeInfo, e.getMountPath(), common.EACMountType, sessMgrWorkDir)
 }
 
 // createFusePersistentVolume
@@ -63,4 +75,116 @@ func (e *EACEngine) createFusePersistentVolumeClaim() (err error) {
 	}
 
 	return volumehelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
+}
+
+func (e *EACEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInterface, mountPath string, mountType string, sessMgrWorkDir string) error {
+	accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtime.GetName(), runtime.GetNamespace())
+	if err != nil {
+		return err
+	}
+
+	pvName := runtime.GetPersistentVolumeName()
+
+	found, err := kubeclient.IsPersistentVolumeExist(e.Client, pvName, common.ExpectedFluidAnnotations)
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		pv := &corev1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pvName,
+				Namespace: runtime.GetNamespace(),
+				Labels: map[string]string{
+					runtime.GetCommonLabelName(): "true",
+				},
+				Annotations: common.ExpectedFluidAnnotations,
+			},
+			Spec: corev1.PersistentVolumeSpec{
+				AccessModes: accessModes,
+				Capacity: corev1.ResourceList{
+					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Pi"),
+				},
+				StorageClassName: common.FluidStorageClass,
+				PersistentVolumeSource: corev1.PersistentVolumeSource{
+					CSI: &corev1.CSIPersistentVolumeSource{
+						Driver:       common.CSIDriver,
+						VolumeHandle: pvName,
+						VolumeAttributes: map[string]string{
+							common.VolumeAttrFluidPath:         mountPath,
+							common.VolumeAttrMountType:         mountType,
+							common.VolumeAttrNamespace:         runtime.GetNamespace(),
+							common.VolumeAttrName:              runtime.GetName(),
+							common.VolumeAttrEACSessMgrWorkDir: sessMgrWorkDir,
+						},
+					},
+				},
+				// NodeAffinity: &corev1.VolumeNodeAffinity{
+				// 	Required: &corev1.NodeSelector{
+				// 		NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				// 			{
+				// 				MatchExpressions: []corev1.NodeSelectorRequirement{
+				// 					{
+				// 						Key:      runtime.GetCommonLabelName(),
+				// 						Operator: corev1.NodeSelectorOpIn,
+				// 						Values:   []string{"true"},
+				// 					},
+				// 				},
+				// 			},
+				// 		},
+				// 	},
+				// },
+			},
+		}
+
+		global, nodeSelector := runtime.GetFuseDeployMode()
+		if global {
+			e.Log.Info("Enable global mode for fuse in volume")
+			if len(nodeSelector) > 0 {
+				nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}
+				for key, value := range nodeSelector {
+					nodeSelectorRequirements = append(nodeSelectorRequirements, corev1.NodeSelectorRequirement{
+						Key:      key,
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{value},
+					})
+				}
+				pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
+					Required: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: nodeSelectorRequirements,
+							},
+						},
+					},
+				}
+			}
+		} else {
+			e.Log.Info("Disable global mode for fuse in volume")
+			pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
+				Required: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      runtime.GetCommonLabelName(),
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"true"},
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+
+		err = e.Client.Create(context.TODO(), pv)
+		if err != nil {
+			return err
+		}
+	} else {
+		e.Log.Info("The persistent volume is created", "name", pvName)
+	}
+
+	return err
 }

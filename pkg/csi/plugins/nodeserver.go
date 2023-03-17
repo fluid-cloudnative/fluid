@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -279,20 +281,29 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	defer ns.mutex.Unlock()
 	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
 
-	// 1. clean up broken mount point
+	// 1. Start SessMgr Pod and wait for ready if FUSE pod requires SessMgr
+	sessMgrWorkDir := req.GetVolumeContext()[common.VolumeAttrEACSessMgrWorkDir]
+	if len(sessMgrWorkDir) != 0 {
+		if err := ns.prepareSessMgr(sessMgrWorkDir); err != nil {
+			glog.Errorf("NodeStageVolume: fail to prepare SessMgr because: %v", err)
+			return nil, errors.Wrapf(err, "NodeStageVolume: fail to prepare SessMgr")
+		}
+	}
+
+	// 2. clean up broken mount point
 	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
 	if ignoredErr := cleanUpBrokenMountPoint(fluidPath); ignoredErr != nil {
 		glog.Warningf("Ignoring error when cleaning up broken mount point %v: %v", fluidPath, ignoredErr)
 	}
 
-	// 1. get runtime namespace and name
+	// 3. get runtime namespace and name
 	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), req.GetVolumeId())
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get runtime namespace and name given (volumeContext: %v, volumeId: %s): %v", req.GetVolumeContext(), req.GetVolumeId(), err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
 	}
 
-	// 2. Label node
+	// 4. Label node to launch FUSE Pod
 	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
@@ -427,6 +438,45 @@ func cleanUpBrokenMountPoint(mountPoint string) error {
 		}
 
 		return errors.Wrapf(err, "failed to os.Stat(%s)", mountPoint)
+	}
+
+	return nil
+}
+
+func (ns *nodeServer) prepareSessMgr(workDir string) error {
+	sessMgrLabelKey := common.SessMgrNodeSelectorKey
+	var labelsToModify common.LabelsToModify
+	labelsToModify.Add(sessMgrLabelKey, "true")
+
+	node, err := ns.getNode()
+	if err != nil {
+		return errors.Wrapf(err, "can't get node %s", ns.nodeId)
+	}
+
+	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	if err != nil {
+		return errors.Wrapf(err, "error when patching labels on node %s", ns.nodeId)
+	}
+
+	// check sessmgrd.sock file existence
+	sessMgrSockFilePath := filepath.Join(workDir, common.SessMgrSockFile)
+	glog.Infof("Checking existence of file %s", sessMgrSockFilePath)
+	retryLimit := 30
+	var i int
+	for i = 0; i < retryLimit; i++ {
+		if _, err := os.Stat(sessMgrSockFilePath); err == nil {
+			break
+		}
+
+		// err != nil
+		if !os.IsNotExist(err) {
+			glog.Errorf("fail to os.Stat sessmgr socket file %s", sessMgrSockFilePath)
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	if i >= retryLimit {
+		return errors.New("timeout waiting for SessMgr Pod to be ready")
 	}
 
 	return nil
