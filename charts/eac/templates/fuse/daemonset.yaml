@@ -66,20 +66,6 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
-      initContainers:
-        - name: init-fuse
-          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
-          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
-          command: [ "/entrypoint.sh" ]
-          args:
-            - "init_fuse"
-            - {{ .Values.osAdvise.enabled | quote }}
-            - {{ .Values.osAdvise.osVersion | quote }}
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: host-os
-              mountPath: /etc/host-os-release
       containers:
         - name: eac-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -124,25 +110,6 @@ spec:
             {{- if .Values.fuse.tieredstore }}
 {{- include "eac.tieredstoreVolumeMounts" .Values.fuse }}
             {{- end }}
-            - name: localtime
-              mountPath: /etc/localtime
-            - name: eac-sock
-              mountPath: /var/run/eac
-        - name: eac-sessmgr
-          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
-          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
-          command: [ "/entrypoint.sh" ]
-          args:
-            - "sessmgr"
-          securityContext:
-            privileged: true
-          lifecycle:
-            preStop:
-              exec:
-                command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
-          volumeMounts:
-            - name: localtime
-              mountPath: /etc/localtime
             - name: eac-sock
               mountPath: /var/run/eac
       {{- with .Values.imagePullSecrets }}
@@ -160,13 +127,11 @@ spec:
         {{- if .Values.fuse.tieredstore }}
 {{- include "eac.tieredstoreVolumes" .Values.fuse }}
         {{- end }}
-        - name: localtime
-          hostPath:
-            path: /etc/localtime
-            type: ''
         - name: host-os
           hostPath:
             path: /etc/os-release
             type: FileOrCreate
         - name: eac-sock
-          emptyDir: {}
+          hostPath:
+            path: /runtime-mnt/eac-sock
+            type: Directory
