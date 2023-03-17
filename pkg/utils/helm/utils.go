@@ -87,12 +87,12 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	// 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
 	// }
 
-	if err := cmd.Start(); err != nil {
-		// log.Fatalf("cmd.Start: %v", err)
-		// log.Error(err)
-		log.Error(err, "failed to start CheckRelease() command", "command", cmd.String())
-		return exist, err
-	}
+	// if err := cmd.Start(); err != nil {
+	// 	// log.Fatalf("cmd.Start: %v", err)
+	// 	// log.Error(err)
+	// 	log.Error(err, "failed to start CheckRelease() command", "command", cmd.String())
+	// 	return exist, err
+	// }
 
 	resultBytes, err := cmd.CombinedOutput()
 	if err != nil {
