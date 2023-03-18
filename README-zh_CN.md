@@ -138,6 +138,10 @@ Slack 讨论群
 
 Fluid采用Apache 2.0 license开源协议，详情参见[LICENSE](./LICENSE)文件。
 
+## 漏洞报告
+
+安全性是Fluid项目高度关注的事务。如果您发现或遇到安全相关的问题，欢迎您给fluid.opensource.project@gmail.com邮箱发送邮件报告。
+
 ## 行为准则
 
-Fluid 遵守 [CNCF 行为准则](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+Fluid 遵守 [CNCF 行为准则](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)。
