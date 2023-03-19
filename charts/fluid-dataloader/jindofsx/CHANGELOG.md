@@ -1,3 +1,5 @@
+### 0.6.0
+- Support for setting affinity,tolerations,nodeSelector,schedulerName
 ### 0.5.0
 
 - Support configurable DataLoad pod metadata
