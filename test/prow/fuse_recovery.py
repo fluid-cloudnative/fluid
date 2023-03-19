@@ -58,7 +58,7 @@ def createDatasetAndRuntime():
         "kind": "Dataset",
         "metadata": {"name": "hbase"},
         "spec": {
-            "mounts": [{"mountPoint": "https://mirrors.bit.edu.cn/apache/zookeeper/stable/", "name": "hbase"}]
+            "mounts": [{"mountPoint": "https://mirrors.bit.edu.cn/apache/hbase/stable/", "name": "hbase"}]
         }
     }
 
@@ -118,15 +118,24 @@ def checkDatasetBound():
 
 
 def checkFuseRecovered():
-    api = client.CoreV1Api()
+    ### get dataset hbase uid
+    api = client.CustomObjectsApi()
+    dataset = api.get_namespaced_custom_object(
+        group="data.fluid.io",
+        version="v1alpha1",
+        namespace=namespace,
+        plural="datasets",
+        name="hbase")
+    uid = dataset['metadata']['uid']
+    print("Dataset hbase uid is: {}".format(uid))
     while True:
-        items = api.list_namespaced_event(namespace=namespace).items
-        for item in items:
-            if item.message.__contains__("Fuse recover"):
-                print("Fuse Recovered.")
-                return True
+        uids = getFuseRecoveredUids()
+        print("Total uids are: {}".format(uids))
+        if uids.__contains__(uid):
+            print("Fuse Recovered.")
+            return True
         print("Fuse not Recovered.")
-        time.sleep(1)
+        time.sleep(3)
 
 
 def checkVolumeResourcesReady():
@@ -253,10 +262,20 @@ def deleteAlluxioFusePod():
     time.sleep(60)
 
 
+def getFuseRecoveredUids():
+    api = client.CoreV1Api()
+    items = api.list_namespaced_event(namespace=namespace).items
+    fuseRecoveryUids = set()
+    for item in items:
+        if item.message.__contains__("Fuse recover"):
+            fuseRecoveryUids.add(item.involved_object.uid)
+    return fuseRecoveryUids
+
+
 def main():
     exit_code = 0
     ### Load config
-    config.load_incluster_config()
+    config.load_kube_config()
     if checkCsiRecoverEnabled() is False:
         return 1
 
