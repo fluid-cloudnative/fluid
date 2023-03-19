@@ -4,24 +4,23 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
-	appsv1 "k8s.io/api/apps/v1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-
 	"github.com/brahma-adshonor/gohook"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 var valuesConfigMapData = `
@@ -341,7 +340,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 		},
 	}
 
-	var testCases = []struct {
+	testCases := []struct {
 		dataLoad       datav1alpha1.DataLoad
 		expectFileName string
 	}{
@@ -468,7 +467,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 		},
 	}
 
-	var testCases = []struct {
+	testCases := []struct {
 		dataLoad       datav1alpha1.DataLoad
 		expectFileName string
 	}{
@@ -707,5 +706,466 @@ func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
 				t.Errorf("CheckRuntimeReady() = %v, want %v", gotReady, tt.wantReady)
 			}
 		})
+	}
+}
+
+func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
+	testCases := map[string]struct {
+		image         string
+		runtimeName   string
+		targetDataset *datav1alpha1.Dataset
+		dataload      *datav1alpha1.DataLoad
+		cacheInfo     map[string]string
+		pods          []v1.Pod
+		want          *cdataload.DataLoadValue
+	}{
+		"test case with scheduler name": {
+			image:       "fluid:v0.0.1",
+			runtimeName: "juicefs",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					Options: map[string]string{
+						"dl-opts-k-1": "dl-opts-v-1",
+					},
+				},
+			},
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-1",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-2",
+					},
+				},
+			},
+			cacheInfo: map[string]string{
+				Edition:         CommunityEdition,
+				"cache-info-k1": "cache-info-v1",
+				"cache-info-k2": "cache-info-v2",
+				"cache-info-k3": "cache-info-v3",
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []v1.LocalObjectReference{},
+					Options: map[string]string{
+						// dataload spec options
+						"dl-opts-k-1": "dl-opts-v-1",
+						// cache info
+						Edition:         CommunityEdition,
+						"cache-info-k1": "cache-info-v1",
+						"cache-info-k2": "cache-info-v2",
+						"cache-info-k3": "cache-info-v3",
+						"podNames":      "pods-1:pods-2",
+						"runtimeName":   "juicefs",
+						"timeout":       DefaultDataLoadTimeout,
+					},
+				},
+			},
+		},
+		"test case with affinity": {
+			image:       "fluid:v0.0.1",
+			runtimeName: "juicefs",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					Options: map[string]string{
+						"dl-opts-k-1": "dl-opts-v-1",
+					},
+					SchedulerName: "scheduler-test",
+					Affinity: &v1.Affinity{
+						NodeAffinity: &v1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+								NodeSelectorTerms: []v1.NodeSelectorTerm{
+									{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "topology.kubernetes.io/zone",
+												Operator: v1.NodeSelectorOpIn,
+												Values: []string{
+													"antarctica-east1",
+													"antarctica-west1",
+												},
+											},
+										},
+									},
+								},
+							},
+							PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+								{
+									Weight: 1,
+									Preference: v1.NodeSelectorTerm{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "another-node-label-key",
+												Operator: v1.NodeSelectorOpIn,
+												Values: []string{
+													"another-node-label-value",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-1",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-2",
+					},
+				},
+			},
+			cacheInfo: map[string]string{
+				Edition:         CommunityEdition,
+				"cache-info-k1": "cache-info-v1",
+				"cache-info-k2": "cache-info-v2",
+				"cache-info-k3": "cache-info-v3",
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []v1.LocalObjectReference{},
+					Affinity: &v1.Affinity{
+						NodeAffinity: &v1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+								NodeSelectorTerms: []v1.NodeSelectorTerm{
+									{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "topology.kubernetes.io/zone",
+												Operator: v1.NodeSelectorOpIn,
+												Values: []string{
+													"antarctica-east1",
+													"antarctica-west1",
+												},
+											},
+										},
+									},
+								},
+							},
+							PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+								{
+									Weight: 1,
+									Preference: v1.NodeSelectorTerm{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "another-node-label-key",
+												Operator: v1.NodeSelectorOpIn,
+												Values: []string{
+													"another-node-label-value",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Options: map[string]string{
+						// dataload spec options
+						"dl-opts-k-1": "dl-opts-v-1",
+						// cache info
+						Edition:         CommunityEdition,
+						"cache-info-k1": "cache-info-v1",
+						"cache-info-k2": "cache-info-v2",
+						"cache-info-k3": "cache-info-v3",
+						"podNames":      "pods-1:pods-2",
+						"runtimeName":   "juicefs",
+						"timeout":       DefaultDataLoadTimeout,
+					},
+				},
+			},
+		},
+		"test case with node selector": {
+			image:       "fluid:v0.0.1",
+			runtimeName: "juicefs",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					NodeSelector: map[string]string{
+						"diskType": "ssd",
+					},
+					Options: map[string]string{
+						"dl-opts-k-1": "dl-opts-v-1",
+					},
+				},
+			},
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-1",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-2",
+					},
+				},
+			},
+			cacheInfo: map[string]string{
+				Edition:         CommunityEdition,
+				"cache-info-k1": "cache-info-v1",
+				"cache-info-k2": "cache-info-v2",
+				"cache-info-k3": "cache-info-v3",
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []v1.LocalObjectReference{},
+					NodeSelector: map[string]string{
+						"diskType": "ssd",
+					},
+					Options: map[string]string{
+						// dataload spec options
+						"dl-opts-k-1": "dl-opts-v-1",
+						// cache info
+						Edition:         CommunityEdition,
+						"cache-info-k1": "cache-info-v1",
+						"cache-info-k2": "cache-info-v2",
+						"cache-info-k3": "cache-info-v3",
+						"podNames":      "pods-1:pods-2",
+						"runtimeName":   "juicefs",
+						"timeout":       DefaultDataLoadTimeout,
+					},
+				},
+			},
+		},
+		"test case with tolerations": {
+			image:       "fluid:v0.0.1",
+			runtimeName: "juicefs",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					Tolerations: []v1.Toleration{
+						{
+							Key:      "example-key",
+							Operator: v1.TolerationOpExists,
+							Effect:   v1.TaintEffectNoSchedule,
+						},
+					},
+					Options: map[string]string{
+						"dl-opts-k-1": "dl-opts-v-1",
+					},
+				},
+			},
+			pods: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-1",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pods-2",
+					},
+				},
+			},
+			cacheInfo: map[string]string{
+				Edition:         CommunityEdition,
+				"cache-info-k1": "cache-info-v1",
+				"cache-info-k2": "cache-info-v2",
+				"cache-info-k3": "cache-info-v3",
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []v1.LocalObjectReference{},
+					Tolerations: []v1.Toleration{
+						{
+							Key:      "example-key",
+							Operator: v1.TolerationOpExists,
+							Effect:   v1.TaintEffectNoSchedule,
+						},
+					},
+					Options: map[string]string{
+						// dataload spec options
+						"dl-opts-k-1": "dl-opts-v-1",
+						// cache info
+						Edition:         CommunityEdition,
+						"cache-info-k1": "cache-info-v1",
+						"cache-info-k2": "cache-info-v2",
+						"cache-info-k3": "cache-info-v3",
+						"podNames":      "pods-1:pods-2",
+						"runtimeName":   "juicefs",
+						"timeout":       DefaultDataLoadTimeout,
+					},
+				},
+			},
+		},
+	}
+
+	for k, item := range testCases {
+		engine := JuiceFSEngine{
+			namespace: "fluid",
+			name:      item.runtimeName,
+			Log:       fake.NullLogger(),
+		}
+		got := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, *item.dataload)
+		if !reflect.DeepEqual(got, item.want) {
+			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
+		}
 	}
 }
