@@ -275,7 +275,7 @@ def getFuseRecoveredUids():
 def main():
     exit_code = 0
     ### Load config
-    config.load_kube_config()
+    config.load_incluster_config()
     if checkCsiRecoverEnabled() is False:
         return 1
 
