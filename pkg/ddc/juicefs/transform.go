@@ -176,17 +176,17 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 	// if not use hostnetwork then use default port
 	// use hostnetwork to choose port from port allocator
 
-	exportWorkerPodNum := 1
-	exportFusePodNum := 1
+	expectWorkerPodNum := 1
+	expectFusePodNum := 1
 	if !datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		value.Worker.MetricsPort = &workerMetricsPort
-		exportWorkerPodNum--
+		expectWorkerPodNum--
 	}
 	if !datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode) {
 		value.Fuse.MetricsPort = &fuseMetricsPort
-		exportFusePodNum--
+		expectFusePodNum--
 	}
-	if exportWorkerPodNum+exportFusePodNum == 0 {
+	if expectWorkerPodNum+expectFusePodNum == 0 {
 		return nil
 	}
 
@@ -196,18 +196,18 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 		return err
 	}
 
-	allocatedPorts, err := allocator.GetAvailablePorts(exportWorkerPodNum + exportFusePodNum)
+	allocatedPorts, err := allocator.GetAvailablePorts(expectFusePodNum + expectWorkerPodNum)
 	if err != nil {
-		j.Log.Error(err, "can't get available ports", "expected port num", exportWorkerPodNum+exportFusePodNum)
+		j.Log.Error(err, "can't get available ports", "expected port num", expectFusePodNum+expectWorkerPodNum)
 		return err
 	}
 
 	index := 0
-	if exportWorkerPodNum > 0 {
+	if expectWorkerPodNum > 0 {
 		value.Worker.MetricsPort = &allocatedPorts[index]
+		index++
 	}
-	index++
-	if exportFusePodNum > 0 {
+	if expectFusePodNum > 0 {
 		value.Fuse.MetricsPort = &allocatedPorts[index]
 	}
 	return nil
