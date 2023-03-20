@@ -176,8 +176,7 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 	// if not use hostnetwork then use default port
 	// use hostnetwork to choose port from port allocator
 
-	expectWorkerPodNum := 1
-	expectFusePodNum := 1
+	expectWorkerPodNum, expectFusePodNum := 1, 1
 	if !datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		value.Worker.MetricsPort = &workerMetricsPort
 		expectWorkerPodNum--
