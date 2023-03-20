@@ -87,6 +87,7 @@ rules:
     - get
     - create
     - delete
+    - update
   - apiGroups:
     - ""
     resources:

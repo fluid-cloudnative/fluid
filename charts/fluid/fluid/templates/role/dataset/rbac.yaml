@@ -75,6 +75,7 @@ rules:
       - get
       - create
       - delete
+      - update
   - apiGroups:
       - data.fluid.io
     resources:
