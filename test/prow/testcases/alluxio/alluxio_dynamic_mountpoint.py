@@ -211,8 +211,7 @@ def main():
         SimpleStep(
             step_name="create dataset",
             forth_fn=funcs.create_dataset_fn(dataset.dump()),
-            back_fn=dummy_back
-            # back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
+            back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
         )
     )
 
@@ -241,13 +240,13 @@ def main():
     flow.append_step(
         StatusCheckStep(
             step_name="check alluxio runtime mount point",
-            forth_fn=currying_fn(checkAlluxioruntimeMountpoint, dataset_name=name, namespace=namespace, mp1="hbase", mp2="hadoop"),
+            forth_fn=currying_fn(checkAlluxioruntimeMountpoint, dataset_name=name, namespace=namespace, mp1="zookeeper", mp2="hadoop"),
             timeout=10
         )
     )
 
     new_mount = fluidapi.Mount()
-    new_mount.set_mount_info("zookeeper", "https://mirrors.bit.edu.cn/apache/zookeeper/stable/")
+    new_mount.set_mount_info("hbase", "https://mirrors.bit.edu.cn/apache/hbase/stable/")
 
 
     new_dataset = fluidapi.assemble_dataset("alluxio-webufs") \

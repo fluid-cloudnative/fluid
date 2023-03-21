@@ -180,7 +180,7 @@ class DataLoad(K8sObject):
 def assemble_dataset(testcase):
     if testcase == "alluxio-webufs":
         mount = Mount()
-        mount.set_mount_info("hbase", webufs)
+        mount.set_mount_info("zookeeper", webufs)
 
         dataset = Dataset("hbase")
         dataset.add_mount(mount.dump())
