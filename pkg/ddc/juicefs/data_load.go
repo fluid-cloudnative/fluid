@@ -94,7 +94,37 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		}
 	}
 
+	cacheinfo, err := GetCacheInfoFromConfigmap(j.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	if err != nil {
+		return
+	}
+
+	stsName := j.getWorkerName()
+	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	if err != nil || len(pods) == 0 {
+		return
+	}
+
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
+	dataLoadValue := j.genDataLoadValue(image, cacheinfo, pods, targetDataset, dataload)
+	data, err := yaml.Marshal(dataLoadValue)
+	if err != nil {
+		return
+	}
+	j.Log.Info("dataload value", "value", string(data))
+
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
+	if err != nil {
+		return
+	}
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
+	if err != nil {
+		return
+	}
+	return valueFile.Name(), nil
+}
+
+func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]string, pods []v1.Pod, targetDataset *datav1alpha1.Dataset, dataload datav1alpha1.DataLoad) *cdataload.DataLoadValue {
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataloadInfo := cdataload.DataLoadInfo{
@@ -105,6 +135,32 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		Labels:           dataload.Spec.PodMetadata.Labels,
 		Annotations:      dataload.Spec.PodMetadata.Annotations,
 		ImagePullSecrets: imagePullSecrets,
+	}
+
+	// pod affinity
+	if dataload.Spec.Affinity != nil {
+		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// node selector
+	if dataload.Spec.NodeSelector != nil {
+		if dataloadInfo.NodeSelector == nil {
+			dataloadInfo.NodeSelector = make(map[string]string)
+		}
+		dataloadInfo.NodeSelector = dataload.Spec.NodeSelector
+	}
+
+	// pod tolerations
+	if len(dataload.Spec.Tolerations) > 0 {
+		if dataloadInfo.Tolerations == nil {
+			dataloadInfo.Tolerations = make([]v1.Toleration, 0)
+		}
+		dataloadInfo.Tolerations = dataload.Spec.Tolerations
+	}
+
+	// scheduler name
+	if len(dataload.Spec.SchedulerName) > 0 {
+		dataloadInfo.SchedulerName = dataload.Spec.SchedulerName
 	}
 
 	targetPaths := []cdataload.TargetPath{}
@@ -126,19 +182,11 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 			options[key] = value
 		}
 	}
-	cacheinfo, err := GetCacheInfoFromConfigmap(j.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
-	if err != nil {
-		return
-	}
+
 	for key, value := range cacheinfo {
 		options[key] = value
 	}
 
-	stsName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-	if err != nil || len(pods) == 0 {
-		return
-	}
 	podNames := []string{}
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
@@ -156,25 +204,11 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	dataloadInfo.Options = options
 
-	dataLoadValue := cdataload.DataLoadValue{
+	dataLoadValue := &cdataload.DataLoadValue{
 		DataLoadInfo: dataloadInfo,
 	}
 
-	data, err := yaml.Marshal(dataLoadValue)
-	if err != nil {
-		return
-	}
-	j.Log.Info("dataload value", "value", string(data))
-
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-loader-values.yaml", dataload.Namespace, dataload.Name))
-	if err != nil {
-		return
-	}
-	err = os.WriteFile(valueFile.Name(), data, 0o400)
-	if err != nil {
-		return
-	}
-	return valueFile.Name(), nil
+	return dataLoadValue
 }
 
 func (j *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
