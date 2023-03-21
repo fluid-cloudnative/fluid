@@ -26,6 +26,7 @@ from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
 from framework.exception import TestError
 
 from kubernetes import client, config
+from kubernetes.stream import stream
 
 def checkAlluxioruntimeMountpoint(dataset_name, namespace, mp1, mp2):
     exec_command = ["/bin/sh",
@@ -63,7 +64,7 @@ def check_dataset_mount_change(name, namespace):
             plural="datasets"
         )
 
-    print(resource)
+    # print(resource)
 
     if "status" in resource:
         if "mounts" in resource["status"]:
@@ -210,7 +211,8 @@ def main():
         SimpleStep(
             step_name="create dataset",
             forth_fn=funcs.create_dataset_fn(dataset.dump()),
-            back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
+            back_fn=dummy_back
+            # back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
         )
     )
 
@@ -248,7 +250,7 @@ def main():
     new_mount.set_mount_info("zookeeper", "https://mirrors.bit.edu.cn/apache/zookeeper/stable/")
 
 
-    new_dataset = fluidapi.assemble_dataset("alluxio_webufs") \
+    new_dataset = fluidapi.assemble_dataset("alluxio-webufs") \
         .set_namespaced_name(namespace, name) \
         .add_mount(new_mount.dump())
     
