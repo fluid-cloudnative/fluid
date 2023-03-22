@@ -306,6 +306,10 @@ type AlluxioRuntimeSpec struct {
 	// RuntimeManagement defines policies when managing the runtime
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
+
+	// PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio
+	// +optional
+	PVCMetadata Metadata `json:"pvcMetadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true

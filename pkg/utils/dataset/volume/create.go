@@ -185,6 +185,9 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				},
 			},
 		}
+		pvcMetadata := runtime.GetPVCMetadata()
+		pvc.Labels = utils.UnionMapsWithOverride(pvc.Labels, pvcMetadata.Labels)
+		pvc.Annotations = utils.UnionMapsWithOverride(pvc.Annotations, pvcMetadata.Annotations)
 
 		err = client.Create(context.TODO(), pvc)
 		if err != nil {

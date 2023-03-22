@@ -81,6 +81,8 @@ type RuntimeInfoInterface interface {
 	GetTemplateToInjectForFuse(pvcName string, pvcNamespace string, option common.FuseSidecarInjectOption) (*common.FuseInjectionTemplate, error)
 
 	SetClient(client client.Client)
+
+	GetPVCMetadata() datav1alpha1.Metadata
 }
 
 // The real Runtime Info should implement
@@ -106,6 +108,8 @@ type RuntimeInfo struct {
 	deprecatedPVName bool
 
 	client client.Client
+
+	pvcMetadata datav1alpha1.Metadata
 }
 
 type Fuse struct {
@@ -145,6 +149,7 @@ type CachePath struct {
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
+	pvcMetadata datav1alpha1.Metadata,
 	tieredstore datav1alpha1.TieredStore) (runtime RuntimeInfoInterface, err error) {
 
 	tieredstoreInfo, err := convertToTieredstoreInfo(tieredstore)
@@ -157,8 +162,13 @@ func BuildRuntimeInfo(name string,
 		namespace:       namespace,
 		runtimeType:     runtimeType,
 		tieredstoreInfo: tieredstoreInfo,
+		pvcMetadata:     pvcMetadata,
 	}
 	return
+}
+
+func (info *RuntimeInfo) GetPVCMetadata() datav1alpha1.Metadata {
+	return info.pvcMetadata
 }
 
 func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
@@ -317,55 +327,55 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 	}
 	switch runtimeType {
 	case common.AlluxioRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{})
+		alluxioRuntime, err := utils.GetAlluxioRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		alluxioRuntime, err := utils.GetAlluxioRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, alluxioRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 	case common.JindoRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{})
+		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, jindoRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
 	case common.GooseFSRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{})
+		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, goosefsRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{})
+		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, juicefsRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
 		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.ThinRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{})
+		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, thinRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -373,11 +383,11 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EACRuntime:
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{})
+		eacRuntime, err := utils.GetEACRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		eacRuntime, err := utils.GetEACRuntime(client, name, namespace)
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, eacRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
 		if err != nil {
 			return runtimeInfo, err
 		}

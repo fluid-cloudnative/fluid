@@ -159,6 +159,10 @@ type EACRuntimeSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to all EAC's pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio
+	// +optional
+	PVCMetadata Metadata `json:"pvcMetadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -79,6 +79,10 @@ type JuiceFSRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio
+	// +optional
+	PVCMetadata Metadata `json:"pvcMetadata,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components
