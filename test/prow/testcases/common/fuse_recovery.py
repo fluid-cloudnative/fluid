@@ -14,12 +14,22 @@ Steps:
 10. clean up
 """
 import os
+import sys
 import time
+
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, project_root)
 
 from kubernetes import client, config
 
-namespace = "default"
+from kubernetes.client.rest import ApiException
 
+import fluid.fluidapi as fluidapi
+import fluid.step_funcs as funcs
+from framework.testflow import TestFlow
+from framework.step import SimpleStep, StatusCheckStep, SleepStep, dummy_back, currying_fn
+
+from kubernetes import client, config
 
 def getPodNameByPrefix(prefix, pod_namespace):
     api = client.CoreV1Api()
@@ -47,7 +57,7 @@ def checkCsiRecoverEnabled() -> bool:
         if str(pod.spec.containers).__contains__("FuseRecovery=true"):
             print("CSI recovery enabled")
             return True
-        time.sleep(5)
+        time.sleep(1)
     return False
 
 
@@ -117,7 +127,7 @@ def checkDatasetBound():
         time.sleep(1)
 
 
-def checkFuseRecovered():
+def checkFuseRecovered(dataset_name, namespace="default"):
     ### get dataset hbase uid
     api = client.CustomObjectsApi()
     dataset = api.get_namespaced_custom_object(
@@ -125,17 +135,16 @@ def checkFuseRecovered():
         version="v1alpha1",
         namespace=namespace,
         plural="datasets",
-        name="hbase")
+        name=dataset_name)
     uid = dataset['metadata']['uid']
-    print("Dataset hbase uid is: {}".format(uid))
-    while True:
-        uids = getFuseRecoveredUids()
-        print("Total uids are: {}".format(uids))
-        if uids.__contains__(uid):
-            print("Fuse Recovered.")
-            return True
-        print("Fuse not Recovered.")
-        time.sleep(3)
+    print("Dataset uid is: {}".format(uid))
+    uids = getFuseRecoveredUids(namespace)
+        # print("Total uids are: {}".format(uids))
+    if uids.__contains__(uid):
+        print("Fuse Recovered.")
+        return True
+    
+    return False
 
 
 def checkVolumeResourcesReady():
@@ -184,8 +193,8 @@ def createDataListPod(name):
     time.sleep(5)
 
 
-def checkDataListSuccess(name) -> bool:
-    cmd = "kubectl -n {} exec -it  {} ls /data/hbase".format(namespace, name)
+def checkDataListSuccess(pod_name, namespace="default") -> bool:
+    cmd = "kubectl -n {} exec -it  {} ls /data/zookeeper".format(namespace, pod_name)
     success = os.system(cmd)
     if success == 0:
         print("Data Read done.")
@@ -256,13 +265,13 @@ def checkPodReady(name, pod_namespace) -> bool:
             time.sleep(1)
 
 
-def deleteAlluxioFusePod():
-    deletePod("hbase-fuse", namespace)
-    print("Delete Fuse Pod:{}".format("hbase-fuse-xxxx"))
-    time.sleep(60)
+def deleteAlluxioFusePod(dataset_name, namespace="default"):
+    deletePod("{}-fuse".format(dataset_name), namespace)
+    print("Delete Fuse Pod:{}-fuse-xxxxx".format(dataset_name))
+    time.sleep(30)
 
 
-def getFuseRecoveredUids():
+def getFuseRecoveredUids(namespace="default"):
     api = client.CoreV1Api()
     items = api.list_namespaced_event(namespace=namespace).items
     fuseRecoveryUids = set()
@@ -273,34 +282,134 @@ def getFuseRecoveredUids():
 
 
 def main():
+    if os.getenv("KUBERNETES_SERVICE_HOST") is None:
+        config.load_kube_config()
+    else:
+        config.load_incluster_config()
+
+
     exit_code = 0
-    ### Load config
-    config.load_incluster_config()
     if checkCsiRecoverEnabled() is False:
+        print("FAIL at checkCsiRecoverEnabled(): FUSE Recover feature gate is not enabled")
         return 1
+    
+    name = "test-fuse-recover"
+    namespace = "default"
+
+    dataset = fluidapi.assemble_dataset("alluxio-webufs") \
+        .set_namespaced_name(namespace, name)
+
+    runtime = fluidapi.assemble_runtime("alluxio-webufs") \
+        .set_namespaced_name(namespace, name) \
+    
+    flow = TestFlow("Common - Test FUSE Recover")
+
+    flow.append_step(
+        SimpleStep(
+            step_name="create dataset",
+            forth_fn=funcs.create_dataset_fn(dataset.dump()),
+            back_fn=funcs.delete_dataset_and_runtime_fn(runtime.dump(), name, namespace)
+        )
+    )
+
+    flow.append_step(
+        SimpleStep(
+            step_name="create runtime",
+            forth_fn=funcs.create_runtime_fn(runtime.dump()),
+            back_fn=dummy_back
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check dataset bound",
+            forth_fn=funcs.check_dataset_bound_fn(name, namespace)
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check if PV & PVC is ready",
+            forth_fn=funcs.check_volume_resource_ready_fn(name, namespace)
+        )
+    )
+
+    flow.append_step(
+        SimpleStep(
+            step_name="create pod with fluid pvc",
+            forth_fn=funcs.create_pod_fn(dataset_name=name, name="nginx-test", namespace=namespace, serverful=True),
+            back_fn=funcs.delete_pod_fn(name="nginx-test", namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check pod status",
+            forth_fn=funcs.check_pod_running_fn(name="nginx-test", namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="touch FUSE mountpoint",
+            forth_fn=currying_fn(checkDataListSuccess, pod_name="nginx-test", namespace=namespace),
+            timeout=5
+        )
+    )
+
+    flow.append_step(
+        SimpleStep(
+            step_name="delete fuse pod",
+            forth_fn=currying_fn(deleteAlluxioFusePod, dataset_name=name, namespace=namespace),
+            back_fn=dummy_back
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check if fuse mountpoint is recovered",
+            forth_fn=currying_fn(checkFuseRecovered, dataset_name=name, namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="touch FUSE mountpoint",
+            forth_fn=currying_fn(checkDataListSuccess, pod_name="nginx-test", namespace=namespace),
+            timeout=5
+        )
+    )
+
+    try:
+        flow.run()
+    except Exception as e:
+        print(e)
+        exit(1)
+
+
 
     ### Create dataset & alluxioruntime
-    createDatasetAndRuntime()
-    checkDatasetBound()
-    checkVolumeResourcesReady()
+    # createDatasetAndRuntime()
+    # checkDatasetBound()
+    # checkVolumeResourcesReady()
 
-    ### Create Pod with Injection Label
-    createDataListPod("nginx")
-    if checkPodReady("nginx", namespace):
-        time.sleep(5)
-        checkDataListSuccess("nginx")
+    # ### Create Pod with Injection Label
+    # createDataListPod("nginx")
+    # if checkPodReady("nginx", namespace):
+    #     time.sleep(5)
+    #     checkDataListSuccess("nginx")
 
-    ### Delete fuse
-    deleteAlluxioFusePod()
-    if checkPodReady("hbase-fuse", namespace) and checkFuseRecovered():
-        time.sleep(5)
-        if checkDataListSuccess("nginx"):
-            exit_code = 0
-        else:
-            exit_code = 1
-    cleanUp("nginx")
-    return exit_code
+    # ### Delete fuse
+    # deleteAlluxioFusePod()
+    # if checkPodReady("hbase-fuse", namespace) and checkFuseRecovered():
+    #     time.sleep(5)
+    #     if checkDataListSuccess("nginx"):
+    #         exit_code = 0
+    #     else:
+    #         exit_code = 1
+    # cleanUp("nginx")
+    # return exit_code
 
 
 if __name__ == '__main__':
-    exit(main())
+    main()

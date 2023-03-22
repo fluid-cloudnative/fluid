@@ -7,9 +7,11 @@ sys.path.insert(0, project_root)
 
 from kubernetes import client, config
 from framework.step import check
+from framework.exception import TestError
 
 
 SERVERLESS_KEY="serverless.fluid.io/inject"
+SERVERFUL_KEY="fuse.serverful.fluid.io/inject"
 
 def create_dataset_fn(dataset):
     def create_dataset():
@@ -26,7 +28,6 @@ def create_dataset_fn(dataset):
         print("Dataset \"{}/{}\" created".format(dataset["metadata"]["namespace"], dataset["metadata"]["name"]))
 
     return create_dataset
-
 
 def check_dataset_bound_fn(name, namespace="default"):
     def check():
@@ -49,7 +50,6 @@ def check_dataset_bound_fn(name, namespace="default"):
 
     return check
 
-
 def create_runtime_fn(runtime):
     def create_runtime():
         plural_str = "{}s".format(runtime["kind"].lower())
@@ -67,7 +67,6 @@ def create_runtime_fn(runtime):
                                             runtime["metadata"]["name"]))
 
     return create_runtime
-
 
 def delete_dataset_and_runtime_fn(runtime, name, namespace="default"):
     def check_clean_up():
@@ -180,7 +179,6 @@ def check_dataset_cached_percentage_fn(name, namespace="default"):
 
     return check
 
-
 def check_volume_resource_ready_fn(name, namespace="default"):
     def check():
         api = client.CoreV1Api()
@@ -201,7 +199,6 @@ def check_volume_resource_ready_fn(name, namespace="default"):
         return True
 
     return check
-
 
 def create_job_fn(script, dataset_name, name="fluid-e2e-job-test", namespace="default", serverless=False):
     def create():
@@ -270,5 +267,64 @@ def delete_job_fn(name="fluid-e2e-job-test", namespace="default"):
 
         body = client.V1DeleteOptions(propagation_policy='Background')
         batch_api.delete_namespaced_job(name=name, namespace=namespace, body=body)
+
+    return delete
+
+def create_pod_fn(dataset_name, name="nginx-test", namespace="default", serverless=False, serverful=False):
+    def create():
+        api = client.CoreV1Api()
+        container = client.V1Container(
+            name="nginx",
+            image="nginx",
+            volume_mounts=[client.V1VolumeMount(mount_path="/data", name="data-vol")]
+        )
+
+        volume = client.V1Volume(
+            name="data-vol",
+            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=dataset_name)
+        )
+
+        labels = {}
+        if serverless:
+            labels[SERVERLESS_KEY] = "true"
+        if serverful:
+            labels[SERVERFUL_KEY] = "true"
+
+        pod = client.V1Pod(
+            api_version="v1",
+            kind="Pod",
+            metadata=client.V1ObjectMeta(name=name, labels=labels),
+            spec=client.V1PodSpec(
+                containers=[container],
+                volumes=[volume]
+            )
+        )
+
+        api.create_namespaced_pod(namespace=namespace, body=pod)
+        print("Pod {} created".format(name))
+
+    return create
+
+def check_pod_running_fn(name="nginx-test", namespace="default"):
+    def check():
+        api = client.CoreV1Api()
+        pod_status = api.read_namespaced_pod(name, namespace).status
+        if pod_status.phase == "Running":
+            return True
+        
+        return False
+    
+    return check
+
+def delete_pod_fn(name="nginx-test", namespace="default"):
+    def delete():
+        api = client.CoreV1Api()
+        body = client.V1DeleteOptions(propagation_policy='Background')
+
+        try:
+            api.delete_namespaced_pod(name=name, namespace=namespace, body=body)
+        except client.exceptions.ApiException as e:
+            if e.status != 404:
+                raise TestError("failed to delete pod with code status {}".format(e.status))
 
     return delete
