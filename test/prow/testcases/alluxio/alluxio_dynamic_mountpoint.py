@@ -74,66 +74,6 @@ def check_dataset_mount_change(name, namespace):
     
     return False
 
-def changeDatasetMountpoint():
-    new_dataset = {
-        "apiVersion": "data.fluid.io/v1alpha1",
-        "kind": "Dataset",
-        "metadata": {
-            "name": "hbase"
-        },
-        "spec": {
-            "mounts": [
-                {
-                    "mountPoint": "https://mirrors.bit.edu.cn/apache/hbase/stable/",
-                    "name": "hbase"
-                },
-                {
-                    "mountPoint": "https://mirrors.bit.edu.cn/apache/zookeeper/stable/",
-                    "name": "zookeeper"
-                }
-            ]
-        }
-    }
-
-    client.CustomObjectsApi().patch_namespaced_custom_object(
-        name="hbase",
-        group="data.fluid.io",
-        version="v1alpha1",
-        namespace="default",
-        plural="datasets",
-        body=new_dataset,
-    )
-
-    client.CustomObjectsApi().patch_namespaced_custom_object(
-        name="hbase",
-        group="data.fluid.io",
-        version="v1alpha1",
-        namespace="default",
-        plural="alluxioruntimes",
-        body=new_alluxioruntime,
-    )
-
-    time.sleep(1)
-    while True:
-        resource = client.CustomObjectsApi().get_namespaced_custom_object(
-            group="data.fluid.io",
-            version="v1alpha1",
-            name="hbase",
-            namespace="default",
-            plural="datasets"
-        )
-
-        print(resource)
-
-        if "status" in resource:
-            if "mounts" in resource["status"]:
-                print(resource["status"]["mounts"])
-                if resource["status"]["mounts"][0]["name"] == "zookeeper" or resource["status"]["mounts"][1]["name"] == "zookeeper":
-                    break
-
-        time.sleep(1)
-
-
 def checkRecoverAfterCrash():
     # exec the master pod and kill
     exec_command = ["/bin/sh",
