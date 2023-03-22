@@ -242,13 +242,13 @@ def __assemble_runtime_by_kind(runtime_kind, name):
     if runtime_kind == "alluxio":
         runtime = Runtime("AlluxioRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm", "20Gi")
+        runtime.set_tieredstore("MEM", "/dev/shm", "4Gi")
 
         return runtime
     elif runtime_kind == "jindo":
         runtime = Runtime("JindoRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm", "20Gi")
+        runtime.set_tieredstore("MEM", "/dev/shm", "15Gi")
 
         return runtime
 

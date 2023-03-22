@@ -24,7 +24,7 @@ class TestFlow():
         try:
             while undergoing_step < total_steps:
                 self.steps[undergoing_step].go_forth()
-                print("OK {}".format(self.steps[undergoing_step].get_step_name()))
+                print("PASS {}".format(self.steps[undergoing_step].get_step_name()))
                 time.sleep(3)
                 undergoing_step += 1
         except TestError as e:
