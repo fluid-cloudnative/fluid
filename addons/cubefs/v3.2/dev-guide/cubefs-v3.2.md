@@ -1,4 +1,4 @@
-# Simple example of CubeFS access to ThinRuntime
+# Simple example of CubeFS 3.2 access to ThinRuntimeCubeFS
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@
 
 #### Deploy CubeFS
 
-Deploy CubeFS v2.4.0 according to [cubefs-helm](https://github.com/cubefs/cubefs-helm).
+Deploy CubeFS v3.2.0 according to [cubefs-helm](https://github.com/cubefs/cubefs-helm).
 
 
 ### Use Remote CubeFS Cluster as backend storage
@@ -106,11 +106,11 @@ The shell script creates the mounted folder and mounts the remote file system to
 Package parameter resolution scripts, mount scripts, and related libraries into the image.
 
 ```dockerfile
-FROM chubaofs/cfs-client:2.4.0
+FROM chubaofs/cfs-client:v3.2.0
 ADD fluid_config_init.py /
 ```
 
-cfs-client is needed to mount CubeFS volume, so we use CubeFS client image(chubaofs/cfs-client:2.4.0) here.
+cfs-client is needed to mount CubeFS volume, so we use CubeFS client image(chubaofs/cfs-client:v3.2.0) here.
 
 At the same time, the client image has integrated the Python environment (Python2.7), which will be used to perform parameter resolution script.
 
@@ -197,7 +197,7 @@ After the application using the remote file system is deployed, the correspondin
 ```shell
 $ kubectl get pods
 NAME                    READY   STATUS    RESTARTS   AGE
-cubefs-test-fuse-lf8r4  1/1     Running   0        2m56s
+cubefs-test-fuse-wsd26  1/1     Running   0        2m56s
 nginx                   1/1     Running   0        2m56s
 ```
 The remote file system is mounted to the /data directory of nginx pod.

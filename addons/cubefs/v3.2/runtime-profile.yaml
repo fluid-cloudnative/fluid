@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntimeProfile
+metadata:
+  name: cubefs
+spec:
+  fileSystemType: cubefs
+  fuse:
+    image: fluidcloudnative/cubefs_v3.2
+    imageTag: v0.1
+    imagePullPolicy: IfNotPresent
+    command:
+      - "/usr/local/bin/entrypoint.sh"
