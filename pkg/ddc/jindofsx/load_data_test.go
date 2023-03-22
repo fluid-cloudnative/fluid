@@ -5,21 +5,24 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/brahma-adshonor/gohook"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 )
 
 func TestCreateDataLoadJob(t *testing.T) {
@@ -245,7 +248,7 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 		},
 	}
 
-	var testCases = []struct {
+	testCases := []struct {
 		dataLoad       datav1alpha1.DataLoad
 		expectFileName string
 	}{
@@ -263,6 +266,392 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 		engine := JindoFSxEngine{}
 		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file")
+		}
+	}
+}
+
+func Test_genDataLoadValue(t *testing.T) {
+	testCases := map[string]struct {
+		image         string
+		targetDataset *datav1alpha1.Dataset
+		dataload      *datav1alpha1.DataLoad
+		runtime       *datav1alpha1.JindoRuntime
+		want          *cdataload.DataLoadValue
+	}{
+		"test case with scheduler name": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "MEM",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Options: map[string]string{
+						"loadMemorydata": "true",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
+		"test case with affinity": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "topology.kubernetes.io/zone",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"antarctica-east1",
+													"antarctica-west1",
+												},
+											},
+										},
+									},
+								},
+							},
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+								{
+									Weight: 1,
+									Preference: corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "another-node-label-key",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"another-node-label-value",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "MEM",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "topology.kubernetes.io/zone",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"antarctica-east1",
+													"antarctica-west1",
+												},
+											},
+										},
+									},
+								},
+							},
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+								{
+									Weight: 1,
+									Preference: corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "another-node-label-key",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"another-node-label-value",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Options: map[string]string{
+						"loadMemorydata": "true",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
+		"test case with node selector": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					NodeSelector: map[string]string{
+						"diskType": "ssd",
+					},
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "SSD",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					NodeSelector: map[string]string{
+						"diskType": "ssd",
+					},
+					Options: map[string]string{
+						"loadMemorydata": "false",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
+		"test case with tolerations": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+					Target: []datav1alpha1.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					SchedulerName: "scheduler-test",
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "example-key",
+							Operator: corev1.TolerationOpExists,
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "MEM",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					SchedulerName: "scheduler-test",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:     "/test",
+							Replicas: 1,
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "example-key",
+							Operator: corev1.TolerationOpExists,
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+					Options: map[string]string{
+						"loadMemorydata": "true",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
+	}
+	engine := JindoFSxEngine{
+		namespace: "fluid",
+		name:      "test",
+		Log:       fake.NullLogger(),
+	}
+	for k, item := range testCases {
+		got := engine.genDataLoadValue(item.image, item.runtime, item.targetDataset, *item.dataload)
+		if !reflect.DeepEqual(got, item.want) {
+			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}
 	}
 }
@@ -344,7 +733,7 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 		},
 	}
 
-	var testCases = []struct {
+	testCases := []struct {
 		dataLoad       datav1alpha1.DataLoad
 		expectFileName string
 	}{
