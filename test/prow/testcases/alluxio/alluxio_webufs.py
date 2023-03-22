@@ -69,7 +69,7 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.create_job_fn("time cp -r /data/hbase ./", name),
+            forth_fn=funcs.create_job_fn("time cp -r /data/zookeeper ./", name),
             back_fn=funcs.delete_job_fn()
         )
     )
