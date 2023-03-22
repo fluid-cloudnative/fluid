@@ -605,6 +605,20 @@ spec:
                 description: The specific runtime profile name, empty value is used
                   for handling datasets which mount another dataset
                 type: string
+              pvcMetadata:
+                description: Metadata defines subgroup properties of metav1.ObjectMeta
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
+                type: object
               replicas:
                 description: The replicas of the worker, need to be specified
                 format: int32
