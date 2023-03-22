@@ -62,3 +62,37 @@ func TestIsDeprecated(t *testing.T) {
 		}
 	}
 }
+
+func TestIsNotSupported(t *testing.T) {
+	testCases := []struct {
+		Name   string
+		Err    error
+		expect bool
+	}{
+		{
+			Name:   "notSupported",
+			Err:    NewNotSupported(resource("DataBackup"), "ecaRuntime"),
+			expect: true,
+		},
+		{
+			Name:   "no notSupported",
+			Err:    fmt.Errorf("test"),
+			expect: false,
+		},
+	}
+
+	err := NewNotSupported(resource("DataBackup"), "ecaRuntime")
+	if err.Details() == nil {
+		t.Errorf("expect error details %v is not nil", err.Details())
+	}
+
+	if len(err.Error()) == 0 {
+		t.Errorf("expect error is not empty, but %v", err.Error())
+	}
+
+	for _, testCase := range testCases {
+		if testCase.expect != IsNotSupported(testCase.Err) {
+			t.Errorf("testCase %s: expected %v ,got %v", testCase.Name, testCase.expect, IsNotSupported(testCase.Err))
+		}
+	}
+}

@@ -78,7 +78,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	// Build and setup runtime info
 	runtimeInfo, err := engine.getRuntimeInfo()
 	if err != nil {
-		return nil, fmt.Errorf("engine %s failed to get runtime info", ctx.Name)
+		return nil, fmt.Errorf("engine %s failed to get runtime info, error %s", ctx.Name, err.Error())
 	}
 
 	// Build the helper
