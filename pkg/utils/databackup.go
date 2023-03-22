@@ -13,13 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GetDataBackupRef returns the identity of the Backup by combining its namespace and name.
-// The identity is used for identifying current lock holder on the target dataset.
-func GetDataBackupRef(name, namespace string) string {
-	// namespace may contain '-', use '/' as separator
-	return fmt.Sprintf("%s/%s", namespace, name)
-}
-
 // GetDataBackup gets the DataBackup given its name and namespace
 func GetDataBackup(client client.Client, name, namespace string) (*datav1alpha1.DataBackup, error) {
 	key := types.NamespacedName{

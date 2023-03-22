@@ -18,8 +18,11 @@ package base
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Engine interface defines the interfaces that should be implemented
@@ -49,17 +52,36 @@ type Engine interface {
 
 	// Datamigrater
 	Datamigrater
+
+	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.
+	DataOperator
+}
+
+// DataOperator is a common interface of TemplateEngine for Data Operations like DataBackup/DataLoad/DataMigrate etc.
+type DataOperator interface {
+	Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error)
+}
+
+// DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
+type DataOperatorYamlGenerator interface {
+	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error)
 }
 
 type Dataloader interface {
 	// LoadData generate dataload values and install helm chart
 	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error)
 
-	// Check if runtime is ready
+	// CheckRuntimeReady Check if runtime is ready
+	// @Deprecated because it's common for all engine
 	CheckRuntimeReady() (ready bool)
 
-	// Check existence of path
+	// CheckExistenceOfPath Check existence of path
+	// @Deprecated as https://github.com/fluid-cloudnative/fluid/pull/2355
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
+}
+
+type Databackuper interface {
+	BackupData(ctx cruntime.ReconcileRequestContext, targetDataBackup datav1alpha1.DataBackup) (ctrl.Result, error)
 }
 
 type Datamigrater interface {
@@ -70,6 +92,8 @@ type Datamigrater interface {
 // Implement is what the real engine should implement if it use the TemplateEngine
 type Implement interface {
 	UnderFileSystemService
+
+	DataOperatorYamlGenerator
 
 	// ShouldSetupMaster checks if the master ready
 	CheckMasterReady() (ready bool, err error)
@@ -138,9 +162,11 @@ type Implement interface {
 	BindToDataset() (err error)
 
 	// CreateDataLoadJob creates the job to load data
+	// @Deprecated TODO: remove when DataOperator ready
 	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
 
 	// CreateDataMigrateJob creates the job to load data
+	// @Deprecated TODO: remove when DataOperator ready
 	CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error
 
 	// checks if the runtime is ready
@@ -149,7 +175,9 @@ type Implement interface {
 	// SyncRuntime syncs the runtime spec
 	SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error)
 
-	// Check existence of targetDataload path
+	// CheckExistenceOfPath Check existence of targetDataload path
+	// useless as https://github.com/fluid-cloudnative/fluid/pull/2355
+	// @Deprecated TODO: remove when DataOperator ready
 	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 
 	// Sync the scheduleInfo to cacheNodes

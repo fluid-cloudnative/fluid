@@ -5,7 +5,11 @@
 package base
 
 import (
-	"reflect"
+	dataoperation"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	reflect "reflect"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/golang/mock/gomock"
 
@@ -14,10 +18,27 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
+var _ base.Engine = (*MockEngine)(nil)
+
 // MockEngine is a mock of Engine interface.
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
+}
+
+func (m *MockEngine) MigrateData(ctx runtime.ReconcileRequestContext, targetDataMigrate v1alpha1.DataMigrate) (err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MigrateData", ctx, targetDataMigrate)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Operate", ctx, object, opStatus, operation)
+	ret0, _ := ret[0].(ctrl.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MockEngineMockRecorder is the mock recorder for MockEngine.
@@ -231,7 +252,7 @@ func (mr *MockDataloaderMockRecorder) LoadData(ctx, targetDataload interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockDataloader)(nil).LoadData), ctx, targetDataload)
 }
 
-// MockImplement is a mock of Implement interface.
+// MockImplement is a mock of implement interface.
 type MockImplement struct {
 	ctrl     *gomock.Controller
 	recorder *MockImplementMockRecorder
@@ -369,6 +390,15 @@ func (m *MockImplement) CheckWorkersReady() (bool, error) {
 func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckWorkersReady", reflect.TypeOf((*MockImplement)(nil).CheckWorkersReady))
+}
+
+
+func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDataOperationValueFile", ctx, object, operation)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateDataLoadJob mocks base method.

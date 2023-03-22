@@ -19,6 +19,13 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -55,6 +62,18 @@ type ReferenceDatasetEngine struct {
 	runtimeInfo base.RuntimeInfoInterface
 	// mounted dataset corresponding runtimeInfo,  use getMountedRuntimeInfo instead of directly use this field
 	mountedRuntimeInfo base.RuntimeInfoInterface
+}
+
+func (e *ReferenceDatasetEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	// reference thin engine not support data operation
+	err := errors.NewNotSupported(
+		schema.GroupResource{
+			Group:    object.GetObjectKind().GroupVersionKind().Group,
+			Resource: object.GetObjectKind().GroupVersionKind().Kind,
+		}, "ThinRuntime")
+	ctx.Log.Error(err, "ThinRuntime for reference dataset does not support data operations")
+	ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotSupport, "thinEngine for reference dataset does not support data operations")
+	return utils.NoRequeue()
 }
 
 // ID returns the id of the engine

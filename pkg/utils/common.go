@@ -14,8 +14,11 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -42,4 +45,14 @@ func IsSubPath(path, subPath string) bool {
 	}
 
 	return true
+}
+
+func GetObjectMeta(object client.Object) (objectMeta metav1.Object, err error) {
+	objectMetaAccessor, isOM := object.(metav1.ObjectMetaAccessor)
+	if !isOM {
+		err = fmt.Errorf("object is not ObjectMetaAccessor")
+		return
+	}
+	objectMeta = objectMetaAccessor.GetObjectMeta()
+	return
 }
