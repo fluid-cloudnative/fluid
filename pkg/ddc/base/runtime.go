@@ -149,8 +149,8 @@ type CachePath struct {
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
-	pvcMetadata datav1alpha1.Metadata,
-	tieredstore datav1alpha1.TieredStore) (runtime RuntimeInfoInterface, err error) {
+	tieredstore datav1alpha1.TieredStore,
+	opts ...RuntimeInfoOption) (runtime RuntimeInfoInterface, err error) {
 
 	tieredstoreInfo, err := convertToTieredstoreInfo(tieredstore)
 	if err != nil {
@@ -162,9 +162,19 @@ func BuildRuntimeInfo(name string,
 		namespace:       namespace,
 		runtimeType:     runtimeType,
 		tieredstoreInfo: tieredstoreInfo,
-		pvcMetadata:     pvcMetadata,
+	}
+	for _, fn := range opts {
+		fn(runtime.(*RuntimeInfo))
 	}
 	return
+}
+
+type RuntimeInfoOption func(info *RuntimeInfo)
+
+func WithPVCMetadata(metadata datav1alpha1.Metadata) RuntimeInfoOption {
+	return func(info *RuntimeInfo) {
+		info.pvcMetadata = metadata
+	}
 }
 
 func (info *RuntimeInfo) GetPVCMetadata() datav1alpha1.Metadata {
@@ -331,7 +341,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, alluxioRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(alluxioRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -342,7 +352,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, jindoRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(jindoRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -353,7 +363,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, goosefsRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(goosefsRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -364,7 +374,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, juicefsRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(juicefsRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -375,7 +385,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, thinRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(thinRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -387,7 +397,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, eacRuntime.Spec.PVCMetadata, datav1alpha1.TieredStore{})
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(eacRuntime.Spec.PVCMetadata))
 		if err != nil {
 			return runtimeInfo, err
 		}

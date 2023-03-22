@@ -62,7 +62,7 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 		return e.runtimeInfo, err
 	}
 
-	e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.PVCMetadata, runtime.Spec.TieredStore)
+	e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore, base.WithPVCMetadata(runtime.Spec.PVCMetadata))
 	if err != nil {
 		return e.runtimeInfo, err
 	}
