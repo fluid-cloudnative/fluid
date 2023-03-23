@@ -205,117 +205,6 @@ def check_datamigrate_complete(datamigrate_name, namespace="default"):
     return False
 
 
-def get_worker_node_fn(dataset_name, namespace="default"):
-    def check_internal():
-        api = client.CoreV1Api()
-        pod_name = "{}-worker-0".format(dataset_name)
-        try:
-            global NODE_NAME
-            pod = api.read_namespaced_pod(name=pod_name, namespace=namespace)
-            NODE_NAME = pod.spec.node_name
-            return True
-        except client.exceptions.ApiException as e:
-            if e.status == 404:
-                return False
-            raise e
-    
-    return funcs.check(check_internal, retries=60, interval=1)
-
-
-def create_check_cache_job(job_name, node_name, namespace="default"):
-    if node_name == "":
-        raise TestError("cannot check cache cleaned up given an empty node")
-
-    print("Create check cache job")
-    api = client.BatchV1Api()
-
-    container = client.V1Container(
-        name="demo",
-        image="debian:buster",
-        command=["/bin/bash"],
-        args=["-c", "if [ $(find /dev/shm/* | grep chunks | wc -l) = 0 ]; then exit 0; else exit 1; fi"],
-        volume_mounts=[client.V1VolumeMount(mount_path="/dev/shm/cache1", name="cache1"),
-                       client.V1VolumeMount(mount_path="/dev/shm/cache2", name="cache2")]
-    )
-
-    template = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(labels={"app": "checkcache"}),
-        spec=client.V1PodSpec(
-            restart_policy="Never",
-            containers=[container],
-            volumes=[
-                client.V1Volume(
-                    name="cache1",
-                    host_path=client.V1HostPathVolumeSource(path="/dev/shm/cache1")
-                ),
-                client.V1Volume(
-                    name="cache2",
-                    host_path=client.V1HostPathVolumeSource(path="/dev/shm/cache2")
-                )
-            ],
-            node_name=node_name,
-        )
-    )
-
-    spec = client.V1JobSpec(template=template, backoff_limit=4)
-
-    job = client.V1Job(
-        api_version="batch/v1",
-        kind="Job",
-        metadata=client.V1ObjectMeta(name=job_name, namespace=namespace),
-        spec=spec
-    )
-
-    api.create_namespaced_job(namespace=namespace, body=job)
-    print("Job {} created.".format("checkcache"))
-
-
-def check_data_job_status(job_name, namespace="default"):
-    api = client.BatchV1Api()
-
-    count = 0
-    while count < 300:
-        count += 1
-        response = api.read_namespaced_job_status(name=job_name, namespace=namespace)
-        if response.status.succeeded is not None:
-            print("Job {} completed.".format(job_name))
-            return True
-        if response.status.failed is not None:
-            print("Job {} failed.".format(job_name))
-            return False
-        time.sleep(1)
-    print("Job {} not completed within 300s.".format(job_name))
-    return False
-
-
-def clean_job(job_name, namespace="default"):
-    batch_api = client.BatchV1Api()
-
-    # See https://github.com/kubernetes-client/python/issues/234
-    body = client.V1DeleteOptions(propagation_policy='Background')
-    try:
-        batch_api.delete_namespaced_job(name=job_name, namespace=namespace, body=body)
-    except client.exceptions.ApiException as e:
-        if e.status == 404:
-            print("job {} deleted".format(job_name))
-            return True
-
-    count = 0
-    while count < 300:
-        count += 1
-        print("job {} still exists...".format(job_name))
-        try:
-            batch_api.read_namespaced_job(name=job_name, namespace=namespace)
-        except client.exceptions.ApiException as e:
-            if e.status == 404:
-                print("job {} deleted".format(job_name))
-                return True
-        time.sleep(1)
-
-    print("job {} not deleted within 300s".format(job_name))
-    return False
-
-
 def clean_up_datamigrate(datamigrate_name, namespace):
     custom_api = client.CustomObjectsApi()
     custom_api.delete_namespaced_custom_object(
@@ -344,12 +233,11 @@ def main():
     else:
        config.load_incluster_config()
 
-    name = "jfsdemo"
+    name = "jfsdemo-sidecar"
     datamigrate_name = "jfsdemo"
     namespace = "default"
-    test_write_job = "demo-write"
-    test_read_job = "demo-read"
-    check_cache_job = "checkcache"
+    test_write_job = "demo-write-sidecar"
+    test_read_job = "demo-read-sidecar"
 
     dataset = fluidapi.assemble_dataset("juicefs-minio") \
         .set_namespaced_name(namespace, name)
@@ -398,16 +286,8 @@ def main():
     
     flow.append_step(
         SimpleStep(
-            step_name="get juicefs worker node info",
-            forth_fn=get_worker_node_fn(dataset_name=name, namespace=namespace),
-            back_fn=dummy_back
-        )
-    )
-
-    flow.append_step(
-        SimpleStep(
             step_name="create data write job",
-            forth_fn=funcs.create_job_fn(script="dd if=/dev/zero of=/data/allzero.file bs=100M count=10 && sha256sum /data/allzero.file", dataset_name=name, name=test_write_job, namespace=namespace),
+            forth_fn=funcs.create_job_fn(script="dd if=/dev/zero of=/data/allzero.file bs=100M count=10 && sha256sum /data/allzero.file", dataset_name=name, name=test_write_job, namespace=namespace, serverless=True),
             back_fn=funcs.delete_job_fn(name=test_write_job, namespace=namespace)
         )
     )
@@ -422,7 +302,7 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.create_job_fn(script="time sha256sum /data/allzero.file && rm /data/allzero.file", dataset_name=name, name=test_read_job, namespace=namespace),
+            forth_fn=funcs.create_job_fn(script="time sha256sum /data/allzero.file && rm /data/allzero.file", dataset_name=name, name=test_read_job, namespace=namespace, serverless=True),
             back_fn=funcs.delete_job_fn(name=test_read_job, namespace=namespace)
         )
     )
@@ -456,21 +336,6 @@ def main():
     except Exception as e:
         print(e)
         exit(1)
-
-    
-    print("> Post-Check: Cache cleaned up?")
-    try:
-        assert(NODE_NAME != "")
-        create_check_cache_job(job_name=check_cache_job, node_name=NODE_NAME, namespace=namespace)
-        if not check_data_job_status(check_cache_job, namespace=namespace):
-            raise Exception("> FAIL: Job {} in normal mode failed.".format("checkcache"))
-    except Exception as e:
-        print(e)
-        exit(1)
-    finally:
-        # clean up check cache job
-        clean_job(check_cache_job, namespace=namespace)
-    print("> Post-Check: PASSED")
 
 
 if __name__ == '__main__':
