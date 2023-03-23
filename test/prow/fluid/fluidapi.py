@@ -255,6 +255,6 @@ def __assemble_runtime_by_kind(runtime_kind, name):
     elif runtime_kind == "juicefs":
         runtime = Runtime("JuiceFSRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm", "4Gi", high="", low="0.1")
+        runtime.set_tieredstore("MEM", "/dev/shm/cache1:/dev/shm/cache2", "4Gi", high="", low="0.1")
 
         return runtime
