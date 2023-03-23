@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntimeProfile
+metadata:
+  name: cephfs
+spec:
+  fileSystemType: ceph-fuse
+  fuse:
+    image: baowj/cephfs
+    imageTag: v0.1
+    imagePullPolicy: IfNotPresent
+    command:
+      - "/usr/local/bin/entrypoint.sh"
