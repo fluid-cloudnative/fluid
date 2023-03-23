@@ -1,7 +1,7 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs
+  name: cubefs3.2
 spec:
   fileSystemType: cubefs
   fuse:
