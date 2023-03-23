@@ -203,9 +203,9 @@ type JindoRuntimeSpec struct {
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 
-	// PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio
+	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
 	// +optional
-	PVCMetadata Metadata `json:"pvcMetadata,omitempty"`
+	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // +kubebuilder:object:root=true

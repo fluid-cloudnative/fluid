@@ -101,11 +101,9 @@ type User struct {
 
 // Metadata defines subgroup properties of metav1.ObjectMeta
 type Metadata struct {
-	// Labels are labels of pod specification
-	Labels map[string]string `json:"labels,omitempty"`
+	PodMetadata `json:",inline"`
 
-	// Annotations are annotations of pod specification
-	Annotations map[string]string `json:"annotations,omitempty"`
+	Selector metav1.GroupKind `json:"selector,omitempty"`
 }
 
 // PodMetadata defines subgroup properties of metav1.ObjectMeta

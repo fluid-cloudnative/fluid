@@ -60,7 +60,9 @@ type ThinRuntimeSpec struct {
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
 
-	PVCMetadata Metadata `json:"pvcMetadata,omitempty"`
+	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
+	// +optional
+	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // ThinCompTemplateSpec is a description of the thinRuntime components

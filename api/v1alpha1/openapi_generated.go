@@ -696,11 +696,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement"),
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -2251,11 +2258,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EACRuntimeSpec(ref common.Refer
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -2872,11 +2886,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -3548,11 +3569,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -4016,11 +4044,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PVCMetadata defines labels and annotations that will be propagated to pvc created by Alluxio",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -4143,9 +4178,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref common.ReferenceCa
 							},
 						},
 					},
+					"selector": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.GroupKind"),
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.GroupKind"},
 	}
 }
 
@@ -5486,10 +5529,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 							},
 						},
 					},
-					"pvcMetadata": {
+					"metadataList": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
+									},
+								},
+							},
 						},
 					},
 				},

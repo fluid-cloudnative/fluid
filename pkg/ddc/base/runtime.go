@@ -82,7 +82,7 @@ type RuntimeInfoInterface interface {
 
 	SetClient(client client.Client)
 
-	GetPVCMetadata() datav1alpha1.Metadata
+	GetMetadataList() []datav1alpha1.Metadata
 }
 
 // The real Runtime Info should implement
@@ -109,7 +109,7 @@ type RuntimeInfo struct {
 
 	client client.Client
 
-	pvcMetadata datav1alpha1.Metadata
+	metadataList []datav1alpha1.Metadata
 }
 
 type Fuse struct {
@@ -171,14 +171,14 @@ func BuildRuntimeInfo(name string,
 
 type RuntimeInfoOption func(info *RuntimeInfo)
 
-func WithPVCMetadata(metadata datav1alpha1.Metadata) RuntimeInfoOption {
+func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 	return func(info *RuntimeInfo) {
-		info.pvcMetadata = metadata
+		info.metadataList = metadataList
 	}
 }
 
-func (info *RuntimeInfo) GetPVCMetadata() datav1alpha1.Metadata {
-	return info.pvcMetadata
+func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
+	return info.metadataList
 }
 
 func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
@@ -341,7 +341,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(alluxioRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{}, WithMetadataList(alluxioRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -352,7 +352,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(jindoRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithMetadataList(jindoRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -363,7 +363,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(goosefsRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(goosefsRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -374,7 +374,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(juicefsRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(juicefsRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -385,7 +385,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(thinRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{}, WithMetadataList(thinRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -397,7 +397,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{}, WithPVCMetadata(eacRuntime.Spec.PVCMetadata))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{}, WithMetadataList(eacRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}

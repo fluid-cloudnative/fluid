@@ -619,27 +619,43 @@ spec:
                         type: object
                     type: object
                 type: object
+              metadataList:
+                description: MetadataList defines labels and annotations that will
+                  be propagated to resources created by runtime
+                items:
+                  description: Metadata defines subgroup properties of metav1.ObjectMeta
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations are annotations of pod specification
+                      type: object
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels are labels of pod specification
+                      type: object
+                    selector:
+                      description: GroupKind specifies a Group and a Kind, but does
+                        not force a version.  This is useful for identifying concepts
+                        during lookup stages without having partially valid types
+                      properties:
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                      required:
+                      - group
+                      - kind
+                      type: object
+                  type: object
+                type: array
               properties:
                 additionalProperties:
                   type: string
                 description: Configurable properties for the GOOSEFS component. <br>
                   Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS
                   Configuration Properties</a> for more info
-                type: object
-              pvcMetadata:
-                description: PVCMetadata defines labels and annotations that will
-                  be propagated to pvc created by Alluxio
-                properties:
-                  annotations:
-                    additionalProperties:
-                      type: string
-                    description: Annotations are annotations of pod specification
-                    type: object
-                  labels:
-                    additionalProperties:
-                      type: string
-                    description: Labels are labels of pod specification
-                    type: object
                 type: object
               replicas:
                 description: The replicas of the worker, need to be specified
