@@ -19,6 +19,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -74,6 +75,7 @@ func GetDataMigrateRef(name, namespace string) string {
 
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
 	var fromDataset, toDataset *datav1alpha1.Dataset
+	var boundedRuntimeType = ""
 	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {
 		toDataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
 		if err != nil {
@@ -96,6 +98,7 @@ func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.Da
 			targetDataset = toDataset
 			return
 		}
+		boundedRuntimeType = boundedRuntime.Type
 	}
 	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
 		fromDataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
@@ -118,8 +121,17 @@ func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.Da
 			targetDataset = fromDataset
 			return
 		}
+		boundedRuntimeType = boundedRuntime.Type
 	}
 
+	// DataMigrate has from/to dataset, but Spec.RuntimeType is different with target dataset' bounded runtime type;
+	if boundedRuntimeType != "" {
+		err = fmt.Errorf("the runtime type of the target dataset is %s, but the runtime type of the dataMigrate is %s",
+			boundedRuntimeType, dataMigrate.Spec.RuntimeType)
+		return nil, errors.Wrap(err, "Unable to get ddc runtime")
+	}
+
+	// DataMigrate has no from/to dataset
 	return nil, apierrors.NewNotFound(schema.GroupResource{
 		Group:    datav1alpha1.Group,
 		Resource: datav1alpha1.Version,
