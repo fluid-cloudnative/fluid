@@ -134,6 +134,14 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				},
 			}
 		}
+		metadataList := runtime.GetMetadataList()
+		for i := range metadataList {
+			if selector := metadataList[i].Selector; selector.Group != v1.GroupName || selector.Kind != "PersistentVolume" {
+				continue
+			}
+			pv.Labels = utils.UnionMapsWithOverride(pv.Labels, metadataList[i].Labels)
+			pv.Annotations = utils.UnionMapsWithOverride(pv.Annotations, metadataList[i].Annotations)
+		}
 
 		err = client.Create(context.TODO(), pv)
 		if err != nil {
@@ -184,6 +192,14 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 					},
 				},
 			},
+		}
+		metadataList := runtime.GetMetadataList()
+		for i := range metadataList {
+			if selector := metadataList[i].Selector; selector.Group != v1.GroupName || selector.Kind != "PersistentVolumeClaim" {
+				continue
+			}
+			pvc.Labels = utils.UnionMapsWithOverride(pvc.Labels, metadataList[i].Labels)
+			pvc.Annotations = utils.UnionMapsWithOverride(pvc.Annotations, metadataList[i].Annotations)
 		}
 
 		err = client.Create(context.TODO(), pvc)

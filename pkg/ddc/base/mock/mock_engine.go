@@ -5,7 +5,7 @@
 package base
 
 import (
-	dataoperation"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	reflect "reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -391,7 +391,6 @@ func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckWorkersReady", reflect.TypeOf((*MockImplement)(nil).CheckWorkersReady))
 }
-
 
 func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	m.ctrl.T.Helper()
