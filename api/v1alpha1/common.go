@@ -99,6 +99,13 @@ type User struct {
 	GroupName string `json:"group"`
 }
 
+// Metadata defines subgroup properties of metav1.ObjectMeta
+type Metadata struct {
+	PodMetadata `json:",inline"`
+
+	Selector metav1.GroupKind `json:"selector,omitempty"`
+}
+
 // PodMetadata defines subgroup properties of metav1.ObjectMeta
 type PodMetadata struct {
 	// Labels are labels of pod specification
