@@ -56,11 +56,11 @@ spec:
       image: nginx
       volumeMounts:
         - mountPath: /data
-          name: nfs-demo
+          name: ceph-demo
   volumes:
-    - name: nfs-demo
+    - name: ceph-demo
       persistentVolumeClaim:
-        claimName: nfs-demo
+        claimName: ceph-demo
 EOF
 
 $ kubectl apply -f app.yaml
