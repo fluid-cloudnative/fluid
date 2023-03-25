@@ -1,6 +1,6 @@
-# CubeFS 2.4
+# CubeFS 3.2
 
-This addon is built based for [CubeFS](https://cubefs.io/) v2.4.0.
+This addon is built based for [CubeFS](https://cubefs.io/) v3.2.0.
 
 ## Install
 
@@ -13,7 +13,7 @@ kubectl apply -f runtime-profile.yaml
 ## Usage
 
 ### Prerequisites
-CubeFS 2.4 has been deployed in the K8s cluster and can be accessed normally.
+CubeFS 3.2 has been deployed in the K8s cluster and can be accessed normally.
 
 ### Create and Deploy ThinRuntimeProfile Resource
 
@@ -22,11 +22,11 @@ $ cat <<EOF > runtime-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs2.4
+  name: cubefs3.2
 spec:
   fileSystemType: cubefs
   fuse:
-    image: fluidcloudnative/cubefs_v2.4
+    image: fluidcloudnative/cubefs_v3.2
     imageTag: v0.1
     imagePullPolicy: IfNotPresent
     command:
@@ -55,7 +55,7 @@ kind: ThinRuntime
 metadata:
   name: cubefs-test
 spec:
-  profileName: cubefs2.4
+  profileName: cubefs3.2
 EOF
 
 $ kubectl apply -f dataset.yaml
@@ -99,7 +99,7 @@ To verify that the addon is working correctly, run the following command:
 ```shell
 $ kubectl get pods
 NAME                    READY   STATUS    RESTARTS   AGE
-cubefs-test-fuse-lf8r4  1/1     Running   0        2m56s
+cubefs-test-fuse-wsd26  1/1     Running   0        2m56s
 nginx                   1/1     Running   0        2m56s
 ```
 The remote file system is mounted to the /data directory of nginx pod.
@@ -116,4 +116,4 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 
 ## How to develop
 
-Please check [doc](./dev-guide/cubefs-v2.4.md).
+Please check [doc](./dev-guide/cubefs-v3.2.md).

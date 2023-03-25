@@ -1,32 +1,33 @@
-# CubeFS 2.4
+# CubeFS 3.2
 
-This addon is built based for [CubeFS](https://cubefs.io/) v2.4.0.
+该插件用于 [CubeFS](https://cubefs.io/) v3.2.0.
 
-## Install
+## 安装
 
-To install the addon, apply the `runtime-profile.yaml` file:
+使用以下命令安装：
 
 ```shell
 kubectl apply -f runtime-profile.yaml
 ```
 
-## Usage
+## 使用
 
-### Prerequisites
-CubeFS 2.4 has been deployed in the K8s cluster and can be accessed normally.
+### 前置条件
+K8s集群中已经部署CubeFS 3.2，并且可以正常访问。
 
-### Create and Deploy ThinRuntimeProfile Resource
+### 创建并部署 ThinRuntimeProfile 资源
 
+使用以下命令创建并部署ThinRuntimeProfile资源：
 ```shell
 $ cat <<EOF > runtime-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs2.4
+  name: cubefs3.2
 spec:
   fileSystemType: cubefs
   fuse:
-    image: fluidcloudnative/cubefs_v2.4
+    image: fluidcloudnative/cubefs_v3.2
     imageTag: v0.1
     imagePullPolicy: IfNotPresent
     command:
@@ -36,8 +37,10 @@ EOF
 $ kubectl apply -f runtime-profile.yaml
 ```
 
-### Create and Deploy Dataset and ThinRuntime Resource
-To create and deploy the `Dataset` and `ThinRuntime` resources for the addon, run the following commands:
+
+### 创建 Dataset 和 ThinRuntime 
+
+使用以下命令创建Dataset和ThinRuntime：
 
 ```shell
 $ cat <<EOF > dataset.yaml
@@ -55,16 +58,16 @@ kind: ThinRuntime
 metadata:
   name: cubefs-test
 spec:
-  profileName: cubefs2.4
+  profileName: cubefs3.2
 EOF
 
 $ kubectl apply -f dataset.yaml
 ```
-Modify the above `mountPoint` to the address of the Master of CubeFS you want to use. Modify `name` to the name of the storage volume to be mounted
+将上述 `mountPoint` 修改为您需要使用的CuebFS集群Master的地址，`name`修改为需要挂载的存储卷的名字。
 
-### Run pod with Fluid PVC
+### 数据访问应用示例
 
-To run a Pod with a Fluid PVC that uses the addon, run the following commands:
+使用以下命令创建数据访问应用示例：
 
 ```shell
 $ cat <<EOF > app.yaml
@@ -92,17 +95,16 @@ EOF
 $ kubectl apply -f app.yaml
 ```
 
-After the application using the remote file system is deployed, the corresponding FUSE pod is also scheduled to the same node.
-
-To verify that the addon is working correctly, run the following command:
+运行以上命令后，应用Pod将会自动创建Fuse Pod，并将其调度到与应用相同的节点上。您可以通过以下命令检查Pod状态：
 
 ```shell
 $ kubectl get pods
 NAME                    READY   STATUS    RESTARTS   AGE
-cubefs-test-fuse-lf8r4  1/1     Running   0        2m56s
+cubefs-test-fuse-wsd26  1/1     Running   0        2m56s
 nginx                   1/1     Running   0        2m56s
 ```
-The remote file system is mounted to the /data directory of nginx pod.
+
+您可以通过以下命令检查远程的⽂件系统被挂载到 nginx pod 的 /data ⽬录下。
 
 ```
 $ kubectl exec -it nginx bash
@@ -114,6 +116,5 @@ chubaofs-fluid  5.0G  4.0K  5.0G   1% /data
 ...
 ```
 
-## How to develop
-
-Please check [doc](./dev-guide/cubefs-v2.4.md).
+## 如何开发
+请参考文档 [doc](./dev-guide/cubefs-v3.2-zh_CN.md).

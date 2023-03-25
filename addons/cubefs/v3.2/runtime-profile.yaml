@@ -1,11 +1,11 @@
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs2.4
+  name: cubefs3.2
 spec:
   fileSystemType: cubefs
   fuse:
-    image: fluidcloudnative/cubefs_v2.4
+    image: fluidcloudnative/cubefs_v3.2
     imageTag: v0.1
     imagePullPolicy: IfNotPresent
     command:
