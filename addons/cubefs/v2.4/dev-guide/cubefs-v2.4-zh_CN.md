@@ -123,7 +123,7 @@ $ cat <<EOF > cubefs-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs-profile
+  name: cubefs2.4
 spec:
   fileSystemType: cubefs
   fuse:
@@ -157,7 +157,7 @@ kind: ThinRuntime
 metadata:
   name: cubefs-test
 spec:
-  profileName: cubefs
+  profileName: cubefs2.4
 EOF
 
 $ kubectl apply -f dataset.yaml

@@ -1,29 +1,29 @@
-# Simple example of CubeFS access to ThinRuntime
+# CubeFS 3.2 接入 ThinRuntime 的简单示例
 
-## Prerequisites
+## 前期准备
 
-### Deploy CubeFS Cluster
+### CubeFS集群搭建
 
-#### Prerequisite
+#### 前置条件
 
 * Kubernetes 1.14+
 * CSI spec version 1.1.0
 * Helm 3
 
-#### Deploy CubeFS
+#### CubeFS 集群部署
 
-Deploy CubeFS v2.4.0 according to [cubefs-helm](https://github.com/cubefs/cubefs-helm).
+根据 [cubefs-helm](https://github.com/cubefs/cubefs-helm) 部署 CubeFS v3.2.0 。
 
 
-### Use Remote CubeFS Cluster as backend storage
+### 使用CubeFS作为后端存储
 
-Create storage volumes that need to be mounted in the CubeFS cluster.
+在CubeFS集群内创建需要挂载的存储卷。
 
-## Prepare CubeFS-FUSE Client Image
+## 准备 CubeFS-FUSE 客户端镜像
 
-1. Parameter Resolution Script
+1. 挂载参数解析脚本
 
-In the FUSE container, you need to extract the configuration information of the remote file system from the relevant **ThinRuntimeProfile, Dataset, and ThinRuntime** resources. The relevant information is saved to the FUSE container in the form of JSON strings in **/etc/fluid/config.json** file.
+在 FUSE 容器内需要提取相关的 **ThinRuntimeProfile、Dataset、ThinRuntime**资源中对远程文件系统的配置信息，相关信息以 JSON 字符串的方式保存到 FUSE 容器的 **/etc/fluid/config.json** 文件内。
 
 ```python
 import json
@@ -74,11 +74,11 @@ with open("mount-cubefs.sh", "w") as f:
     f.write("targetPath=\"%s\"\n" % obj['targetPath'])
     f.write(script)
 ```
-The Python script injects the parameters into the shell script in the form of variables after extraction. The mounted storage volume is created by the root user in the CubeFS cluster, and `logDir` and `logLevel` are default.
+该 Python 脚本，将参数提取后以变量的方式注入 shell 脚本。其中挂载的存储卷为CubeFS集群中root用户创建，`logDir`和`logLevel`为默认。
 
-2. Mount script
+2. 挂载远程文件系统脚本
 
-After the parameters are parsed and injected into the shell script, the generated script is as follows
+在将参数解析并注入shell脚本后，生成的脚本如下
 ```shell
 targetPath="/runtime-mnt/thin/default/cubefs-test/thin-fuse"
 
@@ -98,31 +98,32 @@ fi
 
 sleep inf
 ```
-The shell script creates the mounted folder and mounts the remote file system to the target location（targetPath）.**To avoid the FUSE pod from restarting repeatedly，sleep inf is required to keep the process alive**.
+该 shell 脚本创建挂载的文件夹并将远程文件系统挂载到目标位置（targetPath）。**为了防⽌ fuse pod 反复重启，需要 sleep inf 来保持进程的存在**。
 
 
-3. Build FUSE Client Image
+3. 创建 FUSE 客户端镜像
 
-Package parameter resolution scripts, mount scripts, and related libraries into the image.
+将参数解析脚本、挂载脚本和相关的库打包入镜像。
 
 ```dockerfile
-FROM chubaofs/cfs-client:2.4.0
+FROM chubaofs/cfs-client:v3.2.0
 ADD fluid_config_init.py /
 ```
 
-cfs-client is needed to mount CubeFS volume, so we use CubeFS client image(chubaofs/cfs-client:2.4.0) here.
+由于Cubefs挂载需要使用官方提供的二进制文件 cfs-client，该文件存放于cubefs客户端镜像(chubaofs/cfs-client:v3.2.0) /cfs/bin中。
 
-At the same time, the client image has integrated the Python environment (Python2.7), which will be used to perform parameter resolution script.
+同时该客户端镜像已经集成了python环境(python2.7)，将用于执行参数解析脚本。
 
-## Demo
+## 使用示例
 
-### Create and Deploy ThinRuntimeProfile Resource
+### 创建并部署 ThinRuntimeProfile 资源
+
 ```shell
 $ cat <<EOF > cubefs-profile.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: ThinRuntimeProfile
 metadata:
-  name: cubefs2.4
+  name: cubefs3.2
 spec:
   fileSystemType: cubefs
   fuse:
@@ -137,9 +138,9 @@ EOF
 
 $ kubectl apply -f runtime-profile.yaml
 ```
-Replace the above <IMG_ REPO> to the repository name of the image you created, <IMG_ TAG>is modified to the TAG of your image.
+将上述 <IMG_REPO> 改为您制作的镜像的仓库名称，<IMG_TAG> 修改为该镜像的 TAG。
 
-### Create and Deploy Dataset and ThinRuntime Resource
+### 创建并部署 Dataset 和 ThinRuntime 资源
 ```shell
 $ cat <<EOF > dataset.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -156,14 +157,14 @@ kind: ThinRuntime
 metadata:
   name: cubefs-test
 spec:
-  profileName: cubefs2.4
+  profileName: cubefs3.2
 EOF
 
 $ kubectl apply -f dataset.yaml
 ```
-Modify the above `mountPoint` to the address of the Master of CubeFS you want to use. Modify `name` to the name of the storage volume to be mounted
+将上述 `mountPoint` 修改为您需要使用的CuebFS集群Master的地址, `name`修改为需要挂载的存储卷的名字。
 
-### Deploy Application
+### 部署应用
 
 
 ```shell
@@ -192,15 +193,15 @@ EOF
 $ kubectl apply -f app.yaml
 ```
 
-After the application using the remote file system is deployed, the corresponding FUSE pod is also scheduled to the same node.
+查看应用Pod，可发现其正常运行。Fluid自动根据ThinRuntimeProfile中的Fuse配置，创建Fuse Pod，并调度到应用同一个节点上。
 
 ```shell
 $ kubectl get pods
 NAME                    READY   STATUS    RESTARTS   AGE
-cubefs-test-fuse-lf8r4  1/1     Running   0        2m56s
+cubefs-test-fuse-wsd26  1/1     Running   0        2m56s
 nginx                   1/1     Running   0        2m56s
 ```
-The remote file system is mounted to the /data directory of nginx pod.
+远程的⽂件系统被挂载到 nginx pod 的 /data ⽬录下。
 
 ```
 $ kubectl exec -it nginx bash
