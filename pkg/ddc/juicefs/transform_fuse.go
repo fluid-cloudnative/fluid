@@ -81,6 +81,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		j.Log.Error(err, "failed to transform volumes for fuse")
 		return err
 	}
+	// transform cache volumes for fuse
+	err = j.transformFuseCacheVolumes(runtime, value)
+	if err != nil {
+		j.Log.Error(err, "failed to transform cache volumes for fuse")
+		return err
+	}
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
@@ -174,7 +180,11 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	var storagePath = DefaultCacheDir
 	var volumeType = common.VolumeTypeHostPath
 	if tiredStoreLevel != nil {
-		storagePath = tiredStoreLevel.Path // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
+		// juicefs cache-dir use colon (:) to separate multiple paths
+		// community doc: https://juicefs.com/docs/community/command_reference/#juicefs-mount
+		// enterprise doc: https://juicefs.com/docs/cloud/commands_reference#mount
+		// /mnt/disk1/bigboot or /mnt/disk1/bigboot:/mnt/disk2/bigboot
+		storagePath = tiredStoreLevel.Path
 		if tiredStoreLevel.Quota != nil {
 			q := tiredStoreLevel.Quota
 			// juicefs cache-size should be integer in MiB
@@ -188,7 +198,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 		volumeType = tiredStoreLevel.VolumeType
 	}
-	originPath := strings.Split(storagePath, ",")
+	originPath := strings.Split(storagePath, ":")
 	options["cache-dir"] = storagePath
 
 	// transform cacheDir

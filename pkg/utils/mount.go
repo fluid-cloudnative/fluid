@@ -18,19 +18,20 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/golang/glog"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/mount"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/golang/glog"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/mount"
 )
 
 const MountRoot string = "MOUNT_ROOT"
 
-//GetMountRoot gets the value of the env variable named MOUNT_ROOT
+// GetMountRoot gets the value of the env variable named MOUNT_ROOT
 func GetMountRoot() (string, error) {
 	mountRoot := os.Getenv(MountRoot)
 
@@ -50,7 +51,22 @@ func CheckMountReady(fluidPath string, mountType string) error {
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()
 	glog.Infoln(string(stdoutStderr))
-	return err
+
+	if err != nil {
+		var checkMountErr *exec.ExitError
+		if errors.As(err, &checkMountErr) {
+			switch checkMountErr.ExitCode() {
+			case 1:
+				// exitcode=1 indicates timeout waiting for mount point to be ready
+				return errors.New("timeout waiting for FUSE mount point to be ready")
+			case 2:
+				// exitcode=2 indicates subPath not exists
+				return fmt.Errorf("subPath not exists under FUSE mount")
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 func IsMounted(absPath string) (bool, error) {
