@@ -36,17 +36,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
-// TODO(lzq) 将 返回信息变成 Dataset
-func (r *DataMigrateReconciler) GetTargetDatasetNamespacedName(object client.Object) (*types.NamespacedName, error) {
-
-	dataset, err := utils.GetTargetDatasetOfMigrate(r.Client, *object.(*datav1alpha1.DataMigrate))
-	if err != nil {
-		return nil, err
-	}
-	return &types.NamespacedName{
-		Namespace: dataset.Namespace,
-		Name:      dataset.Name,
-	}, nil
+func (r *DataMigrateReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
+	return utils.GetTargetDatasetOfMigrate(r.Client, *object.(*datav1alpha1.DataMigrate))
 }
 
 func (r *DataMigrateReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
