@@ -324,7 +324,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-to-type",
+			name: "test-wrong-type",
 			args: args{
 				dataMigrate: datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
