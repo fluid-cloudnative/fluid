@@ -201,6 +201,9 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									"false",
 									"none",
 								},
+								SecurityContext: &corev1.SecurityContext{
+									Privileged: utilpointer.Bool(true),
+								},
 								VolumeMounts: []corev1.VolumeMount{
 									{
 										MountPath: "/etc/host-os-release",
