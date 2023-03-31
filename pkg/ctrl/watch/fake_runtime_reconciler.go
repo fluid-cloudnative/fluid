@@ -72,3 +72,4 @@ func (r *FakePodReconciler) ControllerName() string {
 func (r *FakePodReconciler) ManagedResource() (c client.Object) {
 	return &corev1.Pod{}
 }
+
