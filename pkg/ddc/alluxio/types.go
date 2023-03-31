@@ -89,6 +89,7 @@ type UFSPath struct {
 
 type UFSVolume struct {
 	Name          string `json:"name"`
+	SubPath       string `json:"subPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
 }
 
