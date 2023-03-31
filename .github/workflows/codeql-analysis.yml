@@ -14,12 +14,12 @@ name: "CodeQL"
 on:
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [ master, release-* ]
   schedule:
     - cron: '20 21 * * 4'
 
 # Declare default permissions as read only.
-permissions: read
+permissions: read-all
 
 jobs:
   analyze:
