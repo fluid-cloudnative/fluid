@@ -50,7 +50,7 @@ const (
 
 	runtimeFSType = "jindofs"
 
-	jindoFuseMonntpath = "/jfs/jindofs-fuse"
+	jindoFuseMountpath = "/jfs/jindofs-fuse"
 
 	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2"
 

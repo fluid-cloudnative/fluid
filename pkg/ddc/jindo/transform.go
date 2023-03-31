@@ -171,7 +171,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	e.transformLogConfig(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
-	value.Fuse.MountPath = jindoFuseMonntpath
+	value.Fuse.MountPath = jindoFuseMountpath
 	return value, err
 }
 
