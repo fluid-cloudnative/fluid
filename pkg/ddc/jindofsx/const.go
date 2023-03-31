@@ -50,11 +50,11 @@ const (
 
 	runtimeFSType = "jindofs"
 
-	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
+	jindoFuseMonntpath = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDOFSX_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2"
+	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2"
 
-	ENGINE_TYPE = "jindofsx"
+	engineType = "jindofsx"
 
 	FuseOnly = "fuseOnly"
 
