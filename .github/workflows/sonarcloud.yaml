@@ -39,6 +39,8 @@ jobs:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
+          ignore_paths:
+            - vendor/**
 
       - name: "Upload artifact"
         uses: actions/upload-artifact@v3
