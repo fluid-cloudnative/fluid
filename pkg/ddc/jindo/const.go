@@ -46,7 +46,7 @@ const (
 
 	runtimeFSType = "jindofs"
 
-	JINDO_FUSE_MONNTPATH = "/jfs/jindofs-fuse"
+	jindoFuseMountpath = "/jfs/jindofs-fuse"
 
 	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
 )
