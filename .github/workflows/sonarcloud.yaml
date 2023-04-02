@@ -40,8 +40,9 @@ jobs:
           results_format: sarif
           publish_results: true
           exclude_checks: "Pinned-Dependencies"
-          ignore_paths:
+          exclude_paths: 
             - vendor/**
+            - hack/sdk/swagger-codegen-cli.jar
 
       - name: "Upload artifact"
         uses: actions/upload-artifact@v3
