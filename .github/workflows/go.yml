@@ -2,12 +2,15 @@ name: Github Actions
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, release-* ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, release-* ]
 
 env:
   GO_VERSION: 1.18
+
+# Declare default permissions as read only.
+permissions: read-all
 
 jobs:
   staticcheck:
