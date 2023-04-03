@@ -27,7 +27,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubereader"
 )
 
@@ -177,7 +176,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+		secret, err := kubereader.GetSecret(j.apiReader, secretKeyRef.Name, j.namespace)
 		if err != nil {
 			j.Log.Info("can't get the secret",
 				"namespace", j.namespace,
