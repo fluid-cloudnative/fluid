@@ -19,6 +19,7 @@ set -o nounset
 set -o pipefail
 
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
+SWAGGER_CODEGEN_JAR_URL="https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.41/swagger-codegen-cli-3.0.41.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
 SDK_OUTPUT_PATH="sdk/python"
@@ -37,6 +38,9 @@ go install k8s.io/kube-openapi/cmd/openapi-gen@${OPENAPI_VERSION}
 
 echo "Generating OpenAPI specification ..."
 ${GOPATH}/bin/openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
+
+echo "Downloading codegen jar ..."
+curl -o ${SWAGGER_CODEGEN_JAR} ${SWAGGER_CODEGEN_JAR_URL}
 
 echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
