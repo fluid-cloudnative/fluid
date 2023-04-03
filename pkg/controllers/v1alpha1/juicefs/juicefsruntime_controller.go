@@ -20,17 +20,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +34,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -71,6 +73,7 @@ func (r *JuiceFSRuntimeReconciler) ManagedResource() client.Object {
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
 func NewRuntimeReconciler(client client.Client,
+	reader client.Reader,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *JuiceFSRuntimeReconciler {
@@ -79,7 +82,7 @@ func NewRuntimeReconciler(client client.Client,
 		mutex:   &sync.Mutex{},
 		engines: map[string]base.Engine{},
 	}
-	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, log, recorder)
+	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, reader, log, recorder)
 	return r
 }
 
@@ -96,6 +99,7 @@ func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.R
 		Category:       common.AccelerateCategory,
 		RuntimeType:    runtimeType,
 		Client:         r.Client,
+		Reader:         r.ApiReader,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}
 

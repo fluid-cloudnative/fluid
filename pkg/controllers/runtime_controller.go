@@ -36,10 +36,11 @@ import (
 
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/fluid-cloudnative/fluid/pkg/dump"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -52,19 +53,21 @@ import (
 // RuntimeReconciler is the default implementation
 type RuntimeReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Recorder record.EventRecorder
+	ApiReader client.Reader
+	Log       logr.Logger
+	Recorder  record.EventRecorder
 	// Real implement
 	implement RuntimeReconcilerInterface
 }
 
 // NewRuntimeReconciler creates the default RuntimeReconciler
-func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.Client, log logr.Logger, recorder record.EventRecorder) *RuntimeReconciler {
+func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.Client, reader client.Reader, log logr.Logger, recorder record.EventRecorder) *RuntimeReconciler {
 	// install gorouting dump generator for all runtime reconciler
 	dump.InstallgoroutineDumpGenerator()
 	r := &RuntimeReconciler{
 		implement: reconciler,
 		Client:    client,
+		ApiReader: reader,
 		Recorder:  recorder,
 		Log:       log,
 	}
@@ -340,7 +343,7 @@ func (r *RuntimeReconciler) GetRuntimeObjectMeta(ctx cruntime.ReconcileRequestCo
 // GetDataset gets the dataset
 func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.Dataset, error) {
 	var dataset datav1alpha1.Dataset
-	if err := r.Get(ctx, ctx.NamespacedName, &dataset); err != nil {
+	if err := r.Client.Get(ctx, ctx.NamespacedName, &dataset); err != nil {
 		return nil, err
 	}
 	return &dataset, nil

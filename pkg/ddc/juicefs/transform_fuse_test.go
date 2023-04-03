@@ -330,10 +330,12 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy(), juicefsSecret2.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	reader := fake.NewFakeReaderWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
 		Client:    client,
+		apiReader: reader,
 		Log:       fake.NullLogger(),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{

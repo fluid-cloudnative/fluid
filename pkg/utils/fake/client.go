@@ -33,3 +33,11 @@ func NewFakeClientWithScheme(clientScheme *runtime.Scheme, initObjs ...runtime.O
 func NewFakeClient(initObjs ...runtime.Object) client.Client {
 	return fake.NewClientBuilder().WithRuntimeObjects(initObjs...).Build()
 }
+
+func NewFakeReaderWithScheme(clientScheme *runtime.Scheme, initObjs ...runtime.Object) client.Reader {
+	return fake.NewClientBuilder().WithScheme(clientScheme).WithRuntimeObjects(initObjs...).Build()
+}
+
+func NewFakeReader(initObjs ...runtime.Object) client.Reader {
+	return fake.NewClientBuilder().WithRuntimeObjects(initObjs...).Build()
+}

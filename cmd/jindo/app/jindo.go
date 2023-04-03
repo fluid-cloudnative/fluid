@@ -21,13 +21,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	jindoctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/jindo"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -37,6 +30,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	jindoctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 var (
@@ -116,7 +117,7 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
-	if err = (jindoctl.NewRuntimeReconciler(mgr.GetClient(),
+	if err = (jindoctl.NewRuntimeReconciler(mgr.GetClient(), mgr.GetAPIReader(),
 		ctrl.Log.WithName("jindoctl").WithName("JindoRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("JindoRuntime"),

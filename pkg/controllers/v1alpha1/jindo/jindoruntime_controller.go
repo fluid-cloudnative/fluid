@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -37,7 +39,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -54,7 +55,7 @@ type RuntimeReconciler struct {
 }
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
-func NewRuntimeReconciler(client client.Client,
+func NewRuntimeReconciler(client client.Client, reader client.Reader,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *RuntimeReconciler {
@@ -63,7 +64,7 @@ func NewRuntimeReconciler(client client.Client,
 		mutex:   &sync.Mutex{},
 		engines: map[string]base.Engine{},
 	}
-	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, log, recorder)
+	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, reader, log, recorder)
 	return r
 }
 

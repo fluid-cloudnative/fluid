@@ -19,11 +19,11 @@ package app
 import (
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac"
 	"k8s.io/apimachinery/pkg/util/net"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac"
+
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,6 +32,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -111,7 +113,7 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
-	if err = (eacctl.NewRuntimeReconciler(mgr.GetClient(),
+	if err = (eacctl.NewRuntimeReconciler(mgr.GetClient(), mgr.GetAPIReader(),
 		ctrl.Log.WithName("eacctl").WithName("EACRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("EACRuntime"),

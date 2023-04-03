@@ -21,7 +21,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -30,6 +29,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -108,7 +109,7 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
-	if err = (thinctl.NewRuntimeReconciler(mgr.GetClient(),
+	if err = (thinctl.NewRuntimeReconciler(mgr.GetClient(), mgr.GetAPIReader(),
 		ctrl.Log.WithName("thinctl").WithName("ThinRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("ThinRuntime"),

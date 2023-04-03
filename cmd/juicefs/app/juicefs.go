@@ -114,7 +114,7 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
-	if err = (juicefsctl.NewRuntimeReconciler(mgr.GetClient(),
+	if err = (juicefsctl.NewRuntimeReconciler(mgr.GetClient(), mgr.GetAPIReader(),
 		ctrl.Log.WithName("juicefsctl").WithName("JuiceFSRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("JuiceFSRuntime"),

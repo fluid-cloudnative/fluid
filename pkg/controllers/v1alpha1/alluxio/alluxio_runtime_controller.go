@@ -18,11 +18,10 @@ package alluxio
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	"sync"
 
 	"github.com/pkg/errors"
 
@@ -54,7 +53,7 @@ type RuntimeReconciler struct {
 }
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
-func NewRuntimeReconciler(client client.Client,
+func NewRuntimeReconciler(client client.Client, reader client.Reader,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *RuntimeReconciler {
@@ -63,7 +62,7 @@ func NewRuntimeReconciler(client client.Client,
 		mutex:   &sync.Mutex{},
 		engines: map[string]base.Engine{},
 	}
-	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, log, recorder)
+	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, reader, log, recorder)
 	return r
 }
 

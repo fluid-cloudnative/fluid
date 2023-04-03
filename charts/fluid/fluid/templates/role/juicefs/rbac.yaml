@@ -62,14 +62,14 @@ rules:
     - get
     - list
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - nodes
+      - nodes
     verbs:
-    - get
-    - list
-    - watch
-    - patch
+      - get
+      - list
+      - watch
+      - patch
   - apiGroups:
     - ""
     resources:
@@ -82,12 +82,9 @@ rules:
     resources:
     - secrets
     verbs:
-    - list
-    - watch
     - get
     - create
     - delete
-    - update
   - apiGroups:
     - ""
     resources:
@@ -97,7 +94,7 @@ rules:
     - delete
     - list
     - watch
-    - get 
+    - get
   - apiGroups:
       - data.fluid.io
     resources:
@@ -106,14 +103,19 @@ rules:
       - juicefsruntimes/status
       - datasets/status
     verbs:
-      - '*'
+      - create
+      - update
+      - get
+      - list
+      - watch
+      - patch
+      - delete
   - apiGroups:
       - ""
     resources:
       - serviceaccounts
     verbs:
       - create
-      - list
       - get
       - delete
   - apiGroups:
@@ -134,7 +136,13 @@ rules:
       - daemonsets/status
       - statefulsets/status
     verbs:
-      - '*'
+      - get
+      - update
+      - patch
+      - create
+      - delete
+      - list
+      - watch
   - apiGroups:
       - coordination.k8s.io
     resources:

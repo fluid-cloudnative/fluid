@@ -40,6 +40,7 @@ type JuiceFSEngine struct {
 	runtimeType string
 	Log         logr.Logger
 	client.Client
+	apiReader client.Reader
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	MetadataSyncDoneCh     chan base.MetadataSyncResult
@@ -54,6 +55,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Client:                 ctx.Client,
+		apiReader:              ctx.Reader,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,

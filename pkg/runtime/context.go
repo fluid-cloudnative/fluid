@@ -19,12 +19,13 @@ package runtime
 import (
 	"context"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // ReconcileRequestContext loads or applys the configuration state of a service.
@@ -35,6 +36,7 @@ type ReconcileRequestContext struct {
 	*datav1alpha1.Dataset
 	Recorder record.EventRecorder
 	client.Client
+	client.Reader
 	RuntimeType   string
 	FinalizerName string
 	common.Category

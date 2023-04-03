@@ -21,13 +21,6 @@ import (
 	"sync"
 	"time"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,6 +30,14 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -71,7 +72,7 @@ func (r *ThinRuntimeReconciler) ManagedResource() client.Object {
 }
 
 // NewRuntimeReconciler create controller for watching runtime custom resources created
-func NewRuntimeReconciler(client client.Client,
+func NewRuntimeReconciler(client client.Client, reader client.Reader,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *ThinRuntimeReconciler {
@@ -80,7 +81,7 @@ func NewRuntimeReconciler(client client.Client,
 		mutex:   &sync.Mutex{},
 		engines: map[string]base.Engine{},
 	}
-	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, log, recorder)
+	r.RuntimeReconciler = controllers.NewRuntimeReconciler(r, client, reader, log, recorder)
 	return r
 }
 
