@@ -5,7 +5,8 @@ Specifically, Fluid, combined with Pod scheduling policies based on datasets lay
 
 1. Support K8s native scheduler, as well as Volcano, Yunikorn, etc. to achieve Pod data affinity scheduling  
 2. Scheduling Pods to nodes with data caching capability first  
-3. When Pods do not use data sets, they can avoid scheduling to nodes with cache as much as possible
+3. Scheduling Pods forcibly to nodes with data caching capability by specifying the Pod Label
+4. When Pods do not use data sets, they can avoid scheduling to nodes with cache as much as possible
 
 ## Prerequisites
 The version of k8s you are using needs to support admissionregistration.k8s.io/v1 (Kubernetes version > 1.16 )
@@ -164,6 +165,63 @@ Through the Webhook mechanism, the application Pod is injected with preferred af
 $ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
 nginx-1   node.172.16.1.84
+```
+
+From the results, we can see that the pod is scheduled to the node with the data cache (i.e., running the Alluxio Worker Pod).
+
+## Running Demo 3: Create a Pod with mounted dataset, and schedule pod to the nodes with mounted dataset through specifying Pod Label
+
+**Create a Pod**
+
+The Label should be specified in metadata (in format `fluid.io/dataset.{dataset_name}.sched: required`). Such as `fluid.io/dataset.hbase.sched: required`, which indicates that this pod need to be scheduled to the node with dataset hbase cache. 
+
+```shell
+$ cat<<EOF >nginx-3.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-3
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
+    fluid.io/dataset.hbase.sched: required
+spec:
+  containers:
+    - name: nginx-3
+      image: nginx
+      volumeMounts:
+        - mountPath: /data
+          name: hbase-vol
+  volumes:
+    - name: hbase-vol
+      persistentVolumeClaim:
+        claimName: hbase
+EOF
+$ kubectl create -f nginx-3.yaml
+```
+
+**Check the Pod**
+
+Checking the yaml file of Pod, shows that the following information has been injected:
+
+```yaml
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: fluid.io/s-default-hbase
+            operator: In
+            values:
+            - "true"
+```
+
+Through the Webhook mechanism, the application Pod is injected with preferred affinity to the cache worker.
+
+```shell
+$ kubectl get pods nginx-3 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
+NAME    NODE
+nginx-3   node.172.16.1.84
 ```
 
 From the results, we can see that the pod is scheduled to the node with the data cache (i.e., running the Alluxio Worker Pod).
