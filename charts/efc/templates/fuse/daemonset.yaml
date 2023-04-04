@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "efc.fullname" . }}-fuse
+  labels:
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: efc-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
+  selector:
+    matchLabels:
+      app: {{ template "efc.name" . }}
+      chart: {{ template "efc.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: efc-fuse
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+      labels:
+        app: {{ template "efc.name" . }}
+        chart: {{ template "efc.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: efc-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 90
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
+      {{- if .Values.fuse.hostNetwork }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+        - name: efc-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          {{- if .Values.fuse.resources  }}
+          resources:
+{{ toYaml .Values.fuse.resources | trim | indent 12  }}
+          {{- end }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "fuse"
+            - {{ .Values.fuse.mountPoint | quote }}
+            - "/efc/efc-fuse"
+            - {{ .Values.fuse.option | quote }}
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }}"]
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          {{- if .Values.fuse.port }}
+          ports:
+            {{- if .Values.fuse.port.monitor }}
+            - containerPort: {{ .Values.fuse.port.monitor }}
+              name: monitor
+            {{- end }}
+          {{- end }}
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "/entrypoint.sh stop_fuse /efc/efc-fuse"]
+          volumeMounts:
+            - name: efc-fuse-mount
+              mountPath: /efc
+              mountPropagation: Bidirectional
+            - name: efc-worker-endpoints
+              mountPath: /etc/efc
+            {{- if .Values.fuse.tieredstore }}
+{{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
+            {{- end }}
+            - name: efc-sock
+              mountPath: /var/run/efc
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: efc-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.hostMountPath }}
+            type: DirectoryOrCreate
+        - name: efc-worker-endpoints
+          configMap:
+            name: {{ template "efc.fullname" . }}-worker-endpoints
+        {{- if .Values.fuse.tieredstore }}
+{{- include "efc.tieredstoreVolumes" .Values.fuse }}
+        {{- end }}
+        - name: host-os
+          hostPath:
+            path: /etc/os-release
+            type: FileOrCreate
+        - name: efc-sock
+          hostPath:
+            path: /runtime-mnt/efc-sock
+            type: Directory

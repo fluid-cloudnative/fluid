@@ -16,49 +16,49 @@
 
 package common
 
-// Runtime for EAC
+// Runtime for EFC
 const (
-	EACRuntimeType                  = "eac"
-	EACRuntimeResourceFinalizerName = "eac-runtime-controller-finalizer"
-	EACRuntimeControllerName        = "EACRuntimeController"
+	EFCRuntimeType                  = "efc"
+	EFCRuntimeResourceFinalizerName = "efc-runtime-controller-finalizer"
+	EFCRuntimeControllerName        = "EFCRuntimeController"
 
-	EACRuntime = EACRuntimeType
+	EFCRuntime = EFCRuntimeType
 
-	EACChart = EACRuntime
+	EFCChart = EFCRuntime
 
-	EACMountType = "alifuse.aliyun-alinas-eac"
+	EFCMountType = "alifuse.aliyun-alinas-efc"
 
-	EACMasterImageEnv = "EAC_MASTER_IMAGE_ENV"
+	EFCMasterImageEnv = "EFC_MASTER_IMAGE_ENV"
 
-	EACFuseImageEnv = "EAC_FUSE_IMAGE_ENV"
+	EFCFuseImageEnv = "EFC_FUSE_IMAGE_ENV"
 
-	EACWorkerImageEnv = "EAC_WORKER_IMAGE_ENV"
+	EFCWorkerImageEnv = "EFC_WORKER_IMAGE_ENV"
 
-	EACInitFuseImageEnv = "EAC_INIT_FUSE_IMAGE_ENV"
+	EFCInitFuseImageEnv = "EFC_INIT_FUSE_IMAGE_ENV"
 
-	DefaultEACMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
+	DefaultEFCMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:update"
 
-	DefaultEACFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img:update"
+	DefaultEFCFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:update"
 
-	DefaultEACWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img:update"
+	DefaultEFCWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:update"
 
-	DefaultEACInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse:update"
+	DefaultEFCInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:update"
 )
 
-// Constants for EAC SessMgr
+// Constants for EFC SessMgr
 const (
-	SessMgrNamespace     = "eac-system"
-	SessMgrDaemonSetName = "eac-sessmgr"
+	SessMgrNamespace     = "efc-system"
+	SessMgrDaemonSetName = "efc-sessmgr"
 
-	SessMgrNodeSelectorKey = "fluid.io/eac-sessmgr"
+	SessMgrNodeSelectorKey = "fluid.io/efc-sessmgr"
 
-	EACSessMgrImageEnv = "EAC_SESSMGR_IMAGE_ENV"
+	EFCSessMgrImageEnv = "EFC_SESSMGR_IMAGE_ENV"
 
-	EACSessMgrUpdateStrategyEnv = "EAC_SESSMGR_UPDATE_STRATEGY_ENV"
+	EFCSessMgrUpdateStrategyEnv = "EFC_SESSMGR_UPDATE_STRATEGY_ENV"
 
-	DefaultEACSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1"
+	DefaultEFCSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v0.1.0-196d2b1"
 
 	SessMgrSockFile = "sessmgrd.sock"
 
-	VolumeAttrEACSessMgrWorkDir = "eac_sessmgr_workdir"
+	VolumeAttrEFCSessMgrWorkDir = "eac_sessmgr_workdir"
 )

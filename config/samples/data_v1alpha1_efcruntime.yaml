@@ -1,0 +1,6 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: EFCRuntime
+metadata:
+  name: efcruntime-sample
+spec:
+  # TODO(user): Add fields here

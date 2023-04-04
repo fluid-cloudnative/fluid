@@ -27,7 +27,7 @@ csi:
     image: fluidcloudnative/fluid-csi:v0.9.0-03d8f04
   kubelet:
     rootDir: /var/lib/kubelet
-  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs,alifuse.aliyun-alinas-eac
+  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs,alifuse.aliyun-alinas-efc
 
 runtime:
   criticalFusePod: true
@@ -91,20 +91,20 @@ runtime:
     enabled: false
     controller:
       image: fluidcloudnative/thinruntime-controller:v0.9.0-03d8f04
-  eac:
+  efc:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/eacruntime-controller:v0.9.0-03d8f04
+      image: fluidcloudnative/efcruntime-controller:v0.9.0-03d8f04
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v0.1.0-196d2b1
     master:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-master:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v0.1.0-196d2b1
     worker:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v0.1.0-196d2b1
     fuse:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v0.1.0-196d2b1
 
 webhook:
   enabled: true
