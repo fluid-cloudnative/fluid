@@ -19,6 +19,7 @@ set -o nounset
 set -o pipefail
 
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
+SWAGGER_CODEGEN_JAR_URL="https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.41/swagger-codegen-cli-3.0.41.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
 SDK_OUTPUT_PATH="sdk/python"
@@ -37,6 +38,27 @@ go install k8s.io/kube-openapi/cmd/openapi-gen@${OPENAPI_VERSION}
 
 echo "Generating OpenAPI specification ..."
 ${GOPATH}/bin/openapi-gen --input-dirs github.com/fluid-cloudnative/fluid/api/v1alpha1 --output-package github.com/fluid-cloudnative/fluid/api/v1alpha1 --go-header-file hack/boilerplate.go.txt
+
+echo "Downloading codegen jar ..."
+if [ -f "${SWAGGER_CODEGEN_JAR}" ]; then
+    echo "Using existing ${SWAGGER_CODEGEN_JAR}"
+else
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "Error: curl command not found." >&2
+        exit 1
+    fi
+    for i in {1..3}; do
+        if curl -fLsS "${SWAGGER_CODEGEN_JAR_URL}" -o "${SWAGGER_CODEGEN_JAR}"; then
+            break
+        elif [ "$i" -eq 3 ]; then
+            echo "Failed to download ${SWAGGER_CODEGEN_JAR} after 3 attempts." >&2
+            exit 1
+        else
+            echo "Failed to download ${SWAGGER_CODEGEN_JAR}, retrying in 10 seconds..." >&2
+            sleep 10
+        fi
+    done
+fi
 
 echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
