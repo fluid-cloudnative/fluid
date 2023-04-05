@@ -18,6 +18,7 @@ package nodeaffinitywithcache
 
 import (
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -82,9 +83,6 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 
 func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (
 	requiredRuntimes map[string]base.RuntimeInfoInterface, preferredRuntimes map[string]base.RuntimeInfoInterface) {
-
-	requiredRuntimes = nil
-	preferredRuntimes = nil
 
 	// get the pod specified bound dataset
 	boundDataSetNames := map[string]bool{}

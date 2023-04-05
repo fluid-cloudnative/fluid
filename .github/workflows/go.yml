@@ -2,9 +2,15 @@ name: Github Actions
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, release-* ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, release-* ]
+
+env:
+  GO_VERSION: 1.17
+
+# Declare default permissions as read only.
+permissions: read-all
 
 jobs:
   staticcheck:
@@ -23,36 +29,36 @@ jobs:
         working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.17
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
+      - name: Lint golang code
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout 10m --verbose
       - name: Lint preparation
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
           arch=$(go env GOARCH)
           os=$(go env GOOS)
-          curl -L https://get.helm.sh/helm-v3.7.2-${os}-${arch}.tar.gz | tar -xz -C /tmp
+          curl -L https://get.helm.sh/helm-v3.11.1-${os}-${arch}.tar.gz | tar -xz -C /tmp
           chmod u+x /tmp/${os}-${arch}/helm && sudo mv /tmp/${os}-${arch}/helm /usr/local/bin/helm
-
       - name: CRD validation check
         run: |
           make update-crd
           git status --porcelain
           if [ -z "`git status --porcelain`" ]; then echo "CRD validation passed."; else echo "CRD validation failed. Please use 'make update-crd' to keep CRDs latest"; exit 1; fi
-
       - name: Project lint
         run: |
-          golangci-lint run --timeout=10m
           test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
           go vet ./...
           find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
-
   build:
     env:
       GOPATH: ${{ github.workspace }}
@@ -64,12 +70,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
-        go-version: 1.17
+        go-version: ${{ env.GO_VERSION }}
     
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
@@ -80,7 +86,6 @@ jobs:
         curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_${os}_${arch}.tar.gz | tar -xz -C /tmp/
         sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
         export PATH=$PATH:/usr/local/kubebuilder/bin
-
     - name: CI script
       run: |
         make build
