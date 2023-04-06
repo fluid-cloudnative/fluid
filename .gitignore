@@ -6,7 +6,6 @@
 *.so
 *.dylib
 *.jar
-!hack/sdk/swagger-codegen-cli.jar
 bin
 
 # Test binary, build with `go test -c`
