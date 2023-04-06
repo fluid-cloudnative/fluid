@@ -28,7 +28,7 @@ import (
 
 func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err error) {
 	if runtime == nil {
-		err = fmt.Errorf("the eacRuntime is null")
+		err = fmt.Errorf("the efcRuntime is null")
 		return
 	}
 
