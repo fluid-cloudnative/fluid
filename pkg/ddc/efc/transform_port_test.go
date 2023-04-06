@@ -12,7 +12,7 @@ import (
 func TestTransformPortForMaster(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{
@@ -40,7 +40,7 @@ func TestTransformPortForMaster(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to set up runtime port allocator due to %v", err)
 		}
-		err = engine.transformPortForMaster(test.runtime, test.eacValue)
+		err = engine.transformPortForMaster(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
@@ -50,7 +50,7 @@ func TestTransformPortForMaster(t *testing.T) {
 func TestTransformPortForFuse(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{
@@ -78,7 +78,7 @@ func TestTransformPortForFuse(t *testing.T) {
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-		err = engine.transformPortForFuse(test.runtime, test.eacValue)
+		err = engine.transformPortForFuse(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
@@ -88,7 +88,7 @@ func TestTransformPortForFuse(t *testing.T) {
 func TestTransformPortForWorker(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{
@@ -116,7 +116,7 @@ func TestTransformPortForWorker(t *testing.T) {
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-		err = engine.transformPortForWorker(test.runtime, test.eacValue)
+		err = engine.transformPortForWorker(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}

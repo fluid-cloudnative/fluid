@@ -32,7 +32,7 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 	var tests = []struct {
 		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
-		eacValue       *EFC
+		efcValue       *EFC
 		wantType       string
 		wantPath       string
 		wantMediumType string
@@ -50,7 +50,7 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 					Name: "test",
 				},
 			},
-			eacValue:       &EFC{},
+			efcValue:       &EFC{},
 			wantType:       string(common.VolumeTypeEmptyDir),
 			wantPath:       "/cache_dir//test",
 			wantMediumType: string(common.Memory),
@@ -79,7 +79,7 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 					Name: "tes2",
 				},
 			},
-			eacValue:       &EFC{},
+			efcValue:       &EFC{},
 			wantType:       string(common.VolumeTypeEmptyDir),
 			wantPath:       "/cache_dir2//tes2",
 			wantMediumType: string(common.Memory),
@@ -96,21 +96,21 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformWorkerTieredStore(test.runtime, test.eacValue)
+		err := engine.transformWorkerTieredStore(test.runtime, test.efcValue)
 		if err != nil {
 			t.Error(err)
 		}
-		if test.wantType != test.eacValue.Worker.TieredStore.Levels[0].Type {
-			t.Errorf("expected %v, got %v", test.wantType, test.eacValue.Worker.TieredStore.Levels[0].Type)
+		if test.wantType != test.efcValue.Worker.TieredStore.Levels[0].Type {
+			t.Errorf("expected %v, got %v", test.wantType, test.efcValue.Worker.TieredStore.Levels[0].Type)
 		}
-		if test.wantPath != test.eacValue.Worker.TieredStore.Levels[0].Path {
-			t.Errorf("expected %v, got %v", test.wantPath, test.eacValue.Worker.TieredStore.Levels[0].Path)
+		if test.wantPath != test.efcValue.Worker.TieredStore.Levels[0].Path {
+			t.Errorf("expected %v, got %v", test.wantPath, test.efcValue.Worker.TieredStore.Levels[0].Path)
 		}
-		if test.wantMediumType != test.eacValue.getTiredStoreLevel0MediumType() {
-			t.Errorf("expected %v, got %v", test.wantMediumType, test.eacValue.getTiredStoreLevel0MediumType())
+		if test.wantMediumType != test.efcValue.getTiredStoreLevel0MediumType() {
+			t.Errorf("expected %v, got %v", test.wantMediumType, test.efcValue.getTiredStoreLevel0MediumType())
 		}
-		if test.wantQuota != test.eacValue.getTiredStoreLevel0Quota() {
-			t.Errorf("expected %v, got %v", test.wantQuota, test.eacValue.getTiredStoreLevel0Quota())
+		if test.wantQuota != test.efcValue.getTiredStoreLevel0Quota() {
+			t.Errorf("expected %v, got %v", test.wantQuota, test.efcValue.getTiredStoreLevel0Quota())
 		}
 	}
 }
@@ -119,7 +119,7 @@ func TestTransformMasterTieredStore(t *testing.T) {
 	var tests = []struct {
 		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
-		eacValue       *EFC
+		efcValue       *EFC
 		wantType       string
 		wantPath       string
 		wantMediumType string
@@ -136,7 +136,7 @@ func TestTransformMasterTieredStore(t *testing.T) {
 					Name: "test",
 				},
 			},
-			eacValue:       &EFC{},
+			efcValue:       &EFC{},
 			wantType:       string(common.VolumeTypeEmptyDir),
 			wantPath:       "/dev/shm",
 			wantMediumType: string(common.Memory),
@@ -152,18 +152,18 @@ func TestTransformMasterTieredStore(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformMasterTieredStore(test.runtime, test.eacValue)
+		err := engine.transformMasterTieredStore(test.runtime, test.efcValue)
 		if err != nil {
 			t.Error(err)
 		}
-		if test.wantType != test.eacValue.Master.TieredStore.Levels[0].Type {
-			t.Errorf("expected %v, got %v", test.wantType, test.eacValue.Master.TieredStore.Levels[0].Type)
+		if test.wantType != test.efcValue.Master.TieredStore.Levels[0].Type {
+			t.Errorf("expected %v, got %v", test.wantType, test.efcValue.Master.TieredStore.Levels[0].Type)
 		}
-		if test.wantPath != test.eacValue.Master.TieredStore.Levels[0].Path {
-			t.Errorf("expected %v, got %v", test.wantPath, test.eacValue.Master.TieredStore.Levels[0].Path)
+		if test.wantPath != test.efcValue.Master.TieredStore.Levels[0].Path {
+			t.Errorf("expected %v, got %v", test.wantPath, test.efcValue.Master.TieredStore.Levels[0].Path)
 		}
-		if test.wantMediumType != test.eacValue.Master.TieredStore.Levels[0].MediumType {
-			t.Errorf("expected %v, got %v", test.wantMediumType, test.eacValue.Master.TieredStore.Levels[0].MediumType)
+		if test.wantMediumType != test.efcValue.Master.TieredStore.Levels[0].MediumType {
+			t.Errorf("expected %v, got %v", test.wantMediumType, test.efcValue.Master.TieredStore.Levels[0].MediumType)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func TestTransformFuseTieredStore(t *testing.T) {
 	var tests = []struct {
 		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
-		eacValue       *EFC
+		efcValue       *EFC
 		wantType       string
 		wantPath       string
 		wantMediumType string
@@ -189,7 +189,7 @@ func TestTransformFuseTieredStore(t *testing.T) {
 					Name: "test",
 				},
 			},
-			eacValue:       &EFC{},
+			efcValue:       &EFC{},
 			wantType:       string(common.VolumeTypeEmptyDir),
 			wantPath:       "/dev/shm",
 			wantMediumType: string(common.Memory),
@@ -205,18 +205,18 @@ func TestTransformFuseTieredStore(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformFuseTieredStore(test.runtime, test.eacValue)
+		err := engine.transformFuseTieredStore(test.runtime, test.efcValue)
 		if err != nil {
 			t.Error(err)
 		}
-		if test.wantType != test.eacValue.Fuse.TieredStore.Levels[0].Type {
-			t.Errorf("expected %v, got %v", test.wantType, test.eacValue.Fuse.TieredStore.Levels[0].Type)
+		if test.wantType != test.efcValue.Fuse.TieredStore.Levels[0].Type {
+			t.Errorf("expected %v, got %v", test.wantType, test.efcValue.Fuse.TieredStore.Levels[0].Type)
 		}
-		if test.wantPath != test.eacValue.Fuse.TieredStore.Levels[0].Path {
-			t.Errorf("expected %v, got %v", test.wantPath, test.eacValue.Fuse.TieredStore.Levels[0].Path)
+		if test.wantPath != test.efcValue.Fuse.TieredStore.Levels[0].Path {
+			t.Errorf("expected %v, got %v", test.wantPath, test.efcValue.Fuse.TieredStore.Levels[0].Path)
 		}
-		if test.wantMediumType != test.eacValue.Fuse.TieredStore.Levels[0].MediumType {
-			t.Errorf("expected %v, got %v", test.wantMediumType, test.eacValue.Fuse.TieredStore.Levels[0].MediumType)
+		if test.wantMediumType != test.efcValue.Fuse.TieredStore.Levels[0].MediumType {
+			t.Errorf("expected %v, got %v", test.wantMediumType, test.efcValue.Fuse.TieredStore.Levels[0].MediumType)
 		}
 	}
 }

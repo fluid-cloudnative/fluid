@@ -31,7 +31,7 @@ import (
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{},
@@ -39,11 +39,11 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &EFCEngine{Log: fake.NullLogger()}
-		err := engine.transformResourcesForWorker(test.runtime, test.eacValue)
+		err := engine.transformResourcesForWorker(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
-		if result, found := test.eacValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
+		if result, found := test.efcValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
 	}
@@ -58,7 +58,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 
 	var tests = []struct {
 		runtime                *datav1alpha1.EFCRuntime
-		eacValue               *EFC
+		efcValue               *EFC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
@@ -73,7 +73,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue:               &EFC{},
+			efcValue:               &EFC{},
 			wantedResourcesRequest: "2Gi",
 			wantErr:                false,
 		},
@@ -88,7 +88,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Worker: Worker{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -114,7 +114,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Worker: Worker{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -136,16 +136,16 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformResourcesForWorker(test.runtime, test.eacValue)
+		err := engine.transformResourcesForWorker(test.runtime, test.efcValue)
 		if (err == nil) != !test.wantErr {
 			t.Error(err)
 		}
 		if err != nil {
 			continue
 		}
-		quantity := test.eacValue.Worker.Resources.Requests[corev1.ResourceMemory]
+		quantity := test.efcValue.Worker.Resources.Requests[corev1.ResourceMemory]
 		if quantity != test.wantedResourcesRequest {
-			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.eacValue.Worker.Resources.Requests[corev1.ResourceMemory])
+			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.efcValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
 	}
 }
@@ -153,7 +153,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 func TestTransformResourcesForMasterNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{},
@@ -161,11 +161,11 @@ func TestTransformResourcesForMasterNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &EFCEngine{Log: fake.NullLogger()}
-		err := engine.transformResourcesForMaster(test.runtime, test.eacValue)
+		err := engine.transformResourcesForMaster(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
-		if result, found := test.eacValue.Master.Resources.Limits[corev1.ResourceMemory]; found {
+		if result, found := test.efcValue.Master.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
 	}
@@ -180,7 +180,7 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 
 	var tests = []struct {
 		runtime                *datav1alpha1.EFCRuntime
-		eacValue               *EFC
+		efcValue               *EFC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
@@ -195,7 +195,7 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue:               &EFC{},
+			efcValue:               &EFC{},
 			wantedResourcesRequest: "2Gi",
 			wantErr:                false,
 		},
@@ -210,7 +210,7 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Master: Master{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -236,7 +236,7 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Master: Master{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -258,16 +258,16 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformResourcesForMaster(test.runtime, test.eacValue)
+		err := engine.transformResourcesForMaster(test.runtime, test.efcValue)
 		if (err == nil) != !test.wantErr {
 			t.Error(err)
 		}
 		if err != nil {
 			continue
 		}
-		quantity := test.eacValue.Master.Resources.Requests[corev1.ResourceMemory]
+		quantity := test.efcValue.Master.Resources.Requests[corev1.ResourceMemory]
 		if quantity != test.wantedResourcesRequest {
-			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.eacValue.Master.Resources.Requests[corev1.ResourceMemory])
+			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.efcValue.Master.Resources.Requests[corev1.ResourceMemory])
 		}
 	}
 }
@@ -275,7 +275,7 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime  *datav1alpha1.EFCRuntime
-		eacValue *EFC
+		efcValue *EFC
 	}{
 		{&datav1alpha1.EFCRuntime{
 			Spec: datav1alpha1.EFCRuntimeSpec{},
@@ -283,11 +283,11 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &EFCEngine{Log: fake.NullLogger()}
-		err := engine.transformResourcesForFuse(test.runtime, test.eacValue)
+		err := engine.transformResourcesForFuse(test.runtime, test.efcValue)
 		if err != nil {
 			t.Errorf("unexpected err %v", err)
 		}
-		if result, found := test.eacValue.Fuse.Resources.Limits[corev1.ResourceMemory]; found {
+		if result, found := test.efcValue.Fuse.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
 	}
@@ -302,7 +302,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 
 	var tests = []struct {
 		runtime                *datav1alpha1.EFCRuntime
-		eacValue               *EFC
+		efcValue               *EFC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
@@ -317,7 +317,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue:               &EFC{},
+			efcValue:               &EFC{},
 			wantedResourcesRequest: "2Gi",
 			wantErr:                false,
 		},
@@ -332,7 +332,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Fuse: Fuse{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -358,7 +358,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Fuse: Fuse{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -380,16 +380,16 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		err := engine.transformResourcesForFuse(test.runtime, test.eacValue)
+		err := engine.transformResourcesForFuse(test.runtime, test.efcValue)
 		if (err == nil) != !test.wantErr {
 			t.Error(err)
 		}
 		if err != nil {
 			continue
 		}
-		quantity := test.eacValue.Fuse.Resources.Requests[corev1.ResourceMemory]
+		quantity := test.efcValue.Fuse.Resources.Requests[corev1.ResourceMemory]
 		if quantity != test.wantedResourcesRequest {
-			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.eacValue.Fuse.Resources.Requests[corev1.ResourceMemory])
+			t.Errorf("expected %v, got %v", test.wantedResourcesRequest, test.efcValue.Fuse.Resources.Requests[corev1.ResourceMemory])
 		}
 	}
 }

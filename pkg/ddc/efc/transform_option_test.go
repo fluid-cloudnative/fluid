@@ -73,7 +73,7 @@ func TestTransformWorkerOptions(t *testing.T) {
 	}
 	var tests = []struct {
 		runtime     *datav1alpha1.EFCRuntime
-		eacValue    *EFC
+		efcValue    *EFC
 		wantError   bool
 		wantOptions string
 	}{
@@ -87,7 +87,7 @@ func TestTransformWorkerOptions(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Worker: Worker{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -109,7 +109,7 @@ func TestTransformWorkerOptions(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Worker: Worker{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -137,7 +137,7 @@ func TestTransformWorkerOptions(t *testing.T) {
 					},
 				},
 			},
-			eacValue: &EFC{
+			efcValue: &EFC{
 				Worker: Worker{
 					TieredStore: TieredStore{
 						Levels: []Level{
@@ -156,12 +156,12 @@ func TestTransformWorkerOptions(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		err := engine.transformWorkerOptions(test.runtime, test.eacValue)
+		err := engine.transformWorkerOptions(test.runtime, test.efcValue)
 		if (err == nil) != !test.wantError {
 			t.Errorf("unexpected err %v", err)
 		}
-		if test.eacValue.Worker.Options != test.wantOptions {
-			t.Errorf("want worker options: %s, got %s", test.wantOptions, test.eacValue.Worker.Options)
+		if test.efcValue.Worker.Options != test.wantOptions {
+			t.Errorf("want worker options: %s, got %s", test.wantOptions, test.efcValue.Worker.Options)
 		}
 	}
 }
