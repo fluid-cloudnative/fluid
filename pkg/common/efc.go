@@ -56,7 +56,7 @@ const (
 
 	EFCSessMgrUpdateStrategyEnv = "EFC_SESSMGR_UPDATE_STRATEGY_ENV"
 
-	DefaultEFCSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v0.1.0-196d2b1"
+	DefaultEFCSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v0.1.0-1a92cfc"
 
 	SessMgrSockFile = "sessmgrd.sock"
 
