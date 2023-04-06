@@ -118,7 +118,7 @@ spec:
             - name: localtime
               mountPath: /etc/localtime
             - name: efc-sock
-              mountPath: /var/run/efc
+              mountPath: /var/run/eac
         - name: efc-sessmgr
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
           imagePullPolicy: {{ .Values.master.imagePullPolicy }}
@@ -135,7 +135,7 @@ spec:
             - name: localtime
               mountPath: /etc/localtime
             - name: efc-sock
-              mountPath: /var/run/efc
+              mountPath: /var/run/eac
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

@@ -230,7 +230,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								},
 								VolumeMounts: []corev1.VolumeMount{
 									corev1.VolumeMount{
-										MountPath: "/var/run/efc",
+										MountPath: "/var/run/eac",
 										Name:      "efc-sock",
 									},
 								},
