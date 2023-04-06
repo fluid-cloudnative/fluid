@@ -60,5 +60,5 @@ const (
 
 	SessMgrSockFile = "sessmgrd.sock"
 
-	VolumeAttrEFCSessMgrWorkDir = "eac_sessmgr_workdir"
+	VolumeAttrEFCSessMgrWorkDir = "efc_sessmgr_workdir"
 )
