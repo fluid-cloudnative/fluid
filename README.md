@@ -39,25 +39,25 @@ English | [简体中文](./README-zh_CN.md)
 
 ## Features
 
-- __Native Support for DataSet Abstraction__
+- __Dataset Abstraction__
 
-  	Implement the basic capabilities required for data-intensive applications to achieve efficient data access and reduce the cost of multidimensional management.
+  	Implement the unified abstraction for datasets from multiple storage sources, with observability features to help users evaluate the need for scaling the cache system.
 
-- __Cloud Data Warming up and Accessing Acceleration__
+- __Scalable Data Engine__
 
-  	Fluid provides data warm-up and acceleration for cloud applications by using a distributed cache engine (Alluxio) in Kubernetes with  **Observability**, **Portability** and **Horizontal Scalability**
+  	Offers a unified access interface for data operations with different runtimes, enabling access to third-party storage systems.
 
-- __Co-Orchestration for Data and Application__
+- __Automated Data Operations__
 
-  	During application scheduling and data placement on the cloud, taking both the app's characteristics and data location into consideration, to improve the performance.
+  	Provides various automated data operation modes to facilitate integration with automated operations systems.
 
-- __Support Multiple Namespaces Management__
+- __Elasticity and Scheduling__
 
-  	User can create and manage datasets in multiple namespaces.
+  	By combining data caching technology with elastic scaling, portability, observability, and data affinity scheduling capabilities, Fluid enhances data access performance.
 
-- __Support Heterogeneous Data Source Management__
+- __Runtime Platform Agnostic__
 
-  	Unify the Data access for OSS, HDFS, CEPH and Other underlayer storages.
+  	Supports a variety of environments and can run different storage clients based on the environment, including native, edge, Serverless Kubernetes clusters, and Kubernetes multi-cluster environments.
 
 ## Key Concepts
 
@@ -65,13 +65,10 @@ English | [简体中文](./README-zh_CN.md)
 
 **Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to manage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
 
-**AlluxioRuntime**: Based on open-source [Alluxio](https://www.alluxio.io/), 
-Fluid can manage and schedule Alluxio Runtime to achieve dataset visibility, elastic scaling, and data migration. This is one engine which supports data management and caching of Datasets.
-
 ## Prerequisites
 
 - Kubernetes version > 1.16, and support CSI
-- Golang 1.12+
+- Golang 1.18+
 - Helm 3
 
 ## Quick Start
