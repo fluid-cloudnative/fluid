@@ -1,0 +1,647 @@
+/*
+Copyright 2021 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+package operations
+
+import (
+	"errors"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/brahma-adshonor/gohook"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+)
+
+const (
+	NotExist     = "not-exist"
+	OtherErr     = "other-err"
+	FINE         = "fine"
+	CommonStatus = `{
+  "Setting": {
+    "Name": "zww-cachefs",
+    "UUID": "73416457-6f3f-490b-abb6-cbc1f837944e",
+    "Storage": "minio",
+    "Bucket": "http://10.98.166.242:9000/zww-cachefs",
+    "AccessKey": "minioadmin",
+    "SecretKey": "removed",
+    "BlockSize": 4096,
+    "Compression": "none",
+    "Shards": 0,
+    "HashPrefix": false,
+    "Capacity": 0,
+    "Inodes": 0,
+    "KeyEncrypted": false,
+    "TrashDays": 2,
+    "MetaVersion": 0,
+    "MinClientVersion": "",
+    "MaxClientVersion": ""
+  },
+  "Sessions": [
+    {
+      "Sid": 14,
+      "Expire": "2022-02-09T10:01:50Z",
+      "Version": "1.0-dev (2022-02-09 748949ac)",
+      "HostName": "cachefs-pvc-33d9bdf3-5fb5-42fe-bf48-d3d6156b424b-createvol2dv4j",
+      "MountPoint": "/mnt/jfs",
+      "ProcessID": 20
+    }
+  ]
+}`
+)
+
+func TestNewCacheFSFileUtils(t *testing.T) {
+	var expectedResult = CacheFSFileUtils{
+		podName:   "cachefs",
+		namespace: "default",
+		container: common.CacheFSFuseContainer,
+		log:       fake.NullLogger(),
+	}
+	result := NewCacheFSFileUtils("cachefs", common.CacheFSFuseContainer, "default", fake.NullLogger())
+	if !reflect.DeepEqual(expectedResult, result) {
+		t.Errorf("fail to create the CacheFSFileUtils, want: %v, got: %v", expectedResult, result)
+	}
+}
+
+func TestCacheFSFileUtils_IsExist(t *testing.T) {
+	mockExec := func(a *CacheFSFileUtils, p []string, verbose bool) (stdout string, stderr string, e error) {
+		if strings.Contains(p[1], NotExist) {
+			return "No such file or directory", "", errors.New("No such file or directory")
+		} else if strings.Contains(p[1], OtherErr) {
+			return "", "", errors.New("other error")
+		} else {
+			return "", "", nil
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, mockExec, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	var tests = []struct {
+		in    string
+		out   bool
+		noErr bool
+	}{
+		{NotExist, false, true},
+		{OtherErr, false, false},
+		{FINE, true, true},
+	}
+	for _, test := range tests {
+		found, err := (&CacheFSFileUtils{log: fake.NullLogger()}).IsExist(test.in)
+		if found != test.out {
+			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
+		}
+		var noErr bool = (err == nil)
+		if test.noErr != noErr {
+			t.Errorf("input parameter is %s, expected noerr is %t, got %t", test.in, test.noErr, err)
+		}
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_Mkdir(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "cachefs mkdir success", "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{}
+	err = a.Mkdir("/")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.Mkdir("/")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_exec(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Type: COUNTER, Value: 6,367,897", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &CacheFSFileUtils{log: fake.NullLogger()}
+	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	_, _, err = a.exec([]string{"mkdir", "abc"}, true)
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_GetMetric(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "cachefs metrics success", "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{}
+	_, err = a.GetMetric("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	m, err := a.GetMetric("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if m != "cachefs metrics success" {
+		t.Errorf("expected cachefs metrics success, got %s", m)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_DeleteCacheDirs(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "cachefs rmr success", "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{}
+	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_DeleteCacheDir(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "cachefs rmr success", "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	a := CacheFSFileUtils{}
+	// no error
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+
+	// error
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_GetStatus(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return CommonStatus, "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{}
+	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	got, err := a.GetStatus("test")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if got != CommonStatus {
+		t.Errorf("want %s, got: %v", CommonStatus, got)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "Load cachefs metadata", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExecWithoutTimeout := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{log: fake.NullLogger()}
+	err = a.LoadMetadataWithoutTimeout("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExecWithoutTimeout()
+
+	err = gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.LoadMetadataWithoutTimeout("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExecWithoutTimeout()
+}
+
+func TestCacheFSFileUtils_Count(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "6367897   /tmp", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &CacheFSFileUtils{log: fake.NullLogger()}
+	_, err = a.Count("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.Count("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_GetFileCount(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "6367897", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &CacheFSFileUtils{log: fake.NullLogger()}
+	_, err = a.GetFileCount("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	fileCount, err := a.GetFileCount("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if fileCount != 6367897 {
+		t.Errorf("check failure, want 6367897, got %d", fileCount)
+	}
+	wrappedUnhookExec()
+}
+
+func TestCacheFSFileUtils_GetUsedSpace(t *testing.T) {
+	ExecWithoutTimeoutCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "CacheFS:test   87687856128  87687856128            0 100% /runtime-mnt/cachfs/kube-system/cfsdemo/cachefs-fuse", "", nil
+	}
+	ExecWithoutTimeoutErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).execWithoutTimeout)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &CacheFSFileUtils{log: fake.NullLogger()}
+	_, err = a.GetUsedSpace("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	usedSpace, err := a.GetUsedSpace("/tmp")
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	if usedSpace != 87687856128 {
+		t.Errorf("check failure, want 87687856128, got %d", usedSpace)
+	}
+	wrappedUnhookExec()
+}
+
+func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
+	ExecCommon := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "cachefs  cluster summary", "", nil
+	}
+	ExecErr := func(a *CacheFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook((*CacheFSFileUtils).exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook((*CacheFSFileUtils).exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := CacheFSFileUtils{log: fake.NullLogger()}
+
+	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err == nil {
+			t.Errorf("%d check failure, want err, got nil", index)
+			return
+		}
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook((*CacheFSFileUtils).exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	for index, keySet := range keySets {
+		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		if err != nil {
+			t.Errorf("%d check failure, want nil, got err: %v", index, err)
+			return
+		}
+	}
+	wrappedUnhookExec()
+}
+
+func TestValidDir(t *testing.T) {
+	type args struct {
+		dir string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantMatch bool
+	}{
+		{
+			name: "test-normal",
+			args: args{
+				dir: "/tmp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test1",
+			args: args{
+				dir: "/t mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test2",
+			args: args{
+				dir: "/t..mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test3",
+			args: args{
+				dir: "/t__mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test4",
+			args: args{
+				dir: "/t--mp/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test5",
+			args: args{
+				dir: "/",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test6",
+			args: args{
+				dir: ".",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test7",
+			args: args{
+				dir: "/tttt/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test8",
+			args: args{
+				dir: "//",
+			},
+			wantMatch: false,
+		},
+		{
+			name: "test9",
+			args: args{
+				dir: "/0/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test10",
+			args: args{
+				dir: "/0/1/raw/chunks",
+			},
+			wantMatch: true,
+		},
+		{
+			name: "test11",
+			args: args{
+				dir: "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z/0/raw/chunks",
+			},
+			wantMatch: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotMatch := ValidCacheDir(tt.args.dir); gotMatch != tt.wantMatch {
+				t.Errorf("ValidDir() = %v, want %v", gotMatch, tt.wantMatch)
+			}
+		})
+	}
+}

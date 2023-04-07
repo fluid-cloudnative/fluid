@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheFSRuntime
+metadata:
+  labels:
+    app.kubernetes.io/name: cachefsruntime
+    app.kubernetes.io/instance: cachefsruntime-sample
+    app.kubernetes.io/part-of: fluid
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: fluid
+  name: cachefsruntime-sample
+spec:
+  # TODO(user): Add fields here

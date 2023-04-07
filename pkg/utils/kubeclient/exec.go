@@ -156,6 +156,7 @@ func ExecShellInContainer(podName string, containerName string, namespace string
 }
 
 // A wrapper function of ExecCommandInContainerWithFullOutput
+//go:noinline
 func ExecCommandInContainer(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
 	return ExecCommandInContainerWithFullOutput(podName, containerName, namespace, cmd)
 }
