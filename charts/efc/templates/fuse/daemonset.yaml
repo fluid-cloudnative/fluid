@@ -134,4 +134,4 @@ spec:
         - name: efc-sock
           hostPath:
             path: /runtime-mnt/efc-sock
-            type: Directory
+            type: DirectoryOrCreate
