@@ -26,7 +26,7 @@ const (
 
 	EFCChart = EFCRuntime
 
-	EFCMountType = "alifuse.aliyun-alinas-efc"
+	EFCMountType = "alifuse.aliyun-alinas-eac"
 
 	EFCMasterImageEnv = "EFC_MASTER_IMAGE_ENV"
 
