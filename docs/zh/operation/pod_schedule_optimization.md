@@ -6,7 +6,8 @@
 
 1.支持K8s原生调度器,以及Volcano, Yunikorn等实现Pod数据亲和性调度  
 2.将Pod优先调度到有数据缓存能力的节点  
-3.当Pod不使用数据集时，可以尽量避免调度到有缓存的节点
+3.可以通过指定Pod Label的形式，将Pod强制调度到有数据缓存的节点
+4.当Pod不使用数据集时，可以尽量避免调度到有缓存的节点
 
 ## 前提条件
 
@@ -179,6 +180,63 @@ spec:
 $ kubectl get pods nginx-2 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
 NAME    NODE
 nginx-1   node.172.16.1.84
+```
+
+从结果上看, 可以看到pod被调度到了有数据缓存（即运行Alluxio Worker Pod）的节点。
+
+## 运行示例3: 创建挂载数据集的Pod，通过指定Label将Pod调度到挂载数据集的节点
+
+**创建Pod**
+metadata中指定label（格式`fluid.io/dataset.{dataset_name}.sched: required`），如`fluid.io/dataset.hbase.sched: required`表明该Pod需要被调度到数据集 hbase 的缓存节点上。
+
+```shell
+$ cat<<EOF >nginx-3.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-3
+  labels:
+    fuse.serverful.fluid.io/inject: "true"
+    fluid.io/dataset.hbase.sched: required
+spec:
+  containers:
+    - name: nginx-3
+      image: nginx
+      volumeMounts:
+        - mountPath: /data
+          name: hbase-vol
+  volumes:
+    - name: hbase-vol
+      persistentVolumeClaim:
+        claimName: hbase
+EOF
+$ kubectl create -f nginx-3.yaml
+```
+
+**查看Pod**
+
+查看Pod的yaml文件，发现被注入了如下信息：
+
+```yaml
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: fluid.io/s-default-hbase
+            operator: In
+            values:
+            - "true"
+```
+
+通过Webhook机制，应用Pod被注入和缓存worker的强亲和性配置。
+
+
+```shell
+$ kubectl get pods nginx-3 -o  custom-columns=NAME:metadata.name,NODE:.spec.nodeName
+NAME    NODE
+nginx-3   node.172.16.1.84
 ```
 
 从结果上看, 可以看到pod被调度到了有数据缓存（即运行Alluxio Worker Pod）的节点。
