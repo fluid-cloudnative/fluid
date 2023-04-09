@@ -102,7 +102,8 @@ sh /mount_ceph.sh
 Package parameter resolution scripts, mount scripts, and related libraries into the image.
 
 ~~~ dockerfile
-FROM alpine
+FROM alpine@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
+# use alpine:3.17
 
 RUN mkdir /etc/ceph
 RUN apk add ceph ceph-fuse python3
