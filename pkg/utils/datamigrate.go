@@ -23,7 +23,6 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -132,8 +131,5 @@ func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.Da
 	}
 
 	// DataMigrate has no from/to dataset
-	return nil, apierrors.NewNotFound(schema.GroupResource{
-		Group:    datav1alpha1.Group,
-		Resource: datav1alpha1.Version,
-	}, "dataset")
+	return nil, apierrors.NewBadRequest("datamigration should specify from or to dataset")
 }

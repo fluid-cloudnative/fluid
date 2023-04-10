@@ -70,7 +70,7 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 		},
 		DataOpFinalizerName: cdatamigrate.DataMigrateFinalizer,
 	}
-	// 1. Get DataBackup object
+	// 1. Get DataMigrate object
 	targetDataMigrate, err := utils.GetDataMigrate(r.Client, req.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {

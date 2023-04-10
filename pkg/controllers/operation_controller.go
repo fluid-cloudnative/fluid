@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -120,7 +121,8 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	targetDataset, err := o.implement.GetTargetDataset(object)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("The dataset is not found")
+			statusError := err.(*apierrors.StatusError)
+			ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
 			ctx.Log.Error(err, "Failed to get the ddc dataset")

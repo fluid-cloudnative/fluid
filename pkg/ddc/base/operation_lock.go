@@ -24,6 +24,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
@@ -110,7 +111,8 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 		dataset, err := operation.GetTargetDataset(object)
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
-				ctx.Log.Info("can't find target dataset, won't release lock")
+				statusError := err.(*apierrors.StatusError)
+				ctx.Log.Info("can't find target dataset, won't release lock", "dataset", statusError.Status().Details.Name)
 				return nil
 			}
 			// other error
@@ -127,7 +129,7 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 
 		// different operation may set other fields
 		operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
 			if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 				return err
 			}

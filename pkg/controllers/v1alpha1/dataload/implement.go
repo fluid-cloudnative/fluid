@@ -376,7 +376,7 @@ func (r *DataLoadReconcilerImplement) releaseLockOnTargetDataset(ctx cruntime.Re
 		}
 		datasetToUpdate := dataset.DeepCopy()
 		datasetToUpdate.RemoveDataOperationInProgress(cdataload.DataLoadLockName)
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
 			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
 				return err
 			}
