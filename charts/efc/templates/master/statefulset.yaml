@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "efc.fullname" . }}-master
+  labels:
+    name: {{ template "efc.fullname" . }}-master
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: efc-master
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "efc.name" . }}
+      role: efc-master
+      name: {{ template "efc.fullname" . }}-master
+  replicas: {{ if .Values.master.enabled -}} {{ $.Values.master.count }} {{ else -}} 0 {{ end }}
+  serviceName: {{ template "efc.fullname" . }}-master
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.master.annotations }}
+      {{- range $key, $val := .Values.master.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+      labels:
+        name: {{ template "efc.fullname" . }}-master
+        app: {{ template "efc.name" . }}
+        chart: {{ template "efc.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: efc-master
+        {{- if .Values.master.labels }}
+        {{- range $key, $val := .Values.master.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 90
+      {{- if .Values.master.hostNetwork }}
+      hostNetwork: {{ .Values.master.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      nodeSelector:
+      {{- if .Values.master.nodeSelector }}
+{{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
+      {{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      affinity:
+      {{- if .Values.master.affinity }}
+{{ toYaml .Values.master.affinity | indent 8  }}
+      {{- end }}
+      initContainers:
+        - name: init-fuse
+          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
+          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "init_fuse"
+            - {{ .Values.osAdvise.enabled | quote }}
+            - {{ .Values.osAdvise.osVersion | quote }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-os
+              mountPath: /etc/host-os-release
+      containers:
+        - name: efc-master
+          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
+          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
+          {{- if .Values.master.resources  }}
+          resources:
+{{ toYaml .Values.master.resources | trim | indent 12  }}
+          {{- end }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "master"
+            - {{ .Values.master.mountPoint | quote }}
+            - "/efc/efc-master"
+            - {{ .Values.master.option | quote }}
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.master.mountPoint }}"]
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 1
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "/entrypoint.sh stop_master /efc/efc-master"]
+          volumeMounts:
+            - name: efc-worker-endpoints
+              mountPath: /etc/efc
+            {{- if .Values.master.tieredstore }}
+{{- include "efc.tieredstoreVolumeMounts" .Values.master }}
+            {{- end }}
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: efc-sock
+              mountPath: /var/run/eac
+        - name: efc-sessmgr
+          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
+          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
+          command: [ "/entrypoint.sh" ]
+          args:
+            - "sessmgr"
+          securityContext:
+            privileged: true
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: efc-sock
+              mountPath: /var/run/eac
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: efc-worker-endpoints
+          configMap:
+            name: {{ template "efc.fullname" . }}-worker-endpoints
+        {{- if .Values.master.tieredstore }}
+{{- include "efc.tieredstoreVolumes" .Values.master }}
+        {{- end }}
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+            type: ''
+        - name: host-os
+          hostPath:
+            path: /etc/os-release
+            type: FileOrCreate
+        - name: efc-sock
+          emptyDir: {}

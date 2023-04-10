@@ -104,7 +104,7 @@ rules:
       - jindoruntimes
       - juicefsruntimes
       - goosefsruntimes
-      - eacruntimes
+      - efcruntimes
       - thinruntimes
       - thinruntimeprofiles
       - datasets

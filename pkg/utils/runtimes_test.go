@@ -414,10 +414,10 @@ func TestGetThinRuntimeProfile(t *testing.T) {
 	}
 }
 
-func TestGetEACRuntime(t *testing.T) {
+func TestGetEFCRuntime(t *testing.T) {
 	runtimeNamespace := "default"
-	runtimeName := "eac-runtime-1"
-	eacRuntime := &datav1alpha1.EACRuntime{
+	runtimeName := "efc-runtime-1"
+	efcRuntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      runtimeName,
 			Namespace: runtimeNamespace,
@@ -425,9 +425,9 @@ func TestGetEACRuntime(t *testing.T) {
 	}
 
 	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, eacRuntime)
+	s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
 
-	fakeClient := fake.NewFakeClientWithScheme(s, eacRuntime)
+	fakeClient := fake.NewFakeClientWithScheme(s, efcRuntime)
 
 	tests := []struct {
 		name      string
@@ -456,7 +456,7 @@ func TestGetEACRuntime(t *testing.T) {
 	}
 
 	for k, item := range tests {
-		gotRuntime, err := GetEACRuntime(fakeClient, item.name, item.namespace)
+		gotRuntime, err := GetEFCRuntime(fakeClient, item.name, item.namespace)
 		if item.notFound {
 			if err == nil || gotRuntime != nil {
 				t.Errorf("%d check failure, want to got nil", k)
@@ -467,7 +467,7 @@ func TestGetEACRuntime(t *testing.T) {
 			}
 		} else {
 			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got EACRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
+				t.Errorf("%d check failure, got EFCRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
 			}
 		}
 	}

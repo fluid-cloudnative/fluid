@@ -392,17 +392,17 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		// Fuse global is always set to true
 		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
-	case common.EACRuntime:
-		eacRuntime, err := utils.GetEACRuntime(client, name, namespace)
+	case common.EFCRuntime:
+		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EACRuntime, datav1alpha1.TieredStore{}, WithMetadataList(eacRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{}, WithMetadataList(efcRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(true, eacRuntime.Spec.Fuse.NodeSelector)
-		runtimeInfo.SetupFuseCleanPolicy(eacRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetupFuseDeployMode(true, efcRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return
@@ -440,8 +440,8 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 			return status, err
 		}
 		return &runtime.Status, nil
-	case common.EACRuntime:
-		runtime, err := utils.GetEACRuntime(client, name, namespace)
+	case common.EFCRuntime:
+		runtime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
 			return status, err
 		}
@@ -472,8 +472,8 @@ func GetRuntimeAndType(client client.Client, boundedRuntime *datav1alpha1.Runtim
 		runtime, err = utils.GetGooseFSRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.JuiceFSRuntime:
 		runtime, err = utils.GetJuiceFSRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.EACRuntime:
-		runtime, err = utils.GetEACRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
+	case common.EFCRuntime:
+		runtime, err = utils.GetEFCRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.ThinRuntime:
 		runtime, err = utils.GetThinRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	}

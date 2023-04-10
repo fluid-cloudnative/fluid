@@ -283,7 +283,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 	}
 }
 
-func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
+func TestBuildWorkersAffinityForEFCRuntime(t *testing.T) {
 	tests := []struct {
 		name    string
 		dataset *datav1alpha1.Dataset
@@ -291,10 +291,10 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 		want    *v1.Affinity
 	}{
 		{
-			name: "eac-shared",
+			name: "efc-shared",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eac",
+					Name:      "test-efc",
 					Namespace: "big-data",
 				},
 				Spec: datav1alpha1.DatasetSpec{
@@ -303,7 +303,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 			},
 			worker: &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eac-worker",
+					Name:      "test-efc-worker",
 					Namespace: "big-data",
 				},
 				Spec: appsv1.StatefulSetSpec{
@@ -335,7 +335,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 							Preference: v1.NodeSelectorTerm{
 								MatchExpressions: []v1.NodeSelectorRequirement{
 									{
-										Key:      "fluid.io/f-big-data-test-eac",
+										Key:      "fluid.io/f-big-data-test-efc",
 										Operator: v1.NodeSelectorOpIn,
 										Values:   []string{"true"},
 									},
@@ -359,7 +359,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.dataset)
 			runtimeObjs = append(runtimeObjs, tt.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EACRuntime, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Fatalf("testcase %s failed due to %v", tt.name, err)
 			}
