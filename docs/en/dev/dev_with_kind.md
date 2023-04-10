@@ -201,8 +201,8 @@ go run main.go start \
 ## 7. load image to kind cluster
 ```
 kind load docker-image registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.4.0-a8ba7c9 --name=fluid-dev
-kind load docker-image registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226 --name=fluid-dev
-kind load docker-image registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226 --name=fluid-dev                                 
+kind load docker-image alluxio/alluxio-dev:2.9.0 --name=fluid-dev
+kind load docker-image alluxio/alluxio-dev:2.9.0 --name=fluid-dev                                 
 kind load docker-image nginx:latest --name=fluid-dev
 ```
 
