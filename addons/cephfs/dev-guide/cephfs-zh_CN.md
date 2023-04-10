@@ -100,7 +100,8 @@ sh /mount_ceph.sh
 将参数解析脚本、挂载脚本和相关的库打包⼊镜像。
 
 ~~~ dockerfile
-FROM alpine
+FROM alpine@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
+# use alpine:3.17
 
 RUN mkdir /etc/ceph
 RUN apk add ceph ceph-fuse python3
