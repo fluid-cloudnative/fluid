@@ -179,7 +179,7 @@ type EACRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:resource:categories={fluid},shortName=eac
+// +kubebuilder:resource:categories={fluid},shortName=efc
 // +genclient
 
 // EACRuntime is the Schema for the eacruntimes API
