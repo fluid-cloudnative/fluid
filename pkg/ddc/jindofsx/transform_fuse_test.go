@@ -167,30 +167,63 @@ func TestTransformFuseArg(t *testing.T) {
 
 func TestParseFuseImage(t *testing.T) {
 	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     string
+		runtime               *datav1alpha1.JindoRuntime
+		dataset               *datav1alpha1.Dataset
+		jindoValue            *Jindo
+		expect                string
+		expectImagePullPolicy string
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+				},
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+						Path:       "/",
+					}},
 				}},
-			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.2"},
+			jindoValue:            &Jindo{},
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.2",
+			expectImagePullPolicy: "Always",
+		},
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+					Fuse: datav1alpha1.JindoFuseSpec{
+						Image:           "jindofs/jindo-fuse",
+						ImageTag:        "testtag",
+						ImagePullPolicy: "IfNotPresent",
+					},
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+						Path:       "/",
+					}},
+				}},
+			jindoValue:            &Jindo{},
+			expect:                "jindofs/jindo-fuse:testtag",
+			expectImagePullPolicy: "IfNotPresent",
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		imageR, tagR := engine.parseFuseImage()
+		imageR, tagR, imagePullPolicyR := engine.parseFuseImage(test.runtime)
 		registryVersion := imageR + ":" + tagR
 		if registryVersion != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+			t.Errorf("expected value %v, but got %v", test.expect, registryVersion)
+		}
+		if imagePullPolicyR != test.expectImagePullPolicy {
+			t.Errorf("expected image pull policy %v, but got %v", test.expectImagePullPolicy, imagePullPolicyR)
 		}
 	}
 }
