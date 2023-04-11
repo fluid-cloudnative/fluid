@@ -85,6 +85,7 @@ type UFSPath struct {
 
 type UFSVolume struct {
 	Name          string `yaml:"name"`
+	SubPath       string `yaml:"subPath,omitempty"`
 	ContainerPath string `yaml:"containerPath"`
 }
 

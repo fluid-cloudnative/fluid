@@ -46,10 +46,23 @@ func (e *AlluxioEngine) transformDatasetToVolume(runtime *datav1alpha1.AlluxioRu
 				value.UFSVolumes = []UFSVolume{}
 			}
 
-			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
-				Name:          strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()),
-				ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
-			})
+			// Split MountPoint into PVC name and subpath (if it contains a subpath)
+			parts := strings.SplitN(strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()), "/", 2)
+
+			if len(parts) > 1 {
+				// MountPoint contains subpath
+				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
+					Name:          parts[0],
+					SubPath:       parts[1],
+					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+				})
+			} else {
+				// MountPoint does not contain subpath
+				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
+					Name:          parts[0],
+					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+				})
+			}
 		}
 	}
 

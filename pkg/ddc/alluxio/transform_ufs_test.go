@@ -70,12 +70,22 @@ func TestTransformDatasetToVolume(t *testing.T) {
 
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
-	ufsVolume.Name = "test2"
-	ufsVolume.ContainerPath = "/underFSStorage/test2"
+	ufsVolume.Name = "test"
+	ufsVolume.ContainerPath = "/underFSStorage/test"
 
 	var ufsVolume1 = UFSVolume{}
 	ufsVolume1.Name = "test1"
 	ufsVolume1.ContainerPath = "/underFSStorage"
+
+	var ufsVolume2 = UFSVolume{}
+	ufsVolume2.Name = "test2"
+	ufsVolume2.SubPath = "subpath"
+	ufsVolume2.ContainerPath = "/underFSStorage/test2"
+
+	var ufsVolume3 = UFSVolume{}
+	ufsVolume3.Name = "test3"
+	ufsVolume3.SubPath = "subpath"
+	ufsVolume3.ContainerPath = "/underFSStorage"
 
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -86,8 +96,8 @@ func TestTransformDatasetToPVC(t *testing.T) {
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc://test2",
-					Name:       "test2",
+					MountPoint: "pvc://test",
+					Name:       "test",
 				}},
 			},
 		}, &Alluxio{}, ufsVolume},
@@ -100,12 +110,30 @@ func TestTransformDatasetToPVC(t *testing.T) {
 				}},
 			},
 		}, &Alluxio{}, ufsVolume1},
+		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "pvc://test2/subpath",
+					Name:       "test2",
+				}},
+			},
+		}, &Alluxio{}, ufsVolume2},
+		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "pvc://test3/subpath",
+					Name:       "test3",
+					Path:       "/",
+				}},
+			},
+		}, &Alluxio{}, ufsVolume3},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
 		if test.value.UFSVolumes[0].ContainerPath != test.expect.ContainerPath ||
-			test.value.UFSVolumes[0].Name != test.expect.Name {
+			test.value.UFSVolumes[0].Name != test.expect.Name ||
+			test.value.UFSVolumes[0].SubPath != test.expect.SubPath {
 			t.Errorf("expected %v, got %v", test.expect, test.value)
 		}
 	}
