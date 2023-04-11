@@ -5,18 +5,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: eacruntimes.data.fluid.io
+  name: efcruntimes.data.fluid.io
 spec:
   group: data.fluid.io
   names:
     categories:
     - fluid
-    kind: EACRuntime
-    listKind: EACRuntimeList
-    plural: eacruntimes
+    kind: EFCRuntime
+    listKind: EFCRuntimeList
+    plural: efcruntimes
     shortNames:
-    - eac
-    singular: eacruntime
+    - efc
+    singular: efcruntime
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

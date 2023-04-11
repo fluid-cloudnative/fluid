@@ -63,8 +63,8 @@ func NewRuntimeReconciler(client client.Client,
 }
 
 //Reconcile reconciles eac runtime
-// +kubebuilder:rbac:groups=data.fluid.io,resources=eacruntimes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.fluid.io,resources=eacruntimes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes/status,verbs=get;update;patch
 
 func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	defer utils.TimeTrack(time.Now(), "Reconcile EACRuntime", "request", req)
