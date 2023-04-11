@@ -1,4 +1,5 @@
 /*
+Copyright 2023 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -89,6 +90,7 @@ type UFSPath struct {
 
 type UFSVolume struct {
 	Name          string `json:"name"`
+	SubPath       string `json:"subPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
 }
 
