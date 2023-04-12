@@ -107,30 +107,61 @@ func TestTransformTolerations(t *testing.T) {
 
 func TestParseSmartDataImage(t *testing.T) {
 	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     string
+		runtime               *datav1alpha1.JindoRuntime
+		dataset               *datav1alpha1.Dataset
+		jindoValue            *Jindo
+		expect                string
+		expectImagePullPolicy string
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
 				}},
-			}}, &Jindo{}, "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2"},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+						Path:       "/",
+					}},
+				}},
+			jindoValue:            &Jindo{},
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2",
+			expectImagePullPolicy: "Always",
+		},
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+					JindoVersion: datav1alpha1.VersionSpec{
+						Image:           "jindofs/smartdata",
+						ImageTag:        "testtag",
+						ImagePullPolicy: "IfNotPresent",
+					},
+				}},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+						Path:       "/",
+					}},
+				}},
+			jindoValue:            &Jindo{},
+			expect:                "jindofs/smartdata:testtag",
+			expectImagePullPolicy: "IfNotPresent",
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		imageR, tagR, _ := engine.getSmartDataConfigs()
-		registryVersion := imageR + ":" + tagR
+		smartdataConfig := engine.getSmartDataConfigs(test.runtime)
+		registryVersion := smartdataConfig.image + ":" + smartdataConfig.imageTag
 		if registryVersion != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+			t.Errorf("expected value %v, but got %v", test.expect, registryVersion)
+		}
+		if smartdataConfig.imagePullPolicy != test.expectImagePullPolicy {
+			t.Errorf("expected imagePullPolicy %v, but got %v", test.expectImagePullPolicy, smartdataConfig.imagePullPolicy)
 		}
 	}
 }
