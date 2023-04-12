@@ -16,6 +16,7 @@ initPortCheck:
 
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
 fuseImageTag: "4.5.2"
+fuseImagePullPolicy: "Always"
 
 user: 0
 group: 0
