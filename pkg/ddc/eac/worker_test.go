@@ -39,7 +39,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 	type fields struct {
 		name      string
 		namespace string
-		runtime   *datav1alpha1.EACRuntime
+		runtime   *datav1alpha1.EFCRuntime
 	}
 	tests := []struct {
 		name       string
@@ -52,7 +52,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			fields: fields{
 				name:      "test0",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0",
 						Namespace: "eac",
@@ -70,7 +70,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			fields: fields{
 				name:      "test1",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
 						Namespace: "eac",
@@ -88,7 +88,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			fields: fields{
 				name:      "test2",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
 						Namespace: "eac",
@@ -106,7 +106,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			fields: fields{
 				name:      "test3",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test3",
 						Namespace: "eac",
@@ -174,7 +174,7 @@ func TestEACEngine_SetupWorkers(t *testing.T) {
 		replicas    int32
 		nodeInputs  []*v1.Node
 		worker      appsv1.StatefulSet
-		runtime     *datav1alpha1.EACRuntime
+		runtime     *datav1alpha1.EFCRuntime
 		runtimeInfo base.RuntimeInfoInterface
 		name        string
 		namespace   string
@@ -203,12 +203,12 @@ func TestEACEngine_SetupWorkers(t *testing.T) {
 						Replicas: utilpointer.Int32Ptr(1),
 					},
 				},
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "fluid",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
 					},
 				},
@@ -237,13 +237,13 @@ func TestEACEngine_SetupWorkers(t *testing.T) {
 						Replicas: utilpointer.Int32Ptr(0),
 					},
 				},
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
 						Namespace: "fluid",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
-						Worker: datav1alpha1.EACCompTemplateSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
+						Worker: datav1alpha1.EFCCompTemplateSpec{
 							Disabled: true,
 						},
 					},
@@ -306,7 +306,7 @@ func TestEACEngine_SetupWorkers(t *testing.T) {
 
 func TestEACEngine_CheckWorkersReady(t *testing.T) {
 	type fields struct {
-		runtime   *datav1alpha1.EACRuntime
+		runtime   *datav1alpha1.EFCRuntime
 		worker    *appsv1.StatefulSet
 		name      string
 		namespace string
@@ -322,14 +322,14 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			fields: fields{
 				name:      "test0",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0",
 						Namespace: "eac",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -351,14 +351,14 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			fields: fields{
 				name:      "test1",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
 						Namespace: "eac",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -380,14 +380,14 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			fields: fields{
 				name:      "test2",
 				namespace: "eac",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
 						Namespace: "eac",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
-						Fuse: datav1alpha1.EACFuseSpec{},
-						Worker: datav1alpha1.EACCompTemplateSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
+						Fuse: datav1alpha1.EFCFuseSpec{},
+						Worker: datav1alpha1.EFCCompTemplateSpec{
 							Disabled: true,
 						},
 					},

@@ -134,13 +134,13 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	runtimeInputs := []*datav1alpha1.EACRuntime{
+	runtimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ready",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 		},
@@ -149,7 +149,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Name:      "master-not-ready",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 		},
@@ -158,7 +158,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Name:      "worker-partial-ready",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 		},
@@ -167,7 +167,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Name:      "worker-not-ready",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 		},

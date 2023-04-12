@@ -41,7 +41,7 @@ type TestCase struct {
 }
 
 func newTestEACEngine(client client.Client, name string, namespace string, withRuntimeInfo bool) *EACEngine {
-	runTime := &datav1alpha1.EACRuntime{}
+	runTime := &datav1alpha1.EFCRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	if !withRuntimeInfo {
 		runTimeInfo = nil

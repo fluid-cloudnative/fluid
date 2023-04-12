@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GetReservedPorts defines restoration logic for EACRuntime
+// GetReservedPorts defines restoration logic for EFCRuntime
 func GetReservedPorts(client client.Client) (ports []int, err error) {
 	var datasets v1alpha1.DatasetList
 	err = client.List(context.TODO(), &datasets)

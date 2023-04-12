@@ -51,14 +51,14 @@ func newEACEngineRT(client client.Client, name string, namespace string, withRun
 }
 
 func TestEACEngine_getRuntimeInfo(t *testing.T) {
-	runtimeInputs := []*datav1alpha1.EACRuntime{
+	runtimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "runtime1",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{
 					CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -68,8 +68,8 @@ func TestEACEngine_getRuntimeInfo(t *testing.T) {
 				Name:      "runtime2",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{
 					CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -79,8 +79,8 @@ func TestEACEngine_getRuntimeInfo(t *testing.T) {
 				Name:      "runtime3",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{
 					CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
 				},
 				TieredStore: datav1alpha1.TieredStore{

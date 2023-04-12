@@ -55,21 +55,21 @@ func TestSyncMetadataInternal(t *testing.T) {
 	}
 
 	testObjs := []runtime.Object{}
-	EACRuntimeInputs := []datav1alpha1.EACRuntime{
+	EACRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					Replicas: 1,
 				},
 			},
 		},
 	}
-	for _, EACRuntime := range EACRuntimeInputs {
-		testObjs = append(testObjs, EACRuntime.DeepCopy())
+	for _, EFCRuntime := range EACRuntimeInputs {
+		testObjs = append(testObjs, EFCRuntime.DeepCopy())
 	}
 
 	var datasetInputs = []datav1alpha1.Dataset{
@@ -166,21 +166,21 @@ func TestSyncMetadata(t *testing.T) {
 	}
 
 	testObjs := []runtime.Object{}
-	EACRuntimeInputs := []datav1alpha1.EACRuntime{
+	EACRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					Replicas: 1,
 				},
 			},
 		},
 	}
-	for _, EACRuntime := range EACRuntimeInputs {
-		testObjs = append(testObjs, EACRuntime.DeepCopy())
+	for _, EFCRuntime := range EACRuntimeInputs {
+		testObjs = append(testObjs, EFCRuntime.DeepCopy())
 	}
 
 	var datasetInputs = []datav1alpha1.Dataset{

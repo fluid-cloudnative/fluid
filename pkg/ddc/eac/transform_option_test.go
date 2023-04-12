@@ -7,9 +7,9 @@ import (
 )
 
 func TestTransformMasterOptions(t *testing.T) {
-	runtime := &datav1alpha1.EACRuntime{
-		Spec: datav1alpha1.EACRuntimeSpec{
-			Master: datav1alpha1.EACCompTemplateSpec{
+	runtime := &datav1alpha1.EFCRuntime{
+		Spec: datav1alpha1.EFCRuntimeSpec{
+			Master: datav1alpha1.EFCCompTemplateSpec{
 				Properties: map[string]string{
 					"a": "b",
 				},
@@ -31,12 +31,12 @@ func TestTransformMasterOptions(t *testing.T) {
 }
 
 func TestTransformFuseOptions(t *testing.T) {
-	runtime := &datav1alpha1.EACRuntime{
-		Spec: datav1alpha1.EACRuntimeSpec{
-			Worker: datav1alpha1.EACCompTemplateSpec{
+	runtime := &datav1alpha1.EFCRuntime{
+		Spec: datav1alpha1.EFCRuntimeSpec{
+			Worker: datav1alpha1.EFCCompTemplateSpec{
 				Disabled: false,
 			},
-			Fuse: datav1alpha1.EACFuseSpec{
+			Fuse: datav1alpha1.EFCFuseSpec{
 				Properties: map[string]string{
 					"a": "b",
 				},
@@ -72,15 +72,15 @@ func TestTransformWorkerOptions(t *testing.T) {
 		namespace: "fluid",
 	}
 	var tests = []struct {
-		runtime     *datav1alpha1.EACRuntime
+		runtime     *datav1alpha1.EFCRuntime
 		eacValue    *EAC
 		wantError   bool
 		wantOptions string
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+			runtime: &datav1alpha1.EFCRuntime{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Properties: map[string]string{
 							"a": "b",
 						},
@@ -100,9 +100,9 @@ func TestTransformWorkerOptions(t *testing.T) {
 			wantOptions: "cache_media=/cache_dir/fluid/test,server_port=0,cache_capacity_gb=1,tmpfs=true,a=b",
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+			runtime: &datav1alpha1.EFCRuntime{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Properties: map[string]string{
 							"a": "b",
 						},
@@ -128,9 +128,9 @@ func TestTransformWorkerOptions(t *testing.T) {
 			wantOptions: "cache_media=/test,server_port=0,cache_capacity_gb=2,a=b",
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+			runtime: &datav1alpha1.EFCRuntime{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Properties: map[string]string{
 							"a": "b",
 						},
