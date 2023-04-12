@@ -840,26 +840,24 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 	globalImage := docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
 	globalTag := docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
 	globalDnsServer := os.Getenv(common.JindoDnsServer)
-	switch {
-	case len(globalImage) > 0:
+	if len(globalImage) > 0 {
 		config.image = globalImage
-		fallthrough
-	case len(globalTag) > 0:
+	}
+	if len(globalTag) > 0 {
 		config.imageTag = globalTag
-		fallthrough
-	case len(globalDnsServer) > 0:
+	}
+	if len(globalDnsServer) > 0 {
 		config.dnsServer = globalDnsServer
 	}
 
 	// Override with runtime-scoped configs
-	switch {
-	case len(runtime.Spec.JindoVersion.Image) > 0:
+	if len(runtime.Spec.JindoVersion.Image) > 0 {
 		config.image = runtime.Spec.JindoVersion.Image
-		fallthrough
-	case len(runtime.Spec.JindoVersion.ImageTag) > 0:
+	}
+	if len(runtime.Spec.JindoVersion.ImageTag) > 0 {
 		config.imageTag = runtime.Spec.JindoVersion.ImageTag
-		fallthrough
-	case len(runtime.Spec.JindoVersion.ImagePullPolicy) > 0:
+	}
+	if len(runtime.Spec.JindoVersion.ImagePullPolicy) > 0 {
 		config.imagePullPolicy = runtime.Spec.JindoVersion.ImagePullPolicy
 	}
 
@@ -877,23 +875,21 @@ func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (ima
 	// Override with global-scoped configs
 	globalImage := docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)
 	globalTag := docker.GetImageTagFromEnv(common.JindoFuseImageEnv)
-	switch {
-	case len(globalImage) > 0:
+	if len(globalImage) > 0 {
 		image = globalImage
-		fallthrough
-	case len(globalTag) > 0:
+	}
+	if len(globalTag) > 0 {
 		tag = globalTag
 	}
 
 	// Override with runtime-scoped configs
-	switch {
-	case len(runtime.Spec.Fuse.Image) > 0:
+	if len(runtime.Spec.Fuse.Image) > 0 {
 		image = runtime.Spec.Fuse.Image
-		fallthrough
-	case len(runtime.Spec.Fuse.ImageTag) > 0:
+	}
+	if len(runtime.Spec.Fuse.ImageTag) > 0 {
 		tag = runtime.Spec.Fuse.ImageTag
-		fallthrough
-	case len(runtime.Spec.Fuse.ImagePullPolicy) > 0:
+	}
+	if len(runtime.Spec.Fuse.ImagePullPolicy) > 0 {
 		imagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
 	}
 

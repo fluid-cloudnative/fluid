@@ -112,6 +112,7 @@ func TestParseSmartDataImage(t *testing.T) {
 		jindoValue            *Jindo
 		expect                string
 		expectImagePullPolicy string
+		expectDnsServer       string
 	}{
 		{
 			runtime: &datav1alpha1.JindoRuntime{
@@ -129,6 +130,7 @@ func TestParseSmartDataImage(t *testing.T) {
 			jindoValue:            &Jindo{},
 			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2",
 			expectImagePullPolicy: "Always",
+			expectDnsServer:       "1.1.1.1",
 		},
 		{
 			runtime: &datav1alpha1.JindoRuntime{
@@ -151,6 +153,7 @@ func TestParseSmartDataImage(t *testing.T) {
 			jindoValue:            &Jindo{},
 			expect:                "jindofs/smartdata:testtag",
 			expectImagePullPolicy: "IfNotPresent",
+			expectDnsServer:       "1.1.1.1",
 		},
 	}
 	for _, test := range tests {
@@ -162,6 +165,9 @@ func TestParseSmartDataImage(t *testing.T) {
 		}
 		if smartdataConfig.imagePullPolicy != test.expectImagePullPolicy {
 			t.Errorf("expected imagePullPolicy %v, but got %v", test.expectImagePullPolicy, smartdataConfig.imagePullPolicy)
+		}
+		if smartdataConfig.dnsServer != test.expectDnsServer {
+			t.Errorf("expected dnsServer %v, but got %v", test.expectDnsServer, smartdataConfig.dnsServer)
 		}
 	}
 }
