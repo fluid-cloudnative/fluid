@@ -41,6 +41,13 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+type smartdataConfig struct {
+	image           string
+	imageTag        string
+	imagePullPolicy string
+	dnsServer       string
+}
+
 func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
 	if runtime == nil {
 		err = fmt.Errorf("the jindoRuntime is null")
@@ -92,7 +99,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	}
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
-	jindoSmartdataImage, smartdataTag, smartdataImagePullPolicy, dnsServer := e.getSmartDataConfigs(runtime)
+	smartdataConfig := e.getSmartDataConfigs(runtime)
 	jindoFuseImage, fuseTag, fuseImagePullPolicy := e.parseFuseImage(runtime)
 
 	var mediumType = common.Memory
@@ -104,9 +111,9 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	}
 
 	value = &Jindo{
-		Image:               jindoSmartdataImage,
-		ImageTag:            smartdataTag,
-		ImagePullPolicy:     smartdataImagePullPolicy,
+		Image:               smartdataConfig.image,
+		ImageTag:            smartdataConfig.imageTag,
+		ImagePullPolicy:     smartdataConfig.imagePullPolicy,
 		FuseImage:           jindoFuseImage,
 		FuseImageTag:        fuseTag,
 		FuseImagePullPolicy: fuseImagePullPolicy,
@@ -170,7 +177,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	}
 	e.transformLogConfig(runtime, value)
 	e.transformDeployMode(runtime, value)
-	value.Master.DnsServer = dnsServer
+	value.Master.DnsServer = smartdataConfig.dnsServer
 	value.Master.NameSpace = e.namespace
 	value.Fuse.MountPath = jindoFuseMountpath
 	return value, err
@@ -820,87 +827,77 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	return fuseArgs
 }
 
-func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy, dnsServer string) {
-	var (
-		defaultImage           = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag             = "4.5.2"
-		defaultImagePullPolicy = "Always"
-		defaultDnsServer       = "1.1.1.1"
-	)
-
+func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime) smartdataConfig {
 	// Apply defaults
-	image = defaultImage
-	tag = defaultTag
-	imagePullPolicy = defaultImagePullPolicy
-	dnsServer = defaultDnsServer
+	config := smartdataConfig{
+		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
+		imageTag:        "4.5.2",
+		imagePullPolicy: "Always",
+		dnsServer:       "1.1.1.1",
+	}
 
 	// Override with global-scoped configs
 	globalImage := docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
 	globalTag := docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
 	globalDnsServer := os.Getenv(common.JindoDnsServer)
-	if len(globalImage) > 0 {
-		image = globalImage
-	}
-	if len(globalTag) > 0 {
-		tag = globalTag
-	}
-	if len(globalDnsServer) > 0 {
-		dnsServer = globalDnsServer
+	switch {
+	case len(globalImage) > 0:
+		config.image = globalImage
+		fallthrough
+	case len(globalTag) > 0:
+		config.imageTag = globalTag
+		fallthrough
+	case len(globalDnsServer) > 0:
+		config.dnsServer = globalDnsServer
 	}
 
 	// Override with runtime-scoped configs
-	if len(runtime.Spec.JindoVersion.Image) > 0 {
-		image = runtime.Spec.JindoVersion.Image
-	}
-	if len(runtime.Spec.JindoVersion.ImageTag) > 0 {
-		tag = runtime.Spec.JindoVersion.ImageTag
-	}
-	if len(runtime.Spec.JindoVersion.ImagePullPolicy) > 0 {
-		imagePullPolicy = runtime.Spec.JindoVersion.ImagePullPolicy
+	switch {
+	case len(runtime.Spec.JindoVersion.Image) > 0:
+		config.image = runtime.Spec.JindoVersion.Image
+		fallthrough
+	case len(runtime.Spec.JindoVersion.ImageTag) > 0:
+		config.imageTag = runtime.Spec.JindoVersion.ImageTag
+		fallthrough
+	case len(runtime.Spec.JindoVersion.ImagePullPolicy) > 0:
+		config.imagePullPolicy = runtime.Spec.JindoVersion.ImagePullPolicy
 	}
 
-	e.Log.Info("Set image", "image", image, "tag", tag, "imagePullPolicy", imagePullPolicy, "dnsServer", dnsServer)
+	e.Log.Info("Set image", "config", config)
 
-	return
+	return config
 }
 
 func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
-	var (
-		defaultImage           = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-		defaultTag             = "4.5.2"
-		defaultImagePullPolicy = "Always"
-	)
-
 	// Apply defaults
-	image = defaultImage
-	tag = defaultTag
-	imagePullPolicy = defaultImagePullPolicy
+	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
+	tag = "4.5.2"
+	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs
 	globalImage := docker.GetImageRepoFromEnv(common.JindoFuseImageEnv)
 	globalTag := docker.GetImageTagFromEnv(common.JindoFuseImageEnv)
-	if len(globalImage) > 0 {
+	switch {
+	case len(globalImage) > 0:
 		image = globalImage
-	}
-	if len(globalTag) > 0 {
+		fallthrough
+	case len(globalTag) > 0:
 		tag = globalTag
 	}
 
 	// Override with runtime-scoped configs
-	runtimeImage := runtime.Spec.Fuse.Image
-	runtimeTag := runtime.Spec.Fuse.ImageTag
-	runtimeImagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
-	if len(runtimeImage) > 0 {
-		image = runtimeImage
-	}
-	if len(runtimeTag) > 0 {
-		tag = runtimeTag
-	}
-	if len(runtimeImagePullPolicy) > 0 {
-		imagePullPolicy = runtimeImagePullPolicy
+	switch {
+	case len(runtime.Spec.Fuse.Image) > 0:
+		image = runtime.Spec.Fuse.Image
+		fallthrough
+	case len(runtime.Spec.Fuse.ImageTag) > 0:
+		tag = runtime.Spec.Fuse.ImageTag
+		fallthrough
+	case len(runtime.Spec.Fuse.ImagePullPolicy) > 0:
+		imagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
 	}
 
-	e.Log.Info("Set image", "image", image, "tag", tag, "imagePullPolicy", imagePullPolicy)
+	e.Log.Info("Set fuse image", "image", image, "tag", tag, "imagePullPolicy", imagePullPolicy)
 
 	return
 }

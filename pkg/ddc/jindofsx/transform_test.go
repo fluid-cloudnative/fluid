@@ -155,13 +155,13 @@ func TestParseSmartDataImage(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		imageR, tagR, imagePullPolicyR, _ := engine.getSmartDataConfigs(test.runtime)
-		registryVersion := imageR + ":" + tagR
+		smartdataConfig := engine.getSmartDataConfigs(test.runtime)
+		registryVersion := smartdataConfig.image + ":" + smartdataConfig.imageTag
 		if registryVersion != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, registryVersion)
 		}
-		if imagePullPolicyR != test.expectImagePullPolicy {
-			t.Errorf("expected imagePullPolicy %v, but got %v", test.expectImagePullPolicy, imagePullPolicyR)
+		if smartdataConfig.imagePullPolicy != test.expectImagePullPolicy {
+			t.Errorf("expected imagePullPolicy %v, but got %v", test.expectImagePullPolicy, smartdataConfig.imagePullPolicy)
 		}
 	}
 }
