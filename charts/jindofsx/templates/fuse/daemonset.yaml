@@ -74,7 +74,7 @@ spec:
             preStop:
               exec:
                 command: ["/prestop.sh"]
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.fuseImagePullPolicy }}
           {{- if .Values.fuse.resources }}
           resources:
             limits:
