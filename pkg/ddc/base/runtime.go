@@ -393,7 +393,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EACRuntime:
-		eacRuntime, err := utils.GetEACRuntime(client, name, namespace)
+		eacRuntime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -441,7 +441,7 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 		}
 		return &runtime.Status, nil
 	case common.EACRuntime:
-		runtime, err := utils.GetEACRuntime(client, name, namespace)
+		runtime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
 			return status, err
 		}
@@ -473,7 +473,7 @@ func GetRuntimeAndType(client client.Client, boundedRuntime *datav1alpha1.Runtim
 	case common.JuiceFSRuntime:
 		runtime, err = utils.GetJuiceFSRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.EACRuntime:
-		runtime, err = utils.GetEACRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
+		runtime, err = utils.GetEFCRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	case common.ThinRuntime:
 		runtime, err = utils.GetThinRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
 	}

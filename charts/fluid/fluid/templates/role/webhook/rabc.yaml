@@ -20,7 +20,7 @@ rules:
       - juicefsruntimes
       - goosefsruntimes
       - thinruntimes
-      - eacruntimes
+      - efcruntimes
     verbs:
       - get
       - list

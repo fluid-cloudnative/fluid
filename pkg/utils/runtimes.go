@@ -122,14 +122,14 @@ func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRun
 	return &runtime, nil
 }
 
-// GetEACRuntime gets EAC Runtime object with the given name and namespace
-func GetEACRuntime(client client.Client, name, namespace string) (*data.EACRuntime, error) {
+// GetEFCRuntime gets EAC Runtime object with the given name and namespace
+func GetEFCRuntime(client client.Client, name, namespace string) (*data.EFCRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.EACRuntime
+	var runtime data.EFCRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}

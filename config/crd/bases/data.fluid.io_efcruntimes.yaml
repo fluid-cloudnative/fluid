@@ -5,18 +5,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: eacruntimes.data.fluid.io
+  name: efcruntimes.data.fluid.io
 spec:
   group: data.fluid.io
   names:
     categories:
     - fluid
-    kind: EACRuntime
-    listKind: EACRuntimeList
-    plural: eacruntimes
+    kind: EFCRuntime
+    listKind: EFCRuntimeList
+    plural: efcruntimes
     shortNames:
-    - eac
-    singular: eacruntime
+    - efc
+    singular: efcruntime
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -59,7 +59,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: EACRuntime is the Schema for the eacruntimes API
+        description: EFCRuntime is the Schema for the efcruntimes API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -74,7 +74,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EACRuntimeSpec defines the desired state of EACRuntime
+            description: EFCRuntimeSpec defines the desired state of EFCRuntime
             properties:
               cleanCachePolicy:
                 description: CleanCachePolicy defines cleanCache Policy
@@ -104,10 +104,10 @@ spec:
                     type: integer
                 type: object
               fuse:
-                description: The component spec of EAC Fuse
+                description: The component spec of EFC Fuse
                 properties:
                   cleanPolicy:
-                    description: 'CleanPolicy decides when to clean EAC Fuse pods.
+                    description: 'CleanPolicy decides when to clean EFC Fuse pods.
                       Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
                       OnDemand cleans fuse pod once th fuse pod on some node is not
                       needed OnRuntimeDeleted cleans fuse pod only when the cache
@@ -129,7 +129,7 @@ spec:
                     type: object
                   podMetadata:
                     description: PodMetadata defines labels and annotations that will
-                      be propagated to EAC's fuse pods
+                      be propagated to EFC's fuse pods
                     properties:
                       annotations:
                         additionalProperties:
@@ -145,10 +145,10 @@ spec:
                   properties:
                     additionalProperties:
                       type: string
-                    description: Configurable properties for EAC fuse
+                    description: Configurable properties for EFC fuse
                     type: object
                   resources:
-                    description: Resources that will be requested by EAC Fuse. <br>
+                    description: Resources that will be requested by EFC Fuse. <br>
                       <br> Resources are not allowed for ephemeral containers. Ephemeral
                       containers use spare resources already allocated to the pod.
                     properties:
@@ -177,7 +177,7 @@ spec:
                     type: object
                   version:
                     description: The version information that instructs fluid to orchestrate
-                      a particular version of EAC Fuse
+                      a particular version of EFC Fuse
                     properties:
                       image:
                         description: Image (e.g. alluxio/alluxio)
@@ -211,7 +211,7 @@ spec:
                     type: object
                 type: object
               master:
-                description: The component spec of EAC master
+                description: The component spec of EFC master
                 properties:
                   disabled:
                     description: Enabled or Disabled for the components. Default enable.
@@ -231,7 +231,7 @@ spec:
                     type: object
                   podMetadata:
                     description: PodMetadata defines labels and annotations that will
-                      be propagated to EAC's master and worker pods
+                      be propagated to EFC's master and worker pods
                     properties:
                       annotations:
                         additionalProperties:
@@ -247,12 +247,12 @@ spec:
                   ports:
                     additionalProperties:
                       type: integer
-                    description: 'Ports used by EAC(e.g. rpc: 19998 for master).'
+                    description: 'Ports used by EFC(e.g. rpc: 19998 for master).'
                     type: object
                   properties:
                     additionalProperties:
                       type: string
-                    description: Configurable properties for the EAC component.
+                    description: Configurable properties for the EFC component.
                     type: object
                   replicas:
                     description: Replicas is the desired number of replicas of the
@@ -262,7 +262,7 @@ spec:
                     minimum: 1
                     type: integer
                   resources:
-                    description: Resources that will be requested by the EAC component.
+                    description: Resources that will be requested by the EFC component.
                       <br> <br> Resources are not allowed for ephemeral containers.
                       Ephemeral containers use spare resources already allocated to
                       the pod.
@@ -292,7 +292,7 @@ spec:
                     type: object
                   version:
                     description: The version information that instructs fluid to orchestrate
-                      a particular version of EAC Comp
+                      a particular version of EFC Comp
                     properties:
                       image:
                         description: Image (e.g. alluxio/alluxio)
@@ -338,7 +338,7 @@ spec:
                   type: object
                 type: array
               osAdvise:
-                description: Operating system optimization for EAC
+                description: Operating system optimization for EFC
                 properties:
                   enabled:
                     description: Enable operating system optimization not enabled
@@ -350,7 +350,7 @@ spec:
                 type: object
               podMetadata:
                 description: PodMetadata defines labels and annotations that will
-                  be propagated to all EAC's pods
+                  be propagated to all EFC's pods
                 properties:
                   annotations:
                     additionalProperties:
@@ -368,7 +368,7 @@ spec:
                 format: int32
                 type: integer
               tieredstore:
-                description: Tiered storage used by EAC worker
+                description: Tiered storage used by EFC worker
                 properties:
                   levels:
                     description: configurations for multiple tiers
@@ -2033,7 +2033,7 @@ spec:
                     type: array
                 type: object
               worker:
-                description: The component spec of EAC worker
+                description: The component spec of EFC worker
                 properties:
                   disabled:
                     description: Enabled or Disabled for the components. Default enable.
@@ -2053,7 +2053,7 @@ spec:
                     type: object
                   podMetadata:
                     description: PodMetadata defines labels and annotations that will
-                      be propagated to EAC's master and worker pods
+                      be propagated to EFC's master and worker pods
                     properties:
                       annotations:
                         additionalProperties:
@@ -2069,12 +2069,12 @@ spec:
                   ports:
                     additionalProperties:
                       type: integer
-                    description: 'Ports used by EAC(e.g. rpc: 19998 for master).'
+                    description: 'Ports used by EFC(e.g. rpc: 19998 for master).'
                     type: object
                   properties:
                     additionalProperties:
                       type: string
-                    description: Configurable properties for the EAC component.
+                    description: Configurable properties for the EFC component.
                     type: object
                   replicas:
                     description: Replicas is the desired number of replicas of the
@@ -2084,7 +2084,7 @@ spec:
                     minimum: 1
                     type: integer
                   resources:
-                    description: Resources that will be requested by the EAC component.
+                    description: Resources that will be requested by the EFC component.
                       <br> <br> Resources are not allowed for ephemeral containers.
                       Ephemeral containers use spare resources already allocated to
                       the pod.
@@ -2114,7 +2114,7 @@ spec:
                     type: object
                   version:
                     description: The version information that instructs fluid to orchestrate
-                      a particular version of EAC Comp
+                      a particular version of EFC Comp
                     properties:
                       image:
                         description: Image (e.g. alluxio/alluxio)

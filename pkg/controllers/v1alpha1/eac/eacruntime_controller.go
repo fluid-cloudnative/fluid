@@ -40,7 +40,7 @@ import (
 // Use compiler to check if the struct implements all the interface
 var _ controllers.RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
 
-// RuntimeReconciler reconciles a EACRuntime object
+// RuntimeReconciler reconciles a EFCRuntime object
 type RuntimeReconciler struct {
 	Scheme  *runtime.Scheme
 	engines map[string]base.Engine
@@ -63,11 +63,11 @@ func NewRuntimeReconciler(client client.Client,
 }
 
 //Reconcile reconciles eac runtime
-// +kubebuilder:rbac:groups=data.fluid.io,resources=eacruntimes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=data.fluid.io,resources=eacruntimes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes/status,verbs=get;update;patch
 
 func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
-	defer utils.TimeTrack(time.Now(), "Reconcile EACRuntime", "request", req)
+	defer utils.TimeTrack(time.Now(), "Reconcile EFCRuntime", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context,
 		Log:            r.Log.WithValues("eacruntime", req.NamespacedName),
@@ -106,7 +106,7 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 	} else {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
-			For(&datav1alpha1.EACRuntime{}).
+			For(&datav1alpha1.EFCRuntime{}).
 			Complete(r)
 	}
 }
@@ -116,9 +116,9 @@ func (r *RuntimeReconciler) ControllerName() string {
 }
 
 func (r *RuntimeReconciler) ManagedResource() client.Object {
-	return &datav1alpha1.EACRuntime{
+	return &datav1alpha1.EFCRuntime{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       datav1alpha1.EACRuntimeKind,
+			Kind:       datav1alpha1.EFCRuntimeKind,
 			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 		},
 	}

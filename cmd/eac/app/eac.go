@@ -112,11 +112,11 @@ func handle() {
 	}
 
 	if err = (eacctl.NewRuntimeReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("eacctl").WithName("EACRuntime"),
+		ctrl.Log.WithName("eacctl").WithName("EFCRuntime"),
 		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("EACRuntime"),
+		mgr.GetEventRecorderFor("EFCRuntime"),
 	)).SetupWithManager(mgr, controllerOptions, eventDriven); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "EACRuntime")
+		setupLog.Error(err, "unable to create controller", "controller", "EFCRuntime")
 		os.Exit(1)
 	}
 

@@ -58,13 +58,13 @@ func TestBuild(t *testing.T) {
 	}
 	testObjs = append(testObjs, dataset.DeepCopy())
 
-	var runtime = datav1alpha1.EACRuntime{
+	var runtime = datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
-		Spec: datav1alpha1.EACRuntimeSpec{
-			Fuse: datav1alpha1.EACFuseSpec{
+		Spec: datav1alpha1.EFCRuntimeSpec{
+			Fuse: datav1alpha1.EFCFuseSpec{
 				CleanPolicy: datav1alpha1.OnDemandCleanPolicy,
 			},
 		},

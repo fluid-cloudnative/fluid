@@ -99,9 +99,9 @@ rules:
   - apiGroups:
       - data.fluid.io
     resources:
-      - eacruntimes
+      - efcruntimes
       - datasets
-      - eacruntimes/status
+      - efcruntimes/status
       - datasets/status
     verbs:
       - '*'

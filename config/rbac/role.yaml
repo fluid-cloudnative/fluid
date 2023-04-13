@@ -48,7 +48,7 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - eacruntimes
+  - efcruntimes
   verbs:
   - create
   - delete
@@ -60,7 +60,7 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - eacruntimes/status
+  - efcruntimes/status
   verbs:
   - get
   - patch

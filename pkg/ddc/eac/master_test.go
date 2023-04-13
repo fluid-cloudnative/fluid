@@ -61,14 +61,14 @@ func TestCheckMasterReady(t *testing.T) {
 		testObjs = append(testObjs, statefulset.DeepCopy())
 	}
 
-	EACRuntimeInputs := []datav1alpha1.EACRuntime{
+	EACRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					Replicas: 1,
 				},
 			},
@@ -78,8 +78,8 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					Replicas: 2,
 				},
 			},
@@ -89,15 +89,15 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hadoop",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					Disabled: true,
 				},
 			},
 		},
 	}
-	for _, EACRuntime := range EACRuntimeInputs {
-		testObjs = append(testObjs, EACRuntime.DeepCopy())
+	for _, EFCRuntime := range EACRuntimeInputs {
+		testObjs = append(testObjs, EFCRuntime.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -148,12 +148,12 @@ func TestCheckMasterReady(t *testing.T) {
 		if !test.expectedResult {
 			continue
 		}
-		EACRuntime, err := test.engine.getRuntime()
+		EFCRuntime, err := test.engine.getRuntime()
 		if err != nil {
 			t.Errorf("fail to get runtime %v", err)
 			return
 		}
-		if len(EACRuntime.Status.Conditions) == 0 {
+		if len(EFCRuntime.Status.Conditions) == 0 {
 			t.Errorf("fail to update the runtime conditions")
 			return
 		}
@@ -161,7 +161,7 @@ func TestCheckMasterReady(t *testing.T) {
 }
 
 func TestShouldSetupMaster(t *testing.T) {
-	EACRuntimeInputs := []datav1alpha1.EACRuntime{
+	EACRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
@@ -182,8 +182,8 @@ func TestShouldSetupMaster(t *testing.T) {
 		},
 	}
 	testObjs := []runtime.Object{}
-	for _, EACRuntime := range EACRuntimeInputs {
-		testObjs = append(testObjs, EACRuntime.DeepCopy())
+	for _, EFCRuntime := range EACRuntimeInputs {
+		testObjs = append(testObjs, EFCRuntime.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -240,7 +240,7 @@ func TestSetupMaster(t *testing.T) {
 		testObjs = append(testObjs, statefulSet.DeepCopy())
 	}
 
-	EACRuntimeInputs := []datav1alpha1.EACRuntime{
+	EACRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
@@ -248,8 +248,8 @@ func TestSetupMaster(t *testing.T) {
 			},
 		},
 	}
-	for _, EACRuntime := range EACRuntimeInputs {
-		testObjs = append(testObjs, EACRuntime.DeepCopy())
+	for _, EFCRuntime := range EACRuntimeInputs {
+		testObjs = append(testObjs, EFCRuntime.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -276,8 +276,8 @@ func TestSetupMaster(t *testing.T) {
 
 	for _, test := range testCases {
 		_ = test.engine.SetupMaster()
-		EACRuntime, _ := test.engine.getRuntime()
-		if len(EACRuntime.Status.Conditions) == 0 || EACRuntime.Status.Selector != test.expectedSelector || EACRuntime.Status.ValueFileConfigmap != test.expectedConfigMapName {
+		EFCRuntime, _ := test.engine.getRuntime()
+		if len(EFCRuntime.Status.Conditions) == 0 || EFCRuntime.Status.Selector != test.expectedSelector || EFCRuntime.Status.ValueFileConfigmap != test.expectedConfigMapName {
 			t.Errorf("fail to update the runtime")
 			return
 		}

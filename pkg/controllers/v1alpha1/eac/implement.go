@@ -25,8 +25,8 @@ import (
 )
 
 // getRuntime gets the runtime
-func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.EACRuntime, error) {
-	var runtime datav1alpha1.EACRuntime
+func (r *RuntimeReconciler) getRuntime(ctx cruntime.ReconcileRequestContext) (*datav1alpha1.EFCRuntime, error) {
+	var runtime datav1alpha1.EFCRuntime
 	if err := r.Get(ctx, ctx.NamespacedName, &runtime); err != nil {
 		return nil, err
 	}

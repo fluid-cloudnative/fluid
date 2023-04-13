@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err error) {
+func (e *EACEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EAC, err error) {
 	if runtime == nil {
 		err = fmt.Errorf("the eacRuntime is null")
 		return
@@ -38,7 +38,7 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 	}
 
 	value = &EAC{
-		// Set ownerReference to all EACRuntime resources
+		// Set ownerReference to all EFCRuntime resources
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
 	}
 
@@ -76,7 +76,7 @@ func (e *EACEngine) transform(runtime *datav1alpha1.EACRuntime) (value *EAC, err
 	return
 }
 
-func (e *EACEngine) transformMasters(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformMasters(runtime *datav1alpha1.EFCRuntime,
 	dataset *datav1alpha1.Dataset,
 	value *EAC) (err error) {
 	value.Master = Master{}
@@ -130,7 +130,7 @@ func (e *EACEngine) transformMasters(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformWorkers(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformWorkers(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) (err error) {
 	value.Worker = Worker{}
 
@@ -176,7 +176,7 @@ func (e *EACEngine) transformWorkers(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformFuse(runtime *datav1alpha1.EFCRuntime,
 	dataset *datav1alpha1.Dataset,
 	value *EAC) (err error) {
 	value.Fuse = Fuse{}
@@ -232,7 +232,7 @@ func (e *EACEngine) transformFuse(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformInitFuse(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformInitFuse(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) (err error) {
 	value.InitFuse = InitFuse{}
 
@@ -244,7 +244,7 @@ func (e *EACEngine) transformInitFuse(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformOSAdvice(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformOSAdvice(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) {
 	value.OSAdvise.OSVersion = runtime.Spec.OSAdvise.OSVersion
 	value.OSAdvise.Enabled = runtime.Spec.OSAdvise.Enabled
@@ -268,7 +268,7 @@ func (e *EACEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *E
 	}
 }
 
-func (e *EACEngine) transformPodMetadata(runtime *datav1alpha1.EACRuntime, value *EAC) (err error) {
+func (e *EACEngine) transformPodMetadata(runtime *datav1alpha1.EFCRuntime, value *EAC) (err error) {
 	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
 	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
 	value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)

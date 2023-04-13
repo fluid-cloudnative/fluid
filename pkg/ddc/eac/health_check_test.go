@@ -36,7 +36,7 @@ import (
 
 func TestCheckRuntimeHealthy(t *testing.T) {
 	type fields struct {
-		runtime         *datav1alpha1.EACRuntime
+		runtime         *datav1alpha1.EFCRuntime
 		worker          *appsv1.StatefulSet
 		master          *appsv1.StatefulSet
 		fuse            *appsv1.DaemonSet
@@ -55,14 +55,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{
@@ -115,14 +115,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "master-no-health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "master-no-health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{
@@ -175,14 +175,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "worker-no-health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "worker-no-health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{
@@ -235,14 +235,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "worker-partial-health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "worker-partial-health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{
@@ -295,14 +295,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "fuse-no-health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "fuse-no-health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{
@@ -355,14 +355,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			fields: fields{
 				name:      "endpoints-no-health-data",
 				namespace: "big-data",
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "endpoints-no-health-data",
 						Namespace: "big-data",
 					},
-					Spec: datav1alpha1.EACRuntimeSpec{
+					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.EACFuseSpec{},
+						Fuse:     datav1alpha1.EFCFuseSpec{},
 					},
 				},
 				master: &appsv1.StatefulSet{

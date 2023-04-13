@@ -31,7 +31,7 @@ import (
 )
 
 type EACEngine struct {
-	runtime     *datav1alpha1.EACRuntime
+	runtime     *datav1alpha1.EFCRuntime
 	name        string
 	namespace   string
 	runtimeType string
@@ -78,7 +78,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 func (e *EACEngine) parseRuntime(ctx cruntime.ReconcileRequestContext) error {
 	if ctx.Runtime != nil {
-		runtime, ok := ctx.Runtime.(*datav1alpha1.EACRuntime)
+		runtime, ok := ctx.Runtime.(*datav1alpha1.EFCRuntime)
 		if !ok {
 			return fmt.Errorf("engine %s is failed to parse", ctx.Name)
 		}
@@ -91,6 +91,6 @@ func (e *EACEngine) parseRuntime(ctx cruntime.ReconcileRequestContext) error {
 
 // Precheck checks if the given key can be found in the current runtime types
 func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
-	var obj datav1alpha1.EACRuntime
+	var obj datav1alpha1.EFCRuntime
 	return utils.CheckObject(client, key, &obj)
 }

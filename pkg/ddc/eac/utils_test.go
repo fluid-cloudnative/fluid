@@ -114,7 +114,7 @@ var workerEndpointsConfigMapData = `
 func newEACEngine(client client.Client, name string, namespace string) *EACEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
-		runtime:     &datav1alpha1.EACRuntime{},
+		runtime:     &datav1alpha1.EFCRuntime{},
 		name:        name,
 		namespace:   namespace,
 		Client:      client,
@@ -207,7 +207,7 @@ func Test_parseCacheDirFromConfigMap(t *testing.T) {
 
 func TestEACEngine_getDaemonset(t *testing.T) {
 	type fields struct {
-		runtime   *datav1alpha1.EACRuntime
+		runtime   *datav1alpha1.EFCRuntime
 		name      string
 		namespace string
 		Client    client.Client
@@ -221,7 +221,7 @@ func TestEACEngine_getDaemonset(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "runtime1",
 						Namespace: "default",
@@ -346,20 +346,20 @@ func TestEACEngine_getHostMountPath(t *testing.T) {
 
 func TestEACEngine_getRuntime(t *testing.T) {
 	type fields struct {
-		runtime   *datav1alpha1.EACRuntime
+		runtime   *datav1alpha1.EFCRuntime
 		name      string
 		namespace string
 	}
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *datav1alpha1.EACRuntime
+		want    *datav1alpha1.EFCRuntime
 		wantErr bool
 	}{
 		{
 			name: "test",
 			fields: fields{
-				runtime: &datav1alpha1.EACRuntime{
+				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "eac",
 						Namespace: "default",
@@ -368,9 +368,9 @@ func TestEACEngine_getRuntime(t *testing.T) {
 				name:      "eac",
 				namespace: "default",
 			},
-			want: &datav1alpha1.EACRuntime{
+			want: &datav1alpha1.EFCRuntime{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "EACRuntime",
+					Kind:       "EFCRuntime",
 					APIVersion: "data.fluid.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{

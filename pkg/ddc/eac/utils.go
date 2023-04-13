@@ -35,14 +35,14 @@ import (
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 )
 
-func (e *EACEngine) getRuntime() (*datav1alpha1.EACRuntime, error) {
+func (e *EACEngine) getRuntime() (*datav1alpha1.EFCRuntime, error) {
 
 	key := types.NamespacedName{
 		Name:      e.name,
 		Namespace: e.namespace,
 	}
 
-	var runtime datav1alpha1.EACRuntime
+	var runtime datav1alpha1.EFCRuntime
 	if err := e.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 		return info, err
 	}
 	if len(dataset.Spec.Mounts) == 0 {
-		return info, fmt.Errorf("empty mount point for EACRuntime name:%s, namespace:%s", e.name, e.namespace)
+		return info, fmt.Errorf("empty mount point for EFCRuntime name:%s, namespace:%s", e.name, e.namespace)
 	}
 	mount := dataset.Spec.Mounts[0]
 	if !strings.HasSuffix(mount.MountPoint, "/") {
@@ -178,25 +178,25 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 	}
 
 	if !strings.HasPrefix(mount.MountPoint, MountPointPrefix) {
-		return info, fmt.Errorf("invalid mountpoint prefix for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		return info, fmt.Errorf("invalid mountpoint prefix for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	} else {
 		info.MountPoint = strings.TrimPrefix(mount.MountPoint, MountPointPrefix)
 	}
 
 	if len(strings.Split(info.MountPoint, ".")) < 2 {
-		return info, fmt.Errorf("fail to parse serviceaddr for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		return info, fmt.Errorf("fail to parse serviceaddr for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	} else {
 		info.ServiceAddr = strings.Split(info.MountPoint, ".")[1]
 	}
 
 	if len(strings.Split(info.MountPoint, "-")) < 1 {
-		return info, fmt.Errorf("fail to parse filesystemid for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		return info, fmt.Errorf("fail to parse filesystemid for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	} else {
 		info.FileSystemId = strings.Split(info.MountPoint, "-")[0]
 	}
 
 	if len(strings.Split(info.MountPoint, "nas.aliyuncs.com:")) < 2 {
-		return info, fmt.Errorf("fail to parse dirpath for EACRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		return info, fmt.Errorf("fail to parse dirpath for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	} else {
 		info.DirPath = strings.Split(info.MountPoint, "nas.aliyuncs.com:")[1]
 	}
@@ -206,7 +206,7 @@ func (e *EACEngine) getMountInfo() (info MountInfo, err error) {
 		return info, err
 	}
 
-	e.Log.Info("EACRuntime MountInfo", "mountPoint", info.MountPoint, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath, "AccessKeyID", info.AccessKeyID, "AccessKeySecret", info.AccessKeySecret)
+	e.Log.Info("EFCRuntime MountInfo", "mountPoint", info.MountPoint, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath, "AccessKeyID", info.AccessKeyID, "AccessKeySecret", info.AccessKeySecret)
 	return info, nil
 }
 

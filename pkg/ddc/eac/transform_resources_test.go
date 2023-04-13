@@ -30,11 +30,11 @@ import (
 
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{},
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		}, &EAC{}},
 	}
 	for _, test := range tests {
@@ -57,18 +57,18 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("4Gi")
 
 	var tests = []struct {
-		runtime                *datav1alpha1.EACRuntime
+		runtime                *datav1alpha1.EFCRuntime
 		eacValue               *EAC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -78,12 +78,12 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test2",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -104,12 +104,12 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test3",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Worker: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Worker: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -152,11 +152,11 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 
 func TestTransformResourcesForMasterNoValue(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{},
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		}, &EAC{}},
 	}
 	for _, test := range tests {
@@ -179,18 +179,18 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("4Gi")
 
 	var tests = []struct {
-		runtime                *datav1alpha1.EACRuntime
+		runtime                *datav1alpha1.EFCRuntime
 		eacValue               *EAC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Master: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Master: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -200,12 +200,12 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test2",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Master: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Master: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -226,12 +226,12 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test3",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Master: datav1alpha1.EACCompTemplateSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Master: datav1alpha1.EFCCompTemplateSpec{
 						Resources: resources,
 					},
 				},
@@ -274,11 +274,11 @@ func TestTransformResourcesForMasterWithValue(t *testing.T) {
 
 func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{},
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		}, &EAC{}},
 	}
 	for _, test := range tests {
@@ -301,18 +301,18 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("4Gi")
 
 	var tests = []struct {
-		runtime                *datav1alpha1.EACRuntime
+		runtime                *datav1alpha1.EFCRuntime
 		eacValue               *EAC
 		wantedResourcesRequest string
 		wantErr                bool
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Fuse: datav1alpha1.EACFuseSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Fuse: datav1alpha1.EFCFuseSpec{
 						Resources: resources,
 					},
 				},
@@ -322,12 +322,12 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test2",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Fuse: datav1alpha1.EACFuseSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Fuse: datav1alpha1.EFCFuseSpec{
 						Resources: resources,
 					},
 				},
@@ -348,12 +348,12 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 			wantErr:                false,
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test3",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
-					Fuse: datav1alpha1.EACFuseSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
+					Fuse: datav1alpha1.EFCFuseSpec{
 						Resources: resources,
 					},
 				},

@@ -30,7 +30,7 @@ import (
 func TestTransformWorkerTieredStore(t *testing.T) {
 	test2_quota := resource.MustParse("2Gi")
 	var tests = []struct {
-		runtime        *datav1alpha1.EACRuntime
+		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
 		eacValue       *EAC
 		wantType       string
@@ -39,11 +39,11 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 		wantQuota      string
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{},
+				Spec: datav1alpha1.EFCRuntimeSpec{},
 			},
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -57,11 +57,11 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 			wantQuota:      "1GB",
 		},
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "tes2",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{
+				Spec: datav1alpha1.EFCRuntimeSpec{
 					TieredStore: datav1alpha1.TieredStore{
 						Levels: []datav1alpha1.Level{
 							{
@@ -117,7 +117,7 @@ func TestTransformWorkerTieredStore(t *testing.T) {
 
 func TestTransformMasterTieredStore(t *testing.T) {
 	var tests = []struct {
-		runtime        *datav1alpha1.EACRuntime
+		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
 		eacValue       *EAC
 		wantType       string
@@ -125,11 +125,11 @@ func TestTransformMasterTieredStore(t *testing.T) {
 		wantMediumType string
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{},
+				Spec: datav1alpha1.EFCRuntimeSpec{},
 			},
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -170,7 +170,7 @@ func TestTransformMasterTieredStore(t *testing.T) {
 
 func TestTransformFuseTieredStore(t *testing.T) {
 	var tests = []struct {
-		runtime        *datav1alpha1.EACRuntime
+		runtime        *datav1alpha1.EFCRuntime
 		dataset        *datav1alpha1.Dataset
 		eacValue       *EAC
 		wantType       string
@@ -178,11 +178,11 @@ func TestTransformFuseTieredStore(t *testing.T) {
 		wantMediumType string
 	}{
 		{
-			runtime: &datav1alpha1.EACRuntime{
+			runtime: &datav1alpha1.EFCRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: datav1alpha1.EACRuntimeSpec{},
+				Spec: datav1alpha1.EFCRuntimeSpec{},
 			},
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{

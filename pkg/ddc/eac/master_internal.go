@@ -60,7 +60,7 @@ func (e *EACEngine) setupMasterInternal() (err error) {
 }
 
 // generate eac struct
-func (e *EACEngine) generateEACValueFile(runtime *datav1alpha1.EACRuntime) (valueFileName string, err error) {
+func (e *EACEngine) generateEACValueFile(runtime *datav1alpha1.EFCRuntime) (valueFileName string, err error) {
 
 	//0. Check if the configmap exists
 	err = kubeclient.DeleteConfigMap(e.Client, e.getConfigmapName(), e.namespace)

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,21 +26,21 @@ import (
 
 func TestTransformPortForMaster(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					NetworkMode: "HostNetwork",
 				},
 			},
 		},
 			&EAC{},
 		},
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Master: datav1alpha1.EACCompTemplateSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Master: datav1alpha1.EFCCompTemplateSpec{
 					NetworkMode: "ContainerNetwork",
 				},
 			},
@@ -64,21 +64,21 @@ func TestTransformPortForMaster(t *testing.T) {
 
 func TestTransformPortForFuse(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{
 					NetworkMode: "HostNetwork",
 				},
 			},
 		},
 			&EAC{},
 		},
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{
 					NetworkMode: "ContainerNetwork",
 				},
 			},
@@ -102,21 +102,21 @@ func TestTransformPortForFuse(t *testing.T) {
 
 func TestTransformPortForWorker(t *testing.T) {
 	var tests = []struct {
-		runtime  *datav1alpha1.EACRuntime
+		runtime  *datav1alpha1.EFCRuntime
 		eacValue *EAC
 	}{
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Worker: datav1alpha1.EACCompTemplateSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Worker: datav1alpha1.EFCCompTemplateSpec{
 					NetworkMode: "HostNetwork",
 				},
 			},
 		},
 			&EAC{},
 		},
-		{&datav1alpha1.EACRuntime{
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Worker: datav1alpha1.EACCompTemplateSpec{
+		{&datav1alpha1.EFCRuntime{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Worker: datav1alpha1.EFCCompTemplateSpec{
 					NetworkMode: "ContainerNetwork",
 				},
 			},

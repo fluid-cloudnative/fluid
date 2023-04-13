@@ -97,8 +97,8 @@ rules:
       - juicefsruntimes/status
       - thinruntimes
       - thinruntimes/status
-      - eacruntimes
-      - eacruntimes/status
+      - efcruntimes
+      - efcruntimes/status
     verbs:
       - '*'
   - apiGroups:

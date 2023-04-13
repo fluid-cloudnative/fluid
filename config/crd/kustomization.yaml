@@ -11,7 +11,7 @@ resources:
 - bases/data.fluid.io_juicefsruntimes.yaml
 - bases/data.fluid.io_thinruntimes.yaml
 - bases/data.fluid.io_thinruntimeprofiles.yaml
-- bases/data.fluid.io_eacruntimes.yaml
+- bases/data.fluid.io_efcruntimes.yaml
 - bases/data.fluid.io_datamigrates.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
@@ -24,7 +24,7 @@ patchesStrategicMerge:
 #- patches/webhook_in_juicefsruntimes.yaml
 #- patches/webhook_in_thinruntimes.yaml
 #- patches/webhook_in_ThinRuntimeProfiles.yaml
-#- patches/webhook_in_eacruntimes.yaml
+#- patches/webhook_in_efcruntimes.yaml
 #- patches/webhook_in_datamigrates.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -36,7 +36,7 @@ patchesStrategicMerge:
 #- patches/cainjection_in_juicefsruntimes.yaml
 #- patches/cainjection_in_thinruntimes.yaml
 #- patches/cainjection_in_ThinRuntimeProfiles.yaml
-#- patches/cainjection_in_eacruntimes.yaml
+#- patches/cainjection_in_efcruntimes.yaml
 #- patches/cainjection_in_datamigrates.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 

@@ -925,7 +925,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 	}
 
-	eacRuntime := v1alpha1.EACRuntime{
+	eacRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "eac",
 			Namespace: "default",
@@ -950,7 +950,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EACRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
@@ -1181,7 +1181,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	eacRuntime := v1alpha1.EACRuntime{
+	eacRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "eac",
 			Namespace: "default",
@@ -1199,7 +1199,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EACRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ThinRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 

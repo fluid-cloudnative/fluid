@@ -30,7 +30,7 @@ var (
 	miniWorkerQuota = resource.MustParse("1Gi")
 )
 
-func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) (err error) {
 	var options []string
 
@@ -45,7 +45,7 @@ func (e *EACEngine) transformMasterOptions(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) (err error) {
 	var options []string
 
@@ -64,7 +64,7 @@ func (e *EACEngine) transformFuseOptions(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformWorkerOptions(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) (err error) {
 	if len(value.Worker.TieredStore.Levels) == 0 {
 		return fmt.Errorf("worker tiered store are not specified")

@@ -43,13 +43,13 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 1,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -132,13 +132,13 @@ func TestUpdateDatasetStatus(t *testing.T) {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 1,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -267,13 +267,13 @@ func TestBindToDataset(t *testing.T) {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{},
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{
 					common.Cached: "true",
