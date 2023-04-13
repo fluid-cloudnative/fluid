@@ -2,7 +2,7 @@
 
 ## 背景介绍
 
-EFC 是一款针对分布式文件系统 NAS 的用户态客户端，并在提供分布式缓存的同时，保证多客户端之间的缓存一致性。EAC现阶段支持阿里云NAS，未来会支持通用NAS和GPFS等高速分布式文件系统。
+EFC 是一款针对分布式文件系统 NAS 的用户态客户端，并在提供分布式缓存的同时，保证多客户端之间的缓存一致性。EFC现阶段支持阿里云NAS，未来会支持通用NAS和GPFS等高速分布式文件系统。
 
 如何开启NAS服务能力，可以参考[文档](https://help.aliyun.com/document_detail/148430.html)
 
@@ -10,7 +10,7 @@ EFC 是一款针对分布式文件系统 NAS 的用户态客户端，并在提�
 
 您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
 
-在 Fluid 的安装 chart values.yaml 中将 `runtime.efc.enable` 设置为 `true` ，再参考 [安装文档](../userguide/install.md) 完成安装。并检查Fluid各组件正常运行：
+在 Fluid 的安装 chart values.yaml 中将 `runtime.eac.enable` 设置为 `true` ，再参考 [安装文档](../userguide/install.md) 完成安装。并检查Fluid各组件正常运行：
 
 ```shell
 $ kubectl get po -n fluid-system
@@ -47,13 +47,13 @@ metadata:
   name: mydemo
 spec:
   mounts:
-    - mountPoint: "efc://nas-mount-point-address:/sub/path"
+    - mountPoint: "eac://nas-mount-point-address:/sub/path"
 EOF
 ```
 
 其中：
 
-- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `efc://` 开头；如 `efc://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
+- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `eac://` 开头；如 `eac://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
 
 **创建 `Dataset` 资源对象**
 ```shell
@@ -97,12 +97,12 @@ EOF
 
 ```shell
 $ kubectl create -f runtime.yaml
-eacruntime.data.fluid.io/mydemo created
+efcruntime.data.fluid.io/mydemo created
 ```
 
 **检查 `EFCRuntime` 资源对象是否已经创建**
 ```shell
-$ kubectl get eacruntime
+$ kubectl get efcruntime
 NAME     MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
 mydemo   NotReady                                   23s
 ```
@@ -116,7 +116,7 @@ mydemo-worker-0   1/1     Running   0          61s
 ```
 
 ```shell
-$ kubectl get eacruntime
+$ kubectl get efcruntime
 NAME     MASTER PHASE   WORKER PHASE   FUSE PHASE   AGE
 mydemo   Ready          Ready          Ready        55s
 ```
