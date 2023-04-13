@@ -268,7 +268,7 @@ func TestEACEngineCleanAll(t *testing.T) {
 
 func TestEACEngineReleasePorts(t *testing.T) {
 	type fields struct {
-		runtime     *datav1alpha1.EACRuntime
+		runtime     *datav1alpha1.EFCRuntime
 		name        string
 		namespace   string
 		runtimeType string

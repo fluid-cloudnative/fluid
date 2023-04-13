@@ -28,7 +28,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime, value *EAC) error {
+func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EFCRuntime, value *EAC) error {
 	value.Master.Resources = common.Resources{
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},
@@ -88,7 +88,7 @@ func (e *EACEngine) transformResourcesForMaster(runtime *datav1alpha1.EACRuntime
 	return nil
 }
 
-func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EACRuntime, value *EAC) error {
+func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EFCRuntime, value *EAC) error {
 	value.Fuse.Resources = common.Resources{
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},
@@ -148,7 +148,7 @@ func (e *EACEngine) transformResourcesForFuse(runtime *datav1alpha1.EACRuntime, 
 	return nil
 }
 
-func (e *EACEngine) transformResourcesForWorker(runtime *datav1alpha1.EACRuntime, value *EAC) error {
+func (e *EACEngine) transformResourcesForWorker(runtime *datav1alpha1.EFCRuntime, value *EAC) error {
 	value.Worker.Resources = common.Resources{
 		Requests: common.ResourceList{},
 		Limits:   common.ResourceList{},

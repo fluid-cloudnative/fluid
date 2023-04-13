@@ -21,7 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 )
 
-func (e *EACEngine) transformPortForMaster(runtime *datav1alpha1.EACRuntime, value *EAC) (err error) {
+func (e *EACEngine) transformPortForMaster(runtime *datav1alpha1.EFCRuntime, value *EAC) (err error) {
 	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) {
 		e.Log.Info("allocateMasterPorts for hostnetwork mode")
 		err = e.allocateMasterPorts(value)
@@ -35,7 +35,7 @@ func (e *EACEngine) transformPortForMaster(runtime *datav1alpha1.EACRuntime, val
 	return
 }
 
-func (e *EACEngine) transformPortForWorker(runtime *datav1alpha1.EACRuntime, value *EAC) (err error) {
+func (e *EACEngine) transformPortForWorker(runtime *datav1alpha1.EFCRuntime, value *EAC) (err error) {
 	if datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		e.Log.Info("allocateWorkerPorts for hostnetwork mode")
 		err = e.allocateWorkerPorts(value)
@@ -49,7 +49,7 @@ func (e *EACEngine) transformPortForWorker(runtime *datav1alpha1.EACRuntime, val
 	return
 }
 
-func (e *EACEngine) transformPortForFuse(runtime *datav1alpha1.EACRuntime, value *EAC) (err error) {
+func (e *EACEngine) transformPortForFuse(runtime *datav1alpha1.EFCRuntime, value *EAC) (err error) {
 	if datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode) {
 		e.Log.Info("allocateFusePorts for hostnetwork mode")
 		err = e.allocateFusePorts(value)

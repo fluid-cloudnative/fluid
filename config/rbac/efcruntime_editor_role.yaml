@@ -1,13 +1,13 @@
-# permissions for end users to edit eacruntimes.
+# permissions for end users to edit efcruntimes.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: eacruntime-editor-role
+  name: efcruntime-editor-role
 rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - eacruntimes
+  - efcruntimes
   verbs:
   - create
   - delete
@@ -19,6 +19,6 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
-  - eacruntimes/status
+  - efcruntimes/status
   verbs:
   - get

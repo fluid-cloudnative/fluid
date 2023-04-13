@@ -39,7 +39,7 @@ import (
 func newEACEngineREP(client client.Client, name string, namespace string) *EACEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
-		runtime:     &datav1alpha1.EACRuntime{},
+		runtime:     &datav1alpha1.EFCRuntime{},
 		name:        name,
 		namespace:   namespace,
 		Client:      client,
@@ -99,13 +99,13 @@ func TestSyncReplicas(t *testing.T) {
 			},
 		},
 	}
-	runtimeInputs := []*datav1alpha1.EACRuntime{
+	runtimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 3, // 2
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -119,7 +119,7 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "hadoop",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
@@ -133,7 +133,7 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "obj",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{

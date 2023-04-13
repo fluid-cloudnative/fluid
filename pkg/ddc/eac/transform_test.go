@@ -31,17 +31,17 @@ import (
 
 func TestEACEngine_transform(t *testing.T) {
 	var tests = []struct {
-		runtime *datav1alpha1.EACRuntime
+		runtime *datav1alpha1.EFCRuntime
 		dataset *datav1alpha1.Dataset
 	}{
-		{&datav1alpha1.EACRuntime{
+		{&datav1alpha1.EFCRuntime{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{
-				Fuse: datav1alpha1.EACFuseSpec{},
-				Worker: datav1alpha1.EACCompTemplateSpec{
+			Spec: datav1alpha1.EFCRuntimeSpec{
+				Fuse: datav1alpha1.EFCFuseSpec{},
+				Worker: datav1alpha1.EFCCompTemplateSpec{
 					Replicas: 2,
 				},
 			},
