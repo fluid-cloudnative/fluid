@@ -19,6 +19,7 @@ webhooks:
       caBundle: Cg==
     timeoutSeconds: 20
     failurePolicy: Fail
+    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
     sideEffects: None
     admissionReviewVersions: ["v1","v1beta1"]
     namespaceSelector:

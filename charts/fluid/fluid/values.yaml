@@ -90,6 +90,7 @@ webhook:
   enabled: true
   image: fluidcloudnative/fluid-webhook:v0.8.5-00f609e
   replicas: 1
+  reinvocationPolicy: Never
 
 fluidapp:
   enabled: true
