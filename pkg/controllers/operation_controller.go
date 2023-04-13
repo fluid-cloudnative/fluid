@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -80,7 +81,8 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 
 	// 2. Release lock on target dataset if necessary
 	err = base.ReleaseTargetDataset(ctx.ReconcileRequestContext, object, o.implement)
-	if err != nil {
+	// ignore the not found error, as dataset can be deleted first, then the data operation will be deleted by owner reference.
+	if utils.IgnoreNotFound(err) != nil {
 		log.Error(err, "can't release lock on target dataset")
 		return utils.RequeueIfError(err)
 	}
@@ -116,17 +118,11 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	}
 
 	// 2. set target dataset
-	targetDatasetNamespacedName, err := o.implement.GetTargetDatasetNamespacedName(object)
-	if err != nil {
-		ctx.Log.Error(err, "Failed to get the ddc dataset namespace and name")
-		return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
-	}
-
-	targetDataset, err := utils.GetDataset(o.Client, targetDatasetNamespacedName.Name, targetDatasetNamespacedName.Namespace)
+	targetDataset, err := o.implement.GetTargetDataset(object)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("The dataset is not found", "dataset", targetDatasetNamespacedName)
-			// no dataset means no metadata, not necessary to Reconcile
+			statusError := err.(*apierrors.StatusError)
+			ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
 			ctx.Log.Error(err, "Failed to get the ddc dataset")

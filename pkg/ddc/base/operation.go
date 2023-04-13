@@ -130,6 +130,11 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 				"RuntimeType %s not support %s", ctx.RuntimeType, operation.GetOperationType())
 
 			opStatus.Phase = common.PhaseFailed
+			if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+				log.Error(err, "failed to update api status")
+				return utils.RequeueIfError(err)
+			}
+			// goto failed case
 			return utils.RequeueImmediately()
 		}
 		return utils.RequeueAfterInterval(20 * time.Second)
