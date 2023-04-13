@@ -321,7 +321,7 @@ def check_datamigrate_clean_up(datamigrate_name, namespace="default"):
         api = client.CustomObjectsApi()
         print("datamigrate {} still exists...".format(datamigrate_name))
         try:
-            to_delete = api.get_namespaced_custom_object(
+            api.get_namespaced_custom_object(
                 group="data.fluid.io",
                 version="v1alpha1",
                 name=datamigrate_name,

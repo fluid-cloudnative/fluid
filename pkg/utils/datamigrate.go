@@ -131,5 +131,5 @@ func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.Da
 	}
 
 	// DataMigrate has no from/to dataset
-	return nil, apierrors.NewBadRequest("datamigration should specify from or to dataset")
+	return nil, apierrors.NewBadRequest("datamigrate should specify from or to dataset")
 }
